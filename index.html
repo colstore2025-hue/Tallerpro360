@@ -6,44 +6,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
+  
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
     :root { --primary: #0f172a; --secondary: #1e293b; --success: #16a34a; --accent: #3b82f6; --danger: #ef4444; }
     body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f1f5f9; padding-bottom: 70px; }
-    header { background: var(--primary); color: white; padding: 15px; text-align: center; sticky: top; z-index: 100; }
+    header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; }
     
     /* Navegación */
-    .nav-tabs { display: flex; background: white; border-bottom: 1px solid #ddd; sticky: top; }
+    .nav-tabs { display: flex; background: white; border-bottom: 1px solid #ddd; position: sticky; top: 55px; z-index: 99; }
     .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-weight: bold; font-size: 0.8em; color: var(--secondary); }
     .tab.active { border-bottom: 3px solid var(--accent); color: var(--accent); }
     
     .container { padding: 15px; max-width: 600px; margin: auto; }
     .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
     
-    /* Inputs y Botones */
-    input, textarea, select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
-    .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; margin-bottom: 5px; }
+    input, textarea, select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+    .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; margin-bottom: 10px; font-size: 16px; }
     .btn-main { background: var(--success); }
     .btn-accent { background: var(--accent); }
-    .btn-voice { background: var(--secondary); width: auto; margin: 0; }
+    .btn-voice { background: var(--secondary); margin-bottom: 5px; }
     
-    /* Fotos */
     .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
-    .photo-preview { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 5px; background: #eee; }
+    .photo-preview { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 5px; background: #eee; border: 1px solid #ddd; }
 
-    /* Listas */
-    .list-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; }
+    .list-item { background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .hidden { display: none; }
-    
-    /* Bottom Nav (Mobile style) */
-    .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; }
-    .nav-item { flex: 1; padding: 15px; text-align: center; font-size: 1.2em; cursor: pointer; }
+    .badge { padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; background: #dcfce7; color: #166534; }
   </style>
 </head>
 <body>
 
 <header>
-  <strong>TallerPRO360</strong> | <small>Nexus-X</small>
+  <strong>TallerPRO360</strong> | <small>Nexus-X Starlink</small>
 </header>
 
 <div class="nav-tabs">
@@ -56,89 +53,96 @@
 <div class="container">
   
   <section id="sec-ordenes">
-    <div class="card" style="background: var(--accent); color: white;">
-      <strong>🎙️ Asistente de Voz:</strong>
-      <button onclick="startGlobalVoice()" class="btn" style="background:white; color:var(--accent); margin-top:10px;">DICTAR ORDEN COMPLETA</button>
+    <div class="card" style="background: var(--accent); color: white; text-align: center;">
+      <p style="margin:0 0 10px 0;">🎙️ <strong>Modo Manos Libres</strong></p>
+      <button onclick="startGlobalVoice()" class="btn" style="background:white; color:var(--accent); margin:0;">DICTAR ORDEN COMPLETA</button>
     </div>
 
     <div class="card">
-      <h3>Nueva Orden</h3>
-      <input id="o-placa" placeholder="Placa">
-      <input id="o-cliente" placeholder="Cliente">
-      <input id="o-tel" type="tel" placeholder="WhatsApp">
-      <textarea id="o-trabajo" placeholder="Descripción del servicio"></textarea>
+      <h3>📋 Nueva Orden de Trabajo</h3>
+      <input id="o-placa" placeholder="Placa del Vehículo">
+      <input id="o-cliente" placeholder="Nombre del Cliente">
+      <input id="o-tel" type="tel" placeholder="WhatsApp (ej: 310...)">
+      <textarea id="o-trabajo" placeholder="¿Qué le vamos a hacer al carro?" rows="3"></textarea>
       
-      <p>📷 Evidencias (Fotos):</p>
+      <p style="font-size: 0.9em; color: #64748b;">📷 Fotos de Ingreso:</p>
       <input type="file" id="o-fotos" accept="image/*" capture="environment" multiple onchange="previewImages()">
       <div id="photo-preview-container" class="photo-grid"></div>
       
-      <button class="btn btn-main" onclick="saveOrder()">GUARDAR Y ENVIAR WHATSAPP</button>
+      <button class="btn btn-main" onclick="saveOrder()">GUARDAR Y NOTIFICAR WHATSAPP</button>
     </div>
 
-    <h3>Órdenes Activas</h3>
+    <h3>🛠️ Órdenes en Curso</h3>
     <div id="lista-ordenes"></div>
   </section>
 
   <section id="sec-finanzas" class="hidden">
     <div class="card">
-      <h3>Registrar Gasto</h3>
+      <h3>💸 Registrar Gasto / Compra</h3>
       <select id="g-tipo">
-        <option value="Insumos">Insumos/Repuestos</option>
-        <option value="Servicios">Servicios Públicos</option>
+        <option value="Insumos">Repuestos / Insumos</option>
+        <option value="Servicios">Servicios (Luz, Agua, Internet)</option>
         <option value="Arriendo">Arriendo</option>
-        <option value="Otros">Otros</option>
+        <option value="Nomina">Pago de Nómina</option>
+        <option value="Otros">Otros Gastos</option>
       </select>
-      <input id="g-valor" type="number" placeholder="Valor ($)">
-      <input id="g-desc" placeholder="Descripción del gasto">
+      <input id="g-valor" type="number" placeholder="Valor en Pesos ($)">
+      <input id="g-desc" placeholder="Descripción breve">
       <select id="g-ordenId">
-        <option value="general">Gasto General (No asociado a orden)</option>
+        <option value="general">Gasto General</option>
       </select>
       <button class="btn btn-accent" onclick="saveGasto()">REGISTRAR GASTO</button>
     </div>
-    <h3>Historial de Gastos</h3>
+    <h3>📊 Historial de Salidas</h3>
     <div id="lista-gastos"></div>
   </section>
 
   <section id="sec-nomina" class="hidden">
     <div class="card">
-      <h3>Liquidación de Personal</h3>
-      <input id="n-nombre" placeholder="Nombre del Mecánico/Pintor">
+      <h3>👷 Liquidación de Técnico</h3>
+      <input id="n-nombre" placeholder="Nombre del colaborador">
       <select id="n-tipo">
-        <option value="porcentaje">Porcentaje por Obra (Destajo)</option>
-        <option value="fijo">Salario Fijo</option>
+        <option value="porcentaje">Porcentaje (Obra/Labor)</option>
+        <option value="fijo">Sueldo Fijo / Quincena</option>
       </select>
-      <input id="n-monto" type="number" placeholder="Monto o %">
-      <button class="btn btn-main" onclick="saveNomina()">GUARDAR COLABORADOR</button>
+      <input id="n-monto" type="number" placeholder="Monto base ($)">
+      <button class="btn btn-main" onclick="generarPDFNomina()">GENERAR COMPROBANTE PDF</button>
     </div>
+    <h3>Historial de Pagos</h3>
     <div id="lista-nomina"></div>
   </section>
 
   <section id="sec-dashboard" class="hidden">
-    <div class="card">
-      <canvas id="chartFinanzas"></canvas>
+    <div class="card" style="text-align: center;">
+      <h4>Estado Financiero</h4>
+      <canvas id="chartFinanzas" style="max-height: 250px;"></canvas>
     </div>
     <div class="card">
-      <h4>Resumen del Mes</h4>
-      <p>Ingresos: <strong id="d-ingresos">$0</strong></p>
-      <p>Gastos: <strong id="d-gastos" style="color:var(--danger)">$0</strong></p>
+      <p>Total Ingresos Estimados: <strong id="d-ingresos">$0</strong></p>
+      <p>Total Gastos Registrados: <strong id="d-gastos" style="color:var(--danger)">$0</strong></p>
       <hr>
-      <p>Utilidad: <strong id="d-utilidad">$0</strong></p>
+      <h3>Utilidad Neta: <span id="d-utilidad">$0</span></h3>
     </div>
   </section>
 
 </div>
 
 <script>
-// --- CONFIGURACIÓN DE BASE DE DATOS ---
+// --- MOTOR DE BASE DE DATOS (IndexedDB) ---
 let db;
-const request = indexedDB.open("TallerProUltimateDB", 2);
+const request = indexedDB.open("TallerProGlobalDB", 3);
+
 request.onupgradeneeded = (e) => {
   db = e.target.result;
   if(!db.objectStoreNames.contains("ordenes")) db.createObjectStore("ordenes", { keyPath: "id", autoIncrement: true });
   if(!db.objectStoreNames.contains("gastos")) db.createObjectStore("gastos", { keyPath: "id", autoIncrement: true });
   if(!db.objectStoreNames.contains("nomina")) db.createObjectStore("nomina", { keyPath: "id", autoIncrement: true });
 };
-request.onsuccess = (e) => { db = e.target.result; renderAll(); };
+
+request.onsuccess = (e) => {
+  db = e.target.result;
+  renderAll();
+};
 
 // --- NAVEGACIÓN ---
 function showTab(tab) {
@@ -149,7 +153,7 @@ function showTab(tab) {
   if(tab === 'dashboard') initChart();
 }
 
-// --- LÓGICA DE ORDENES ---
+// --- LÓGICA DE ÓRDENES Y FOTOS ---
 let fotosBase64 = [];
 function previewImages() {
   const files = document.getElementById('o-fotos').files;
@@ -171,13 +175,14 @@ function previewImages() {
 }
 
 function saveOrder() {
+  const placa = document.getElementById('o-placa').value.toUpperCase();
   const data = {
-    placa: document.getElementById('o-placa').value.toUpperCase(),
+    placa,
     cliente: document.getElementById('o-cliente').value,
     tel: document.getElementById('o-tel').value,
     trabajo: document.getElementById('o-trabajo').value,
     fotos: fotosBase64,
-    fecha: new Date().toISOString(),
+    fecha: new Date().toLocaleString(),
     estado: 'Abierta'
   };
 
@@ -185,32 +190,36 @@ function saveOrder() {
   tx.objectStore("ordenes").add(data);
   tx.oncomplete = () => {
     enviarWhatsApp(data);
-    location.reload(); 
+    alert("Orden Guardada Correctamente");
+    location.reload();
   };
 }
 
 function enviarWhatsApp(data) {
   let num = data.tel.replace(/\D/g, '');
   if (num.length === 10) num = "57" + num;
-  const msj = encodeURIComponent(`🚗 *TallerPRO360*\nHola ${data.cliente}, recibimos tu vehículo placa *${data.placa}*.\nServicio: ${data.trabajo}\nNexus-X Starlink SAS.`);
+  const msj = encodeURIComponent(`🚗 *TallerPRO360 - NEXUS-X*\nHola ${data.cliente}, recibimos tu vehículo con placa *${data.placa}*.\nDetalle: ${data.trabajo}\n\n*Estado:* En proceso.`);
   window.open(`https://wa.me/${num}?text=${msj}`, '_blank');
 }
 
-// --- LÓGICA DE GASTOS Y FINANZAS ---
+// --- LÓGICA DE GASTOS ---
 function saveGasto() {
   const data = {
     tipo: document.getElementById('g-tipo').value,
     valor: parseFloat(document.getElementById('g-valor').value),
     desc: document.getElementById('g-desc').value,
     ordenId: document.getElementById('g-ordenId').value,
-    fecha: new Date().toISOString()
+    fecha: new Date().toLocaleString()
   };
   const tx = db.transaction("gastos", "readwrite");
   tx.objectStore("gastos").add(data);
-  tx.oncomplete = () => renderAll();
+  tx.oncomplete = () => {
+    alert("Gasto registrado");
+    renderAll();
+  };
 }
 
-// --- VOZ ---
+// --- VOZ (NLP Básico) ---
 const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
 recognition.lang = 'es-CO';
 
@@ -224,41 +233,87 @@ function startGlobalVoice() {
   };
 }
 
-// --- RENDERING ---
+// --- PDF DE NÓMINA ---
+async function generarPDFNomina() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const nombre = document.getElementById('n-nombre').value;
+  const monto = parseFloat(document.getElementById('n-monto').value);
+  const tipo = document.getElementById('n-tipo').value;
+  
+  if(!nombre || !monto) return alert("Ingrese datos de nómina");
+
+  let total = monto;
+  let detalle = "Salario Fijo";
+  if(tipo === "porcentaje") {
+    const porc = prompt("¿Qué porcentaje aplicar? (ej: 30)");
+    total = (monto * (porc / 100));
+    detalle = `Pago por porcentaje (${porc}%) de labor`;
+  }
+
+  doc.setFontSize(18);
+  doc.text("COMPROBANTE DE PAGO - TallerPRO360", 20, 20);
+  doc.setFontSize(10);
+  doc.text("Nexus-X Starlink SAS - Tecnología para Talleres", 20, 28);
+  doc.line(20, 32, 190, 32);
+  doc.text(`Beneficiario: ${nombre}`, 20, 50);
+  doc.text(`Concepto: ${detalle}`, 20, 60);
+  doc.text(`Fecha: ${new Date().toLocaleString()}`, 20, 70);
+  doc.setFontSize(14);
+  doc.text(`TOTAL PAGADO: $${total.toLocaleString()}`, 20, 90);
+  doc.save(`Pago_${nombre}.pdf`);
+  
+  // Guardar en DB
+  const tx = db.transaction("nomina", "readwrite");
+  tx.objectStore("nomina").add({ nombre, total, fecha: new Date().toLocaleString() });
+}
+
+// --- ACTUALIZAR VISTAS ---
 function renderAll() {
-  // Render Órdenes
   const listO = document.getElementById('lista-ordenes');
   const selectG = document.getElementById('g-ordenId');
   listO.innerHTML = "";
+  
   db.transaction("ordenes").objectStore("ordenes").getAll().onsuccess = (e) => {
     e.target.result.forEach(o => {
-      listO.innerHTML += `<div class="list-item"><span>${o.placa} - ${o.cliente}</span> <span class="badge">Activa</span></div>`;
+      listO.innerHTML += `<div class="list-item">
+        <div><strong>${o.placa}</strong> - ${o.cliente}</div>
+        <span class="badge">Abierta</span>
+      </div>`;
       selectG.innerHTML += `<option value="${o.id}">Orden: ${o.placa}</option>`;
     });
   };
-  
-  // Render Gastos
+
   const listG = document.getElementById('lista-gastos');
   listG.innerHTML = "";
   db.transaction("gastos").objectStore("gastos").getAll().onsuccess = (e) => {
+    let totalGastos = 0;
     e.target.result.forEach(g => {
-      listG.innerHTML += `<div class="list-item"><span>${g.desc}</span> <strong style="color:red">-$${g.valor}</strong></div>`;
+      totalGastos += g.valor;
+      listG.innerHTML += `<div class="list-item"><span>${g.desc}</span> <strong style="color:red">-$${g.valor.toLocaleString()}</strong></div>`;
     });
+    document.getElementById('d-gastos').innerText = `$${totalGastos.toLocaleString()}`;
   };
 }
 
+// --- DASHBOARD ---
 function initChart() {
   const ctx = document.getElementById('chartFinanzas').getContext('2d');
   new Chart(ctx, {
-    type: 'doughnut',
+    type: 'pie',
     data: {
       labels: ['Ingresos', 'Gastos'],
       datasets: [{
-        data: [5000000, 2400000], // Ejemplo estático, se vincula a DB después
+        data: [1000000, 450000], // Aquí se conectarían los datos reales de la DB
         backgroundColor: ['#16a34a', '#ef4444']
       }]
     }
   });
+}
+
+// Service Worker para PWA
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
 }
 </script>
 
