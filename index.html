@@ -2,38 +2,183 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>TallerPRO360</title>
+  <title>TallerPRO360 - Nexus-X</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
+  <style>
+    :root { --primary: #0f172a; --secondary: #1e293b; --success: #16a34a; --accent: #3b82f6; }
+    body { font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; background: #f1f5f9; color: #1e293b; }
+    header { background: var(--primary); color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    .container { padding: 15px; max-width: 600px; margin: auto; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .input-group { position: relative; margin-bottom: 12px; display: flex; gap: 8px; }
+    input, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; transition: 0.3s; }
+    input:focus { outline: none; border-color: var(--accent); ring: 2px var(--accent); }
+    .btn-voice { background: var(--secondary); color: white; border: none; border-radius: 8px; padding: 0 15px; cursor: pointer; transition: 0.3s; }
+    .btn-voice.active { background: #ef4444; animation: pulse 1.5s infinite; }
+    .btn-save { width: 100%; padding: 15px; background: var(--success); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; }
+    .order-item { background: white; padding: 15px; border-left: 5px solid var(--accent); border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    .badge { background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+  </style>
 </head>
 
-<body style="font-family: Arial; margin:0; background:#f5f5f5;">
+<body>
 
-<header style="background:#0f172a;color:white;padding:15px;">
-  <h2>🚗 TallerPRO360</h2>
-  <small>Nexus-X Starlink SAS</small>
+<header>
+  <h2 style="margin:0;">🚗 TallerPRO360</h2>
+  <small style="opacity:0.8;">Sistema Inteligente Nexus-X Starlink</small>
 </header>
 
-<section style="padding:15px;">
-  <h3>📋 Nueva Orden de Trabajo</h3>
+<div class="container">
+  <div class="card" style="background: var(--accent); color: white;">
+    <h4 style="margin-top:0;">🎙️ Dictado Inteligente</h4>
+    <p style="font-size: 0.85em;">Presiona y di por ejemplo: <br><i>"Placa GTR 123 cliente Juan Perez falla en frenos"</i></p>
+    <button id="btnSmartVoice" onclick="startGlobalVoice()" style="width:100%; padding:10px; border-radius:8px; border:none; background:white; color:var(--accent); font-weight:bold; cursor:pointer;">
+      INICIAR DICTADO MÁGICO
+    </button>
+  </div>
 
-  <input placeholder="Placa del vehículo" style="width:100%;padding:10px;margin-bottom:8px;">
-  <input placeholder="Nombre del cliente" style="width:100%;padding:10px;margin-bottom:8px;">
-  <input placeholder="Teléfono" style="width:100%;padding:10px;margin-bottom:8px;">
-  <textarea placeholder="Trabajo a realizar" style="width:100%;padding:10px;margin-bottom:8px;"></textarea>
+  <section class="card">
+    <h3>📋 Nueva Orden de Trabajo</h3>
+    
+    <div class="input-group">
+      <input id="placa" placeholder="Placa (ej: ABC-123)">
+      <button class="btn-voice" onclick="startListen('placa')">🎤</button>
+    </div>
 
-  <button style="width:100%;padding:12px;background:#16a34a;color:white;border:none;font-size:16px;">
-    Guardar Orden
-  </button>
-</section>
+    <div class="input-group">
+      <input id="cliente" placeholder="Nombre del cliente">
+      <button class="btn-voice" onclick="startListen('cliente')">🎤</button>
+    </div>
 
-<section style="padding:15px;">
-  <h3>🛠️ Órdenes del Taller</h3>
-  <p>Aquí aparecerán las órdenes creadas.</p>
-</section>
+    <div class="input-group">
+      <input id="telefono" type="tel" placeholder="Teléfono/WhatsApp">
+      <button class="btn-voice" onclick="startListen('telefono')">🎤</button>
+    </div>
+
+    <textarea id="trabajo" placeholder="Descripción del trabajo o diagnóstico..." rows="4" style="width:94%; margin-bottom:12px;"></textarea>
+
+    <button class="btn-save" onclick="saveOrder()">Guardar Orden</button>
+  </section>
+
+  <section>
+    <h3>🛠️ Órdenes Recientes</h3>
+    <div id="listaOrdenes">
+      </div>
+  </section>
+</div>
 
 <script>
+/** * LÓGICA DE VOZ (Web Speech API)
+ */
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recognition = new SpeechRecognition();
+recognition.lang = 'es-CO';
+
+function startListen(fieldId) {
+  recognition.start();
+  const btn = event.currentTarget;
+  btn.classList.add('active');
+
+  recognition.onresult = (e) => {
+    let text = e.results[0][0].transcript;
+    document.getElementById(fieldId).value = text.toUpperCase();
+    btn.classList.remove('active');
+  };
+}
+
+// NLP Básico para dictado rápido
+function startGlobalVoice() {
+  recognition.start();
+  const btn = document.getElementById('btnSmartVoice');
+  btn.innerText = "ESCUCHANDO...";
+  
+  recognition.onresult = (e) => {
+    const speech = e.results[0][0].transcript.toLowerCase();
+    btn.innerText = "INICIAR DICTADO MÁGICO";
+    
+    // Lógica de extracción simple
+    if(speech.includes("placa")) {
+      const parts = speech.split("placa");
+      document.getElementById('placa').value = parts[1].split(" ")[1].toUpperCase();
+    }
+    if(speech.includes("cliente")) {
+      const parts = speech.split("cliente");
+      document.getElementById('cliente').value = parts[1].trim();
+    }
+    document.getElementById('trabajo').value = speech;
+  };
+}
+
+/**
+ * BASE DE DATOS LOCAL (IndexedDB)
+ * Permite que funcione 100% offline
+ */
+let db;
+const request = indexedDB.open("TallerProDB", 1);
+
+request.onupgradeneeded = (e) => {
+  db = e.target.result;
+  db.createObjectStore("ordenes", { keyPath: "id", autoIncrement: true });
+};
+
+request.onsuccess = (e) => {
+  db = e.target.result;
+  displayOrders();
+};
+
+function saveOrder() {
+  const data = {
+    placa: document.getElementById('placa').value,
+    cliente: document.getElementById('cliente').value,
+    telefono: document.getElementById('telefono').value,
+    trabajo: document.getElementById('trabajo').value,
+    fecha: new Date().toLocaleString(),
+    sync: false
+  };
+
+  const transaction = db.transaction(["ordenes"], "readwrite");
+  transaction.objectStore("ordenes").add(data);
+
+  transaction.oncomplete = () => {
+    alert("✅ Orden guardada localmente");
+    clearForm();
+    displayOrders();
+  };
+}
+
+function displayOrders() {
+  const container = document.getElementById('listaOrdenes');
+  container.innerHTML = "";
+  
+  const objectStore = db.transaction("ordenes").objectStore("ordenes");
+  objectStore.openCursor().onsuccess = (e) => {
+    const cursor = e.target.result;
+    if (cursor) {
+      container.innerHTML += `
+        <div class="order-item">
+          <div>
+            <strong>${cursor.value.placa}</strong> - ${cursor.value.cliente}<br>
+            <small>${cursor.value.trabajo.substring(0,30)}...</small>
+          </div>
+          <span class="badge">Pendiente</span>
+        </div>
+      `;
+      cursor.continue();
+    }
+  };
+}
+
+function clearForm() {
+  document.getElementById('placa').value = "";
+  document.getElementById('cliente').value = "";
+  document.getElementById('telefono').value = "";
+  document.getElementById('trabajo').value = "";
+}
+
+// Registro Service Worker
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js");
 }
