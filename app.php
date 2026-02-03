@@ -568,7 +568,7 @@ function renderizarDashboardCEO(userEmail) {
 }
 
 // Llamar a esta función dentro de tu onAuthStateChanged (al iniciar sesión)
-// renderizarDashboardCEO(user.email);
+ renderizarDashboardCEO(user.email);
 
 // --- FIN DEL ANEXO ---
 </body>
