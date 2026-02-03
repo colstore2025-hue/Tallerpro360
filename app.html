@@ -316,25 +316,49 @@
     } catch (e) { alert("Error Nexus-X: " + e.message); }
   };
 
+    // OBSERVADOR DE SESIÓN - NODO MAESTRO
   onAuthStateChanged(auth, async (user) => {
     const loader = document.getElementById('loader-nexus');
+    const authScreen = document.getElementById('auth-screen');
+    
     if (user) {
+      // Convertimos a minúsculas para evitar errores de digitación
+      const userEmail = user.email.toLowerCase();
+      console.log("Nodo detectado:", userEmail);
+      
+      // ACCESO CEO PARA COL.STORE2025
+      if(userEmail === 'col.store2025@gmail.com') {
+          const ceoRef = doc(db, "usuarios", user.uid);
+          const ceoDoc = await getDoc(ceoRef);
+          
+          // Si es el primer ingreso del CEO, creamos su perfil automáticamente
+          if (!ceoDoc.exists()) {
+              await setDoc(ceoRef, {
+                  nombreTaller: "COLSTORE NEXUS-X HQ",
+                  email: userEmail,
+                  rol: "CEO_RED",
+                  status: "MASTER_ACTIVE",
+                  fecha: serverTimestamp()
+              });
+          }
+          // Activamos la pestaña dorada de CEO
+          document.getElementById('tab-admin').classList.remove('hidden');
+          cargarLeadsCEO();
+      }
+
       const uDoc = await getDoc(doc(db, "usuarios", user.uid));
       if (uDoc.exists()) {
         const data = uDoc.data();
-        document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('display-taller').innerText = `${data.nombreTaller} | STARLINK ID: ${user.uid.substring(0,6)}`;
-        
-        if(user.email === 'william@nexus-x.com') {
-          document.getElementById('tab-admin').classList.remove('hidden');
-          cargarLeadsCEO();
-        }
+        document.getElementById('display-taller').innerText = `${data.nombreTaller} | SATELLITE ID: ${user.uid.substring(0,6)}`;
+        authScreen.classList.add('hidden'); // Entramos a la App
         initRealtimeSync();
       }
     } else {
-        document.getElementById('auth-screen').classList.remove('hidden');
+      authScreen.classList.remove('hidden'); // Mostramos Login si no hay sesión
     }
-    setTimeout(() => { loader.style.opacity = '0'; setTimeout(()=>loader.remove(), 1000); }, 2500);
+    
+    // Matamos el loader para evitar pantalla en blanco
+    setTimeout(() => { if(loader) loader.remove(); }, 1500);
   });
 
   // --- SINCRONIZACIÓN EN TIEMPO REAL ---
