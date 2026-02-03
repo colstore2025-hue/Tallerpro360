@@ -557,7 +557,7 @@ async function cargarLeadsCEO() {
 // 2. Anexar el Dashboard al inicio de la App si el usuario es el CEO
 // (Aquí puedes filtrar por el correo de William para que nadie más lo vea)
 function renderizarDashboardCEO(userEmail) {
-    if(userEmail === "tu_correo@gmail.com") { // <-- CAMBIA ESTO POR TU CORREO
+    if(userEmail === "william@nexus-x.com") { // <-- CAMBIA ESTO POR TU CORREO
         const mainContainer = document.querySelector('main') || document.body;
         const ceoDiv = document.createElement('div');
         ceoDiv.id = "ceo_leads_display";
