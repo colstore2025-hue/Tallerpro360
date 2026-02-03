@@ -52,7 +52,7 @@
                 <button onclick="registrarInteres('PLAN_TRIAL_14_DIAS')" class="btn-nexus bg-green-600 hover:bg-green-700 text-white font-black py-5 px-12 rounded-2xl text-lg flex items-center justify-center gap-3">
                     <i class="fas fa-rocket"></i> EMPEZAR GRATIS AHORA
                 </button>
-                <a href="https://wa.me/573100000000?text=Hola%20Nexus-X,%20solicito%20asesoría%20para%20TallerPRO360" class="btn-nexus bg-white/5 hover:bg-white/10 text-white font-bold py-5 px-12 rounded-2xl text-lg border border-white/20 backdrop-blur-sm flex items-center justify-center gap-3">
+                <a href="https://wa.me/573115709730?text=Hola%20Nexus-X,%20solicito%20asesoría%20para%20TallerPRO360" class="btn-nexus bg-white/5 hover:bg-white/10 text-white font-bold py-5 px-12 rounded-2xl text-lg border border-white/20 backdrop-blur-sm flex items-center justify-center gap-3">
                     <i class="fab fa-whatsapp"></i> Hablar con Asesor
                 </a>
             </div>
