@@ -7,224 +7,273 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   
   <style>
     :root { 
       --primary: #0f172a; --secondary: #1e293b; --success: #16a34a; 
-      --accent: #3b82f6; --danger: #ef4444; --gold: #f59e0b; --gray: #f1f5f9; 
+      --accent: #3b82f6; --danger: #ef4444; --gold: #f59e0b; --gray: #f8fafc; 
     }
-    body { font-family: 'Inter', system-ui, sans-serif; margin: 0; background: var(--gray); padding-bottom: 90px; color: var(--primary); overflow-x: hidden; }
+    body { font-family: 'Inter', system-ui, sans-serif; margin: 0; background: var(--gray); padding-bottom: 100px; color: var(--primary); overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
     
     header { 
-      background: var(--primary); color: white; padding: 18px; text-align: center; 
-      position: sticky; top: 0; z-index: 100; border-bottom: 3px solid var(--gold);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      background: var(--primary); color: white; padding: 20px; text-align: center; 
+      position: sticky; top: 0; z-index: 1000; border-bottom: 4px solid var(--gold);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     }
     
     #auth-screen { 
       background: radial-gradient(circle at top, #1e293b, #0f172a); 
       height: 100vh; color: white; display: flex; flex-direction: column; 
-      justify-content: center; position: fixed; top: 0; left: 0; z-index: 9999; width: 100%; 
+      justify-content: center; position: fixed; top: 0; left: 0; z-index: 99999; width: 100%; 
     }
-    .auth-card { background: white; color: var(--primary); margin: 25px; padding: 35px; border-radius: 28px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    .auth-card { background: white; color: var(--primary); margin: 20px; padding: 40px; border-radius: 35px; box-shadow: 0 25px 60px rgba(0,0,0,0.6); }
     
-    .nav-tabs { display: flex; background: white; border-bottom: 1px solid #e2e8f0; position: sticky; top: 76px; z-index: 99; }
-    .tab { flex: 1; padding: 15px 5px; text-align: center; cursor: pointer; font-weight: 800; font-size: 0.65rem; color: #64748b; transition: 0.3s; border-bottom: 4px solid transparent; }
-    .tab.active { border-bottom: 4px solid var(--gold); color: var(--primary); background: #fffbeb; }
+    .nav-tabs { display: flex; background: white; border-top: 1px solid #e2e8f0; position: fixed; bottom: 0; width: 100%; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+    .tab { flex: 1; padding: 18px 5px; text-align: center; cursor: pointer; font-weight: 800; font-size: 0.7rem; color: #94a3b8; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); border-top: 4px solid transparent; }
+    .tab.active { border-top: 4px solid var(--gold); color: var(--primary); background: #fffbeb; transform: translateY(-5px); }
     
-    .card { background: white; padding: 22px; border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); margin-bottom: 20px; border: 1px solid #eef2f6; transition: 0.3s; }
-    .card:active { transform: scale(0.98); }
+    .card { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #f1f5f9; transition: 0.3s ease; }
+    .card:hover { border-color: var(--gold); }
     
-    input, textarea, select { width: 100%; padding: 16px; margin-bottom: 12px; border: 2px solid #e2e8f0; border-radius: 16px; font-size: 16px; transition: 0.3s; background: #f8fafc; }
-    input:focus { border-color: var(--gold); outline: none; background: white; }
-    label { font-size: 0.7rem; font-weight: 900; text-transform: uppercase; color: var(--secondary); margin-left: 5px; display: block; margin-bottom: 4px; }
+    input, textarea, select { width: 100%; padding: 18px; margin-bottom: 15px; border: 2px solid #e2e8f0; border-radius: 20px; font-size: 16px; transition: 0.3s; background: #fff; }
+    input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+    label { font-size: 0.75rem; font-weight: 900; text-transform: uppercase; color: var(--secondary); margin-left: 10px; display: block; margin-bottom: 6px; letter-spacing: 0.5px; }
 
-    .btn { width: 100%; padding: 18px; border: none; border-radius: 18px; font-weight: 900; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: 0.3s; }
-    .btn-main { background: var(--success); color: white; box-shadow: 0 8px 20px rgba(22, 163, 74, 0.3); }
-    .btn-accent { background: var(--accent); color: white; box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3); }
-    .btn-voice { background: var(--primary); border: 2px solid var(--gold); color: var(--gold); position: relative; overflow: hidden; }
+    .btn { width: 100%; padding: 20px; border: none; border-radius: 22px; font-weight: 900; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; transition: 0.4s; letter-spacing: 1px; }
+    .btn-main { background: var(--success); color: white; box-shadow: 0 10px 25px rgba(22, 163, 74, 0.3); }
+    .btn-accent { background: var(--accent); color: white; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3); }
+    .btn-voice { background: var(--primary); border: 2px solid var(--gold); color: var(--gold); position: relative; }
     
-    .checklist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-    .check-item { background: #f1f5f9; padding: 12px; border-radius: 14px; display: flex; align-items: center; gap: 10px; font-size: 0.75rem; font-weight: 800; border: 1px solid transparent; }
-    .check-item input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--success); margin: 0; }
+    .status-badge { padding: 4px 12px; border-radius: 10px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+    .status-proceso { background: #fef3c7; color: #92400e; }
+    .status-listo { background: #dcfce7; color: #166534; }
 
-    .list-item { background: white; padding: 18px; border-radius: 22px; margin-bottom: 12px; border-left: 8px solid var(--gold); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-    
     .pulse-gold { animation: pulse-gold 2s infinite; }
-    @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
+    @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 70% { box-shadow: 0 0 0 20px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
+    
+    /* Comparativa Table CSS */
+    .table-compare { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 20px; }
+    .table-compare th, .table-compare td { border: 1px solid #eee; padding: 12px; text-align: left; }
+    .table-compare th { background: var(--primary); color: white; }
+    .check-yes { color: var(--success); font-weight: bold; }
+    .check-no { color: var(--danger); }
   </style>
 </head>
 <body>
 
-<div id="loader-nexus" class="fixed inset-0 z-[10000] bg-slate-950 flex flex-col items-center justify-center transition-opacity duration-1000">
-    <div class="relative">
-        <div class="w-28 h-28 border-4 border-gold/10 border-t-gold rounded-full animate-spin"></div>
-        <i class="fas fa-satellite text-gold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl animate-bounce"></i>
+<div id="loader-nexus" class="fixed inset-0 z-[999999] bg-slate-950 flex flex-col items-center justify-center transition-all duration-1000">
+    <div class="relative mb-10">
+        <div class="w-32 h-32 border-8 border-gold/5 border-t-gold rounded-full animate-spin"></div>
+        <i class="fas fa-satellite-dish text-gold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl animate-pulse"></i>
     </div>
-    <h2 class="mt-8 text-white font-black tracking-[0.3em] text-sm uppercase italic">TallerPRO360 Elite</h2>
-    <p class="text-gold/40 text-[9px] uppercase mt-3 tracking-widest font-bold">Nexus-X Global Infrastructure</p>
+    <div class="text-center">
+        <h2 class="text-white font-black tracking-[0.5em] text-lg uppercase italic">Nexus-X Engine</h2>
+        <p id="loader-status" class="text-gold/40 text-[10px] uppercase mt-4 tracking-widest font-bold">Linkeando con constelación Starlink...</p>
+    </div>
+    <button onclick="document.getElementById('loader-nexus').style.display='none'" class="mt-12 text-[10px] text-white/20 uppercase font-black border border-white/10 px-6 py-2 rounded-full">Bypass Neural Link</button>
 </div>
 
 <div id="auth-screen">
   <div class="auth-card">
-    <div class="text-center mb-8">
-      <div class="inline-block bg-slate-100 p-4 rounded-full mb-4">
-        <i class="fas fa-truck-monster text-primary text-4xl"></i>
+    <div class="text-center mb-10">
+      <div class="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-inner">
+        <i class="fas fa-shield-halved text-primary text-4xl"></i>
       </div>
-      <h2 class="font-black text-3xl tracking-tighter">NEXUS-X</h2>
-      <p class="text-blue-600 font-black text-[10px] tracking-widest uppercase">Inteligencia Logística Starlink</p>
+      <h2 class="font-black text-4xl tracking-tighter">NEXUS-X</h2>
+      <p class="text-blue-600 font-black text-[11px] tracking-widest uppercase italic">Secure Logistics Network</p>
     </div>
     <div id="login-form">
-      <input id="auth-email" type="email" placeholder="Correo corporativo">
-      <input id="auth-pass" type="password" placeholder="Contraseña de red">
-      <button class="btn btn-accent" onclick="vibrate(); handleAuth('login')">CONECTAR SISTEMA</button>
-      <p class="text-center text-xs mt-6 text-slate-400 font-bold" onclick="toggleAuth()">¿NUEVO TALLER? <span class="text-blue-600 underline">REGISTRAR AQUÍ</span></p>
+      <label>Acceso Corporativo</label>
+      <input id="auth-email" type="email" placeholder="email@taller.com">
+      <label>Llave de Encriptación</label>
+      <input id="auth-pass" type="password" placeholder="••••••••">
+      <button class="btn btn-accent" onclick="vibrate(); handleAuth('login')">INICIAR SESIÓN MAESTRA</button>
+      <p class="text-center text-xs mt-8 text-slate-400 font-bold" onclick="toggleAuth()">¿NUEVO NODO? <span class="text-blue-600 underline">REGISTRAR TALLER</span></p>
     </div>
     <div id="register-form" class="hidden">
-      <input id="reg-taller" type="text" placeholder="Nombre Legal del Taller">
-      <input id="reg-email" type="email" placeholder="Email Administrativo">
-      <input id="reg-pass" type="password" placeholder="Crear Clave de Acceso">
-      <button class="btn btn-main pulse-gold" onclick="vibrate(); handleAuth('register')">ACTIVAR NODO NEXUS-X</button>
-      <p class="text-center text-xs mt-6 text-slate-400 font-bold" onclick="toggleAuth()">YA TENGO ACCESO, <span class="text-primary underline">LOG IN</span></p>
+      <input id="reg-taller" type="text" placeholder="Nombre Comercial">
+      <input id="reg-email" type="email" placeholder="Email Admin">
+      <input id="reg-pass" type="password" placeholder="Crear Contraseña">
+      <button class="btn btn-main pulse-gold" onclick="vibrate(); handleAuth('register')">ACTIVAR LICENCIA RED</button>
+      <p class="text-center text-xs mt-8 text-slate-400 font-bold" onclick="toggleAuth()">VOLVER AL <span class="text-primary underline">LOGIN</span></p>
     </div>
   </div>
 </div>
 
 <header>
-  <div class="flex items-center justify-center gap-2">
-    <i class="fas fa-microchip text-gold animate-pulse"></i>
-    <strong class="text-xl tracking-tighter uppercase font-black">TallerPRO360 <span class="font-light italic text-gold">Elite</span></strong>
+  <div class="flex items-center justify-between max-w-lg mx-auto">
+    <i class="fas fa-bars text-gold text-lg"></i>
+    <div class="text-center">
+        <strong class="text-2xl tracking-tighter uppercase font-black">TallerPRO360 <span class="text-gold italic">Elite</span></strong>
+        <p id="display-taller" class="text-[9px] text-slate-400 font-black tracking-widest uppercase">Syncing...</p>
+    </div>
+    <i class="fas fa-user-circle text-gold text-2xl"></i>
   </div>
-  <small id="display-taller" class="block text-slate-400 font-black text-[9px] mt-1 tracking-widest uppercase italic">Linkeando satélites...</small>
 </header>
 
-<nav class="nav-tabs">
-  <div class="tab active" onclick="vibrate(); showTab('ordenes')"><i class="fas fa-screwdriver-wrench fa-lg"></i><br>ÓRDENES</div>
-  <div class="tab" onclick="vibrate(); showTab('passport')"><i class="fas fa-globe-americas fa-lg"></i><br>PASSPORT</div>
-  <div class="tab" onclick="vibrate(); showTab('finanzas')"><i class="fas fa-chart-line fa-lg"></i><br>MÉTRICAS</div>
-  <div id="tab-admin" class="tab hidden bg-gold text-slate-900 border-none" onclick="vibrate(); showTab('admin')"><i class="fas fa-crown fa-lg"></i><br>CEO RED</div>
-</nav>
-
-<div class="container p-4" id="main-content">
+<div class="container p-4 max-w-2xl mx-auto" id="main-content">
   
   <section id="sec-ordenes">
+    <div class="flex gap-4 mb-6">
+        <div class="card bg-primary text-white flex-1 mb-0 p-5 flex flex-col items-center">
+            <span class="text-[10px] text-gold font-bold uppercase">En Patio</span>
+            <span class="text-3xl font-black" id="count-patio">0</span>
+        </div>
+        <div class="card bg-white flex-1 mb-0 p-5 flex flex-col items-center">
+            <span class="text-[10px] text-slate-400 font-bold uppercase">Hoy</span>
+            <span class="text-3xl font-black" id="count-hoy">0</span>
+        </div>
+    </div>
+
     <div class="card bg-slate-900 border-gold/30">
-      <button id="btn-voz" class="btn btn-voice pulse-gold"><i class="fas fa-microphone-lines text-xl"></i> DICTADO POR VOZ IA</button>
-      <p class="text-center text-[9px] text-gold/50 mt-3 font-bold uppercase tracking-tighter">El sistema transcribirá el diagnóstico automáticamente</p>
+      <button id="btn-voz" class="btn btn-voice pulse-gold text-lg"><i class="fas fa-microphone-lines text-2xl"></i> DICTADO IA NEXUS</button>
     </div>
 
     <div class="card">
-      <div class="flex justify-between items-center mb-6">
-        <h3 class="font-black text-lg italic uppercase"><i class="fas fa-clipboard-list text-gold"></i> Recepción Élite</h3>
-        <span class="bg-blue-100 text-blue-700 text-[10px] px-3 py-1 rounded-full font-black">USA STANDARD</span>
-      </div>
-      
+      <h3 class="font-black text-xl italic uppercase mb-6"><i class="fas fa-file-signature text-gold mr-2"></i>Nueva Recepción</h3>
       <input id="o-id" type="hidden">
-      <div class="grid grid-cols-2 gap-3">
-        <div><label>Placa Vehículo</label><input id="o-placa" placeholder="XYZ-999" class="text-center font-black text-blue-700 uppercase"></div>
-        <div><label>Año / Modelo</label><input id="o-modelo" type="number" placeholder="2026"></div>
+      
+      <div class="grid grid-cols-2 gap-4">
+        <div><label>Placa</label><input id="o-placa" placeholder="ABC-123" class="text-center font-black text-blue-600 text-2xl uppercase"></div>
+        <div><label>Modelo/Año</label><input id="o-modelo" type="number" placeholder="2026"></div>
       </div>
       
-      <label>Marca y Referencia Técnica</label>
-      <input id="o-marca" placeholder="Ej: Volvo FH16 / Kenworth T880">
+      <label>Marca y Referencia</label>
+      <input id="o-marca" placeholder="Ej: Kenworth T800 / International">
       
-      <div class="grid grid-cols-2 gap-3">
-        <div><label>Odómetro (KM)</label><input id="o-km" type="number" placeholder="000,000"></div>
-        <div><label>Nivel Diesel/Gas</label>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label>Kilometraje</label><input id="o-km" type="number" placeholder="0"></div>
+        <div><label>Combustible</label>
             <select id="o-gas" class="font-bold">
-                <option>Reserva</option><option>1/4 Tanque</option><option>1/2 Tanque</option><option>3/4 Tanque</option><option>Full Tanque</option>
+                <option>Reserva</option><option>1/4</option><option>1/2</option><option>3/4</option><option>Full</option>
             </select>
         </div>
       </div>
       
-      <div class="bg-slate-50 p-4 rounded-2xl border-2 border-dashed border-slate-200 mb-4">
-          <label>Propietario & Contacto Red</label>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <input id="o-cliente" placeholder="Nombre Completo">
-            <input id="o-tel" type="tel" placeholder="WhatsApp (Sin el 57)">
+      <div class="bg-blue-50 p-5 rounded-3xl border-2 border-blue-100 mb-6">
+          <label>Cliente (WhatsApp)</label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input id="o-cliente" placeholder="Nombre">
+            <input id="o-tel" type="tel" placeholder="310...">
           </div>
       </div>
       
-      <label class="mb-3">Inventario de Seguridad Nexus-X</label>
-      <div class="checklist-grid">
-        <div class="check-item"><input type="checkbox" class="chk-item" value="Radio"> Multimedia</div>
-        <div class="check-item"><input type="checkbox" class="chk-item" value="Herramienta"> Kit Herram.</div>
-        <div class="check-item"><input type="checkbox" class="chk-item" value="Llanta"> Repuesto</div>
-        <div class="check-item"><input type="checkbox" class="chk-item" value="Extintor"> Extintor</div>
+      <label class="mb-4">Checklist de Entrada</label>
+      <div class="checklist-grid grid grid-cols-2 gap-3 mb-6">
+        <div class="check-item bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
+            <input type="checkbox" class="chk-item w-5 h-5 accent-success" value="Radio"> <span class="font-bold text-xs">Radio/Pantalla</span>
+        </div>
+        <div class="check-item bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
+            <input type="checkbox" class="chk-item w-5 h-5 accent-success" value="Gato"> <span class="font-bold text-xs">Gato/Llave</span>
+        </div>
+        <div class="check-item bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
+            <input type="checkbox" class="chk-item w-5 h-5 accent-success" value="Llanta"> <span class="font-bold text-xs">Repuesto</span>
+        </div>
+        <div class="check-item bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
+            <input type="checkbox" class="chk-item w-5 h-5 accent-success" value="Extintor"> <span class="font-bold text-xs">Extintor</span>
+        </div>
       </div>
 
-      <label>Diagnóstico Técnico / Trabajo a Realizar</label>
-      <textarea id="o-trabajo" placeholder="Describa la falla o use el botón de voz..." rows="5" class="bg-white border-2 border-slate-200"></textarea>
+      <label>Diagnóstico Técnico Detallado</label>
+      <textarea id="o-trabajo" placeholder="Describa la falla..." rows="6" class="bg-slate-50 border-none focus:ring-2 focus:ring-blue-500"></textarea>
       
-      <button class="btn btn-main text-lg" onclick="vibrate(); saveOrder()">
-        <i class="fas fa-paper-plane"></i> PROCESAR Y NOTIFICAR WA
+      <button class="btn btn-main text-xl py-6" onclick="saveOrder()">
+        <i class="fas fa-cloud-upload-alt"></i> SINCRONIZAR Y ENVIAR WA
       </button>
     </div>
     
-    <div id="lista-ordenes" class="space-y-3"></div>
+    <div id="lista-ordenes" class="space-y-4"></div>
   </section>
 
   <section id="sec-passport" class="hidden">
-    <div class="card bg-slate-900 text-white text-center p-8 relative overflow-hidden">
-        <div class="absolute top-0 right-0 p-4 opacity-10"><i class="fas fa-fingerprint text-6xl"></i></div>
-        <i class="fas fa-satellite fa-3xl text-gold mb-4"></i>
-        <h3 class="font-black text-xl tracking-tighter">VEHICLE PASSPORT</h3>
-        <p class="text-[9px] text-gold/60 font-bold tracking-widest uppercase">Historial Global Inviolable Nexus-X</p>
+    <div class="card bg-primary text-white text-center p-10 relative overflow-hidden">
+        <i class="fas fa-dna text-gold text-5xl mb-4 opacity-40"></i>
+        <h3 class="font-black text-2xl tracking-tighter">GLOBAL VEHICLE PASSPORT</h3>
+        <p class="text-[10px] text-gold/60 font-black tracking-widest uppercase">Consulta de red Starlink Nexus-X</p>
     </div>
-    <div class="mt-6">
-        <label>Auditar Placa en la Red</label>
-        <input id="search-placa" placeholder="INGRESE PLACA..." class="text-center font-black text-2xl border-4 border-slate-900 rounded-2xl py-6 mb-4 uppercase">
-        <button class="btn btn-accent text-lg" onclick="vibrate(); searchHistory()">
-            <i class="fas fa-search"></i> CONSULTAR BASE DE DATOS
+    <div class="mt-8">
+        <label>Rastrear Historial por Placa</label>
+        <input id="search-placa" placeholder="ABC-123" class="text-center font-black text-4xl border-4 border-primary rounded-3xl py-8 mb-6 uppercase">
+        <button class="btn btn-accent text-xl" onclick="searchHistory()">
+            <i class="fas fa-radar"></i> ESCANEAR RED GLOBAL
         </button>
     </div>
-    <div id="history-result" class="mt-6"></div>
+    <div id="history-result" class="mt-8"></div>
   </section>
 
   <section id="sec-finanzas" class="hidden">
-    <div class="grid grid-cols-2 gap-4 mb-6">
-        <div class="bg-white p-6 rounded-3xl shadow-sm border-b-4 border-green-500">
-            <small class="text-slate-400 font-bold text-[10px] uppercase">Ingresos</small>
-            <div class="text-xl font-black text-slate-900" id="stat-ingresos">$0</div>
+    <div class="card bg-white overflow-hidden p-0">
+        <div class="p-6 bg-slate-900 text-white">
+            <h3 class="font-black uppercase text-xs tracking-widest text-gold">Ventaja Competitiva Nexus-X</h3>
         </div>
-        <div class="bg-white p-6 rounded-3xl shadow-sm border-b-4 border-red-500">
-            <small class="text-slate-400 font-bold text-[10px] uppercase">Gastos</small>
-            <div class="text-xl font-black text-slate-900" id="stat-gastos">$0</div>
+        <div class="p-4">
+            <table class="table-compare">
+                <thead><tr><th>Función</th><th>Software Común</th><th>Nexus-X Elite</th></tr></thead>
+                <tbody>
+                    <tr><td>Dictado Voz IA</td><td class="check-no">❌ No</td><td class="check-yes">✅ Sí</td></tr>
+                    <tr><td>WhatsApp Auto</td><td class="check-no">❌ No</td><td class="check-yes">✅ Sí</td></tr>
+                    <tr><td>Passport Global</td><td class="check-no">❌ No</td><td class="check-yes">✅ Sí</td></tr>
+                    <tr><td>Sync Starlink</td><td class="check-no">❌ No</td><td class="check-yes">✅ Sí</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
+
+    <div class="grid grid-cols-2 gap-4 mb-8">
+        <div class="card mb-0 bg-green-50 border-green-200">
+            <small class="text-green-600 font-black text-[10px] uppercase">Facturado</small>
+            <div class="text-2xl font-black" id="stat-ingresos">$0</div>
+        </div>
+        <div class="card mb-0 bg-red-50 border-red-200">
+            <small class="text-red-600 font-black text-[10px] uppercase">Gastos</small>
+            <div class="text-2xl font-black" id="stat-gastos">$0</div>
+        </div>
+    </div>
+
     <div class="card">
-        <h3 class="font-black mb-4 uppercase text-sm italic">Registrar Movimiento de Caja</h3>
-        <label>Categoría</label>
-        <select id="g-tipo" class="font-bold"><option>Servicio / Mano de Obra</option><option>Repuestos</option><option>Nomina / Mecánicos</option><option>Arriendo / Servicios</option><option>Insumos</option></select>
-        <label>Monto ($)</label>
-        <input id="g-valor" type="number" placeholder="0.00" class="text-xl font-black">
-        <label>Concepto</label>
-        <input id="g-desc" placeholder="Detalle del movimiento...">
-        <button class="btn btn-accent" onclick="vibrate(); saveGasto()">REGISTRAR EN LIBRO</button>
+        <h3 class="font-black mb-6 uppercase text-sm italic">Movimiento de Caja</h3>
+        <select id="g-tipo" class="font-bold"><option>Servicio/Mano Obra</option><option>Repuestos</option><option>Nómina</option><option>Gastos Fijos</option></select>
+        <input id="g-valor" type="number" placeholder="Monto $" class="text-2xl font-black">
+        <input id="g-desc" placeholder="Descripción del movimiento">
+        <button class="btn btn-accent" onclick="saveGasto()">REGISTRAR EN BLOCKCHAIN</button>
     </div>
-    <div id="lista-gastos"></div>
+    <div id="lista-gastos" class="space-y-3"></div>
   </section>
 
   <section id="sec-admin" class="hidden">
-    <div class="card border-2 border-gold bg-slate-50">
-      <div class="flex items-center gap-3 mb-6">
-          <div class="bg-gold p-3 rounded-2xl"><i class="fas fa-shield-halved text-slate-900"></i></div>
-          <h3 class="font-black uppercase text-lg tracking-tighter">CEO COMMAND CENTER</h3>
+    <div class="card border-2 border-gold bg-slate-900 text-white">
+      <div class="flex items-center gap-4 mb-8">
+          <div class="bg-gold p-4 rounded-3xl"><i class="fas fa-crown text-slate-900 text-xl"></i></div>
+          <div>
+            <h3 class="font-black uppercase text-xl tracking-tighter">CEO COMMAND CENTER</h3>
+            <p class="text-[9px] text-gold font-bold">WILLIAM MASTER ACCESS</p>
+          </div>
       </div>
-      <div id="ceo_leads_display" class="grid grid-cols-1 gap-3"></div>
-      <div id="admin-users-list" class="mt-6"></div>
+      
+      <div id="ceo_leads_display" class="grid grid-cols-1 gap-4">
+          </div>
     </div>
   </section>
 </div>
 
+<nav class="nav-tabs">
+  <div class="tab active" onclick="showTab('ordenes')"><i class="fas fa-tools text-xl"></i><br>ÓRDENES</div>
+  <div class="tab" onclick="showTab('passport')"><i class="fas fa-id-card text-xl"></i><br>PASSPORT</div>
+  <div class="tab" onclick="showTab('finanzas')"><i class="fas fa-chart-pie text-xl"></i><br>ELITE AI</div>
+  <div id="tab-admin" class="tab hidden" onclick="showTab('admin')"><i class="fas fa-crown text-xl"></i><br>CEO</div>
+</nav>
+
 <script type="module">
+  // FIREBASE ENGINE - ULTIMA GENERACIÓN
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, updateDoc, serverTimestamp, addDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, updateDoc, serverTimestamp, addDoc, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
@@ -239,23 +288,29 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  window.vibrate = () => { if(navigator.vibrate) navigator.vibrate(20); };
+  setPersistence(auth, browserLocalPersistence);
 
-  // --- AUTH REDESIGNED ---
+  window.vibrate = () => { if(navigator.vibrate) navigator.vibrate(25); };
+
+  // --- LÓGICA DE AUTENTICACIÓN ---
   window.handleAuth = async (mode) => {
     const email = mode === 'login' ? document.getElementById('auth-email').value : document.getElementById('reg-email').value;
     const pass = mode === 'login' ? document.getElementById('auth-pass').value : document.getElementById('reg-pass').value;
-    if(!email || !pass) return alert("Complete los accesos de red");
+    
+    if(!email || !pass) return alert("Ingrese credenciales válidas");
     
     try {
       if (mode === 'register') {
         const res = await createUserWithEmailAndPassword(auth, email, pass);
         await setDoc(doc(db, "usuarios", res.user.uid), {
           nombreTaller: document.getElementById('reg-taller').value,
-          email: email, estado: "TRIAL_ACTIVE", fecha: serverTimestamp(), pais: "COL"
+          email: email,
+          rol: "TALLER",
+          status: "ELITE_ACTIVE",
+          fecha_creacion: serverTimestamp()
         });
-      } else { 
-        await signInWithEmailAndPassword(auth, email, pass); 
+      } else {
+        await signInWithEmailAndPassword(auth, email, pass);
       }
       location.reload();
     } catch (e) { alert("Error Nexus-X: " + e.message); }
@@ -268,23 +323,52 @@
       if (uDoc.exists()) {
         const data = uDoc.data();
         document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('display-taller').innerText = `${data.nombreTaller} | SATELLITE ID: ${user.uid.substring(0,8)}`;
+        document.getElementById('display-taller').innerText = `${data.nombreTaller} | STARLINK ID: ${user.uid.substring(0,6)}`;
+        
         if(user.email === 'william@nexus-x.com') {
           document.getElementById('tab-admin').classList.remove('hidden');
           cargarLeadsCEO();
         }
-        renderOrders();
-        renderGastos();
+        initRealtimeSync();
       }
+    } else {
+        document.getElementById('auth-screen').classList.remove('hidden');
     }
-    setTimeout(() => { loader.style.opacity = '0'; setTimeout(()=>loader.remove(), 1000); }, 2000);
+    setTimeout(() => { loader.style.opacity = '0'; setTimeout(()=>loader.remove(), 1000); }, 2500);
   });
 
-  // --- CORE ORDERS ---
+  // --- SINCRONIZACIÓN EN TIEMPO REAL ---
+  function initRealtimeSync() {
+    const q = query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid), orderBy("timestamp", "desc"));
+    onSnapshot(q, (snap) => {
+        const list = document.getElementById('lista-ordenes');
+        list.innerHTML = "<h4 class='text-[10px] font-black mt-10 uppercase text-slate-400 tracking-widest'>Patio en tiempo real</h4>";
+        let patioCount = 0;
+        
+        snap.forEach(d => {
+            const o = d.data();
+            patioCount++;
+            list.innerHTML += `
+                <div class="list-item bg-white p-6 rounded-3xl border-l-[10px] border-gold flex justify-between items-center shadow-sm">
+                    <div>
+                        <b class="text-blue-700 text-xl font-black">${o.placa}</b><br>
+                        <small class="font-black text-slate-400 uppercase">${o.marca}</small>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick='editOrder("${d.id}", ${JSON.stringify(o)})' class="bg-primary text-white p-3 rounded-2xl"><i class="fas fa-edit"></i></button>
+                        <button onclick='generatePDF("${d.id}")' class="bg-gold/10 text-gold p-3 rounded-2xl"><i class="fas fa-file-pdf"></i></button>
+                    </div>
+                </div>`;
+        });
+        document.getElementById('count-patio').innerText = patioCount;
+    });
+  }
+
+  // --- GUARDADO DE ORDENES ---
   window.saveOrder = async () => {
+    vibrate();
     const id = document.getElementById('o-id').value;
-    const itemsCheck = [];
-    document.querySelectorAll('.chk-item:checked').forEach(i => itemsCheck.push(i.value));
+    const checks = Array.from(document.querySelectorAll('.chk-item:checked')).map(i => i.value);
 
     const orden = {
       placa: document.getElementById('o-placa').value.toUpperCase(),
@@ -294,136 +378,103 @@
       gas: document.getElementById('o-gas').value,
       cliente: document.getElementById('o-cliente').value,
       tel: document.getElementById('o-tel').value,
-      inventario: itemsCheck,
+      inventario: checks,
       trabajo: document.getElementById('o-trabajo').value,
       tallerId: auth.currentUser.uid,
       tallerNombre: document.getElementById('display-taller').innerText.split('|')[0],
       timestamp: serverTimestamp(),
-      fechaStr: new Date().toLocaleString(),
-      estado: 'EN_TALLER'
+      fechaStr: new Date().toLocaleDateString(),
+      estado: 'PROCESO'
     };
 
     try {
       if(id) { await updateDoc(doc(db, "ordenes", id), orden); }
       else { await addDoc(collection(db, "ordenes"), orden); }
       
-      const msg = `🛠️ *TallerPRO360 ELITE*\n\nHola *${orden.cliente}*, su vehículo *${orden.placa}* ha sido recibido exitosamente.\n\n📍 *Estado:* ${orden.estado}\n📝 *Diagnóstico:* ${orden.trabajo}\n\n_Nexus-X Starlink SAS USA/COL_`;
+      const msg = `🚀 *NEXUS-X ELITE REPORT*\nVehículo: *${orden.placa}*\nCliente: *${orden.cliente}*\n\nSu vehículo ha ingresado a nuestra red Starlink. Puede rastrear el progreso con este ID.\n\n*Nexus-X Starlink SAS USA*`;
       window.open(`https://wa.me/57${orden.tel.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
-      location.reload();
-    } catch(e) { alert("Error de Sincronización: " + e.message); }
+      resetForm();
+    } catch(e) { alert("Error Sync: " + e.message); }
   };
 
-  async function renderOrders() {
-    const q = query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid), orderBy("timestamp", "desc"));
-    const snap = await getDocs(q);
-    const list = document.getElementById('lista-ordenes');
-    list.innerHTML = "<h4 class='text-[10px] font-black mt-6 uppercase text-slate-400 tracking-widest'>Patio de Servicio Activo</h4>";
-    
-    snap.forEach(d => {
-      const o = d.data();
-      list.innerHTML += `
-        <div class="list-item border-l-gold">
-          <div>
-            <b class="text-blue-700 text-lg">${o.placa}</b><br>
-            <small class="font-bold text-slate-500 uppercase">${o.marca}</small><br>
-            <span class="text-[9px] bg-slate-100 px-2 py-0.5 rounded font-bold">${o.fechaStr}</span>
-          </div>
-          <div class="flex flex-col gap-2">
-            <button class="bg-primary text-white text-[9px] px-4 py-2 rounded-xl font-black" onclick='vibrate(); editOrder("${d.id}", ${JSON.stringify(o)})'>EDITAR</button>
-            <button class="bg-gold/20 text-gold text-[9px] px-4 py-2 rounded-xl font-black" onclick='vibrate(); generatePDF("${d.id}")'>PDF</button>
-          </div>
-        </div>`;
-    });
-  }
-
-  window.editOrder = (id, d) => {
-    document.getElementById('o-id').value = id;
-    document.getElementById('o-placa').value = d.placa;
-    document.getElementById('o-marca').value = d.marca;
-    document.getElementById('o-tel').value = d.tel;
-    document.getElementById('o-trabajo').value = d.trabajo;
-    window.showTab('ordenes');
-    window.scrollTo(0,0);
-  };
-
-  // --- PASSPORT SEARCH ---
+  // --- PASSPORT ENGINE ---
   window.searchHistory = async () => {
+    vibrate();
     const placa = document.getElementById('search-placa').value.toUpperCase();
-    if(!placa) return;
     const q = query(collection(db, "ordenes"), where("placa", "==", placa), orderBy("timestamp", "desc"));
     const snap = await getDocs(q);
     const res = document.getElementById('history-result');
     res.innerHTML = "";
     
     if(snap.empty) {
-        res.innerHTML = "<div class='card bg-red-50 text-red-600 font-bold text-center'>SIN REGISTROS EN LA RED NEXUS-X</div>";
+        res.innerHTML = "<div class='card bg-red-50 text-red-600 font-bold text-center'>NO SE ENCONTRARON REGISTROS EN LA RED</div>";
         return;
     }
     
     snap.forEach(doc => {
-        const data = doc.data();
+        const d = doc.data();
         res.innerHTML += `
-            <div class="card border-l-blue-500">
-                <div class="flex justify-between text-[10px] mb-2 font-black italic">
-                    <span class="text-blue-600 uppercase">${data.tallerNombre}</span>
-                    <span class="text-slate-400">${data.fechaStr}</span>
+            <div class="card border-l-blue-500 animate-pulse-slow">
+                <div class="flex justify-between text-[10px] mb-3 font-black">
+                    <span class="text-blue-600 uppercase italic">${d.tallerNombre}</span>
+                    <span class="text-slate-400">${d.fechaStr}</span>
                 </div>
-                <p class="text-sm font-bold text-slate-800">${data.trabajo}</p>
-                <div class="mt-2 text-[9px] font-bold text-slate-400 uppercase">KM: ${data.km} | MODELO: ${data.modelo}</div>
+                <p class="font-bold text-slate-800">${d.trabajo}</p>
+                <div class="mt-4 text-[9px] font-black text-slate-400">KM: ${d.km} | SENSOR: STARLINK-NEXUS-X</div>
             </div>`;
     });
   };
 
-  // --- CEO & ANALYTICS ---
+  // --- CEO COMMAND ---
   async function cargarLeadsCEO() {
     const leads = await getDocs(collection(db, "leads_interesados"));
     const container = document.getElementById('ceo_leads_display');
     leads.forEach(d => {
         const l = d.data();
         container.innerHTML += `
-            <div class="bg-white p-3 rounded-xl border border-slate-200 text-[10px]">
-                <div class="flex justify-between">
-                    <b class="text-primary uppercase">${l.plan_clicado}</b>
-                    <span class="text-gold font-bold italic">${l.agente}</span>
+            <div class="bg-white/10 p-4 rounded-3xl border border-white/5">
+                <div class="flex justify-between items-center">
+                    <b class="text-gold uppercase text-xs">${l.plan_clicado}</b>
+                    <span class="bg-blue-500 text-[8px] px-2 py-1 rounded-full">${l.agente}</span>
                 </div>
-                <div class="text-slate-400">${l.fecha?.toDate().toLocaleString() || 'Reciente'}</div>
             </div>`;
     });
   }
 
+  // --- UI HELPERS ---
   window.showTab = (tab) => {
+    vibrate();
     document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById(`sec-${tab}`).classList.remove('hidden');
-    const activeTab = Array.from(document.querySelectorAll('.tab')).find(t => t.innerText.includes(tab.toUpperCase()));
-    if(activeTab) activeTab.classList.add('active');
+    event.currentTarget.classList.add('active');
+    window.scrollTo(0,0);
   };
 
-  // --- VOICE ENGINE ---
+  function resetForm() {
+    document.getElementById('o-id').value = "";
+    document.getElementById('o-placa').value = "";
+    document.getElementById('o-trabajo').value = "";
+    document.querySelectorAll('.chk-item').forEach(c => c.checked = false);
+  }
+
+  window.toggleAuth = () => {
+    vibrate();
+    document.getElementById('login-form').classList.toggle('hidden');
+    document.getElementById('register-form').classList.toggle('hidden');
+  };
+
+  // VOICE ENGINE
   const btnVoz = document.getElementById('btn-voz');
   const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(Speech){
-    const rec = new Speech(); rec.lang = 'es-CO'; rec.continuous = false;
-    btnVoz.onclick = () => { vibrate(); rec.start(); btnVoz.innerHTML = "<i class='fas fa-circle-dot text-red-500 animate-ping'></i> ESCUCHANDO..."; };
+    const rec = new Speech(); rec.lang = 'es-CO';
+    btnVoz.onclick = () => { vibrate(); rec.start(); btnVoz.innerHTML = "<i class='fas fa-compact-disc text-red-500 animate-spin'></i> ESCUCHANDO..."; };
     rec.onresult = (e) => { 
         document.getElementById('o-trabajo').value += (document.getElementById('o-trabajo').value ? ' ' : '') + e.results[0][0].transcript;
-        btnVoz.innerHTML = "<i class='fas fa-microphone-lines'></i> DICTADO POR VOZ IA";
+        btnVoz.innerHTML = "<i class='fas fa-microphone-lines'></i> DICTADO IA NEXUS";
     };
-    rec.onerror = () => { btnVoz.innerHTML = "<i class='fas fa-microphone-lines'></i> DICTADO POR VOZ IA"; };
   }
-</script>
-
-<script>
-  function toggleAuth() {
-    document.getElementById('login-form').classList.toggle('hidden');
-    document.getElementById('register-form').classList.toggle('hidden');
-  }
-  
-  // PDF Generator Lite
-  window.generatePDF = (id) => {
-    alert("Generando Certificado Passport PDF... (Requiere conexión Starlink)");
-    // Aquí se integraría la lógica de jsPDF específica
-  };
 </script>
 </body>
 </html>
