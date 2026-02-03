@@ -111,6 +111,31 @@
 </head>
 <body>
 
+<div id="loader-nexus" class="fixed inset-0 z-[9999] bg-slate-950 flex flex-col items-center justify-center transition-opacity duration-500">
+    <div class="relative">
+        <div class="w-24 h-24 border-4 border-gold/20 border-t-gold rounded-full animate-spin"></div>
+        <i class="fas fa-satellite-dish text-gold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl animate-pulse"></i>
+    </div>
+    <h2 class="mt-6 text-white font-black tracking-[0.2em] text-sm uppercase">Nexus-X Starlink</h2>
+    <p class="text-gold/50 text-[10px] uppercase mt-2 tracking-widest" id="loader-status">Sincronizando Red SAS...</p>
+</div>
+
+<script>
+// Función para ocultar el loader cuando la red esté lista
+function finalizarCargaNexus() {
+    const loader = document.getElementById('loader-nexus');
+    if(loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => loader.remove(), 500);
+    }
+}
+
+// Llamar al finalizar la carga de Firebase o después de 2 segundos
+window.addEventListener('load', () => {
+    setTimeout(finalizarCargaNexus, 2000);
+});
+</script>
+
 <div id="auth-screen">
   <div class="auth-card">
     <div style="text-align:center; margin-bottom:25px;">
