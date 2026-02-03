@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>TallerPRO360 Elite - Nexus-X Starlink SAS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <style>
+    :root { 
+      --primary: #0f172a; --secondary: #1e293b; --success: #16a34a; 
+      --accent: #3b82f6; --danger: #ef4444; --gold: #f59e0b; --gray: #f1f5f9; 
+    }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: var(--gray); padding-bottom: 90px; color: var(--primary); }
+    
+    header { 
+      background: var(--primary); color: white; padding: 15px; text-align: center; 
+      position: sticky; top: 0; z-index: 100; border-bottom: 3px solid var(--gold); 
+    }
+    
+    #auth-screen { 
+      background: radial-gradient(circle at top, #1e293b, #0f172a); 
+      height: 100vh; color: white; display: flex; flex-direction: column; 
+      justify-content: center; position: fixed; top: 0; left: 0; z-index: 9999; width: 100%; 
+    }
+    .auth-card { background: white; color: var(--primary); margin: 25px; padding: 35px; border-radius: 28px; }
+    
+    .nav-tabs { display: flex; background: white; border-bottom: 1px solid #e2e8f0; position: sticky; top: 72px; z-index: 99; overflow-x: auto; }
+    .tab { flex: 1; min-width: 85px; padding: 15px 5px; text-align: center; cursor: pointer; font-weight: 800; font-size: 0.65rem; color: #64748b; transition: 0.3s; border-bottom: 4px solid transparent; }
+    .tab.active { border-bottom: 4px solid var(--accent); color: var(--accent); background: #f0f9ff; }
+    
+    .card { background: white; padding: 20px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #eef2f6; }
+    
+    input, textarea, select { width: 100%; padding: 14px; margin-bottom: 12px; border: 2px solid #e2e8f0; border-radius: 14px; font-size: 16px; transition: 0.3s; }
+    label { font-size: 0.65rem; font-weight: 900; text-transform: uppercase; color: var(--secondary); margin-left: 5px; }
+
+    .btn { width: 100%; padding: 16px; border: none; border-radius: 14px; font-weight: 800; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; }
+    .btn-main { background: var(--success); color: white; }
+    .btn-accent { background: var(--accent); color: white; }
+    .btn-voice { background: var(--primary); border: 2px solid var(--gold); color: var(--gold); }
+    
+    .checklist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+    .check-item { background: var(--gray); padding: 10px; border-radius: 12px; display: flex; align-items: center; gap: 8px; font-size: 0.75rem; font-weight: 700; }
+    .check-item input { width: auto; margin: 0; }
+
+    .list-item { background: white; padding: 15px; border-radius: 18px; margin-bottom: 10px; border-left: 6px solid var(--accent); display: flex; justify-content: space-between; align-items: center; }
+  </style>
+</head>
+<body>
+
+<div id="loader-nexus" class="fixed inset-0 z-[10000] bg-slate-950 flex flex-col items-center justify-center transition-opacity duration-700">
+    <div class="relative">
+        <div class="w-24 h-24 border-4 border-gold/20 border-t-gold rounded-full animate-spin"></div>
+        <i class="fas fa-satellite-dish text-gold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl animate-pulse"></i>
+    </div>
+    <h2 class="mt-6 text-white font-black tracking-[0.2em] text-sm uppercase">Nexus-X Starlink</h2>
+    <p class="text-gold/50 text-[10px] uppercase mt-2 tracking-widest">Sincronizando Red SAS...</p>
+</div>
+
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="text-center mb-6">
+      <h2 class="font-black text-2xl">TallerPRO360</h2>
+      <small class="text-blue-500 font-bold tracking-tighter uppercase">Sistema Logístico Nexus-X</small>
+    </div>
+    <div id="login-form">
+      <input id="auth-email" type="email" placeholder="Correo del taller">
+      <input id="auth-pass" type="password" placeholder="Contraseña">
+      <button class="btn btn-accent" onclick="handleAuth('login')">INICIAR SESIÓN</button>
+      <p class="text-center text-xs mt-4" onclick="toggleAuth()">¿Nuevo taller? <b class="text-blue-600">Registrar</b></p>
+    </div>
+    <div id="register-form" class="hidden">
+      <input id="reg-taller" type="text" placeholder="Nombre del Taller">
+      <input id="reg-email" type="email" placeholder="Email Admin">
+      <input id="reg-pass" type="password" placeholder="Crear Contraseña">
+      <button class="btn btn-main" onclick="handleAuth('register')">ACTIVAR TRIAL</button>
+      <p class="text-center text-xs mt-4" onclick="toggleAuth()">Ya tengo cuenta, <b>Entrar</b></p>
+    </div>
+  </div>
+</div>
+
+<header>
+  <strong class="text-lg">TallerPRO360 Elite</strong>
+  <small id="display-taller" class="block text-amber-500 font-bold">Validando Starlink...</small>
+</header>
+
+<nav class="nav-tabs">
+  <div class="tab active" onclick="showTab('ordenes')"><i class="fas fa-tools fa-lg"></i><br>ORDENES</div>
+  <div class="tab" onclick="showTab('passport')"><i class="fas fa-id-card fa-lg"></i><br>PASSPORT</div>
+  <div class="tab" onclick="showTab('finanzas')"><i class="fas fa-wallet fa-lg"></i><br>CAJA</div>
+  <div id="tab-admin" class="tab hidden bg-black text-amber-400" onclick="showTab('admin')"><i class="fas fa-crown fa-lg"></i><br>CEO</div>
+</nav>
+
+<div class="container mt-4" id="main-content">
+  
+  <section id="sec-ordenes">
+    <div class="card bg-slate-900 text-center">
+      <button id="btn-voz" class="btn btn-voice"><i class="fas fa-microphone"></i> DICTADO POR VOZ</button>
+    </div>
+
+    <div class="card">
+      <h3 class="font-black mb-4"><i class="fas fa-file-medical"></i> Recepción</h3>
+      <input id="o-id" type="hidden">
+      <div class="grid grid-cols-2 gap-2">
+        <div><label>Placa</label><input id="o-placa" placeholder="ABC-123" class="text-center font-black text-blue-600"></div>
+        <div><label>Modelo</label><input id="o-modelo" type="number" placeholder="2025"></div>
+      </div>
+      <label>Marca y Referencia</label>
+      <input id="o-marca" placeholder="Ej: Kenworth T800">
+      <div class="grid grid-cols-2 gap-2">
+        <div><label>KM</label><input id="o-km" type="number" placeholder="KM"></div>
+        <div><label>Combustible</label>
+            <select id="o-gas"><option>1/4</option><option>1/2</option><option>3/4</option><option>Full</option></select>
+        </div>
+      </div>
+      <label>Propietario / WhatsApp</label>
+      <div class="grid grid-cols-2 gap-2">
+        <input id="o-cliente" placeholder="Nombre">
+        <input id="o-tel" type="tel" placeholder="WhatsApp">
+      </div>
+      
+      <label>Inventario</label>
+      <div class="checklist-grid mt-1">
+        <div class="check-item"><input type="checkbox" class="chk-item" value="Radio"> Radio</div>
+        <div class="check-item"><input type="checkbox" class="chk-item" value="Herramienta"> Gato</div>
+        <div class="check-item"><input type="checkbox" class="chk-item" value="Llanta"> Repuesto</div>
+        <div class="check-item"><input type="checkbox" class="chk-item" value="Extintor"> Extintor</div>
+      </div>
+
+      <label>Diagnóstico</label>
+      <textarea id="o-trabajo" placeholder="Falla reportada..." rows="4"></textarea>
+      <button class="btn btn-main" onclick="saveOrder()"><i class="fas fa-save"></i> PROCESAR Y ENVIAR WA</button>
+    </div>
+    <div id="lista-ordenes"></div>
+  </section>
+
+  <section id="sec-passport" class="hidden">
+    <div class="card bg-slate-900 text-white text-center p-6">
+        <i class="fas fa-satellite fa-2x text-amber-500 mb-2"></i>
+        <h3 class="font-black">PASSPORT HISTORY</h3>
+        <p class="text-[10px] opacity-70">CONSULTA GLOBAL RED NEXUS-X</p>
+    </div>
+    <input id="search-placa" placeholder="PLACA A AUDITAR..." class="text-center font-bold mt-4">
+    <button class="btn btn-accent" onclick="searchHistory()">VER HOJA DE VIDA</button>
+    <div id="history-result" class="mt-4"></div>
+  </section>
+
+  <section id="sec-finanzas" class="hidden">
+    <div class="card">
+        <h3 class="font-bold mb-4">CAJA / GASTOS</h3>
+        <select id="g-tipo"><option>Repuestos</option><option>Nomina</option><option>Gastos</option></select>
+        <input id="g-valor" type="number" placeholder="Valor $">
+        <input id="g-desc" placeholder="Descripción">
+        <button class="btn btn-accent" onclick="saveGasto()">REGISTRAR MOVIMIENTO</button>
+    </div>
+    <div id="lista-gastos"></div>
+  </section>
+
+  <section id="sec-admin" class="hidden">
+    <div class="card border-2 border-amber-500">
+      <h3 class="font-black uppercase text-sm mb-4">CEO Master Control</h3>
+      <div id="ceo_leads_display"></div>
+      <div id="admin-users-list"></div>
+    </div>
+  </section>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, updateDoc, serverTimestamp, addDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+    authDomain: "tallerpro360.firebaseapp.com",
+    projectId: "tallerpro360",
+    storageBucket: "tallerpro360.appspot.com",
+    messagingSenderId: "636224778184",
+    appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // --- AUTH ---
+  window.handleAuth = async (mode) => {
+    const email = mode === 'login' ? document.getElementById('auth-email').value : document.getElementById('reg-email').value;
+    const pass = mode === 'login' ? document.getElementById('auth-pass').value : document.getElementById('reg-pass').value;
+    try {
+      if (mode === 'register') {
+        const res = await createUserWithEmailAndPassword(auth, email, pass);
+        await setDoc(doc(db, "usuarios", res.user.uid), {
+          nombreTaller: document.getElementById('reg-taller').value,
+          email: email, estado: "TRIAL", fecha: serverTimestamp()
+        });
+      } else { await signInWithEmailAndPassword(auth, email, pass); }
+      location.reload();
+    } catch (e) { alert("Error: " + e.message); }
+  };
+
+  // --- SESIÓN Y DASHBOARD CEO ---
+  onAuthStateChanged(auth, async (user) => {
+    setTimeout(() => { document.getElementById('loader-nexus').style.opacity = '0'; setTimeout(()=>document.getElementById('loader-nexus').remove(), 500); }, 1500);
+    if (user) {
+      const uDoc = await getDoc(doc(db, "usuarios", user.uid));
+      if (uDoc.exists()) {
+        const data = uDoc.data();
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('display-taller').innerText = data.nombreTaller + " | 🛰️ ACTIVE";
+        if(user.email === 'william@nexus-x.com') {
+          document.getElementById('tab-admin').classList.remove('hidden');
+          cargarLeadsCEO();
+        }
+        renderOrders();
+        renderGastos();
+      }
+    }
+  });
+
+  // --- MOTOR DE ORDENES ---
+  window.saveOrder = async () => {
+    const id = document.getElementById('o-id').value;
+    const orden = {
+      placa: document.getElementById('o-placa').value.toUpperCase(),
+      marca: document.getElementById('o-marca').value,
+      modelo: document.getElementById('o-modelo').value,
+      km: document.getElementById('o-km').value,
+      cliente: document.getElementById('o-cliente').value,
+      tel: document.getElementById('o-tel').value,
+      trabajo: document.getElementById('o-trabajo').value,
+      tallerId: auth.currentUser.uid,
+      fecha: new Date().toISOString(),
+      estado: 'PROCESO'
+    };
+    try {
+      if(id) { await updateDoc(doc(db, "ordenes", id), orden); }
+      else { await addDoc(collection(db, "ordenes"), orden); }
+      const txt = `🚀 *ORDEN TALLERPRO360*\nVehículo: ${orden.placa}\nTrabajo: ${orden.trabajo}\n*Nexus-X Starlink*`;
+      window.open(`https://wa.me/57${orden.tel.replace(/\D/g,'')}?text=${encodeURIComponent(txt)}`, '_blank');
+      location.reload();
+    } catch(e) { alert(e.message); }
+  };
+
+  async function renderOrders() {
+    const q = query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid), orderBy("fecha", "desc"));
+    const snap = await getDocs(q);
+    const list = document.getElementById('lista-ordenes');
+    list.innerHTML = "<h4 class='text-[10px] font-bold mt-4 uppercase opacity-50'>Vehículos en patio</h4>";
+    snap.forEach(d => {
+      const o = d.data();
+      list.innerHTML += `<div class="list-item">
+        <div><b>${o.placa}</b><br><small>${o.cliente}</small></div>
+        <button class="bg-amber-500 text-[10px] px-3 py-1 rounded-lg font-bold" onclick='editOrder("${d.id}", ${JSON.stringify(o)})'>EDITAR</button>
+      </div>`;
+    });
+  }
+
+  window.editOrder = (id, d) => {
+    document.getElementById('o-id').value = id;
+    document.getElementById('o-placa').value = d.placa;
+    document.getElementById('o-trabajo').value = d.trabajo;
+    window.showTab('ordenes');
+  };
+
+  async function cargarLeadsCEO() {
+    const snap = await getDocs(collection(db, "leads_interesados"));
+    let html = `<div class="bg-slate-900 p-4 rounded-xl text-white text-[10px] mb-4"><b>LEADS ACTIVOS:</b><br>`;
+    snap.forEach(d => { html += `• ${d.data().plan_clicado} - ${d.data().agente}<br>`; });
+    document.getElementById('ceo_leads_display').innerHTML = html + "</div>";
+  }
+
+  window.showTab = (tab) => {
+    document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(`sec-${tab}`).classList.remove('hidden');
+    event.currentTarget.classList.add('active');
+  };
+
+  // --- VOZ ---
+  const btnVoz = document.getElementById('btn-voz');
+  const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(Speech){
+    const rec = new Speech(); rec.lang = 'es-CO';
+    btnVoz.onclick = () => { rec.start(); btnVoz.innerText = "ESCUCHANDO..."; };
+    rec.onresult = (e) => { 
+        document.getElementById('o-trabajo').value += e.results[0][0].transcript;
+        btnVoz.innerHTML = "<i class='fas fa-microphone'></i> DICTADO POR VOZ";
+    };
+  }
+</script>
+
+<script>
+  function toggleAuth() {
+    document.getElementById('login-form').classList.toggle('hidden');
+    document.getElementById('register-form').classList.toggle('hidden');
+  }
+</script>
+</body>
+</html>
