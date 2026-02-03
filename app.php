@@ -506,5 +506,70 @@
     document.getElementById('register-form').classList.toggle('hidden');
   }
 </script>
+// --- COPIAR DESDE AQUÍ PARA ANEXAR A app.php ---
+
+// 1. Función para cargar prospectos (Solo para William / CEO)
+async function cargarLeadsCEO() {
+    const leadsContainer = document.getElementById('ceo_leads_display');
+    if(!leadsContainer) return; // Evita errores si no estás en la vista CEO
+
+    try {
+        const querySnapshot = await getDocs(collection(db, "leads_interesados"));
+        let htmlLeads = `
+            <div class="bg-slate-900 p-6 rounded-3xl border border-gold/30 mb-8">
+                <h3 class="text-gold font-black text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <i class="fas fa-users-viewfinder"></i> Prospectos de Red Nexus-X
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead>
+                            <tr class="border-b border-white/10 uppercase tracking-tighter">
+                                <th class="pb-2">Fecha</th>
+                                <th class="pb-2">Plan Interés</th>
+                                <th class="pb-2">Origen</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+        querySnapshot.forEach((doc) => {
+            const lead = doc.data();
+            const fecha = lead.fecha ? new Date(lead.fecha.seconds * 1000).toLocaleDateString() : 'Pendiente';
+            htmlLeads += `
+                <tr class="border-b border-white/5">
+                    <td class="py-2 text-white font-bold">${fecha}</td>
+                    <td class="py-2">
+                        <span class="bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded-full text-[9px] font-black italic">
+                            ${lead.plan_clicado}
+                        </span>
+                    </td>
+                    <td class="py-2 opacity-60">${lead.agente}</td>
+                </tr>`;
+        });
+
+        htmlLeads += `</tbody></table></div></div>`;
+        leadsContainer.innerHTML = htmlLeads;
+
+    } catch (error) {
+        console.error("Error al cargar leads: ", error);
+    }
+}
+
+// 2. Anexar el Dashboard al inicio de la App si el usuario es el CEO
+// (Aquí puedes filtrar por el correo de William para que nadie más lo vea)
+function renderizarDashboardCEO(userEmail) {
+    if(userEmail === "tu_correo@gmail.com") { // <-- CAMBIA ESTO POR TU CORREO
+        const mainContainer = document.querySelector('main') || document.body;
+        const ceoDiv = document.createElement('div');
+        ceoDiv.id = "ceo_leads_display";
+        ceoDiv.className = "max-w-4xl mx-auto px-4 mt-4";
+        mainContainer.prepend(ceoDiv);
+        cargarLeadsCEO();
+    }
+}
+
+// Llamar a esta función dentro de tu onAuthStateChanged (al iniciar sesión)
+// renderizarDashboardCEO(user.email);
+
+// --- FIN DEL ANEXO ---
 </body>
 </html>
