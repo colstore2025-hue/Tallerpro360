@@ -9,11 +9,42 @@
   
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // Reemplaza con tus credenciales de la Consola Firebase
+    const firebaseConfig = {
+      apiKey: "TU_API_KEY",
+      authDomain: "tallerpro360.firebaseapp.com",
+      projectId: "tallerpro360",
+      storageBucket: "tallerpro360.appspot.com",
+      messagingSenderId: "XXXXXXXX",
+      appId: "XXXXXXXX"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Exponer a nivel global para el resto del script
+    window.auth = auth;
+    window.db = db;
+    window.setDoc = setDoc;
+    window.doc = doc;
+    window.getDoc = getDoc;
+  </script>
 
   <style>
     :root { --primary: #0f172a; --secondary: #1e293b; --success: #16a34a; --accent: #3b82f6; --danger: #ef4444; }
     body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f1f5f9; padding-bottom: 70px; }
-    header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; }
+    header { background: var(--primary); color: white; padding: 10px; text-align: center; position: sticky; top: 0; z-index: 100; }
+    
+    /* Pantalla de Autenticación */
+    #auth-screen { background: var(--primary); height: 100vh; color: white; display: flex; flex-direction: column; justify-content: center; position: fixed; top: 0; left: 0; z-index: 999; width: 100%; transition: 0.3s; }
+    .auth-card { background: white; color: var(--primary); margin: 20px; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
     
     /* Navegación */
     .nav-tabs { display: flex; background: white; border-bottom: 1px solid #ddd; position: sticky; top: 55px; z-index: 99; }
@@ -29,18 +60,39 @@
     .btn-accent { background: var(--accent); }
     .btn-voice { background: var(--secondary); margin-bottom: 5px; }
     
-    .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
-    .photo-preview { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 5px; background: #eee; border: 1px solid #ddd; }
-
-    .list-item { background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .hidden { display: none; }
+    .hidden { display: none !important; }
+    .list-item { background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center; }
     .badge { padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; background: #dcfce7; color: #166534; }
   </style>
 </head>
 <body>
 
+<div id="auth-screen">
+  <div class="auth-card">
+    <h2 style="text-align: center; margin-bottom: 5px;">TallerPRO360</h2>
+    <p style="text-align: center; font-size: 0.8em; color: #64748b; margin-bottom: 20px;">Nexus-X Starlink SAS</p>
+    
+    <div id="login-form">
+      <input id="auth-email" type="email" placeholder="Correo del taller">
+      <input id="auth-pass" type="password" placeholder="Contraseña">
+      <button class="btn btn-accent" onclick="handleAuth('login')">ENTRAR AL SISTEMA</button>
+      <p style="text-align: center; font-size: 0.8em; color: var(--accent);" onclick="toggleAuth()">¿No tienes cuenta? Regístrate aquí</p>
+    </div>
+
+    <div id="register-form" class="hidden">
+      <input id="reg-taller" type="text" placeholder="Nombre de tu Taller">
+      <input id="reg-email" type="email" placeholder="Correo electrónico">
+      <input id="reg-pass" type="password" placeholder="Contraseña segura">
+      <button class="btn btn-main" onclick="handleAuth('register')">ACTIVAR 7 DÍAS GRATIS</button>
+      <p style="text-align: center; font-size: 0.8em; color: var(--accent);" onclick="toggleAuth()">Ya tengo cuenta, volver</p>
+    </div>
+    <p style="text-align: center; font-size: 0.7em; margin-top: 15px; color: #94a3b8;">"Menos grasa en el papel, más plata en su bolsillo."</p>
+  </div>
+</div>
+
 <header>
-  <strong>TallerPRO360</strong> | <small>Nexus-X Starlink</small>
+  <strong id="display-taller">TallerPRO360</strong><br>
+  <small style="font-size: 0.6em; letter-spacing: 1px;">NEXUS-X: MENOS GRASA EN EL PAPEL, MÁS PLATA EN SU BOLSILLO</small>
 </header>
 
 <div class="nav-tabs">
@@ -51,7 +103,6 @@
 </div>
 
 <div class="container">
-  
   <section id="sec-ordenes">
     <div class="card" style="background: var(--accent); color: white; text-align: center;">
       <p style="margin:0 0 10px 0;">🎙️ <strong>Modo Manos Libres</strong></p>
@@ -64,36 +115,24 @@
       <input id="o-cliente" placeholder="Nombre del Cliente">
       <input id="o-tel" type="tel" placeholder="WhatsApp (ej: 310...)">
       <textarea id="o-trabajo" placeholder="¿Qué le vamos a hacer al carro?" rows="3"></textarea>
-      
-      <p style="font-size: 0.9em; color: #64748b;">📷 Fotos de Ingreso:</p>
-      <input type="file" id="o-fotos" accept="image/*" capture="environment" multiple onchange="previewImages()">
-      <div id="photo-preview-container" class="photo-grid"></div>
-      
       <button class="btn btn-main" onclick="saveOrder()">GUARDAR Y NOTIFICAR WHATSAPP</button>
     </div>
-
     <h3>🛠️ Órdenes en Curso</h3>
     <div id="lista-ordenes"></div>
   </section>
 
   <section id="sec-finanzas" class="hidden">
     <div class="card">
-      <h3>💸 Registrar Gasto / Compra</h3>
+      <h3>💸 Registrar Gasto</h3>
       <select id="g-tipo">
         <option value="Insumos">Repuestos / Insumos</option>
-        <option value="Servicios">Servicios (Luz, Agua, Internet)</option>
-        <option value="Arriendo">Arriendo</option>
+        <option value="Servicios">Servicios</option>
         <option value="Nomina">Pago de Nómina</option>
-        <option value="Otros">Otros Gastos</option>
       </select>
-      <input id="g-valor" type="number" placeholder="Valor en Pesos ($)">
-      <input id="g-desc" placeholder="Descripción breve">
-      <select id="g-ordenId">
-        <option value="general">Gasto General</option>
-      </select>
+      <input id="g-valor" type="number" placeholder="Valor ($)">
+      <input id="g-desc" placeholder="Descripción">
       <button class="btn btn-accent" onclick="saveGasto()">REGISTRAR GASTO</button>
     </div>
-    <h3>📊 Historial de Salidas</h3>
     <div id="lista-gastos"></div>
   </section>
 
@@ -101,15 +140,9 @@
     <div class="card">
       <h3>👷 Liquidación de Técnico</h3>
       <input id="n-nombre" placeholder="Nombre del colaborador">
-      <select id="n-tipo">
-        <option value="porcentaje">Porcentaje (Obra/Labor)</option>
-        <option value="fijo">Sueldo Fijo / Quincena</option>
-      </select>
       <input id="n-monto" type="number" placeholder="Monto base ($)">
-      <button class="btn btn-main" onclick="generarPDFNomina()">GENERAR COMPROBANTE PDF</button>
+      <button class="btn btn-main" onclick="generarPDFNomina()">GENERAR PDF Y PAGAR</button>
     </div>
-    <h3>Historial de Pagos</h3>
-    <div id="lista-nomina"></div>
   </section>
 
   <section id="sec-dashboard" class="hidden">
@@ -117,34 +150,66 @@
       <h4>Estado Financiero</h4>
       <canvas id="chartFinanzas" style="max-height: 250px;"></canvas>
     </div>
-    <div class="card">
-      <p>Total Ingresos Estimados: <strong id="d-ingresos">$0</strong></p>
-      <p>Total Gastos Registrados: <strong id="d-gastos" style="color:var(--danger)">$0</strong></p>
-      <hr>
-      <h3>Utilidad Neta: <span id="d-utilidad">$0</span></h3>
-    </div>
   </section>
-
 </div>
 
 <script>
-// --- MOTOR DE BASE DE DATOS (IndexedDB) ---
-let db;
-const request = indexedDB.open("TallerProGlobalDB", 3);
+// --- PUNTO 2: LÓGICA DE NUBE Y TRIAL ---
+function toggleAuth() {
+  document.getElementById('login-form').classList.toggle('hidden');
+  document.getElementById('register-form').classList.toggle('hidden');
+}
 
-request.onupgradeneeded = (e) => {
-  db = e.target.result;
-  if(!db.objectStoreNames.contains("ordenes")) db.createObjectStore("ordenes", { keyPath: "id", autoIncrement: true });
-  if(!db.objectStoreNames.contains("gastos")) db.createObjectStore("gastos", { keyPath: "id", autoIncrement: true });
-  if(!db.objectStoreNames.contains("nomina")) db.createObjectStore("nomina", { keyPath: "id", autoIncrement: true });
+async function handleAuth(mode) {
+  const email = mode === 'login' ? document.getElementById('auth-email').value : document.getElementById('reg-email').value;
+  const pass = mode === 'login' ? document.getElementById('auth-pass').value : document.getElementById('reg-pass').value;
+
+  try {
+    if (mode === 'register') {
+      const nombreTaller = document.getElementById('reg-taller').value;
+      const res = await window.auth.createUserWithEmailAndPassword(window.auth, email, pass);
+      await window.setDoc(window.doc(window.db, "usuarios", res.user.uid), {
+        nombreTaller: nombreTaller,
+        fechaRegistro: new Date(),
+        estado: "TRIAL"
+      });
+    } else {
+      await window.auth.signInWithEmailAndPassword(window.auth, email, pass);
+    }
+    location.reload();
+  } catch (e) { alert("Error: " + e.message); }
+}
+
+// Verificación de acceso al cargar
+window.onload = () => {
+  setTimeout(async () => {
+    const user = window.auth.currentUser;
+    if (user) {
+      const docSnap = await window.getDoc(window.doc(window.db, "usuarios", user.uid));
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const dias = Math.floor((new Date() - data.fechaRegistro.toDate()) / (1000*60*60*24));
+        
+        if (data.estado === "PAGADO" || dias <= 7) {
+          document.getElementById('auth-screen').classList.add('hidden');
+          document.getElementById('display-taller').innerText = data.nombreTaller;
+        } else {
+          alert("Periodo de prueba vencido. Contacta a Nexus-X.");
+        }
+      }
+    }
+  }, 1500);
 };
 
-request.onsuccess = (e) => {
-  db = e.target.result;
-  renderAll();
+// --- BASE DE DATOS LOCAL (Órdenes) ---
+let localDB;
+const req = indexedDB.open("TallerProDB", 1);
+req.onsuccess = (e) => { localDB = e.target.result; renderAll(); };
+req.onupgradeneeded = (e) => {
+  let db = e.target.result;
+  db.createObjectStore("ordenes", { keyPath: "id", autoIncrement: true });
 };
 
-// --- NAVEGACIÓN ---
 function showTab(tab) {
   document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -153,167 +218,56 @@ function showTab(tab) {
   if(tab === 'dashboard') initChart();
 }
 
-// --- LÓGICA DE ÓRDENES Y FOTOS ---
-let fotosBase64 = [];
-function previewImages() {
-  const files = document.getElementById('o-fotos').files;
-  const container = document.getElementById('photo-preview-container');
-  container.innerHTML = "";
-  fotosBase64 = [];
-
-  Array.from(files).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = document.createElement('img');
-      img.src = e.target.result;
-      img.className = "photo-preview";
-      container.appendChild(img);
-      fotosBase64.push(e.target.result);
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
 function saveOrder() {
-  const placa = document.getElementById('o-placa').value.toUpperCase();
   const data = {
-    placa,
+    placa: document.getElementById('o-placa').value.toUpperCase(),
     cliente: document.getElementById('o-cliente').value,
     tel: document.getElementById('o-tel').value,
     trabajo: document.getElementById('o-trabajo').value,
-    fotos: fotosBase64,
-    fecha: new Date().toLocaleString(),
-    estado: 'Abierta'
+    fecha: new Date().toLocaleString()
   };
-
-  const tx = db.transaction("ordenes", "readwrite");
+  const tx = localDB.transaction("ordenes", "readwrite");
   tx.objectStore("ordenes").add(data);
   tx.oncomplete = () => {
-    enviarWhatsApp(data);
-    alert("Orden Guardada Correctamente");
+    let num = data.tel.replace(/\D/g, '');
+    const msj = encodeURIComponent(`🚗 *TallerPRO360*\nHola ${data.cliente}, recibimos tu vehículo placa *${data.placa}*.\nServicio: ${data.trabajo}`);
+    window.open(`https://wa.me/57${num}?text=${msj}`, '_blank');
     location.reload();
   };
 }
 
-function enviarWhatsApp(data) {
-  let num = data.tel.replace(/\D/g, '');
-  if (num.length === 10) num = "57" + num;
-  const msj = encodeURIComponent(`🚗 *TallerPRO360 - NEXUS-X*\nHola ${data.cliente}, recibimos tu vehículo con placa *${data.placa}*.\nDetalle: ${data.trabajo}\n\n*Estado:* En proceso.`);
-  window.open(`https://wa.me/${num}?text=${msj}`, '_blank');
-}
-
-// --- LÓGICA DE GASTOS ---
-function saveGasto() {
-  const data = {
-    tipo: document.getElementById('g-tipo').value,
-    valor: parseFloat(document.getElementById('g-valor').value),
-    desc: document.getElementById('g-desc').value,
-    ordenId: document.getElementById('g-ordenId').value,
-    fecha: new Date().toLocaleString()
-  };
-  const tx = db.transaction("gastos", "readwrite");
-  tx.objectStore("gastos").add(data);
-  tx.oncomplete = () => {
-    alert("Gasto registrado");
-    renderAll();
+function renderAll() {
+  const list = document.getElementById('lista-ordenes');
+  list.innerHTML = "";
+  localDB.transaction("ordenes").objectStore("ordenes").getAll().onsuccess = (e) => {
+    e.target.result.forEach(o => {
+      list.innerHTML += `<div class="list-item"><div><strong>${o.placa}</strong> - ${o.cliente}</div><span class="badge">Activa</span></div>`;
+    });
   };
 }
 
-// --- VOZ (NLP Básico) ---
+// --- VOZ ---
 const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
 recognition.lang = 'es-CO';
-
 function startGlobalVoice() {
   recognition.start();
   recognition.onresult = (e) => {
     const text = e.results[0][0].transcript.toLowerCase();
-    if(text.includes("placa")) document.getElementById('o-placa').value = text.split("placa")[1].split(" ")[1].toUpperCase();
-    if(text.includes("cliente")) document.getElementById('o-cliente').value = text.split("cliente")[1].trim();
     document.getElementById('o-trabajo').value = text;
   };
 }
 
-// --- PDF DE NÓMINA ---
-async function generarPDFNomina() {
+// --- PDF NÓMINA ---
+function generarPDFNomina() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const nombre = document.getElementById('n-nombre').value;
-  const monto = parseFloat(document.getElementById('n-monto').value);
-  const tipo = document.getElementById('n-tipo').value;
-  
-  if(!nombre || !monto) return alert("Ingrese datos de nómina");
-
-  let total = monto;
-  let detalle = "Salario Fijo";
-  if(tipo === "porcentaje") {
-    const porc = prompt("¿Qué porcentaje aplicar? (ej: 30)");
-    total = (monto * (porc / 100));
-    detalle = `Pago por porcentaje (${porc}%) de labor`;
-  }
-
-  doc.setFontSize(18);
-  doc.text("COMPROBANTE DE PAGO - TallerPRO360", 20, 20);
-  doc.setFontSize(10);
-  doc.text("Nexus-X Starlink SAS - Tecnología para Talleres", 20, 28);
-  doc.line(20, 32, 190, 32);
-  doc.text(`Beneficiario: ${nombre}`, 20, 50);
-  doc.text(`Concepto: ${detalle}`, 20, 60);
-  doc.text(`Fecha: ${new Date().toLocaleString()}`, 20, 70);
-  doc.setFontSize(14);
-  doc.text(`TOTAL PAGADO: $${total.toLocaleString()}`, 20, 90);
+  const monto = document.getElementById('n-monto').value;
+  doc.text("COMPROBANTE DE PAGO - NEXUS-X", 20, 20);
+  doc.text(`Técnico: ${nombre}`, 20, 40);
+  doc.text(`Total: $${monto}`, 20, 50);
+  doc.text(`Fecha: ${new Date().toLocaleString()}`, 20, 60);
   doc.save(`Pago_${nombre}.pdf`);
-  
-  // Guardar en DB
-  const tx = db.transaction("nomina", "readwrite");
-  tx.objectStore("nomina").add({ nombre, total, fecha: new Date().toLocaleString() });
-}
-
-// --- ACTUALIZAR VISTAS ---
-function renderAll() {
-  const listO = document.getElementById('lista-ordenes');
-  const selectG = document.getElementById('g-ordenId');
-  listO.innerHTML = "";
-  
-  db.transaction("ordenes").objectStore("ordenes").getAll().onsuccess = (e) => {
-    e.target.result.forEach(o => {
-      listO.innerHTML += `<div class="list-item">
-        <div><strong>${o.placa}</strong> - ${o.cliente}</div>
-        <span class="badge">Abierta</span>
-      </div>`;
-      selectG.innerHTML += `<option value="${o.id}">Orden: ${o.placa}</option>`;
-    });
-  };
-
-  const listG = document.getElementById('lista-gastos');
-  listG.innerHTML = "";
-  db.transaction("gastos").objectStore("gastos").getAll().onsuccess = (e) => {
-    let totalGastos = 0;
-    e.target.result.forEach(g => {
-      totalGastos += g.valor;
-      listG.innerHTML += `<div class="list-item"><span>${g.desc}</span> <strong style="color:red">-$${g.valor.toLocaleString()}</strong></div>`;
-    });
-    document.getElementById('d-gastos').innerText = `$${totalGastos.toLocaleString()}`;
-  };
-}
-
-// --- DASHBOARD ---
-function initChart() {
-  const ctx = document.getElementById('chartFinanzas').getContext('2d');
-  new Chart(ctx, {
-    type: 'pie',
-    data: {
-      labels: ['Ingresos', 'Gastos'],
-      datasets: [{
-        data: [1000000, 450000], // Aquí se conectarían los datos reales de la DB
-        backgroundColor: ['#16a34a', '#ef4444']
-      }]
-    }
-  });
-}
-
-// Service Worker para PWA
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js");
 }
 </script>
 </body>
