@@ -311,84 +311,134 @@
 
     let realtimeSyncActive = false;
 
-    // --- SEGURIDAD Y AUTH ---
-    window.handleAuth = async (mode) => {
-        vibrate(50);
-        const emailInput = mode === 'login' ? document.getElementById('auth-email').value : document.getElementById('reg-email').value;
-        const passInput = mode === 'login' ? document.getElementById('auth-pass').value : document.getElementById('reg-pass').value;
+    // --- SISTEMA DE SEGURIDAD ELITE NEXUS-X ---
+window.handleAuth = async (mode) => {
+    vibrate(60);
+    const emailInput = mode === 'login' ? document.getElementById('auth-email').value : document.getElementById('reg-email').value;
+    const passInput = mode === 'login' ? document.getElementById('auth-pass').value : document.getElementById('reg-pass').value;
 
-        if (!emailInput || passInput.length < 6) return alert("Seguridad: Clave mínima de 6 caracteres.");
+    if (!emailInput || passInput.length < 6) {
+        return alert("ACCESO DENEGADO: Verifique email y que la clave tenga +6 caracteres.");
+    }
 
-        const email = emailInput.toLowerCase().trim();
+    const email = emailInput.toLowerCase().trim();
+    const btn = event.currentTarget;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PROCESANDO...';
 
+    try {
+        if (mode === 'register') {
+            const nombreTaller = document.getElementById('reg-taller').value;
+            if(!nombreTaller) throw new Error("Nombre del taller es obligatorio.");
+            
+            const res = await createUserWithEmailAndPassword(auth, email, passInput);
+            
+            // Creación inmediata del perfil para evitar limbos
+            const fechaVence = new Date();
+            fechaVence.setDate(fechaVence.getDate() + 14);
+
+            await setDoc(doc(db, "usuarios", res.user.uid), {
+                nombreTaller: nombreTaller,
+                email: email,
+                rol: email === 'col.store2025@gmail.com' ? "CEO_RED" : "TALLER",
+                status: "TRIAL_ACTIVE",
+                vence: fechaVence.getTime(),
+                fecha_creacion: serverTimestamp(),
+                master: email === 'col.store2025@gmail.com'
+            });
+            console.log("Nodo registrado y perfil creado con éxito.");
+        } else {
+            await signInWithEmailAndPassword(auth, email, passInput);
+        }
+    } catch (e) { 
+        alert("NEXUS ERROR: " + e.message); 
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = mode === 'login' ? 'SINCRONIZAR NODO' : 'DESPLEGAR NODO';
+    }
+};
+
+// --- OBSERVADOR DE ESTADO (EL CEREBRO DEL SISTEMA) ---
+onAuthStateChanged(auth, async (user) => {
+    const loader = document.getElementById('loader-nexus');
+    const authScreen = document.getElementById('auth-screen');
+    const blockScreen = document.getElementById('block-screen');
+    const disp = document.getElementById('display-taller');
+    const tabAdmin = document.getElementById('tab-admin');
+
+    if (user) {
+        const email = user.email.toLowerCase().trim();
+        console.log("📡 Enlace establecido con:", email);
+        
+        // 1. BYPASS MAESTRO CEO (Acceso Total Incondicional)
+        if (email === 'col.store2025@gmail.com') {
+            disp.innerText = "NEXUS-X GLOBAL COMMAND";
+            if(tabAdmin) tabAdmin.classList.remove('hidden');
+            if(authScreen) authScreen.classList.add('hidden');
+            if(blockScreen) blockScreen.classList.add('hidden');
+            
+            initRealtimeSync();
+            cargarDatosCEO();
+            if(loader) loader.style.display = 'none';
+            return; 
+        }
+
+        // 2. VERIFICACIÓN DE TALLERES (Nodos Estándar)
         try {
-            if (mode === 'register') {
-                const nombreTaller = document.getElementById('reg-taller').value;
-                if(!nombreTaller) return alert("Nombre de taller obligatorio");
+            const uDoc = await getDoc(doc(db, "usuarios", user.uid));
+            
+            if (uDoc.exists()) {
+                const data = uDoc.data();
+                const hoy = new Date().getTime();
                 
-                const res = await createUserWithEmailAndPassword(auth, email, passInput);
+                // Lógica de Bloqueo por Pago
+                if (hoy > data.vence && data.status !== 'PAID_ACTIVE') {
+                    if(blockScreen) blockScreen.classList.remove('hidden');
+                    if(authScreen) authScreen.classList.add('hidden');
+                } else {
+                    // Acceso Permitido
+                    const dias = Math.ceil((data.vence - hoy) / 86400000);
+                    const badge = document.getElementById('trial-badge');
+                    if(badge) badge.classList.remove('hidden');
+                    document.getElementById('days-left').innerText = `TRIAL: ${dias > 0 ? dias : 0} DÍAS`;
+                    
+                    disp.innerText = data.nombreTaller || "Nodo Activo";
+                    authScreen.classList.add('hidden');
+                    blockScreen.classList.add('hidden');
+                    initRealtimeSync();
+                }
+            } else {
+                // AUTO-REPAIR: Si el usuario existe en Auth pero no en Firestore
+                console.warn("Perfil no encontrado. Reparando nodo...");
                 const fechaVence = new Date();
                 fechaVence.setDate(fechaVence.getDate() + 14);
-
-                await setDoc(doc(db, "usuarios", res.user.uid), {
-                    nombreTaller: nombreTaller,
+                
+                await setDoc(doc(db, "usuarios", user.uid), {
+                    nombreTaller: "Nuevo Nodo Nexus",
                     email: email,
-                    rol: email === 'col.store2025@gmail.com' ? "CEO_RED" : "TALLER",
+                    rol: "TALLER",
                     status: "TRIAL_ACTIVE",
                     vence: fechaVence.getTime(),
-                    fecha_creacion: serverTimestamp(),
-                    master: email === 'col.store2025@gmail.com'
+                    fecha_creacion: serverTimestamp()
                 });
-            } else {
-                await signInWithEmailAndPassword(auth, email, passInput);
+                location.reload(); // Recargar para aplicar cambios
             }
-        } catch (e) { alert("NEXUS AUTH ERROR: " + e.message); }
-    };
-
-    onAuthStateChanged(auth, async (user) => {
-        const loader = document.getElementById('loader-nexus');
-        const authScreen = document.getElementById('auth-screen');
-        const blockScreen = document.getElementById('block-screen');
-        const disp = document.getElementById('display-taller');
-        const tabAdmin = document.getElementById('tab-admin');
-
-        if (user) {
-            const email = user.email.toLowerCase().trim();
-            
-            // BYPASS MAESTRO WILLIAM
-            if (email === 'col.store2025@gmail.com') {
-                disp.innerText = "NEXUS-X GLOBAL COMMAND";
-                tabAdmin.classList.remove('hidden');
-                authScreen.classList.add('hidden');
-                blockScreen.classList.add('hidden');
-                if(!realtimeSyncActive) initRealtimeSync();
-                cargarDatosCEO();
-            } else {
-                const uDoc = await getDoc(doc(db, "usuarios", user.uid));
-                if (uDoc.exists()) {
-                    const data = uDoc.data();
-                    const hoy = new Date().getTime();
-                    
-                    if (hoy > data.vence && data.status !== 'PAID_ACTIVE') {
-                        blockScreen.classList.remove('hidden');
-                        authScreen.classList.add('hidden');
-                    } else {
-                        const dias = Math.ceil((data.vence - hoy) / 86400000);
-                        document.getElementById('trial-badge').classList.remove('hidden');
-                        document.getElementById('days-left').innerText = `TRIAL: ${dias > 0 ? dias : 0} DÍAS`;
-                        disp.innerText = data.nombreTaller;
-                        authScreen.classList.add('hidden');
-                        blockScreen.classList.add('hidden');
-                        if(!realtimeSyncActive) initRealtimeSync();
-                    }
-                }
-            }
-        } else {
-            authScreen.classList.remove('hidden');
-            tabAdmin.classList.add('hidden');
+        } catch (error) {
+            console.error("Fallo de enlace Starlink:", error);
+            // Si hay error de red, permitimos ver la interfaz pero con advertencia
+            disp.innerText = "MODO OFFLINE";
         }
-        if(loader) setTimeout(() => loader.style.display = 'none', 1200);
-    });
+    } else {
+        // No hay sesión
+        if(authScreen) authScreen.classList.remove('hidden');
+        if(tabAdmin) tabAdmin.classList.add('hidden');
+        if(blockScreen) blockScreen.classList.add('hidden');
+    }
+
+    if(loader) {
+        setTimeout(() => { loader.style.opacity = '0'; setTimeout(()=>loader.style.display='none', 500); }, 1000);
+    }
+});
 
     // --- OPERACIONES DE TALLER ---
     window.saveOrder = async () => {
