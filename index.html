@@ -12,37 +12,39 @@
   
   <style>
     :root { --primary: #0f172a; --secondary: #1e293b; --success: #16a34a; --accent: #3b82f6; --danger: #ef4444; --gold: #f59e0b; }
-    body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: #f8fafc; padding-bottom: 70px; overflow-x: hidden; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: #f8fafc; padding-bottom: 80px; overflow-x: hidden; }
     
-    /* Header Branding Nexus-X */
-    header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    /* Branding Nexus-X */
+    header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     header strong { font-size: 1.2rem; letter-spacing: 1px; }
-    header small { display: block; font-size: 0.65rem; color: #94a3b8; margin-top: 4px; }
+    header small { display: block; font-size: 0.65rem; color: #94a3b8; margin-top: 4px; font-weight: bold; }
 
     /* Muro de Autenticación Moderno */
     #auth-screen { background: radial-gradient(circle at top, #1e293b, #0f172a); height: 100vh; color: white; display: flex; flex-direction: column; justify-content: center; position: fixed; top: 0; left: 0; z-index: 9999; width: 100%; transition: all 0.5s ease; }
-    .auth-card { background: white; color: var(--primary); margin: 20px; padding: 30px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+    .auth-card { background: white; color: var(--primary); margin: 20px; padding: 30px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
     
-    /* Navegación Estilo App Premium */
-    .nav-tabs { display: flex; background: white; border-bottom: 1px solid #e2e8f0; position: sticky; top: 74px; z-index: 99; }
-    .tab { flex: 1; padding: 15px 5px; text-align: center; cursor: pointer; font-weight: 700; font-size: 0.75rem; color: #64748b; transition: 0.3s; }
+    /* Navegación Estilo Premium */
+    .nav-tabs { display: flex; background: white; border-bottom: 1px solid #e2e8f0; position: sticky; top: 74px; z-index: 99; overflow-x: auto; }
+    .tab { flex: 1; min-width: 80px; padding: 15px 5px; text-align: center; cursor: pointer; font-weight: 700; font-size: 0.7rem; color: #64748b; transition: 0.3s; white-space: nowrap; }
     .tab.active { border-bottom: 4px solid var(--accent); color: var(--accent); background: #f0f9ff; }
-    .tab-admin-secret { background: #000 !important; color: var(--gold) !important; display: none; }
+    #tab-admin { background: #000; color: var(--gold); }
 
-    /* Contenedores y Tarjetas */
+    /* Contenedores */
     .container { padding: 15px; max-width: 600px; margin: auto; }
-    .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #f1f5f9; }
+    .card { background: white; padding: 20px; border-radius: 18px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 15px; border: 1px solid #f1f5f9; }
     
-    /* Formularios */
-    input, textarea, select { width: 100%; padding: 14px; margin-bottom: 12px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 16px; transition: 0.3s; }
-    input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-    .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; color: white; font-size: 14px; letter-spacing: 0.5px; text-transform: uppercase; }
+    /* Inputs y Botones */
+    input, textarea, select { width: 100%; padding: 14px; margin-bottom: 12px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 16px; box-sizing: border-box; }
+    input:focus { border-color: var(--accent); outline: none; }
+    .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; color: white; font-size: 14px; text-transform: uppercase; transition: 0.2s; }
+    .btn:active { transform: scale(0.98); }
     .btn-main { background: var(--success); }
     .btn-accent { background: var(--accent); }
-    .btn-ghost { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+    .btn-voice { background: var(--primary); display: flex; align-items: center; justify-content: center; gap: 8px; }
     
     .hidden { display: none !important; }
-    .list-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 5px solid var(--accent); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .list-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 5px solid var(--accent); display: flex; justify-content: space-between; align-items: center; }
+    .badge { padding: 5px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
   </style>
 </head>
 <body>
@@ -55,78 +57,98 @@
     </div>
     
     <div id="login-form">
-      <input id="auth-email" type="email" placeholder="Correo electrónico">
+      <input id="auth-email" type="email" placeholder="Correo del taller">
       <input id="auth-pass" type="password" placeholder="Contraseña">
-      <button class="btn btn-accent" onclick="handleAuth('login')">Entrar al Taller</button>
-      <p style="text-align: center; font-size: 0.85rem; margin-top:15px;" onclick="toggleAuth()">¿Nuevo taller? <b>Regístrate aquí</b></p>
+      <button class="btn btn-accent" onclick="handleAuth('login')">Entrar al Sistema</button>
+      <p style="text-align: center; font-size: 0.85rem; margin-top:15px;" onclick="toggleAuth()">¿Nuevo taller? <b style="color:var(--accent)">Regístrate aquí</b></p>
     </div>
 
     <div id="register-form" class="hidden">
-      <input id="reg-taller" type="text" placeholder="Nombre del Taller">
+      <input id="reg-taller" type="text" placeholder="Nombre de su Taller">
       <input id="reg-email" type="email" placeholder="Correo electrónico">
-      <input id="reg-pass" type="password" placeholder="Crear contraseña segura">
+      <input id="reg-pass" type="password" placeholder="Crear contraseña">
       <button class="btn btn-main" onclick="handleAuth('register')">Activar 7 Días Gratis</button>
-      <p style="text-align: center; font-size: 0.85rem; margin-top:15px;" onclick="toggleAuth()">Ya tengo cuenta, <b>ingresar</b></p>
+      <p style="text-align: center; font-size: 0.85rem; margin-top:15px;" onclick="toggleAuth()">Ya tengo cuenta, <b style="color:var(--accent)">ingresar</b></p>
     </div>
-    <p style="text-align: center; font-size: 0.65rem; margin-top: 20px; color: #64748b; font-style:italic;">"Menos grasa en el papel, más plata en su bolsillo."</p>
+    <p style="text-align: center; font-size: 0.65rem; margin-top: 20px; color: #94a3b8;">SISTEMA LOGÍSTICO NEXUS-X USA - COLOMBIA</p>
   </div>
 </div>
 
 <header>
-  <strong id="display-taller">TallerPRO360</strong>
-  <small>NEXUS-X STARLINK • LOGÍSTICA AVANZADA</small>
+  <strong id="display-taller">Cargando...</strong>
+  <small>NEXUS-X: MENOS GRASA EN EL PAPEL, MÁS PLATA EN SU BOLSILLO</small>
 </header>
 
 <div class="nav-tabs">
   <div class="tab active" onclick="showTab('ordenes')">ORDENES</div>
   <div class="tab" onclick="showTab('finanzas')">FINANZAS</div>
   <div class="tab" onclick="showTab('nomina')">NÓMINA</div>
-  <div class="tab" id="tab-admin" class="tab tab-admin-secret" onclick="showTab('admin')" style="display:none;">ADMIN</div>
+  <div class="tab" onclick="showTab('dashboard')">DASHBOARD</div>
+  <div class="tab" id="tab-admin" onclick="showTab('admin')" style="display:none;">ADMIN</div>
 </div>
 
 <div class="container">
+  
   <section id="sec-ordenes">
-    <div class="card" style="background: linear-gradient(135deg, var(--accent), #1d4ed8); color: white;">
-      <p style="margin:0; font-size:0.8rem; opacity:0.9;">DICTADO POR VOZ INTELIGENTE</p>
-      <button onclick="startGlobalVoice()" class="btn" style="background:white; color:var(--accent); margin-top:10px; padding:10px;">🎙️ DICTAR ORDEN AHORA</button>
+    <div class="card" style="background: var(--primary); color: white;">
+      <button onclick="startGlobalVoice()" class="btn btn-voice">🎙️ DICTAR ORDEN COMPLETA</button>
     </div>
 
     <div class="card">
-      <h3 style="margin-top:0;">📋 Registro de Entrada</h3>
-      <input id="o-placa" placeholder="Placa (ej: ABC123)" style="text-transform: uppercase; font-weight:bold;">
+      <h3 style="margin-top:0;">📋 Nueva Orden</h3>
+      <input id="o-placa" placeholder="Placa Vehículo" style="text-transform: uppercase;">
       <input id="o-cliente" placeholder="Nombre del Cliente">
       <input id="o-tel" type="tel" placeholder="WhatsApp (ej: 310...)">
-      <textarea id="o-trabajo" placeholder="Descripción del servicio o falla..." rows="3"></textarea>
-      <button class="btn btn-main" onclick="saveOrder()">Guardar y Notificar WhatsApp</button>
+      <textarea id="o-trabajo" placeholder="Trabajo a realizar..." rows="3"></textarea>
+      <button class="btn btn-main" onclick="saveOrder()">GUARDAR Y NOTIFICAR</button>
     </div>
     <div id="lista-ordenes"></div>
   </section>
 
+  <section id="sec-finanzas" class="hidden">
+    <div class="card">
+      <h3>💸 Registro de Gastos</h3>
+      <select id="g-tipo">
+        <option value="Insumos">Repuestos / Insumos</option>
+        <option value="Servicios">Servicios Públicos</option>
+        <option value="Nomina">Pago de Personal</option>
+      </select>
+      <input id="g-valor" type="number" placeholder="Valor ($)">
+      <input id="g-desc" placeholder="Descripción breve">
+      <button class="btn btn-accent" onclick="saveGasto()">REGISTRAR GASTO</button>
+    </div>
+    <div id="lista-gastos"></div>
+  </section>
+
+  <section id="sec-nomina" class="hidden">
+    <div class="card">
+      <h3>👷 Liquidación de Técnico</h3>
+      <input id="n-nombre" placeholder="Nombre del Técnico">
+      <input id="n-monto" type="number" placeholder="Monto a pagar ($)">
+      <button class="btn btn-main" onclick="generarPDFNomina()">GENERAR PDF Y PAGAR</button>
+    </div>
+  </section>
+
+  <section id="sec-dashboard" class="hidden">
+    <div class="card" style="text-align: center;">
+      <h4>Rendimiento del Taller</h4>
+      <canvas id="chartFinanzas" style="max-height: 250px;"></canvas>
+    </div>
+  </section>
+
   <section id="sec-admin" class="hidden">
     <div class="card" style="border: 2px solid var(--gold);">
-      <h3 style="color:var(--gold);">👑 Panel Maestro Nexus-X</h3>
+      <h3 style="color:var(--gold);">👑 Panel Maestro de Licencias</h3>
       <div id="admin-users-list"></div>
     </div>
   </section>
 
-  <section id="sec-finanzas" class="hidden">
-    <div class="card">
-      <h3>💸 Control de Gastos</h3>
-      <select id="g-tipo">
-        <option value="Repuestos">Repuestos</option>
-        <option value="Servicios">Servicios Públicos</option>
-        <option value="Insumos">Insumos Taller</option>
-      </select>
-      <input id="g-valor" type="number" placeholder="Monto ($)">
-      <button class="btn btn-accent" onclick="saveGasto()">Registrar Salida</button>
-    </div>
-  </section>
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
@@ -141,7 +163,7 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // --- AUTENTICACIÓN AVANZADA ---
+  // --- AUTENTICACIÓN ---
   window.handleAuth = async (mode) => {
     const email = mode === 'login' ? document.getElementById('auth-email').value : document.getElementById('reg-email').value;
     const pass = mode === 'login' ? document.getElementById('auth-pass').value : document.getElementById('reg-pass').value;
@@ -156,7 +178,7 @@
           fechaRegistro: serverTimestamp(),
           estado: "TRIAL"
         });
-        alert("Nexus-X: ¡Bienvenido! Tienes 7 días de acceso gratuito.");
+        alert("¡Cuenta Nexus-X activa! Disfruta 7 días de prueba.");
       } else {
         await signInWithEmailAndPassword(auth, email, pass);
       }
@@ -164,37 +186,36 @@
     } catch (e) { alert("Error Nexus-X: " + e.message); }
   };
 
-  // --- CONTROL DE ACCESO Y LICENCIAS ---
+  // --- CONTROL DE ACCESO ---
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       const docSnap = await getDoc(doc(db, "usuarios", user.uid));
       if (docSnap.exists()) {
         const data = docSnap.data();
-        const diasUsados = Math.floor((new Date() - (data.fechaRegistro?.toDate() || new Date())) / (1000*60*60*24));
+        const dias = Math.floor((new Date() - (data.fechaRegistro?.toDate() || new Date())) / (1000*60*60*24));
         
-        // Verificación de Pago o Trial
-        if (data.estado === "PAGADO" || diasUsados <= 7) {
+        if (data.estado === "PAGADO" || dias <= 7) {
           document.getElementById('auth-screen').style.display = 'none';
           document.getElementById('display-taller').innerText = data.nombreTaller;
           
-          // Activar Panel Admin si es el correo de Nexus-X
-          if(user.email === 'admin@nexus-x.com') {
+          if(user.email === 'william@nexus-x.com') {
             document.getElementById('tab-admin').style.display = 'block';
             loadAdminPanel();
           }
           renderOrders();
+          renderGastos();
         } else {
-          document.body.innerHTML = `<div style="height:100vh; background:#0f172a; color:white; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:30px;">
+          document.body.innerHTML = `<div style="height:100vh; background:var(--primary); color:white; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:30px;">
             <h1 style="color:var(--gold);">Suscripción Vencida</h1>
-            <p>Sus 7 días de prueba con Nexus-X Starlink han finalizado.</p>
-            <button class="btn btn-accent" onclick="window.open('https://wa.me/573100000000?text=Deseo%20activar%20mi%20plan%20TallerPRO360')">ACTIVAR POR WHATSAPP</button>
+            <p>Nexus-X informa: Su periodo de prueba ha finalizado.</p>
+            <button class="btn btn-accent" onclick="window.open('https://wa.me/573100000000')">ACTIVAR LICENCIA</button>
           </div>`;
         }
       }
     }
   });
 
-  // --- GESTIÓN DE ORDENES (Sincronizado) ---
+  // --- FUNCIONES DE NEGOCIO ---
   window.saveOrder = async () => {
     const orden = {
       placa: document.getElementById('o-placa').value.toUpperCase(),
@@ -202,74 +223,122 @@
       tel: document.getElementById('o-tel').value,
       trabajo: document.getElementById('o-trabajo').value,
       fecha: new Date().toLocaleString(),
-      tallerId: auth.currentUser.uid
+      tallerId: auth.currentUser.uid,
+      estado: 'ACTIVA'
     };
+    await setDoc(doc(collection(db, "ordenes")), orden);
+    const msj = encodeURIComponent(`🚗 *TallerPRO360*\nHola ${orden.cliente}, su vehículo *${orden.placa}* ha sido ingresado.\nNexus-X Starlink Logística.`);
+    window.open(`https://wa.me/57${orden.tel.replace(/\D/g,'')}?text=${msj}`, '_blank');
+    location.reload();
+  };
 
-    try {
-      await setDoc(doc(collection(db, "ordenes")), orden);
-      const msj = encodeURIComponent(`🚗 *TallerPRO360 - NEXUS-X*\nHola ${orden.cliente}, recibimos tu vehículo placa *${orden.placa}*.\nDetalle: ${orden.trabajo}`);
-      window.open(`https://wa.me/57${orden.tel.replace(/\D/g,'')}?text=${msj}`, '_blank');
-      location.reload();
-    } catch (e) { alert("Error al guardar: " + e.message); }
+  window.saveGasto = async () => {
+    const gasto = {
+      tipo: document.getElementById('g-tipo').value,
+      valor: document.getElementById('g-valor').value,
+      desc: document.getElementById('g-desc').value,
+      tallerId: auth.currentUser.uid,
+      fecha: serverTimestamp()
+    };
+    await setDoc(doc(collection(db, "gastos")), gasto);
+    alert("Gasto registrado");
+    location.reload();
   };
 
   async function renderOrders() {
     const list = document.getElementById('lista-ordenes');
     const q = query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid));
     const snap = await getDocs(q);
-    list.innerHTML = "<h4>Órdenes Activas</h4>";
+    list.innerHTML = "<h4>Órdenes en Taller</h4>";
     snap.forEach(d => {
       const o = d.data();
-      list.innerHTML += `<div class="list-item">
-        <div><b>${o.placa}</b><br><small>${o.cliente}</small></div>
-        <span style="font-size:0.7rem; color:var(--success);">● En Proceso</span>
-      </div>`;
+      list.innerHTML += `<div class="list-item"><div><b>${o.placa}</b> - ${o.cliente}</div><span class="badge" style="background:#dcfce7; color:#166534;">En Curso</span></div>`;
     });
   }
 
-  // --- PANEL MAESTRO DE ACTIVACIÓN ---
+  async function renderGastos() {
+    const list = document.getElementById('lista-gastos');
+    const q = query(collection(db, "gastos"), where("tallerId", "==", auth.currentUser.uid));
+    const snap = await getDocs(q);
+    list.innerHTML = "<h4>Últimos Gastos</h4>";
+    snap.forEach(d => {
+      const g = d.data();
+      list.innerHTML += `<div class="list-item"><div><b>${g.tipo}</b>: $${g.valor}</div></div>`;
+    });
+  }
+
+  // --- PANEL ADMIN NEXUS-X ---
   async function loadAdminPanel() {
     const snap = await getDocs(collection(db, "usuarios"));
     const list = document.getElementById('admin-users-list');
     list.innerHTML = "";
     snap.forEach(u => {
-      const userData = u.data();
-      list.innerHTML += `<div class="list-item" style="font-size:0.8rem;">
-        <div><b>${userData.nombreTaller}</b><br>${userData.email}</div>
-        <button onclick="activateTaller('${u.id}')" style="background:var(--success); border:none; color:white; padding:5px; border-radius:5px;">ACTUALIZAR PAGO</button>
+      const d = u.data();
+      list.innerHTML += `<div class="list-item">
+        <div><b>${d.nombreTaller}</b><br>${d.estado}</div>
+        <button onclick="window.activateTaller('${u.id}')" style="background:var(--success); color:white; border:none; padding:8px; border-radius:8px;">ACTIVAR</button>
       </div>`;
     });
   }
 
   window.activateTaller = async (id) => {
     await updateDoc(doc(db, "usuarios", id), { estado: "PAGADO" });
-    alert("Taller Activado Exitosamente");
+    alert("Licencia Activada por Nexus-X");
     location.reload();
   };
-</script>
 
-<script>
-  // Funciones de Navegación y UI
-  function showTab(tab) {
+  // --- EXPOSICIÓN GLOBAL PARA UI ---
+  window.showTab = (tab) => {
     document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById(`sec-${tab}`).classList.remove('hidden');
     event.currentTarget.classList.add('active');
-  }
+    if(tab === 'dashboard') initChart();
+  };
+</script>
 
+<script>
+  // UI Y UTILIDADES
   function toggleAuth() {
     document.getElementById('login-form').classList.toggle('hidden');
     document.getElementById('register-form').classList.toggle('hidden');
   }
 
-  // Voz (Speech Recognition)
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = 'es-CO';
   function startGlobalVoice() {
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'es-CO';
     recognition.start();
     recognition.onresult = (e) => {
       document.getElementById('o-trabajo').value = e.results[0][0].transcript;
     };
+  }
+
+  function generarPDFNomina() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const nombre = document.getElementById('n-nombre').value;
+    const monto = document.getElementById('n-monto').value;
+    doc.setFontSize(18);
+    doc.text("COMPROBANTE DE PAGO - TallerPRO360", 20, 30);
+    doc.setFontSize(12);
+    doc.text(`Técnico: ${nombre}`, 20, 50);
+    doc.text(`Monto Pagado: $${monto}`, 20, 60);
+    doc.text(`Nexus-X Starlink Logística - ${new Date().toLocaleDateString()}`, 20, 80);
+    doc.save(`Pago_${nombre}.pdf`);
+  }
+
+  function initChart() {
+    const ctx = document.getElementById('chartFinanzas').getContext('2d');
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Ingresos', 'Gastos'],
+        datasets: [{
+          data: [70, 30],
+          backgroundColor: ['#16a34a', '#ef4444']
+        }]
+      }
+    });
   }
 </script>
 </body>
