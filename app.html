@@ -2,512 +2,426 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>TallerPRO360 Elite - Nexus-X Starlink SAS</title>
+  <title>Nexus-X Starlink SAS - TallerPRO360 Elite</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
   
   <style>
     :root { 
-      --primary: #0f172a; --secondary: #1e293b; --success: #16a34a; 
-      --accent: #3b82f6; --danger: #ef4444; --gold: #f59e0b; --gray: #f8fafc; 
+      --primary: #020617; --secondary: #0f172a; --accent: #3b82f6; 
+      --gold: #f59e0b; --success: #10b981; --danger: #ef4444;
     }
-    body { font-family: 'Inter', system-ui, sans-serif; margin: 0; background: var(--gray); padding-bottom: 100px; color: var(--primary); overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: var(--primary); padding-bottom: 90px; }
+    .font-nexus { font-family: 'Orbitron', sans-serif; }
     
-    header { 
-      background: var(--primary); color: white; padding: 20px; text-align: center; 
-      position: sticky; top: 0; z-index: 1000; border-bottom: 4px solid var(--gold);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    }
+    /* Neumorfismo y Glassmorphism */
+    .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.3); }
+    .card-dark { background: radial-gradient(circle at top right, #1e293b, #020617); color: white; }
     
-    #auth-screen { 
-      background: radial-gradient(circle at top, #1e293b, #0f172a); 
-      height: 100vh; color: white; display: flex; flex-direction: column; 
-      justify-content: center; position: fixed; top: 0; left: 0; z-index: 99999; width: 100%; 
-    }
-    .auth-card { background: white; color: var(--primary); margin: 20px; padding: 40px; border-radius: 35px; box-shadow: 0 25px 60px rgba(0,0,0,0.6); }
+    header { background: var(--primary); border-bottom: 3px solid var(--gold); position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
     
-    .nav-tabs { display: flex; background: white; border-top: 1px solid #e2e8f0; position: fixed; bottom: 0; width: 100%; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
-    .tab { flex: 1; padding: 18px 5px; text-align: center; cursor: pointer; font-weight: 800; font-size: 0.7rem; color: #94a3b8; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); border-top: 4px solid transparent; }
-    .tab.active { border-top: 4px solid var(--gold); color: var(--primary); background: #fffbeb; transform: translateY(-5px); }
+    .nav-tabs { position: fixed; bottom: 0; width: 100%; display: flex; background: white; border-top: 1px solid #e2e8f0; z-index: 2000; padding-bottom: env(safe-area-inset-bottom); }
+    .tab { flex: 1; padding: 15px 0; text-align: center; font-size: 10px; font-weight: 900; color: #64748b; transition: 0.3s; cursor: pointer; }
+    .tab.active { color: var(--accent); border-top: 3px solid var(--accent); background: #f8faff; }
     
-    .card { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #f1f5f9; transition: 0.3s ease; }
-    .card:hover { border-color: var(--gold); }
-    
-    input, textarea, select { width: 100%; padding: 18px; margin-bottom: 15px; border: 2px solid #e2e8f0; border-radius: 20px; font-size: 16px; transition: 0.3s; background: #fff; }
-    input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
-    label { font-size: 0.75rem; font-weight: 900; text-transform: uppercase; color: var(--secondary); margin-left: 10px; display: block; margin-bottom: 6px; letter-spacing: 0.5px; }
+    .btn-nexus { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border-radius: 18px; font-weight: 800; text-transform: uppercase; transition: 0.3s; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .btn-nexus:active { transform: scale(0.95); }
 
-    .btn { width: 100%; padding: 20px; border: none; border-radius: 22px; font-weight: 900; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; transition: 0.4s; letter-spacing: 1px; }
-    .btn-main { background: var(--success); color: white; box-shadow: 0 10px 25px rgba(22, 163, 74, 0.3); }
-    .btn-accent { background: var(--accent); color: white; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3); }
-    .btn-voice { background: var(--primary); border: 2px solid var(--gold); color: var(--gold); position: relative; }
+    /* Pantallas Especiales */
+    #auth-screen, #block-screen { position: fixed; inset: 0; z-index: 9999; background: var(--primary); display: flex; align-items: center; justify-content: center; }
+    .auth-card { background: white; width: 90%; max-width: 400px; padding: 35px; border-radius: 40px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
     
-    .status-badge { padding: 4px 12px; border-radius: 10px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
-    .status-proceso { background: #fef3c7; color: #92400e; }
-    .status-listo { background: #dcfce7; color: #166534; }
+    input, select, textarea { width: 100%; padding: 16px; margin-bottom: 12px; border: 2px solid #e2e8f0; border-radius: 15px; font-weight: 600; font-size: 16px; }
+    input:focus { border-color: var(--accent); outline: none; }
+    
+    .pulse { animation: pulse-animation 2s infinite; }
+    @keyframes pulse-animation { 0% { box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.4); } 100% { box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); } }
 
-    .pulse-gold { animation: pulse-gold 2s infinite; }
-    @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 70% { box-shadow: 0 0 0 20px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
-    
-    /* Comparativa Table CSS */
-    .table-compare { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 20px; }
-    .table-compare th, .table-compare td { border: 1px solid #eee; padding: 12px; text-align: left; }
-    .table-compare th { background: var(--primary); color: white; }
-    .check-yes { color: var(--success); font-weight: bold; }
-    .check-no { color: var(--danger); }
+    .tag-trial { background: var(--gold); color: black; padding: 2px 8px; border-radius: 6px; font-size: 9px; font-weight: 900; }
   </style>
 </head>
 <body>
 
-<div id="loader-nexus" class="fixed inset-0 z-[999999] bg-slate-950 flex flex-col items-center justify-center transition-all duration-1000">
-    <div class="relative mb-10">
-        <div class="w-32 h-32 border-8 border-gold/5 border-t-gold rounded-full animate-spin"></div>
-        <i class="fas fa-satellite-dish text-gold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl animate-pulse"></i>
+<div id="loader-nexus" class="fixed inset-0 z-[10000] bg-slate-950 flex flex-col items-center justify-center">
+    <div class="relative w-40 h-40 mb-8">
+        <div class="absolute inset-0 border-4 border-accent/20 rounded-full animate-ping"></div>
+        <div class="absolute inset-2 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
+        <i class="fas fa-satellite text-gold text-5xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
     </div>
-    <div class="text-center">
-        <h2 class="text-white font-black tracking-[0.5em] text-lg uppercase italic">Nexus-X Engine</h2>
-        <p id="loader-status" class="text-gold/40 text-[10px] uppercase mt-4 tracking-widest font-bold">Linkeando con constelación Starlink...</p>
-    </div>
-    <button onclick="document.getElementById('loader-nexus').style.display='none'" class="mt-12 text-[10px] text-white/20 uppercase font-black border border-white/10 px-6 py-2 rounded-full">Bypass Neural Link</button>
+    <h2 class="font-nexus text-white tracking-[0.3em] italic">NEXUS-X ENGINE</h2>
+    <p class="text-white/40 text-[10px] uppercase mt-2 font-bold tracking-widest">Estableciendo Link Starlink...</p>
 </div>
 
-<div id="auth-screen">
-  <div class="auth-card">
-    <div class="text-center mb-10">
-      <div class="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-inner">
-        <i class="fas fa-shield-halved text-primary text-4xl"></i>
-      </div>
-      <h2 class="font-black text-4xl tracking-tighter">NEXUS-X</h2>
-      <p class="text-blue-600 font-black text-[11px] tracking-widest uppercase italic">Secure Logistics Network</p>
+<div id="block-screen" class="hidden flex-col p-8 text-center text-white">
+    <i class="fas fa-lock text-gold text-6xl mb-6"></i>
+    <h1 class="font-nexus text-3xl mb-4">LICENCIA EXPIRADA</h1>
+    <p class="text-slate-400 mb-8 font-bold">Tu periodo de 14 días ha finalizado. Para reactivar tu nodo Nexus-X y TallerPRO360, realiza el pago de la membresía:</p>
+    
+    <div class="card-dark p-6 rounded-3xl border border-gold/30 mb-8 w-full text-left">
+        <p class="text-gold text-xs font-black uppercase mb-2">Datos de Pago</p>
+        <p class="text-sm font-bold"><i class="fas fa-university mr-2"></i>NuBank Ahorros: 69000706</p>
+        <p class="text-sm font-bold"><i class="fas fa-id-card mr-2"></i>Titular: William Jeffry Urquijo</p>
+        <p class="text-sm font-bold mb-4"><i class="fas fa-fingerprint mr-2"></i>CC: 79646721</p>
+        <hr class="opacity-10 mb-4">
+        <p class="text-sm font-bold"><i class="fas fa-mobile-alt mr-2"></i>Nequi: 311 570 9730</p>
     </div>
-    <div id="login-form">
-      <label>Acceso Corporativo</label>
-      <input id="auth-email" type="email" placeholder="email@taller.com">
-      <label>Llave de Encriptación</label>
-      <input id="auth-pass" type="password" placeholder="••••••••">
-      <button class="btn btn-accent" onclick="vibrate(); handleAuth('login')">INICIAR SESIÓN MAESTRA</button>
-      <p class="text-center text-xs mt-8 text-slate-400 font-bold" onclick="toggleAuth()">¿NUEVO NODO? <span class="text-blue-600 underline">REGISTRAR TALLER</span></p>
-    </div>
-    <div id="register-form" class="hidden">
-      <input id="reg-taller" type="text" placeholder="Nombre Comercial">
-      <input id="reg-email" type="email" placeholder="Email Admin">
-      <input id="reg-pass" type="password" placeholder="Crear Contraseña">
-      <button class="btn btn-main pulse-gold" onclick="vibrate(); handleAuth('register')">ACTIVAR LICENCIA RED</button>
-      <p class="text-center text-xs mt-8 text-slate-400 font-bold" onclick="toggleAuth()">VOLVER AL <span class="text-primary underline">LOGIN</span></p>
-    </div>
-  </div>
+
+    <button onclick="contactCEO()" class="btn-nexus w-full p-5 bg-gold text-black hover:bg-white transition">
+        <i class="fab fa-whatsapp text-xl"></i> ENVIAR SOPORTE DE PAGO
+    </button>
 </div>
 
-<header>
-  <div class="flex items-center justify-between max-w-lg mx-auto">
-    <i class="fas fa-bars text-gold text-lg"></i>
-    <div class="text-center">
-        <strong class="text-2xl tracking-tighter uppercase font-black">TallerPRO360 <span class="text-gold italic">Elite</span></strong>
-        <p id="display-taller" class="text-[9px] text-slate-400 font-black tracking-widest uppercase">Syncing...</p>
+<div id="auth-screen" class="hidden">
+    <div class="auth-card">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <i class="fas fa-shield-alt text-primary text-2xl"></i>
+            </div>
+            <h2 class="font-nexus text-2xl tracking-tighter">NEXUS-X <span class="text-accent italic">USA</span></h2>
+            <p class="text-slate-400 font-bold text-[10px] tracking-widest uppercase">Logistics & Tech Network</p>
+        </div>
+
+        <div id="form-login">
+            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Email Corporativo</label>
+            <input id="auth-email" type="email" placeholder="admin@taller.com">
+            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Clave de Encriptación</label>
+            <input id="auth-pass" type="password" placeholder="••••••••">
+            <button class="btn-nexus w-full p-5 shadow-lg shadow-accent/30 mt-4" onclick="handleAuth('login')">
+                INGRESAR AL SISTEMA
+            </button>
+            <p class="text-center text-[11px] mt-8 font-bold text-slate-400" onclick="toggleAuth()">¿NUEVO NODO? <span class="text-accent underline">SOLICITAR DEMO 14 DÍAS</span></p>
+        </div>
+
+        <div id="form-reg" class="hidden">
+            <input id="reg-taller" type="text" placeholder="Nombre del Taller">
+            <input id="reg-email" type="email" placeholder="Email Admin">
+            <input id="reg-pass" type="password" placeholder="Crear Contraseña">
+            <div class="bg-blue-50 p-4 rounded-xl mb-4 text-[10px] font-bold text-blue-700 italic">
+                <i class="fas fa-info-circle mr-1"></i> Recibirás 14 días gratis de licencia Elite tras activar tu nodo.
+            </div>
+            <button class="btn-nexus w-full p-5 bg-success" onclick="handleAuth('register')">ACTIVAR NODO DEMO</button>
+            <p class="text-center text-[11px] mt-8 font-bold text-slate-400" onclick="toggleAuth()">YA TENGO CUENTA <span class="text-primary underline">LOG IN</span></p>
+        </div>
     </div>
-    <i class="fas fa-user-circle text-gold text-2xl"></i>
-  </div>
+</div>
+
+<header class="p-4 text-white">
+    <div class="flex justify-between items-center max-w-4xl mx-auto">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/10">
+                <i class="fas fa-satellite-dish text-gold"></i>
+            </div>
+            <div>
+                <h1 class="font-nexus text-sm tracking-widest">TallerPRO360 <span class="text-gold italic">Elite</span></h1>
+                <p id="display-taller" class="text-[8px] font-black text-white/40 uppercase tracking-tighter">Conectando...</p>
+            </div>
+        </div>
+        <div id="trial-badge" class="hidden">
+            <span class="tag-trial" id="days-left">TRIAL: 14 DÍAS</span>
+        </div>
+        <button onclick="signOutNow()" class="opacity-50 text-xs"><i class="fas fa-power-off"></i></button>
+    </div>
 </header>
 
-<div class="container p-4 max-w-2xl mx-auto" id="main-content">
-  
-  <section id="sec-ordenes">
-    <div class="flex gap-4 mb-6">
-        <div class="card bg-primary text-white flex-1 mb-0 p-5 flex flex-col items-center">
-            <span class="text-[10px] text-gold font-bold uppercase">En Patio</span>
-            <span class="text-3xl font-black" id="count-patio">0</span>
+<main class="p-4 max-w-4xl mx-auto">
+    <section id="sec-ordenes">
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="card-dark p-6 rounded-3xl flex flex-col items-center">
+                <span class="text-[10px] text-gold font-bold uppercase tracking-widest mb-2">Vehículos en Red</span>
+                <span class="text-4xl font-nexus" id="count-patio">0</span>
+            </div>
+            <div class="glass p-6 rounded-3xl flex flex-col items-center">
+                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2">Ingresos Hoy</span>
+                <span class="text-4xl font-nexus text-success">$0</span>
+            </div>
         </div>
-        <div class="card bg-white flex-1 mb-0 p-5 flex flex-col items-center">
-            <span class="text-[10px] text-slate-400 font-bold uppercase">Hoy</span>
-            <span class="text-3xl font-black" id="count-hoy">0</span>
-        </div>
-    </div>
 
-    <div class="card bg-slate-900 border-gold/30">
-      <button id="btn-voz" class="btn btn-voice pulse-gold text-lg"><i class="fas fa-microphone-lines text-2xl"></i> DICTADO IA NEXUS</button>
-    </div>
-
-    <div class="card">
-      <h3 class="font-black text-xl italic uppercase mb-6"><i class="fas fa-file-signature text-gold mr-2"></i>Nueva Recepción</h3>
-      <input id="o-id" type="hidden">
-      
-      <div class="grid grid-cols-2 gap-4">
-        <div><label>Placa</label><input id="o-placa" placeholder="ABC-123" class="text-center font-black text-blue-600 text-2xl uppercase"></div>
-        <div><label>Modelo/Año</label><input id="o-modelo" type="number" placeholder="2026"></div>
-      </div>
-      
-      <label>Marca y Referencia</label>
-      <input id="o-marca" placeholder="Ej: Kenworth T800 / International">
-      
-      <div class="grid grid-cols-2 gap-4">
-        <div><label>Kilometraje</label><input id="o-km" type="number" placeholder="0"></div>
-        <div><label>Combustible</label>
-            <select id="o-gas" class="font-bold">
-                <option>Reserva</option><option>1/4</option><option>1/2</option><option>3/4</option><option>Full</option>
-            </select>
-        </div>
-      </div>
-      
-      <div class="bg-blue-50 p-5 rounded-3xl border-2 border-blue-100 mb-6">
-          <label>Cliente (WhatsApp)</label>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input id="o-cliente" placeholder="Nombre">
-            <input id="o-tel" type="tel" placeholder="310...">
-          </div>
-      </div>
-      
-      <label class="mb-4">Checklist de Entrada</label>
-      <div class="checklist-grid grid grid-cols-2 gap-3 mb-6">
-        <div class="check-item bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
-            <input type="checkbox" class="chk-item w-5 h-5 accent-success" value="Radio"> <span class="font-bold text-xs">Radio/Pantalla</span>
-        </div>
-        <div class="check-item bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
-            <input type="checkbox" class="chk-item w-5 h-5 accent-success" value="Gato"> <span class="font-bold text-xs">Gato/Llave</span>
-        </div>
-        <div class="check-item bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
-            <input type="checkbox" class="chk-item w-5 h-5 accent-success" value="Llanta"> <span class="font-bold text-xs">Repuesto</span>
-        </div>
-        <div class="check-item bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
-            <input type="checkbox" class="chk-item w-5 h-5 accent-success" value="Extintor"> <span class="font-bold text-xs">Extintor</span>
-        </div>
-      </div>
-
-      <label>Diagnóstico Técnico Detallado</label>
-      <textarea id="o-trabajo" placeholder="Describa la falla..." rows="6" class="bg-slate-50 border-none focus:ring-2 focus:ring-blue-500"></textarea>
-      
-      <button class="btn btn-main text-xl py-6" onclick="saveOrder()">
-        <i class="fas fa-cloud-upload-alt"></i> SINCRONIZAR Y ENVIAR WA
-      </button>
-    </div>
-    
-    <div id="lista-ordenes" class="space-y-4"></div>
-  </section>
-
-  <section id="sec-passport" class="hidden">
-    <div class="card bg-primary text-white text-center p-10 relative overflow-hidden">
-        <i class="fas fa-dna text-gold text-5xl mb-4 opacity-40"></i>
-        <h3 class="font-black text-2xl tracking-tighter">GLOBAL VEHICLE PASSPORT</h3>
-        <p class="text-[10px] text-gold/60 font-black tracking-widest uppercase">Consulta de red Starlink Nexus-X</p>
-    </div>
-    <div class="mt-8">
-        <label>Rastrear Historial por Placa</label>
-        <input id="search-placa" placeholder="ABC-123" class="text-center font-black text-4xl border-4 border-primary rounded-3xl py-8 mb-6 uppercase">
-        <button class="btn btn-accent text-xl" onclick="searchHistory()">
-            <i class="fas fa-radar"></i> ESCANEAR RED GLOBAL
+        <button id="btn-voz" class="btn-nexus w-full p-6 mb-6 bg-slate-900 border-2 border-gold/50 pulse">
+            <i class="fas fa-microphone-alt text-2xl text-gold"></i> DICTADO IA NEXUS-X
         </button>
-    </div>
-    <div id="history-result" class="mt-8"></div>
-  </section>
 
-  <section id="sec-finanzas" class="hidden">
-    <div class="card bg-white overflow-hidden p-0">
-        <div class="p-6 bg-slate-900 text-white">
-            <h3 class="font-black uppercase text-xs tracking-widest text-gold">Ventaja Competitiva Nexus-X</h3>
-        </div>
-        <div class="p-4">
-            <table class="table-compare">
-                <thead><tr><th>Función</th><th>Software Común</th><th>Nexus-X Elite</th></tr></thead>
-                <tbody>
-                    <tr><td>Dictado Voz IA</td><td class="check-no">❌ No</td><td class="check-yes">✅ Sí</td></tr>
-                    <tr><td>WhatsApp Auto</td><td class="check-no">❌ No</td><td class="check-yes">✅ Sí</td></tr>
-                    <tr><td>Passport Global</td><td class="check-no">❌ No</td><td class="check-yes">✅ Sí</td></tr>
-                    <tr><td>Sync Starlink</td><td class="check-no">❌ No</td><td class="check-yes">✅ Sí</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+        <div class="glass p-6 rounded-[40px] shadow-sm mb-6">
+            <h3 class="font-nexus text-sm mb-6 border-l-4 border-gold pl-3">RECEPCIÓN DE VEHÍCULO</h3>
+            <input id="o-id" type="hidden">
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-[10px] font-black">PLACA</label><input id="o-placa" placeholder="ABC-123" class="text-center font-nexus text-xl text-accent"></div>
+                <div><label class="text-[10px] font-black">AÑO</label><input id="o-modelo" type="number" placeholder="2026"></div>
+            </div>
 
-    <div class="grid grid-cols-2 gap-4 mb-8">
-        <div class="card mb-0 bg-green-50 border-green-200">
-            <small class="text-green-600 font-black text-[10px] uppercase">Facturado</small>
-            <div class="text-2xl font-black" id="stat-ingresos">$0</div>
-        </div>
-        <div class="card mb-0 bg-red-50 border-red-200">
-            <small class="text-red-600 font-black text-[10px] uppercase">Gastos</small>
-            <div class="text-2xl font-black" id="stat-gastos">$0</div>
-        </div>
-    </div>
+            <label class="text-[10px] font-black">REFERENCIA / MARCA</label>
+            <input id="o-marca" placeholder="Ej: Kenworth T800">
 
-    <div class="card">
-        <h3 class="font-black mb-6 uppercase text-sm italic">Movimiento de Caja</h3>
-        <select id="g-tipo" class="font-bold"><option>Servicio/Mano Obra</option><option>Repuestos</option><option>Nómina</option><option>Gastos Fijos</option></select>
-        <input id="g-valor" type="number" placeholder="Monto $" class="text-2xl font-black">
-        <input id="g-desc" placeholder="Descripción del movimiento">
-        <button class="btn btn-accent" onclick="saveGasto()">REGISTRAR EN BLOCKCHAIN</button>
-    </div>
-    <div id="lista-gastos" class="space-y-3"></div>
-  </section>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-[10px] font-black">CLIENTE</label><input id="o-cliente" placeholder="Nombre"></div>
+                <div><label class="text-[10px] font-black">WHATSAPP</label><input id="o-tel" type="tel" placeholder="310..."></div>
+            </div>
 
-  <section id="sec-admin" class="hidden">
-    <div class="card border-2 border-gold bg-slate-900 text-white">
-      <div class="flex items-center gap-4 mb-8">
-          <div class="bg-gold p-4 rounded-3xl"><i class="fas fa-crown text-slate-900 text-xl"></i></div>
-          <div>
-            <h3 class="font-black uppercase text-xl tracking-tighter">CEO COMMAND CENTER</h3>
-            <p class="text-[9px] text-gold font-bold">WILLIAM MASTER ACCESS</p>
-          </div>
-      </div>
-      
-      <div id="ceo_leads_display" class="grid grid-cols-1 gap-4">
-          </div>
-    </div>
-  </section>
-</div>
+            <label class="text-[10px] font-black">DIAGNÓSTICO TÉCNICO (VOZ O TECLADO)</label>
+            <textarea id="o-trabajo" rows="4" placeholder="Describa los hallazgos..."></textarea>
+
+            <button class="btn-nexus w-full p-6 text-lg bg-success" onclick="saveOrder()">
+                <i class="fas fa-cloud-upload-alt"></i> SINCRONIZAR A STARLINK
+            </button>
+        </div>
+
+        <div id="lista-ordenes" class="space-y-4"></div>
+    </section>
+
+    <section id="sec-passport" class="hidden">
+        <div class="card-dark p-10 rounded-[40px] text-center mb-8">
+            <i class="fas fa-fingerprint text-gold text-5xl mb-4"></i>
+            <h2 class="font-nexus text-2xl">GLOBAL PASSPORT</h2>
+            <p class="text-xs text-white/40 uppercase font-bold tracking-widest">Historial unificado de vehículos Nexus-X</p>
+        </div>
+        <input id="search-placa" placeholder="INGRESE PLACA" class="text-center font-nexus text-3xl p-8 border-4 border-slate-900 mb-4 uppercase">
+        <button class="btn-nexus w-full p-6 bg-accent" onclick="searchHistory()">
+            <i class="fas fa-search"></i> RASTREAR EN LA RED
+        </button>
+        <div id="history-result" class="mt-8 space-y-4"></div>
+    </section>
+
+    <section id="sec-admin" class="hidden">
+        <div class="card-dark border-2 border-gold p-8 rounded-[40px] mb-6">
+            <div class="flex items-center gap-4 mb-8">
+                <div class="w-16 h-16 bg-gold rounded-3xl flex items-center justify-center">
+                    <i class="fas fa-crown text-primary text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="font-nexus text-xl">COMMAND CENTER</h2>
+                    <p class="text-[10px] text-gold font-bold">WILLIAM MASTER ACCESS</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <div class="bg-white/5 p-4 rounded-2xl">
+                    <p class="text-[8px] text-white/40 uppercase font-black">Nodos Activos</p>
+                    <p id="ceo-nodos" class="text-2xl font-nexus text-gold">0</p>
+                </div>
+                <div class="bg-white/5 p-4 rounded-2xl">
+                    <p class="text-[8px] text-white/40 uppercase font-black">Leads Pendientes</p>
+                    <p id="ceo-leads" class="text-2xl font-nexus text-accent">0</p>
+                </div>
+            </div>
+
+            <h3 class="text-xs font-black uppercase mb-4 text-white/60"><i class="fas fa-users mr-2"></i>Gestión de Clientes Red</h3>
+            <div id="ceo-user-list" class="space-y-3"></div>
+        </div>
+    </section>
+</main>
 
 <nav class="nav-tabs">
-  <div class="tab active" onclick="showTab('ordenes')"><i class="fas fa-tools text-xl"></i><br>ÓRDENES</div>
-  <div class="tab" onclick="showTab('passport')"><i class="fas fa-id-card text-xl"></i><br>PASSPORT</div>
-  <div class="tab" onclick="showTab('finanzas')"><i class="fas fa-chart-pie text-xl"></i><br>ELITE AI</div>
-  <div id="tab-admin" class="tab hidden" onclick="showTab('admin')"><i class="fas fa-crown text-xl"></i><br>CEO</div>
+    <div class="tab active" onclick="showTab('ordenes')"><i class="fas fa-tools text-xl mb-1"></i><br>PATIO</div>
+    <div class="tab" onclick="showTab('passport')"><i class="fas fa-id-card text-xl mb-1"></i><br>PASSPORT</div>
+    <div class="tab" onclick="showTab('finanzas')"><i class="fas fa-chart-line text-xl mb-1"></i><br>METRICS</div>
+    <div id="tab-admin" class="tab hidden" onclick="showTab('admin')"><i class="fas fa-crown text-xl mb-1 text-gold"></i><br>CEO</div>
 </nav>
 
 <script type="module">
-  // FIREBASE ENGINE - ULTIMA GENERACIÓN
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, updateDoc, serverTimestamp, addDoc, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    // FIREBASE CORE
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, updateDoc, serverTimestamp, addDoc, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-    authDomain: "tallerpro360.firebaseapp.com",
-    projectId: "tallerpro360",
-    storageBucket: "tallerpro360.appspot.com",
-    messagingSenderId: "636224778184",
-    appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-  };
+    const firebaseConfig = {
+        apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+        authDomain: "tallerpro360.firebaseapp.com",
+        projectId: "tallerpro360",
+        storageBucket: "tallerpro360.appspot.com",
+        messagingSenderId: "636224778184",
+        appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-  setPersistence(auth, browserLocalPersistence);
+    // --- SISTEMA DE AUTENTICACIÓN Y TRIAL ---
+    window.handleAuth = async (mode) => {
+        vibrate();
+        const email = (mode === 'login' ? document.getElementById('auth-email').value : document.getElementById('reg-email').value).toLowerCase().trim();
+        const pass = mode === 'login' ? document.getElementById('auth-pass').value : document.getElementById('reg-pass').value;
 
-  window.vibrate = () => { if(navigator.vibrate) navigator.vibrate(25); };
+        try {
+            if (mode === 'register') {
+                const res = await createUserWithEmailAndPassword(auth, email, pass);
+                const fechaHoy = new Date();
+                const fechaVence = new Date();
+                fechaVence.setDate(fechaHoy.getDate() + 14); // 14 días de Trial
 
-  // --- LÓGICA DE AUTENTICACIÓN ---
-  window.handleAuth = async (mode) => {
-    const email = mode === 'login' ? document.getElementById('auth-email').value : document.getElementById('reg-email').value;
-    const pass = mode === 'login' ? document.getElementById('auth-pass').value : document.getElementById('reg-pass').value;
-    
-    if(!email || !pass) return alert("Ingrese credenciales válidas");
-    
-    try {
-      if (mode === 'register') {
-        const res = await createUserWithEmailAndPassword(auth, email, pass);
-        await setDoc(doc(db, "usuarios", res.user.uid), {
-          nombreTaller: document.getElementById('reg-taller').value,
-          email: email,
-          rol: "TALLER",
-          status: "ELITE_ACTIVE",
-          fecha_creacion: serverTimestamp()
-        });
-      } else {
-        await signInWithEmailAndPassword(auth, email, pass);
-      }
-      location.reload();
-    } catch (e) { alert("Error Nexus-X: " + e.message); }
-  };
+                await setDoc(doc(db, "usuarios", res.user.uid), {
+                    nombreTaller: document.getElementById('reg-taller').value,
+                    email: email,
+                    rol: email === 'col.store2025@gmail.com' ? "CEO_RED" : "TALLER",
+                    status: "TRIAL_ACTIVE",
+                    fecha_registro: serverTimestamp(),
+                    vence: fechaVence.getTime(),
+                    master: email === 'col.store2025@gmail.com'
+                });
+            } else {
+                await signInWithEmailAndPassword(auth, email, pass);
+            }
+        } catch (e) { alert("ERROR NEXUS: " + e.message); }
+    };
 
-       // OBSERVADOR DE SESIÓN - CONTROL TOTAL CEO
-  onAuthStateChanged(auth, async (user) => {
-    const loader = document.getElementById('loader-nexus');
-    const authScreen = document.getElementById('auth-screen');
-    
-    if (user) {
-      const userEmail = user.email.toLowerCase();
-      console.log("Nodo Nexus detectado:", userEmail);
-      
-      // VALIDACIÓN MAESTRA PARA TU CORREO
-      if(userEmail === 'col.store2025@gmail.com') {
-          const ceoRef = doc(db, "usuarios", user.uid);
-          const ceoDoc = await getDoc(ceoRef);
-          
-          // Si el perfil no existe en Firestore, lo creamos a la fuerza
-          if (!ceoDoc.exists()) {
-              await setDoc(ceoRef, {
-                  nombreTaller: "COLSTORE NEXUS-X HQ",
-                  email: userEmail,
-                  rol: "CEO_RED",
-                  status: "MASTER_ACTIVE",
-                  fecha: serverTimestamp(),
-                  isCEO: true
-              });
-          }
-          
-          // FORZAMOS LA ENTRADA: Saltamos cualquier validación extra
-          document.getElementById('tab-admin').classList.remove('hidden');
-          document.getElementById('display-taller').innerText = "NEXUS-X GLOBAL COMMAND";
-          authScreen.classList.add('hidden'); 
-          cargarLeadsCEO();
-          initRealtimeSync();
-      } else {
-          // Lógica para talleres normales
-          const uDoc = await getDoc(doc(db, "usuarios", user.uid));
-          if (uDoc.exists()) {
-            const data = uDoc.data();
-            document.getElementById('display-taller').innerText = `${data.nombreTaller} | ID: ${user.uid.substring(0,6)}`;
-            authScreen.classList.add('hidden');
-            initRealtimeSync();
-          } else {
-            // Si el taller no existe en la base de datos, lo cerramos para evitar errores
-            console.error("Error: Perfil de taller no encontrado.");
-            auth.signOut(); 
-          }
-      }
-    } else {
-      authScreen.classList.remove('hidden');
-    }
-    
-    // Eliminamos el loader garantizado
-    setTimeout(() => { if(loader) loader.remove(); }, 1000);
-  });
+    onAuthStateChanged(auth, async (user) => {
+        const loader = document.getElementById('loader-nexus');
+        const authScreen = document.getElementById('auth-screen');
+        const blockScreen = document.getElementById('block-screen');
+        const disp = document.getElementById('display-taller');
 
-  // --- SINCRONIZACIÓN EN TIEMPO REAL ---
-  function initRealtimeSync() {
-    const q = query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid), orderBy("timestamp", "desc"));
-    onSnapshot(q, (snap) => {
-        const list = document.getElementById('lista-ordenes');
-        list.innerHTML = "<h4 class='text-[10px] font-black mt-10 uppercase text-slate-400 tracking-widest'>Patio en tiempo real</h4>";
-        let patioCount = 0;
+        if (user) {
+            const email = user.email.toLowerCase();
+            const uRef = doc(db, "usuarios", user.uid);
+            let uDoc = await getDoc(uRef);
+
+            // Bypass Maestro CEO
+            if(email === 'col.store2025@gmail.com') {
+                disp.innerText = "NEXUS-X GLOBAL COMMAND";
+                document.getElementById('tab-admin').classList.remove('hidden');
+                authScreen.classList.add('hidden');
+                initRealtimeSync();
+                cargarDatosCEO();
+                if(loader) loader.style.display = 'none';
+                return;
+            }
+
+            // Validación de Trial para usuarios normales
+            if (uDoc.exists()) {
+                const data = uDoc.data();
+                const hoy = new Date().getTime();
+                
+                if (hoy > data.vence && data.status !== 'PAID_ACTIVE') {
+                    blockScreen.classList.remove('hidden');
+                    authScreen.classList.add('hidden');
+                } else {
+                    const diasRestantes = Math.ceil((data.vence - hoy) / (1000 * 60 * 60 * 24));
+                    document.getElementById('trial-badge').classList.remove('hidden');
+                    document.getElementById('days-left').innerText = `TRIAL: ${diasRestantes} DÍAS`;
+                    disp.innerText = data.nombreTaller;
+                    authScreen.classList.add('hidden');
+                    initRealtimeSync();
+                }
+            }
+        } else {
+            authScreen.classList.remove('hidden');
+        }
+        if(loader) setTimeout(() => loader.style.display = 'none', 1000);
+    });
+
+    // --- LÓGICA DE NEGOCIO ---
+    window.saveOrder = async () => {
+        vibrate();
+        const orden = {
+            placa: document.getElementById('o-placa').value.toUpperCase(),
+            marca: document.getElementById('o-marca').value,
+            modelo: document.getElementById('o-modelo').value,
+            cliente: document.getElementById('o-cliente').value,
+            tel: document.getElementById('o-tel').value,
+            trabajo: document.getElementById('o-trabajo').value,
+            tallerId: auth.currentUser.uid,
+            tallerNombre: document.getElementById('display-taller').innerText,
+            timestamp: serverTimestamp(),
+            fechaStr: new Date().toLocaleDateString()
+        };
+
+        await addDoc(collection(db, "ordenes"), orden);
         
-        snap.forEach(d => {
-            const o = d.data();
-            patioCount++;
+        // WhatsApp Link Directo
+        const link = `https://wa.me/57${orden.tel}?text=NEXUS-X%20REPORT%0A%0AVehículo%20${orden.placa}%20recibido%20en%20${orden.tallerNombre}.%20Diagnóstico:%20${orden.trabajo}`;
+        window.open(link, '_blank');
+        resetForm();
+    };
+
+    function initRealtimeSync() {
+        const q = query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid), orderBy("timestamp", "desc"));
+        onSnapshot(q, (snap) => {
+            const list = document.getElementById('lista-ordenes');
+            list.innerHTML = "";
+            let count = 0;
+            snap.forEach(d => {
+                count++;
+                const o = d.data();
+                list.innerHTML += `
+                    <div class="glass p-5 rounded-3xl border-l-[8px] border-gold flex justify-between items-center">
+                        <div>
+                            <b class="text-xl font-nexus text-slate-800">${o.placa}</b><br>
+                            <small class="font-bold text-slate-400 uppercase">${o.cliente}</small>
+                        </div>
+                        <button class="bg-slate-900 text-gold p-3 rounded-xl"><i class="fas fa-eye"></i></button>
+                    </div>`;
+            });
+            document.getElementById('count-patio').innerText = count;
+        });
+    }
+
+    // --- PANEL CEO WILLIAM ---
+    async function cargarDatosCEO() {
+        const usersSnap = await getDocs(collection(db, "usuarios"));
+        const list = document.getElementById('ceo-user-list');
+        list.innerHTML = "";
+        
+        let nodosActivos = 0;
+        usersSnap.forEach(d => {
+            nodosActivos++;
+            const u = d.data();
+            const vencido = new Date().getTime() > u.vence;
             list.innerHTML += `
-                <div class="list-item bg-white p-6 rounded-3xl border-l-[10px] border-gold flex justify-between items-center shadow-sm">
+                <div class="bg-white/5 p-4 rounded-2xl flex justify-between items-center">
                     <div>
-                        <b class="text-blue-700 text-xl font-black">${o.placa}</b><br>
-                        <small class="font-black text-slate-400 uppercase">${o.marca}</small>
+                        <p class="text-[11px] font-bold text-white">${u.nombreTaller}</p>
+                        <p class="text-[9px] text-white/40">${u.email}</p>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick='editOrder("${d.id}", ${JSON.stringify(o)})' class="bg-primary text-white p-3 rounded-2xl"><i class="fas fa-edit"></i></button>
-                        <button onclick='generatePDF("${d.id}")' class="bg-gold/10 text-gold p-3 rounded-2xl"><i class="fas fa-file-pdf"></i></button>
-                    </div>
+                    <span class="text-[9px] font-black ${vencido ? 'text-danger' : 'text-success'}">
+                        ${vencido ? 'EXPIRADO' : 'ACTIVO'}
+                    </span>
                 </div>`;
         });
-        document.getElementById('count-patio').innerText = patioCount;
-    });
-  }
-
-  // --- GUARDADO DE ORDENES ---
-  window.saveOrder = async () => {
-    vibrate();
-    const id = document.getElementById('o-id').value;
-    const checks = Array.from(document.querySelectorAll('.chk-item:checked')).map(i => i.value);
-
-    const orden = {
-      placa: document.getElementById('o-placa').value.toUpperCase(),
-      marca: document.getElementById('o-marca').value,
-      modelo: document.getElementById('o-modelo').value,
-      km: document.getElementById('o-km').value,
-      gas: document.getElementById('o-gas').value,
-      cliente: document.getElementById('o-cliente').value,
-      tel: document.getElementById('o-tel').value,
-      inventario: checks,
-      trabajo: document.getElementById('o-trabajo').value,
-      tallerId: auth.currentUser.uid,
-      tallerNombre: document.getElementById('display-taller').innerText.split('|')[0],
-      timestamp: serverTimestamp(),
-      fechaStr: new Date().toLocaleDateString(),
-      estado: 'PROCESO'
-    };
-
-    try {
-      if(id) { await updateDoc(doc(db, "ordenes", id), orden); }
-      else { await addDoc(collection(db, "ordenes"), orden); }
-      
-      const msg = `🚀 *NEXUS-X ELITE REPORT*\nVehículo: *${orden.placa}*\nCliente: *${orden.cliente}*\n\nSu vehículo ha ingresado a nuestra red Starlink. Puede rastrear el progreso con este ID.\n\n*Nexus-X Starlink SAS USA*`;
-      window.open(`https://wa.me/57${orden.tel.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
-      resetForm();
-    } catch(e) { alert("Error Sync: " + e.message); }
-  };
-
-  // --- PASSPORT ENGINE ---
-  window.searchHistory = async () => {
-    vibrate();
-    const placa = document.getElementById('search-placa').value.toUpperCase();
-    const q = query(collection(db, "ordenes"), where("placa", "==", placa), orderBy("timestamp", "desc"));
-    const snap = await getDocs(q);
-    const res = document.getElementById('history-result');
-    res.innerHTML = "";
-    
-    if(snap.empty) {
-        res.innerHTML = "<div class='card bg-red-50 text-red-600 font-bold text-center'>NO SE ENCONTRARON REGISTROS EN LA RED</div>";
-        return;
+        document.getElementById('ceo-nodos').innerText = nodosActivos;
     }
-    
-    snap.forEach(doc => {
-        const d = doc.data();
-        res.innerHTML += `
-            <div class="card border-l-blue-500 animate-pulse-slow">
-                <div class="flex justify-between text-[10px] mb-3 font-black">
-                    <span class="text-blue-600 uppercase italic">${d.tallerNombre}</span>
-                    <span class="text-slate-400">${d.fechaStr}</span>
-                </div>
-                <p class="font-bold text-slate-800">${d.trabajo}</p>
-                <div class="mt-4 text-[9px] font-black text-slate-400">KM: ${d.km} | SENSOR: STARLINK-NEXUS-X</div>
-            </div>`;
-    });
-  };
 
-  // --- CEO COMMAND ---
-  async function cargarLeadsCEO() {
-    const leads = await getDocs(collection(db, "leads_interesados"));
-    const container = document.getElementById('ceo_leads_display');
-    leads.forEach(d => {
-        const l = d.data();
-        container.innerHTML += `
-            <div class="bg-white/10 p-4 rounded-3xl border border-white/5">
-                <div class="flex justify-between items-center">
-                    <b class="text-gold uppercase text-xs">${l.plan_clicado}</b>
-                    <span class="bg-blue-500 text-[8px] px-2 py-1 rounded-full">${l.agente}</span>
-                </div>
-            </div>`;
-    });
-  }
-
-  // --- UI HELPERS ---
-  window.showTab = (tab) => {
-    vibrate();
-    document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById(`sec-${tab}`).classList.remove('hidden');
-    event.currentTarget.classList.add('active');
-    window.scrollTo(0,0);
-  };
-
-  function resetForm() {
-    document.getElementById('o-id').value = "";
-    document.getElementById('o-placa').value = "";
-    document.getElementById('o-trabajo').value = "";
-    document.querySelectorAll('.chk-item').forEach(c => c.checked = false);
-  }
-
-  window.toggleAuth = () => {
-    vibrate();
-    document.getElementById('login-form').classList.toggle('hidden');
-    document.getElementById('register-form').classList.toggle('hidden');
-  };
-
-  // VOICE ENGINE
-  const btnVoz = document.getElementById('btn-voz');
-  const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(Speech){
-    const rec = new Speech(); rec.lang = 'es-CO';
-    btnVoz.onclick = () => { vibrate(); rec.start(); btnVoz.innerHTML = "<i class='fas fa-compact-disc text-red-500 animate-spin'></i> ESCUCHANDO..."; };
-    rec.onresult = (e) => { 
-        document.getElementById('o-trabajo').value += (document.getElementById('o-trabajo').value ? ' ' : '') + e.results[0][0].transcript;
-        btnVoz.innerHTML = "<i class='fas fa-microphone-lines'></i> DICTADO IA NEXUS";
+    // --- UTILIDADES ---
+    window.showTab = (tab) => {
+        vibrate();
+        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(`sec-${tab}`).classList.remove('hidden');
+        event.currentTarget.classList.add('active');
     };
-  }
+
+    window.toggleAuth = () => {
+        document.getElementById('form-login').classList.toggle('hidden');
+        document.getElementById('form-reg').classList.toggle('hidden');
+    };
+
+    window.signOutNow = () => signOut(auth).then(() => location.reload());
+
+    window.contactCEO = () => {
+        const msg = `Hola William, realicé el pago para reactivar mi Nodo Nexus-X. Mi correo es: ${auth.currentUser.email}`;
+        window.open(`https://wa.me/573115709730?text=${encodeURIComponent(msg)}`, '_blank');
+    };
+
+    window.vibrate = () => { if(navigator.vibrate) navigator.vibrate(30); };
+
+    // VOICE ENGINE
+    const btnVoz = document.getElementById('btn-voz');
+    const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(Speech){
+        const rec = new Speech(); rec.lang = 'es-CO';
+        btnVoz.onclick = () => { vibrate(); rec.start(); btnVoz.classList.add('bg-red-500'); };
+        rec.onresult = (e) => { 
+            document.getElementById('o-trabajo').value += e.results[0][0].transcript;
+            btnVoz.classList.remove('bg-red-500');
+        };
+    }
 </script>
 </body>
 </html>
