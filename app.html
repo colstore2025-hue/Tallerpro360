@@ -272,50 +272,76 @@
         } catch (e) { alert("ERROR NEXUS: " + e.message); }
     };
 
-    onAuthStateChanged(auth, async (user) => {
-        const loader = document.getElementById('loader-nexus');
-        const authScreen = document.getElementById('auth-screen');
-        const blockScreen = document.getElementById('block-screen');
-        const disp = document.getElementById('display-taller');
+   onAuthStateChanged(auth, async (user) => {
+    const loader = document.getElementById('loader-nexus');
+    const authScreen = document.getElementById('auth-screen');
+    const blockScreen = document.getElementById('block-screen');
+    const disp = document.getElementById('display-taller');
+    const tabAdmin = document.getElementById('tab-admin');
 
-        if (user) {
-            const email = user.email.toLowerCase();
-            const uRef = doc(db, "usuarios", user.uid);
-            let uDoc = await getDoc(uRef);
+    if (user) {
+      const email = user.email.toLowerCase().trim();
+      console.log("📡 Nodo detectado:", email);
 
-            // Bypass Maestro CEO
-            if(email === 'col.store2025@gmail.com') {
-                disp.innerText = "NEXUS-X GLOBAL COMMAND";
-                document.getElementById('tab-admin').classList.remove('hidden');
-                authScreen.classList.add('hidden');
-                initRealtimeSync();
-                cargarDatosCEO();
-                if(loader) loader.style.display = 'none';
-                return;
-            }
+      // --- BYPASS MAESTRO CEO (WILLIAM) ---
+      if (email === 'col.store2025@gmail.com') {
+        console.log("👑 Acceso Master CEO Confirmado");
+        
+        // Interfaz de Mando
+        if(disp) disp.innerText = "NEXUS-X GLOBAL COMMAND";
+        if(tabAdmin) tabAdmin.classList.remove('hidden');
+        if(authScreen) authScreen.classList.add('hidden');
+        if(blockScreen) blockScreen.classList.add('hidden');
+        
+        // Carga de Datos de Red
+        try {
+          initRealtimeSync();
+          cargarDatosCEO();
+        } catch(e) { console.error("Error en carga CEO:", e); }
+        
+        if(loader) loader.style.display = 'none';
+        return; // Salida inmediata, el CEO no obedece reglas de trial
+      }
 
-            // Validación de Trial para usuarios normales
-            if (uDoc.exists()) {
-                const data = uDoc.data();
-                const hoy = new Date().getTime();
-                
-                if (hoy > data.vence && data.status !== 'PAID_ACTIVE') {
-                    blockScreen.classList.remove('hidden');
-                    authScreen.classList.add('hidden');
-                } else {
-                    const diasRestantes = Math.ceil((data.vence - hoy) / (1000 * 60 * 60 * 24));
-                    document.getElementById('trial-badge').classList.remove('hidden');
-                    document.getElementById('days-left').innerText = `TRIAL: ${diasRestantes} DÍAS`;
-                    disp.innerText = data.nombreTaller;
-                    authScreen.classList.add('hidden');
-                    initRealtimeSync();
-                }
-            }
+      // --- LÓGICA PARA TALLERES (Nodos Estándar) ---
+      try {
+        const uDoc = await getDoc(doc(db, "usuarios", user.uid));
+        
+        if (uDoc.exists()) {
+          const data = uDoc.data();
+          const hoy = new Date().getTime();
+          
+          // Verificación de Trial / Pago
+          if (hoy > data.vence && data.status !== 'PAID_ACTIVE') {
+            if(blockScreen) blockScreen.classList.remove('hidden');
+            if(authScreen) authScreen.classList.add('hidden');
+          } else {
+            const diasRestantes = Math.ceil((data.vence - hoy) / (1000 * 60 * 60 * 24));
+            const badge = document.getElementById('trial-badge');
+            if(badge) badge.classList.remove('hidden');
+            document.getElementById('days-left').innerText = `TRIAL: ${diasRestantes > 0 ? diasRestantes : 0} DÍAS`;
+            
+            if(disp) disp.innerText = data.nombreTaller || "Nodo Activo";
+            if(authScreen) authScreen.classList.add('hidden');
+            initRealtimeSync();
+          }
         } else {
-            authScreen.classList.remove('hidden');
+          console.warn("Perfil no encontrado en Firestore, reintentando...");
+          // Si el usuario existe en Auth pero no en DB, lo forzamos a crearse o salir
+          if(disp) disp.innerText = "Configurando Nodo...";
         }
-        if(loader) setTimeout(() => loader.style.display = 'none', 1000);
-    });
+      } catch (error) {
+        console.error("Error de conexión Nexus-X:", error);
+      }
+    } else {
+      // No hay sesión: Mostrar Login
+      if(authScreen) authScreen.classList.remove('hidden');
+      if(blockScreen) blockScreen.classList.add('hidden');
+      if(tabAdmin) tabAdmin.classList.add('hidden');
+    }
+
+    if(loader) setTimeout(() => loader.style.display = 'none', 1000);
+  });
 
     // --- LÓGICA DE NEGOCIO ---
     window.saveOrder = async () => {
