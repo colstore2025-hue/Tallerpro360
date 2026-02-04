@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Nexus-X Terminal | Operaciones de Taller</title>
+    <title>Nexus-X Terminal | Misión de Taller</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,37 +11,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        :root { 
-            --primary: #020617; --accent: #3b82f6; --gold: #f59e0b; 
-            --success: #10b981; --danger: #ef4444;
-        }
+        :root { --primary: #020617; --accent: #3b82f6; --gold: #f59e0b; --success: #10b981; }
         body { font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; padding-bottom: 100px; }
         .font-nexus { font-family: 'Orbitron', sans-serif; }
-        
-        .glass-panel { 
-            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(20px); 
-            border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; 
-        }
-
-        .neo-input { 
-            background: rgba(0,0,0,0.3); border: 1px solid #1e293b; 
-            border-radius: 15px; padding: 15px; color: white; width: 100%; outline: none;
-        }
-
-        /* Timeline de Estados */
-        .step-pill { padding: 6px 12px; border-radius: 10px; font-size: 9px; font-weight: 800; cursor: pointer; transition: 0.3s; opacity: 0.4; border: 1px solid transparent; }
-        .step-pill.active { opacity: 1; border-color: var(--gold); color: var(--gold); background: rgba(245, 158, 11, 0.1); }
-
-        /* Navbar Inferior */
-        .nav-nexus { 
-            position: fixed; bottom: 20px; left: 10px; right: 10px; height: 75px; 
-            background: rgba(7, 10, 25, 0.95); backdrop-filter: blur(15px); 
-            border-radius: 25px; display: flex; justify-content: space-around; 
-            align-items: center; z-index: 1000; border: 1px solid rgba(255,255,255,0.1);
-        }
-        .nav-btn { text-align: center; color: #475569; font-size: 8px; font-weight: 900; }
-        .nav-btn.active { color: var(--gold); }
-        .nav-btn i { font-size: 20px; display: block; margin-bottom: 4px; }
+        .glass-panel { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; }
+        .neo-input { background: rgba(0,0,0,0.3); border: 1px solid #1e293b; border-radius: 12px; padding: 12px; color: white; width: 100%; outline: none; transition: 0.3s; }
+        .neo-input:focus { border-color: var(--gold); box-shadow: 0 0 10px rgba(245,158,11,0.2); }
+        .pulse-mic { animation: pulse 1.5s infinite; background: var(--gold) !important; color: black !important; }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245,158,11,0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(245,158,11,0); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -53,97 +30,75 @@
         </div>
         <div>
             <h1 id="shop-name" class="font-nexus text-[10px] text-white tracking-widest uppercase italic">Nexus-X Terminal</h1>
-            <p id="live-clock" class="text-[9px] text-gold font-bold">00:00:00</p>
+            <p id="status-voz" class="text-[9px] text-gold font-bold">SISTEMA ONLINE</p>
         </div>
     </div>
-    <button onclick="logout()" class="text-slate-500 hover:text-red-500"><i class="fas fa-power-off"></i></button>
+    <div id="trial-counter" class="text-[8px] bg-white/5 px-3 py-1 rounded-full border border-white/10 uppercase font-black text-slate-400">
+        Prueba: 14 Días
+    </div>
 </header>
 
 <main class="p-4 space-y-6">
 
     <section id="tab-patio" class="tab-content space-y-4">
         <div class="glass-panel p-6 border-l-4 border-accent">
-            <h2 class="font-nexus text-[10px] text-accent mb-6 tracking-widest uppercase font-black italic">Registro de Misión</h2>
-            <div class="grid grid-cols-3 gap-3 mb-4">
-                <input id="in-placa" placeholder="PLACA" class="neo-input font-nexus text-xl text-center col-span-1 border-accent/30 uppercase text-gold">
-                <input id="in-cliente" placeholder="CLIENTE / EMPRESA" class="neo-input text-xs col-span-2 font-bold uppercase">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="font-nexus text-[10px] text-accent tracking-widest uppercase font-black italic">Recepción de Vehículo</h2>
+                <button onclick="activarVozComando()" id="btn-voz-global" class="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center transition-all">
+                    <i class="fas fa-microphone"></i>
+                </button>
             </div>
-            <textarea id="in-reporte" rows="3" placeholder="SÍNTOMAS Y FALLAS DETECTADAS..." class="neo-input text-sm mb-4"></textarea>
+
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="col-span-1">
+                    <label class="text-[8px] uppercase text-slate-500 ml-2">Placa</label>
+                    <input id="in-placa" placeholder="EJ: BCE670" class="neo-input font-nexus text-xl uppercase text-gold">
+                </div>
+                <div class="col-span-1">
+                    <label class="text-[8px] uppercase text-slate-500 ml-2">Marca / Modelo</label>
+                    <input id="in-marca" placeholder="Kenworth, FTR..." class="neo-input font-bold uppercase">
+                </div>
+                <div class="col-span-1">
+                    <label class="text-[8px] uppercase text-slate-500 ml-2">Kilometraje</label>
+                    <input id="in-km" type="number" placeholder="KM" class="neo-input font-nexus text-sm">
+                </div>
+                <div class="col-span-1">
+                    <label class="text-[8px] uppercase text-slate-500 ml-2">Nivel Combustible</label>
+                    <select id="in-fuel" class="neo-input text-xs uppercase">
+                        <option>E (Vacío)</option>
+                        <option>1/4</option>
+                        <option>1/2</option>
+                        <option>3/4</option>
+                        <option>F (Lleno)</option>
+                    </select>
+                </div>
+            </div>
+
+            <label class="text-[8px] uppercase text-slate-500 ml-2">Inventario / Observaciones de Entrada</label>
+            <textarea id="in-reporte" rows="2" placeholder="Rayones, estado de cabina, herramientas..." class="neo-input text-xs mb-4"></textarea>
             
             <button onclick="crearOrden()" class="w-full bg-white text-black font-nexus py-4 rounded-2xl text-[11px] tracking-[4px] shadow-xl hover:bg-gold transition-all uppercase">
-                Iniciar Servicio
+                Abrir Hoja de Vida
             </button>
         </div>
 
-        <div id="lista-ordenes" class="space-y-4">
+        <div id="lista-ordenes" class="space-y-4 pt-4">
             </div>
     </section>
-
-    <div id="modal-gestion" class="fixed inset-0 bg-black/95 z-[100] hidden overflow-y-auto">
-        <div class="p-6 max-w-2xl mx-auto pb-32">
-            <div class="flex justify-between items-center mb-8">
-                <button onclick="cerrarModal()" class="text-slate-400"><i class="fas fa-chevron-left mr-2"></i> Volver</button>
-                <div class="text-right">
-                    <h2 id="m-placa" class="font-nexus text-2xl text-gold">---</h2>
-                    <p id="m-cliente" class="text-[9px] font-black uppercase text-slate-500 tracking-widest">---</p>
-                </div>
-            </div>
-
-            <div class="flex justify-between gap-1 mb-8">
-                <div onclick="cambiarEstado('INGRESADO')" id="step-INGRESADO" class="step-pill active">PATIO</div>
-                <div onclick="cambiarEstado('REPARACION')" id="step-REPARACION" class="step-pill">MOTOR</div>
-                <div onclick="cambiarEstado('REPUESTOS')" id="step-REPUESTOS" class="step-pill">STOCK</div>
-                <div onclick="cambiarEstado('LISTO')" id="step-LISTO" class="step-pill">LISTO</div>
-            </div>
-
-            <div class="glass-panel p-6 space-y-6">
-                <h3 class="font-nexus text-[10px] text-slate-400 uppercase tracking-widest">Bitácora de Costos</h3>
-                
-                <div class="flex gap-2">
-                    <input id="item-nombre" placeholder="ITEM / REPUESTO" class="neo-input text-xs flex-1">
-                    <input id="item-costo" type="number" placeholder="$ COSTO" class="neo-input text-xs w-24">
-                    <button onclick="agregarGasto()" class="w-12 h-12 bg-gold text-black rounded-xl"><i class="fas fa-plus"></i></button>
-                </div>
-
-                <div id="lista-gastos" class="space-y-2 border-t border-white/5 pt-4">
-                    </div>
-
-                <div class="pt-4">
-                    <label class="text-[9px] font-black text-slate-500 uppercase mb-2 block tracking-widest">Mano de Obra Técnica</label>
-                    <input id="m-labor" type="number" onchange="guardarManoObra()" placeholder="$0.00" class="neo-input font-nexus text-xl text-success">
-                </div>
-            </div>
-
-            <div class="mt-8 glass-panel p-6 bg-gold/5 border-gold/20">
-                <div class="flex justify-between items-center">
-                    <p class="font-nexus text-xs text-slate-400">LIQUIDACIÓN TOTAL</p>
-                    <h3 id="m-total" class="font-nexus text-3xl text-gold">$0</h3>
-                </div>
-                <div class="grid grid-cols-2 gap-4 mt-6">
-                    <button onclick="compartirWhatsApp()" class="bg-emerald-600 p-4 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2">
-                        <i class="fab fa-whatsapp"></i> WhatsApp
-                    </button>
-                    <button onclick="generarPDF()" class="bg-white text-black p-4 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2">
-                        <i class="fas fa-file-pdf"></i> Reporte PDF
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
 </main>
 
 <nav class="nav-nexus">
     <div class="nav-btn active" onclick="switchTab('patio')"><i class="fas fa-truck-monster"></i>PATIO</div>
-    <div class="nav-btn" onclick="switchTab('caja')"><i class="fas fa-cash-register"></i>CAJA</div>
-    <div class="nav-btn" onclick="switchTab('stock')"><i class="fas fa-box-open"></i>ALMACÉN</div>
+    <div class="nav-btn" onclick="switchTab('caja')"><i class="fas fa-file-invoice-dollar"></i>CAJA</div>
+    <div class="nav-btn" onclick="switchTab('stock')"><i class="fas fa-boxes-stacked"></i>STOCK</div>
 </nav>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp, getDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+    // Mismo Config de Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
         authDomain: "tallerpro360.firebaseapp.com",
@@ -157,159 +112,105 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    let activeOrderId = null;
-    let currentTaller = {};
+    // --- LÓGICA DE VOZ AVANZADA (INTELIGENCIA NEXUS) ---
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'es-CO';
+    recognition.continuous = false;
 
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) window.location.href = "index.html";
-        const snap = await getDoc(doc(db, "usuarios", user.uid));
-        currentTaller = snap.data();
-        document.getElementById('shop-name').innerText = currentTaller.nombreTaller;
-        initRealtime();
-    });
+    window.activarVozComando = () => {
+        recognition.start();
+        document.getElementById('btn-voz-global').classList.add('pulse-mic');
+        document.getElementById('status-voz').innerText = "ESCUCHANDO...";
+    };
 
-    // --- LOGICA DE ÓRDENES ---
+    recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript.toLowerCase();
+        document.getElementById('btn-voz-global').classList.remove('pulse-mic');
+        document.getElementById('status-voz').innerText = "PROCESANDO IA...";
+        
+        // Mapeo Inteligente
+        if(text.includes("placa")) document.getElementById('in-placa').value = extraerDato(text, "placa");
+        if(text.includes("marca")) document.getElementById('in-marca').value = extraerDato(text, "marca");
+        if(text.includes("kilometraje")) document.getElementById('in-km').value = extraerDato(text, "kilometraje");
+        if(text.includes("observación") || text.includes("reporte")) document.getElementById('in-reporte').value = extraerDato(text, "reporte");
+
+        setTimeout(() => { document.getElementById('status-voz').innerText = "SISTEMA ONLINE"; }, 2000);
+    };
+
+    function extraerDato(frase, clave) {
+        // Separa la palabra clave y toma lo que sigue
+        const partes = frase.split(clave);
+        return partes.length > 1 ? partes[1].trim().toUpperCase() : "";
+    }
+
+    // --- GESTIÓN DE ORDEN Y HOJA DE VIDA ---
     window.crearOrden = async () => {
-        const placa = document.getElementById('in-placa').value.toUpperCase();
-        const cliente = document.getElementById('in-cliente').value.toUpperCase();
-        const reporte = document.getElementById('in-reporte').value;
-        
-        if(!placa || !cliente) return alert("¡Placa y Cliente obligatorios!");
-
-        await addDoc(collection(db, "ordenes"), {
+        const data = {
             tallerId: auth.currentUser.uid,
-            placa, cliente, reporte,
+            placa: document.getElementById('in-placa').value,
+            marca: document.getElementById('in-marca').value,
+            km: document.getElementById('in-km').value,
+            fuel: document.getElementById('in-fuel').value,
+            recepcion: document.getElementById('in-reporte').value,
             status: 'INGRESADO',
-            items: [],
-            labor: 0,
-            total: 0,
-            timestamp: serverTimestamp()
-        });
+            fecha_entrada: serverTimestamp(),
+            items: [], labor: 0, total: 0
+        };
 
-        document.getElementById('in-placa').value = "";
-        document.getElementById('in-cliente').value = "";
-        document.getElementById('in-reporte').value = "";
+        if(!data.placa) return alert("Debe dictar o escribir al menos la Placa");
+
+        await addDoc(collection(db, "ordenes"), data);
+        limpiarFormulario();
+        alert("¡Misión Iniciada! Hoja de Vida generada.");
     };
 
-    function initRealtime() {
-        const q = query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid));
-        onSnapshot(q, (snap) => {
-            const container = document.getElementById('lista-ordenes');
-            container.innerHTML = "";
-            snap.forEach(d => {
-                const o = d.data();
-                container.innerHTML += `
-                    <div onclick="abrirGestion('${d.id}')" class="glass-panel p-5 flex justify-between items-center border-l-4 ${o.status==='LISTO'?'border-success':'border-gold'}">
-                        <div>
-                            <p class="text-[8px] text-slate-500 font-bold tracking-widest">${o.status}</p>
-                            <h3 class="font-nexus text-xl">${o.placa}</h3>
-                            <p class="text-[10px] text-slate-400">${o.cliente}</p>
+    function limpiarFormulario() {
+        ['in-placa', 'in-marca', 'in-km', 'in-reporte'].forEach(id => document.getElementById(id).value = "");
+    }
+
+    // --- MONITOR DE PRUEBA 14 DÍAS ---
+    async function verificarTrial(user) {
+        const userRef = doc(db, "usuarios", user.uid);
+        const userSnap = await getDoc(userRef);
+        
+        if (userSnap.exists()) {
+            const data = userSnap.data();
+            const creado = data.createdAt.toDate();
+            const hoy = new Date();
+            const diff = Math.ceil((hoy - creado) / (1000 * 60 * 60 * 24));
+            const restante = 14 - diff;
+
+            document.getElementById('trial-counter').innerText = restante > 0 ? `Prueba: ${restante} Días` : "Suscripción Inactiva";
+            if(restante <= 0) {
+                alert("Su periodo de prueba Nexus-X ha finalizado. Contacte al CEO.");
+                // Aquí podrías bloquear funciones
+            }
+        }
+    }
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            verificarTrial(user);
+            // Cargar datos en tiempo real
+            const q = query(collection(db, "ordenes"), where("tallerId", "==", user.uid));
+            onSnapshot(q, (snap) => {
+                const container = document.getElementById('lista-ordenes');
+                container.innerHTML = "";
+                snap.forEach(doc => {
+                    const o = doc.data();
+                    container.innerHTML += `
+                        <div class="glass-panel p-4 flex justify-between items-center border-b-2 border-accent/20">
+                            <div>
+                                <h4 class="font-nexus text-gold">${o.placa}</h4>
+                                <p class="text-[9px] text-slate-400">${o.marca} | KM: ${o.km}</p>
+                            </div>
+                            <span class="text-[8px] bg-accent/20 text-accent px-2 py-1 rounded-full font-black">${o.status}</span>
                         </div>
-                        <div class="text-right">
-                            <p class="font-nexus text-xs text-white">$${(o.total || 0).toLocaleString()}</p>
-                            <i class="fas fa-chevron-right text-slate-700 mt-2"></i>
-                        </div>
-                    </div>
-                `;
+                    `;
+                });
             });
-        });
-    }
-
-    // --- GESTIÓN DE MODAL ---
-    window.abrirGestion = async (id) => {
-        activeOrderId = id;
-        const snap = await getDoc(doc(db, "ordenes", id));
-        const o = snap.data();
-
-        document.getElementById('m-placa').innerText = o.placa;
-        document.getElementById('m-cliente').innerText = o.cliente;
-        document.getElementById('m-labor').value = o.labor || 0;
-        
-        actualizarTimelineUI(o.status);
-        renderItems(o.items || []);
-        calcularTotalLocal(o.items, o.labor);
-        
-        document.getElementById('modal-gestion').classList.remove('hidden');
-    };
-
-    window.agregarGasto = async () => {
-        const nombre = document.getElementById('item-nombre').value.toUpperCase();
-        const costo = parseFloat(document.getElementById('item-costo').value);
-        if(!nombre || !costo) return;
-
-        const ref = doc(db, "ordenes", activeOrderId);
-        await updateDoc(ref, {
-            items: arrayUnion({ nombre, costo, fecha: Date.now() })
-        });
-
-        document.getElementById('item-nombre').value = "";
-        document.getElementById('item-costo').value = "";
-        abrirGestion(activeOrderId); // Refrescar
-    };
-
-    function renderItems(items) {
-        const list = document.getElementById('lista-gastos');
-        list.innerHTML = "";
-        items.forEach(it => {
-            list.innerHTML += `
-                <div class="flex justify-between text-[11px] bg-white/5 p-3 rounded-xl border border-white/5">
-                    <span class="text-slate-300 font-bold">${it.nombre}</span>
-                    <span class="text-gold font-nexus">$${it.costo.toLocaleString()}</span>
-                </div>
-            `;
-        });
-    }
-
-    window.cambiarEstado = async (nuevoStatus) => {
-        await updateDoc(doc(db, "ordenes", activeOrderId), { status: nuevoStatus });
-        actualizarTimelineUI(nuevoStatus);
-        alert(`Estado actualizado: ${nuevoStatus}`);
-    };
-
-    function actualizarTimelineUI(status) {
-        document.querySelectorAll('.step-pill').forEach(p => p.classList.remove('active'));
-        document.getElementById('step-' + status).classList.add('active');
-    }
-
-    function calcularTotalLocal(items, labor) {
-        let sub = labor || 0;
-        items.forEach(i => sub += i.costo);
-        document.getElementById('m-total').innerText = `$${sub.toLocaleString()}`;
-        updateDoc(doc(db, "ordenes", activeOrderId), { total: sub });
-    }
-
-    window.guardarManoObra = async () => {
-        const labor = parseFloat(document.getElementById('m-labor').value) || 0;
-        await updateDoc(doc(db, "ordenes", activeOrderId), { labor });
-        abrirGestion(activeOrderId);
-    };
-
-    window.cerrarModal = () => document.getElementById('modal-gestion').classList.add('hidden');
-
-    window.generarPDF = () => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.setFont("helvetica", "bold");
-        doc.text("REPORTE TÉCNICO NEXUS-X", 20, 20);
-        doc.setFontSize(10);
-        doc.text(`Taller: ${currentTaller.nombreTaller}`, 20, 30);
-        doc.text(`Placa: ${document.getElementById('m-placa').innerText}`, 20, 40);
-        doc.text(`Cliente: ${document.getElementById('m-cliente').innerText}`, 20, 50);
-        doc.text("--------------------------------------------------", 20, 60);
-        doc.text(`TOTAL A PAGAR: ${document.getElementById('m-total').innerText}`, 20, 80);
-        doc.save(`NexusX_${document.getElementById('m-placa').innerText}.pdf`);
-    };
-
-    window.compartirWhatsApp = () => {
-        const placa = document.getElementById('m-placa').innerText;
-        const total = document.getElementById('m-total').innerText;
-        const msg = `🚀 *NEXUS-X STARLINK REPORT*%0A%0AHola, su vehículo *${placa}* ha sido procesado en *${currentTaller.nombreTaller}*.%0A%0A💰 *Total Liquidación:* ${total}%0A%0APuedes retirar tu unidad. ¡Gracias por confiar en nuestra red!`;
-        window.open(`https://wa.me/?text=${msg}`);
-    };
-
-    setInterval(() => {
-        document.getElementById('live-clock').innerText = new Date().toLocaleTimeString();
-    }, 1000);
+        }
+    });
 
 </script>
 </body>
