@@ -1,399 +1,89 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Nexus-X | Terminal de Ingeniería Starlink</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-    
     <style>
-        :root { --primary: #020617; --accent: #3b82f6; --gold: #f59e0b; --success: #10b981; --danger: #ef4444; }
-        body { font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; padding-bottom: 110px; overflow-x: hidden; }
-        .font-nexus { font-family: 'Orbitron', sans-serif; }
-        .glass-card { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; }
-        .neo-input { background: rgba(0,0,0,0.5); border: 1px solid #1e293b; border-radius: 16px; padding: 14px; color: white; width: 100%; outline: none; transition: 0.3s; }
-        .neo-input:focus { border-color: var(--gold); box-shadow: 0 0 15px rgba(245, 158, 11, 0.2); }
-        .nav-nexus { position: fixed; bottom: 15px; left: 15px; right: 15px; height: 80px; background: rgba(7, 10, 25, 0.98); backdrop-filter: blur(20px); border-radius: 24px; display: flex; justify-content: space-around; align-items: center; z-index: 1000; border: 1px solid rgba(255,255,255,0.1); }
-        .nav-item { color: #64748b; text-align: center; font-size: 10px; font-weight: 800; cursor: pointer; transition: 0.3s; }
-        .nav-item.active { color: var(--gold); transform: translateY(-5px); }
-        .active-voice { animation: pulse-gold 1.5s infinite; border: 2px solid var(--gold) !important; }
-        @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
-        .hidden { display: none !important; }
-        .btn-action { transition: all 0.2s ease; active: scale(0.95); }
+        .pg-card { background: linear-gradient(135deg, #0f172a 0%, #020617 100%); border: 1px solid #1e293b; }
+        .mecanico-tag { background: #3b82f620; color: #3b82f6; border: 1px solid #3b82f640; padding: 2px 8px; border-radius: 6px; font-size: 10px; }
     </style>
 </head>
-<body>
+<body class="bg-slate-950 text-white font-inter">
 
-<header class="p-6 flex justify-between items-center sticky top-0 bg-slate-950/95 backdrop-blur-2xl z-[100] border-b border-white/5 shadow-2xl">
-    <div class="flex items-center gap-4">
-        <div class="w-12 h-12 bg-gradient-to-br from-gold to-yellow-600 rounded-xl flex items-center justify-center shadow-lg shadow-gold/20">
-            <i class="fas fa-satellite-dish text-black text-xl"></i>
+    <section id="view-pg" class="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="pg-card p-6 rounded-3xl">
+            <p class="text-[10px] text-slate-500 font-black uppercase">Utilidad Bruta Mes</p>
+            <h2 id="total-utilidad" class="text-3xl font-nexus text-emerald-400 font-black">$ 0</h2>
         </div>
-        <div>
-            <h1 id="shop-name" class="font-nexus text-[11px] text-white tracking-[4px] uppercase italic font-black">NEXUS-X TERMINAL</h1>
-            <p id="live-clock" class="text-[10px] text-gold font-bold tracking-widest">SINCRO STARLINK...</p>
+        <div class="pg-card p-6 rounded-3xl">
+            <p class="text-[10px] text-slate-500 font-black uppercase">Nómina por Pagar</p>
+            <h2 id="total-nomina" class="text-3xl font-nexus text-gold font-black">$ 0</h2>
         </div>
-    </div>
-    <div class="flex items-center gap-2">
-        <div id="status-dot" class="w-2 h-2 rounded-full bg-success animate-pulse"></div>
-        <span class="text-[8px] font-black text-slate-500 tracking-widest uppercase">Red Activa</span>
-    </div>
-</header>
+        <div class="pg-card p-6 rounded-3xl">
+            <p class="text-[10px] text-slate-500 font-black uppercase">Vehículos Activos</p>
+            <h2 id="count-vehiculos" class="text-3xl font-nexus text-white font-black">0</h2>
+        </div>
+    </section>
 
-<main class="p-4 space-y-8 max-w-4xl mx-auto">
-    <section id="view-patio" class="space-y-6">
-        <div class="glass-card p-6 border-l-4 border-accent relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-4 opacity-10"><i class="fas fa-truck-pickup text-6xl"></i></div>
-            <h2 class="font-nexus text-[10px] text-accent tracking-[3px] uppercase mb-6 font-black">Recepción de Misión (Check-In IA)</h2>
-            
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                <div class="col-span-2 md:col-span-1">
-                    <label class="text-[9px] text-slate-500 font-bold ml-2">PLACA</label>
-                    <input id="in-placa" placeholder="ABC-123" class="neo-input font-nexus text-2xl uppercase text-gold text-center">
+    <section id="view-patio" class="p-4">
+        <div class="glass-card p-6">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <input id="in-placa" placeholder="PLACA" class="neo-input font-nexus text-2xl text-gold">
+                <select id="in-mecanico" class="neo-input text-xs">
+                    <option value="">ASIGNAR MECÁNICO...</option>
+                    </select>
+            </div>
+            </div>
+    </section>
+
+    <div id="modal-cierre" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-[6000] p-6">
+        <div class="max-w-md mx-auto bg-slate-900 p-8 rounded-[40px] border border-gold/30">
+            <h3 class="font-nexus text-gold text-center mb-6">LIQUIDACIÓN DE MISIÓN</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] text-slate-500 font-bold uppercase">Mano de Obra (Valor para el Mecánico)</label>
+                    <input id="pay-mecanico" type="number" placeholder="$ Valor Fijo Tarea" class="neo-input text-xl text-white">
                 </div>
                 <div>
-                    <label class="text-[9px] text-slate-500 font-bold ml-2">KILOMETRAJE</label>
-                    <input id="in-km" type="number" placeholder="00000" class="neo-input">
+                    <label class="text-[10px] text-slate-500 font-bold uppercase">Mano de Obra (Cobro al Cliente)</label>
+                    <input id="pay-cliente" type="number" placeholder="$ Valor Cobrado" class="neo-input text-xl text-white font-black">
                 </div>
-                <div class="col-span-2 md:col-span-2">
-                    <label class="text-[9px] text-slate-500 font-bold ml-2">CLIENTE</label>
-                    <input id="in-cliente" placeholder="NOMBRE COMPLETO" class="neo-input uppercase text-xs">
-                </div>
-            </div>
-
-            <div class="space-y-3">
-                <label class="text-[9px] text-slate-500 font-bold ml-2 uppercase">Dictado de Inventario y Fallas</label>
-                <div class="relative">
-                    <textarea id="in-reporte" rows="4" placeholder="Diga: 'Inventario: Gato, Llave, Carpa. Falla: Ruido en transmisión...'" class="neo-input text-sm leading-relaxed"></textarea>
-                    <button onclick="window.startVoiceMain()" class="absolute right-4 bottom-4 w-14 h-14 bg-gradient-to-r from-accent to-blue-700 text-white rounded-full shadow-xl shadow-blue-500/30 flex items-center justify-center btn-action">
-                        <i id="mic-icon" class="fas fa-microphone text-xl"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4 mt-6">
-                <div class="space-y-2">
-                    <label class="text-[9px] text-slate-500 font-bold uppercase block text-center">Foto Entrada</label>
-                    <button class="w-full bg-slate-800/50 py-4 rounded-xl border border-dashed border-white/20 text-xs"><i class="fas fa-camera mr-2"></i> Capturar</button>
-                </div>
-                <div class="space-y-2">
-                    <label class="text-[9px] text-slate-500 font-bold uppercase block text-center">Foto Salida</label>
-                    <button class="w-full bg-slate-800/50 py-4 rounded-xl border border-dashed border-white/20 text-xs opacity-50"><i class="fas fa-check-circle mr-2"></i> Final</button>
-                </div>
-            </div>
-
-            <button onclick="window.registrarEntrada()" class="w-full mt-8 bg-white text-black font-nexus py-5 rounded-2xl text-[11px] tracking-[5px] uppercase font-black hover:bg-gold transition-all shadow-2xl">Desplegar Misión a la Red</button>
-        </div>
-
-        <div id="feed-ordenes" class="space-y-4"></div>
-    </section>
-
-    <section id="view-caja" class="hidden space-y-6">
-        <div class="glass-card p-6 border-t-4 border-success">
-            <h2 class="font-nexus text-[10px] text-success tracking-[3px] uppercase mb-6 text-center font-black">Auxiliar Contable de Flota</h2>
-            <div id="caja-list" class="space-y-4"></div>
-        </div>
-    </section>
-
-    <section id="view-stock" class="hidden space-y-6">
-        <div class="glass-card p-6 border-t-4 border-gold">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="font-nexus text-[10px] text-gold tracking-[3px] uppercase font-black">Almacén Starlink</h2>
-                <button onclick="window.openModalStock()" class="bg-gold text-black px-5 py-2 rounded-xl text-[10px] font-black uppercase">Ingresar Item</button>
-            </div>
-            <div id="stock-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-        </div>
-    </section>
-</main>
-
-<div id="modal-caja" class="fixed inset-0 bg-black/98 z-[5000] hidden overflow-y-auto p-4 sm:p-8">
-    <div class="glass-card max-w-2xl mx-auto p-8 my-4 space-y-8 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-        <div class="flex justify-between items-start">
-            <div>
-                <h3 id="caja-placa" class="font-nexus text-4xl text-gold italic">---</h3>
-                <p id="caja-cliente-info" class="text-xs text-slate-400 mt-2 font-bold uppercase"></p>
-            </div>
-            <button onclick="window.closeCaja()" class="text-white bg-white/5 w-12 h-12 rounded-full flex items-center justify-center text-3xl">&times;</button>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="space-y-4">
-                <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">Control de Movimientos</h4>
-                <div class="space-y-3">
-                    <input id="mov-desc" placeholder="Descripción (Eje: Axial Derecha)" class="neo-input text-xs uppercase">
-                    <div class="flex gap-2">
-                        <input id="mov-monto" type="number" placeholder="$ Valor" class="neo-input text-xl text-success font-nexus w-full">
-                        <select id="mov-tipo" class="bg-slate-900 border border-white/10 rounded-xl px-2 text-[10px] font-bold">
-                            <option value="EGRESO">EGRESO</option>
-                            <option value="ABONO">ABONO</option>
-                        </select>
-                    </div>
-                    <button onclick="window.registrarMovimiento()" class="w-full bg-accent py-3 rounded-xl font-black text-[10px] uppercase">Añadir a la Hoja</button>
-                </div>
-                <div id="lista-movimientos" class="max-h-60 overflow-y-auto space-y-2 pr-2"></div>
-            </div>
-
-            <div class="bg-black/40 p-6 rounded-3xl border border-white/5 space-y-6">
-                <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Liquidación Final</h4>
-                
-                <div class="space-y-4">
-                    <div class="flex justify-between text-xs">
-                        <span class="text-slate-400">SUBTOTAL SERVICIOS</span>
-                        <span id="liq-subtotal" class="font-bold">$ 0</span>
-                    </div>
-                    <div class="flex justify-between text-xs">
-                        <span class="text-slate-400">IVA (19%)</span>
-                        <span id="liq-iva" class="font-bold text-blue-400">$ 0</span>
-                    </div>
-                    <div class="flex justify-between text-xs">
-                        <span class="text-slate-400">ABONOS RECIBIDOS</span>
-                        <span id="liq-abonos" class="font-bold text-success">-$ 0</span>
-                    </div>
-                    <div class="pt-4 border-t border-white/10 flex justify-between items-center">
-                        <span class="font-nexus text-xs text-gold">TOTAL A PAGAR</span>
-                        <span id="liq-total" class="font-nexus text-2xl text-white">$ 0</span>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 gap-3 pt-4">
-                    <button onclick="window.generarPDF()" class="bg-white text-black p-4 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">
-                        <i class="fas fa-file-pdf"></i> Generar Factura Pro
-                    </button>
-                    <button onclick="window.enviarWhatsApp()" class="bg-emerald-600 text-white p-4 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">
-                        <i class="fab fa-whatsapp"></i> Reporte al Cliente
-                    </button>
-                </div>
+                <button onclick="finalizarYArchivar()" class="w-full bg-gold text-black font-nexus py-4 rounded-2xl font-black">CERRAR Y CALCULAR P&G</button>
             </div>
         </div>
-        
-        <button onclick="window.finalizarOrden()" class="w-full bg-danger/20 hover:bg-danger text-danger hover:text-white p-4 rounded-2xl font-black uppercase text-[10px] transition-all border border-danger/30">Cerrar y Archivar de la Red</button>
     </div>
-</div>
-
-<nav class="nav-nexus">
-    <div class="nav-item active" onclick="window.switchTab('patio', this)"><i class="fas fa-truck-monster text-2xl mb-1"></i><br>PATIO</div>
-    <div class="nav-item" onclick="window.switchTab('caja', this)"><i class="fas fa-cash-register text-2xl mb-1"></i><br>CAJA</div>
-    <div class="nav-item" onclick="window.switchTab('stock', this)"><i class="fas fa-boxes-stacked text-2xl mb-1"></i><br>STOCK</div>
-    <div class="nav-item" onclick="window.logout()"><i class="fas fa-power-off text-danger text-2xl mb-1"></i><br>SALIR</div>
-</nav>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp, getDoc, orderBy, deleteDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-        authDomain: "tallerpro360.firebaseapp.com",
-        projectId: "tallerpro360",
-        storageBucket: "tallerpro360.appspot.com",
-        messagingSenderId: "636224778184",
-        appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-
-    let currentOrders = []; 
-    let activeOrderId = null;
-    let recognition;
-
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) window.location.href = "index.html"; 
-        const snap = await getDoc(doc(db, "usuarios", user.uid));
-        if (snap.exists()) {
-            document.getElementById('shop-name').innerText = snap.data().nombreTaller;
-            initRealtimeData();
-        }
-    });
-
-    function initRealtimeData() {
-        onSnapshot(query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid), orderBy("timestamp", "desc")), (snap) => {
-            currentOrders = [];
-            const feed = document.getElementById('feed-ordenes');
-            const caja = document.getElementById('caja-list');
-            feed.innerHTML = ""; caja.innerHTML = "";
-            
-            snap.forEach(d => {
-                const o = {id: d.id, ...d.data()};
-                currentOrders.push(o);
-                const card = `
-                    <div class="glass-card p-5 flex justify-between items-center border-l-4 ${o.status==='INGRESADO'?'border-accent':'border-success'}">
-                        <div onclick="window.abrirCaja('${o.id}')" class="cursor-pointer">
-                            <h3 class="font-nexus text-xl text-white tracking-tighter">${o.placa}</h3>
-                            <p class="text-[9px] text-slate-400 font-bold uppercase">${o.cliente} | KM: ${o.km}</p>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <select onchange="window.updateStatus('${o.id}', this.value)" class="bg-slate-900 text-[10px] p-2 rounded-lg text-gold font-bold">
-                                <option value="INGRESADO" ${o.status==='INGRESADO'?'selected':''}>PATIO</option>
-                                <option value="LISTO" ${o.status==='LISTO'?'selected':''}>LISTO</option>
-                            </select>
-                            <button onclick="window.abrirCaja('${o.id}')" class="bg-success text-white w-10 h-10 rounded-xl flex items-center justify-center"><i class="fas fa-calculator"></i></button>
-                        </div>
-                    </div>`;
-                feed.innerHTML += card;
-                if(o.status === 'LISTO') caja.innerHTML += card;
-            });
-        });
-    }
-
-    // --- LOGICA DE CAJA Y GASTOS ---
-    window.abrirCaja = (id) => {
-        activeOrderId = id;
-        const o = currentOrders.find(order => order.id === id);
-        document.getElementById('caja-placa').innerText = o.placa;
-        document.getElementById('caja-cliente-info').innerText = `${o.cliente} | ${o.marca || 'GENÉRICO'}`;
-        renderMovimientos(o.movimientos || []);
-        calcularTotales(o.movimientos || []);
-        document.getElementById('modal-caja').classList.remove('hidden');
-    };
-
-    window.registrarMovimiento = async () => {
-        const desc = document.getElementById('mov-desc').value;
-        const monto = parseFloat(document.getElementById('mov-monto').value);
-        const tipo = document.getElementById('mov-tipo').value;
-
-        if(!desc || !monto) return alert("COMPLETE LOS DATOS");
-
-        const nuevoMov = { desc, monto, tipo, fecha: new Date().toISOString() };
-        await updateDoc(doc(db, "ordenes", activeOrderId), {
-            movimientos: arrayUnion(nuevoMov)
-        });
-
-        document.getElementById('mov-desc').value = "";
-        document.getElementById('mov-monto').value = "";
-        // El onSnapshot actualizará la UI
-    };
-
-    function renderMovimientos(movs) {
-        const container = document.getElementById('lista-movimientos');
-        container.innerHTML = "";
-        movs.forEach(m => {
-            container.innerHTML += `
-                <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl border-l-2 ${m.tipo==='EGRESO'?'border-danger':'border-success'}">
-                    <div>
-                        <p class="text-[10px] font-black uppercase">${m.desc}</p>
-                        <p class="text-[8px] text-slate-500">${m.tipo}</p>
-                    </div>
-                    <span class="font-nexus text-xs ${m.tipo==='EGRESO'?'text-white':'text-success'}">$${m.monto.toLocaleString()}</span>
-                </div>`;
-        });
-    }
-
-    function calcularTotales(movs) {
-        const egresos = movs.filter(m => m.tipo === 'EGRESO').reduce((acc, m) => acc + m.monto, 0);
-        const abonos = movs.filter(m => m.tipo === 'ABONO').reduce((acc, m) => acc + m.monto, 0);
-        const iva = egresos * 0.19;
-        const total = (egresos + iva) - abonos;
-
-        document.getElementById('liq-subtotal').innerText = `$ ${egresos.toLocaleString()}`;
-        document.getElementById('liq-iva').innerText = `$ ${iva.toLocaleString()}`;
-        document.getElementById('liq-abonos').innerText = `-$ ${abonos.toLocaleString()}`;
-        document.getElementById('liq-total').innerText = `$ ${total.toLocaleString()}`;
-    }
-
-    // --- FUNCIONES CORE ---
-    window.registrarEntrada = async () => {
-        const placa = document.getElementById('in-placa').value.toUpperCase();
-        if(!placa) return alert("PLACA REQUERIDA");
-
-        await addDoc(collection(db, "ordenes"), {
-            tallerId: auth.currentUser.uid,
-            placa,
-            cliente: document.getElementById('in-cliente').value.toUpperCase(),
-            reporte: document.getElementById('in-reporte').value,
-            km: document.getElementById('in-km').value,
-            status: 'INGRESADO',
-            movimientos: [],
-            timestamp: serverTimestamp()
-        });
-        document.querySelectorAll('.neo-input').forEach(i => i.value = "");
-        alert("MISIÓN DESPLEGADA");
-    };
-
-    window.updateStatus = async (id, status) => { await updateDoc(doc(db, "ordenes", id), { status }); };
-    window.closeCaja = () => document.getElementById('modal-caja').classList.add('hidden');
-    window.switchTab = (tab, el) => {
-        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-        document.getElementById('view-' + tab).classList.remove('hidden');
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        el.classList.add('active');
-    };
-    window.logout = () => signOut(auth);
-
-    // --- RECONOCIMIENTO DE VOZ PRO ---
-    if ('webkitSpeechRecognition' in window) {
-        recognition = new webkitSpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'es-CO';
-
-        recognition.onresult = (event) => {
-            let finalTranscript = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
-            }
-            if(finalTranscript) {
-                document.getElementById('in-reporte').value += " " + finalTranscript;
-            }
-        };
-
-        recognition.onend = () => {
-            document.getElementById('in-reporte').classList.remove('active-voice');
-            document.getElementById('mic-icon').className = "fas fa-microphone text-xl";
-        };
-    }
-
-    window.startVoiceMain = () => {
-        if(document.getElementById('in-reporte').classList.contains('active-voice')) {
-            recognition.stop();
-        } else {
-            recognition.start();
-            document.getElementById('in-reporte').classList.add('active-voice');
-            document.getElementById('mic-icon').className = "fas fa-stop text-xl animate-pulse";
-        }
-    };
-
-    window.generarPDF = () => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const o = currentOrders.find(order => order.id === activeOrderId);
+    // LÓGICA DE CÁLCULO DE NÓMINA Y P&G
+    window.finalizarYArchivar = async () => {
+        const pagoTecnico = parseFloat(document.getElementById('pay-mecanico').value);
+        const cobroCliente = parseFloat(document.getElementById('pay-cliente').value);
         
-        doc.setFont("helvetica", "bold");
-        doc.text("NEXUS-X STARLINK SYSTEM", 105, 20, {align: 'center'});
-        doc.setFontSize(8);
-        doc.text("COLOMBIAN TRUCKS LOGISTICS LLC", 105, 25, {align: 'center'});
-        doc.line(20, 30, 190, 30);
+        // El ID de la misión amarra todo
+        const ordenRef = doc(db, "ordenes", activeOrderId);
+        const snap = await getDoc(ordenRef);
+        const data = snap.data();
+
+        // Cálculo de Utilidad de Repuestos
+        const costoRepuestos = data.movimientos
+            .filter(m => m.tipo === 'EGRESO')
+            .reduce((acc, m) => acc + (m.costo || 0), 0);
         
-        doc.setFontSize(12);
-        doc.text(`ORDEN DE SERVICIO: ${o.placa}`, 20, 45);
-        doc.setFontSize(10);
-        doc.text(`CLIENTE: ${o.cliente}`, 20, 55);
-        doc.text(`KILOMETRAJE: ${o.km}`, 20, 60);
-        doc.text(`REPORTE: ${o.reporte.substring(0, 50)}...`, 20, 70);
-        
-        doc.text("DETALLE DE MOVIMIENTOS", 20, 90);
-        let y = 100;
-        o.movimientos.forEach(m => {
-            doc.text(`${m.desc} (${m.tipo})`, 25, y);
-            doc.text(`$ ${m.monto.toLocaleString()}`, 160, y);
-            y += 7;
+        const ventaRepuestos = data.movimientos
+            .filter(m => m.tipo === 'EGRESO')
+            .reduce((acc, m) => acc + (m.monto || 0), 0);
+
+        // P&G DE LA ORDEN
+        const utilidadOrden = (ventaRepuestos - costoRepuestos) + (cobroCliente - pagoTecnico);
+
+        await updateDoc(ordenRef, {
+            status: 'ARCHIVADO',
+            pagoMecanico: pagoTecnico,
+            cobroMO: cobroCliente,
+            utilidadNeta: utilidadOrden,
+            fechaCierre: serverTimestamp()
         });
-
-        doc.save(`NexusX_${o.placa}.pdf`);
+        
+        alert("MISIÓN FINALIZADA. UTILIDAD: $" + utilidadOrden.toLocaleString());
     };
-
-    window.enviarWhatsApp = () => {
-        const o = currentOrders.find(order => order.id === activeOrderId);
-        const msg = `*🚀 NEXUS-X STARLINK REPORT*%0A%0A*UNIDAD:* ${o.placa}%0A*ESTADO:* ${o.status}%0A*TOTAL:* ${document.getElementById('liq-total').innerText}%0A%0A_Su vehículo está en proceso avanzado de ingeniería._`;
-        window.open(`https://wa.me/?text=${msg}`);
-    };
-
-    setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleTimeString(); }, 1000);
 </script>
 </body>
 </html>
