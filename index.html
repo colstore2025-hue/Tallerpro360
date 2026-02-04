@@ -268,29 +268,42 @@
     };
 
     onAuthStateChanged(auth, async (user) => {
-        const loader = document.getElementById('loader-nexus');
-        if (user) {
-            const email = user.email.toLowerCase();
-            if(email === 'col.store2025@gmail.com') {
-                document.getElementById('display-taller').innerText = "HQ: WILLIAM URQUIJO";
-                document.getElementById('tab-admin').classList.remove('hidden');
-                initNexusSystem(user.uid, true);
-            } else {
-                const uDoc = await getDoc(doc(db, "usuarios", user.uid));
+    const loader = document.getElementById('loader-nexus');
+    const tabAdmin = document.getElementById('tab-admin');
+    
+    if (user) {
+        const email = user.email.toLowerCase();
+        
+        // --- FILTRO MAESTRO CEO WILLIAM ---
+        if(email === 'col.store2025@gmail.com'){
+            document.getElementById('display-taller').innerText = "CEO CONTROL: WILLIAM URQUIJO";
+            document.getElementById('display-taller').classList.add('text-gold', 'font-black');
+            
+            // Forzar visualización de pestaña administrativa
+            tabAdmin.classList.remove('hidden'); 
+            
+            // El CEO tiene acceso total sin importar el vencimiento
+            initNexusSystem(user.uid, true); 
+        } else {
+            // Lógica para talleres normales
+            const uDoc = await getDoc(doc(db, "usuarios", user.uid));
+            if(uDoc.exists()){
                 const data = uDoc.data();
-                if(Date.now() > data.vence) {
+                if(Date.now() > data.vence){
                     document.getElementById('block-screen').classList.remove('hidden');
                 } else {
                     document.getElementById('display-taller').innerText = data.nombreTaller.toUpperCase();
+                    tabAdmin.classList.add('hidden'); // Ocultar para usuarios normales
                     initNexusSystem(user.uid, false);
                 }
             }
-            document.getElementById('auth-screen').classList.add('hidden');
-        } else {
-            document.getElementById('auth-screen').classList.remove('hidden');
         }
-        setTimeout(() => loader.classList.add('hidden'), 1000);
-    });
+        document.getElementById('auth-screen').classList.add('hidden');
+    } else {
+        document.getElementById('auth-screen').classList.remove('hidden');
+    }
+    setTimeout(() => loader.classList.add('hidden'), 1000);
+});
 
     // --- MOTOR OPERATIVO ---
     function initNexusSystem(uid, isCEO) {
