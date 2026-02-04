@@ -2,282 +2,223 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Nexus-X | Terminal de Taller Élite</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Nexus-X Starlink | Ingeniería Logística Élite</title>
     
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#020617">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3239/3239147.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     
     <style>
-        :root { 
-            --primary: #020617; --accent: #3b82f6; 
-            --gold: #f59e0b; --success: #10b981; --danger: #ef4444;
-        }
-        body { font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; padding-bottom: 110px; }
+        :root { --gold: #f59e0b; --deep: #020617; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--deep); color: #f1f5f9; }
         .font-nexus { font-family: 'Orbitron', sans-serif; }
         
-        .glass-card { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.08); border-radius: 32px; }
-        .neo-input { background: rgba(0,0,0,0.4); border: 1px solid #1e293b; border-radius: 18px; padding: 15px; color: white; width: 100%; outline: none; transition: 0.3s; }
-        .neo-input:focus { border-color: var(--gold); box-shadow: 0 0 15px rgba(245,158,11,0.2); }
+        .hero-mesh {
+            background-color: #020617;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.1) 0px, transparent 50%);
+        }
 
-        .nav-nexus { position: fixed; bottom: 20px; left: 15px; right: 15px; height: 80px; background: rgba(7, 10, 25, 0.9); backdrop-filter: blur(20px); border-radius: 25px; display: flex; justify-content: space-around; align-items: center; z-index: 1000; border: 1px solid rgba(255,255,255,0.1); }
-        .nav-item { color: #64748b; text-align: center; font-size: 9px; font-weight: 800; cursor: pointer; transition: 0.3s; }
-        .nav-item.active { color: var(--gold); transform: translateY(-5px); }
-        .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
+        .grid-pattern {
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
 
-        .active-voice { animation: pulse-gold 1.5s infinite; border: 2px solid var(--gold) !important; }
-        @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
-        
-        .hidden { display: none !important; }
+        .glass-dark { 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            box-shadow: 0 10px 20px -5px rgba(245, 158, 11, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 15px 30px -5px rgba(245, 158, 11, 0.6); }
+
+        .floating { animation: floating 3s ease-in-out infinite; }
+        @keyframes floating { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     </style>
 </head>
-<body>
+<body class="selection:bg-gold selection:text-black">
 
-<header class="p-5 flex justify-between items-center sticky top-0 bg-slate-950/90 backdrop-blur-xl z-[100] border-b border-white/5">
-    <div class="flex items-center gap-4">
-        <div class="w-10 h-10 bg-gold rounded-xl flex items-center justify-center">
-            <i class="fas fa-satellite text-black"></i>
-        </div>
-        <div>
-            <h1 id="shop-name" class="font-nexus text-[10px] text-white tracking-widest uppercase italic">Nexus-X Terminal</h1>
-            <p id="live-clock" class="text-[9px] text-gold font-bold">00:00:00</p>
-        </div>
-    </div>
-    <div id="trial-days" class="text-[8px] bg-white/5 px-3 py-1 rounded-full border border-white/10 text-slate-400">PRUEBA: -- DÍAS</div>
-</header>
-
-<main class="p-4 space-y-6">
-
-    <section id="view-patio" class="space-y-6">
-        <div class="glass-card p-6 border-l-4 border-accent">
-            <h2 class="font-nexus text-[10px] text-accent tracking-[3px] uppercase mb-4">Recepción de Misión (Check-In)</h2>
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <input id="in-placa" placeholder="PLACA" class="neo-input font-nexus text-xl uppercase text-gold text-center">
-                <input id="in-marca" placeholder="MARCA/MODELO" class="neo-input uppercase text-xs">
-                <input id="in-km" type="number" placeholder="KILOMETRAJE" class="neo-input text-xs">
-                <input id="in-cliente" placeholder="CLIENTE" class="neo-input uppercase text-xs">
+    <nav class="fixed top-0 w-full z-50 glass-dark border-b border-white/5 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-gold p-2 rounded-lg shadow-lg shadow-gold/20">
+                    <i class="fas fa-satellite text-black text-xl"></i>
+                </div>
+                <span class="font-nexus text-xl tracking-tighter font-black">NEXUS<span class="text-gold">-X</span></span>
             </div>
-
-            <div class="relative">
-                <textarea id="in-reporte" rows="3" placeholder="DICTAR FALLAS..." class="neo-input text-sm"></textarea>
-                <button onclick="startVoiceMain()" class="absolute right-3 bottom-3 w-12 h-12 bg-accent text-white rounded-full"><i id="mic-icon" class="fas fa-microphone"></i></button>
+            <div class="hidden md:flex gap-8 items-center">
+                <a href="#soluciones" class="text-[10px] font-bold tracking-[3px] uppercase hover:text-gold transition">Ingeniería</a>
+                <a href="#precios" class="text-[10px] font-bold tracking-[3px] uppercase hover:text-gold transition">Licencias</a>
+                <button onclick="distribuirAcceso('TALLER')" class="bg-white/5 hover:bg-white/10 px-6 py-2 rounded-full border border-white/10 text-[10px] font-black tracking-widest transition uppercase">Terminal Taller</button>
             </div>
-
-            <button onclick="registrarEntrada()" class="w-full mt-4 bg-white text-black font-nexus py-4 rounded-2xl text-[10px] tracking-[4px] shadow-xl uppercase">Desplegar a la Red</button>
         </div>
+    </nav>
 
-        <div id="feed-ordenes" class="space-y-4"></div>
-    </section>
-
-    <section id="view-caja" class="hidden space-y-6">
-        <div class="glass-card p-6 border-t-4 border-success">
-            <h2 class="font-nexus text-[10px] text-success tracking-[3px] uppercase mb-6 text-center">Facturación y Entrega</h2>
-            <div id="caja-list" class="space-y-4"></div>
-        </div>
-    </section>
-
-    <section id="view-stock" class="hidden space-y-6">
-        <div class="glass-card p-6 border-t-4 border-gold">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="font-nexus text-[10px] text-gold tracking-[3px] uppercase">Almacén Starlink</h2>
-                <button onclick="openModalStock()" class="bg-gold text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase">Nuevo Item</button>
-            </div>
-            <div id="stock-list" class="space-y-3"></div>
-        </div>
-    </section>
-
-</main>
-
-<div id="modal-caja" class="fixed inset-0 bg-black/95 z-[5000] hidden overflow-y-auto p-4">
-    <div class="glass-card max-w-lg mx-auto p-8 my-10 space-y-6">
-        <div class="flex justify-between">
-            <h3 id="caja-placa" class="font-nexus text-2xl text-gold">---</h3>
-            <button onclick="closeCaja()" class="text-white text-2xl">&times;</button>
-        </div>
+    <header class="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden hero-mesh">
+        <div class="absolute inset-0 grid-pattern opacity-40"></div>
         
-        <div class="space-y-4">
-            <label class="text-[10px] text-slate-500 uppercase font-black">Mano de Obra ($)</label>
-            <input id="caja-labor" type="number" class="neo-input text-xl text-success" placeholder="0.00">
+        <div class="max-w-6xl mx-auto px-6 text-center relative z-10">
+            <div class="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full mb-8 floating">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-gold"></span>
+                </span>
+                <span class="text-[9px] font-black tracking-[4px] uppercase text-slate-400">Powered by Starlink Technology</span>
+            </div>
+
+            <h1 class="text-5xl md:text-8xl font-black mb-8 leading-[0.9] tracking-tighter">
+                SISTEMA LOGÍSTICO <br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-gold via-white to-gold uppercase italic">Nexus-X Élite</span>
+            </h1>
             
-            <label class="text-[10px] text-slate-500 uppercase font-black">Añadir Repuestos del Stock</label>
-            <div id="caja-stock-selector" class="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto bg-black/20 p-2 rounded-xl"></div>
-            
-            <div class="border-t border-white/10 pt-4 text-right">
-                <p class="text-xs text-slate-500">TOTAL ESTIMADO</p>
-                <p id="caja-total" class="font-nexus text-3xl text-white">$ 0.00</p>
+            <p class="text-lg md:text-xl text-slate-400 mb-12 max-w-3xl mx-auto font-light leading-relaxed">
+                Deje de ser un mecánico y conviértase en un **Centro de Soluciones**. La inteligencia de <span class="text-white font-bold">Colombian Trucks Logistics LLC</span> ahora disponible en su taller.
+            </p>
+
+            <div class="flex flex-col md:flex-row gap-6 justify-center items-center">
+                <button onclick="distribuirAcceso('TALLER')" class="btn-gold text-black font-black py-6 px-14 rounded-2xl text-sm tracking-widest uppercase flex items-center gap-4 group">
+                    <i class="fas fa-microchip group-hover:rotate-90 transition-all"></i>
+                    Activar Nodo Taller
+                </button>
+                <button onclick="distribuirAcceso('CLIENTE')" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black py-6 px-14 rounded-2xl text-sm tracking-widest uppercase transition-all">
+                    Rastrear Camión
+                </button>
+            </div>
+
+            <div class="mt-20 flex flex-wrap justify-center gap-12 opacity-40 grayscale">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/2449px-NASA_logo.svg.png" class="h-8" alt="NASA">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Starlink_Logo.svg/2560px-Starlink_Logo.svg.png" class="h-4" alt="Starlink">
+                <span class="font-nexus text-sm">TRUCKS LOGISTICS LLC</span>
             </div>
         </div>
+    </header>
 
-        <div class="grid grid-cols-2 gap-3">
-            <button onclick="generarPDF()" class="bg-slate-800 p-4 rounded-xl text-[10px] font-black uppercase">Descargar PDF</button>
-            <button onclick="enviarWhatsApp()" class="bg-emerald-600 p-4 rounded-xl text-[10px] font-black uppercase"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+    <section id="soluciones" class="py-32 px-6 relative">
+        <div class="max-w-7xl mx-auto grid md:grid-cols-3 gap-8">
+            <div class="glass-dark p-10 rounded-[2rem] border-t-2 border-gold/20">
+                <div class="text-gold mb-6 text-4xl"><i class="fas fa-brain"></i></div>
+                <h3 class="font-nexus text-lg mb-4 uppercase">Diagnóstico IA</h3>
+                <p class="text-slate-500 text-sm leading-relaxed">Hable con la terminal. Nexus-X procesa fallas mecánicas pesadas y genera reportes técnicos con estándares de la industria USA.</p>
+            </div>
+            <div class="glass-dark p-10 rounded-[2rem] border-t-2 border-blue-500/20">
+                <div class="text-blue-500 mb-6 text-4xl"><i class="fas fa-shield-halved"></i></div>
+                <h3 class="font-nexus text-lg mb-4 uppercase">Protocolo Starlink</h3>
+                <p class="text-slate-500 text-sm leading-relaxed">Conexión constante. Sincronice datos de motores y kilometrajes directamente en la nube global de Nexus.</p>
+            </div>
+            <div class="glass-dark p-10 rounded-[2rem] border-t-2 border-emerald-500/20">
+                <div class="text-emerald-500 mb-6 text-4xl"><i class="fas fa-hand-holding-dollar"></i></div>
+                <h3 class="font-nexus text-lg mb-4 uppercase">Caja Blindada</h3>
+                <p class="text-slate-500 text-sm leading-relaxed">Control total de repuestos y mano de obra. Usted factura, el sistema se encarga de la rentabilidad.</p>
+            </div>
         </div>
-        <button onclick="finalizarOrden()" class="w-full bg-gold text-black p-5 rounded-2xl font-black tracking-widest uppercase">Cerrar y Archivar Orden</button>
-    </div>
-</div>
+    </section>
 
-<nav class="nav-nexus">
-    <div class="nav-item active" onclick="switchTab('patio', this)"><i class="fas fa-truck-monster"></i>PATIO</div>
-    <div class="nav-item" onclick="switchTab('caja', this)"><i class="fas fa-file-invoice-dollar"></i>CAJA</div>
-    <div class="nav-item" onclick="switchTab('stock', this)"><i class="fas fa-boxes-stacked"></i>STOCK</div>
-    <div class="nav-item" onclick="logout()"><i class="fas fa-power-off text-danger"></i>SALIR</div>
-</nav>
+    <section id="precios" class="py-32 px-6 bg-slate-950/50">
+        <div class="max-w-5xl mx-auto">
+            <div class="text-center mb-20">
+                <h2 class="font-nexus text-3xl md:text-5xl mb-4">LICENCIAS DE RED</h2>
+                <div class="h-1 w-24 bg-gold mx-auto"></div>
+            </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp, getDoc, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="glass-dark p-12 rounded-[3rem] border-2 border-gold/30 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 bg-gold text-black font-black text-[10px] px-6 py-2 rounded-bl-2xl uppercase tracking-tighter">Plan Maestro</div>
+                    <h4 class="font-nexus text-2xl text-white mb-2">PRO NEXUS-X</h4>
+                    <div class="flex items-baseline gap-2 mb-8">
+                        <span class="text-5xl font-black text-gold">$89.000</span>
+                        <span class="text-slate-500 uppercase text-xs">/ Mes</span>
+                    </div>
+                    <ul class="space-y-4 mb-10">
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle text-gold"></i> Órdenes de Servicio Ilimitadas</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle text-gold"></i> Terminal de Voz Avanzada</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle text-gold"></i> Pasaporte Digital de Camión</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle text-gold"></i> Soporte Starlink Priority</li>
+                    </ul>
+                    <button onclick="distribuirAcceso('TALLER')" class="w-full py-5 rounded-2xl btn-gold text-black font-black uppercase text-xs tracking-widest transition-all">Iniciar Demo 15 Días</button>
+                </div>
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-        authDomain: "tallerpro360.firebaseapp.com",
-        projectId: "tallerpro360",
-        storageBucket: "tallerpro360.appspot.com",
-        messagingSenderId: "636224778184",
-        appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-    };
+                <div class="glass-dark p-12 rounded-[3rem] border-2 border-white/5 opacity-80">
+                    <h4 class="font-nexus text-2xl text-white mb-2">ADMIN+</h4>
+                    <div class="flex items-baseline gap-2 mb-8">
+                        <span class="text-5xl font-black">$129.000</span>
+                        <span class="text-slate-500 uppercase text-xs">/ Mes</span>
+                    </div>
+                    <ul class="space-y-4 mb-10 opacity-70">
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle"></i> Multitalleres (Sedes)</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle"></i> Contabilidad Exportable</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle"></i> Facturación Electrónica DIAN</li>
+                    </ul>
+                    <button class="w-full py-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase text-xs tracking-widest transition-all">Hablar con William Urquijo</button>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
+    <footer class="py-20 border-t border-white/5">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <p class="font-nexus text-gold tracking-[10px] uppercase mb-8">NEXUS-X STARLINK</p>
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[4px] leading-loose mb-12">
+                Charlotte, NC. United States | Ibagué, Tolima. Colombia <br>
+                Todos los derechos reservados - Colombian Trucks Logistics LLC © 2026
+            </p>
+            <div class="flex justify-center gap-6 text-slate-600">
+                <i class="fab fa-whatsapp hover:text-green-500 cursor-pointer text-xl"></i>
+                <i class="fab fa-instagram hover:text-pink-500 cursor-pointer text-xl"></i>
+                <i class="fab fa-linkedin hover:text-blue-500 cursor-pointer text-xl"></i>
+            </div>
+        </div>
+    </footer>
 
-    let activeOrder = null;
-    let stockList = [];
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) window.location.href = "index.html";
-        const snap = await getDoc(doc(db, "usuarios", user.uid));
-        if (snap.exists()) {
-            document.getElementById('shop-name').innerText = snap.data().nombreTaller;
-            initRealtimeData();
-        }
-    });
+        const firebaseConfig = {
+            apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+            authDomain: "tallerpro360.firebaseapp.com",
+            projectId: "tallerpro360",
+            storageBucket: "tallerpro360.appspot.com",
+            messagingSenderId: "636224778184",
+            appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+        };
 
-    // --- VOZ ---
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = 'es-CO';
-    window.startVoiceMain = () => { recognition.start(); document.getElementById('in-reporte').classList.add('active-voice'); };
-    recognition.onresult = (e) => {
-        const text = e.results[0][0].transcript.toLowerCase();
-        document.getElementById('in-reporte').classList.remove('active-voice');
-        if(text.includes("placa")) document.getElementById('in-placa').value = text.replace("placa", "").trim().toUpperCase();
-        else if(text.includes("nombre") || text.includes("cliente")) document.getElementById('in-cliente').value = text.replace("nombre", "").replace("cliente", "").trim().toUpperCase();
-        else document.getElementById('in-reporte').value += " " + text;
-    };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-    // --- LOGICA DE DATOS ---
-    function initRealtimeData() {
-        onSnapshot(query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid), orderBy("timestamp", "desc")), (snap) => {
-            const feed = document.getElementById('feed-ordenes');
-            const caja = document.getElementById('caja-list');
-            feed.innerHTML = ""; caja.innerHTML = "";
-            snap.forEach(d => {
-                const o = {id: d.id, ...d.data()};
-                const card = `
-                    <div class="glass-card p-5 flex justify-between items-center border-l-4 ${o.status==='INGRESADO'?'border-accent':'border-success'}">
-                        <div>
-                            <h3 class="font-nexus text-xl text-white">${o.placa}</h3>
-                            <p class="text-[9px] text-slate-400 font-bold uppercase">${o.cliente} | KM: ${o.km || 0}</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <select onchange="updateStatus('${d.id}', this.value)" class="bg-slate-900 text-[10px] p-2 rounded-xl text-gold font-bold">
-                                <option value="INGRESADO" ${o.status==='INGRESADO'?'selected':''}>PATIO</option>
-                                <option value="LISTO" ${o.status==='LISTO'?'selected':''}>LISTO</option>
-                            </select>
-                            <button onclick='abrirCaja(${JSON.stringify(o)})' class="bg-success text-white px-3 rounded-xl"><i class="fas fa-file-invoice-dollar"></i></button>
-                        </div>
-                    </div>`;
-                feed.innerHTML += card;
-                if(o.status === 'LISTO') caja.innerHTML += card;
-            });
-        });
+        window.distribuirAcceso = async (perfil) => {
+            try {
+                await addDoc(collection(db, "leads_interesados"), {
+                    perfil_destino: perfil,
+                    agente: "LANDING_ELITE_V4",
+                    timestamp: serverTimestamp(),
+                    device: navigator.userAgent
+                });
+            } catch (e) { console.warn("Tracker offline"); }
 
-        onSnapshot(query(collection(db, "stock"), where("tallerId", "==", auth.currentUser.uid)), (snap) => {
-            stockList = [];
-            const list = document.getElementById('stock-list');
-            const selector = document.getElementById('caja-stock-selector');
-            list.innerHTML = ""; selector.innerHTML = "";
-            snap.forEach(d => {
-                const s = {id: d.id, ...d.data()};
-                stockList.push(s);
-                list.innerHTML += `<div class="bg-slate-950/50 p-4 rounded-2xl flex justify-between border border-white/5">
-                    <span class="text-xs font-bold text-slate-300 uppercase">${s.nombre}</span>
-                    <span class="text-success">${s.cantidad} UN</span>
-                </div>`;
-                selector.innerHTML += `<div class="flex justify-between items-center p-2 border-b border-white/5">
-                    <span class="text-[10px] text-white">${s.nombre} ($${s.precio})</span>
-                    <button onclick="addRepuestoToOrden('${s.id}')" class="bg-accent text-white px-2 py-1 rounded text-[10px]">+</button>
-                </div>`;
-            });
-        });
-    }
+            window.location.href = perfil === 'TALLER' ? "taller.html" : "cliente.html";
+        };
 
-    // --- CAJA Y FACTURACION ---
-    window.abrirCaja = (order) => {
-        activeOrder = order;
-        document.getElementById('caja-placa').innerText = order.placa;
-        document.getElementById('caja-labor').value = order.labor || 0;
-        document.getElementById('modal-caja').classList.remove('hidden');
-    };
-
-    window.generarPDF = () => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.setFont("courier", "bold");
-        doc.text("NEXUS-X STARLINK SYSTEM", 10, 20);
-        doc.text("REPORTE TÉCNICO Y FACTURA", 10, 30);
-        doc.line(10, 35, 200, 35);
-        doc.setFontSize(10);
-        doc.text(`PLACA: ${activeOrder.placa}`, 10, 45);
-        doc.text(`CLIENTE: ${activeOrder.cliente}`, 10, 55);
-        doc.text(`KILOMETRAJE: ${activeOrder.km || 'N/A'}`, 10, 65);
-        doc.text(`REPORTE: ${activeOrder.reporte}`, 10, 75);
-        doc.text(`MANO DE OBRA: $${document.getElementById('caja-labor').value}`, 10, 95);
-        doc.save(`NexusX_${activeOrder.placa}.pdf`);
-    };
-
-    window.enviarWhatsApp = () => {
-        const msg = `🚀 *NEXUS-X STARLINK REPORT*%0A%0AUnidad: *${activeOrder.placa}*%0AEstado: *LISTO*%0AMano de Obra: $${document.getElementById('caja-labor').value}%0A%0A*Su vehículo está listo para entrega.*`;
-        window.open(`https://wa.me/?text=${msg}`);
-    };
-
-    window.finalizarOrden = async () => {
-        if(confirm("¿Archivar misión y liquidar stock?")) {
-            await deleteDoc(doc(db, "ordenes", activeOrder.id));
-            alert("MISIÓN ARCHIVADA EN NUBE");
-            closeCaja();
-        }
-    };
-
-    window.registrarEntrada = async () => {
-        const placa = document.getElementById('in-placa').value.toUpperCase();
-        const cliente = document.getElementById('in-cliente').value.toUpperCase();
-        const reporte = document.getElementById('in-reporte').value;
-        const km = document.getElementById('in-km').value;
-        const marca = document.getElementById('in-marca').value.toUpperCase();
-
-        if(!placa) return alert("PLACA REQUERIDA");
-
-        await addDoc(collection(db, "ordenes"), {
-            tallerId: auth.currentUser.uid,
-            placa, cliente, reporte, km, marca,
-            status: 'INGRESADO',
-            timestamp: serverTimestamp()
-        });
-        document.querySelectorAll('.neo-input').forEach(i => i.value = "");
-    };
-
-    window.updateStatus = async (id, status) => { await updateDoc(doc(db, "ordenes", id), { status }); };
-    window.switchTab = (tab, el) => {
-        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-        document.getElementById('view-' + tab).classList.remove('hidden');
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        el.classList.add('active');
-    };
-    window.closeCaja = () => document.getElementById('modal-caja').classList.add('hidden');
-    setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleTimeString(); }, 1000);
-</script>
+        // ACCESO SECRETO CEO (C + E + O)
+        let combo = {};
+        window.onkeydown = (e) => {
+            combo[e.key.toLowerCase()] = true;
+            if(combo['c'] && combo['e'] && combo['o']) window.location.href = "ceo.html";
+        };
+        window.onkeyup = (e) => combo[e.key.toLowerCase()] = false;
+    </script>
 </body>
 </html>
