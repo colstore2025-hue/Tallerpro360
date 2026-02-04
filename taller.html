@@ -1,27 +1,288 @@
-// --- MÓDULO CONTABLE NEXUS-X ---
-window.calcularTotalServicio = (items, manoObra) => {
-    const subtotalRepuestos = items.reduce((acc, item) => acc + (item.precio * item.cantidad), 0);
-    const subtotalGeneral = subtotalRepuestos + manoObra;
-    const iva = subtotalGeneral * 0.19;
-    const total = subtotalGeneral + iva;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Nexus-X | Terminal de Taller</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#020617">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { 
+            --primary: #020617; --secondary: #0f172a; --accent: #3b82f6; 
+            --gold: #f59e0b; --success: #10b981; --danger: #ef4444;
+            --glass: rgba(15, 23, 42, 0.8);
+        }
+        
+        body { font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; margin: 0; padding-bottom: 100px; }
+        .font-nexus { font-family: 'Orbitron', sans-serif; }
+        
+        /* Glassmorphism 3.0 */
+        .glass-card { background: var(--glass); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); border-radius: 28px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+        .neo-input { background: rgba(0,0,0,0.3); border: 1px solid #1e293b; border-radius: 18px; padding: 15px; color: white; width: 100%; transition: 0.3s; }
+        .neo-input:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
 
-    return {
-        subtotal: subtotalGeneral,
-        iva: iva,
-        total: total,
-        gananciaEstimada: (subtotalGeneral * 0.35) // Ejemplo de margen del 35%
+        /* Módulo Contable Badge */
+        .badge-money { background: linear-gradient(135deg, #059669, #10b981); color: white; padding: 4px 12px; border-radius: 10px; font-weight: 800; font-size: 12px; }
+        
+        /* Nav Bar */
+        .nav-nexus { position: fixed; bottom: 20px; left: 15px; right: 15px; height: 75px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border-radius: 25px; display: flex; justify-content: space-around; align-items: center; z-index: 1000; border: 1px solid rgba(255,255,255,0.1); }
+        .nav-item { color: #64748b; text-align: center; font-size: 10px; font-weight: 700; }
+        .nav-item.active { color: var(--accent); }
+        .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
+
+        #loader { position: fixed; inset: 0; background: var(--primary); z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div id="loader">
+    <div class="w-20 h-20 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
+    <p class="font-nexus mt-6 tracking-widest text-accent animate-pulse">SINCRO STARLINK...</p>
+</div>
+
+<header class="p-4 flex justify-between items-center sticky top-0 bg-slate-950/80 backdrop-blur-md z-50">
+    <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gold rounded-xl flex items-center justify-center shadow-lg shadow-gold/20">
+            <i class="fas fa-tools text-black"></i>
+        </div>
+        <h1 id="shop-name" class="font-nexus text-sm text-white uppercase tracking-tighter">Terminal Nexus-X</h1>
+    </div>
+    <div class="flex items-center gap-2">
+        <span class="w-2 h-2 bg-success rounded-full"></span>
+        <span id="live-clock" class="text-[10px] font-black text-slate-400">00:00:00</span>
+    </div>
+</header>
+
+<main class="p-4 space-y-6">
+
+    <section id="view-home" class="space-y-6">
+        <div class="glass-card p-6">
+            <h2 class="font-nexus text-xs text-accent mb-4 uppercase tracking-widest border-l-4 border-accent pl-3">Ingreso de Unidad</h2>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <input id="in-placa" placeholder="PLACA" class="neo-input font-nexus text-xl text-center uppercase text-gold">
+                <input id="in-cliente" placeholder="CLIENTE" class="neo-input uppercase">
+            </div>
+            <div class="relative">
+                <textarea id="in-reporte" rows="3" placeholder="REPORTE TÉCNICO (USA EL MICRÓFONO)..." class="neo-input text-sm"></textarea>
+                <button onclick="startVoice('in-reporte')" class="absolute right-3 bottom-3 w-12 h-12 bg-accent/20 text-accent rounded-full flex items-center justify-center border border-accent/30 shadow-xl">
+                    <i id="mic-icon" class="fas fa-microphone"></i>
+                </button>
+            </div>
+            <button onclick="crearOrden()" class="w-full mt-4 bg-accent p-4 rounded-2xl font-bold shadow-lg shadow-accent/20">DESPLEGAR A LA RED</button>
+        </div>
+
+        <div id="feed-ordenes" class="space-y-4">
+            </div>
+    </section>
+
+    <section id="view-contable" class="hidden space-y-6">
+        <div class="glass-card p-6 border-t-4 border-success">
+            <h2 class="font-nexus text-xs text-success mb-6 uppercase tracking-widest">Secretaría IA Contable</h2>
+            <div id="contable-list" class="space-y-4">
+                </div>
+        </div>
+    </section>
+
+</main>
+
+<nav class="nav-nexus">
+    <div class="nav-item active" onclick="showSection('home')"><i class="fas fa-clipboard-list"></i>PATIO</div>
+    <div class="nav-item" onclick="showSection('contable')"><i class="fas fa-calculator"></i>CONTABLE</div>
+    <div class="nav-item" onclick="showSection('stock')"><i class="fas fa-boxes"></i>STOCK</div>
+    <div class="nav-item" onclick="logout()"><i class="fas fa-sign-out-alt"></i>SALIR</div>
+</nav>
+
+<div id="modal-factura" class="fixed inset-0 bg-black/90 z-[5000] hidden p-4 flex items-center justify-center">
+    <div class="glass-card w-full max-w-md p-6 space-y-4">
+        <div class="flex justify-between items-center">
+            <h3 class="font-nexus text-sm text-gold">LIQUIDACIÓN DE SERVICIO</h3>
+            <button onclick="closeModal()" class="text-slate-500 text-2xl">&times;</button>
+        </div>
+        <div id="factura-content" class="space-y-3">
+            <div class="flex justify-between text-sm"><span>Mano de Obra</span><input id="f-labor" type="number" class="w-24 bg-slate-900 border-none rounded text-right p-1" value="0" onchange="recalc()"></div>
+            <div class="flex justify-between text-sm font-bold border-t border-slate-700 pt-2"><span>SUBTOTAL</span><span id="f-subtotal">$0</span></div>
+            <div class="flex justify-between text-sm text-slate-400"><span>IVA (19%)</span><span id="f-iva">$0</span></div>
+            <div class="flex justify-between text-xl font-nexus text-success border-t-2 border-success/30 pt-2"><span>TOTAL</span><span id="f-total">$0</span></div>
+        </div>
+        <button onclick="finalizarYFacturar()" class="w-full bg-success p-4 rounded-xl font-bold shadow-xl">GENERAR PDF Y CERRAR</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, query, where, onSnapshot, orderBy, doc, updateDoc, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+        authDomain: "tallerpro360.firebaseapp.com",
+        projectId: "tallerpro360",
+        storageBucket: "tallerpro360.appspot.com",
+        messagingSenderId: "636224778184",
+        appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
     };
-};
 
-window.guardarContabilidad = async (ordenId, datosContables) => {
-    const docRef = doc(db, "ordenes", ordenId);
-    await updateDoc(docRef, {
-        contabilidad: {
-            ...datosContables,
-            fechaLiquidacion: serverTimestamp(),
-            estadoPago: 'PENDIENTE'
-        },
-        status: 'listo_entrega' // Cambia el estado para que el cliente lo vea en su PWA
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    let currentTallerId = "";
+    let activeOrdenId = "";
+    let currentPlaca = "";
+
+    // --- SEGURIDAD Y CARGA ---
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentTallerId = user.uid;
+            const docRef = doc(db, "usuarios", user.uid);
+            const docSnap = await getDoc(docRef);
+            if(docSnap.exists()) document.getElementById('shop-name').innerText = docSnap.data().nombreTaller;
+            initRealtimeData();
+        } else {
+            window.location.href = "index.html";
+        }
+        document.getElementById('loader').classList.add('hidden');
     });
-    alert("Factura generada y enviada a la nube Nexus-X");
-};
+
+    // --- MOTOR DE DICTADO IA ---
+    window.startVoice = (id) => {
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'es-CO';
+        recognition.start();
+        document.getElementById('mic-icon').className = "fas fa-circle-notch fa-spin text-danger";
+        
+        recognition.onresult = (e) => {
+            document.getElementById(id).value += " " + e.results[0][0].transcript;
+            document.getElementById('mic-icon').className = "fas fa-microphone";
+        };
+        recognition.onerror = () => document.getElementById('mic-icon').className = "fas fa-microphone";
+    };
+
+    // --- CREACIÓN DE ORDEN ---
+    window.crearOrden = async () => {
+        const placa = document.getElementById('in-placa').value.toUpperCase();
+        const cliente = document.getElementById('in-cliente').value;
+        const reporte = document.getElementById('in-reporte').value;
+
+        if(!placa || !cliente) return alert("Completa los datos básicos");
+
+        await addDoc(collection(db, "ordenes"), {
+            placa, cliente, reporte,
+            tallerId: currentTallerId,
+            status: 'ingresado',
+            timestamp: serverTimestamp(),
+            contabilidad: { subtotal: 0, iva: 0, total: 0, labor: 0 }
+        });
+
+        alert("Unidad sincronizada en la Red Nexus-X");
+        document.getElementById('in-placa').value = "";
+        document.getElementById('in-cliente').value = "";
+        document.getElementById('in-reporte').value = "";
+    };
+
+    // --- DATOS EN TIEMPO REAL ---
+    function initRealtimeData() {
+        const q = query(collection(db, "ordenes"), where("tallerId", "==", currentTallerId), orderBy("timestamp", "desc"));
+        onSnapshot(q, (snap) => {
+            const feed = document.getElementById('feed-ordenes');
+            const contable = document.getElementById('contable-list');
+            feed.innerHTML = "";
+            contable.innerHTML = "";
+
+            snap.forEach(d => {
+                const o = d.data();
+                const card = `
+                    <div class="glass-card p-5 flex justify-between items-center border-l-4 ${o.status === 'ingresado' ? 'border-accent' : 'border-success'}">
+                        <div>
+                            <h3 class="font-nexus text-lg text-white">${o.placa}</h3>
+                            <p class="text-[10px] text-slate-500 uppercase">${o.cliente} | ${o.status}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <select onchange="updateStatus('${d.id}', this.value)" class="bg-slate-900 text-[10px] p-2 rounded-lg border-none">
+                                <option value="ingresado" ${o.status==='ingresado'?'selected':''}>PATIO</option>
+                                <option value="diagnostico" ${o.status==='diagnostico'?'selected':''}>DIAGNÓSTICO</option>
+                                <option value="reparacion" ${o.status==='reparacion'?'selected':''}>REPARACIÓN</option>
+                                <option value="listo_entrega" ${o.status==='listo_entrega'?'selected':''}>LISTO</option>
+                            </select>
+                            <button onclick="openContable('${d.id}', '${o.placa}')" class="w-10 h-10 bg-success/20 text-success rounded-xl border border-success/30">
+                                <i class="fas fa-calculator"></i>
+                            </button>
+                        </div>
+                    </div>`;
+                feed.innerHTML += card;
+                if(o.status === 'listo_entrega') contable.innerHTML += card;
+            });
+        });
+    }
+
+    // --- ACCIONES CONTABLES ---
+    window.updateStatus = async (id, status) => {
+        await updateDoc(doc(db, "ordenes", id), { status });
+    };
+
+    window.openContable = (id, placa) => {
+        activeOrdenId = id;
+        currentPlaca = placa;
+        document.getElementById('modal-factura').classList.remove('hidden');
+    };
+
+    window.recalc = () => {
+        const labor = parseFloat(document.getElementById('f-labor').value) || 0;
+        const iva = labor * 0.19;
+        const total = labor + iva;
+        document.getElementById('f-subtotal').innerText = `$${labor.toLocaleString()}`;
+        document.getElementById('f-iva').innerText = `$${iva.toLocaleString()}`;
+        document.getElementById('f-total').innerText = `$${total.toLocaleString()}`;
+    };
+
+    window.finalizarYFacturar = async () => {
+        const labor = parseFloat(document.getElementById('f-labor').value) || 0;
+        const iva = labor * 0.19;
+        const total = labor + iva;
+
+        await updateDoc(doc(db, "ordenes", activeOrdenId), {
+            "contabilidad.labor": labor,
+            "contabilidad.iva": iva,
+            "contabilidad.total": total,
+            status: 'facturado'
+        });
+
+        generarPDF(labor, iva, total);
+        closeModal();
+    };
+
+    function generarPDF(labor, iva, total) {
+        const { jsPDF } = window.jspdf;
+        const docPDF = new jsPDF();
+        docPDF.setFillColor(2, 6, 23); docPDF.rect(0, 0, 210, 40, 'F');
+        docPDF.setTextColor(255, 255, 255); docPDF.text("NEXUS-X STARLINK LOGISTICS", 20, 25);
+        docPDF.setTextColor(0, 0, 0);
+        docPDF.text(`FACTURA PROVISIONAL - PLACA: ${currentPlaca}`, 20, 60);
+        docPDF.text(`Mano de Obra: $${labor}`, 20, 80);
+        docPDF.text(`IVA (19%): $${iva}`, 20, 90);
+        docPDF.text(`TOTAL A PAGAR: $${total}`, 20, 110);
+        docPDF.save(`Factura_${currentPlaca}.pdf`);
+    }
+
+    window.closeModal = () => document.getElementById('modal-factura').classList.add('hidden');
+    window.showSection = (s) => {
+        document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
+        document.getElementById(`view-${s}`).classList.remove('hidden');
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+    };
+
+    setInterval(() => document.getElementById('live-clock').innerText = new Date().toLocaleTimeString(), 1000);
+</script>
+</body>
+</html>
