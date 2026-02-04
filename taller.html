@@ -2,164 +2,230 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS-X | STARLINK ERP COMMANDER</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nexus-X | Terminal Élite Starlink</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        :root { --primary: #020617; --accent: #3b82f6; --gold: #f59e0b; --success: #10b981; --danger: #ef4444; }
-        body { font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; overflow-x: hidden; }
+        :root { 
+            --primary: #020617; --accent: #3b82f6; 
+            --gold: #f59e0b; --success: #10b981; --danger: #ef4444;
+            --glass: rgba(15, 23, 42, 0.85);
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; 
+            margin: 0; padding-bottom: 110px; overflow-x: hidden;
+        }
         .font-nexus { font-family: 'Orbitron', sans-serif; }
-        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
-        .neo-input { background: rgba(0,0,0,0.4); border: 1px solid #1e293b; border-radius: 12px; padding: 12px; color: white; width: 100%; outline: none; transition: 0.3s; }
-        .neo-input:focus { border-color: var(--gold); box-shadow: 0 0 10px rgba(245, 158, 11, 0.2); }
-        .btn-gold { background: linear-gradient(135deg, #f59e0b, #9a3412); color: black; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; }
-        .tab-active { color: var(--gold); border-bottom: 3px solid var(--gold); }
+        
+        /* Glassmorphism de Alta Densidad */
+        .glass-card { 
+            background: var(--glass); backdrop-filter: blur(20px); 
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 28px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
+        
+        .neo-input { 
+            background: rgba(0,0,0,0.5); border: 1px solid #1e293b; 
+            border-radius: 16px; padding: 14px; color: white; width: 100%; 
+            outline: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .neo-input:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
+
+        /* Navegación Aero */
+        .nav-nexus { 
+            position: fixed; bottom: 20px; left: 15px; right: 15px; height: 85px; 
+            background: rgba(7, 10, 25, 0.95); backdrop-filter: blur(25px); 
+            border-radius: 30px; display: flex; justify-content: space-around; 
+            align-items: center; z-index: 1000; border: 1px solid rgba(255,255,255,0.08);
+        }
+        .nav-item { color: #475569; text-align: center; font-size: 10px; font-weight: 800; cursor: pointer; transition: 0.4s; }
+        .nav-item.active { color: var(--gold); transform: translateY(-8px); text-shadow: 0 0 10px rgba(245,158,11,0.5); }
+        .nav-item i { font-size: 24px; display: block; margin-bottom: 5px; }
+
+        /* Estados y Animaciones */
+        .active-voice { animation: pulse-voice 1.5s infinite; border-color: var(--gold) !important; }
+        @keyframes pulse-voice { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6); } 70% { box-shadow: 0 0 0 20px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
+        
+        #loader { position: fixed; inset: 0; background: var(--primary); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; }
         .hidden { display: none !important; }
-        @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
-        .recording { animation: pulse-gold 1s infinite; border: 2px solid var(--danger) !important; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
     </style>
 </head>
-<body class="pb-24">
+<body>
 
-<header class="p-4 glass sticky top-0 z-[1000] border-b border-white/10 flex justify-between items-center">
-    <div class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-gold rounded-lg flex items-center justify-center text-black font-black italic">NX</div>
+<div id="loader">
+    <div class="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
+    <p class="font-nexus text-xs mt-4 tracking-widest text-accent animate-pulse">SINCRONIZANDO STARLINK...</p>
+</div>
+
+<header class="p-5 flex justify-between items-center sticky top-0 bg-slate-950/90 backdrop-blur-xl z-[100] border-b border-white/5">
+    <div class="flex items-center gap-4">
+        <div class="w-11 h-11 bg-gradient-to-br from-gold to-yellow-600 rounded-2xl flex items-center justify-center shadow-lg shadow-gold/20">
+            <i class="fas fa-satellite text-black text-xl"></i>
+        </div>
         <div>
-            <h1 class="font-nexus text-[10px] tracking-widest text-white uppercase">Nexus-X Starlink</h1>
-            <p id="live-clock" class="text-[9px] text-gold font-black uppercase tracking-tighter">Sincronizando...</p>
+            <h1 id="shop-name" class="font-nexus text-xs text-white tracking-tighter uppercase italic">Cargando Sistema...</h1>
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 bg-success rounded-full animate-ping"></span>
+                <p id="live-clock" class="text-[9px] text-slate-400 font-bold">00:00:00</p>
+            </div>
         </div>
     </div>
-    <div class="flex gap-4">
-        <div class="text-right">
-            <p class="text-[8px] text-slate-500 font-bold">P&G ESTIMADO (MES)</p>
-            <p id="pg-mes" class="text-sm font-nexus text-success font-black">$ 0</p>
-        </div>
-        <div class="text-right border-l border-white/10 pl-4">
-            <p class="text-[8px] text-slate-500 font-bold">NÓMINA PENDIENTE</p>
-            <p id="nomina-mes" class="text-sm font-nexus text-danger font-black">$ 0</p>
-        </div>
+    <div class="text-right">
+        <div id="trial-counter" class="text-[8px] bg-white/5 px-3 py-1 rounded-full border border-white/10 text-gold font-black uppercase tracking-widest">Trial: -- Días</div>
     </div>
 </header>
 
-<main class="p-4 max-w-5xl mx-auto space-y-6">
+<main class="p-4 space-y-6 max-w-4xl mx-auto">
 
-    <section id="view-patio" class="space-y-4">
-        <div class="glass p-6 rounded-[32px] border-l-4 border-accent">
-            <h2 class="font-nexus text-[10px] text-accent tracking-[3px] uppercase mb-4">Nueva Misión / Check-In</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <input id="in-placa" placeholder="PLACA" class="neo-input font-nexus text-2xl text-gold uppercase text-center col-span-1">
-                <input id="in-km" type="number" placeholder="KM" class="neo-input text-xs">
-                <input id="in-cliente" placeholder="CLIENTE" class="neo-input text-xs uppercase col-span-2">
-                <input id="in-mecanico" placeholder="MECÁNICO RESPONSABLE" class="neo-input text-xs uppercase col-span-2">
-                <input id="in-tel" type="tel" placeholder="WHATSAPP" class="neo-input text-xs col-span-2">
+    <section id="view-patio" class="space-y-6">
+        <div class="glass-card p-6 border-l-4 border-accent">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="font-nexus text-[10px] text-accent tracking-[4px] uppercase font-black">Recepción de Unidad</h2>
+                <i class="fas fa-truck-moving text-slate-700"></i>
             </div>
-            <div class="relative mt-4">
-                <textarea id="in-reporte" rows="3" placeholder="Diga: 'Falla: Ruido en motor. Inventario: Gato, Llantas...'" class="neo-input text-sm"></textarea>
-                <button onclick="startVoice()" id="btn-voice" class="absolute right-3 bottom-3 w-12 h-12 bg-accent rounded-full flex items-center justify-center shadow-lg">
-                    <i class="fas fa-microphone text-xl text-white"></i>
+            
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="space-y-1">
+                    <label class="text-[8px] text-slate-500 font-bold ml-2">PLACA</label>
+                    <input id="in-placa" placeholder="EJ: BCE670" class="neo-input font-nexus text-xl uppercase text-gold text-center">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[8px] text-slate-500 font-bold ml-2">CLIENTE</label>
+                    <input id="in-cliente" placeholder="NOMBRE" class="neo-input uppercase text-xs font-bold">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[8px] text-slate-500 font-bold ml-2">MARCA</label>
+                    <input id="in-marca" placeholder="MODELO" class="neo-input uppercase text-[10px]">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[8px] text-slate-500 font-bold ml-2">KILOMETRAJE</label>
+                    <input id="in-km" type="number" placeholder="KM" class="neo-input text-xs font-nexus">
+                </div>
+            </div>
+
+            <div class="relative group">
+                <label class="text-[8px] text-slate-500 font-bold ml-2">DIAGNÓSTICO TÉCNICO</label>
+                <textarea id="in-reporte" rows="3" placeholder="DESCRIBA LA FALLA O DICTE..." class="neo-input text-sm mt-1"></textarea>
+                <button onclick="startSmartVoice()" class="absolute right-3 bottom-3 w-12 h-12 bg-accent text-white rounded-full shadow-2xl hover:scale-110 active:scale-95 transition">
+                    <i id="mic-icon" class="fas fa-microphone"></i>
                 </button>
             </div>
-            <button onclick="registrarEntrada()" class="w-full mt-4 btn-gold py-4 rounded-2xl text-[11px]">Desplegar Misión a la Red</button>
+
+            <button onclick="registrarIngreso()" class="w-full mt-6 bg-white text-black font-nexus py-4 rounded-2xl text-[11px] tracking-[5px] shadow-2xl hover:bg-gold transition-all uppercase font-black">
+                Desplegar Misión
+            </button>
         </div>
 
         <div id="feed-ordenes" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             </div>
     </section>
 
-    <section id="view-reportes" class="hidden space-y-4">
-        <div class="glass p-6 rounded-[32px]">
-            <h2 class="font-nexus text-center text-xs text-gold uppercase tracking-[4px]">Balance General de Operaciones</h2>
-            <div id="historial-list" class="mt-6 space-y-2"></div>
+    <section id="view-caja" class="hidden space-y-6">
+        <div class="glass-card p-6 border-t-4 border-success">
+            <h2 class="font-nexus text-[10px] text-success tracking-[4px] uppercase mb-6 text-center">Terminal Contable Nexus-X</h2>
+            <div id="caja-list" class="space-y-4">
+                </div>
+        </div>
+    </section>
+
+    <section id="view-stock" class="hidden space-y-6">
+        <div class="glass-card p-6 border-t-4 border-gold">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="font-nexus text-[10px] text-gold tracking-[4px] uppercase">Almacén Starlink</h2>
+                <button onclick="openStockModal()" class="bg-gold text-black px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-white transition">Nuevo Item</button>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-3" id="stock-list">
+                </div>
         </div>
     </section>
 
 </main>
 
-<div id="modal-master" class="fixed inset-0 bg-black/95 z-[5000] hidden overflow-y-auto p-4 sm:p-10">
-    <div class="max-w-4xl mx-auto glass rounded-[40px] p-8 border border-white/10">
-        <div class="flex justify-between items-start mb-8">
+<div id="modal-caja" class="fixed inset-0 bg-black/95 z-[5000] hidden overflow-y-auto p-4 md:p-10">
+    <div class="glass-card max-w-2xl mx-auto p-8 space-y-8 animate-in fade-in duration-300">
+        <div class="flex justify-between items-start border-b border-white/10 pb-4">
             <div>
-                <span id="mod-status" class="bg-accent text-[9px] px-3 py-1 rounded-full font-black italic">PATIO</span>
-                <h3 id="mod-placa" class="font-nexus text-5xl text-white mt-2 tracking-tighter">ABC-123</h3>
-                <p id="mod-meta" class="text-[10px] text-slate-500 font-bold uppercase"></p>
+                <h3 id="caja-placa" class="font-nexus text-3xl text-gold">---</h3>
+                <p id="caja-cliente" class="text-xs text-slate-400 font-bold uppercase"></p>
             </div>
-            <button onclick="closeModal()" class="w-12 h-12 bg-white/5 rounded-full text-3xl">&times;</button>
+            <button onclick="closeCaja()" class="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-white text-2xl hover:bg-danger transition">&times;</button>
         </div>
-
+        
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div class="space-y-4">
-                <div class="bg-white/5 p-5 rounded-3xl border border-white/5">
-                    <h4 class="text-[9px] font-black text-gold uppercase mb-4 tracking-widest">Registrar Repuesto / Insumo</h4>
-                    <div class="space-y-2">
-                        <input id="m-desc" placeholder="Descripción del Item" class="neo-input text-xs uppercase">
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="text-[8px] text-slate-500 font-bold ml-1 uppercase">Costo (Lo que pagué)</label>
-                                <input id="m-costo" type="number" placeholder="$ 0" class="neo-input text-sm text-white">
-                            </div>
-                            <div>
-                                <label class="text-[8px] text-slate-500 font-bold ml-1 uppercase">Venta (Lo que cobro)</label>
-                                <input id="m-venta" type="number" placeholder="$ 0" class="neo-input text-sm text-success font-bold">
-                            </div>
-                        </div>
-                        <button onclick="addGasto()" class="w-full bg-white/10 py-3 rounded-xl text-[10px] font-black uppercase hover:bg-white/20">Añadir a la Cuenta</button>
-                    </div>
+                <label class="text-[10px] text-slate-500 uppercase font-black tracking-widest">Mano de Obra</label>
+                <div class="relative">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-success font-bold">$</span>
+                    <input id="caja-labor" type="number" oninput="calculateTotal()" class="neo-input pl-10 text-xl text-white font-nexus">
                 </div>
-                <div id="mod-lista-gastos" class="max-h-40 overflow-y-auto space-y-2 pr-2"></div>
+                
+                <label class="text-[10px] text-slate-500 uppercase font-black tracking-widest">Repuestos / Insumos</label>
+                <div id="caja-stock-selector" class="space-y-2 max-h-60 overflow-y-auto pr-2 bg-black/30 p-4 rounded-2xl">
+                    </div>
             </div>
 
-            <div class="space-y-4">
-                <div class="bg-black/60 p-6 rounded-[32px] border border-gold/20 relative overflow-hidden">
-                    <h4 class="text-[9px] font-black text-slate-500 uppercase mb-6 tracking-widest text-center">Cierre de Misión y Nómina</h4>
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase">Mano de Obra (Al Cliente)</span>
-                            <input id="m-mo-cliente" type="number" class="w-32 bg-transparent text-right font-nexus text-xl outline-none" placeholder="$ 0">
-                        </div>
-                        <div class="flex justify-between items-center text-gold">
-                            <span class="text-[10px] font-bold uppercase">Pago Mecánico (Valor Fijo)</span>
-                            <input id="m-mo-mecanico" type="number" class="w-32 bg-transparent text-right font-nexus text-xl outline-none border-b border-gold/30" placeholder="$ 0">
-                        </div>
-                        <hr class="border-white/5">
-                        <div class="flex justify-between items-end pt-2">
-                            <div>
-                                <p class="text-[8px] text-slate-500 font-black">UTILIDAD ESTIMADA</p>
-                                <h2 id="mod-utilidad" class="text-3xl font-nexus text-success font-black">$ 0</h2>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-[8px] text-slate-500 font-black uppercase tracking-widest">Total Factura</p>
-                                <h3 id="mod-total-venta" class="text-xl font-nexus">$ 0</h3>
-                            </div>
-                        </div>
-                    </div>
+            <div class="space-y-6 bg-slate-900/40 p-6 rounded-3xl border border-white/5 h-fit">
+                <div class="flex justify-between text-xs text-slate-400"><span>SUBTOTAL</span><span id="res-subtotal">$0</span></div>
+                <div class="flex justify-between text-xs text-slate-400"><span>IVA (19%)</span><span id="res-iva">$0</span></div>
+                <div class="flex justify-between text-3xl font-nexus text-success pt-4 border-t border-dashed border-white/20">
+                    <span>TOTAL</span><span id="res-total">$0</span>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="shareWA()" class="bg-emerald-600 py-4 rounded-2xl text-[10px] font-black uppercase"><i class="fab fa-whatsapp text-lg mr-2"></i> Reportar</button>
-                    <button onclick="finalizarMision()" class="bg-white text-black py-4 rounded-2xl text-[10px] font-black uppercase">Finalizar Obra</button>
+                
+                <div class="grid grid-cols-1 gap-3 pt-4">
+                    <button onclick="generarDocumento('pdf')" class="w-full bg-slate-800 p-4 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent transition flex items-center justify-center gap-2">
+                        <i class="fas fa-file-pdf"></i> Generar PDF
+                    </button>
+                    <button onclick="enviarWhatsAppNexus()" class="w-full bg-emerald-600 p-4 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition flex items-center justify-center gap-2">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </button>
+                    <button onclick="finalizarMision()" class="w-full bg-white text-black p-4 rounded-xl text-[10px] font-nexus tracking-[3px] uppercase hover:bg-gold transition shadow-2xl">
+                        Facturar y Archivar
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<nav class="fixed bottom-4 left-4 right-4 h-20 glass rounded-[24px] border border-white/10 flex justify-around items-center z-[4000]">
-    <div onclick="switchTab('patio')" class="flex flex-col items-center gap-1 tab-active cursor-pointer">
-        <i class="fas fa-garage text-xl"></i>
-        <span class="text-[9px] font-black uppercase">Patio Activo</span>
+<div id="modal-stock" class="fixed inset-0 bg-black/90 z-[5000] hidden flex items-center justify-center p-6">
+    <div class="glass-card w-full max-w-md p-8 space-y-6">
+        <h3 class="font-nexus text-gold text-center tracking-[4px]">SISTEMA INVENTARIO</h3>
+        <input id="s-nombre" placeholder="NOMBRE DEL REPUESTO" class="neo-input uppercase text-xs">
+        <div class="grid grid-cols-2 gap-4">
+            <input id="s-precio" type="number" placeholder="PRECIO VENTA" class="neo-input text-xs font-nexus">
+            <input id="s-cantidad" type="number" placeholder="STOCK" class="neo-input text-xs font-nexus">
+        </div>
+        <div class="flex gap-3">
+            <button onclick="closeStockModal()" class="flex-1 bg-slate-800 p-4 rounded-xl font-bold uppercase text-[10px]">Cerrar</button>
+            <button onclick="guardarNuevoRepuesto()" class="flex-1 bg-gold text-black p-4 rounded-xl font-bold uppercase text-[10px]">Guardar</button>
+        </div>
     </div>
-    <div onclick="switchTab('reportes')" class="flex flex-col items-center gap-1 text-slate-500 cursor-pointer">
-        <i class="fas fa-chart-line text-xl"></i>
-        <span class="text-[9px] font-black uppercase">P&G General</span>
-    </div>
+</div>
+
+<nav class="nav-nexus">
+    <div class="nav-item active" onclick="window.switchTab('patio', this)"><i class="fas fa-truck-monster"></i>PATIO</div>
+    <div class="nav-item" onclick="window.switchTab('caja', this)"><i class="fas fa-file-invoice-dollar"></i>CAJA</div>
+    <div class="nav-item" onclick="window.switchTab('stock', this)"><i class="fas fa-boxes-stacked"></i>STOCK</div>
+    <div class="nav-item text-danger" onclick="window.logout()"><i class="fas fa-power-off"></i>SALIR</div>
 </nav>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp, getDoc, orderBy, deleteDoc, arrayUnion, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp, getDoc, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
@@ -174,171 +240,308 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    let misiones = [];
-    let currentId = null;
-    let recognition;
+    // Estado Local de la App
+    let activeOrderId = null;
+    let selectedOrder = null;
+    let repuestosDeHoy = [];
+    let itemsFactura = [];
 
-    onAuthStateChanged(auth, (user) => {
-        if (!user) window.location.href = "index.html";
-        startSync();
+    // --- SEGURIDAD Y TRIAL ---
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+            window.location.href = "index.html";
+            return;
+        }
+        try {
+            const snap = await getDoc(doc(db, "usuarios", user.uid));
+            if (snap.exists()) {
+                const data = snap.data();
+                document.getElementById('shop-name').innerText = data.nombreTaller || "NEXUS-X WORKSHOP";
+                
+                // Calcular Trial
+                const creado = data.createdAt?.toDate() || new Date();
+                const hoy = new Date();
+                const diasRestantes = 14 - Math.floor((hoy - creado) / (1000 * 60 * 60 * 24));
+                document.getElementById('trial-counter').innerText = `Trial: ${diasRestantes} Días`;
+                
+                initNexusCore();
+            }
+        } catch (e) { console.error("Error Auth:", e); }
+        document.getElementById('loader').classList.add('hidden');
     });
 
-    // --- MOTOR DE SINCRONIZACIÓN (EL CEREBRO ERP) ---
-    function startSync() {
-        const q = query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid), orderBy("timestamp", "desc"));
-        onSnapshot(q, (snap) => {
-            misiones = [];
-            let utilidadMes = 0;
-            let nominaMes = 0;
-            const feed = document.getElementById('feed-ordenes');
-            feed.innerHTML = "";
+    // --- MOTOR VOZ ---
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'es-CO';
+    recognition.continuous = false;
 
+    window.startSmartVoice = () => {
+        try {
+            recognition.start();
+            document.getElementById('mic-icon').className = "fas fa-spinner fa-spin text-gold";
+            document.getElementById('in-reporte').classList.add('active-voice');
+        } catch(e) { recognition.stop(); }
+    };
+
+    recognition.onresult = (event) => {
+        const result = event.results[0][0].transcript.toLowerCase();
+        document.getElementById('mic-icon').className = "fas fa-microphone";
+        document.getElementById('in-reporte').classList.remove('active-voice');
+
+        if(result.includes("placa")) document.getElementById('in-placa').value = result.split("placa")[1].trim().toUpperCase();
+        else if(result.includes("cliente")) document.getElementById('in-cliente').value = result.split("cliente")[1].trim().toUpperCase();
+        else document.getElementById('in-reporte').value += " " + result;
+    };
+
+    // --- NÚCLEO DE DATOS (SIN TITILEO) ---
+    function initNexusCore() {
+        // Monitor de Patio
+        const qPatio = query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid), orderBy("timestamp", "desc"));
+        onSnapshot(qPatio, (snap) => {
+            const feed = document.getElementById('feed-ordenes');
+            const caja = document.getElementById('caja-list');
+            feed.innerHTML = ""; caja.innerHTML = "";
+            
             snap.forEach(d => {
                 const o = {id: d.id, ...d.data()};
-                misiones.push(o);
-
-                if (o.status !== 'ARCHIVADO') {
-                    feed.innerHTML += `
-                        <div class="glass p-5 rounded-[28px] border-b-4 border-accent flex justify-between items-center shadow-2xl">
-                            <div onclick="openModal('${o.id}')" class="cursor-pointer">
-                                <h3 class="font-nexus text-2xl text-white tracking-tighter">${o.placa}</h3>
-                                <p class="text-[9px] text-slate-500 font-black uppercase">${o.mecanico} | ${o.cliente}</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-[9px] text-slate-500 font-bold">TOTAL CUENTA</p>
-                                <p class="font-nexus text-gold">$ ${calcVenta(o).toLocaleString()}</p>
-                            </div>
-                        </div>`;
-                } else {
-                    utilidadMes += (o.utilidad || 0);
-                    nominaMes += (o.pagoMecanico || 0);
-                }
+                const card = createOrderCard(o);
+                
+                feed.innerHTML += card;
+                if(o.status === 'LISTO') caja.innerHTML += card;
             });
-            document.getElementById('pg-mes').innerText = `$ ${utilidadMes.toLocaleString()}`;
-            document.getElementById('nomina-mes').innerText = `$ ${nominaMes.toLocaleString()}`;
+        });
+
+        // Monitor de Stock
+        const qStock = query(collection(db, "stock"), where("tallerId", "==", auth.currentUser.uid));
+        onSnapshot(qStock, (snap) => {
+            const list = document.getElementById('stock-list');
+            const selector = document.getElementById('caja-stock-selector');
+            list.innerHTML = ""; selector.innerHTML = "";
+            repuestosDeHoy = [];
+
+            snap.forEach(d => {
+                const s = {id: d.id, ...d.data()};
+                repuestosDeHoy.push(s);
+                
+                list.innerHTML += `
+                    <div class="bg-slate-900/60 p-4 rounded-2xl flex justify-between items-center border border-white/5">
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${s.nombre}</p>
+                            <p class="font-nexus text-gold text-sm">$${Number(s.precio).toLocaleString()}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xl font-nexus ${s.cantidad < 5 ? 'text-danger animate-pulse':'text-success'}">${s.cantidad}</span>
+                            <p class="text-[7px] text-slate-600 font-bold uppercase">Unidades</p>
+                        </div>
+                    </div>`;
+
+                selector.innerHTML += `
+                    <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-white/5 mb-2">
+                        <span class="text-[10px] font-bold uppercase">${s.nombre}</span>
+                        <button onclick="window.addRepuestoAInsumos('${s.id}')" class="bg-accent text-white px-3 py-1 rounded-lg text-[10px] active:scale-90 transition">+</button>
+                    </div>`;
+            });
         });
     }
 
-    // --- OPERACIONES ---
-    window.registrarEntrada = async () => {
+    function createOrderCard(o) {
+        return `
+            <div class="glass-card p-5 border-l-4 ${o.status==='INGRESADO'?'border-accent':'border-success'} transition hover:border-gold group">
+                <div class="flex justify-between items-start mb-3">
+                    <span class="text-[8px] bg-white/10 px-2 py-0.5 rounded font-nexus text-slate-400">#${o.id.slice(-5)}</span>
+                    <span class="text-[9px] font-black tracking-widest ${o.status==='INGRESADO'?'text-accent':'text-success'}">${o.status}</span>
+                </div>
+                <h3 class="font-nexus text-xl text-white tracking-tighter">${o.placa}</h3>
+                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-4">${o.cliente || 'SIN NOMBRE'}</p>
+                <div class="flex gap-2">
+                    <select onchange="window.updateOrderStatus('${o.id}', this.value)" class="flex-1 bg-slate-900 text-[9px] p-2 rounded-xl text-white font-bold outline-none border border-white/5">
+                        <option value="INGRESADO" ${o.status==='INGRESADO'?'selected':''}>PATIO</option>
+                        <option value="LISTO" ${o.status==='LISTO'?'selected':''}>LISTO</option>
+                    </select>
+                    <button onclick="window.prepareCaja('${o.id}')" class="w-10 h-10 bg-success/10 text-success rounded-xl flex items-center justify-center hover:bg-success hover:text-white transition">
+                        <i class="fas fa-file-invoice"></i>
+                    </button>
+                </div>
+            </div>`;
+    }
+
+    // --- ACCIONES GLOBALES ---
+    window.registrarIngreso = async () => {
         const placa = document.getElementById('in-placa').value.toUpperCase();
-        if(!placa) return alert("SISTEMA REQUIERE PLACA");
+        const cliente = document.getElementById('in-cliente').value.toUpperCase();
+        const reporte = document.getElementById('in-reporte').value;
+        const km = document.getElementById('in-km').value;
+        const marca = document.getElementById('in-marca').value.toUpperCase();
 
-        await addDoc(collection(db, "ordenes"), {
-            tallerId: auth.currentUser.uid,
-            placa,
-            km: document.getElementById('in-km').value,
-            cliente: document.getElementById('in-cliente').value.toUpperCase(),
-            mecanico: document.getElementById('in-mecanico').value.toUpperCase(),
-            telefono: document.getElementById('in-tel').value,
-            reporte: document.getElementById('in-reporte').value,
-            status: 'PATIO',
-            gastos: [],
-            timestamp: serverTimestamp()
-        });
-        document.querySelectorAll('.neo-input').forEach(i => i.value = "");
-    };
+        if(!placa || !cliente) return alert("COMPLETE PLACA Y CLIENTE");
 
-    window.openModal = (id) => {
-        currentId = id;
-        const o = misiones.find(x => x.id === id);
-        document.getElementById('mod-placa').innerText = o.placa;
-        document.getElementById('mod-meta').innerText = `${o.cliente} | RESPONSABLE: ${o.mecanico}`;
-        renderGastos(o);
-        document.getElementById('modal-master').classList.remove('hidden');
-    };
-
-    function renderGastos(o) {
-        const lista = document.getElementById('mod-lista-gastos');
-        lista.innerHTML = "";
-        let costoTotal = 0;
-        let ventaTotal = 0;
-
-        o.gastos.forEach(g => {
-            costoTotal += g.costo;
-            ventaTotal += g.venta;
-            lista.innerHTML += `
-                <div class="flex justify-between text-[10px] bg-white/5 p-2 rounded-lg">
-                    <span class="uppercase">${g.desc}</span>
-                    <span class="font-nexus text-success">$ ${g.venta.toLocaleString()}</span>
-                </div>`;
-        });
-
-        const moCliente = parseFloat(document.getElementById('m-mo-cliente').value) || 0;
-        const moMeca = parseFloat(document.getElementById('m-mo-mecanico').value) || 0;
-        
-        const totalFactura = ventaTotal + moCliente;
-        const utilidad = (ventaTotal - costoTotal) + (moCliente - moMeca);
-
-        document.getElementById('mod-total-venta').innerText = `$ ${totalFactura.toLocaleString()}`;
-        document.getElementById('mod-utilidad').innerText = `$ ${utilidad.toLocaleString()}`;
-    }
-
-    window.addGasto = async () => {
-        const desc = document.getElementById('m-desc').value.toUpperCase();
-        const costo = parseFloat(document.getElementById('m-costo').value) || 0;
-        const venta = parseFloat(document.getElementById('m-venta').value) || 0;
-
-        await updateDoc(doc(db, "ordenes", currentId), {
-            gastos: arrayUnion({ desc, costo, venta, fecha: new Date().toISOString() })
-        });
-        
-        document.getElementById('m-desc').value = "";
-        document.getElementById('m-costo').value = "";
-        document.getElementById('m-venta').value = "";
-        const o = misiones.find(x => x.id === currentId);
-        renderGastos(o);
-    };
-
-    window.finalizarMision = async () => {
-        const o = misiones.find(x => x.id === currentId);
-        const moCliente = parseFloat(document.getElementById('m-mo-cliente').value) || 0;
-        const moMeca = parseFloat(document.getElementById('m-mo-mecanico').value) || 0;
-        
-        let costoRep = o.gastos.reduce((acc, g) => acc + g.costo, 0);
-        let ventaRep = o.gastos.reduce((acc, g) => acc + g.venta, 0);
-        let utilidadFinal = (ventaRep - costoRep) + (moCliente - moMeca);
-
-        if(confirm(`¿Cerrar Misión? Utilidad: $${utilidadFinal.toLocaleString()}`)){
-            await updateDoc(doc(db, "ordenes", currentId), {
-                status: 'ARCHIVADO',
-                pagoMecanico: moMeca,
-                cobroMO: moCliente,
-                utilidad: utilidadFinal,
-                fechaCierre: serverTimestamp()
+        try {
+            await addDoc(collection(db, "ordenes"), {
+                tallerId: auth.currentUser.uid,
+                placa, cliente, reporte, km, marca,
+                status: 'INGRESADO',
+                timestamp: serverTimestamp(),
+                labor: 0, items: []
             });
-            closeModal();
+            document.querySelectorAll('.neo-input').forEach(i => i.value = "");
+            alert("SISTEMA: UNIDAD REGISTRADA EN LA RED");
+        } catch(e) { alert("ERROR DE CONEXIÓN"); }
+    };
+
+    window.updateOrderStatus = async (id, status) => {
+        await updateDoc(doc(db, "ordenes", id), { status });
+    };
+
+    window.prepareCaja = async (id) => {
+        activeOrderId = id;
+        itemsFactura = [];
+        const snap = await getDoc(doc(db, "ordenes", id));
+        selectedOrder = {id: snap.id, ...snap.data()};
+
+        document.getElementById('caja-placa').innerText = selectedOrder.placa;
+        document.getElementById('caja-cliente').innerText = selectedOrder.cliente;
+        document.getElementById('caja-labor').value = selectedOrder.labor || 0;
+        
+        calculateTotal();
+        document.getElementById('modal-caja').classList.remove('hidden');
+    };
+
+    window.addRepuestoAInsumos = (id) => {
+        const rep = repuestosDeHoy.find(x => x.id === id);
+        if(rep && rep.cantidad > 0) {
+            itemsFactura.push(rep);
+            calculateTotal();
+        } else {
+            alert("SIN STOCK DISPONIBLE");
         }
     };
 
-    // --- RECONOCIMIENTO DE VOZ ---
-    if ('webkitSpeechRecognition' in window) {
-        recognition = new webkitSpeechRecognition();
-        recognition.lang = 'es-CO';
-        recognition.onresult = (e) => {
-            document.getElementById('in-reporte').value += e.results[0][0].transcript;
-            document.getElementById('btn-voice').classList.remove('recording');
-        };
-    }
+    window.calculateTotal = () => {
+        const labor = Number(document.getElementById('caja-labor').value) || 0;
+        const subRepuestos = itemsFactura.reduce((acc, item) => acc + Number(item.precio), 0);
+        
+        const subtotal = labor + subRepuestos;
+        const iva = subtotal * 0.19;
+        const total = subtotal + iva;
 
-    window.startVoice = () => {
-        recognition.start();
-        document.getElementById('btn-voice').classList.add('recording');
+        document.getElementById('res-subtotal').innerText = `$${subtotal.toLocaleString()}`;
+        document.getElementById('res-iva').innerText = `$${iva.toLocaleString()}`;
+        document.getElementById('res-total').innerText = `$${total.toLocaleString()}`;
     };
 
-    // --- HELPERS ---
-    function calcVenta(o) { return o.gastos.reduce((acc, g) => acc + g.venta, 0); }
-    window.closeModal = () => document.getElementById('modal-master').classList.add('hidden');
-    window.switchTab = (tab) => {
-        document.getElementById('view-patio').classList.toggle('hidden', tab !== 'patio');
-        document.getElementById('view-reportes').classList.toggle('hidden', tab !== 'reportes');
+    window.generarDocumento = (tipo) => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.setFillColor(2, 6, 23);
+        doc.rect(0, 0, 210, 40, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(22);
+        doc.text("NEXUS-X WORKSHOP REPORT", 10, 25);
+        
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        doc.text(`ORDEN ID: ${selectedOrder.id}`, 10, 50);
+        doc.text(`FECHA: ${new Date().toLocaleDateString()}`, 10, 55);
+        
+        doc.setFontSize(12);
+        doc.text("DATOS DE LA UNIDAD", 10, 70);
+        doc.line(10, 72, 100, 72);
+        doc.text(`PLACA: ${selectedOrder.placa}`, 10, 80);
+        doc.text(`MARCA: ${selectedOrder.marca || '---'}`, 10, 85);
+        doc.text(`KM: ${selectedOrder.km || '---'}`, 10, 90);
+        doc.text(`CLIENTE: ${selectedOrder.cliente}`, 10, 95);
+
+        doc.text("DIAGNÓSTICO", 110, 70);
+        doc.line(110, 72, 200, 72);
+        doc.setFontSize(8);
+        const splitReport = doc.splitTextToSize(selectedOrder.reporte || "SIN NOVEDAD", 85);
+        doc.text(splitReport, 110, 80);
+
+        doc.setFontSize(12);
+        doc.text("DETALLE CONTABLE", 10, 115);
+        doc.line(10, 117, 200, 117);
+        
+        let y = 125;
+        doc.text("DESCRIPCIÓN", 10, y);
+        doc.text("VALOR", 170, y);
+        
+        y += 10;
+        doc.text("MANO DE OBRA PROFESIONAL", 10, y);
+        doc.text(`$${Number(document.getElementById('caja-labor').value).toLocaleString()}`, 170, y);
+        
+        itemsFactura.forEach(item => {
+            y += 8;
+            doc.text(item.nombre, 10, y);
+            doc.text(`$${Number(item.precio).toLocaleString()}`, 170, y);
+        });
+
+        y += 20;
+        doc.setFontSize(16);
+        doc.text(`TOTAL FACTURADO: ${document.getElementById('res-total').innerText}`, 10, y);
+        
+        doc.save(`NexusX_${selectedOrder.placa}.pdf`);
     };
-    window.shareWA = () => {
-        const o = misiones.find(x => x.id === currentId);
-        const msg = `*🚀 NEXUS-X STARLINK REPORT*%0A*UNIDAD:* ${o.placa}%0A*ESTADO:* FINALIZADO%0A*TOTAL A PAGAR:* ${document.getElementById('mod-total-venta').innerText}`;
-        window.open(`https://wa.me/${o.telefono}?text=${msg}`);
+
+    window.enviarWhatsAppNexus = () => {
+        const total = document.getElementById('res-total').innerText;
+        const msg = `*SISTEMA LOGISTICO NEXUS-X*%0A%0AUnidad: *${selectedOrder.placa}*%0AEstado: *LISTO PARA ENTREGA*%0ACliente: ${selectedOrder.cliente}%0A%0ATotal a Pagar: *${total}*%0A%0A_Reporte generado via Satelite Starlink_`;
+        window.open(`https://wa.me/?text=${msg}`);
     };
-    setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleTimeString(); }, 1000);
+
+    window.finalizarMision = async () => {
+        if(!confirm("¿CONFIRMA LIQUIDACIÓN Y ARCHIVO?")) return;
+        
+        try {
+            // Descontar Stock Real
+            for(let item of itemsFactura) {
+                const stockRef = doc(db, "stock", item.id);
+                const stockSnap = await getDoc(stockRef);
+                if(stockSnap.exists()) {
+                    await updateDoc(stockRef, {
+                        cantidad: stockSnap.data().cantidad - 1
+                    });
+                }
+            }
+            // Archivar Orden
+            await deleteDoc(doc(db, "ordenes", activeOrderId));
+            alert("MISIÓN FINALIZADA: DATOS ARCHIVADOS Y STOCK ACTUALIZADO");
+            closeCaja();
+        } catch(e) { alert("ERROR AL CERRAR MISIÓN"); }
+    };
+
+    // --- STOCK ACTIONS ---
+    window.openStockModal = () => document.getElementById('modal-stock').classList.remove('hidden');
+    window.closeStockModal = () => document.getElementById('modal-stock').classList.add('hidden');
+    window.guardarNuevoRepuesto = async () => {
+        const nombre = document.getElementById('s-nombre').value.toUpperCase();
+        const precio = document.getElementById('s-precio').value;
+        const cantidad = document.getElementById('s-cantidad').value;
+
+        if(!nombre || !precio) return;
+
+        await addDoc(collection(db, "stock"), {
+            tallerId: auth.currentUser.uid,
+            nombre, precio, cantidad: Number(cantidad)
+        });
+        closeStockModal();
+    };
+
+    // --- NAVEGACIÓN ---
+    window.switchTab = (tab, el) => {
+        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+        document.getElementById('view-' + tab).classList.remove('hidden');
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+    };
+
+    window.closeCaja = () => document.getElementById('modal-caja').classList.add('hidden');
+    window.logout = () => signOut(auth);
+
+    setInterval(() => {
+        document.getElementById('live-clock').innerText = new Date().toLocaleTimeString();
+    }, 1000);
 
 </script>
 </body>
