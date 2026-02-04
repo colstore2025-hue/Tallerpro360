@@ -2,142 +2,205 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Nexus-X | TallerPro360 Global</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TallerPRO360 - Nexus-X Starlink | Gestión Élite para Talleres</title>
     
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="manifest" href="/manifest.json">
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
     
     <style>
-        :root { --primary: #020617; --accent: #3b82f6; --gold: #f59e0b; }
-        body { font-family: 'Inter', sans-serif; background: var(--primary); color: white; margin: 0; overflow-x: hidden; }
+        body { font-family: 'Inter', sans-serif; }
         .font-nexus { font-family: 'Orbitron', sans-serif; }
-        
-        /* Glassmorphism Interfaz */
-        .glass-panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); border-radius: 30px; }
-        .view-section { display: none; min-height: 100vh; padding: 20px; }
-        .view-section.active { display: block; animation: fadeIn 0.5s ease; }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Botones Élite */
-        .btn-main { background: linear-gradient(135deg, var(--accent), #1d4ed8); padding: 18px; border-radius: 20px; font-weight: bold; transition: 0.3s; width: 100%; text-align: center; }
-        .btn-gold { background: linear-gradient(135deg, var(--gold), #b45309); color: black; }
+        .gradient-starlink { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+        .text-gold { color: #f59e0b; }
+        .bg-gold { background-color: #f59e0b; }
+        .btn-nexus { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-nexus:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.3); }
+        .glass-nav { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); }
     </style>
 </head>
-<body>
+<body class="bg-slate-50">
 
-<div id="nexus-loader" class="fixed inset-0 bg-slate-950 z-[9999] flex flex-col items-center justify-center">
-    <i class="fas fa-satellite-dish text-gold text-5xl animate-pulse mb-4"></i>
-    <p class="font-nexus tracking-widest text-xs">SISTEMA NEXUS-X ACTIVADO</p>
-</div>
-
-<section id="view-entry" class="view-section active flex flex-col items-center justify-center p-6 text-center">
-    <div class="mb-12">
-        <h1 class="font-nexus text-5xl mb-2">NEXUS<span class="text-accent">X</span></h1>
-        <p class="text-[9px] tracking-[0.6em] text-gold uppercase">Colombian Trucks Logistics LLC</p>
-    </div>
-
-    <div class="w-full max-w-sm space-y-4">
-        <div class="glass-panel p-8 space-y-6">
-            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Portal de Servicios</h3>
-            <button onclick="switchView('view-client-search')" class="btn-main font-nexus text-sm">RASTREAR MI CAMIÓN</button>
-            <button onclick="switchView('view-login')" class="btn-main btn-gold font-nexus text-sm">ACCESO TALLER / SOCIO</button>
+    <nav class="glass-nav py-4 px-6 border-b border-white/10 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-satellite text-gold text-2xl animate-pulse"></i>
+                <span class="text-white font-nexus text-xl tracking-tighter uppercase">TallerPRO360 <span class="text-gold">ELITE</span></span>
+            </div>
+            <div class="hidden md:flex gap-8 text-white text-[10px] font-black uppercase tracking-[2px]">
+                <a href="#soluciones" class="hover:text-gold transition">Soluciones</a>
+                <a href="#precios" class="hover:text-gold transition">Planes</a>
+                <button onclick="distribuirAcceso('TALLER')" class="bg-blue-600 px-6 py-2 rounded-full hover:bg-blue-700 transition shadow-lg shadow-blue-900/40">Acceso Red</button>
+            </div>
         </div>
-        <p class="text-[10px] text-slate-600 mt-8">© 2026 Charlotte, NC. USA. Derechos Reservados.</p>
-    </div>
-</section>
+    </nav>
 
-<section id="view-client-search" class="view-section p-6">
-    <button onclick="switchView('view-entry')" class="mb-8 text-slate-400"><i class="fas fa-arrow-left mr-2"></i> VOLVER</button>
-    <div class="glass-panel p-8 text-center space-y-6">
-        <i class="fas fa-truck-moving text-gold text-4xl"></i>
-        <h2 class="font-nexus text-xl">STATUS DE UNIDAD</h2>
-        <input id="search-placa" placeholder="INGRESA TU PLACA" class="w-full bg-slate-900 p-5 rounded-2xl text-center font-nexus text-2xl border border-slate-700 uppercase">
-        <button onclick="processClientSearch()" class="btn-main">CONSULTAR AHORA</button>
-    </div>
-</section>
-
-<section id="view-login" class="view-section p-6">
-    <button onclick="switchView('view-entry')" class="mb-8 text-slate-400"><i class="fas fa-arrow-left mr-2"></i> VOLVER</button>
-    <div class="glass-panel p-8 space-y-6 max-w-sm mx-auto">
-        <h2 class="font-nexus text-center text-gold">SISTEMA OPERATIVO</h2>
-        <input id="login-email" type="email" placeholder="Usuario / Email" class="w-full bg-slate-900 p-4 rounded-xl border border-slate-700">
-        <input id="login-pass" type="password" placeholder="Contraseña" class="w-full bg-slate-900 p-4 rounded-xl border border-slate-700">
-        <button onclick="handleLogin()" class="btn-main">ESTABLECER ENLACE</button>
-    </div>
-</section>
-
-<div id="nexus-app-container" class="hidden">
-    </div>
-
-<script type="module">
-    // --- IMPORTACIÓN DE MÓDULOS FIREBASE ---
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-        authDomain: "tallerpro360.firebaseapp.com",
-        projectId: "tallerpro360",
-        storageBucket: "tallerpro360.appspot.com",
-        messagingSenderId: "636224778184",
-        appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    // --- ROUTER DE VISTAS ---
-    window.switchView = (viewId) => {
-        document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-        document.getElementById(viewId).classList.add('active');
-    };
-
-    // --- PROCESAR BÚSQUEDA DE CLIENTE ---
-    window.processClientSearch = async () => {
-        const placa = document.getElementById('search-placa').value.toUpperCase().trim();
-        if(!placa) return alert("Ingresa una placa válida");
+    <header class="gradient-starlink text-white py-24 px-6 text-center relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
+            <i class="fas fa-microchip text-[25rem] absolute -top-20 -left-20"></i>
+            <i class="fas fa-truck-monster text-[20rem] absolute -bottom-10 -right-10"></i>
+        </div>
         
-        // Simulación: Aquí cargaría el módulo de cliente.html que ya tenemos
-        alert(`Buscando Unidad ${placa} en la red Starlink...`);
-        // Lógica de redirección o inyección de código de cliente
-    };
+        <div class="max-w-4xl mx-auto relative z-10">
+            <div class="inline-block bg-gold/10 text-gold px-4 py-1 rounded-full text-[10px] font-black mb-8 border border-gold/30 tracking-[3px] uppercase">
+                Sistema Logístico Nexus-X Starlink USA/COL
+            </div>
+            <h1 class="text-5xl md:text-7xl font-black mb-8 leading-tight tracking-tight">
+                La secretaria que <span class="text-gold">no tienes que pagar.</span>
+            </h1>
+            <p class="text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
+                Tecnología de **Colombian Trucks Logistics LLC** diseñada para mecánicos élite. Orden, velocidad y respaldo total.
+            </p>
+            
+            <div class="flex flex-col md:flex-row gap-5 justify-center">
+                <button onclick="distribuirAcceso('TALLER')" class="btn-nexus bg-green-600 hover:bg-green-700 text-white font-black py-5 px-12 rounded-2xl text-lg flex items-center justify-center gap-3">
+                    <i class="fas fa-rocket"></i> EMPEZAR GRATIS (TALLERES)
+                </button>
+                <button onclick="distribuirAcceso('CLIENTE')" class="btn-nexus bg-white hover:bg-slate-100 text-slate-900 font-bold py-5 px-12 rounded-2xl text-lg border-4 border-gold flex items-center justify-center gap-3">
+                    <i class="fas fa-search-location text-blue-600"></i> RASTREAR MI CAMIÓN
+                </button>
+            </div>
+            
+            <div class="mt-12 flex justify-center gap-8 text-slate-400">
+                <div class="flex flex-col items-center">
+                    <i class="fab fa-android text-3xl hover:text-green-500 cursor-pointer"></i>
+                    <span class="text-[8px] mt-2 font-bold uppercase">Android APK</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <i class="fab fa-apple text-3xl hover:text-white cursor-pointer"></i>
+                    <span class="text-[8px] mt-2 font-bold uppercase">iOS App</span>
+                </div>
+            </div>
+        </div>
+    </header>
 
-    // --- LOGIN UNIFICADO (Taller & CEO) ---
-    window.handleLogin = async () => {
-        const email = document.getElementById('login-email').value;
-        const pass = document.getElementById('login-pass').value;
+    <section id="soluciones" class="py-28 px-6 max-w-7xl mx-auto">
+        <div class="grid md:grid-cols-3 gap-10">
+            <div class="bg-white p-12 rounded-[40px] shadow-sm border border-slate-100 hover:border-blue-200 transition-all">
+                <div class="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mb-8 shadow-lg shadow-blue-200">
+                    <i class="fas fa-microphone-alt text-white text-3xl"></i>
+                </div>
+                <h3 class="text-2xl font-black mb-4 text-slate-800 tracking-tight">Voz Nexus-X</h3>
+                <p class="text-slate-500 text-sm">Dicta diagnósticos pesados mientras trabajas. El sistema convierte tu voz en órdenes técnicas profesionales.</p>
+            </div>
+            <div class="bg-white p-12 rounded-[40px] shadow-sm border border-slate-100">
+                <div class="bg-green-600 w-16 h-16 rounded-2xl flex items-center justify-center mb-8 shadow-lg shadow-green-200">
+                    <i class="fab fa-whatsapp text-white text-3xl"></i>
+                </div>
+                <h3 class="text-2xl font-black mb-4 text-slate-800 tracking-tight">WhatsApp Elite</h3>
+                <p class="text-slate-500 text-sm">Notificaciones automáticas. Mantén a tus clientes conectados al progreso de su vehículo en tiempo real.</p>
+            </div>
+            <div class="bg-white p-12 rounded-[40px] shadow-sm border border-slate-100">
+                <div class="bg-gold w-16 h-16 rounded-2xl flex items-center justify-center mb-8 shadow-lg shadow-amber-200">
+                    <i class="fas fa-passport text-white text-3xl"></i>
+                </div>
+                <h3 class="text-2xl font-black mb-4 text-slate-800 tracking-tight">Passport Starlink</h3>
+                <p class="text-slate-500 text-sm">Hoja de vida digital inviolable para cada camión. Consulta el historial global en nuestra red.</p>
+            </div>
+        </div>
+    </section>
 
-        try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-            // El observador onAuthStateChanged manejará la redirección al módulo correcto
-        } catch (error) {
-            alert("Acceso denegado: Credenciales no registradas en la red.");
-        }
-    };
+    <section id="precios" class="bg-slate-900 py-28 px-6">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-black text-center mb-20 text-white tracking-tighter uppercase italic">Estrategia de <span class="text-gold">Crecimiento</span></h2>
+            <div class="grid md:grid-cols-3 gap-8 items-center">
+                <div class="bg-slate-800/40 p-10 rounded-3xl border border-slate-700 text-white">
+                    <h3 class="text-xl font-black mb-2 uppercase tracking-widest text-slate-400">Starter</h3>
+                    <div class="text-4xl font-black mb-8">$49.000 <span class="text-xs font-normal opacity-50">/mes</span></div>
+                    <ul class="space-y-4 mb-10 text-sm opacity-80">
+                        <li><i class="fas fa-check text-green-500 mr-2"></i> 50 Órdenes por Voz</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i> WhatsApp Básico</li>
+                    </ul>
+                    <button onclick="distribuirAcceso('TALLER')" class="w-full py-4 rounded-xl border-2 border-slate-600 font-black hover:bg-slate-700 transition uppercase text-xs">Seleccionar</button>
+                </div>
+                <div class="bg-white p-12 rounded-[40px] shadow-2xl border-4 border-gold transform scale-105 relative">
+                    <div class="absolute -top-5 left-1/2 -translate-x-1/2 bg-gold text-slate-900 px-6 py-1 rounded-full text-[10px] font-black uppercase tracking-[2px]">Más Solicitado</div>
+                    <h3 class="text-xl font-black mb-2 text-slate-900 uppercase">Pro Nexus-X</h3>
+                    <div class="text-5xl font-black mb-8 text-slate-900">$89.000 <span class="text-xs font-normal text-slate-400">/mes</span></div>
+                    <ul class="space-y-4 mb-12 text-sm text-slate-600 font-bold italic">
+                        <li><i class="fas fa-check text-blue-600 mr-2"></i> Órdenes Ilimitadas</li>
+                        <li><i class="fas fa-check text-blue-600 mr-2"></i> Caja y Finanzas Full</li>
+                        <li><i class="fas fa-check text-blue-600 mr-2"></i> Passport Global Access</li>
+                    </ul>
+                    <button onclick="distribuirAcceso('TALLER')" class="w-full py-5 rounded-2xl bg-slate-900 text-white font-black hover:bg-black transition shadow-xl uppercase text-xs">Activar Red Pro</button>
+                </div>
+                <div class="bg-slate-800/40 p-10 rounded-3xl border border-slate-700 text-white">
+                    <h3 class="text-xl font-black mb-2 uppercase tracking-widest text-slate-400">Admin+</h3>
+                    <div class="text-4xl font-black mb-8">$129.000 <span class="text-xs font-normal opacity-50">/mes</span></div>
+                    <ul class="space-y-4 mb-10 text-sm opacity-80">
+                        <li><i class="fas fa-check text-gold mr-2"></i> Facturación Electrónica</li>
+                        <li><i class="fas fa-check text-gold mr-2"></i> Soporte VIP Nexus-X</li>
+                    </ul>
+                    <button onclick="distribuirAcceso('TALLER')" class="w-full py-4 rounded-xl border-2 border-gold text-gold font-black hover:bg-gold/10 transition uppercase text-xs text-center">Contactar CEO</button>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    // --- DETECTOR DE ROL ---
-    onAuthStateChanged(auth, async (user) => {
-        if(user) {
-            if(user.email === 'col.store2025@gmail.com') {
-                alert("MODO CEO ACTIVADO");
-                // Aquí inyectas el código de ceo.html
-            } else {
-                alert("ACCESO TALLER AUTORIZADO");
-                // Aquí inyectas el código de taller.html
+    <footer class="py-20 text-center bg-white border-t border-slate-100">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="flex justify-center items-center gap-3 mb-8">
+                <i class="fas fa-satellite text-blue-600 text-3xl"></i>
+                <span class="text-2xl font-nexus tracking-tighter uppercase">TallerPRO360</span>
+            </div>
+            <p class="font-black text-slate-800 uppercase tracking-[3px] text-sm mb-4">Nexus-X Starlink SAS</p>
+            <p class="text-slate-400 text-[10px] mb-8 uppercase">Charlotte, NC. United States | Ibagué, Colombia</p>
+            <div class="mt-12 text-[10px] text-slate-300 font-medium italic">
+                SISTEMA LOGISTICO NEXUS-X © 2026 - COLOMBIAN TRUCKS LOGISTICS LLC.
+            </div>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+            authDomain: "tallerpro360.firebaseapp.com",
+            projectId: "tallerpro360",
+            storageBucket: "tallerpro360.appspot.com",
+            messagingSenderId: "636224778184",
+            appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- DISTRIBUIDOR MAESTRO ---
+        window.distribuirAcceso = async (perfil) => {
+            // Rastrear interés en Firebase para el CEO
+            try {
+                await addDoc(collection(db, "leads_interesados"), {
+                    perfil_destino: perfil,
+                    agente: "LANDING_MASTER_INDEX",
+                    fecha: serverTimestamp()
+                });
+            } catch (e) { console.error("Error tracker", e); }
+
+            // Redirección lógica
+            if (perfil === 'TALLER') {
+                window.location.href = "taller.html";
+            } else if (perfil === 'CLIENTE') {
+                window.location.href = "cliente.html";
             }
-        }
-        document.getElementById('nexus-loader').classList.add('hidden');
-    });
+        };
 
-    window.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => document.getElementById('nexus-loader').classList.add('hidden'), 1500);
-    });
-</script>
+        // --- ACCESO SECRETO CEO (William) ---
+        // Presiona la combinación de teclas C + E + O simultáneamente
+        let keys = {};
+        window.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            if(keys['c'] && keys['e'] && keys['o']) {
+                window.location.href = "ceo.html";
+            }
+        });
+        window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+    </script>
 </body>
 </html>
