@@ -1,16 +1,19 @@
-const CACHE_NAME = "nexus-x-starlink-v2";
+const CACHE_NAME = "nexus-x-starlink-v3";
 
 // Recursos críticos para que la red funcione sin internet (Modo Offline)
 const ASSETS_TO_CACHE = [
   "/",
-  "/app", // Ruta limpia en Vercel
-  "/index.php",
-  "/app.php",
+  "/index.html",
+  "/taller.html",
+  "/cliente.html",
+  "/ceo.html",
+  "/manifest.json",
   "https://cdn.tailwindcss.com",
-  "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+  "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css",
+  "https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;700&display=swap"
 ];
 
-// 1. Instalación: Almacenamiento ultra-rápido de activos críticos
+// 1. Instalación: Almacenamiento ultra-rápido
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
@@ -18,10 +21,10 @@ self.addEventListener("install", event => {
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
-  self.skipWaiting(); // Fuerza la activación inmediata
+  self.skipWaiting();
 });
 
-// 2. Activación: Limpieza de versiones antiguas de la red
+// 2. Activación: Limpieza y toma de control
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys => {
@@ -34,29 +37,31 @@ self.addEventListener("activate", event => {
   self.clients.claim();
 });
 
-// 3. Estrategia "Stale-While-Revalidate" (Carga instantánea + Actualización silenciosa)
+// 3. Estrategia "Network First, Falling Back to Cache"
+// Para un sistema de taller, necesitamos los datos más frescos (Network First).
+// Si la red Starlink falla, usamos el caché (Backup).
 self.addEventListener("fetch", event => {
-  // Solo procesar peticiones GET (evita errores en envíos de formularios)
   if (event.request.method !== "GET") return;
 
   event.respondWith(
-    caches.match(event.request).then(cachedResponse => {
-      const fetchPromise = fetch(event.request).then(networkResponse => {
-        // Actualizamos el caché con la versión más reciente del servidor
-        if (networkResponse && networkResponse.status === 200) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseClone);
-          });
-        }
-        return networkResponse;
-      }).catch(() => {
-        // Si no hay red y no hay caché (error total)
-        console.log("⚠️ Nexus-X: Sin conexión a la Red Starlink");
-      });
-
-      // Retornar la versión en caché inmediatamente, o esperar a la red si no existe
-      return cachedResponse || fetchPromise;
-    })
+    fetch(event.request)
+      .then(networkResponse => {
+        // Si hay internet, servimos y actualizamos caché
+        return caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, networkResponse.clone());
+          return networkResponse;
+        });
+      })
+      .catch(() => {
+        // Si falla el internet, buscamos en el búnker (Caché)
+        return caches.match(event.request).then(cachedResponse => {
+          if (cachedResponse) return cachedResponse;
+          
+          // Si no está en caché y es una navegación, mostramos index como fallback
+          if (event.request.mode === 'navigate') {
+            return caches.match('/index.html');
+          }
+        });
+      })
   );
 });
