@@ -5,186 +5,72 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Nexus-X Starlink | Ingeniería Logística Élite</title>
     
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#020617">
-    <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3239/3239147.png">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     
     <style>
         :root { --gold: #f59e0b; --deep: #020617; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--deep); color: #f1f5f9; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--deep); color: #f1f5f9; overflow-x: hidden; }
         .font-nexus { font-family: 'Orbitron', sans-serif; }
-        
-        .hero-mesh {
-            background-color: #020617;
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.1) 0px, transparent 50%);
-        }
-
-        .grid-pattern {
-            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-        }
-
-        .glass-dark { 
-            background: rgba(15, 23, 42, 0.6); 
-            backdrop-filter: blur(12px); 
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .btn-gold {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            box-shadow: 0 10px 20px -5px rgba(245, 158, 11, 0.4);
-            transition: all 0.3s ease;
-        }
-
-        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 15px 30px -5px rgba(245, 158, 11, 0.6); }
-
-        .floating { animation: floating 3s ease-in-out infinite; }
-        @keyframes floating { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .hero-mesh { background-image: radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.1) 0px, transparent 50%); }
+        .grid-pattern { background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 40px 40px; }
+        .glass-dark { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        .btn-gold { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); transition: all 0.3s ease; }
+        .neo-input { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; color: white; width: 100%; outline: none; }
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="selection:bg-gold selection:text-black">
+<body class="hero-mesh">
+    <div class="absolute inset-0 grid-pattern opacity-40 pointer-events-none"></div>
 
-    <nav class="fixed top-0 w-full z-50 glass-dark border-b border-white/5 px-6 py-4">
+    <nav class="fixed top-0 w-full z-[100] glass-dark border-b border-white/5 px-6 py-4">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div class="bg-gold p-2 rounded-lg shadow-lg shadow-gold/20">
-                    <i class="fas fa-satellite text-black text-xl"></i>
-                </div>
-                <span class="font-nexus text-xl tracking-tighter font-black">NEXUS<span class="text-gold">-X</span></span>
+                <div class="bg-gold p-2 rounded-lg"><i class="fas fa-satellite text-black text-xl"></i></div>
+                <span class="font-nexus text-xl font-black">NEXUS<span class="text-gold">-X</span></span>
             </div>
-            <div class="hidden md:flex gap-8 items-center">
-                <a href="#soluciones" class="text-[10px] font-bold tracking-[3px] uppercase hover:text-gold transition">Ingeniería</a>
-                <a href="#precios" class="text-[10px] font-bold tracking-[3px] uppercase hover:text-gold transition">Licencias</a>
-                <button onclick="distribuirAcceso('TALLER')" class="bg-white/5 hover:bg-white/10 px-6 py-2 rounded-full border border-white/10 text-[10px] font-black tracking-widest transition uppercase">Terminal Taller</button>
-            </div>
+            <button onclick="document.getElementById('modal-auth').classList.remove('hidden')" class="bg-white/5 px-6 py-2 rounded-full border border-white/10 text-[10px] font-black tracking-widest uppercase transition hover:bg-gold hover:text-black">Acceso Terminal</button>
         </div>
     </nav>
 
-    <header class="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden hero-mesh">
-        <div class="absolute inset-0 grid-pattern opacity-40"></div>
-        
+    <header class="relative min-h-screen flex items-center justify-center pt-20">
         <div class="max-w-6xl mx-auto px-6 text-center relative z-10">
-            <div class="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full mb-8 floating">
-                <span class="relative flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-gold"></span>
-                </span>
-                <span class="text-[9px] font-black tracking-[4px] uppercase text-slate-400">Powered by Starlink Technology</span>
-            </div>
-
             <h1 class="text-5xl md:text-8xl font-black mb-8 leading-[0.9] tracking-tighter">
                 SISTEMA LOGÍSTICO <br>
                 <span class="text-transparent bg-clip-text bg-gradient-to-r from-gold via-white to-gold uppercase italic">Nexus-X Élite</span>
             </h1>
+            <p class="text-lg md:text-xl text-slate-400 mb-12 max-w-3xl mx-auto">Tecnología Starlink para el control total de flotas pesadas. Entre a la red global de ingeniería.</p>
             
-            <p class="text-lg md:text-xl text-slate-400 mb-12 max-w-3xl mx-auto font-light leading-relaxed">
-                Deje de ser un mecánico y conviértase en un **Centro de Soluciones**. La inteligencia de <span class="text-white font-bold">Colombian Trucks Logistics LLC</span> ahora disponible en su taller.
-            </p>
-
-            <div class="flex flex-col md:flex-row gap-6 justify-center items-center">
-                <button onclick="distribuirAcceso('TALLER')" class="btn-gold text-black font-black py-6 px-14 rounded-2xl text-sm tracking-widest uppercase flex items-center gap-4 group">
-                    <i class="fas fa-microchip group-hover:rotate-90 transition-all"></i>
-                    Activar Nodo Taller
+            <div class="flex flex-col md:flex-row gap-6 justify-center">
+                <button onclick="abrirAuth('TALLER')" class="btn-gold text-black font-black py-6 px-14 rounded-2xl text-sm tracking-widest uppercase flex items-center gap-4">
+                    <i class="fas fa-microchip"></i> Activar Nodo Taller
                 </button>
-                <button onclick="distribuirAcceso('CLIENTE')" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black py-6 px-14 rounded-2xl text-sm tracking-widest uppercase transition-all">
+                <button onclick="abrirAuth('CLIENTE')" class="bg-white/5 border border-white/10 text-white font-black py-6 px-14 rounded-2xl text-sm tracking-widest uppercase">
                     Rastrear Camión
                 </button>
-            </div>
-
-            <div class="mt-20 flex flex-wrap justify-center gap-12 opacity-40 grayscale">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/2449px-NASA_logo.svg.png" class="h-8" alt="NASA">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Starlink_Logo.svg/2560px-Starlink_Logo.svg.png" class="h-4" alt="Starlink">
-                <span class="font-nexus text-sm">TRUCKS LOGISTICS LLC</span>
             </div>
         </div>
     </header>
 
-    <section id="soluciones" class="py-32 px-6 relative">
-        <div class="max-w-7xl mx-auto grid md:grid-cols-3 gap-8">
-            <div class="glass-dark p-10 rounded-[2rem] border-t-2 border-gold/20">
-                <div class="text-gold mb-6 text-4xl"><i class="fas fa-brain"></i></div>
-                <h3 class="font-nexus text-lg mb-4 uppercase">Diagnóstico IA</h3>
-                <p class="text-slate-500 text-sm leading-relaxed">Hable con la terminal. Nexus-X procesa fallas mecánicas pesadas y genera reportes técnicos con estándares de la industria USA.</p>
+    <div id="modal-auth" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+        <div class="glass-dark w-full max-w-md p-8 rounded-[2.5rem] border border-gold/20 shadow-2xl">
+            <div class="text-center mb-8">
+                <h3 id="auth-title" class="font-nexus text-xl text-gold mb-2">VALIDACIÓN DE NODO</h3>
+                <p class="text-xs text-slate-500 uppercase tracking-widest">Ingrese credenciales Nexus-X</p>
             </div>
-            <div class="glass-dark p-10 rounded-[2rem] border-t-2 border-blue-500/20">
-                <div class="text-blue-500 mb-6 text-4xl"><i class="fas fa-shield-halved"></i></div>
-                <h3 class="font-nexus text-lg mb-4 uppercase">Protocolo Starlink</h3>
-                <p class="text-slate-500 text-sm leading-relaxed">Conexión constante. Sincronice datos de motores y kilometrajes directamente en la nube global de Nexus.</p>
-            </div>
-            <div class="glass-dark p-10 rounded-[2rem] border-t-2 border-emerald-500/20">
-                <div class="text-emerald-500 mb-6 text-4xl"><i class="fas fa-hand-holding-dollar"></i></div>
-                <h3 class="font-nexus text-lg mb-4 uppercase">Caja Blindada</h3>
-                <p class="text-slate-500 text-sm leading-relaxed">Control total de repuestos y mano de obra. Usted factura, el sistema se encarga de la rentabilidad.</p>
+            <div class="space-y-4">
+                <input id="auth-email" type="email" placeholder="ID STARLINK (Email)" class="neo-input">
+                <input id="auth-pass" type="password" placeholder="CÓDIGO DE ACCESO" class="neo-input">
+                <button id="btn-login" class="w-full btn-gold text-black font-black py-4 rounded-xl uppercase text-xs tracking-[3px]">Inicializar Sistema</button>
+                <button onclick="document.getElementById('modal-auth').classList.add('hidden')" class="w-full text-slate-600 text-[10px] uppercase font-bold">Cancelar Despliegue</button>
             </div>
         </div>
-    </section>
-
-    <section id="precios" class="py-32 px-6 bg-slate-950/50">
-        <div class="max-w-5xl mx-auto">
-            <div class="text-center mb-20">
-                <h2 class="font-nexus text-3xl md:text-5xl mb-4">LICENCIAS DE RED</h2>
-                <div class="h-1 w-24 bg-gold mx-auto"></div>
-            </div>
-
-            <div class="grid md:grid-cols-2 gap-8">
-                <div class="glass-dark p-12 rounded-[3rem] border-2 border-gold/30 relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 bg-gold text-black font-black text-[10px] px-6 py-2 rounded-bl-2xl uppercase tracking-tighter">Plan Maestro</div>
-                    <h4 class="font-nexus text-2xl text-white mb-2">PRO NEXUS-X</h4>
-                    <div class="flex items-baseline gap-2 mb-8">
-                        <span class="text-5xl font-black text-gold">$89.000</span>
-                        <span class="text-slate-500 uppercase text-xs">/ Mes</span>
-                    </div>
-                    <ul class="space-y-4 mb-10">
-                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle text-gold"></i> Órdenes de Servicio Ilimitadas</li>
-                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle text-gold"></i> Terminal de Voz Avanzada</li>
-                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle text-gold"></i> Pasaporte Digital de Camión</li>
-                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle text-gold"></i> Soporte Starlink Priority</li>
-                    </ul>
-                    <button onclick="distribuirAcceso('TALLER')" class="w-full py-5 rounded-2xl btn-gold text-black font-black uppercase text-xs tracking-widest transition-all">Iniciar Demo 15 Días</button>
-                </div>
-
-                <div class="glass-dark p-12 rounded-[3rem] border-2 border-white/5 opacity-80">
-                    <h4 class="font-nexus text-2xl text-white mb-2">ADMIN+</h4>
-                    <div class="flex items-baseline gap-2 mb-8">
-                        <span class="text-5xl font-black">$129.000</span>
-                        <span class="text-slate-500 uppercase text-xs">/ Mes</span>
-                    </div>
-                    <ul class="space-y-4 mb-10 opacity-70">
-                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle"></i> Multitalleres (Sedes)</li>
-                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle"></i> Contabilidad Exportable</li>
-                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle"></i> Facturación Electrónica DIAN</li>
-                    </ul>
-                    <button class="w-full py-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase text-xs tracking-widest transition-all">Hablar con William Urquijo</button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <footer class="py-20 border-t border-white/5">
-        <div class="max-w-7xl mx-auto px-6 text-center">
-            <p class="font-nexus text-gold tracking-[10px] uppercase mb-8">NEXUS-X STARLINK</p>
-            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[4px] leading-loose mb-12">
-                Charlotte, NC. United States | Ibagué, Tolima. Colombia <br>
-                Todos los derechos reservados - Colombian Trucks Logistics LLC © 2026
-            </p>
-            <div class="flex justify-center gap-6 text-slate-600">
-                <i class="fab fa-whatsapp hover:text-green-500 cursor-pointer text-xl"></i>
-                <i class="fab fa-instagram hover:text-pink-500 cursor-pointer text-xl"></i>
-                <i class="fab fa-linkedin hover:text-blue-500 cursor-pointer text-xl"></i>
-            </div>
-        </div>
-    </footer>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -197,22 +83,38 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
 
-        window.distribuirAcceso = async (perfil) => {
-            try {
-                await addDoc(collection(db, "leads_interesados"), {
-                    perfil_destino: perfil,
-                    agente: "LANDING_ELITE_V4",
-                    timestamp: serverTimestamp(),
-                    device: navigator.userAgent
-                });
-            } catch (e) { console.warn("Tracker offline"); }
+        let targetModule = 'TALLER';
 
-            window.location.href = perfil === 'TALLER' ? "taller.html" : "cliente.html";
+        window.abrirAuth = (modulo) => {
+            targetModule = modulo;
+            document.getElementById('auth-title').innerText = `ACCESO ${modulo}`;
+            document.getElementById('modal-auth').classList.remove('hidden');
         };
 
-        // ACCESO SECRETO CEO (C + E + O)
+        document.getElementById('btn-login').onclick = async () => {
+            const email = document.getElementById('auth-email').value;
+            const pass = document.getElementById('auth-pass').value;
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+                // Tracker de éxito
+                await addDoc(collection(db, "accesos_exitosos"), {
+                    uid: userCredential.user.uid,
+                    perfil: targetModule,
+                    timestamp: serverTimestamp()
+                });
+                
+                // Redirección segura
+                window.location.href = targetModule === 'TALLER' ? "taller.html" : "cliente.html";
+            } catch (e) {
+                alert("ERROR DE SINCRONIZACIÓN: Credenciales no válidas en la red Nexus.");
+            }
+        };
+
+        // ACCESO SECRETO CEO
         let combo = {};
         window.onkeydown = (e) => {
             combo[e.key.toLowerCase()] = true;
