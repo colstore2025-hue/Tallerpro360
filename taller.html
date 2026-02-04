@@ -1,0 +1,27 @@
+// --- MÓDULO CONTABLE NEXUS-X ---
+window.calcularTotalServicio = (items, manoObra) => {
+    const subtotalRepuestos = items.reduce((acc, item) => acc + (item.precio * item.cantidad), 0);
+    const subtotalGeneral = subtotalRepuestos + manoObra;
+    const iva = subtotalGeneral * 0.19;
+    const total = subtotalGeneral + iva;
+
+    return {
+        subtotal: subtotalGeneral,
+        iva: iva,
+        total: total,
+        gananciaEstimada: (subtotalGeneral * 0.35) // Ejemplo de margen del 35%
+    };
+};
+
+window.guardarContabilidad = async (ordenId, datosContables) => {
+    const docRef = doc(db, "ordenes", ordenId);
+    await updateDoc(docRef, {
+        contabilidad: {
+            ...datosContables,
+            fechaLiquidacion: serverTimestamp(),
+            estadoPago: 'PENDIENTE'
+        },
+        status: 'listo_entrega' // Cambia el estado para que el cliente lo vea en su PWA
+    });
+    alert("Factura generada y enviada a la nube Nexus-X");
+};
