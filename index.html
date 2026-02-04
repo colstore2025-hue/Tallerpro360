@@ -2,251 +2,396 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TallerPRO360 - Nexus-X Starlink | Ingeniería Automotriz USA-COL</title>
+    <title>Nexus-X Starlink SAS | TallerPRO360 Elite</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#020617">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
-        
-        :root { --gold: #f59e0b; --space: #0f172a; }
-        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
-
-        .glass-nav { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .hero-gradient { background: radial-gradient(circle at top right, #1e293b, #0f172a); }
-        
-        .floating { animation: floating 3s ease-in-out infinite; }
-        @keyframes floating {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+        :root { 
+            --primary: #020617; --secondary: #0f172a; --accent: #3b82f6; 
+            --gold: #f59e0b; --success: #10b981; --danger: #ef4444;
         }
-
-        .gold-glow { box-shadow: 0 0 20px rgba(245, 158, 11, 0.2); }
-        .nexus-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .nexus-card:hover { transform: scale(1.02) translateY(-10px); border-color: var(--gold); }
         
-        /* Animación de entrada */
-        .reveal { opacity: 0; transform: translateY(20px); transition: all 0.8s ease-out; }
-        .reveal.active { opacity: 1; transform: translateY(0); }
+        * { -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; margin: 0; padding-bottom: 100px; overflow-x: hidden; }
+        .font-nexus { font-family: 'Orbitron', sans-serif; }
+        
+        /* Glassmorphism UI */
+        .glass-card { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); border-radius: 30px; }
+        .neo-input { background: rgba(15, 23, 42, 0.8); border: 2px solid #1e293b; border-radius: 18px; padding: 16px; color: white; width: 100%; transition: 0.3s; }
+        .neo-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); }
+        
+        /* Botones Elite */
+        .btn-nexus { 
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border-radius: 20px; 
+            font-weight: 800; text-transform: uppercase; transition: 0.3s; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px; border: none;
+        }
+        .btn-nexus:active { transform: scale(0.96); }
+        .btn-gold { background: linear-gradient(135deg, var(--gold), #b45309); color: black; }
+
+        /* Navegación Nexus */
+        .nav-nexus { 
+            position: fixed; bottom: 20px; left: 15px; right: 15px; height: 80px; 
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(25px);
+            border-radius: 25px; border: 1px solid rgba(255,255,255,0.1);
+            display: flex; justify-content: space-around; align-items: center; z-index: 5000;
+        }
+        .nav-item { color: #64748b; font-size: 10px; font-weight: 800; text-align: center; flex: 1; transition: 0.3s; }
+        .nav-item.active { color: var(--accent); }
+        .nav-item i { font-size: 22px; margin-bottom: 4px; display: block; }
+
+        /* Animaciones */
+        @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0px rgba(245, 158, 11, 0.4); } 100% { box-shadow: 0 0 0 15px rgba(245, 158, 11, 0); } }
+        .pulse-gold { animation: pulse-gold 2s infinite; }
+        
+        /* Pantallas de Control */
+        #loader-nexus, #auth-screen, #block-screen { 
+            position: fixed; inset: 0; z-index: 9999; background: var(--primary); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; 
+        }
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="bg-slate-50">
+<body>
 
-    <nav class="glass-nav py-4 px-6 sticky top-0 z-[100]">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="bg-gold p-2 rounded-lg">
-                    <i class="fas fa-satellite text-slate-900 text-xl"></i>
-                </div>
-                <span class="text-white font-black text-xl tracking-tighter uppercase">TallerPRO360 <span class="text-gold italic font-light">ELITE</span></span>
+<div id="loader-nexus">
+    <div class="relative w-32 h-32 mb-8">
+        <div class="absolute inset-0 border-4 border-accent/20 rounded-full animate-ping"></div>
+        <div class="absolute inset-0 border-t-4 border-gold rounded-full animate-spin"></div>
+        <i class="fas fa-satellite text-gold text-4xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
+    </div>
+    <h2 class="font-nexus text-xl tracking-[0.3em] text-white">NEXUS-X</h2>
+    <p class="text-[10px] text-slate-500 uppercase mt-2 font-bold tracking-widest">Estableciendo Link Satelital...</p>
+</div>
+
+<div id="block-screen" class="hidden">
+    <div class="glass-card p-8 w-full max-w-sm text-center">
+        <i class="fas fa-microchip text-danger text-5xl mb-6"></i>
+        <h2 class="font-nexus text-2xl mb-2">NODO SUSPENDIDO</h2>
+        <p class="text-slate-400 text-sm mb-8 font-bold">La licencia de este taller ha expirado. Por favor contacte al CEO William Urquijo para reactivación.</p>
+        <div class="bg-slate-900/50 p-4 rounded-2xl text-left mb-6 border border-white/5 text-xs">
+            <p><i class="fas fa-university mr-2 text-gold"></i>NuBank: 69000706</p>
+            <p class="mt-2"><i class="fas fa-mobile-alt mr-2 text-success"></i>Nequi: 311 570 9730</p>
+        </div>
+        <button onclick="contactCEO()" class="btn-nexus w-full p-5 bg-gold text-black">ENVIAR COMPROBANTE</button>
+    </div>
+</div>
+
+<div id="auth-screen" class="hidden">
+    <div class="w-full max-w-md">
+        <div class="text-center mb-10">
+            <h1 class="font-nexus text-4xl mb-2">NEXUS-X <span class="text-accent">USA</span></h1>
+            <p class="text-[9px] text-slate-500 font-black tracking-[0.4em] uppercase">Logistics & Tech Network</p>
+        </div>
+
+        <div id="login-box" class="glass-card p-8 space-y-4">
+            <h3 class="text-center font-nexus text-xs text-gold mb-4 uppercase">Ingreso al Sistema</h3>
+            <input id="auth-email" type="email" placeholder="Email Corporativo" class="neo-input">
+            <input id="auth-pass" type="password" placeholder="Clave de Encriptación" class="neo-input">
+            <button class="btn-nexus w-full p-5" onclick="handleAuth('login')">SINCRONIZAR NODO</button>
+            <p class="text-center text-[11px] text-slate-500 mt-6" onclick="toggleAuth()">¿NUEVO TALLER? <span class="text-accent underline">SOLICITAR ACCESO ELITE</span></p>
+        </div>
+
+        <div id="reg-box" class="glass-card p-8 space-y-4 hidden">
+            <h3 class="text-center font-nexus text-xs text-success mb-4 uppercase">Registro Nodo Nuevo</h3>
+            <input id="reg-taller" type="text" placeholder="Nombre Comercial Taller" class="neo-input">
+            <input id="reg-email" type="email" placeholder="Email Administrativo" class="neo-input">
+            <input id="reg-pass" type="password" placeholder="Crear Clave Maestra" class="neo-input">
+            <div class="bg-blue-500/10 p-4 rounded-2xl text-[10px] text-blue-400 font-bold border border-blue-500/20">
+                <i class="fas fa-info-circle mr-1"></i> Recibirás 14 días de licencia FULL ELITE.
             </div>
-            <div class="hidden md:flex items-center gap-10 text-white text-[10px] font-bold uppercase tracking-[2px]">
-                <a href="#soluciones" class="hover:text-gold transition-colors">Tecnología</a>
-                <a href="#precios" class="hover:text-gold transition-colors">Membresías</a>
-                <a href="/app" class="bg-white text-slate-900 px-6 py-2.5 rounded-full font-black hover:bg-gold transition shadow-lg">Acceso Red Starlink</a>
+            <button class="btn-nexus w-full p-5 bg-success" onclick="handleAuth('register')">DESPLEGAR NODO</button>
+            <p class="text-center text-[11px] text-slate-500 mt-6" onclick="toggleAuth()">YA TENGO CUENTA <span class="text-white underline">VOLVER AL LOGIN</span></p>
+        </div>
+    </div>
+</div>
+
+<header class="p-6 sticky top-0 z-[1000] bg-slate-950/80 backdrop-blur-lg border-b border-white/5">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center border border-accent/30">
+                <i class="fas fa-satellite-dish text-accent animate-pulse"></i>
+            </div>
+            <div>
+                <h1 class="font-nexus text-xs" id="display-taller">CARGANDO NODO...</h1>
+                <span id="trial-badge" class="hidden bg-gold text-black text-[8px] font-black px-2 py-0.5 rounded uppercase">Trial Activo</span>
             </div>
         </div>
-    </nav>
+        <button onclick="signOutNow()" class="w-10 h-10 bg-red-500/10 text-red-500 rounded-xl border border-red-500/20">
+            <i class="fas fa-power-off"></i>
+        </button>
+    </div>
+</header>
 
-    <header class="hero-gradient text-white py-32 px-6 relative overflow-hidden">
-        <div class="absolute inset-0 opacity-10">
-            <div class="absolute top-10 left-10 animate-pulse"><i class="fas fa-network-wired text-9xl"></i></div>
-            <div class="absolute bottom-10 right-10 floating"><i class="fas fa-satellite-dish text-[15rem]"></i></div>
+<main class="p-4 max-w-5xl mx-auto space-y-8">
+
+    <section id="sec-patio" class="space-y-6">
+        <div class="grid grid-cols-2 gap-4">
+            <div class="glass-card p-6 text-center border-b-4 border-b-accent">
+                <p class="text-[9px] text-slate-500 font-black uppercase mb-1">Vehículos Hoy</p>
+                <h2 class="text-4xl font-nexus text-white" id="count-patio">0</h2>
+            </div>
+            <div class="glass-card p-6 text-center border-b-4 border-b-success">
+                <p class="text-[9px] text-slate-500 font-black uppercase mb-1">Ingresos Estimados</p>
+                <h2 class="text-4xl font-nexus text-success" id="kpi-ingresos">$0</h2>
+            </div>
+        </div>
+
+        <button id="btn-voz" class="btn-nexus w-full p-6 bg-slate-900 border-2 border-accent/20 pulse-gold">
+            <i class="fas fa-microphone-alt text-2xl text-gold"></i>
+            <span class="text-left"><b class="block text-xs">DICTADO IA NEXUS-X</b><small class="text-[9px] opacity-60 uppercase">Transcripción Técnica Starlink</small></span>
+        </button>
+
+        <div class="glass-card p-8 space-y-6">
+            <h3 class="font-nexus text-[10px] text-gold border-l-4 border-gold pl-3 uppercase">Recepción de Unidad</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <input id="o-placa" placeholder="PLACA" class="neo-input text-center font-nexus text-2xl text-accent uppercase">
+                <input id="o-modelo" type="number" placeholder="AÑO" class="neo-input">
+            </div>
+            <input id="o-marca" placeholder="MARCA Y REFERENCIA" class="neo-input">
+            <div class="grid grid-cols-2 gap-4">
+                <input id="o-cliente" placeholder="NOMBRE CLIENTE" class="neo-input">
+                <input id="o-tel" type="tel" placeholder="WHATSAPP" class="neo-input">
+            </div>
+            <textarea id="o-trabajo" rows="3" placeholder="SÍNTOMAS Y DIAGNÓSTICO..." class="neo-input"></textarea>
+            <button class="btn-nexus w-full p-5" onclick="saveOrder()"><i class="fas fa-save"></i> GUARDAR Y NOTIFICAR</button>
+        </div>
+
+        <div id="lista-ordenes" class="space-y-4 pb-10"></div>
+    </section>
+
+    <section id="sec-metrics" class="hidden space-y-6">
+        <div class="glass-card p-6">
+            <h3 class="font-nexus text-xs text-white mb-6 uppercase tracking-widest">Rendimiento Mensual</h3>
+            <canvas id="chartStats" height="250"></canvas>
         </div>
         
-        <div class="max-w-5xl mx-auto text-center relative z-10">
-            <span class="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full text-gold text-[10px] font-black tracking-[4px] uppercase mb-8">
-                <span class="relative flex h-2 w-2">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-2 w-2 bg-gold"></span>
-                </span>
-                Nexus-X Global Network Presence
-            </span>
-            
-            <h1 class="text-6xl md:text-8xl font-black mb-8 leading-[0.9] tracking-tighter">
-                Control Total. <br> <span class="text-transparent bg-clip-text bg-gradient-to-r from-gold to-yellow-200 font-light italic">Esfuerzo Cero.</span>
-            </h1>
-            
-            <p class="text-xl text-slate-400 mb-12 max-w-2xl mx-auto font-medium">
-                Sincroniza tu taller con la red **Nexus-X Starlink SAS**. La primera IA logística diseñada en Charlotte para el mercado colombiano.
-            </p>
-            
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <button onclick="registrarInteres('LANDING_BTN_TRIAL')" class="bg-gold text-slate-900 font-black py-5 px-10 rounded-2xl text-lg hover:scale-105 transition-transform gold-glow flex items-center justify-center gap-3">
-                    REGISTRAR MI TALLER <i class="fas fa-chevron-right"></i>
-                </button>
-                <a href="https://wa.me/573100000000?text=Hola%20Nexus-X,%20quiero%20conectar%20mi%20taller" class="bg-white/5 backdrop-blur-md text-white font-bold py-5 px-10 rounded-2xl text-lg border border-white/10 hover:bg-white/10 transition-all flex items-center justify-center gap-3">
-                    <i class="fab fa-whatsapp text-green-400"></i> Consultar Red
-                </a>
-            </div>
-        </div>
-    </header>
-
-    <section id="soluciones" class="py-32 px-6 max-w-7xl mx-auto">
-        <div class="grid md:grid-cols-2 gap-20 items-center">
-            <div class="reveal">
-                <h2 class="text-5xl font-black text-slate-900 mb-8 tracking-tighter italic uppercase">Soberanía <br><span class="text-blue-600">Tecnológica</span></h2>
-                <p class="text-slate-600 text-lg mb-8 leading-relaxed">
-                    No es solo un software de administración, es una terminal de control conectada a la red **Nexus-X**. Diseñada bajo los estándares de **Easy Vehicle USA**, permitiendo que cada proceso sea auditable y eficiente.
-                </p>
-                <div class="space-y-6">
-                    <div class="flex gap-4">
-                        <div class="text-gold mt-1"><i class="fas fa-check-circle text-xl"></i></div>
-                        <div>
-                            <h4 class="font-black text-slate-800 uppercase text-sm">Algoritmo Star-Sync</h4>
-                            <p class="text-slate-500 text-sm">Sincronización instantánea de inventarios y repuestos con la base de datos central.</p>
-                        </div>
-                    </div>
-                    <div class="flex gap-4">
-                        <div class="text-gold mt-1"><i class="fas fa-check-circle text-xl"></i></div>
-                        <div>
-                            <h4 class="font-black text-slate-800 uppercase text-sm">Encriptación de Hoja de Vida</h4>
-                            <p class="text-slate-500 text-sm">Historiales de vehículos protegidos bajo estándares de seguridad de Carolina del Norte.</p>
-                        </div>
-                    </div>
+        <div class="grid grid-cols-1 gap-4">
+            <div class="glass-card p-6 flex justify-between items-center">
+                <div>
+                    <p class="text-[10px] font-black text-slate-500 uppercase">Total Órdenes</p>
+                    <h4 class="text-3xl font-nexus text-white" id="stats-total">0</h4>
                 </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4 reveal">
-                <div class="bg-slate-900 p-8 rounded-[2rem] nexus-card text-white">
-                    <i class="fas fa-microphone-alt text-gold text-3xl mb-4"></i>
-                    <h3 class="font-black uppercase text-xs tracking-widest">Voice-to-Task</h3>
-                </div>
-                <div class="bg-blue-600 p-8 rounded-[2rem] nexus-card text-white mt-8">
-                    <i class="fas fa-chart-pie text-white text-3xl mb-4"></i>
-                    <h3 class="font-black uppercase text-xs tracking-widest">Analytics</h3>
-                </div>
-                <div class="bg-white p-8 rounded-[2rem] shadow-xl border border-slate-100 nexus-card">
-                    <i class="fas fa-shield-alt text-slate-900 text-3xl mb-4"></i>
-                    <h3 class="font-black uppercase text-xs tracking-widest">Security</h3>
-                </div>
-                <div class="bg-gold p-8 rounded-[2rem] nexus-card text-slate-900 mt-8">
-                    <i class="fas fa-truck-loading text-slate-900 text-3xl mb-4"></i>
-                    <h3 class="font-black uppercase text-xs tracking-widest">Logistics</h3>
+                <div class="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center border border-accent/20">
+                    <i class="fas fa-chart-line text-accent text-xl"></i>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="precios" class="bg-slate-900 py-32 px-6">
-        <div class="max-w-6xl mx-auto">
-            <div class="text-center mb-20">
-                <h2 class="text-4xl font-black text-white uppercase italic tracking-tighter">Planes de <span class="text-gold">Suscripción Red</span></h2>
-                <p class="text-slate-500 uppercase text-[10px] tracking-[4px] mt-4">Precios locales con potencia internacional</p>
-            </div>
-            
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="bg-white/5 p-10 rounded-3xl border border-white/10 text-white hover:bg-white/10 transition">
-                    <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">Mecánico Independent</h3>
-                    <div class="text-4xl font-black mb-8">$49.000 <span class="text-xs font-light opacity-50">COP/mes</span></div>
-                    <ul class="space-y-4 mb-10 text-sm">
-                        <li><i class="fas fa-bolt text-gold mr-2"></i> 50 Órdenes Star-Sync</li>
-                        <li><i class="fas fa-bolt text-gold mr-2"></i> WhatsApp Automático</li>
-                        <li><i class="fas fa-bolt text-gold mr-2"></i> Historial de 1 Año</li>
-                    </ul>
-                    <button onclick="registrarInteres('PLAN_STARTER')" class="w-full py-4 rounded-xl border border-white/20 font-bold hover:bg-white hover:text-slate-900 transition uppercase text-[10px] tracking-[2px]">Activar Nodo</button>
+    <section id="sec-admin" class="hidden space-y-6">
+        <div class="glass-card p-8 border-2 border-gold/30">
+            <h2 class="font-nexus text-xl text-gold mb-8"><i class="fas fa-crown mr-3"></i>COMMAND CENTER</h2>
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <div class="bg-slate-900/80 p-5 rounded-2xl border border-white/5">
+                    <p class="text-[9px] text-slate-500 font-black uppercase">Nodos Red</p>
+                    <p id="ceo-nodos" class="text-3xl font-nexus text-white">0</p>
                 </div>
-
-                <div class="bg-white p-10 rounded-[2.5rem] border-4 border-gold shadow-2xl transform md:-translate-y-4">
-                    <span class="bg-gold text-slate-900 text-[9px] font-black px-4 py-1 rounded-full uppercase absolute -top-3 left-1/2 -translate-x-1/2">Nexus-X Best Choice</span>
-                    <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">Taller Pro Elite</h3>
-                    <div class="text-5xl font-black mb-8 text-slate-900">$89.000 <span class="text-xs font-light text-slate-400">COP/mes</span></div>
-                    <ul class="space-y-4 mb-10 text-sm text-slate-600 font-medium">
-                        <li><i class="fas fa-star text-gold mr-2"></i> Órdenes Ilimitadas</li>
-                        <li><i class="fas fa-star text-gold mr-2"></i> Dictado por Voz Starlink</li>
-                        <li><i class="fas fa-star text-gold mr-2"></i> Control de Caja y Nómina</li>
-                        <li><i class="fas fa-star text-gold mr-2"></i> Acceso Passport Global</li>
-                    </ul>
-                    <button onclick="registrarInteres('PLAN_PRO')" class="w-full py-5 rounded-2xl bg-slate-900 text-white font-black hover:bg-black transition shadow-lg uppercase text-[10px] tracking-[2px]">Unirse a la Red</button>
-                </div>
-
-                <div class="bg-white/5 p-10 rounded-3xl border border-white/10 text-white">
-                    <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">Multi-Sede Enterprise</h3>
-                    <div class="text-4xl font-black mb-8">$129.000 <span class="text-xs font-light opacity-50">COP/mes</span></div>
-                    <ul class="space-y-4 mb-10 text-sm">
-                        <li><i class="fas fa-satellite text-gold mr-2"></i> Gestión Multi-Taller</li>
-                        <li><i class="fas fa-satellite text-gold mr-2"></i> Facturación Electrónica</li>
-                        <li><i class="fas fa-satellite text-gold mr-2"></i> Soporte CEO Directo</li>
-                    </ul>
-                    <button onclick="registrarInteres('PLAN_ADMIN')" class="w-full py-4 rounded-xl border border-gold text-gold font-bold hover:bg-gold hover:text-slate-900 transition uppercase text-[10px] tracking-[2px]">Contactar Ingeniería</button>
+                <div class="bg-slate-900/80 p-5 rounded-2xl border border-white/5">
+                    <p class="text-[9px] text-slate-500 font-black uppercase">Alertas</p>
+                    <p class="text-3xl font-nexus text-accent">0</p>
                 </div>
             </div>
+            <div id="ceo-user-list" class="space-y-3"></div>
         </div>
     </section>
 
-    <footer class="py-20 bg-white border-t border-slate-100">
-        <div class="max-w-6xl mx-auto px-6 text-center">
-            <div class="flex justify-center items-center gap-3 mb-10">
-                <i class="fas fa-satellite text-blue-600 text-3xl"></i>
-                <span class="text-2xl font-black tracking-tighter uppercase text-slate-900">TallerPRO360</span>
-            </div>
-            <div class="grid md:grid-cols-3 gap-8 text-left mb-16">
-                <div>
-                    <h5 class="font-black uppercase text-[10px] tracking-[2px] mb-4 text-slate-400">USA Operations</h5>
-                    <p class="text-sm text-slate-600">Charlotte, NC. United States<br>Colombian Trucks Logistics LLC</p>
-                </div>
-                <div>
-                    <h5 class="font-black uppercase text-[10px] tracking-[2px] mb-4 text-slate-400">LATAM Tech Hub</h5>
-                    <p class="text-sm text-slate-600">Ibagué, Tolima. Colombia<br>Nexus-X Starlink SAS</p>
-                </div>
-                <div>
-                    <h5 class="font-black uppercase text-[10px] tracking-[2px] mb-4 text-slate-400">Legal & Rights</h5>
-                    <p class="text-[9px] text-slate-400 uppercase leading-loose">Sistema logístico Nexus-X Starlink, EASY VEHICLE USA. Todos los derechos pertenecen a la firma legalmente constituida en Charlotte NC.</p>
-                </div>
-            </div>
-            <div class="pt-10 border-t border-slate-50 text-[10px] text-slate-300 font-bold uppercase tracking-[4px]">
-                © 2026 NEXUS-X STARLINK SAS | BEYOND LOGISTICS
-            </div>
-        </div>
-    </footer>
+</main>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<nav class="nav-nexus">
+    <div class="nav-item active" onclick="showTab('patio')"><i class="fas fa-tools"></i>PATIO</div>
+    <div class="nav-item" onclick="showTab('metrics')"><i class="fas fa-chart-pie"></i>DASHBOARD</div>
+    <div class="nav-item" onclick="showTab('passport')"><i class="fas fa-id-card"></i>PASSPORT</div>
+    <div id="tab-admin" class="nav-item hidden" onclick="showTab('admin')"><i class="fas fa-crown text-gold"></i>CEO</div>
+</nav>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-            authDomain: "tallerpro360.firebaseapp.com",
-            projectId: "tallerpro360",
-            storageBucket: "tallerpro360.appspot.com",
-            messagingSenderId: "636224778184",
-            appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-        };
+<script type="module">
+    // INTEGRACIÓN FIREBASE ELITE
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, addDoc, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+    const firebaseConfig = {
+        apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+        authDomain: "tallerpro360.firebaseapp.com",
+        projectId: "tallerpro360",
+        storageBucket: "tallerpro360.appspot.com",
+        messagingSenderId: "636224778184",
+        appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+    };
 
-        // Tracker Avanzado Nexus-X
-        window.registrarInteres = async (tipoPlan) => {
-            const btn = event.currentTarget;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-sync fa-spin"></i> ENLAZANDO...';
-            
-            try {
-                await addDoc(collection(db, "leads_interesados"), {
-                    plan_clicado: tipoPlan,
-                    agente: "NEXUS_X_ULTIMA_V1",
-                    device: navigator.userAgent.substring(0, 50),
-                    referencia: document.referrer || "directo",
-                    fecha: serverTimestamp()
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // --- MANEJO DE AUTENTICACIÓN ---
+    window.handleAuth = async (mode) => {
+        const email = (mode === 'login' ? document.getElementById('auth-email').value : document.getElementById('reg-email').value).toLowerCase().trim();
+        const pass = mode === 'login' ? document.getElementById('auth-pass').value : document.getElementById('reg-pass').value;
+
+        try {
+            if (mode === 'register') {
+                const taller = document.getElementById('reg-taller').value;
+                if(!taller) return alert("Nombre de taller obligatorio");
+                const res = await createUserWithEmailAndPassword(auth, email, pass);
+                const vence = new Date(); vence.setDate(vence.getDate() + 14);
+                await setDoc(doc(db, "usuarios", res.user.uid), {
+                    nombreTaller: taller, email: email, status: 'TRIAL', vence: vence.getTime(), rol: 'TALLER'
                 });
-                
-                // Animación de salida antes de redirigir
-                document.body.style.opacity = '0.5';
-                window.location.href = "/app"; 
-            } catch (error) {
-                console.error("Nexus-X Link Error:", error);
-                window.location.href = "/app";
+            } else {
+                await signInWithEmailAndPassword(auth, email, pass);
             }
-        };
+        } catch (e) { alert("NEXUS AUTH: " + e.message); }
+    };
 
-        // Animaciones Reveal al hacer scroll
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) entry.target.classList.add('active');
+    onAuthStateChanged(auth, async (user) => {
+        const loader = document.getElementById('loader-nexus');
+        const authScr = document.getElementById('auth-screen');
+        const blockScr = document.getElementById('block-screen');
+        const tabAdmin = document.getElementById('tab-admin');
+
+        if (user) {
+            const email = user.email.toLowerCase();
+            
+            // Bypass Maestro CEO
+            if(email === 'col.store2025@gmail.com'){
+                document.getElementById('display-taller').innerText = "NEXUS MASTER COMMAND";
+                tabAdmin.classList.remove('hidden');
+                authScr.classList.add('hidden');
+                initNexusSystem(user.uid, true);
+            } else {
+                const uDoc = await getDoc(doc(db, "usuarios", user.uid));
+                if(uDoc.exists()){
+                    const data = uDoc.data();
+                    const hoy = new Date().getTime();
+                    if(hoy > data.vence){
+                        blockScr.classList.remove('hidden');
+                        authScr.classList.add('hidden');
+                    } else {
+                        document.getElementById('display-taller').innerText = data.nombreTaller;
+                        document.getElementById('trial-badge').classList.remove('hidden');
+                        authScr.classList.add('hidden');
+                        initNexusSystem(user.uid, false);
+                    }
+                } else {
+                    // Reparación de perfil automático
+                    await setDoc(doc(db, "usuarios", user.uid), {
+                        nombreTaller: "Nuevo Nodo", email: email, status: 'TRIAL', vence: new Date().getTime() + 1209600000, rol: 'TALLER'
+                    });
+                    location.reload();
+                }
+            }
+        } else {
+            authScr.classList.remove('hidden');
+        }
+        setTimeout(() => loader.classList.add('hidden'), 1000);
+    });
+
+    // --- MOTOR OPERATIVO ---
+    function initNexusSystem(uid, isCEO) {
+        const q = query(collection(db, "ordenes"), where("tallerId", "==", uid), orderBy("timestamp", "desc"));
+        onSnapshot(q, (snap) => {
+            const list = document.getElementById('lista-ordenes');
+            list.innerHTML = "";
+            document.getElementById('count-patio').innerText = snap.size;
+            document.getElementById('stats-total').innerText = snap.size;
+            
+            snap.forEach(doc => {
+                const o = doc.data();
+                list.innerHTML += `
+                    <div class="glass-card p-5 border-l-4 border-accent animate-pulse-once flex justify-between items-center">
+                        <div>
+                            <h4 class="font-nexus text-xl text-white">${o.placa}</h4>
+                            <p class="text-[9px] text-slate-500 font-bold uppercase">${o.cliente} | ${o.marca}</p>
+                        </div>
+                        <button class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-gold"><i class="fas fa-eye"></i></button>
+                    </div>`;
             });
-        }, { threshold: 0.1 });
+            updateStatsChart(snap.size);
+        });
 
-        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-    </script>
+        if(isCEO) cargarPanelCEO();
+    }
+
+    window.saveOrder = async () => {
+        const orden = {
+            placa: document.getElementById('o-placa').value.toUpperCase().trim(),
+            marca: document.getElementById('o-marca').value,
+            modelo: document.getElementById('o-modelo').value,
+            cliente: document.getElementById('o-cliente').value,
+            tel: document.getElementById('o-tel').value,
+            trabajo: document.getElementById('o-trabajo').value,
+            tallerId: auth.currentUser.uid,
+            timestamp: serverTimestamp()
+        };
+        if(!orden.placa) return alert("Placa requerida");
+        await addDoc(collection(db, "ordenes"), orden);
+        
+        const msg = `*NEXUS-X REPORTE*%0AUnidad: ${orden.placa}%0ADiagnóstico: ${orden.trabajo}`;
+        window.open(`https://wa.me/57${orden.tel}?text=${msg}`, '_blank');
+        alert("Sincronizado");
+    };
+
+    // --- DASHBOARD ENGINE ---
+    let statsChart;
+    function updateStatsChart(currentCount) {
+        const ctx = document.getElementById('chartStats').getContext('2d');
+        if(statsChart) statsChart.destroy();
+        statsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Ene', 'Feb', 'Mar', 'Abr'],
+                datasets: [{
+                    label: 'Flujo de Patio',
+                    data: [currentCount-2, currentCount+1, currentCount-1, currentCount],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
+        });
+    }
+
+    async function cargarPanelCEO() {
+        const snap = await getDocs(collection(db, "usuarios"));
+        const list = document.getElementById('ceo-user-list');
+        list.innerHTML = "";
+        document.getElementById('ceo-nodos').innerText = snap.size;
+        snap.forEach(d => {
+            const u = d.data();
+            list.innerHTML += `<div class="bg-slate-900/40 p-4 rounded-xl flex justify-between items-center border border-white/5">
+                <span class="text-[10px] font-bold">${u.nombreTaller}</span>
+                <span class="text-[8px] ${new Date().getTime() > u.vence ? 'text-danger' : 'text-success'} font-black">● ${u.status}</span>
+            </div>`;
+        });
+    }
+
+    // --- UTILIDADES ---
+    window.showTab = (tab) => {
+        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+        document.getElementById(`sec-${tab}`).classList.remove('hidden');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+    };
+
+    window.toggleAuth = () => {
+        document.getElementById('login-box').classList.toggle('hidden');
+        document.getElementById('reg-box').classList.toggle('hidden');
+    };
+
+    window.signOutNow = () => signOut(auth).then(() => location.reload());
+    window.contactCEO = () => window.open(`https://wa.me/573115709730?text=Pago%20de%20Nodo%20Nexus-X`, '_blank');
+</script>
 </body>
 </html>
