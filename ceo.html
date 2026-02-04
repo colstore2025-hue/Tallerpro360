@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>CEO COMMAND | Nexus-X Starlink</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --gold: #f59e0b; --deep: #020617; --neon: #3b82f6; }
+        body { font-family: 'Inter', sans-serif; background: var(--deep); color: white; margin: 0; }
+        .font-nexus { font-family: 'Orbitron', sans-serif; }
+        .glass-ceo { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 24px; }
+        .stat-card { border-top: 4px solid var(--gold); transition: 0.3s; }
+        .stat-card:hover { transform: scale(1.02); box-shadow: 0 0 30px rgba(245, 158, 11, 0.1); }
+        .btn-kill { background: linear-gradient(135deg, #ef4444, #991b1b); }
+        .btn-active { background: linear-gradient(135deg, #10b981, #065f46); }
+        
+        /* Animación de Radar */
+        .radar-line { width: 100%; height: 2px; background: var(--gold); position: absolute; animation: scan 4s linear infinite; opacity: 0.2; }
+        @keyframes scan { from { top: 0%; } to { top: 100%; } }
+    </style>
+</head>
+<body class="p-4 lg:p-10">
+
+<header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+    <div>
+        <h1 class="font-nexus text-4xl text-gold tracking-tighter">GLOBAL COMMAND</h1>
+        <p class="text-[10px] text-slate-500 font-black tracking-[0.5em] uppercase">William Urquijo - CEO Operations</p>
+    </div>
+    <div class="flex gap-4">
+        <div class="glass-ceo p-4 flex items-center gap-4">
+            <i class="fas fa-satellite text-gold animate-pulse text-2xl"></i>
+            <div>
+                <p class="text-[9px] text-slate-400 font-bold uppercase">Estado de Red</p>
+                <p class="text-xs font-nexus">Sincronizado 100%</p>
+            </div>
+        </div>
+        <button onclick="logout()" class="w-14 h-14 glass-ceo flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all">
+            <i class="fas fa-power-off"></i>
+        </button>
+    </div>
+</header>
+
+<main class="space-y-10">
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="glass-ceo p-6 stat-card">
+            <p class="text-[10px] font-black text-slate-500 uppercase">Facturación Total Red</p>
+            <h2 id="total-money" class="text-3xl font-nexus mt-2 text-white">$0.00</h2>
+            <p class="text-[9px] text-success mt-1 font-bold">+12.5% vs Mes anterior</p>
+        </div>
+        <div class="glass-ceo p-6 stat-card">
+            <p class="text-[10px] font-black text-slate-500 uppercase">Nodos Activos</p>
+            <h2 id="total-nodos" class="text-3xl font-nexus mt-2 text-white">0</h2>
+            <p class="text-[9px] text-gold mt-1 font-bold">Talleres en Colombia</p>
+        </div>
+        <div class="glass-ceo p-6 stat-card">
+            <p class="text-[10px] font-black text-slate-500 uppercase">En Demo (15D)</p>
+            <h2 id="total-demo" class="text-3xl font-nexus mt-2 text-neon">0</h2>
+            <p class="text-[9px] text-slate-500 mt-1 font-bold">Potenciales suscripciones</p>
+        </div>
+        <div class="glass-ceo p-6 stat-card">
+            <p class="text-[10px] font-black text-slate-500 uppercase">Unidades en Patio</p>
+            <h2 id="total-units" class="text-3xl font-nexus mt-2 text-success">0</h2>
+            <p class="text-[9px] text-slate-500 mt-1 font-bold">Camiones rastreados hoy</p>
+        </div>
+    </section>
+
+    <section class="glass-ceo p-8 relative overflow-hidden">
+        <div class="radar-line"></div>
+        <div class="flex justify-between items-center mb-10">
+            <h3 class="font-nexus text-sm tracking-widest border-l-4 border-gold pl-4">CONTROL DE LICENCIAS</h3>
+            <div class="flex gap-2">
+                <input id="search-taller" placeholder="BUSCAR NODO..." class="bg-slate-900 border border-slate-700 rounded-full px-4 py-2 text-xs">
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="text-slate-500 border-b border-slate-800">
+                    <tr>
+                        <th class="pb-4">TALLER / NODO</th>
+                        <th class="pb-4">FACTURACIÓN</th>
+                        <th class="pb-4">VENCIMIENTO</th>
+                        <th class="pb-4">ESTADO</th>
+                        <th class="pb-4 text-center">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody id="taller-table-body" class="divide-y divide-slate-800">
+                    </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, doc, updateDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+        authDomain: "tallerpro360.firebaseapp.com",
+        projectId: "tallerpro360",
+        storageBucket: "tallerpro360.appspot.com",
+        messagingSenderId: "636224778184",
+        appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Seguridad CEO
+    onAuthStateChanged(auth, (user) => {
+        if (!user || user.email !== 'col.store2025@gmail.com') {
+            window.location.href = "index.html";
+        } else {
+            initCEOCommand();
+        }
+    });
+
+    async function initCEOCommand() {
+        // 1. Escuchar todos los Talleres (Nodos)
+        onSnapshot(collection(db, "usuarios"), (snap) => {
+            const tbody = document.getElementById('taller-table-body');
+            tbody.innerHTML = "";
+            let countNodos = 0;
+            let countDemo = 0;
+
+            snap.forEach(d => {
+                const u = d.data();
+                if(u.rol === 'ADMIN') return; // Saltar tu propia cuenta
+
+                countNodos++;
+                const diasRestantes = Math.ceil((u.vence - Date.now()) / (1000 * 60 * 60 * 24));
+                if(diasRestantes > 0 && diasRestantes < 15) countDemo++;
+
+                const statusColor = u.status === 'ACTIVO' ? 'text-success' : 'text-danger';
+                
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-900/50 transition-all">
+                        <td class="py-6">
+                            <p class="font-bold text-white uppercase">${u.nombreTaller}</p>
+                            <p class="text-[10px] text-slate-500">${u.email}</p>
+                        </td>
+                        <td class="font-nexus text-gold">$${(u.facturacionAcumulada || 0).toLocaleString()}</td>
+                        <td class="text-xs ${diasRestantes < 5 ? 'text-danger animate-pulse font-bold' : ''}">
+                            ${new Date(u.vence).toLocaleDateString()} (${diasRestantes} d)
+                        </td>
+                        <td>
+                            <span class="px-3 py-1 rounded-full text-[9px] font-black border ${u.status === 'ACTIVO' ? 'border-success text-success' : 'border-danger text-danger'}">
+                                ${u.status}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <button onclick="toggleNodo('${d.id}', '${u.status}')" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase ${u.status === 'ACTIVO' ? 'btn-kill' : 'btn-active'}">
+                                ${u.status === 'ACTIVO' ? 'Suspender' : 'Activar'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('total-nodos').innerText = countNodos;
+            document.getElementById('total-demo').innerText = countDemo;
+        });
+
+        // 2. Escuchar todas las órdenes para métricas globales
+        onSnapshot(collection(db, "ordenes"), (snap) => {
+            let totalMoney = 0;
+            let totalUnits = snap.size;
+            
+            snap.forEach(d => {
+                const o = d.data();
+                totalMoney += (o.contabilidad?.total || 0);
+            });
+
+            document.getElementById('total-money').innerText = `$${totalMoney.toLocaleString()}`;
+            document.getElementById('total-units').innerText = totalUnits;
+        });
+    }
+
+    // --- ACCIÓN MAESTRA: SUSPENDER/ACTIVAR TALLER ---
+    window.toggleNodo = async (id, currentStatus) => {
+        const newStatus = currentStatus === 'ACTIVO' ? 'SUSPENDIDO' : 'ACTIVO';
+        if(confirm(`¿Confirmas el cambio de estado a ${newStatus}?`)) {
+            const ref = doc(db, "usuarios", id);
+            await updateDoc(ref, { status: newStatus });
+        }
+    };
+
+    window.logout = () => signOut(auth).then(() => location.href = "index.html");
+</script>
+</body>
+</html>
