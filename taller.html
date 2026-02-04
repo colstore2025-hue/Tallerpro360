@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Nexus-X Terminal | Misión de Taller</title>
+    <title>Nexus-X | Terminal de Taller Élite</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,94 +11,132 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        :root { --primary: #020617; --accent: #3b82f6; --gold: #f59e0b; --success: #10b981; }
-        body { font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; padding-bottom: 100px; }
+        :root { 
+            --primary: #020617; --accent: #3b82f6; 
+            --gold: #f59e0b; --success: #10b981; --danger: #ef4444;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; padding-bottom: 110px; }
         .font-nexus { font-family: 'Orbitron', sans-serif; }
-        .glass-panel { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; }
-        .neo-input { background: rgba(0,0,0,0.3); border: 1px solid #1e293b; border-radius: 12px; padding: 12px; color: white; width: 100%; outline: none; transition: 0.3s; }
-        .neo-input:focus { border-color: var(--gold); box-shadow: 0 0 10px rgba(245,158,11,0.2); }
-        .pulse-mic { animation: pulse 1.5s infinite; background: var(--gold) !important; color: black !important; }
-        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245,158,11,0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(245,158,11,0); } 100% { transform: scale(1); } }
+        
+        .glass-card { 
+            background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(25px); 
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 32px; 
+        }
+        .neo-input { 
+            background: rgba(0,0,0,0.4); border: 1px solid #1e293b; 
+            border-radius: 18px; padding: 15px; color: white; width: 100%; outline: none;
+        }
+        .neo-input:focus { border-color: var(--gold); box-shadow: 0 0 15px rgba(245,158,11,0.2); }
+
+        /* Navbar */
+        .nav-nexus { 
+            position: fixed; bottom: 20px; left: 15px; right: 15px; height: 80px; 
+            background: rgba(7, 10, 25, 0.9); backdrop-filter: blur(20px); 
+            border-radius: 25px; display: flex; justify-content: space-around; 
+            align-items: center; z-index: 1000; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .nav-item { color: #64748b; text-align: center; font-size: 9px; font-weight: 800; cursor: pointer; transition: 0.3s; }
+        .nav-item.active { color: var(--gold); transform: translateY(-5px); }
+        .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
+
+        .active-voice { animation: pulse-gold 1.5s infinite; border: 2px solid var(--gold) !important; }
+        @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
+        
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<header class="p-5 flex justify-between items-center sticky top-0 bg-slate-950/80 backdrop-blur-md z-50 border-b border-white/5">
-    <div class="flex items-center gap-3">
+<header class="p-5 flex justify-between items-center sticky top-0 bg-slate-950/90 backdrop-blur-xl z-[100] border-b border-white/5">
+    <div class="flex items-center gap-4">
         <div class="w-10 h-10 bg-gold rounded-xl flex items-center justify-center shadow-lg shadow-gold/20">
             <i class="fas fa-satellite text-black"></i>
         </div>
         <div>
             <h1 id="shop-name" class="font-nexus text-[10px] text-white tracking-widest uppercase italic">Nexus-X Terminal</h1>
-            <p id="status-voz" class="text-[9px] text-gold font-bold">SISTEMA ONLINE</p>
+            <p id="live-clock" class="text-[9px] text-gold font-bold">00:00:00</p>
         </div>
     </div>
-    <div id="trial-counter" class="text-[8px] bg-white/5 px-3 py-1 rounded-full border border-white/10 uppercase font-black text-slate-400">
-        Prueba: 14 Días
-    </div>
+    <div id="trial-days" class="text-[8px] bg-white/5 px-3 py-1 rounded-full border border-white/10 text-slate-400">PRUEBA: -- DÍAS</div>
 </header>
 
 <main class="p-4 space-y-6">
 
-    <section id="tab-patio" class="tab-content space-y-4">
-        <div class="glass-panel p-6 border-l-4 border-accent">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="font-nexus text-[10px] text-accent tracking-widest uppercase font-black italic">Recepción de Vehículo</h2>
-                <button onclick="activarVozComando()" id="btn-voz-global" class="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center transition-all">
-                    <i class="fas fa-microphone"></i>
+    <section id="view-patio" class="space-y-6">
+        <div class="glass-card p-6 border-l-4 border-accent">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="font-nexus text-[10px] text-accent tracking-[3px] uppercase">Recepción de Misión</h2>
+                <i class="fas fa-truck-pickup text-slate-700"></i>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <input id="in-placa" placeholder="PLACA" class="neo-input font-nexus text-xl uppercase text-gold text-center">
+                <input id="in-cliente" placeholder="CLIENTE" class="neo-input uppercase font-bold text-xs">
+            </div>
+
+            <div class="relative">
+                <textarea id="in-reporte" rows="3" placeholder="SÍNTOMAS Y FALLAS..." class="neo-input text-sm"></textarea>
+                <button onclick="startVoiceMain()" class="absolute right-3 bottom-3 w-12 h-12 bg-accent text-white rounded-full shadow-lg active:scale-90 transition">
+                    <i id="mic-icon" class="fas fa-microphone"></i>
                 </button>
             </div>
 
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <div class="col-span-1">
-                    <label class="text-[8px] uppercase text-slate-500 ml-2">Placa</label>
-                    <input id="in-placa" placeholder="EJ: BCE670" class="neo-input font-nexus text-xl uppercase text-gold">
-                </div>
-                <div class="col-span-1">
-                    <label class="text-[8px] uppercase text-slate-500 ml-2">Marca / Modelo</label>
-                    <input id="in-marca" placeholder="Kenworth, FTR..." class="neo-input font-bold uppercase">
-                </div>
-                <div class="col-span-1">
-                    <label class="text-[8px] uppercase text-slate-500 ml-2">Kilometraje</label>
-                    <input id="in-km" type="number" placeholder="KM" class="neo-input font-nexus text-sm">
-                </div>
-                <div class="col-span-1">
-                    <label class="text-[8px] uppercase text-slate-500 ml-2">Nivel Combustible</label>
-                    <select id="in-fuel" class="neo-input text-xs uppercase">
-                        <option>E (Vacío)</option>
-                        <option>1/4</option>
-                        <option>1/2</option>
-                        <option>3/4</option>
-                        <option>F (Lleno)</option>
-                    </select>
-                </div>
-            </div>
-
-            <label class="text-[8px] uppercase text-slate-500 ml-2">Inventario / Observaciones de Entrada</label>
-            <textarea id="in-reporte" rows="2" placeholder="Rayones, estado de cabina, herramientas..." class="neo-input text-xs mb-4"></textarea>
-            
-            <button onclick="crearOrden()" class="w-full bg-white text-black font-nexus py-4 rounded-2xl text-[11px] tracking-[4px] shadow-xl hover:bg-gold transition-all uppercase">
-                Abrir Hoja de Vida
+            <button onclick="registrarEntrada()" class="w-full mt-4 bg-white text-black font-nexus py-4 rounded-2xl text-[10px] tracking-[4px] shadow-xl hover:bg-gold transition-all uppercase">
+                Desplegar a la Red
             </button>
         </div>
 
-        <div id="lista-ordenes" class="space-y-4 pt-4">
+        <div id="feed-ordenes" class="space-y-4">
             </div>
     </section>
+
+    <section id="view-caja" class="hidden space-y-6">
+        <div class="glass-card p-6 border-t-4 border-success">
+            <h2 class="font-nexus text-[10px] text-success tracking-[3px] uppercase mb-6">Terminal de Liquidación</h2>
+            <div id="caja-list" class="space-y-4 text-center text-slate-500 text-xs py-10">
+                Sincronizando cuentas...
+            </div>
+        </div>
+    </section>
+
+    <section id="view-stock" class="hidden space-y-6">
+        <div class="glass-card p-6 border-t-4 border-gold">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="font-nexus text-[10px] text-gold tracking-[3px] uppercase">Almacén Starlink</h2>
+                <button onclick="openModalStock()" class="bg-gold text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase">Nuevo Item</button>
+            </div>
+            <div id="stock-list" class="space-y-3">
+                </div>
+        </div>
+    </section>
+
 </main>
 
 <nav class="nav-nexus">
-    <div class="nav-btn active" onclick="switchTab('patio')"><i class="fas fa-truck-monster"></i>PATIO</div>
-    <div class="nav-btn" onclick="switchTab('caja')"><i class="fas fa-file-invoice-dollar"></i>CAJA</div>
-    <div class="nav-btn" onclick="switchTab('stock')"><i class="fas fa-boxes-stacked"></i>STOCK</div>
+    <div class="nav-item active" onclick="switchTab('patio', this)"><i class="fas fa-truck-monster"></i>PATIO</div>
+    <div class="nav-item" onclick="switchTab('caja', this)"><i class="fas fa-cash-register"></i>CAJA</div>
+    <div class="nav-item" onclick="switchTab('stock', this)"><i class="fas fa-boxes-stacked"></i>STOCK</div>
+    <div class="nav-item" onclick="logout()"><i class="fas fa-power-off text-danger"></i>SALIR</div>
 </nav>
+
+<div id="modal-stock" class="fixed inset-0 bg-black/90 z-[500] hidden flex items-center justify-center p-6">
+    <div class="glass-card w-full p-8 space-y-4">
+        <h3 class="font-nexus text-gold text-center mb-4">REGISTRAR REPUESTO</h3>
+        <input id="s-nombre" placeholder="NOMBRE DEL REPUESTO" class="neo-input uppercase">
+        <input id="s-precio" type="number" placeholder="PRECIO VENTA" class="neo-input">
+        <input id="s-cantidad" type="number" placeholder="STOCK INICIAL" class="neo-input">
+        <div class="flex gap-2">
+            <button onclick="closeModalStock()" class="flex-1 bg-slate-800 p-4 rounded-xl font-bold uppercase text-[10px]">Cancelar</button>
+            <button onclick="guardarStock()" class="flex-1 bg-gold text-black p-4 rounded-xl font-bold uppercase text-[10px]">Guardar</button>
+        </div>
+    </div>
+</div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp, getDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // Mismo Config de Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
         authDomain: "tallerpro360.firebaseapp.com",
@@ -112,105 +150,144 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // --- LÓGICA DE VOZ AVANZADA (INTELIGENCIA NEXUS) ---
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = 'es-CO';
-    recognition.continuous = false;
+    let currentTaller = null;
 
-    window.activarVozComando = () => {
-        recognition.start();
-        document.getElementById('btn-voz-global').classList.add('pulse-mic');
-        document.getElementById('status-voz').innerText = "ESCUCHANDO...";
-    };
-
-    recognition.onresult = (event) => {
-        const text = event.results[0][0].transcript.toLowerCase();
-        document.getElementById('btn-voz-global').classList.remove('pulse-mic');
-        document.getElementById('status-voz').innerText = "PROCESANDO IA...";
-        
-        // Mapeo Inteligente
-        if(text.includes("placa")) document.getElementById('in-placa').value = extraerDato(text, "placa");
-        if(text.includes("marca")) document.getElementById('in-marca').value = extraerDato(text, "marca");
-        if(text.includes("kilometraje")) document.getElementById('in-km').value = extraerDato(text, "kilometraje");
-        if(text.includes("observación") || text.includes("reporte")) document.getElementById('in-reporte').value = extraerDato(text, "reporte");
-
-        setTimeout(() => { document.getElementById('status-voz').innerText = "SISTEMA ONLINE"; }, 2000);
-    };
-
-    function extraerDato(frase, clave) {
-        // Separa la palabra clave y toma lo que sigue
-        const partes = frase.split(clave);
-        return partes.length > 1 ? partes[1].trim().toUpperCase() : "";
-    }
-
-    // --- GESTIÓN DE ORDEN Y HOJA DE VIDA ---
-    window.crearOrden = async () => {
-        const data = {
-            tallerId: auth.currentUser.uid,
-            placa: document.getElementById('in-placa').value,
-            marca: document.getElementById('in-marca').value,
-            km: document.getElementById('in-km').value,
-            fuel: document.getElementById('in-fuel').value,
-            recepcion: document.getElementById('in-reporte').value,
-            status: 'INGRESADO',
-            fecha_entrada: serverTimestamp(),
-            items: [], labor: 0, total: 0
-        };
-
-        if(!data.placa) return alert("Debe dictar o escribir al menos la Placa");
-
-        await addDoc(collection(db, "ordenes"), data);
-        limpiarFormulario();
-        alert("¡Misión Iniciada! Hoja de Vida generada.");
-    };
-
-    function limpiarFormulario() {
-        ['in-placa', 'in-marca', 'in-km', 'in-reporte'].forEach(id => document.getElementById(id).value = "");
-    }
-
-    // --- MONITOR DE PRUEBA 14 DÍAS ---
-    async function verificarTrial(user) {
-        const userRef = doc(db, "usuarios", user.uid);
-        const userSnap = await getDoc(userRef);
-        
-        if (userSnap.exists()) {
-            const data = userSnap.data();
-            const creado = data.createdAt.toDate();
-            const hoy = new Date();
-            const diff = Math.ceil((hoy - creado) / (1000 * 60 * 60 * 24));
-            const restante = 14 - diff;
-
-            document.getElementById('trial-counter').innerText = restante > 0 ? `Prueba: ${restante} Días` : "Suscripción Inactiva";
-            if(restante <= 0) {
-                alert("Su periodo de prueba Nexus-X ha finalizado. Contacte al CEO.");
-                // Aquí podrías bloquear funciones
-            }
-        }
-    }
-
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            verificarTrial(user);
-            // Cargar datos en tiempo real
-            const q = query(collection(db, "ordenes"), where("tallerId", "==", user.uid));
-            onSnapshot(q, (snap) => {
-                const container = document.getElementById('lista-ordenes');
-                container.innerHTML = "";
-                snap.forEach(doc => {
-                    const o = doc.data();
-                    container.innerHTML += `
-                        <div class="glass-panel p-4 flex justify-between items-center border-b-2 border-accent/20">
-                            <div>
-                                <h4 class="font-nexus text-gold">${o.placa}</h4>
-                                <p class="text-[9px] text-slate-400">${o.marca} | KM: ${o.km}</p>
-                            </div>
-                            <span class="text-[8px] bg-accent/20 text-accent px-2 py-1 rounded-full font-black">${o.status}</span>
-                        </div>
-                    `;
-                });
-            });
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) window.location.href = "index.html";
+        const snap = await getDoc(doc(db, "usuarios", user.uid));
+        if (snap.exists()) {
+            currentTaller = snap.data();
+            document.getElementById('shop-name').innerText = currentTaller.nombreTaller;
+            calcularTrial(currentTaller.createdAt);
+            initRealtimeData();
         }
     });
+
+    // --- VOZ NEXUS-X ---
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'es-CO';
+    
+    window.startVoiceMain = () => {
+        recognition.start();
+        document.getElementById('mic-icon').className = "fas fa-spinner fa-spin text-gold";
+        document.getElementById('in-reporte').classList.add('active-voice');
+    };
+
+    recognition.onresult = (e) => {
+        const text = e.results[0][0].transcript.toLowerCase();
+        document.getElementById('mic-icon').className = "fas fa-microphone";
+        document.getElementById('in-reporte').classList.remove('active-voice');
+
+        if(text.includes("placa")) document.getElementById('in-placa').value = text.replace("placa", "").trim().toUpperCase();
+        else if(text.includes("cliente")) document.getElementById('in-cliente').value = text.replace("cliente", "").trim().toUpperCase();
+        else document.getElementById('in-reporte').value += " " + text;
+    };
+
+    // --- OPERACIONES PATIO ---
+    window.registrarEntrada = async () => {
+        const placa = document.getElementById('in-placa').value.toUpperCase();
+        const cliente = document.getElementById('in-cliente').value.toUpperCase();
+        const reporte = document.getElementById('in-reporte').value;
+
+        if(!placa) return alert("LA PLACA ES OBLIGATORIA");
+
+        await addDoc(collection(db, "ordenes"), {
+            tallerId: auth.currentUser.uid,
+            placa, cliente, reporte,
+            status: 'INGRESADO',
+            timestamp: serverTimestamp(),
+            total: 0
+        });
+
+        document.querySelectorAll('.neo-input').forEach(i => i.value = "");
+        alert("MISIÓN DESPLEGADA");
+    };
+
+    function initRealtimeData() {
+        // Cargar Patio
+        const qPatio = query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid), orderBy("timestamp", "desc"));
+        onSnapshot(qPatio, (snap) => {
+            const feed = document.getElementById('feed-ordenes');
+            const caja = document.getElementById('caja-list');
+            feed.innerHTML = "";
+            caja.innerHTML = "";
+            
+            snap.forEach(d => {
+                const o = d.data();
+                const card = `
+                    <div class="glass-card p-5 flex justify-between items-center border-l-4 ${o.status==='INGRESADO'?'border-accent':'border-success'}">
+                        <div>
+                            <p class="text-[8px] text-slate-500 font-black uppercase tracking-widest">${o.status}</p>
+                            <h3 class="font-nexus text-xl text-white">${o.placa}</h3>
+                            <p class="text-[9px] text-slate-400 font-bold">${o.cliente || 'SIN NOMBRE'}</p>
+                        </div>
+                        <select onchange="updateStatus('${d.id}', this.value)" class="bg-slate-900 text-[10px] p-2 rounded-xl border border-white/10 text-gold font-bold outline-none">
+                            <option value="INGRESADO" ${o.status==='INGRESADO'?'selected':''}>PATIO</option>
+                            <option value="LISTO" ${o.status==='LISTO'?'selected':''}>LISTO</option>
+                        </select>
+                    </div>`;
+                feed.innerHTML += card;
+                if(o.status === 'LISTO') caja.innerHTML += card;
+            });
+        });
+
+        // Cargar Stock
+        onSnapshot(query(collection(db, "stock"), where("tallerId", "==", auth.currentUser.uid)), (snap) => {
+            const list = document.getElementById('stock-list');
+            list.innerHTML = "";
+            snap.forEach(d => {
+                const s = d.data();
+                list.innerHTML += `
+                    <div class="bg-slate-950/50 p-4 rounded-2xl flex justify-between border border-white/5">
+                        <span class="text-xs font-bold uppercase text-slate-300">${s.nombre}</span>
+                        <span class="font-nexus text-gold">$${s.precio.toLocaleString()}</span>
+                        <span class="text-[10px] bg-white/5 px-2 rounded-lg text-success">${s.cantidad} UN</span>
+                    </div>`;
+            });
+        });
+    }
+
+    window.updateStatus = async (id, status) => {
+        await updateDoc(doc(db, "ordenes", id), { status });
+    };
+
+    // --- ALMACÉN ---
+    window.openModalStock = () => document.getElementById('modal-stock').classList.remove('hidden');
+    window.closeModalStock = () => document.getElementById('modal-stock').classList.add('hidden');
+    window.guardarStock = async () => {
+        const nombre = document.getElementById('s-nombre').value.toUpperCase();
+        const precio = parseFloat(document.getElementById('s-precio').value);
+        const cantidad = parseInt(document.getElementById('s-cantidad').value);
+
+        if(!nombre || !precio) return alert("DATOS INCOMPLETOS");
+
+        await addDoc(collection(db, "stock"), {
+            tallerId: auth.currentUser.uid,
+            nombre, precio, cantidad
+        });
+        closeModalStock();
+    };
+
+    // --- UTILIDADES ---
+    window.switchTab = (tab, el) => {
+        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+        document.getElementById('view-' + tab).classList.remove('hidden');
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+    };
+
+    function calcularTrial(timestamp) {
+        const creado = timestamp.toDate();
+        const hoy = new Date();
+        const dias = Math.max(0, 14 - Math.floor((hoy - creado) / (1000 * 60 * 60 * 24)));
+        document.getElementById('trial-days').innerText = `PRUEBA: ${dias} DÍAS`;
+    }
+
+    window.logout = () => signOut(auth);
+
+    setInterval(() => {
+        document.getElementById('live-clock').innerText = new Date().toLocaleTimeString();
+    }, 1000);
 
 </script>
 </body>
