@@ -1,6 +1,6 @@
-const CACHE_NAME = "nexus-x-starlink-v3";
+const CACHE_NAME = "nexus-x-starlink-v4";
 
-// Recursos críticos para que la red funcione sin internet (Modo Offline)
+// Activos críticos para la interfaz Élite
 const ASSETS_TO_CACHE = [
   "/",
   "/index.html",
@@ -9,22 +9,22 @@ const ASSETS_TO_CACHE = [
   "/ceo.html",
   "/manifest.json",
   "https://cdn.tailwindcss.com",
-  "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css",
-  "https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;700&display=swap"
+  "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css",
+  "https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap"
 ];
 
-// 1. Instalación: Almacenamiento ultra-rápido
+// 1. INSTALACIÓN: Descarga silenciosa de la infraestructura
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log("🛰️ Nexus-X: Cache de Red Sincronizado");
+      console.log("🛰️ Nexus-X: Infraestructura descargada");
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
   self.skipWaiting();
 });
 
-// 2. Activación: Limpieza y toma de control
+// 2. ACTIVACIÓN: Purga de versiones antiguas
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys => {
@@ -33,35 +33,30 @@ self.addEventListener("activate", event => {
       );
     })
   );
-  console.log("🚀 Nexus-X: Sistema Operativo Starlink Activado");
   self.clients.claim();
+  console.log("🚀 Nexus-X: Satélite en órbita y listo");
 });
 
-// 3. Estrategia "Network First, Falling Back to Cache"
-// Para un sistema de taller, necesitamos los datos más frescos (Network First).
-// Si la red Starlink falla, usamos el caché (Backup).
+// 3. ESTRATEGIA: STALE-WHILE-REVALIDATE (Velocidad de la Luz)
 self.addEventListener("fetch", event => {
-  if (event.request.method !== "GET") return;
+  // Ignorar peticiones que no sean GET (como envíos de Firebase/POST)
+  if (event.request.method !== "GET" || !event.request.url.startsWith('http')) return;
 
   event.respondWith(
-    fetch(event.request)
-      .then(networkResponse => {
-        // Si hay internet, servimos y actualizamos caché
-        return caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, networkResponse.clone());
-          return networkResponse;
-        });
-      })
-      .catch(() => {
-        // Si falla el internet, buscamos en el búnker (Caché)
-        return caches.match(event.request).then(cachedResponse => {
-          if (cachedResponse) return cachedResponse;
-          
-          // Si no está en caché y es una navegación, mostramos index como fallback
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-        });
-      })
+    caches.match(event.request).then(cachedResponse => {
+      // Retorna el caché inmediatamente si existe
+      const networkFetch = fetch(event.request).then(networkResponse => {
+        // Actualiza el caché en segundo plano
+        if (networkResponse && networkResponse.status === 200) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+        }
+        return networkResponse;
+      }).catch(() => {
+        console.log("⚠️ Nexus-X: Trabajando en modo Offline profundo");
+      });
+
+      return cachedResponse || networkFetch;
+    })
   );
 });
