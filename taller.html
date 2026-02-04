@@ -144,9 +144,154 @@
     </div>
 </div>
 
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>NEXUS-X | TALLERPRO360 ÉLITE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #020617; --gold: #f59e0b; --accent: #3b82f6; --success: #10b981; --danger: #ef4444; }
+        body { font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; padding-bottom: 100px; }
+        .font-nexus { font-family: 'Orbitron', sans-serif; }
+        .glass { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
+        .neo-input { background: rgba(0,0,0,0.5); border: 1px solid #1e293b; border-radius: 14px; padding: 12px; color: white; width: 100%; outline: none; transition: 0.3s; font-size: 13px; }
+        .neo-input:focus { border-color: var(--gold); box-shadow: 0 0 15px rgba(245, 158, 11, 0.2); }
+        .nav-nexus { position: fixed; bottom: 15px; left: 15px; right: 15px; height: 75px; border-radius: 25px; display: flex; justify-content: space-around; align-items: center; z-index: 5000; border: 1px solid rgba(255,255,255,0.1); }
+        .nav-item { color: #64748b; font-size: 10px; font-weight: 800; text-align: center; transition: 0.4s; }
+        .nav-item.active { color: var(--gold); transform: translateY(-5px); }
+        .recording { animation: pulse-gold 1.5s infinite; border: 2px solid var(--danger) !important; }
+        @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5); } 70% { box-shadow: 0 0 0 15px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<header class="p-5 glass sticky top-0 z-[1000] border-b border-white/10 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-gold to-orange-600 rounded-xl flex items-center justify-center text-black shadow-lg shadow-gold/20"><i class="fas fa-rocket text-xl"></i></div>
+        <div>
+            <h1 class="font-nexus text-[10px] tracking-widest text-white uppercase italic">Nexus-X ERP</h1>
+            <p id="live-clock" class="text-[9px] text-slate-500 font-black">Sincronizando...</p>
+        </div>
+    </div>
+    <div class="flex gap-4">
+        <div class="text-right">
+            <p class="text-[8px] text-slate-500 font-bold uppercase">Utilidad Mes</p>
+            <p id="total-pg" class="text-xs font-nexus text-success font-black">$ 0</p>
+        </div>
+    </div>
+</header>
+
+<main class="p-4 max-w-4xl mx-auto space-y-6">
+
+    <section id="sec-patio" class="space-y-4">
+        <div class="glass p-6 rounded-[30px] border-l-4 border-accent">
+            <h2 class="font-nexus text-[10px] text-accent tracking-[4px] uppercase mb-4">Recepción de Unidad</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <input id="in-placa" placeholder="PLACA" class="neo-input font-nexus text-xl text-gold text-center uppercase">
+                <input id="in-mecanico" placeholder="MECÁNICO" class="neo-input uppercase">
+                <input id="in-cliente" placeholder="CLIENTE" class="neo-input uppercase">
+                <input id="in-tel" type="tel" placeholder="WHATSAPP" class="neo-input">
+            </div>
+            <div class="mt-4 relative">
+                <textarea id="in-reporte" rows="2" placeholder="Dictar diagnóstico..." class="neo-input"></textarea>
+                <button onclick="toggleMic()" id="btn-mic" class="absolute right-3 bottom-3 w-10 h-10 bg-accent rounded-full flex items-center justify-center shadow-lg"><i class="fas fa-microphone"></i></button>
+            </div>
+            <button onclick="registrarMision()" class="w-full mt-4 bg-white text-black font-nexus py-4 rounded-2xl text-[10px] font-black tracking-widest uppercase">Desplegar Misión</button>
+        </div>
+
+        <div id="lista-misiones" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            </div>
+    </section>
+
+    <section id="sec-caja" class="hidden space-y-4">
+        <div class="glass p-6 rounded-[30px] border-t-4 border-gold">
+            <h2 class="font-nexus text-[10px] text-gold tracking-[4px] uppercase mb-6 text-center">Cuentas por Cobrar</h2>
+            <div id="lista-caja" class="space-y-3"></div>
+        </div>
+    </section>
+
+    <section id="sec-stock" class="hidden space-y-4">
+        <div class="glass p-6 rounded-[30px] border-t-4 border-emerald-500">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="font-nexus text-[10px] text-emerald-400 tracking-[4px] uppercase">Almacén de Insumos</h2>
+                <button onclick="openStockModal()" class="bg-emerald-500 text-black px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest">Nuevo Item</button>
+            </div>
+            <div id="lista-stock" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+        </div>
+    </section>
+</main>
+
+<nav class="nav-nexus glass">
+    <div onclick="switchSec('patio', this)" class="nav-item active"><i class="fas fa-car-rear text-xl mb-1"></i><br>PATIO</div>
+    <div onclick="switchSec('caja', this)" class="nav-item"><i class="fas fa-cash-register text-xl mb-1"></i><br>CAJA</div>
+    <div onclick="switchSec('stock', this)" class="nav-item"><i class="fas fa-box-open text-xl mb-1"></i><br>STOCK</div>
+    <div onclick="window.location.reload()" class="nav-item"><i class="fas fa-sync text-xl mb-1"></i><br>RED</div>
+</nav>
+
+<div id="modal-orden" class="fixed inset-0 bg-black/98 z-[6000] hidden overflow-y-auto p-4">
+    <div class="max-w-4xl mx-auto glass rounded-[40px] p-8 mt-4 border border-white/10">
+        <div class="flex justify-between items-start mb-8">
+            <div>
+                <h3 id="mod-placa" class="font-nexus text-5xl text-gold italic uppercase">---</h3>
+                <p id="mod-meta" class="text-[10px] text-slate-500 font-bold uppercase mt-2"></p>
+            </div>
+            <button onclick="closeModal()" class="w-12 h-12 bg-white/5 rounded-full text-white text-3xl">&times;</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="space-y-4">
+                <div class="bg-white/5 p-6 rounded-3xl border border-white/5">
+                    <h4 class="text-[9px] font-black text-accent uppercase mb-4 tracking-widest">Inyectar Gasto (Repuesto/Insumo)</h4>
+                    <div class="space-y-3">
+                        <input id="g-desc" placeholder="DESCRIPCIÓN" class="neo-input uppercase">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input id="g-costo" type="number" placeholder="$ COSTO" class="neo-input">
+                            <input id="g-venta" type="number" placeholder="$ VENTA" class="neo-input text-emerald-400 font-bold">
+                        </div>
+                        <button onclick="addGasto()" class="w-full bg-accent text-white py-3 rounded-xl font-black text-[10px] uppercase">Cargar a Misión</button>
+                    </div>
+                </div>
+                <div id="mod-items" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="bg-black/40 p-6 rounded-3xl border border-gold/20">
+                    <h4 class="text-[9px] font-black text-slate-500 uppercase mb-4 tracking-widest text-center">Balance de Orden</h4>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold">MO COBRO CLIENTE:</span>
+                            <input id="mo-cliente" type="number" oninput="updateCalculos()" class="bg-transparent text-right font-nexus text-gold w-24 outline-none border-b border-white/10" value="0">
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold">MO PAGO MECÁNICO (FIJO):</span>
+                            <input id="mo-mecanico" type="number" oninput="updateCalculos()" class="bg-transparent text-right font-nexus text-white w-24 outline-none border-b border-white/10" value="0">
+                        </div>
+                        <hr class="border-white/5">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <p class="text-[8px] text-slate-500 font-black">UTILIDAD NETA</p>
+                                <h2 id="mod-utilidad" class="font-nexus text-3xl text-success font-black">$ 0</h2>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[8px] text-slate-500 font-black">TOTAL FACTURA</p>
+                                <h3 id="mod-total-venta" class="font-nexus text-xl">$ 0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="finalizarOrden()" class="w-full bg-white text-black font-nexus py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest">Finalizar y Archivar</button>
+            </div>
+        </div>
+    </div>
+</div>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp, getDoc, orderBy, deleteDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp, orderBy, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -166,16 +311,17 @@
     let ordenActualId = null;
     let recognition;
 
-    // --- RECONOCIMIENTO DE VOZ CORREGIDO ---
+    // --- GENERADOR DE CÓDIGO DE MISIÓN (TICKET) ---
+    const generarTicket = () => `NX-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    // --- RECONOCIMIENTO DE VOZ ---
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
         recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
         recognition.lang = 'es-CO';
-        recognition.continuous = false;
         recognition.onresult = (e) => {
             document.getElementById('in-reporte').value += " " + e.results[0][0].transcript;
             document.getElementById('btn-mic').classList.remove('recording');
         };
-        recognition.onend = () => document.getElementById('btn-mic').classList.remove('recording');
     }
 
     window.toggleMic = () => {
@@ -185,10 +331,17 @@
 
     onAuthStateChanged(auth, (user) => {
         if (user) initApp();
+        else window.location.href = "index.html"; 
     });
 
+    // --- MOTOR DE SINCRONIZACIÓN (EL ENGRANE) ---
     function initApp() {
-        const q = query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid), orderBy("timestamp", "desc"));
+        const q = query(
+            collection(db, "ordenes"), 
+            where("tallerId", "==", auth.currentUser.uid), 
+            orderBy("timestamp", "desc")
+        );
+
         onSnapshot(q, (snap) => {
             const feed = document.getElementById('lista-misiones');
             const caja = document.getElementById('lista-caja');
@@ -200,54 +353,53 @@
                 const o = {id: d.id, ...d.data()};
                 misionesActivas.push(o);
                 
-                if(o.status !== 'ARCHIVADO') {
-                    const card = `
-                        <div onclick="abrirOrden('${o.id}')" class="glass p-5 rounded-[25px] border-l-4 border-accent hover:border-gold transition cursor-pointer flex justify-between items-center">
-                            <div>
-                                <h3 class="font-nexus text-xl text-white uppercase italic">${o.placa}</h3>
-                                <p class="text-[9px] text-slate-500 font-bold uppercase">${o.mecanico} | ${o.cliente}</p>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-[8px] bg-accent/20 text-accent px-2 py-1 rounded-full font-bold uppercase">${o.status}</span>
-                                <p class="font-nexus text-gold text-xs mt-1">$ ${calcTotalVenta(o).toLocaleString()}</p>
-                            </div>
-                        </div>`;
-                    feed.innerHTML += card;
-                    if(o.status === 'LISTO') caja.innerHTML += card;
-                } else {
+                // Si la orden está en proceso (PATIO)
+                if(o.status === 'PATIO') {
+                    feed.innerHTML += renderCard(o, "border-accent");
+                } 
+                // Si la orden está lista para cobro (CAJA)
+                else if(o.status === 'LISTO') {
+                    const cardCaja = renderCard(o, "border-emerald-500");
+                    feed.innerHTML += cardCaja; // Sigue visible en patio pero resaltada
+                    caja.innerHTML += cardCaja; // Aparece en sección Caja
+                } 
+                // Si ya se cerró (CEO/HISTORIAL)
+                else if(o.status === 'ARCHIVADO') {
                     pgMes += (o.utilidad || 0);
                 }
             });
             document.getElementById('total-pg').innerText = `$ ${pgMes.toLocaleString()}`;
         });
-
-        // Stock Monitor
-        onSnapshot(query(collection(db, "stock"), where("tallerId", "==", auth.currentUser.uid)), (snap) => {
-            const list = document.getElementById('lista-stock');
-            list.innerHTML = "";
-            snap.forEach(d => {
-                const s = d.data();
-                list.innerHTML += `
-                    <div class="bg-white/5 p-4 rounded-2xl flex justify-between items-center border border-white/5">
-                        <span class="text-xs font-bold uppercase text-slate-400">${s.nombre}</span>
-                        <div class="text-right">
-                            <p class="font-nexus text-white">$${s.precio.toLocaleString()}</p>
-                            <p class="text-[8px] text-emerald-500 font-bold">STOCK: ${s.cantidad}</p>
-                        </div>
-                    </div>`;
-            });
-        });
     }
 
+    function renderCard(o, borderColor) {
+        return `
+            <div onclick="abrirOrden('${o.id}')" class="glass p-5 rounded-[25px] border-l-4 ${borderColor} hover:scale-[1.01] transition-all cursor-pointer flex justify-between items-center mb-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="font-nexus text-xl text-white uppercase italic">${o.placa}</h3>
+                        <span class="text-[8px] text-gold font-black">${o.ticket || 'S/N'}</span>
+                    </div>
+                    <p class="text-[9px] text-slate-500 font-bold uppercase">${o.mecanico} | ${o.cliente}</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-[8px] bg-white/5 text-slate-300 px-2 py-1 rounded-full font-bold uppercase">${o.status}</span>
+                    <p class="font-nexus text-emerald-400 text-xs mt-1">$ ${calcTotalVenta(o).toLocaleString()}</p>
+                </div>
+            </div>`;
+    }
+
+    // --- REGISTRO DE NUEVA ORDEN (MISIÓN) ---
     window.registrarMision = async () => {
         const placa = document.getElementById('in-placa').value.toUpperCase();
-        if(!placa) return alert("LA PLACA ES OBLIGATORIA");
+        if(!placa) return alert("SISTEMA REQUIERE PLACA");
 
         await addDoc(collection(db, "ordenes"), {
             tallerId: auth.currentUser.uid,
+            ticket: generarTicket(),
             placa,
-            mecanico: document.getElementById('in-mecanico').value.toUpperCase() || "SIN ASIGNAR",
-            cliente: document.getElementById('in-cliente').value.toUpperCase(),
+            mecanico: document.getElementById('in-mecanico').value.toUpperCase() || "ADMIN",
+            cliente: document.getElementById('in-cliente').value.toUpperCase() || "CLIENTE GENERAL",
             telefono: document.getElementById('in-tel').value,
             reporte: document.getElementById('in-reporte').value,
             status: 'PATIO',
@@ -257,17 +409,22 @@
             timestamp: serverTimestamp()
         });
         
-        document.querySelectorAll('input, textarea').forEach(i => i.value = "");
-        alert("MISIÓN DESPLEGADA EN LA RED");
+        document.querySelectorAll('.in-clean').forEach(i => i.value = "");
+        alert("MISIÓN DESPLEGADA EXITOSAMENTE");
     };
 
     window.abrirOrden = (id) => {
         ordenActualId = id;
         const o = misionesActivas.find(x => x.id === id);
         document.getElementById('mod-placa').innerText = o.placa;
-        document.getElementById('mod-meta').innerText = `CLIENTE: ${o.cliente} | RESPONSABLE: ${o.mecanico}`;
+        document.getElementById('mod-meta').innerText = `TICKET: ${o.ticket} | CLIENTE: ${o.cliente}`;
         document.getElementById('mo-cliente').value = o.moCliente || 0;
         document.getElementById('mo-mecanico').value = o.moMecanico || 0;
+        
+        // Cambiar texto del botón según el estado
+        const btnFin = document.getElementById('btn-finalizar');
+        btnFin.innerText = o.status === 'PATIO' ? "PASAR A CAJA" : "FACTURAR Y ARCHIVAR";
+        
         renderGastos(o);
         document.getElementById('modal-orden').classList.remove('hidden');
     };
@@ -283,24 +440,19 @@
             gastos: arrayUnion({ desc, costo, venta, fecha: new Date().toISOString() })
         });
         
-        document.getElementById('g-desc').value = "";
-        document.getElementById('g-costo').value = "";
-        document.getElementById('g-venta').value = "";
-        
+        ['g-desc', 'g-costo', 'g-venta'].forEach(id => document.getElementById(id).value = "");
         const o = misionesActivas.find(x => x.id === ordenActualId);
         renderGastos(o);
     };
 
     function renderGastos(o) {
         const list = document.getElementById('mod-items');
-        list.innerHTML = "";
-        o.gastos.forEach(g => {
-            list.innerHTML += `
-                <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5 text-[10px]">
-                    <span class="uppercase font-bold">${g.desc}</span>
-                    <span class="font-nexus text-emerald-400">$${g.venta.toLocaleString()}</span>
-                </div>`;
-        });
+        list.innerHTML = o.gastos.map(g => `
+            <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5 text-[10px] mb-2">
+                <span class="uppercase font-bold text-slate-300">${g.desc}</span>
+                <span class="font-nexus text-emerald-400">$${g.venta.toLocaleString()}</span>
+            </div>
+        `).join("");
         updateCalculos();
     }
 
@@ -320,36 +472,49 @@
     };
 
     window.finalizarOrden = async () => {
+        const o = misionesActivas.find(x => x.id === ordenActualId);
         const moC = parseFloat(document.getElementById('mo-cliente').value) || 0;
         const moM = parseFloat(document.getElementById('mo-mecanico').value) || 0;
-        const o = misionesActivas.find(x => x.id === ordenActualId);
         
+        // Lógica de Engrane: PATIO -> LISTO -> ARCHIVADO
+        let nuevoEstado = "LISTO";
+        if (o.status === "LISTO") nuevoEstado = "ARCHIVADO";
+
         const sumaVentaRep = o.gastos.reduce((acc, g) => acc + g.venta, 0);
         const sumaCostoRep = o.gastos.reduce((acc, g) => acc + g.costo, 0);
-        const utilidad = (sumaVentaRep - sumaCostoRep) + (moC - moM);
+        const utilidadFinal = (sumaVentaRep - sumaCostoRep) + (moC - moM);
 
-        if(confirm("¿FACTURAR Y ARCHIVAR ESTA MISIÓN?")){
+        const confirmMsg = nuevoEstado === "LISTO" ? "¿Enviar esta orden a CAJA para cobro?" : "¿Cerrar factura y archivar definitivamente?";
+        
+        if(confirm(confirmMsg)){
             await updateDoc(doc(db, "ordenes", ordenActualId), {
-                status: 'ARCHIVADO',
+                status: nuevoEstado,
                 moCliente: moC,
                 moMecanico: moM,
-                utilidad: utilidad,
+                utilidad: utilidadFinal,
                 fechaCierre: serverTimestamp()
             });
             closeModal();
         }
     };
 
-    // UI Helpers
+    // UI HELPERS
     window.switchSec = (sec, el) => {
         document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
         document.getElementById('sec-' + sec).classList.remove('hidden');
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        el.classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active', 'text-gold'));
+        el.classList.add('active', 'text-gold');
     };
+
     window.closeModal = () => document.getElementById('modal-orden').classList.add('hidden');
-    function calcTotalVenta(o) { return (o.gastos.reduce((acc, g) => acc + g.venta, 0)) + (o.moCliente || 0); }
-    setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleTimeString(); }, 1000);
+    
+    function calcTotalVenta(o) { 
+        return (o.gastos.reduce((acc, g) => acc + g.venta, 0)) + (o.moCliente || 0); 
+    }
+
+    setInterval(() => { 
+        document.getElementById('live-clock').innerText = new Date().toLocaleTimeString(); 
+    }, 1000);
 </script>
 </body>
 </html>
