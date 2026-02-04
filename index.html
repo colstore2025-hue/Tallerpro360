@@ -18,117 +18,142 @@
         :root { 
             --primary: #020617; --secondary: #0f172a; --accent: #3b82f6; 
             --gold: #f59e0b; --success: #10b981; --danger: #ef4444;
+            --glass: rgba(30, 41, 59, 0.4);
         }
         
-        * { -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; margin: 0; padding-bottom: 100px; overflow-x: hidden; }
+        /* MODO NOCTURNO DINÁMICO */
+        .night-mode {
+            --primary: #000000; --secondary: #0a0a0a; --glass: rgba(15, 15, 15, 0.8);
+        }
+        
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; margin: 0; padding-bottom: 110px; transition: background 1s ease; }
         .font-nexus { font-family: 'Orbitron', sans-serif; }
         
         /* Glassmorphism UI */
-        .glass-card { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); border-radius: 30px; }
-        .neo-input { background: rgba(15, 23, 42, 0.8); border: 2px solid #1e293b; border-radius: 18px; padding: 16px; color: white; width: 100%; transition: 0.3s; }
-        .neo-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); }
+        .glass-card { background: var(--glass); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.05); border-radius: 32px; transition: 0.3s; }
+        .glass-card:hover { border-color: rgba(59, 130, 246, 0.2); }
+        
+        .neo-input { background: rgba(15, 23, 42, 0.8); border: 2px solid #1e293b; border-radius: 20px; padding: 18px; color: white; width: 100%; transition: 0.3s; font-size: 16px; }
+        .neo-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 25px rgba(59, 130, 246, 0.2); transform: translateY(-2px); }
         
         /* Botones Elite */
         .btn-nexus { 
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border-radius: 20px; 
-            font-weight: 800; text-transform: uppercase; transition: 0.3s; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 10px; border: none;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border-radius: 22px; 
+            font-weight: 800; text-transform: uppercase; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; border: none;
         }
-        .btn-nexus:active { transform: scale(0.96); }
+        .btn-nexus:active { transform: scale(0.94); }
         .btn-gold { background: linear-gradient(135deg, var(--gold), #b45309); color: black; }
 
         /* Navegación Nexus */
         .nav-nexus { 
-            position: fixed; bottom: 20px; left: 15px; right: 15px; height: 80px; 
-            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(25px);
-            border-radius: 25px; border: 1px solid rgba(255,255,255,0.1);
+            position: fixed; bottom: 25px; left: 20px; right: 20px; height: 85px; 
+            background: rgba(15, 23, 42, 0.96); backdrop-filter: blur(30px);
+            border-radius: 28px; border: 1px solid rgba(255,255,255,0.1);
             display: flex; justify-content: space-around; align-items: center; z-index: 5000;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
-        .nav-item { color: #64748b; font-size: 10px; font-weight: 800; text-align: center; flex: 1; transition: 0.3s; }
+        .nav-item { color: #64748b; font-size: 10px; font-weight: 800; text-align: center; flex: 1; transition: 0.4s; position: relative; }
         .nav-item.active { color: var(--accent); }
-        .nav-item i { font-size: 22px; margin-bottom: 4px; display: block; }
+        .nav-item.active::after { content: ''; position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 30px; height: 4px; background: var(--accent); border-radius: 10px; box-shadow: 0 0 15px var(--accent); }
+        .nav-item i { font-size: 24px; margin-bottom: 5px; display: block; }
 
-        /* Animaciones */
-        @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0px rgba(245, 158, 11, 0.4); } 100% { box-shadow: 0 0 0 15px rgba(245, 158, 11, 0); } }
-        .pulse-gold { animation: pulse-gold 2s infinite; }
+        /* Animaciones Starlink */
+        @keyframes orbit { from { transform: rotate(0deg) translateX(15px) rotate(0deg); } to { transform: rotate(360deg) translateX(15px) rotate(-360deg); } }
+        .sat-animate { animation: orbit 3s linear infinite; }
         
-        /* Pantallas de Control */
-        #loader-nexus, #auth-screen, #block-screen { 
-            position: fixed; inset: 0; z-index: 9999; background: var(--primary); 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; 
-        }
+        #loader-nexus, #auth-screen, #block-screen { position: fixed; inset: 0; z-index: 9999; background: var(--primary); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
         .hidden { display: none !important; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 0; background: transparent; }
     </style>
 </head>
 <body>
 
 <div id="loader-nexus">
-    <div class="relative w-32 h-32 mb-8">
-        <div class="absolute inset-0 border-4 border-accent/20 rounded-full animate-ping"></div>
+    <div class="relative w-32 h-32 mb-10">
+        <div class="absolute inset-0 border-4 border-accent/10 rounded-full animate-ping"></div>
         <div class="absolute inset-0 border-t-4 border-gold rounded-full animate-spin"></div>
-        <i class="fas fa-satellite text-gold text-4xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
+        <i class="fas fa-satellite text-gold text-4xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 sat-animate"></i>
     </div>
-    <h2 class="font-nexus text-xl tracking-[0.3em] text-white">NEXUS-X</h2>
-    <p class="text-[10px] text-slate-500 uppercase mt-2 font-bold tracking-widest">Estableciendo Link Satelital...</p>
+    <h2 class="font-nexus text-2xl tracking-[0.4em] text-white animate-pulse">NEXUS-X</h2>
+    <p class="text-[10px] text-slate-500 uppercase mt-4 font-black tracking-widest">Sincronizando con Starlink...</p>
 </div>
 
 <div id="block-screen" class="hidden">
-    <div class="glass-card p-8 w-full max-w-sm text-center">
-        <i class="fas fa-microchip text-danger text-5xl mb-6"></i>
-        <h2 class="font-nexus text-2xl mb-2">NODO SUSPENDIDO</h2>
-        <p class="text-slate-400 text-sm mb-8 font-bold">La licencia de este taller ha expirado. Por favor contacte al CEO William Urquijo para reactivación.</p>
-        <div class="bg-slate-900/50 p-4 rounded-2xl text-left mb-6 border border-white/5 text-xs">
-            <p><i class="fas fa-university mr-2 text-gold"></i>NuBank: 69000706</p>
-            <p class="mt-2"><i class="fas fa-mobile-alt mr-2 text-success"></i>Nequi: 311 570 9730</p>
+    <div class="glass-card p-10 w-full max-w-sm text-center border-t-4 border-t-danger">
+        <div class="w-20 h-20 bg-danger/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="fas fa-lock text-danger text-4xl"></i>
         </div>
-        <button onclick="contactCEO()" class="btn-nexus w-full p-5 bg-gold text-black">ENVIAR COMPROBANTE</button>
+        <h2 class="font-nexus text-2xl mb-2">NODO SUSPENDIDO</h2>
+        <p class="text-slate-400 text-sm mb-10 font-medium">Su licencia ha expirado. El acceso a la nube Starlink ha sido restringido por falta de pago.</p>
+        <div class="bg-slate-900/80 p-5 rounded-2xl text-left mb-8 border border-white/5 space-y-3">
+            <div class="flex justify-between"><span class="text-slate-500">NuBank:</span><span class="text-gold font-bold">69000706</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Nequi:</span><span class="text-success font-bold">311 570 9730</span></div>
+        </div>
+        <button onclick="contactCEO()" class="btn-nexus w-full p-5 bg-gold text-black">NOTIFICAR PAGO</button>
     </div>
 </div>
 
 <div id="auth-screen" class="hidden">
     <div class="w-full max-w-md">
-        <div class="text-center mb-10">
+        <div class="text-center mb-12">
+            <div class="inline-block p-4 rounded-3xl bg-accent/10 border border-accent/20 mb-4">
+                <i class="fas fa-shield-halved text-accent text-3xl"></i>
+            </div>
             <h1 class="font-nexus text-4xl mb-2">NEXUS-X <span class="text-accent">USA</span></h1>
             <p class="text-[9px] text-slate-500 font-black tracking-[0.4em] uppercase">Logistics & Tech Network</p>
         </div>
 
-        <div id="login-box" class="glass-card p-8 space-y-4">
-            <h3 class="text-center font-nexus text-xs text-gold mb-4 uppercase">Ingreso al Sistema</h3>
-            <input id="auth-email" type="email" placeholder="Email Corporativo" class="neo-input">
+        <div id="login-box" class="glass-card p-8 space-y-5">
+            <h3 class="text-center font-nexus text-[10px] text-gold uppercase tracking-widest">Login de Comando</h3>
+            <input id="auth-email" type="email" placeholder="Email del Nodo" class="neo-input">
             <input id="auth-pass" type="password" placeholder="Clave de Encriptación" class="neo-input">
-            <button class="btn-nexus w-full p-5" onclick="handleAuth('login')">SINCRONIZAR NODO</button>
-            <p class="text-center text-[11px] text-slate-500 mt-6" onclick="toggleAuth()">¿NUEVO TALLER? <span class="text-accent underline">SOLICITAR ACCESO ELITE</span></p>
+            <button class="btn-nexus w-full p-5" id="btn-login-nexus" onclick="handleAuth('login')">CONECTAR NODO</button>
+            <p class="text-center text-xs text-slate-500 mt-8" onclick="toggleAuth()">¿NUEVO TALLER? <span class="text-accent underline font-bold">REGISTRARSE</span></p>
         </div>
 
-        <div id="reg-box" class="glass-card p-8 space-y-4 hidden">
-            <h3 class="text-center font-nexus text-xs text-success mb-4 uppercase">Registro Nodo Nuevo</h3>
-            <input id="reg-taller" type="text" placeholder="Nombre Comercial Taller" class="neo-input">
+        <div id="reg-box" class="glass-card p-8 space-y-5 hidden">
+            <h3 class="text-center font-nexus text-[10px] text-success uppercase tracking-widest">Registro de Nueva Terminal</h3>
+            <input id="reg-taller" type="text" placeholder="Nombre Comercial del Taller" class="neo-input">
             <input id="reg-email" type="email" placeholder="Email Administrativo" class="neo-input">
             <input id="reg-pass" type="password" placeholder="Crear Clave Maestra" class="neo-input">
             <div class="bg-blue-500/10 p-4 rounded-2xl text-[10px] text-blue-400 font-bold border border-blue-500/20">
-                <i class="fas fa-info-circle mr-1"></i> Recibirás 14 días de licencia FULL ELITE.
+                <i class="fas fa-info-circle mr-2"></i> Incluye 14 días de prueba FULL STARLINK.
             </div>
-            <button class="btn-nexus w-full p-5 bg-success" onclick="handleAuth('register')">DESPLEGAR NODO</button>
-            <p class="text-center text-[11px] text-slate-500 mt-6" onclick="toggleAuth()">YA TENGO CUENTA <span class="text-white underline">VOLVER AL LOGIN</span></p>
+            <button class="btn-nexus w-full p-5 bg-success" onclick="handleAuth('register')">DESPLEGAR TERMINAL</button>
+            <p class="text-center text-xs text-slate-500 mt-8" onclick="toggleAuth()">¿YA ES MIEMBRO? <span class="text-white underline font-bold">INGRESAR</span></p>
         </div>
     </div>
 </div>
 
-<header class="p-6 sticky top-0 z-[1000] bg-slate-950/80 backdrop-blur-lg border-b border-white/5">
+<header class="p-6 sticky top-0 z-[1000] bg-slate-950/80 backdrop-blur-xl border-b border-white/5">
     <div class="max-w-5xl mx-auto flex justify-between items-center">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center border border-accent/30">
-                <i class="fas fa-satellite-dish text-accent animate-pulse"></i>
+        <div class="flex items-center gap-4">
+            <div class="relative">
+                <div class="w-12 h-12 bg-accent/20 rounded-2xl flex items-center justify-center border border-accent/30">
+                    <i class="fas fa-satellite-dish text-accent animate-pulse"></i>
+                </div>
+                <div id="status-dot" class="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full border-4 border-slate-950"></div>
             </div>
             <div>
-                <h1 class="font-nexus text-xs" id="display-taller">CARGANDO NODO...</h1>
-                <span id="trial-badge" class="hidden bg-gold text-black text-[8px] font-black px-2 py-0.5 rounded uppercase">Trial Activo</span>
+                <h1 class="font-nexus text-xs" id="display-taller">LINKING...</h1>
+                <div class="flex items-center gap-2">
+                    <span id="trial-badge" class="hidden bg-gold text-black text-[8px] font-black px-2 py-0.5 rounded uppercase">Trial Mode</span>
+                    <span id="clock-display" class="text-[9px] text-slate-500 font-bold">00:00:00</span>
+                </div>
             </div>
         </div>
-        <button onclick="signOutNow()" class="w-10 h-10 bg-red-500/10 text-red-500 rounded-xl border border-red-500/20">
-            <i class="fas fa-power-off"></i>
-        </button>
+        <div class="flex gap-2">
+            <button onclick="toggleDarkMode()" class="w-11 h-11 bg-slate-900 text-gold rounded-xl border border-white/5">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button onclick="signOutNow()" class="w-11 h-11 bg-red-500/10 text-red-500 rounded-xl border border-red-500/20">
+                <i class="fas fa-power-off"></i>
+            </button>
+        </div>
     </div>
 </header>
 
@@ -136,86 +161,88 @@
 
     <section id="sec-patio" class="space-y-6">
         <div class="grid grid-cols-2 gap-4">
-            <div class="glass-card p-6 text-center border-b-4 border-b-accent">
-                <p class="text-[9px] text-slate-500 font-black uppercase mb-1">Vehículos Hoy</p>
-                <h2 class="text-4xl font-nexus text-white" id="count-patio">0</h2>
+            <div class="glass-card p-6 text-center group">
+                <p class="text-[10px] text-slate-500 font-black uppercase mb-1">Vehículos Activos</p>
+                <h2 class="text-5xl font-nexus text-white group-hover:text-accent transition-colors" id="count-patio">0</h2>
             </div>
             <div class="glass-card p-6 text-center border-b-4 border-b-success">
-                <p class="text-[9px] text-slate-500 font-black uppercase mb-1">Ingresos Estimados</p>
+                <p class="text-[10px] text-slate-500 font-black uppercase mb-1">Facturación Mes</p>
                 <h2 class="text-4xl font-nexus text-success" id="kpi-ingresos">$0</h2>
             </div>
         </div>
 
-        <button id="btn-voz" class="btn-nexus w-full p-6 bg-slate-900 border-2 border-accent/20 pulse-gold">
-            <i class="fas fa-microphone-alt text-2xl text-gold"></i>
-            <span class="text-left"><b class="block text-xs">DICTADO IA NEXUS-X</b><small class="text-[9px] opacity-60 uppercase">Transcripción Técnica Starlink</small></span>
+        <button id="btn-voz" class="btn-nexus w-full p-7 bg-slate-900 border-2 border-accent/20 shadow-2xl">
+            <i class="fas fa-microphone-alt text-3xl text-gold animate-bounce"></i>
+            <span class="text-left"><b class="block text-sm">IA VOICE COMMAND</b><small class="text-[10px] text-slate-400 uppercase">Dictado de diagnóstico en tiempo real</small></span>
         </button>
 
-        <div class="glass-card p-8 space-y-6">
-            <h3 class="font-nexus text-[10px] text-gold border-l-4 border-gold pl-3 uppercase">Recepción de Unidad</h3>
+        <div class="glass-card p-8 space-y-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-4 opacity-5"><i class="fas fa-file-invoice text-6xl"></i></div>
+            <h3 class="font-nexus text-xs text-gold border-l-4 border-gold pl-4 uppercase">Ingreso de Nueva Unidad</h3>
             <div class="grid grid-cols-2 gap-4">
-                <input id="o-placa" placeholder="PLACA" class="neo-input text-center font-nexus text-2xl text-accent uppercase">
+                <input id="o-placa" placeholder="PLACA" class="neo-input text-center font-nexus text-2xl text-accent uppercase tracking-tighter">
                 <input id="o-modelo" type="number" placeholder="AÑO" class="neo-input">
             </div>
-            <input id="o-marca" placeholder="MARCA Y REFERENCIA" class="neo-input">
-            <div class="grid grid-cols-2 gap-4">
-                <input id="o-cliente" placeholder="NOMBRE CLIENTE" class="neo-input">
-                <input id="o-tel" type="tel" placeholder="WHATSAPP" class="neo-input">
+            <div class="grid grid-cols-1 gap-4">
+                <input id="o-marca" placeholder="MARCA Y REFERENCIA" class="neo-input">
+                <div class="grid grid-cols-2 gap-4">
+                    <input id="o-cliente" placeholder="NOMBRE CLIENTE" class="neo-input">
+                    <input id="o-tel" type="tel" placeholder="WHATSAPP" class="neo-input">
+                </div>
+                <textarea id="o-trabajo" rows="4" placeholder="REPORTE DE FALLAS Y TAREAS..." class="neo-input"></textarea>
             </div>
-            <textarea id="o-trabajo" rows="3" placeholder="SÍNTOMAS Y DIAGNÓSTICO..." class="neo-input"></textarea>
-            <button class="btn-nexus w-full p-5" onclick="saveOrder()"><i class="fas fa-save"></i> GUARDAR Y NOTIFICAR</button>
+            <button class="btn-nexus w-full p-6 text-lg" onclick="saveOrder()"><i class="fas fa-cloud-arrow-up"></i> SINCRONIZAR NODO</button>
         </div>
 
-        <div id="lista-ordenes" class="space-y-4 pb-10"></div>
+        <div id="lista-ordenes" class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-12"></div>
     </section>
 
     <section id="sec-metrics" class="hidden space-y-6">
-        <div class="glass-card p-6">
-            <h3 class="font-nexus text-xs text-white mb-6 uppercase tracking-widest">Rendimiento Mensual</h3>
-            <canvas id="chartStats" height="250"></canvas>
+        <div class="glass-card p-8">
+            <h3 class="font-nexus text-xs text-white mb-8 uppercase tracking-[0.3em]">Métricas de Rendimiento</h3>
+            <canvas id="chartStats" height="300"></canvas>
         </div>
         
-        <div class="grid grid-cols-1 gap-4">
-            <div class="glass-card p-6 flex justify-between items-center">
-                <div>
-                    <p class="text-[10px] font-black text-slate-500 uppercase">Total Órdenes</p>
-                    <h4 class="text-3xl font-nexus text-white" id="stats-total">0</h4>
-                </div>
-                <div class="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center border border-accent/20">
-                    <i class="fas fa-chart-line text-accent text-xl"></i>
-                </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="glass-card p-6">
+                <p class="text-[9px] text-slate-500 font-bold uppercase">Eficiencia</p>
+                <h4 class="text-2xl font-nexus text-accent">94.2%</h4>
+            </div>
+            <div class="glass-card p-6">
+                <p class="text-[9px] text-slate-500 font-bold uppercase">Total Histórico</p>
+                <h4 class="text-2xl font-nexus text-white" id="stats-total">0</h4>
             </div>
         </div>
     </section>
 
-    <section id="sec-admin" class="hidden space-y-6">
-        <div class="glass-card p-8 border-2 border-gold/30">
-            <h2 class="font-nexus text-xl text-gold mb-8"><i class="fas fa-crown mr-3"></i>COMMAND CENTER</h2>
+    <section id="sec-admin" class="hidden space-y-8">
+        <div class="glass-card p-8 border-2 border-gold/30 relative">
+            <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-gold text-black font-black px-6 py-1 rounded-full text-[10px] font-nexus">ADMIN MODE</div>
+            <h2 class="font-nexus text-xl text-gold mb-8 text-center"><i class="fas fa-crown mr-3"></i>GLOBAL COMMAND</h2>
             <div class="grid grid-cols-2 gap-4 mb-8">
-                <div class="bg-slate-900/80 p-5 rounded-2xl border border-white/5">
-                    <p class="text-[9px] text-slate-500 font-black uppercase">Nodos Red</p>
-                    <p id="ceo-nodos" class="text-3xl font-nexus text-white">0</p>
+                <div class="bg-slate-950 p-6 rounded-3xl border border-white/5 text-center">
+                    <p class="text-[9px] text-slate-500 font-black uppercase mb-2">Nodos en Red</p>
+                    <p id="ceo-nodos" class="text-4xl font-nexus text-white">0</p>
                 </div>
-                <div class="bg-slate-900/80 p-5 rounded-2xl border border-white/5">
-                    <p class="text-[9px] text-slate-500 font-black uppercase">Alertas</p>
-                    <p class="text-3xl font-nexus text-accent">0</p>
+                <div class="bg-slate-950 p-6 rounded-3xl border border-white/5 text-center">
+                    <p class="text-[9px] text-slate-500 font-black uppercase mb-2">Facturación Red</p>
+                    <p class="text-2xl font-nexus text-success font-bold">$4.2M</p>
                 </div>
             </div>
-            <div id="ceo-user-list" class="space-y-3"></div>
+            <div id="ceo-user-list" class="space-y-4"></div>
         </div>
     </section>
 
 </main>
 
 <nav class="nav-nexus">
-    <div class="nav-item active" onclick="showTab('patio')"><i class="fas fa-tools"></i>PATIO</div>
-    <div class="nav-item" onclick="showTab('metrics')"><i class="fas fa-chart-pie"></i>DASHBOARD</div>
-    <div class="nav-item" onclick="showTab('passport')"><i class="fas fa-id-card"></i>PASSPORT</div>
-    <div id="tab-admin" class="nav-item hidden" onclick="showTab('admin')"><i class="fas fa-crown text-gold"></i>CEO</div>
+    <div class="nav-item active" onclick="showTab('patio')"><i class="fas fa-car-rear"></i>PATIO</div>
+    <div class="nav-item" onclick="showTab('metrics')"><i class="fas fa-chart-line"></i>MÉTRICAS</div>
+    <div class="nav-item" onclick="showTab('passport')"><i class="fas fa-id-badge"></i>PASSPORT</div>
+    <div id="tab-admin" class="nav-item hidden" onclick="showTab('admin')"><i class="fas fa-user-gear text-gold"></i>CEO</div>
 </nav>
 
 <script type="module">
-    // INTEGRACIÓN FIREBASE ELITE
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, addDoc, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -235,13 +262,15 @@
 
     // --- MANEJO DE AUTENTICACIÓN ---
     window.handleAuth = async (mode) => {
+        const btn = document.getElementById('btn-login-nexus');
+        btn.disabled = true; btn.innerText = "LINKING...";
+        
         const email = (mode === 'login' ? document.getElementById('auth-email').value : document.getElementById('reg-email').value).toLowerCase().trim();
         const pass = mode === 'login' ? document.getElementById('auth-pass').value : document.getElementById('reg-pass').value;
 
         try {
             if (mode === 'register') {
                 const taller = document.getElementById('reg-taller').value;
-                if(!taller) return alert("Nombre de taller obligatorio");
                 const res = await createUserWithEmailAndPassword(auth, email, pass);
                 const vence = new Date(); vence.setDate(vence.getDate() + 14);
                 await setDoc(doc(db, "usuarios", res.user.uid), {
@@ -250,7 +279,10 @@
             } else {
                 await signInWithEmailAndPassword(auth, email, pass);
             }
-        } catch (e) { alert("NEXUS AUTH: " + e.message); }
+        } catch (e) { 
+            alert("ERROR NEXUS AUTH: " + e.message); 
+            btn.disabled = false; btn.innerText = "CONECTAR NODO";
+        }
     };
 
     onAuthStateChanged(auth, async (user) => {
@@ -262,9 +294,9 @@
         if (user) {
             const email = user.email.toLowerCase();
             
-            // Bypass Maestro CEO
+            // Bypass Maestro CEO William
             if(email === 'col.store2025@gmail.com'){
-                document.getElementById('display-taller').innerText = "NEXUS MASTER COMMAND";
+                document.getElementById('display-taller').innerText = "CEO CONTROL: WILLIAM URQUIJO";
                 tabAdmin.classList.remove('hidden');
                 authScr.classList.add('hidden');
                 initNexusSystem(user.uid, true);
@@ -272,20 +304,18 @@
                 const uDoc = await getDoc(doc(db, "usuarios", user.uid));
                 if(uDoc.exists()){
                     const data = uDoc.data();
-                    const hoy = new Date().getTime();
-                    if(hoy > data.vence){
+                    if(new Date().getTime() > data.vence){
                         blockScr.classList.remove('hidden');
                         authScr.classList.add('hidden');
                     } else {
-                        document.getElementById('display-taller').innerText = data.nombreTaller;
+                        document.getElementById('display-taller').innerText = data.nombreTaller.toUpperCase();
                         document.getElementById('trial-badge').classList.remove('hidden');
                         authScr.classList.add('hidden');
                         initNexusSystem(user.uid, false);
                     }
                 } else {
-                    // Reparación de perfil automático
                     await setDoc(doc(db, "usuarios", user.uid), {
-                        nombreTaller: "Nuevo Nodo", email: email, status: 'TRIAL', vence: new Date().getTime() + 1209600000, rol: 'TALLER'
+                        nombreTaller: "Nuevo Taller Nexus", email: email, status: 'TRIAL', vence: Date.now() + 1209600000, rol: 'TALLER'
                     });
                     location.reload();
                 }
@@ -293,10 +323,10 @@
         } else {
             authScr.classList.remove('hidden');
         }
-        setTimeout(() => loader.classList.add('hidden'), 1000);
+        setTimeout(() => { loader.style.opacity = '0'; setTimeout(()=>loader.classList.add('hidden'), 500); }, 1500);
     });
 
-    // --- MOTOR OPERATIVO ---
+    // --- LÓGICA DE OPERACIÓN Y PDF ---
     function initNexusSystem(uid, isCEO) {
         const q = query(collection(db, "ordenes"), where("tallerId", "==", uid), orderBy("timestamp", "desc"));
         onSnapshot(q, (snap) => {
@@ -305,16 +335,21 @@
             document.getElementById('count-patio').innerText = snap.size;
             document.getElementById('stats-total').innerText = snap.size;
             
-            snap.forEach(doc => {
-                const o = doc.data();
-                list.innerHTML += `
-                    <div class="glass-card p-5 border-l-4 border-accent animate-pulse-once flex justify-between items-center">
-                        <div>
-                            <h4 class="font-nexus text-xl text-white">${o.placa}</h4>
-                            <p class="text-[9px] text-slate-500 font-bold uppercase">${o.cliente} | ${o.marca}</p>
-                        </div>
-                        <button class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-gold"><i class="fas fa-eye"></i></button>
+            snap.forEach(docSnap => {
+                const o = docSnap.data();
+                const card = document.createElement('div');
+                card.className = "glass-card p-6 flex justify-between items-center border-l-4 border-accent";
+                card.innerHTML = `
+                    <div>
+                        <h4 class="font-nexus text-2xl text-white tracking-tighter">${o.placa}</h4>
+                        <p class="text-[10px] text-slate-500 font-black uppercase">${o.marca} | ${o.cliente}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick='descargarPDF(${JSON.stringify(o)})' class="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-gold border border-white/5 shadow-lg">
+                            <i class="fas fa-file-pdf text-xl"></i>
+                        </button>
                     </div>`;
+                list.appendChild(card);
             });
             updateStatsChart(snap.size);
         });
@@ -323,8 +358,11 @@
     }
 
     window.saveOrder = async () => {
+        const placa = document.getElementById('o-placa').value.toUpperCase().trim();
+        if(!placa) return alert("LA PLACA ES LA LLAVE DEL NODO. ES OBLIGATORIA.");
+
         const orden = {
-            placa: document.getElementById('o-placa').value.toUpperCase().trim(),
+            placa,
             marca: document.getElementById('o-marca').value,
             modelo: document.getElementById('o-modelo').value,
             cliente: document.getElementById('o-cliente').value,
@@ -333,56 +371,79 @@
             tallerId: auth.currentUser.uid,
             timestamp: serverTimestamp()
         };
-        if(!orden.placa) return alert("Placa requerida");
-        await addDoc(collection(db, "ordenes"), orden);
-        
-        const msg = `*NEXUS-X REPORTE*%0AUnidad: ${orden.placa}%0ADiagnóstico: ${orden.trabajo}`;
-        window.open(`https://wa.me/57${orden.tel}?text=${msg}`, '_blank');
-        alert("Sincronizado");
+
+        try {
+            await addDoc(collection(db, "ordenes"), orden);
+            const msg = `*REPORTE NEXUS-X STARLINK*%0AUnidad: ${orden.placa}%0ACliente: ${orden.cliente}%0ADiagnóstico: ${orden.trabajo}`;
+            window.open(`https://wa.me/57${orden.tel}?text=${msg}`, '_blank');
+            limpiarForm();
+        } catch(e) { alert("ERROR DE SINCRONIZACIÓN: " + e.message); }
     };
 
-    // --- DASHBOARD ENGINE ---
+    window.descargarPDF = (orden) => {
+        const { jsPDF } = window.jspdf;
+        const docPDF = new jsPDF();
+        
+        docPDF.setFillColor(2, 6, 23); docPDF.rect(0, 0, 210, 45, 'F');
+        docPDF.setTextColor(255, 255, 255);
+        docPDF.setFont("helvetica", "bold"); docPDF.setFontSize(24);
+        docPDF.text("NEXUS-X STARLINK USA", 20, 25);
+        docPDF.setFontSize(9); docPDF.text("RED LOGÍSTICA DE TALLERES ÉLITE - COLOMBIA", 20, 33);
+        
+        docPDF.setTextColor(0, 0, 0); docPDF.setFontSize(14);
+        docPDF.text("ORDEN DE SERVICIO TÉCNICO", 20, 60);
+        docPDF.setDrawColor(59, 130, 246); docPDF.line(20, 63, 190, 63);
+        
+        docPDF.setFontSize(10); docPDF.setFont("helvetica", "normal");
+        docPDF.text(`Taller: ${document.getElementById('display-taller').innerText}`, 20, 75);
+        docPDF.text(`Fecha Emisión: ${new Date().toLocaleString()}`, 20, 82);
+        
+        docPDF.setFillColor(245, 245, 245); docPDF.rect(20, 90, 170, 35, 'F');
+        docPDF.setFont("helvetica", "bold"); docPDF.text("ESPECIFICACIONES DE LA UNIDAD", 25, 97);
+        docPDF.setFont("helvetica", "normal");
+        docPDF.text(`PLACA: ${orden.placa}`, 25, 107);
+        docPDF.text(`CLIENTE: ${orden.cliente}`, 25, 115);
+        docPDF.text(`MARCA: ${orden.marca}`, 110, 107);
+        docPDF.text(`AÑO: ${orden.modelo}`, 110, 115);
+        
+        docPDF.setFont("helvetica", "bold"); docPDF.text("DIAGNÓSTICO Y TRABAJO REALIZADO:", 20, 140);
+        docPDF.setFont("helvetica", "normal");
+        const lines = docPDF.splitTextToSize(orden.trabajo || "Revisión general de sistemas.", 170);
+        docPDF.text(lines, 20, 148);
+        
+        docPDF.setTextColor(150, 150, 150); docPDF.setFontSize(8);
+        docPDF.text("Nexus-X Starlink Logistics LLC - Derechos Reservados 2026", 105, 285, {align: "center"});
+        
+        docPDF.save(`NexusX_${orden.placa}.pdf`);
+    };
+
+    // --- DASHBOARD E INTELIGENCIA ---
     let statsChart;
-    function updateStatsChart(currentCount) {
+    function updateStatsChart(val) {
         const ctx = document.getElementById('chartStats').getContext('2d');
         if(statsChart) statsChart.destroy();
         statsChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['Ene', 'Feb', 'Mar', 'Abr'],
+                labels: ['W1', 'W2', 'W3', 'W4'],
                 datasets: [{
-                    label: 'Flujo de Patio',
-                    data: [currentCount-2, currentCount+1, currentCount-1, currentCount],
+                    data: [val-3, val+2, val-1, val],
                     borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    fill: true,
-                    tension: 0.4
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    fill: true, tension: 0.5, borderWidth: 4, pointRadius: 0
                 }]
             },
-            options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
+            options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#475569' } } } }
         });
     }
 
-    async function cargarPanelCEO() {
-        const snap = await getDocs(collection(db, "usuarios"));
-        const list = document.getElementById('ceo-user-list');
-        list.innerHTML = "";
-        document.getElementById('ceo-nodos').innerText = snap.size;
-        snap.forEach(d => {
-            const u = d.data();
-            list.innerHTML += `<div class="bg-slate-900/40 p-4 rounded-xl flex justify-between items-center border border-white/5">
-                <span class="text-[10px] font-bold">${u.nombreTaller}</span>
-                <span class="text-[8px] ${new Date().getTime() > u.vence ? 'text-danger' : 'text-success'} font-black">● ${u.status}</span>
-            </div>`;
-        });
-    }
-
-    // --- UTILIDADES ---
+    // --- UTILIDADES DE INTERFAZ ---
     window.showTab = (tab) => {
         document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
         document.getElementById(`sec-${tab}`).classList.remove('hidden');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         event.currentTarget.classList.add('active');
+        window.scrollTo(0,0);
     };
 
     window.toggleAuth = () => {
@@ -390,8 +451,26 @@
         document.getElementById('reg-box').classList.toggle('hidden');
     };
 
+    window.toggleDarkMode = () => {
+        document.body.classList.toggle('night-mode');
+        const icon = document.querySelector('.fa-moon');
+        icon.classList.toggle('fa-sun');
+    };
+
+    // Auto Modo Oscuro (18:00 a 06:00)
+    const hour = new Date().getHours();
+    if(hour >= 18 || hour <= 6) document.body.classList.add('night-mode');
+
+    setInterval(() => {
+        document.getElementById('clock-display').innerText = new Date().toLocaleTimeString();
+    }, 1000);
+
+    function limpiarForm() {
+        ['o-placa','o-marca','o-modelo','o-cliente','o-tel','o-trabajo'].forEach(id => document.getElementById(id).value = "");
+    }
+
     window.signOutNow = () => signOut(auth).then(() => location.reload());
-    window.contactCEO = () => window.open(`https://wa.me/573115709730?text=Pago%20de%20Nodo%20Nexus-X`, '_blank');
+    window.contactCEO = () => window.open(`https://wa.me/573115709730?text=Hola%20William,%20necesito%20activar%20mi%20Nodo%20Nexus-X`, '_blank');
 </script>
 </body>
 </html>
