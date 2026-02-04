@@ -2,157 +2,183 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TallerPRO360 - Nexus-X Starlink | Gestión Élite para Talleres</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Nexus-X Starlink | Ingeniería Logística Élite</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#020617">
     <link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3239/3239147.png">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3239/3239147.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        :root { --gold: #f59e0b; --deep: #020617; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--deep); color: #f1f5f9; }
         .font-nexus { font-family: 'Orbitron', sans-serif; }
-        .gradient-starlink { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
-        .text-gold { color: #f59e0b; }
-        .bg-gold { background-color: #f59e0b; }
-        .btn-nexus { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn-nexus:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.3); }
-        .glass-nav { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); }
+        
+        .hero-mesh {
+            background-color: #020617;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.1) 0px, transparent 50%);
+        }
+
+        .grid-pattern {
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .glass-dark { 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            box-shadow: 0 10px 20px -5px rgba(245, 158, 11, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 15px 30px -5px rgba(245, 158, 11, 0.6); }
+
+        .floating { animation: floating 3s ease-in-out infinite; }
+        @keyframes floating { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     </style>
 </head>
-<body class="bg-slate-50">
+<body class="selection:bg-gold selection:text-black">
 
-    <nav class="glass-nav py-4 px-6 border-b border-white/10 sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <i class="fas fa-satellite text-gold text-2xl animate-pulse"></i>
-                <span class="text-white font-nexus text-xl tracking-tighter uppercase">TallerPRO360 <span class="text-gold">ELITE</span></span>
+    <nav class="fixed top-0 w-full z-50 glass-dark border-b border-white/5 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-gold p-2 rounded-lg shadow-lg shadow-gold/20">
+                    <i class="fas fa-satellite text-black text-xl"></i>
+                </div>
+                <span class="font-nexus text-xl tracking-tighter font-black">NEXUS<span class="text-gold">-X</span></span>
             </div>
-            <div class="hidden md:flex gap-8 text-white text-[10px] font-black uppercase tracking-[2px]">
-                <a href="#soluciones" class="hover:text-gold transition">Soluciones</a>
-                <a href="#precios" class="hover:text-gold transition">Planes</a>
-                <button onclick="distribuirAcceso('TALLER')" class="bg-blue-600 px-6 py-2 rounded-full hover:bg-blue-700 transition shadow-lg shadow-blue-900/40">Acceso Red</button>
+            <div class="hidden md:flex gap-8 items-center">
+                <a href="#soluciones" class="text-[10px] font-bold tracking-[3px] uppercase hover:text-gold transition">Ingeniería</a>
+                <a href="#precios" class="text-[10px] font-bold tracking-[3px] uppercase hover:text-gold transition">Licencias</a>
+                <button onclick="distribuirAcceso('TALLER')" class="bg-white/5 hover:bg-white/10 px-6 py-2 rounded-full border border-white/10 text-[10px] font-black tracking-widest transition uppercase">Terminal Taller</button>
             </div>
         </div>
     </nav>
 
-    <header class="gradient-starlink text-white py-24 px-6 text-center relative overflow-hidden">
-        <div class="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
-            <i class="fas fa-microchip text-[25rem] absolute -top-20 -left-20"></i>
-            <i class="fas fa-truck-monster text-[20rem] absolute -bottom-10 -right-10"></i>
-        </div>
+    <header class="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden hero-mesh">
+        <div class="absolute inset-0 grid-pattern opacity-40"></div>
         
-        <div class="max-w-4xl mx-auto relative z-10">
-            <div class="inline-block bg-gold/10 text-gold px-4 py-1 rounded-full text-[10px] font-black mb-8 border border-gold/30 tracking-[3px] uppercase">
-                Sistema Logístico Nexus-X Starlink USA/COL
+        <div class="max-w-6xl mx-auto px-6 text-center relative z-10">
+            <div class="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full mb-8 floating">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-gold"></span>
+                </span>
+                <span class="text-[9px] font-black tracking-[4px] uppercase text-slate-400">Powered by Starlink Technology</span>
             </div>
-            <h1 class="text-5xl md:text-7xl font-black mb-8 leading-tight tracking-tight">
-                La secretaria que <span class="text-gold">no tienes que pagar.</span>
+
+            <h1 class="text-5xl md:text-8xl font-black mb-8 leading-[0.9] tracking-tighter">
+                SISTEMA LOGÍSTICO <br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-gold via-white to-gold uppercase italic">Nexus-X Élite</span>
             </h1>
-            <p class="text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
-                Tecnología de **Colombian Trucks Logistics LLC** diseñada para mecánicos élite. Orden, velocidad y respaldo total.
-            </p>
             
-            <div class="flex flex-col md:flex-row gap-5 justify-center">
-                <button onclick="distribuirAcceso('TALLER')" class="btn-nexus bg-green-600 hover:bg-green-700 text-white font-black py-5 px-12 rounded-2xl text-lg flex items-center justify-center gap-3">
-                    <i class="fas fa-rocket"></i> EMPEZAR GRATIS (TALLERES)
+            <p class="text-lg md:text-xl text-slate-400 mb-12 max-w-3xl mx-auto font-light leading-relaxed">
+                Deje de ser un mecánico y conviértase en un **Centro de Soluciones**. La inteligencia de <span class="text-white font-bold">Colombian Trucks Logistics LLC</span> ahora disponible en su taller.
+            </p>
+
+            <div class="flex flex-col md:flex-row gap-6 justify-center items-center">
+                <button onclick="distribuirAcceso('TALLER')" class="btn-gold text-black font-black py-6 px-14 rounded-2xl text-sm tracking-widest uppercase flex items-center gap-4 group">
+                    <i class="fas fa-microchip group-hover:rotate-90 transition-all"></i>
+                    Activar Nodo Taller
                 </button>
-                <button onclick="distribuirAcceso('CLIENTE')" class="btn-nexus bg-white hover:bg-slate-100 text-slate-900 font-bold py-5 px-12 rounded-2xl text-lg border-4 border-gold flex items-center justify-center gap-3">
-                    <i class="fas fa-search-location text-blue-600"></i> RASTREAR MI CAMIÓN
+                <button onclick="distribuirAcceso('CLIENTE')" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black py-6 px-14 rounded-2xl text-sm tracking-widest uppercase transition-all">
+                    Rastrear Camión
                 </button>
             </div>
-            
-            <div class="mt-12 flex justify-center gap-8 text-slate-400">
-                <div class="flex flex-col items-center">
-                    <i class="fab fa-android text-3xl hover:text-green-500 cursor-pointer"></i>
-                    <span class="text-[8px] mt-2 font-bold uppercase">Android APK</span>
-                </div>
-                <div class="flex flex-col items-center">
-                    <i class="fab fa-apple text-3xl hover:text-white cursor-pointer"></i>
-                    <span class="text-[8px] mt-2 font-bold uppercase">iOS App</span>
-                </div>
+
+            <div class="mt-20 flex flex-wrap justify-center gap-12 opacity-40 grayscale">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/2449px-NASA_logo.svg.png" class="h-8" alt="NASA">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Starlink_Logo.svg/2560px-Starlink_Logo.svg.png" class="h-4" alt="Starlink">
+                <span class="font-nexus text-sm">TRUCKS LOGISTICS LLC</span>
             </div>
         </div>
     </header>
 
-    <section id="soluciones" class="py-28 px-6 max-w-7xl mx-auto">
-        <div class="grid md:grid-cols-3 gap-10">
-            <div class="bg-white p-12 rounded-[40px] shadow-sm border border-slate-100 hover:border-blue-200 transition-all">
-                <div class="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mb-8 shadow-lg shadow-blue-200">
-                    <i class="fas fa-microphone-alt text-white text-3xl"></i>
-                </div>
-                <h3 class="text-2xl font-black mb-4 text-slate-800 tracking-tight">Voz Nexus-X</h3>
-                <p class="text-slate-500 text-sm">Dicta diagnósticos pesados mientras trabajas. El sistema convierte tu voz en órdenes técnicas profesionales.</p>
+    <section id="soluciones" class="py-32 px-6 relative">
+        <div class="max-w-7xl mx-auto grid md:grid-cols-3 gap-8">
+            <div class="glass-dark p-10 rounded-[2rem] border-t-2 border-gold/20">
+                <div class="text-gold mb-6 text-4xl"><i class="fas fa-brain"></i></div>
+                <h3 class="font-nexus text-lg mb-4 uppercase">Diagnóstico IA</h3>
+                <p class="text-slate-500 text-sm leading-relaxed">Hable con la terminal. Nexus-X procesa fallas mecánicas pesadas y genera reportes técnicos con estándares de la industria USA.</p>
             </div>
-            <div class="bg-white p-12 rounded-[40px] shadow-sm border border-slate-100">
-                <div class="bg-green-600 w-16 h-16 rounded-2xl flex items-center justify-center mb-8 shadow-lg shadow-green-200">
-                    <i class="fab fa-whatsapp text-white text-3xl"></i>
-                </div>
-                <h3 class="text-2xl font-black mb-4 text-slate-800 tracking-tight">WhatsApp Elite</h3>
-                <p class="text-slate-500 text-sm">Notificaciones automáticas. Mantén a tus clientes conectados al progreso de su vehículo en tiempo real.</p>
+            <div class="glass-dark p-10 rounded-[2rem] border-t-2 border-blue-500/20">
+                <div class="text-blue-500 mb-6 text-4xl"><i class="fas fa-shield-halved"></i></div>
+                <h3 class="font-nexus text-lg mb-4 uppercase">Protocolo Starlink</h3>
+                <p class="text-slate-500 text-sm leading-relaxed">Conexión constante. Sincronice datos de motores y kilometrajes directamente en la nube global de Nexus.</p>
             </div>
-            <div class="bg-white p-12 rounded-[40px] shadow-sm border border-slate-100">
-                <div class="bg-gold w-16 h-16 rounded-2xl flex items-center justify-center mb-8 shadow-lg shadow-amber-200">
-                    <i class="fas fa-passport text-white text-3xl"></i>
-                </div>
-                <h3 class="text-2xl font-black mb-4 text-slate-800 tracking-tight">Passport Starlink</h3>
-                <p class="text-slate-500 text-sm">Hoja de vida digital inviolable para cada camión. Consulta el historial global en nuestra red.</p>
+            <div class="glass-dark p-10 rounded-[2rem] border-t-2 border-emerald-500/20">
+                <div class="text-emerald-500 mb-6 text-4xl"><i class="fas fa-hand-holding-dollar"></i></div>
+                <h3 class="font-nexus text-lg mb-4 uppercase">Caja Blindada</h3>
+                <p class="text-slate-500 text-sm leading-relaxed">Control total de repuestos y mano de obra. Usted factura, el sistema se encarga de la rentabilidad.</p>
             </div>
         </div>
     </section>
 
-    <section id="precios" class="bg-slate-900 py-28 px-6">
-        <div class="max-w-6xl mx-auto">
-            <h2 class="text-4xl font-black text-center mb-20 text-white tracking-tighter uppercase italic">Estrategia de <span class="text-gold">Crecimiento</span></h2>
-            <div class="grid md:grid-cols-3 gap-8 items-center">
-                <div class="bg-slate-800/40 p-10 rounded-3xl border border-slate-700 text-white">
-                    <h3 class="text-xl font-black mb-2 uppercase tracking-widest text-slate-400">Starter</h3>
-                    <div class="text-4xl font-black mb-8">$49.000 <span class="text-xs font-normal opacity-50">/mes</span></div>
-                    <ul class="space-y-4 mb-10 text-sm opacity-80">
-                        <li><i class="fas fa-check text-green-500 mr-2"></i> 50 Órdenes por Voz</li>
-                        <li><i class="fas fa-check text-green-500 mr-2"></i> WhatsApp Básico</li>
+    <section id="precios" class="py-32 px-6 bg-slate-950/50">
+        <div class="max-w-5xl mx-auto">
+            <div class="text-center mb-20">
+                <h2 class="font-nexus text-3xl md:text-5xl mb-4">LICENCIAS DE RED</h2>
+                <div class="h-1 w-24 bg-gold mx-auto"></div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="glass-dark p-12 rounded-[3rem] border-2 border-gold/30 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 bg-gold text-black font-black text-[10px] px-6 py-2 rounded-bl-2xl uppercase tracking-tighter">Plan Maestro</div>
+                    <h4 class="font-nexus text-2xl text-white mb-2">PRO NEXUS-X</h4>
+                    <div class="flex items-baseline gap-2 mb-8">
+                        <span class="text-5xl font-black text-gold">$89.000</span>
+                        <span class="text-slate-500 uppercase text-xs">/ Mes</span>
+                    </div>
+                    <ul class="space-y-4 mb-10">
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle text-gold"></i> Órdenes de Servicio Ilimitadas</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle text-gold"></i> Terminal de Voz Avanzada</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle text-gold"></i> Pasaporte Digital de Camión</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle text-gold"></i> Soporte Starlink Priority</li>
                     </ul>
-                    <button onclick="distribuirAcceso('TALLER')" class="w-full py-4 rounded-xl border-2 border-slate-600 font-black hover:bg-slate-700 transition uppercase text-xs">Seleccionar</button>
+                    <button onclick="distribuirAcceso('TALLER')" class="w-full py-5 rounded-2xl btn-gold text-black font-black uppercase text-xs tracking-widest transition-all">Iniciar Demo 15 Días</button>
                 </div>
-                <div class="bg-white p-12 rounded-[40px] shadow-2xl border-4 border-gold transform scale-105 relative">
-                    <div class="absolute -top-5 left-1/2 -translate-x-1/2 bg-gold text-slate-900 px-6 py-1 rounded-full text-[10px] font-black uppercase tracking-[2px]">Más Solicitado</div>
-                    <h3 class="text-xl font-black mb-2 text-slate-900 uppercase">Pro Nexus-X</h3>
-                    <div class="text-5xl font-black mb-8 text-slate-900">$89.000 <span class="text-xs font-normal text-slate-400">/mes</span></div>
-                    <ul class="space-y-4 mb-12 text-sm text-slate-600 font-bold italic">
-                        <li><i class="fas fa-check text-blue-600 mr-2"></i> Órdenes Ilimitadas</li>
-                        <li><i class="fas fa-check text-blue-600 mr-2"></i> Caja y Finanzas Full</li>
-                        <li><i class="fas fa-check text-blue-600 mr-2"></i> Passport Global Access</li>
+
+                <div class="glass-dark p-12 rounded-[3rem] border-2 border-white/5 opacity-80">
+                    <h4 class="font-nexus text-2xl text-white mb-2">ADMIN+</h4>
+                    <div class="flex items-baseline gap-2 mb-8">
+                        <span class="text-5xl font-black">$129.000</span>
+                        <span class="text-slate-500 uppercase text-xs">/ Mes</span>
+                    </div>
+                    <ul class="space-y-4 mb-10 opacity-70">
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle"></i> Multitalleres (Sedes)</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle"></i> Contabilidad Exportable</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i class="fas fa-check-circle"></i> Facturación Electrónica DIAN</li>
                     </ul>
-                    <button onclick="distribuirAcceso('TALLER')" class="w-full py-5 rounded-2xl bg-slate-900 text-white font-black hover:bg-black transition shadow-xl uppercase text-xs">Activar Red Pro</button>
-                </div>
-                <div class="bg-slate-800/40 p-10 rounded-3xl border border-slate-700 text-white">
-                    <h3 class="text-xl font-black mb-2 uppercase tracking-widest text-slate-400">Admin+</h3>
-                    <div class="text-4xl font-black mb-8">$129.000 <span class="text-xs font-normal opacity-50">/mes</span></div>
-                    <ul class="space-y-4 mb-10 text-sm opacity-80">
-                        <li><i class="fas fa-check text-gold mr-2"></i> Facturación Electrónica</li>
-                        <li><i class="fas fa-check text-gold mr-2"></i> Soporte VIP Nexus-X</li>
-                    </ul>
-                    <button onclick="distribuirAcceso('TALLER')" class="w-full py-4 rounded-xl border-2 border-gold text-gold font-black hover:bg-gold/10 transition uppercase text-xs text-center">Contactar CEO</button>
+                    <button class="w-full py-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase text-xs tracking-widest transition-all">Hablar con William Urquijo</button>
                 </div>
             </div>
         </div>
     </section>
 
-    <footer class="py-20 text-center bg-white border-t border-slate-100">
-        <div class="max-w-4xl mx-auto px-6">
-            <div class="flex justify-center items-center gap-3 mb-8">
-                <i class="fas fa-satellite text-blue-600 text-3xl"></i>
-                <span class="text-2xl font-nexus tracking-tighter uppercase">TallerPRO360</span>
-            </div>
-            <p class="font-black text-slate-800 uppercase tracking-[3px] text-sm mb-4">Nexus-X Starlink SAS</p>
-            <p class="text-slate-400 text-[10px] mb-8 uppercase">Charlotte, NC. United States | Ibagué, Colombia</p>
-            <div class="mt-12 text-[10px] text-slate-300 font-medium italic">
-                SISTEMA LOGISTICO NEXUS-X © 2026 - COLOMBIAN TRUCKS LOGISTICS LLC.
+    <footer class="py-20 border-t border-white/5">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <p class="font-nexus text-gold tracking-[10px] uppercase mb-8">NEXUS-X STARLINK</p>
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[4px] leading-loose mb-12">
+                Charlotte, NC. United States | Ibagué, Tolima. Colombia <br>
+                Todos los derechos reservados - Colombian Trucks Logistics LLC © 2026
+            </p>
+            <div class="flex justify-center gap-6 text-slate-600">
+                <i class="fab fa-whatsapp hover:text-green-500 cursor-pointer text-xl"></i>
+                <i class="fab fa-instagram hover:text-pink-500 cursor-pointer text-xl"></i>
+                <i class="fab fa-linkedin hover:text-blue-500 cursor-pointer text-xl"></i>
             </div>
         </div>
     </footer>
@@ -173,35 +199,26 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- DISTRIBUIDOR MAESTRO ---
         window.distribuirAcceso = async (perfil) => {
-            // Rastrear interés en Firebase para el CEO
             try {
                 await addDoc(collection(db, "leads_interesados"), {
                     perfil_destino: perfil,
-                    agente: "LANDING_MASTER_INDEX",
-                    fecha: serverTimestamp()
+                    agente: "LANDING_ELITE_V4",
+                    timestamp: serverTimestamp(),
+                    device: navigator.userAgent
                 });
-            } catch (e) { console.error("Error tracker", e); }
+            } catch (e) { console.warn("Tracker offline"); }
 
-            // Redirección lógica
-            if (perfil === 'TALLER') {
-                window.location.href = "taller.html";
-            } else if (perfil === 'CLIENTE') {
-                window.location.href = "cliente.html";
-            }
+            window.location.href = perfil === 'TALLER' ? "taller.html" : "cliente.html";
         };
 
-        // --- ACCESO SECRETO CEO (William) ---
-        // Presiona la combinación de teclas C + E + O simultáneamente
-        let keys = {};
-        window.addEventListener('keydown', (e) => {
-            keys[e.key.toLowerCase()] = true;
-            if(keys['c'] && keys['e'] && keys['o']) {
-                window.location.href = "ceo.html";
-            }
-        });
-        window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+        // ACCESO SECRETO CEO (C + E + O)
+        let combo = {};
+        window.onkeydown = (e) => {
+            combo[e.key.toLowerCase()] = true;
+            if(combo['c'] && combo['e'] && combo['o']) window.location.href = "ceo.html";
+        };
+        window.onkeyup = (e) => combo[e.key.toLowerCase()] = false;
     </script>
 </body>
 </html>
