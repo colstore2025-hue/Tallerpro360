@@ -1,89 +1,242 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <title>NEXUS-X | Sistema de Logística</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
     <style>
-        .pg-card { background: linear-gradient(135deg, #0f172a 0%, #020617 100%); border: 1px solid #1e293b; }
-        .mecanico-tag { background: #3b82f620; color: #3b82f6; border: 1px solid #3b82f640; padding: 2px 8px; border-radius: 6px; font-size: 10px; }
+        :root { --primary: #020617; --accent: #3b82f6; --gold: #f59e0b; }
+        body { font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; }
+        .font-nexus { font-family: 'Orbitron', sans-serif; }
+        .glass-card { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; }
+        .neo-input { background: rgba(0,0,0,0.4); border: 1px solid #1e293b; border-radius: 12px; padding: 12px; color: white; width: 100%; outline: none; }
+        .nav-nexus { position: fixed; bottom: 0; left: 0; right: 0; background: #070a19; border-top: 1px solid rgba(255,255,255,0.1); height: 70px; display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
+        .nav-item { color: #475569; font-size: 10px; font-weight: 800; text-align: center; cursor: pointer; }
+        .nav-item.active { color: var(--gold); }
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="bg-slate-950 text-white font-inter">
+<body class="pb-24">
 
-    <section id="view-pg" class="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="pg-card p-6 rounded-3xl">
-            <p class="text-[10px] text-slate-500 font-black uppercase">Utilidad Bruta Mes</p>
-            <h2 id="total-utilidad" class="text-3xl font-nexus text-emerald-400 font-black">$ 0</h2>
+<header class="p-5 border-b border-white/5 flex justify-between items-center sticky top-0 bg-slate-950/90 backdrop-blur-md z-50">
+    <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gold rounded flex items-center justify-center font-black text-black italic">NX</div>
+        <h1 id="shop-name" class="font-nexus text-[10px] tracking-widest uppercase">NEXUS-X TERMINAL</h1>
+    </div>
+    <div id="live-clock" class="text-[10px] font-bold text-gold italic">00:00:00</div>
+</header>
+
+<main class="p-4 space-y-6 max-w-2xl mx-auto">
+    
+    <section id="view-patio" class="space-y-4">
+        <div class="glass-card p-5">
+            <h2 class="text-accent font-black text-[10px] uppercase tracking-widest mb-4"><i class="fas fa-plus-circle mr-2"></i>Nueva Entrada de Vehículo</h2>
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <input id="in-placa" placeholder="PLACA" class="neo-input font-nexus text-xl text-gold text-center uppercase">
+                <input id="in-km" type="number" placeholder="KM ACTUAL" class="neo-input text-xs">
+            </div>
+            <input id="in-cliente" placeholder="NOMBRE DEL CLIENTE" class="neo-input text-xs uppercase mb-3">
+            <input id="in-tel" type="tel" placeholder="WHATSAPP (Ej: 57300...)" class="neo-input text-xs mb-3">
+            <textarea id="in-reporte" rows="3" placeholder="REPORTE DE FALLAS..." class="neo-input text-sm mb-4"></textarea>
+            <button onclick="window.registrarEntrada()" class="w-full bg-white text-black font-nexus py-4 rounded-xl text-[10px] font-black uppercase tracking-widest">Desplegar a la Red</button>
         </div>
-        <div class="pg-card p-6 rounded-3xl">
-            <p class="text-[10px] text-slate-500 font-black uppercase">Nómina por Pagar</p>
-            <h2 id="total-nomina" class="text-3xl font-nexus text-gold font-black">$ 0</h2>
-        </div>
-        <div class="pg-card p-6 rounded-3xl">
-            <p class="text-[10px] text-slate-500 font-black uppercase">Vehículos Activos</p>
-            <h2 id="count-vehiculos" class="text-3xl font-nexus text-white font-black">0</h2>
-        </div>
+
+        <div id="feed-ordenes" class="space-y-3">
+            </div>
     </section>
 
-    <section id="view-patio" class="p-4">
-        <div class="glass-card p-6">
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <input id="in-placa" placeholder="PLACA" class="neo-input font-nexus text-2xl text-gold">
-                <select id="in-mecanico" class="neo-input text-xs">
-                    <option value="">ASIGNAR MECÁNICO...</option>
-                    </select>
-            </div>
-            </div>
+    <section id="view-caja" class="hidden space-y-4 text-center py-10">
+        <i class="fas fa-file-invoice-dollar text-5xl text-slate-800 mb-4"></i>
+        <h2 class="font-nexus text-xs">Módulo Contable de Flota</h2>
+        <p class="text-[10px] text-slate-500 italic">Seleccione una placa en "PATIO" para gestionar gastos y abonos.</p>
     </section>
 
-    <div id="modal-cierre" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-[6000] p-6">
-        <div class="max-w-md mx-auto bg-slate-900 p-8 rounded-[40px] border border-gold/30">
-            <h3 class="font-nexus text-gold text-center mb-6">LIQUIDACIÓN DE MISIÓN</h3>
-            <div class="space-y-4">
-                <div>
-                    <label class="text-[10px] text-slate-500 font-bold uppercase">Mano de Obra (Valor para el Mecánico)</label>
-                    <input id="pay-mecanico" type="number" placeholder="$ Valor Fijo Tarea" class="neo-input text-xl text-white">
+</main>
+
+<div id="modal-gestion" class="fixed inset-0 bg-black/95 z-[5000] hidden overflow-y-auto p-4">
+    <div class="glass-card max-w-xl mx-auto p-6 mt-10 border-t-4 border-gold">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="modal-placa" class="font-nexus text-3xl text-gold italic">---</h3>
+            <button onclick="window.closeModal()" class="text-white text-2xl">&times;</button>
+        </div>
+
+        <div class="space-y-4">
+            <div class="bg-black/50 p-4 rounded-xl border border-white/5">
+                <p class="text-[9px] text-slate-500 font-black uppercase mb-3">Registrar Gasto o Abono</p>
+                <div class="grid grid-cols-1 gap-2">
+                    <input id="mov-desc" placeholder="REPUESTO / SERVICIO" class="neo-input text-xs uppercase">
+                    <div class="flex gap-2">
+                        <input id="mov-monto" type="number" placeholder="$ VALOR" class="neo-input text-lg font-nexus text-success">
+                        <select id="mov-tipo" class="bg-slate-900 border border-white/10 rounded-xl px-2 text-[9px] font-bold">
+                            <option value="EGRESO">GASTO (-)</option>
+                            <option value="ABONO">ABONO (+)</option>
+                        </select>
+                    </div>
+                    <button onclick="window.registrarMovimiento()" class="w-full bg-accent py-3 rounded-xl font-black text-[10px] uppercase">Grabar Movimiento</button>
                 </div>
-                <div>
-                    <label class="text-[10px] text-slate-500 font-bold uppercase">Mano de Obra (Cobro al Cliente)</label>
-                    <input id="pay-cliente" type="number" placeholder="$ Valor Cobrado" class="neo-input text-xl text-white font-black">
-                </div>
-                <button onclick="finalizarYArchivar()" class="w-full bg-gold text-black font-nexus py-4 rounded-2xl font-black">CERRAR Y CALCULAR P&G</button>
+            </div>
+
+            <div class="max-h-48 overflow-y-auto space-y-2" id="lista-movimientos"></div>
+
+            <div class="p-4 border-t border-white/10 flex justify-between items-center">
+                <span class="font-nexus text-[10px] text-slate-400">SALDO TOTAL:</span>
+                <span id="liq-total" class="font-nexus text-2xl text-white">$ 0</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-4">
+                <button onclick="window.enviarWhatsApp()" class="bg-emerald-600 p-4 rounded-xl text-[9px] font-black uppercase"><i class="fab fa-whatsapp mr-2 text-lg"></i> Reportar al Cliente</button>
+                <button onclick="window.finalizarOrden()" class="bg-slate-800 p-4 rounded-xl text-[9px] font-black uppercase text-danger"><i class="fas fa-check-double mr-2"></i> Cerrar Misión</button>
             </div>
         </div>
     </div>
+</div>
+
+<nav class="nav-nexus">
+    <div class="nav-item active" onclick="window.switchTab('patio', this)"><i class="fas fa-truck-pickup text-xl mb-1"></i><br>PATIO</div>
+    <div class="nav-item" onclick="window.switchTab('caja', this)"><i class="fas fa-cash-register text-xl mb-1"></i><br>CAJA</div>
+    <div class="nav-item" onclick="window.logout()"><i class="fas fa-power-off text-danger text-xl mb-1"></i><br>SALIR</div>
+</nav>
 
 <script type="module">
-    // LÓGICA DE CÁLCULO DE NÓMINA Y P&G
-    window.finalizarYArchivar = async () => {
-        const pagoTecnico = parseFloat(document.getElementById('pay-mecanico').value);
-        const cobroCliente = parseFloat(document.getElementById('pay-cliente').value);
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp, getDoc, orderBy, deleteDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+        authDomain: "tallerpro360.firebaseapp.com",
+        projectId: "tallerpro360",
+        storageBucket: "tallerpro360.appspot.com",
+        messagingSenderId: "636224778184",
+        appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    let activeOrders = [];
+    let currentId = null;
+
+    onAuthStateChanged(auth, (user) => {
+        if (!user) window.location.href = "index.html";
+        initApp();
+    });
+
+    // 1. SINCRONIZACIÓN REAL-TIME (Blindada)
+    function initApp() {
+        const q = query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid), orderBy("timestamp", "desc"));
+        onSnapshot(q, (snap) => {
+            activeOrders = [];
+            const feed = document.getElementById('feed-ordenes');
+            feed.innerHTML = "";
+            
+            snap.forEach(d => {
+                const o = {id: d.id, ...d.data()};
+                activeOrders.push(o);
+                
+                // Si la orden abierta en el modal cambia, actualizamos el modal en vivo
+                if (currentId === o.id) renderModalData(o);
+
+                feed.innerHTML += `
+                    <div class="glass-card p-4 flex justify-between items-center border-l-4 border-accent">
+                        <div>
+                            <h3 class="font-nexus text-lg text-white">${o.placa}</h3>
+                            <p class="text-[9px] text-slate-500 uppercase font-bold">${o.cliente}</p>
+                        </div>
+                        <button onclick="window.openGestion('${o.id}')" class="bg-gold text-black px-4 py-2 rounded-lg font-black text-[9px] uppercase shadow-lg shadow-gold/20">
+                            Gestionar Gastos
+                        </button>
+                    </div>`;
+            });
+        });
+    }
+
+    // 2. CREACIÓN DE ORDEN (Nace el ID)
+    window.registrarEntrada = async () => {
+        const placa = document.getElementById('in-placa').value.toUpperCase();
+        if(!placa) return alert("PLACA REQUERIDA");
         
-        // El ID de la misión amarra todo
-        const ordenRef = doc(db, "ordenes", activeOrderId);
-        const snap = await getDoc(ordenRef);
-        const data = snap.data();
-
-        // Cálculo de Utilidad de Repuestos
-        const costoRepuestos = data.movimientos
-            .filter(m => m.tipo === 'EGRESO')
-            .reduce((acc, m) => acc + (m.costo || 0), 0);
-        
-        const ventaRepuestos = data.movimientos
-            .filter(m => m.tipo === 'EGRESO')
-            .reduce((acc, m) => acc + (m.monto || 0), 0);
-
-        // P&G DE LA ORDEN
-        const utilidadOrden = (ventaRepuestos - costoRepuestos) + (cobroCliente - pagoTecnico);
-
-        await updateDoc(ordenRef, {
-            status: 'ARCHIVADO',
-            pagoMecanico: pagoTecnico,
-            cobroMO: cobroCliente,
-            utilidadNeta: utilidadOrden,
-            fechaCierre: serverTimestamp()
+        await addDoc(collection(db, "ordenes"), {
+            tallerId: auth.currentUser.uid,
+            placa,
+            cliente: document.getElementById('in-cliente').value.toUpperCase(),
+            telefono: document.getElementById('in-tel').value,
+            km: document.getElementById('in-km').value,
+            reporte: document.getElementById('in-reporte').value,
+            movimientos: [],
+            timestamp: serverTimestamp()
         });
         
-        alert("MISIÓN FINALIZADA. UTILIDAD: $" + utilidadOrden.toLocaleString());
+        document.querySelectorAll('.neo-input').forEach(i => i.value = "");
+        alert("ORDEN EN RED");
     };
+
+    // 3. GESTIÓN UNIFICADA (PATIO-CAJA)
+    window.openGestion = (id) => {
+        currentId = id;
+        const o = activeOrders.find(x => x.id === id);
+        renderModalData(o);
+        document.getElementById('modal-gestion').classList.remove('hidden');
+    };
+
+    function renderModalData(o) {
+        document.getElementById('modal-placa').innerText = o.placa;
+        const list = document.getElementById('lista-movimientos');
+        list.innerHTML = "";
+        let saldo = 0;
+        
+        (o.movimientos || []).forEach(m => {
+            if(m.tipo === 'EGRESO') saldo += m.monto; else saldo -= m.monto;
+            list.innerHTML += `
+                <div class="flex justify-between items-center bg-white/5 p-2 rounded-lg text-[10px]">
+                    <span class="uppercase font-bold">${m.desc}</span>
+                    <span class="${m.tipo==='EGRESO'?'text-white':'text-success font-bold'}">$${m.monto.toLocaleString()}</span>
+                </div>`;
+        });
+        document.getElementById('liq-total').innerText = `$${saldo.toLocaleString()}`;
+    }
+
+    window.registrarMovimiento = async () => {
+        const desc = document.getElementById('mov-desc').value.toUpperCase();
+        const monto = parseFloat(document.getElementById('mov-monto').value);
+        const tipo = document.getElementById('mov-tipo').value;
+        if(!desc || !monto) return alert("DATOS INCOMPLETOS");
+
+        await updateDoc(doc(db, "ordenes", currentId), {
+            movimientos: arrayUnion({ desc, monto, tipo, fecha: new Date().toISOString() })
+        });
+        document.getElementById('mov-desc').value = "";
+        document.getElementById('mov-monto').value = "";
+    };
+
+    window.enviarWhatsApp = () => {
+        const o = activeOrders.find(x => x.id === currentId);
+        const msg = `*🚀 NEXUS-X STARLINK REPORT*%0A%0A*UNIDAD:* ${o.placa}%0A*ESTADO:* En Proceso%0A*SALDO PENDIENTE:* ${document.getElementById('liq-total').innerText}%0A%0A_Favor abonar para agilizar entrega._`;
+        window.open(`https://wa.me/${o.telefono}?text=${msg}`);
+    };
+
+    window.finalizarOrden = async () => {
+        if(confirm("¿Cerrar y Archivar esta orden?")) {
+            await deleteDoc(doc(db, "ordenes", currentId));
+            window.closeModal();
+        }
+    };
+
+    window.switchTab = (tab, el) => {
+        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+        document.getElementById('view-' + tab).classList.remove('hidden');
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+    };
+
+    window.closeModal = () => { document.getElementById('modal-gestion').classList.add('hidden'); currentId = null; };
+    window.logout = () => signOut(auth);
+    setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleTimeString(); }, 1000);
 </script>
 </body>
 </html>
