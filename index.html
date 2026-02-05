@@ -3,159 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>TallerPro360 | Global Command Center - Power by Colombian Trucks Logistics</title>
+    <title>TallerPro360 | Global Command Center - Power by CTL LLC</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        :root { --gold: #f59e0b; --deep: #020617; --accent: #3b82f6; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--deep); color: #f1f5f9; overflow-x: hidden; }
+        :root { --gold: #f59e0b; --deep: #0f172a; --accent: #10b981; --soft-blue: #1e293b; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%); 
+            color: #f1f5f9; 
+            overflow-x: hidden; 
+        }
         .font-nexus { font-family: 'Orbitron', sans-serif; }
-        .hero-mesh { background-image: radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.1) 0px, transparent 50%); }
-        .grid-pattern { background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 40px 40px; }
-        .glass-dark { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
-        .btn-gold { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .btn-gold:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(245, 158, 11, 0.3); }
-        .neo-input { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 18px; color: white; width: 100%; outline: none; }
-        .card-feature { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 40px; border-radius: 30px; transition: 0.4s; }
-        .card-feature:hover { background: rgba(255,255,255,0.05); border-color: var(--gold); }
+        .glass-card { 
+            background: rgba(255, 255, 255, 0.03); 
+            backdrop-filter: blur(15px); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        .btn-whatsapp { background: #25d366; color: white; transition: 0.3s; }
+        .btn-whatsapp:hover { background: #128c7e; transform: scale(1.05); }
+        .price-card { transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .price-card:hover { transform: translateY(-10px); border-color: var(--gold); }
+        .text-glow { text-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
         .hidden { display: none !important; }
-        
-        @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 70% { box-shadow: 0 0 0 20px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
-        .pulse { animation: pulse-gold 2s infinite; }
     </style>
 </head>
-<body class="hero-mesh">
-    <div class="absolute inset-0 grid-pattern opacity-40 pointer-events-none"></div>
+<body>
 
-    <nav class="fixed top-0 w-full z-[100] glass-dark border-b border-white/5 px-6 py-4">
+    <nav class="fixed top-0 w-full z-[100] border-b border-white/5 bg-slate-900/80 backdrop-blur-md px-6 py-4">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center gap-4">
-                <div class="bg-gold p-2 rounded-xl shadow-lg shadow-gold/20"><i class="fas fa-satellite-dish text-black text-xl"></i></div>
+                <div class="bg-gradient-to-br from-gold to-yellow-600 p-2 rounded-xl shadow-lg"><i class="fas fa-satellite-dish text-slate-900 text-xl"></i></div>
                 <div class="flex flex-col">
                     <span class="font-nexus text-xl font-black tracking-tighter">TALLERPRO<span class="text-gold">360</span></span>
-                    <span class="text-[7px] text-slate-500 font-bold uppercase tracking-[3px]">Nexus-X Starlink Sync</span>
+                    <span class="text-[8px] text-emerald-400 font-bold uppercase tracking-[3px]">Sistema Operativo V3.0</span>
                 </div>
             </div>
-            <div class="hidden md:flex gap-8 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                <a href="#bondades" class="hover:text-gold transition">Ecosistema</a>
-                <a href="#precios" class="hover:text-gold transition">Membresía</a>
-                <a href="#" class="hover:text-gold transition">Soporte NC</a>
+            <div class="flex items-center gap-4">
+                <a href="https://wa.me/573000000000" class="btn-whatsapp px-4 py-2 rounded-full text-xs font-black uppercase tracking-tighter flex items-center gap-2">
+                    <i class="fab fa-whatsapp text-lg"></i> Soporte
+                </a>
+                <button onclick="abrirAuth()" class="bg-white/10 hover:bg-gold hover:text-black px-6 py-2 rounded-full border border-white/10 text-[10px] font-black tracking-widest uppercase transition">Acceso ERP</button>
             </div>
-            <button onclick="abrirAuth('TALLER')" class="bg-gold/10 px-8 py-3 rounded-full border border-gold/30 text-[10px] font-black tracking-widest uppercase text-gold transition hover:bg-gold hover:text-black">Ingresar al ERP</button>
         </div>
     </nav>
 
-    <header class="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
-        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center relative z-10">
-            <div class="text-left">
-                <div class="inline-block px-4 py-2 bg-white/5 border border-white/10 rounded-full mb-6">
-                    <span class="text-[9px] font-black text-gold uppercase tracking-[4px]"><i class="fas fa-map-marker-alt mr-2"></i> Charlotte, NC | United States</span>
+    <header class="relative min-h-screen flex items-center justify-center pt-24">
+        <div class="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center relative z-10">
+            <div>
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full mb-8">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <span class="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Global Live Support: Charlotte, NC</span>
                 </div>
-                <h1 class="text-6xl md:text-8xl font-black mb-8 leading-[0.85] tracking-tighter">
-                    GESTIÓN <br>
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-gold via-white to-gold uppercase italic">Multinacional</span><br>
-                    EN TU BOLSILLO.
+                <h1 class="text-5xl md:text-7xl font-extrabold mb-6 leading-tight">
+                    El Software que <br>
+                    <span class="text-gold text-glow italic">Mueve Motores.</span>
                 </h1>
-                <p class="text-lg text-slate-400 mb-10 max-w-lg leading-relaxed">
-                    Evolucione su taller con tecnología de grado industrial. Control total de inventarios, finanzas P&G y automatización de clientes con el respaldo de <b>Colombian Trucks Logistics LLC</b>.
+                <p class="text-lg text-slate-400 mb-10 max-w-lg">
+                    La ingeniería de <b>Colombian Trucks Logistics LLC</b> integrada en una plataforma 360°. Control de caja, stock y peritaje con IA.
                 </p>
-                <div class="flex flex-wrap gap-6">
-                    <button onclick="abrirAuth('TALLER')" class="btn-gold pulse text-black font-black py-6 px-12 rounded-2xl text-[11px] tracking-widest uppercase flex items-center gap-4">
-                        <i class="fas fa-terminal"></i> Activar Nodo Maestro
-                    </button>
-                    <div class="flex items-center gap-4 px-6 border-l border-white/10">
-                        <div class="text-left">
-                            <p class="text-white font-bold text-sm">Nexus-X v3.0</p>
-                            <p class="text-[9px] text-slate-500 uppercase font-black">Certificación Americana</p>
-                        </div>
-                    </div>
+                <div class="flex gap-4">
+                    <button onclick="abrirAuth()" class="bg-gold text-slate-950 font-black py-5 px-10 rounded-2xl text-xs tracking-widest uppercase shadow-xl shadow-gold/20 hover:-translate-y-1 transition">Comenzar Prueba Real</button>
+                    <a href="#precios" class="bg-slate-800 text-white font-black py-5 px-10 rounded-2xl text-xs tracking-widest uppercase border border-white/10">Ver Planes</a>
                 </div>
             </div>
-            <div class="relative hidden md:block">
-                <div class="absolute inset-0 bg-gold/20 blur-[120px] rounded-full"></div>
-                <img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=800" class="relative z-10 rounded-[40px] border border-white/10 shadow-2xl grayscale hover:grayscale-0 transition duration-700" alt="Truck Tech">
+            <div class="relative">
+                <img src="https://images.unsplash.com/photo-1486006396193-471068589dcb?auto=format&fit=crop&q=80&w=1000" class="rounded-[2.5rem] border border-white/10 shadow-2xl brightness-75 hover:brightness-100 transition duration-700" alt="Dashboard Preview">
             </div>
         </div>
     </header>
 
-    <section id="bondades" class="py-32 relative">
-        <div class="max-w-7xl mx-auto px-6 text-center mb-20">
-            <h2 class="font-nexus text-xs text-gold tracking-[10px] uppercase mb-4">Ingeniería Logística</h2>
-            <h3 class="text-4xl md:text-6xl font-black tracking-tighter uppercase">Ecosistema TallerPro360</h3>
+    <section id="precios" class="py-32 bg-slate-900/50">
+        <div class="max-w-7xl mx-auto px-6 text-center mb-16">
+            <h2 class="font-nexus text-gold text-xs tracking-[10px] uppercase mb-4">Suscripciones</h2>
+            <h3 class="text-4xl font-black italic">Escoge tu Nivel de Poder</h3>
         </div>
 
-        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-10">
-            <div class="card-feature">
-                <i class="fas fa-microchip text-4xl text-gold mb-8"></i>
-                <h4 class="text-xl font-bold mb-4 uppercase">Control de Flota Inteligente</h4>
-                <p class="text-slate-500 text-sm leading-relaxed">Segmentación especializada para Camiones, Maquinaria, Autos y Motos. Trazabilidad de horas y kilometraje por satélite.</p>
+        <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
+            <div class="glass-card price-card p-10 rounded-[2.5rem]">
+                <h4 class="text-xl font-bold mb-2">Mensual</h4>
+                <div class="text-4xl font-black text-gold mb-6">$129.000 <span class="text-xs text-slate-500">COP</span></div>
+                <ul class="text-left text-sm space-y-4 mb-8 text-slate-400">
+                    <li><i class="fas fa-check text-emerald-500 mr-2"></i> Todos los módulos activos</li>
+                    <li><i class="fas fa-check text-emerald-500 mr-2"></i> Soporte vía WhatsApp</li>
+                    <li><i class="fas fa-check text-emerald-500 mr-2"></i> Fotos ilimitadas</li>
+                </ul>
+                <button onclick="abrirAuth()" class="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-bold uppercase text-[10px] tracking-widest">Activar Mes</button>
             </div>
-            <div class="card-feature border-gold/40 bg-gold/5">
-                <i class="fas fa-vault text-4xl text-gold mb-8"></i>
-                <h4 class="text-xl font-bold mb-4 uppercase">Tesorería Multinacional</h4>
-                <p class="text-slate-500 text-sm leading-relaxed">Cierre de cajas, conciliación Nequi/PSE y generación de reportes P&G en tiempo real bajo estándares contables de EE.UU. y Colombia.</p>
+            <div class="glass-card price-card p-10 rounded-[2.5rem] border-gold/30 bg-gold/5 relative">
+                <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-gold text-black text-[9px] font-black px-4 py-1 rounded-full uppercase">Recomendado</div>
+                <h4 class="text-xl font-bold mb-2">Trimestral</h4>
+                <div class="text-4xl font-black text-gold mb-6">$300.000 <span class="text-xs text-slate-500">COP</span></div>
+                <p class="text-emerald-400 text-[10px] font-bold mb-6 uppercase">Ahorra $87.000 COP</p>
+                <ul class="text-left text-sm space-y-4 mb-8 text-slate-300 font-semibold">
+                    <li><i class="fas fa-check text-emerald-500 mr-2"></i> Gestión de Clientes VIP</li>
+                    <li><i class="fas fa-check text-emerald-500 mr-2"></i> Reportes de Utilidad Trimestral</li>
+                    <li><i class="fas fa-check text-emerald-500 mr-2"></i> Backup Starlink Sync</li>
+                </ul>
+                <button onclick="abrirAuth()" class="w-full py-4 bg-gold text-black rounded-xl font-bold uppercase text-[10px] tracking-widest shadow-lg shadow-gold/20">Activar Trimestre</button>
             </div>
-            <div class="card-feature">
-                <i class="fas fa-boxes-stacked text-4xl text-gold mb-8"></i>
-                <h4 class="text-xl font-bold mb-4 uppercase">Inventario Predictivo</h4>
-                <p class="text-slate-500 text-sm leading-relaxed">Alertas de stock mínimo, gestión de proveedores y comprador experto integrado para maximizar su utilidad neta.</p>
-            </div>
-        </div>
-    </section>
-
-    <section id="precios" class="py-32 bg-white/[0.01]">
-        <div class="max-w-4xl mx-auto px-6">
-            <div class="glass-dark rounded-[50px] overflow-hidden border border-gold/30">
-                <div class="grid md:grid-cols-2">
-                    <div class="p-12 md:p-16 border-r border-white/5">
-                        <h4 class="font-nexus text-gold text-xs tracking-widest mb-8 uppercase">Plan de Despliegue Anual</h4>
-                        <ul class="space-y-6 text-sm">
-                            <li class="flex items-center gap-4"><i class="fas fa-check text-gold"></i> Nodo ERP Taller Ilimitado</li>
-                            <li class="flex items-center gap-4"><i class="fas fa-check text-gold"></i> Historial Digital Carfax-Style</li>
-                            <li class="flex items-center gap-4"><i class="fas fa-check text-gold"></i> Reportes DIAN / Declaración</li>
-                            <li class="flex items-center gap-4"><i class="fas fa-check text-gold"></i> Soporte Élite Colombian Trucks</li>
-                        </ul>
-                    </div>
-                    <div class="p-12 md:p-16 bg-gold flex flex-col justify-center items-center text-black text-center">
-                        <span class="text-[10px] font-black uppercase tracking-[5px] mb-4">Inversión Nodo Global</span>
-                        <h2 class="text-6xl font-nexus font-black leading-none mb-2">$1.800.000</h2>
-                        <p class="text-[10px] font-black uppercase">COP / Año por Taller</p>
-                        <button onclick="abrirAuth('TALLER')" class="mt-10 w-full py-5 bg-black text-gold rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition">Comenzar Ahora</button>
-                    </div>
-                </div>
+            <div class="glass-card price-card p-10 rounded-[2.5rem]">
+                <h4 class="text-xl font-bold mb-2">Anual Nodo Élite</h4>
+                <div class="text-4xl font-black text-gold mb-6">$1.200.000 <span class="text-xs text-slate-500">COP</span></div>
+                <p class="text-emerald-400 text-[10px] font-bold mb-6 uppercase">2 Meses Gratis</p>
+                <ul class="text-left text-sm space-y-4 mb-8 text-slate-400">
+                    <li><i class="fas fa-crown text-gold mr-2"></i> Auditoría CTL LLC</li>
+                    <li><i class="fas fa-check text-emerald-500 mr-2"></i> Personalización de Factura</li>
+                    <li><i class="fas fa-check text-emerald-500 mr-2"></i> Certificación Taller 360</li>
+                </ul>
+                <button onclick="abrirAuth()" class="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-bold uppercase text-[10px] tracking-widest">Activar Anual</button>
             </div>
         </div>
     </section>
 
-    <footer class="py-20 border-t border-white/5">
-        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-10">
-            <div class="text-left">
-                <p class="font-nexus text-lg font-black text-white">TALLERPRO<span class="text-gold">360</span></p>
-                <p class="text-[9px] text-slate-500 font-bold uppercase tracking-[2px] mt-2">© 2026 Todos los Derechos Reservados.</p>
+    <footer class="py-12 border-t border-white/5 bg-slate-950">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-4">
+                <span class="font-nexus text-sm font-black">TALLERPRO<span class="text-gold">360</span></span>
+                <span class="text-[9px] text-slate-600 uppercase font-black">© 2026 Charlotte, NC.</span>
             </div>
-            <div class="text-center md:text-right">
-                <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Powered by</p>
-                <p class="text-sm font-bold text-white mt-1">Colombian Trucks Logistics LLC</p>
-                <p class="text-[9px] text-gold uppercase font-black">Charlotte, NC • United States</p>
+            <a href="/admin" class="text-[10px] text-slate-500 hover:text-gold uppercase tracking-[3px] font-bold">Panel CEO Global</a>
+            <div class="text-right">
+                <p class="text-[10px] text-slate-400 font-black uppercase">Powered by</p>
+                <p class="text-xs font-bold text-white uppercase">Colombian Trucks Logistics LLC</p>
             </div>
         </div>
     </footer>
 
-    <div id="modal-auth" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
-        <div class="glass-dark w-full max-w-md p-10 rounded-[3rem] border border-gold/20 shadow-2xl relative">
-            <button onclick="document.getElementById('modal-auth').classList.add('hidden')" class="absolute top-8 right-8 text-slate-500 hover:text-white">&times;</button>
+    <div id="modal-auth" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-xl">
+        <div class="glass-card w-full max-w-md p-10 rounded-[2.5rem] border border-gold/20 relative">
+            <button onclick="document.getElementById('modal-auth').classList.add('hidden')" class="absolute top-6 right-6 text-slate-500 hover:text-white text-2xl">&times;</button>
             <div class="text-center mb-10">
-                <div class="w-16 h-16 bg-gold rounded-2xl flex items-center justify-center text-black mx-auto mb-6"><i class="fas fa-fingerprint text-3xl"></i></div>
-                <h3 id="auth-title" class="font-nexus text-xl text-white mb-2 uppercase tracking-tighter">Acceso Terminal</h3>
-                <p class="text-[9px] text-slate-500 uppercase tracking-widest">Sincronización segura vía Starlink</p>
+                <h3 class="font-nexus text-xl text-white mb-2 uppercase italic tracking-tighter">Validación Nexus-X</h3>
+                <p class="text-[9px] text-emerald-400 uppercase font-black tracking-widest">Ingreso Seguro Autorizado</p>
             </div>
             <div class="space-y-4">
-                <input id="auth-email" type="email" placeholder="ID TallerPro (Email)" class="neo-input font-bold text-xs uppercase">
-                <input id="auth-pass" type="password" placeholder="Código de Seguridad" class="neo-input font-bold text-xs">
-                <button id="btn-login" class="w-full btn-gold text-black font-black py-5 rounded-2xl uppercase text-xs tracking-[4px] mt-4">Sincronizar Nodo</button>
+                <input id="auth-email" type="email" placeholder="Email (test@tallerpro360.com)" class="w-full bg-slate-800/50 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-gold transition">
+                <input id="auth-pass" type="password" placeholder="Contraseña de Acceso" class="w-full bg-slate-800/50 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-gold transition">
+                <button id="btn-login" class="w-full bg-gradient-to-r from-gold to-yellow-600 text-slate-950 font-black py-4 rounded-xl uppercase text-xs tracking-widest shadow-lg shadow-gold/10">Sincronizar Nodo</button>
             </div>
         </div>
     </div>
@@ -176,7 +165,7 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        window.abrirAuth = (modulo) => {
+        window.abrirAuth = () => {
             document.getElementById('modal-auth').classList.remove('hidden');
         };
 
@@ -185,10 +174,14 @@
             const pass = document.getElementById('auth-pass').value;
 
             try {
-                await signInWithEmailAndPassword(auth, email, pass);
+                const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+                // Si es el email de TEST, redirigir directo al ERP con privilegios
+                if(email === 'test@tallerpro360.com') {
+                    localStorage.setItem('nexus_role', 'TEST_ADMIN');
+                }
                 window.location.href = "taller.html";
             } catch (e) {
-                alert("SISTEMA NEXUS: Acceso denegado. Verifique su suscripción anual.");
+                alert("SISTEMA: Credenciales no registradas en la red Nexus-X.");
             }
         };
     </script>
