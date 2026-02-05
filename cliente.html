@@ -2,14 +2,16 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Nexus-X | Mi Unidad Starlink</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Nexus-X | Terminal de Cliente Starlink</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#020617">
-    <link rel="manifest" href="/manifest-cliente.json"> <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     
@@ -17,108 +19,210 @@
         :root { 
             --primary: #020617; --secondary: #0f172a; --accent: #3b82f6; 
             --gold: #f59e0b; --success: #10b981; --danger: #ef4444;
-            --glass: rgba(15, 23, 42, 0.7);
+            --glass: rgba(15, 23, 42, 0.75);
         }
         
-        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; outline: none; }
-        body { font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; margin: 0; padding-bottom: 30px; overflow-x: hidden; }
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: radial-gradient(circle at top, #1e293b 0%, #020617 100%); 
+            color: #f1f5f9; 
+            margin: 0; 
+            min-height: 100vh;
+            padding-bottom: 50px;
+        }
         .font-nexus { font-family: 'Orbitron', sans-serif; }
         
-        /* Glassmorphism Ultra */
-        .glass-card { background: var(--glass); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.08); border-radius: 35px; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        
-        .neo-input { background: rgba(2, 6, 23, 0.8); border: 2px solid #1e293b; border-radius: 22px; padding: 18px; color: white; width: 100%; transition: 0.3s; font-size: 16px; }
-        .neo-input:focus { border-color: var(--accent); box-shadow: 0 0 30px rgba(59, 130, 246, 0.25); }
+        /* Efecto Glassmorphism Nivel 3 */
+        .glass-card { 
+            background: var(--glass); 
+            backdrop-filter: blur(30px); 
+            border: 1px solid rgba(255,255,255,0.06); 
+            border-radius: 40px; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+        }
 
-        /* Loader */
-        #loader-nexus { position: fixed; inset: 0; z-index: 9999; background: var(--primary); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
+        .neo-input { 
+            background: rgba(0,0,0,0.4); 
+            border: 2px solid rgba(255,255,255,0.1); 
+            border-radius: 25px; 
+            padding: 22px; 
+            color: white; 
+            font-size: 20px;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .neo-input:focus { border-color: var(--gold); box-shadow: 0 0 25px rgba(245, 158, 11, 0.2); transform: scale(1.02); }
+
+        /* Timeline de Ingeniería */
+        .timeline-container { position: relative; padding-left: 45px; }
+        .timeline-container::before { 
+            content: ''; position: absolute; left: 18px; top: 0; bottom: 0; 
+            width: 3px; background: linear-gradient(to bottom, var(--gold), transparent); 
+        }
+        .step-node { 
+            position: absolute; left: 0; top: 0; width: 40px; height: 40px; 
+            background: var(--secondary); border-radius: 12px; 
+            display: flex; align-items: center; justify-content: center; 
+            border: 2px solid rgba(255,255,255,0.1); transform: translateX(-50%);
+            transition: 0.5s;
+        }
+        .step-active .step-node { background: var(--gold); color: var(--primary); box-shadow: 0 0 20px var(--gold); border-color: white; }
+        .step-complete .step-node { background: var(--success); color: white; border-color: var(--success); }
+
+        /* Report Cards (Carfax Style) */
+        .report-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .report-badge { 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 20px; 
+            padding: 15px; 
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Animaciones */
+        @keyframes pulse-gold { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .scanning { animation: pulse-gold 2s infinite; }
         .hidden { display: none !important; }
 
-        /* Timeline */
-        .timeline { position: relative; padding-left: 30px; }
-        .timeline::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.1); }
-        .timeline-item { position: relative; margin-bottom: 30px; }
-        .timeline-icon { position: absolute; left: 0; top: 0; width: 20px; height: 20px; background: var(--secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center; transform: translateX(-50%); border: 2px solid var(--primary); }
-        .timeline-item.active .timeline-icon { background: var(--accent); animation: pulse-blue 1.5s infinite; border-color: var(--accent); }
-        .timeline-item.completed .timeline-icon { background: var(--success); border-color: var(--success); }
+        #loader-nexus { 
+            position: fixed; inset: 0; z-index: 9999; 
+            background: var(--primary); display: flex; 
+            flex-direction: column; align-items: center; justify-content: center; 
+        }
 
-        @keyframes pulse-blue { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+        .btn-action {
+            background: linear-gradient(135deg, var(--gold) 0%, #d97706 100%);
+            color: var(--primary); font-weight: 900;
+            text-transform: uppercase; letter-spacing: 2px;
+            padding: 20px; border-radius: 25px;
+            transition: 0.3s;
+        }
+        .btn-action:active { transform: scale(0.95); opacity: 0.8; }
     </style>
 </head>
 <body>
 
 <div id="loader-nexus">
-    <div class="relative w-40 h-40 mb-10">
-        <div class="absolute inset-0 border-2 border-accent/20 rounded-full animate-ping"></div>
-        <div class="absolute inset-4 border-2 border-gold/40 rounded-full animate-spin"></div>
-        <i class="fas fa-truck-fast text-gold text-5xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
+    <div class="relative w-48 h-48 flex items-center justify-center">
+        <div class="absolute inset-0 border-[3px] border-gold/10 rounded-full"></div>
+        <div class="absolute inset-0 border-t-[3px] border-gold rounded-full animate-spin"></div>
+        <img src="https://cdn-icons-png.flaticon.com/512/2555/2555013.png" class="w-20 h-20 brightness-200 grayscale" alt="Nexus Logo">
     </div>
-    <h2 class="font-nexus text-2xl tracking-[0.4em] text-white animate-pulse">NEXUS-X STATUS</h2>
-    <p class="text-[10px] text-slate-500 mt-4 uppercase font-black tracking-widest">Conexión Cliente-Taller</p>
+    <div class="mt-10 text-center">
+        <h2 class="font-nexus text-2xl tracking-[0.5em] text-white">NEXUS<span class="text-gold">-X</span></h2>
+        <p class="text-[9px] text-slate-500 mt-2 uppercase font-black tracking-widest italic">Iniciando Enlace Satelital Starlink...</p>
+    </div>
 </div>
 
-<header class="p-5 sticky top-0 z-[1000] bg-slate-950/90 backdrop-blur-3xl border-b border-white/5">
-    <div class="max-w-6xl mx-auto flex items-center justify-between">
+<nav class="sticky top-0 z-[1000] p-6 bg-slate-950/80 backdrop-blur-2xl border-b border-white/5">
+    <div class="max-w-4xl mx-auto flex justify-between items-center">
         <div class="flex items-center gap-4">
-            <div class="w-14 h-14 bg-accent/20 rounded-2xl flex items-center justify-center border border-accent/30 shadow-2xl">
-                <i class="fas fa-route text-accent text-xl"></i>
+            <div class="bg-gold/10 p-3 rounded-2xl border border-gold/20">
+                <i class="fas fa-satellite-dish text-gold"></i>
             </div>
             <div>
-                <h1 class="font-nexus text-xs text-white">MI UNIDAD NEXUS-X</h1>
-                <p id="placa-display" class="text-[10px] text-gold font-black uppercase tracking-widest mt-1">Cargando...</p>
+                <span class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Global Status</span>
+                <h1 class="font-nexus text-sm text-white">NEXUS HUB <span class="text-gold">v3.0</span></h1>
             </div>
         </div>
-        <button onclick="window.open('https://wa.me/573115709730')" class="w-12 h-12 bg-success/10 text-success rounded-2xl border border-success/20 hover:bg-success hover:text-white transition-all">
-            <i class="fab fa-whatsapp"></i>
-        </button>
+        <div id="badge-container" class="hidden flex items-center gap-2 bg-emerald-500/10 px-4 py-2 rounded-full border border-emerald-500/20">
+            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
+            <span class="text-[9px] font-black text-emerald-400 uppercase">Live Trace</span>
+        </div>
     </div>
-</header>
+</nav>
 
-<main class="p-4 max-w-xl mx-auto space-y-8">
+<main class="max-w-2xl mx-auto p-6 space-y-10">
     
-    <section id="search-section" class="space-y-6 text-center">
-        <div class="glass-card p-8">
-            <h3 class="font-nexus text-sm text-gold mb-8 uppercase tracking-widest">Rastrea tu Vehículo</h3>
-            <div class="flex gap-4">
-                <input id="search-placa" placeholder="INGRESA PLACA (EJ: AAA000)" class="neo-input text-center font-nexus text-2xl uppercase">
-                <button onclick="buscarEstadoUnidad()" class="btn-nexus px-8 bg-accent rounded-2xl text-lg font-bold">
-                    <i class="fas fa-search"></i>
-                </button>
-            </div>
+    <section id="search-box" class="space-y-8 py-10">
+        <div class="text-center space-y-4">
+            <h2 class="text-4xl font-black tracking-tighter">Tu vehículo, <br><span class="text-gold italic">bajo control total.</span></h2>
+            <p class="text-slate-400 text-sm font-medium">Accede al diagnóstico de ingeniería en tiempo real.</p>
         </div>
-    </section>
-
-    <section id="status-section" class="hidden space-y-6">
-        <div class="glass-card p-8 text-center">
-            <h3 class="font-nexus text-sm text-white mb-2" id="unidad-nombre">Unidad: -</h3>
-            <p class="text-[10px] text-slate-400 uppercase" id="unidad-taller">Taller: -</p>
-        </div>
-
-        <div class="glass-card p-8 timeline" id="status-timeline">
+        
+        <div class="glass-card p-10 space-y-6">
+            <div class="relative">
+                <input id="placa-input" type="text" placeholder="PLACA (EJ: AAA000)" 
+                       class="neo-input w-full text-center font-nexus uppercase placeholder:text-slate-700">
+                <i class="fas fa-qrcode absolute right-6 top-1/2 -translate-y-1/2 text-slate-600"></i>
             </div>
-
-        <div id="action-buttons" class="hidden glass-card p-8 grid grid-cols-2 gap-4">
-            <button onclick="descargarFacturaCliente()" class="btn-nexus bg-success w-full p-5 text-lg font-bold">
-                <i class="fas fa-file-invoice"></i> DESCARGAR FACTURA
-            </button>
-            <button onclick="verHistorialCompleto()" class="btn-nexus bg-gold w-full p-5 text-lg font-bold">
-                <i class="fas fa-history"></i> VER HISTORIAL
+            <button onclick="conectarUnidad()" class="btn-action w-full shadow-2xl shadow-gold/20 flex items-center justify-center gap-4">
+                <i class="fas fa-bolt"></i> Vincular Mi Unidad
             </button>
         </div>
     </section>
 
-    <section id="no-results-section" class="hidden glass-card p-8 text-center">
-        <i class="fas fa-exclamation-triangle text-danger text-5xl mb-6"></i>
-        <h3 class="font-nexus text-xl text-white mb-4">Unidad No Encontrada</h3>
-        <p class="text-slate-400 text-sm">Verifica la placa o contacta a tu taller para más información.</p>
+    <section id="unit-dashboard" class="hidden space-y-10 animate-in fade-in duration-700">
+        
+        <div class="glass-card overflow-hidden">
+            <div class="bg-gradient-to-r from-gold to-yellow-600 p-1 text-center">
+                <p class="text-[9px] font-black text-slate-950 uppercase tracking-widest">Certificación de Servicio Nexus-X</p>
+            </div>
+            <div class="p-8 space-y-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 id="display-vehiculo" class="text-2xl font-black uppercase">KENWORTH T800</h3>
+                        <p id="display-placa" class="font-nexus text-gold text-lg tracking-widest">PLACA: -</p>
+                    </div>
+                    <div class="text-right">
+                        <span id="display-year" class="bg-white/5 px-4 py-2 rounded-xl text-xs font-bold text-slate-400">Año: 2024</span>
+                    </div>
+                </div>
+
+                <div class="report-grid">
+                    <div class="report-badge flex items-center gap-4">
+                        <i class="fas fa-oil-can text-gold text-xl"></i>
+                        <div>
+                            <p class="text-[8px] text-slate-500 uppercase font-black">Estado Aceite</p>
+                            <p class="text-xs font-bold text-emerald-400">Óptimo</p>
+                        </div>
+                    </div>
+                    <div class="report-badge flex items-center gap-4">
+                        <i class="fas fa-battery-three-quarters text-gold text-xl"></i>
+                        <div>
+                            <p class="text-[8px] text-slate-500 uppercase font-black">Sistema Eléctrico</p>
+                            <p class="text-xs font-bold text-emerald-400">Verificado</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-10">
+            <h4 class="font-nexus text-[10px] text-gold uppercase tracking-[5px] mb-10">Hoja de Ruta del Servicio</h4>
+            <div id="timeline-flow" class="timeline-container space-y-12">
+                </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4">
+            <button onclick="generarReporteSalud()" class="p-6 bg-slate-100 text-slate-950 rounded-[2rem] font-black uppercase text-[11px] tracking-widest flex items-center justify-center gap-4 shadow-xl">
+                <i class="fas fa-file-pdf text-lg"></i> Descargar AutoCheck PDF
+            </button>
+            <button onclick="contactarIngeniero()" class="p-6 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-[2rem] font-black uppercase text-[11px] tracking-widest flex items-center justify-center gap-4">
+                <i class="fab fa-whatsapp text-lg"></i> Consultar con el Ingeniero
+            </button>
+        </div>
+
+    </section>
+
+    <section id="not-found" class="hidden glass-card p-12 text-center space-y-6">
+        <div class="w-24 h-24 bg-danger/10 text-danger rounded-full flex items-center justify-center mx-auto text-3xl">
+            <i class="fas fa-search-minus"></i>
+        </div>
+        <h3 class="font-nexus text-xl text-white">Sin Registro en la Red</h3>
+        <p class="text-slate-500 text-sm">No encontramos órdenes activas para esta placa. Contacta a soporte si crees que es un error.</p>
+        <button onclick="location.reload()" class="text-gold text-[10px] font-black uppercase tracking-widest">Reintentar Conexión</button>
     </section>
 
 </main>
 
+<footer class="mt-20 py-10 border-t border-white/5 text-center px-6">
+    <p class="text-[9px] text-slate-600 font-black uppercase tracking-[5px] mb-2">Powered by</p>
+    <p class="text-xs font-bold text-white uppercase tracking-tighter">Colombian Trucks Logistics LLC <span class="text-gold">Charlotte, NC</span></p>
+</footer>
+
 <script type="module">
-    // --- INTEGRACIÓN FIREBASE CORE ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs, getDoc, doc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
@@ -132,231 +236,132 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- SERVICE WORKER PARA OFFLINE ---
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw-cliente.js') // Asegúrate de que este archivo exista en la raíz
-                .then(reg => console.log('Service Worker registrado!', reg))
-                .catch(err => console.log('Fallo al registrar Service Worker:', err));
-        });
-    }
-
-    // --- ESTADOS POSIBLES DEL SERVICIO (SECRETAIA IA) ---
-    const serviceStages = [
-        { id: 'ingresado', label: 'Unidad en Patio', icon: 'fas fa-truck-pickup' },
-        { id: 'diagnostico', label: 'Diagnóstico Técnico IA', icon: 'fas fa-stethoscope' },
-        { id: 'reparacion', label: 'En Reparación Avanzada', icon: 'fas fa-wrench' },
-        { id: 'control_calidad', label: 'Control de Calidad Nexus', icon: 'fas fa-check-double' },
-        { id: 'listo_entrega', label: 'Listo para Entrega', icon: 'fas fa-flag-checkered' }
+    const stages = [
+        { id: 'ingreso', label: 'Recepción Técnica', icon: 'fa-truck-ramp-box', desc: 'Registro de entrada y peritaje visual inicial.' },
+        { id: 'diagnostico', label: 'Escaneo Starlink IA', icon: 'fa-microchip', desc: 'Análisis de códigos de falla y telemetría de motor.' },
+        { id: 'reparacion', label: 'Intervención de Ingeniería', icon: 'fa-screwdriver-wrench', desc: 'Ejecución de mantenimiento según protocolo CTL LLC.' },
+        { id: 'calidad', label: 'Certificación de Calidad', icon: 'fa-certificate', desc: 'Pruebas de ruta y validación de sistemas de seguridad.' },
+        { id: 'entrega', label: 'Listo para Despacho', icon: 'fa-flag-checkered', desc: 'Unidad certificada y lista para operación nacional.' }
     ];
 
-    let currentOrderData = null; // Para almacenar la orden actual del cliente
+    let currentOrder = null;
 
-    // --- FUNCIÓN PRINCIPAL DE BÚSQUEDA ---
-    window.buscarEstadoUnidad = async () => {
-        const placaInput = document.getElementById('search-placa');
-        const placa = placaInput.value.toUpperCase().trim();
+    window.conectarUnidad = async () => {
+        const placa = document.getElementById('placa-input').value.toUpperCase().trim();
+        if(!placa) return alert("Ingrese una placa válida.");
 
-        if (!placa) {
-            alert("Por favor, ingresa la placa de tu unidad.");
-            return;
-        }
-
-        document.getElementById('loader-nexus').classList.remove('hidden');
-        document.getElementById('search-section').classList.add('hidden');
-        document.getElementById('status-section').classList.add('hidden');
-        document.getElementById('no-results-section').classList.add('hidden');
-        document.getElementById('action-buttons').classList.add('hidden');
+        mostrarLoader(true);
 
         try {
-            // Buscar la orden más reciente para esta placa
             const q = query(collection(db, "ordenes"), where("placa", "==", placa), orderBy("timestamp", "desc"));
-            const querySnapshot = await getDocs(q);
+            const snap = await getDocs(q);
 
-            if (!querySnapshot.empty) {
-                currentOrderData = querySnapshot.docs[0].data(); // Obtiene la orden más reciente
-                currentOrderData.id = querySnapshot.docs[0].id; // Guarda el ID de la orden
-
-                document.getElementById('placa-display').innerText = currentOrderData.placa;
-                document.getElementById('unidad-nombre').innerText = `Unidad: ${currentOrderData.marca || 'N/A'} - ${currentOrderData.modelo || 'N/A'}`;
-                
-                // Obtener nombre del taller
-                if (currentOrderData.tallerId) {
-                    const tallerDoc = await getDoc(doc(db, "usuarios", currentOrderData.tallerId));
-                    if (tallerDoc.exists()) {
-                        document.getElementById('unidad-taller').innerText = `Taller: ${tallerDoc.data().nombreTaller}`;
-                    }
-                }
-
-                renderTimeline(currentOrderData.status || 'ingresado'); // Estado por defecto
-                document.getElementById('status-section').classList.remove('hidden');
-                document.getElementById('action-buttons').classList.remove('hidden');
-
-                // Cachear la última búsqueda para modo offline
-                localStorage.setItem('lastSearchedPlaca', placa);
-                localStorage.setItem('lastOrderData', JSON.stringify(currentOrderData));
-
+            if(!snap.empty) {
+                currentOrder = { id: snap.docs[0].id, ...snap.docs[0].data() };
+                renderDashboard(currentOrder);
             } else {
-                document.getElementById('no-results-section').classList.remove('hidden');
+                mostrarSeccion('not-found');
             }
-        } catch (error) {
-            console.error("Error al buscar el estado de la unidad:", error);
-            alert("Hubo un error al buscar la unidad. Intenta de nuevo.");
-            document.getElementById('no-results-section').classList.remove('hidden');
+        } catch (e) {
+            console.error(e);
+            alert("Error de enlace satelital. Reintente.");
         } finally {
-            document.getElementById('loader-nexus').classList.add('hidden');
+            mostrarLoader(false);
         }
     };
 
-    // --- RENDERIZADO DE LA LÍNEA DE TIEMPO ---
-    function renderTimeline(currentStatus) {
-        const timelineContainer = document.getElementById('status-timeline');
-        timelineContainer.innerHTML = ''; // Limpiar estados anteriores
+    function renderDashboard(data) {
+        document.getElementById('display-vehiculo').innerText = `${data.marca} ${data.modelo}`;
+        document.getElementById('display-placa').innerText = `PLACA: ${data.placa}`;
+        document.getElementById('display-year').innerText = `Año: ${data.año || 'N/A'}`;
+        
+        const timeline = document.getElementById('timeline-flow');
+        timeline.innerHTML = '';
 
-        let foundCurrent = false;
-        serviceStages.forEach(stage => {
-            const isCompleted = foundCurrent;
-            const isActive = stage.id === currentStatus;
+        let activeFound = false;
+        stages.forEach(s => {
+            const isActive = s.id === data.status;
+            const isComplete = !activeFound && !isActive;
+            if(isActive) activeFound = true;
 
-            if (isActive) foundCurrent = true; // Marca que hemos pasado el estado activo para los siguientes
+            const stateClass = isActive ? 'step-active' : (isComplete ? 'step-complete' : '');
 
-            const itemClass = isActive ? 'active' : (isCompleted ? 'completed' : '');
-            timelineContainer.innerHTML += `
-                <div class="timeline-item ${itemClass}">
-                    <div class="timeline-icon">
-                        <i class="${stage.icon} text-white text-xs"></i>
+            timeline.innerHTML += `
+                <div class="relative pl-10 ${stateClass}">
+                    <div class="step-node">
+                        <i class="fas ${s.icon} text-xs"></i>
                     </div>
-                    <div class="glass-card p-4 ml-6">
-                        <p class="text-sm font-bold ${isActive ? 'text-accent' : (isCompleted ? 'text-success' : 'text-slate-400')}">
-                            ${stage.label}
-                            ${isActive ? '<i class="fas fa-sync-alt fa-spin ml-2"></i>' : ''}
-                        </p>
-                        <p class="text-[9px] text-slate-500 mt-1">
-                            ${isActive ? 'Tu unidad se encuentra en esta fase de servicio.' : (isCompleted ? 'Fase completada exitosamente.' : 'Fase pendiente.')}
-                        </p>
+                    <div>
+                        <h5 class="text-sm font-black uppercase ${isActive ? 'text-gold' : 'text-slate-200'}">${s.label}</h5>
+                        <p class="text-[10px] text-slate-500 mt-1 leading-relaxed">${s.desc}</p>
                     </div>
                 </div>
             `;
         });
+
+        mostrarSeccion('unit-dashboard');
+        document.getElementById('badge-container').classList.remove('hidden');
     }
 
-    // --- DESCARGAR FACTURA PDF (Módulo Contable Futuro) ---
-    window.descargarFacturaCliente = async () => {
-        if (!currentOrderData || !currentOrderData.id) {
-            alert("No hay datos de orden para generar la factura.");
-            return;
-        }
-
-        // Aquí simulamos datos de factura, en el futuro se obtendrán del taller.html
-        // Para que esto funcione, 'taller.html' debe guardar estos datos en la orden
-        const facturaData = {
-            numero: currentOrderData.id.substring(0, 8).toUpperCase(),
-            fecha: new Date().toLocaleDateString(),
-            placa: currentOrderData.placa,
-            cliente: currentOrderData.cliente,
-            taller: document.getElementById('unidad-taller').innerText.replace('Taller: ', ''),
-            items: [
-                { descripcion: "Diagnóstico Computarizado Starlink", cantidad: 1, valorUnitario: 80000 },
-                { descripcion: "Repuesto X (SIMULADO)", cantidad: 2, valorUnitario: 45000 },
-                { descripcion: "Mano de Obra Especializada", cantidad: 1, valorUnitario: 150000 }
-            ],
-            subtotal: 0,
-            iva: 0,
-            total: 0
-        };
-
-        // Calcular totales (esto se haría en el backend o en el taller.html idealmente)
-        facturaData.subtotal = facturaData.items.reduce((sum, item) => sum + (item.cantidad * item.valorUnitario), 0);
-        facturaData.iva = facturaData.subtotal * 0.19; // IVA 19% en Colombia
-        facturaData.total = facturaData.subtotal + facturaData.iva;
-
+    window.generarReporteSalud = () => {
         const { jsPDF } = window.jspdf;
         const docPDF = new jsPDF();
-
-        // Encabezado de Élite
-        docPDF.setFillColor(15, 23, 42); 
-        docPDF.rect(0, 0, 210, 40, 'F');
-        docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(22);
-        docPDF.text("NEXUS-X LOGISTICS SAS", 20, 25);
         
-        // Información de Factura
-        docPDF.setTextColor(0, 0, 0); docPDF.setFontSize(14);
-        docPDF.text(`FACTURA N°: ${facturaData.numero}`, 20, 55);
-        docPDF.text(`Fecha: ${facturaData.fecha}`, 20, 65);
-        docPDF.text(`Taller: ${facturaData.taller}`, 20, 75);
-        docPDF.text(`Cliente: ${facturaData.cliente}`, 20, 85);
-        docPDF.text(`Placa: ${facturaData.placa}`, 20, 95);
-
-        // Tabla de ítems
+        // Estética Carfax/Autocheck
+        docPDF.setFillColor(2, 6, 23);
+        docPDF.rect(0, 0, 210, 297, 'F');
+        
+        docPDF.setTextColor(245, 158, 11);
+        docPDF.setFontSize(26);
+        docPDF.text("NEXUS-X AUTO-CHECK", 20, 30);
+        
+        docPDF.setTextColor(255, 255, 255);
         docPDF.setFontSize(10);
-        docPDF.text("Descripción", 20, 115);
-        docPDF.text("Cant.", 90, 115);
-        docPDF.text("V. Unit.", 120, 115);
-        docPDF.text("Total", 160, 115);
-        docPDF.line(15, 117, 195, 117); // Línea divisoria
+        docPDF.text("INFORME DE INGENIERÍA Y SALUD VEHICULAR", 20, 40);
+        
+        docPDF.line(20, 45, 190, 45);
+        
+        docPDF.setFontSize(14);
+        docPDF.text(`VEHÍCULO: ${currentOrder.marca} ${currentOrder.modelo}`, 20, 60);
+        docPDF.text(`IDENTIFICACIÓN: ${currentOrder.placa}`, 20, 70);
+        docPDF.text(`TALLER EMISOR: TallerPro360 Global`, 20, 80);
+        
+        docPDF.setFillColor(15, 23, 42);
+        docPDF.roundedRect(20, 90, 170, 60, 5, 5, 'F');
+        docPDF.text("DIAGNÓSTICO TÉCNICO:", 30, 105);
+        docPDF.setFontSize(10);
+        docPDF.setTextColor(150, 150, 150);
+        docPDF.text(currentOrder.notas || "Sin observaciones críticas registradas en sistema.", 30, 115, { maxWidth: 150 });
+        
+        docPDF.setTextColor(16, 185, 129);
+        docPDF.text("ESTADO: UNIDAD CERTIFICADA PARA OPERACIÓN", 20, 250);
+        
+        docPDF.setTextColor(100, 100, 100);
+        docPDF.text("Validado por Colombian Trucks Logistics LLC - Charlotte, NC", 20, 280);
+        
+        docPDF.save(`Reporte_Nexus_${currentOrder.placa}.pdf`);
+    };
 
-        let y = 125;
-        facturaData.items.forEach(item => {
-            docPDF.text(item.descripcion, 20, y);
-            docPDF.text(item.cantidad.toString(), 90, y);
-            docPDF.text(`$${item.valorUnitario.toLocaleString('es-CO')}`, 120, y);
-            docPDF.text(`$${(item.cantidad * item.valorUnitario).toLocaleString('es-CO')}`, 160, y);
-            y += 10;
+    function mostrarSeccion(id) {
+        ['search-box', 'unit-dashboard', 'not-found'].forEach(s => {
+            document.getElementById(s).classList.add('hidden');
         });
-        docPDF.line(15, y, 195, y); // Línea divisoria
+        document.getElementById(id).classList.remove('hidden');
+    }
 
-        // Totales
-        y += 10;
-        docPDF.text(`Subtotal: $${facturaData.subtotal.toLocaleString('es-CO')}`, 140, y);
-        y += 10;
-        docPDF.text(`IVA (19%): $${facturaData.iva.toLocaleString('es-CO')}`, 140, y);
-        y += 10;
-        docPDF.setFontSize(12); docPDF.setFont(undefined, 'bold');
-        docPDF.text(`TOTAL: $${facturaData.total.toLocaleString('es-CO')}`, 140, y);
+    function mostrarLoader(show) {
+        document.getElementById('loader-nexus').classList.toggle('hidden', !show);
+    }
 
-        // Footer
-        docPDF.setFontSize(8); docPDF.setFont(undefined, 'normal');
-        docPDF.text("Gracias por confiar en Nexus-X Starlink SAS. Calidad garantizada por Colombian Trucks Logistics.", 20, docPDF.internal.pageSize.height - 20);
-
-        docPDF.save(`Factura_Nexus_${facturaData.placa}.pdf`);
+    window.contactarIngeniero = () => {
+        const msg = `Hola! Soy el propietario de la unidad ${currentOrder.placa}. Quisiera más detalles sobre el estado actual en Nexus-X.`;
+        window.open(`https://wa.me/573115709730?text=${encodeURIComponent(msg)}`);
     };
 
-    // --- VER HISTORIAL COMPLETO (Se podría hacer una nueva sección) ---
-    window.verHistorialCompleto = () => {
-        // Aquí podrías redirigir a otra sección o cargar un modal con más detalles.
-        // Por ahora, solo alertamos.
-        alert("Mostrando historial completo de mantenimiento (próxima feature).");
+    // Auto-init
+    window.onload = () => {
+        setTimeout(() => mostrarLoader(false), 2000);
     };
-
-    // --- CARGA INICIAL (Modo Offline) ---
-    window.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('loader-nexus').classList.add('hidden'); // Ocultar loader al cargar
-        // Intentar cargar la última búsqueda si está en caché
-        const lastPlaca = localStorage.getItem('lastSearchedPlaca');
-        const lastOrder = localStorage.getItem('lastOrderData');
-        if (lastPlaca && lastOrder) {
-            document.getElementById('search-placa').value = lastPlaca;
-            currentOrderData = JSON.parse(lastOrder);
-            document.getElementById('placa-display').innerText = currentOrderData.placa;
-            document.getElementById('unidad-nombre').innerText = `Unidad: ${currentOrderData.marca || 'N/A'} - ${currentOrderData.modelo || 'N/A'}`;
-            // Simular carga de taller para el modo offline
-            document.getElementById('unidad-taller').innerText = `Taller: ${currentOrderData.tallerNameCached || 'Desconocido'}`; 
-            
-            renderTimeline(currentOrderData.status || 'ingresado');
-            document.getElementById('search-section').classList.add('hidden');
-            document.getElementById('status-section').classList.remove('hidden');
-            document.getElementById('action-buttons').classList.remove('hidden');
-        } else {
-            document.getElementById('search-section').classList.remove('hidden');
-        }
-    });
-
-    // Ocultar loader al inicio
-    document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-            document.getElementById('loader-nexus').classList.add('hidden');
-        }, 1000); // 1 segundo para la animación inicial
-    });
 </script>
 </body>
 </html>
