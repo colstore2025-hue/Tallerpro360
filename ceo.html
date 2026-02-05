@@ -2,215 +2,333 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>CEO COMMAND | Nexus-X Starlink</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>CEO COMMAND CENTER | Nexus-X Starlink Sync</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
     
     <style>
-        :root { --gold: #f59e0b; --deep: #020617; --neon: #3b82f6; --success: #10b981; --danger: #ef4444; }
-        body { font-family: 'Inter', sans-serif; background: var(--deep); color: white; margin: 0; overflow-x: hidden; }
+        :root { 
+            --gold: #f59e0b; 
+            --deep: #020617; 
+            --slate-custom: #0f172a;
+            --emerald-glow: #10b981;
+            --ruby: #ef4444;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--deep); 
+            color: #f1f5f9; 
+            margin: 0; 
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0);
+            background-size: 40px 40px;
+        }
+
         .font-nexus { font-family: 'Orbitron', sans-serif; }
-        .glass-ceo { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 24px; }
-        .stat-card { border-top: 4px solid var(--gold); transition: 0.3s; }
-        .stat-card:hover { transform: scale(1.02); box-shadow: 0 0 30px rgba(245, 158, 11, 0.1); }
-        .btn-kill { background: linear-gradient(135deg, #ef4444, #991b1b); }
-        .btn-active { background: linear-gradient(135deg, #10b981, #065f46); }
+
+        /* INTERFAZ DE CRISTAL CEO */
+        .glass-ceo { 
+            background: rgba(15, 23, 42, 0.7); 
+            backdrop-filter: blur(25px); 
+            border: 1px solid rgba(245, 158, 11, 0.15); 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+
+        /* TELEMETRÍA DE ESTADOS */
+        .status-active { color: var(--emerald-glow); border: 1px solid rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); }
+        .status-suspended { color: var(--ruby); border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
+
+        /* ANIMACIONES DE CARGA SATELITAL */
+        @keyframes radar-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        .radar-active { animation: radar-pulse 2s infinite; }
+
+        .scan-line {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent, rgba(245, 158, 11, 0.05), transparent);
+            position: absolute;
+            top: -100%;
+            left: 0;
+            animation: scan 6s linear infinite;
+        }
+        @keyframes scan { 0% { top: -100%; } 100% { top: 100%; } }
+
+        /* SCROLLBAR CUSTOM */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--deep); }
+        ::-webkit-scrollbar-thumb { background: var(--slate-custom); border-radius: 10px; border: 1px solid var(--gold); }
+
+        .stat-glow { text-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
         
-        /* Animación de Radar */
-        .radar-line { width: 100%; height: 2px; background: var(--gold); position: absolute; animation: scan 4s linear infinite; opacity: 0.1; z-index: 0; }
-        @keyframes scan { from { top: 0%; } to { top: 100%; } }
+        /* BOTONES DE PROTOCOLO */
+        .btn-action { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .btn-action:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+        
+        .grid-bg {
+            background-image: linear-gradient(rgba(245, 158, 11, 0.03) 1px, transparent 1px), 
+                              linear-gradient(90deg, rgba(245, 158, 11, 0.03) 1px, transparent 1px);
+            background-size: 100px 100px;
+        }
     </style>
 </head>
-<body class="p-4 lg:p-10">
+<body class="p-4 lg:p-12 grid-bg min-h-screen">
 
-<header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6 relative z-10">
-    <div>
-        <h1 class="font-nexus text-4xl text-gold tracking-tighter">GLOBAL COMMAND</h1>
-        <p class="text-[10px] text-slate-500 font-black tracking-[0.5em] uppercase">William Urquijo - CEO Operations</p>
-    </div>
-    <div class="flex gap-3">
-        <button onclick="exportarData()" class="glass-ceo px-6 flex items-center gap-3 text-xs font-bold hover:bg-gold hover:text-black transition-all">
-            <i class="fas fa-file-csv"></i> EXPORTAR LOGS
-        </button>
-        <button onclick="logout()" class="w-14 h-14 glass-ceo flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all">
-            <i class="fas fa-power-off"></i>
-        </button>
-    </div>
-</header>
-
-<main class="space-y-10 relative z-10">
-    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="glass-ceo p-6 stat-card">
-            <p class="text-[10px] font-black text-slate-500 uppercase">Facturación Red Colombia</p>
-            <h2 id="total-money" class="text-3xl font-nexus mt-2 text-white">$0</h2>
-            <p class="text-[9px] text-emerald-400 mt-1 font-bold italic">Sincronizado con Starlink</p>
-        </div>
-        <div class="glass-ceo p-6 stat-card">
-            <p class="text-[10px] font-black text-slate-500 uppercase">Nodos Activos</p>
-            <h2 id="total-nodos" class="text-3xl font-nexus mt-2 text-white">0</h2>
-            <p class="text-[9px] text-gold mt-1 font-bold uppercase">Talleres Registrados</p>
-        </div>
-        <div class="glass-ceo p-6 stat-card" style="border-top-color: #3b82f6;">
-            <p class="text-[10px] font-black text-slate-500 uppercase">Vencimientos Proximos</p>
-            <h2 id="total-demo" class="text-3xl font-nexus mt-2 text-neon">0</h2>
-            <p class="text-[9px] text-slate-500 mt-1 font-bold uppercase">Alerta de Licencia</p>
-        </div>
-        <div class="glass-ceo p-6 stat-card" style="border-top-color: #10b981;">
-            <p class="text-[10px] font-black text-slate-500 uppercase">Flujo Vehicular</p>
-            <h2 id="total-units" class="text-3xl font-nexus mt-2 text-success">0</h2>
-            <p class="text-[9px] text-slate-500 mt-1 font-bold uppercase">Órdenes Procesadas</p>
-        </div>
-    </section>
-
-    <section class="glass-ceo p-8 relative overflow-hidden">
-        <div class="radar-line"></div>
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
-            <h3 class="font-nexus text-sm tracking-widest border-l-4 border-gold pl-4">CONTROL DE SATÉLITES (TALLERES)</h3>
-            <input id="search-taller" onkeyup="filterTable()" placeholder="FILTRAR NODO..." class="bg-slate-950 border border-slate-800 rounded-full px-6 py-3 text-xs w-full md:w-64 outline-none focus:border-gold transition-all">
+    <header class="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-start lg:items-center mb-16 gap-8 relative z-50">
+        <div class="flex items-center gap-6">
+            <div class="w-20 h-20 bg-gold rounded-[2rem] flex items-center justify-center text-slate-950 shadow-2xl radar-active">
+                <i class="fas fa-shield-halved text-4xl"></i>
+            </div>
+            <div>
+                <h1 class="font-nexus text-4xl lg:text-5xl font-black tracking-tighter text-white">COMMAND<span class="text-gold italic">ZERO</span></h1>
+                <div class="flex items-center gap-3 mt-1">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                    <p class="text-[10px] text-slate-500 font-black tracking-[0.4em] uppercase italic">W. Urquijo | Global Infrastructure CEO</p>
+                </div>
+            </div>
         </div>
 
-        <div class="overflow-x-auto relative z-10">
-            <table id="main-table" class="w-full text-left text-sm border-separate border-spacing-y-2">
-                <thead class="text-slate-500">
-                    <tr class="uppercase text-[9px] tracking-widest">
-                        <th class="px-4 pb-4">Identificación Nodo</th>
-                        <th class="px-4 pb-4">Volumen Negocio</th>
-                        <th class="px-4 pb-4">Vencimiento</th>
-                        <th class="px-4 pb-4">Estado</th>
-                        <th class="px-4 pb-4 text-center">Protocolo</th>
-                    </tr>
-                </thead>
-                <tbody id="taller-table-body">
-                    </tbody>
-            </table>
+        <div class="flex flex-wrap gap-4 w-full lg:w-auto">
+            <button onclick="descargarReporte()" class="glass-ceo px-8 py-4 text-[10px] font-black tracking-[3px] hover:bg-gold hover:text-black transition-all flex items-center gap-3">
+                <i class="fas fa-file-invoice-dollar"></i> EXPORTAR DATA GLOBAL
+            </button>
+            <button onclick="protocoloCierre()" class="w-16 h-16 glass-ceo border-ruby/50 text-ruby hover:bg-ruby hover:text-white transition-all flex items-center justify-center text-xl">
+                <i class="fas fa-power-off"></i>
+            </button>
         </div>
-    </section>
-</main>
+    </header>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-        authDomain: "tallerpro360.firebaseapp.com",
-        projectId: "tallerpro360",
-        storageBucket: "tallerpro360.appspot.com",
-        messagingSenderId: "636224778184",
-        appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-
-    // --- SEGURIDAD CEO ---
-    onAuthStateChanged(auth, (user) => {
-        // Tu correo maestro
-        if (!user || user.email !== 'col.store2025@gmail.com') {
-            window.location.href = "index.html";
-        } else {
-            initCEOCommand();
-        }
-    });
-
-    function initCEOCommand() {
-        // 1. Monitoreo de Talleres
-        onSnapshot(collection(db, "usuarios"), (snap) => {
-            const tbody = document.getElementById('taller-table-body');
-            tbody.innerHTML = "";
-            let countNodos = 0;
-            let countDemo = 0;
-
-            snap.forEach(d => {
-                const u = d.data();
-                if(u.rol === 'ADMIN') return;
-
-                countNodos++;
-                const hoy = Date.now();
-                const vencimiento = u.vence || hoy;
-                const diasRestantes = Math.ceil((vencimiento - hoy) / (1000 * 60 * 60 * 24));
-                
-                if(diasRestantes <= 5) countDemo++;
-
-                tbody.innerHTML += `
-                    <tr class="bg-slate-900/40 hover:bg-slate-800/60 transition-all rounded-2xl">
-                        <td class="p-4 rounded-l-2xl">
-                            <p class="font-bold text-white uppercase text-xs">${u.nombreTaller}</p>
-                            <p class="text-[9px] text-slate-500 font-medium tracking-tight">${u.email}</p>
-                        </td>
-                        <td class="p-4 font-nexus text-gold">$${(u.facturacionAcumulada || 0).toLocaleString()}</td>
-                        <td class="p-4 text-[10px]">
-                            <span class="${diasRestantes < 5 ? 'text-red-500 font-black animate-pulse' : 'text-slate-300'}">
-                                ${new Date(vencimiento).toLocaleDateString()} (${diasRestantes}d)
-                            </span>
-                        </td>
-                        <td class="p-4">
-                            <span class="px-3 py-1 rounded-lg text-[8px] font-black border ${u.status === 'ACTIVO' ? 'border-emerald-500/50 text-emerald-500' : 'border-red-500/50 text-red-500'}">
-                                ${u.status || 'ACTIVO'}
-                            </span>
-                        </td>
-                        <td class="p-4 text-center rounded-r-2xl">
-                            <button onclick="toggleNodo('${d.id}', '${u.status || 'ACTIVO'}')" class="px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${u.status === 'ACTIVO' ? 'btn-kill shadow-lg shadow-red-900/20' : 'btn-active shadow-lg shadow-emerald-900/20'}">
-                                ${u.status === 'ACTIVO' ? 'Suspender' : 'Activar'}
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-            document.getElementById('total-nodos').innerText = countNodos;
-            document.getElementById('total-demo').innerText = countDemo;
-        });
-
-        // 2. Monitoreo de Órdenes Globales
-        onSnapshot(collection(db, "ordenes"), (snap) => {
-            let totalMoney = 0;
-            snap.forEach(d => {
-                totalMoney += (d.data().contabilidad?.total || 0);
-            });
-            document.getElementById('total-money').innerText = `$${totalMoney.toLocaleString()}`;
-            document.getElementById('total-units').innerText = snap.size;
-        });
-    }
-
-    // --- ACCIONES MAESTRAS ---
-    window.toggleNodo = async (id, currentStatus) => {
-        const newStatus = currentStatus === 'ACTIVO' ? 'SUSPENDIDO' : 'ACTIVO';
-        if(confirm(`Nexus-X Protocol: ¿Deseas cambiar el estado a ${newStatus}?`)) {
-            await updateDoc(doc(db, "usuarios", id), { status: newStatus });
-        }
-    };
-
-    window.exportarData = () => {
-        const rows = [["Taller", "Email", "Facturación", "Estado"]];
-        const tableRows = document.querySelectorAll("#taller-table-body tr");
-        tableRows.forEach(tr => {
-            const data = Array.from(tr.querySelectorAll("td")).map(td => td.innerText.replace(/\n/g, " "));
-            rows.push([data[0], data[0], data[1], data[3]]);
-        });
+    <main class="max-w-7xl mx-auto space-y-12">
         
-        let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `RED_NEXUS_REPORTE_${new Date().toLocaleDateString()}.csv`);
-        document.body.appendChild(link);
-        link.click();
-    };
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="glass-ceo p-8 rounded-[2.5rem] relative overflow-hidden group">
+                <div class="scan-line"></div>
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Ingresos Brutos Red</p>
+                <h2 id="total-revenue" class="text-4xl font-nexus text-white stat-glow">$0</h2>
+                <div class="mt-4 flex items-center gap-2 text-[9px] text-emerald-400 font-bold uppercase italic">
+                    <i class="fas fa-arrow-up"></i> +12% vs Anterior
+                </div>
+            </div>
 
-    window.filterTable = () => {
-        const val = document.getElementById('search-taller').value.toUpperCase();
-        const rows = document.querySelectorAll("#taller-table-body tr");
-        rows.forEach(r => {
-            r.style.display = r.innerText.toUpperCase().includes(val) ? "" : "none";
+            <div class="glass-ceo p-8 rounded-[2.5rem] border-blue-500/20">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Nodos Sincronizados</p>
+                <h2 id="node-count" class="text-4xl font-nexus text-white">0</h2>
+                <div class="mt-4 flex items-center gap-2 text-[9px] text-blue-400 font-bold uppercase italic">
+                    <i class="fas fa-satellite"></i> Starlink v3 Activo
+                </div>
+            </div>
+
+            <div class="glass-ceo p-8 rounded-[2.5rem] border-ruby/20">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Licencias por Vencer</p>
+                <h2 id="expiring-count" class="text-4xl font-nexus text-ruby">0</h2>
+                <div class="mt-4 flex items-center gap-2 text-[9px] text-slate-500 font-bold uppercase italic">
+                    <i class="fas fa-clock"></i> Umbral: < 5 días
+                </div>
+            </div>
+
+            <div class="glass-ceo p-8 rounded-[2.5rem] border-emerald-500/20">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Vehículos en Gestión</p>
+                <h2 id="vehicle-count" class="text-4xl font-nexus text-emerald-400">0</h2>
+                <div class="mt-4 flex items-center gap-2 text-[9px] text-slate-500 font-bold uppercase italic">
+                    <i class="fas fa-truck-moving"></i> Operación Nacional
+                </div>
+            </div>
+        </section>
+
+        <section class="glass-ceo rounded-[3rem] p-10 relative overflow-hidden">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12 gap-6 relative z-10">
+                <div>
+                    <h3 class="font-nexus text-xl tracking-tighter text-white">GESTOR DE NODOS MAESTROS</h3>
+                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-[3px] mt-1">Control de acceso y facturación por ciudad</p>
+                </div>
+                <div class="relative w-full lg:w-96">
+                    <i class="fas fa-search absolute left-6 top-1/2 -translate-y-1/2 text-gold text-sm"></i>
+                    <input type="text" id="node-filter" onkeyup="filtrarNodos()" placeholder="BUSCAR TALLER O CIUDAD..." class="w-full bg-slate-950 border border-white/5 rounded-2xl py-5 pl-14 pr-6 text-xs text-white outline-none focus:border-gold transition-all">
+                </div>
+            </div>
+
+            <div class="overflow-x-auto relative z-10">
+                <table class="w-full border-separate border-spacing-y-4">
+                    <thead>
+                        <tr class="text-[10px] text-slate-500 font-black uppercase tracking-[3px] text-left">
+                            <th class="px-6 pb-4">Info Nodo</th>
+                            <th class="px-6 pb-4">Ubicación / Ciudad</th>
+                            <th class="px-6 pb-4">Facturación</th>
+                            <th class="px-6 pb-4">Vencimiento</th>
+                            <th class="px-6 pb-4">Estado Red</th>
+                            <th class="px-6 pb-4 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ceo-node-table">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+            authDomain: "tallerpro360.firebaseapp.com",
+            projectId: "tallerpro360",
+            storageBucket: "tallerpro360.appspot.com",
+            messagingSenderId: "636224778184",
+            appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // VERIFICACIÓN DE IDENTIDAD CEO
+        onAuthStateChanged(auth, (user) => {
+            if (!user || (user.email !== 'col.store2025@gmail.com' && user.email !== 'test@tallerpro360.com')) {
+                location.href = "index.html";
+            } else {
+                iniciarSincronizacionCEO();
+            }
         });
-    };
 
-    window.logout = () => signOut(auth).then(() => location.href = "index.html");
-</script>
+        function iniciarSincronizacionCEO() {
+            // MONITOREO DE TALLERES (NODOS)
+            onSnapshot(collection(db, "usuarios"), (snap) => {
+                const table = document.getElementById('ceo-node-table');
+                table.innerHTML = "";
+                let nodosCount = 0;
+                let vencimientosCount = 0;
+
+                snap.forEach(d => {
+                    const data = d.data();
+                    if(data.rol === 'CEO') return; // No auto-monitorear
+
+                    nodosCount++;
+                    const hoy = Date.now();
+                    const fechaVence = data.vence || hoy;
+                    const diffDias = Math.ceil((fechaVence - hoy) / (1000 * 60 * 60 * 24));
+                    
+                    if(diffDias <= 5) vencimientosCount++;
+
+                    const statusClass = data.status === 'ACTIVO' ? 'status-active' : 'status-suspended';
+                    const btnClass = data.status === 'ACTIVO' ? 'bg-ruby text-white' : 'bg-emerald-500 text-slate-950';
+
+                    table.innerHTML += `
+                        <tr class="bg-slate-900/30 hover:bg-slate-800/50 transition-all group">
+                            <td class="px-6 py-6 rounded-l-3xl border-l border-white/5">
+                                <p class="font-bold text-white text-sm uppercase">${data.nombreTaller || 'NODO SIN NOMBRE'}</p>
+                                <p class="text-[9px] text-slate-500 font-bold italic tracking-tighter">${data.email}</p>
+                            </td>
+                            <td class="px-6 py-6 font-bold text-xs text-slate-400">
+                                <i class="fas fa-map-marker-alt text-gold mr-2"></i> ${data.ciudad || 'Por Definir'}
+                            </td>
+                            <td class="px-6 py-6 font-nexus text-gold text-xs">
+                                $${(data.facturacionAcumulada || 0).toLocaleString()}
+                            </td>
+                            <td class="px-6 py-6">
+                                <p class="text-[10px] font-black ${diffDias < 5 ? 'text-ruby animate-pulse' : 'text-slate-300'}">
+                                    ${new Date(fechaVence).toLocaleDateString()}
+                                </p>
+                                <p class="text-[8px] text-slate-500 uppercase font-bold">${diffDias} días restantes</p>
+                            </td>
+                            <td class="px-6 py-6">
+                                <span class="px-4 py-1 rounded-full text-[8px] font-black uppercase ${statusClass}">
+                                    ${data.status || 'ACTIVO'}
+                                </span>
+                            </td>
+                            <td class="px-6 py-6 text-center rounded-r-3xl border-r border-white/5">
+                                <button onclick="gestionarNodo('${d.id}', '${data.status || 'ACTIVO'}')" 
+                                        class="btn-action px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${btnClass}">
+                                    ${data.status === 'ACTIVO' ? 'Suspender' : 'Activar Nodo'}
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                document.getElementById('node-count').innerText = nodosCount;
+                document.getElementById('expiring-count').innerText = vencimientosCount;
+            });
+
+            // MONITOREO DE ÓRDENES Y FLUJO DE DINERO
+            onSnapshot(collection(db, "ordenes"), (snap) => {
+                let revenue = 0;
+                snap.forEach(o => {
+                    const d = o.data();
+                    revenue += (d.total || 0);
+                });
+                document.getElementById('total-revenue').innerText = `$${revenue.toLocaleString()}`;
+                document.getElementById('vehicle-count').innerText = snap.size;
+            });
+        }
+
+        // ACCIONES DE MANDO
+        window.gestionarNodo = async (uid, statusActual) => {
+            const nuevoStatus = statusActual === 'ACTIVO' ? 'SUSPENDIDO' : 'ACTIVO';
+            const confirmacion = confirm(`PROTOCOLO NEXUS: ¿Confirmar cambio de estado a ${nuevoStatus}?`);
+            
+            if(confirmacion) {
+                try {
+                    await updateDoc(doc(db, "usuarios", uid), { status: nuevoStatus });
+                    console.log(`Nodo ${uid} actualizado a ${nuevoStatus}`);
+                } catch (error) {
+                    alert("ERROR DE PROTOCOLO: Fallo en la red Starlink.");
+                }
+            }
+        };
+
+        window.descargarReporte = () => {
+            const rows = [["TALLER", "EMAIL", "CIUDAD", "FACTURACIÓN", "ESTADO"]];
+            const dataTable = document.querySelectorAll("#ceo-node-table tr");
+            
+            dataTable.forEach(tr => {
+                const cells = tr.querySelectorAll("td");
+                if(cells.length > 0) {
+                    rows.push([
+                        cells[0].querySelector("p").innerText,
+                        cells[0].querySelectorAll("p")[1].innerText,
+                        cells[1].innerText.trim(),
+                        cells[2].innerText.trim(),
+                        cells[4].innerText.trim()
+                    ]);
+                }
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `NEXUS_GLOBAL_REPORT_${new Date().getTime()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+        };
+
+        window.filtrarNodos = () => {
+            const query = document.getElementById('node-filter').value.toUpperCase();
+            const rows = document.querySelectorAll("#ceo-node-table tr");
+            rows.forEach(r => {
+                const text = r.innerText.toUpperCase();
+                r.style.display = text.includes(query) ? "" : "none";
+            });
+        };
+
+        window.protocoloCierre = () => {
+            if(confirm("¿Cerrar Command Zero?")) {
+                signOut(auth).then(() => location.href = "index.html");
+            }
+        };
+
+    </script>
 </body>
 </html>
