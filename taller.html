@@ -2,15 +2,17 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS-X STARLINK | GLOBAL COMMAND CENTER v6.0 ULTRA</title>
+    <title>TallerPro360 | Nexus-X Starlink Global Command</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
     <style>
         :root { 
             --primary: #020617; --gold: #f59e0b; --accent: #3b82f6; 
-            --success: #10b981; --danger: #ef4444; --surface: rgba(15, 23, 42, 0.95);
+            --success: #10b981; --danger: #ef4444; --surface: rgba(15, 23, 42, 0.98);
         }
         
         body { 
@@ -21,305 +23,329 @@
         }
 
         .font-nexus { font-family: 'Orbitron', sans-serif; }
-        .glass { background: var(--surface); backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .glass { background: var(--surface); backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
         
-        /* Inputs Estilo Nexus */
+        /* Inputs Ultra-Modernos */
         .neo-input { 
-            background: rgba(0,0,0,0.4); border: 1px solid #334155; border-radius: 16px; 
+            background: rgba(0,0,0,0.5); border: 1px solid #334155; border-radius: 18px; 
             padding: 16px; color: white; width: 100%; outline: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-size: 14px;
+            font-size: 14px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
         }
-        .neo-input:focus { border-color: var(--gold); background: rgba(0,0,0,0.6); box-shadow: 0 0 25px rgba(245, 158, 11, 0.15); }
+        .neo-input:focus { border-color: var(--gold); background: rgba(0,0,0,0.7); box-shadow: 0 0 25px rgba(245, 158, 11, 0.2); }
 
-        /* Navegación Elevada */
+        /* Navegación Elevada Pro */
         .nav-nexus { 
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            width: 92%; max-width: 650px; height: 85px; border-radius: 35px; 
+            width: 94%; max-width: 650px; height: 90px; border-radius: 35px; 
             display: flex; justify-content: space-around; align-items: center; z-index: 5000; 
-            border: 1px solid rgba(255,255,255,0.1); background: rgba(7, 10, 25, 0.9);
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.15); background: rgba(7, 10, 25, 0.95);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8); backdrop-filter: blur(20px);
         }
-        .nav-item { color: #64748b; font-size: 9px; font-weight: 900; text-align: center; transition: 0.4s; cursor: pointer; flex: 1; text-transform: uppercase; letter-spacing: 1px; }
-        .nav-item i { font-size: 24px; margin-bottom: 6px; display: block; transition: 0.4s; }
+        .nav-item { color: #64748b; font-size: 9px; font-weight: 900; text-align: center; transition: 0.4s; cursor: pointer; flex: 1; text-transform: uppercase; letter-spacing: 2px; }
+        .nav-item i { font-size: 26px; margin-bottom: 8px; display: block; transition: 0.4s; }
         .nav-item.active { color: var(--gold); }
-        .nav-item.active i { transform: translateY(-12px) scale(1.2); text-shadow: 0 0 20px var(--gold); }
+        .nav-item.active i { transform: translateY(-15px) scale(1.25); text-shadow: 0 0 25px var(--gold); }
 
-        /* Estados de Misión */
-        .status-PATIO { border-right: 4px solid var(--accent); }
-        .status-PROCESO { border-right: 4px solid var(--gold); }
-        .status-LISTO { border-right: 4px solid var(--success); }
+        /* Estados de Misión Visuales */
+        .status-PATIO { border-right: 5px solid var(--accent); }
+        .status-PROCESO { border-right: 5px solid var(--gold); }
+        .status-LISTO { border-right: 5px solid var(--success); }
 
-        .step-pill { opacity: 0.15; transition: 0.5s; filter: grayscale(1); }
-        .step-pill.active { opacity: 1; border-color: var(--gold) !important; color: var(--gold); transform: scale(1.05); filter: grayscale(0); }
+        .step-pill { opacity: 0.2; transition: 0.6s; filter: grayscale(1); border: 2px solid transparent; }
+        .step-pill.active { opacity: 1; border-color: var(--gold); color: var(--gold); transform: scale(1.1); filter: grayscale(0); }
 
-        .inv-item { border: 1px solid rgba(255,255,255,0.05); padding: 12px; border-radius: 18px; cursor: pointer; transition: 0.3s; font-size: 9px; font-weight: 800; text-align: center; background: rgba(255,255,255,0.02); }
-        .inv-item.active { background: var(--gold); color: black; border-color: var(--gold); font-weight: 900; }
+        /* Grid de Inventario por Voz */
+        .inv-item { 
+            border: 1px solid rgba(255,255,255,0.05); padding: 14px; border-radius: 20px; 
+            cursor: pointer; transition: 0.3s; font-size: 10px; font-weight: 800; 
+            text-align: center; background: rgba(255,255,255,0.03); text-transform: uppercase;
+        }
+        .inv-item.active { background: var(--gold); color: black; border-color: var(--gold); box-shadow: 0 0 20px rgba(245,158,11,0.4); }
 
         .card-nexus { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; position: relative; overflow: hidden; }
-        .card-nexus:hover { transform: translateY(-8px) scale(1.02); background: rgba(255,255,255,0.05); }
+        .card-nexus:hover { transform: translateY(-10px); background: rgba(255,255,255,0.06); }
         
-        /* Animaciones */
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .animate-slide { animation: slideUp 0.5s ease forwards; }
+        /* Animaciones del Sistema */
+        @keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-slide { animation: slideUp 0.6s ease-out forwards; }
 
+        .recording { 
+            animation: pulse-red 1.2s infinite; 
+            background: var(--danger) !important; 
+            color: white !important;
+            border-color: white !important;
+        }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); } 70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        /* Fondo Decorativo Starlink */
         .bg-mesh {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
-            background-size: 40px 40px; z-index: -1;
+            background-image: linear-gradient(rgba(59, 130, 246, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px; z-index: -1;
         }
 
-        .btn-action { transition: 0.3s; position: relative; overflow: hidden; }
-        .btn-action:active { transform: scale(0.95); }
-        
-        .badge-mode { padding: 4px 12px; border-radius: 8px; font-size: 9px; font-weight: 900; transition: 0.3s; cursor: pointer; }
+        .badge-mode { padding: 6px 16px; border-radius: 12px; font-size: 10px; font-weight: 900; transition: 0.3s; cursor: pointer; border: 1px solid transparent; }
         .badge-mode.inactive { background: rgba(255,255,255,0.05); color: #475569; }
-        .badge-mode.active-gasto { background: var(--accent); color: white; box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); }
-        .badge-mode.active-cot { background: var(--gold); color: black; box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+        .badge-mode.active-gasto { background: var(--accent); color: white; border-color: #60a5fa; }
+        .badge-mode.active-cot { background: var(--gold); color: black; border-color: #fbbf24; }
 
-        /* Loader */
         #loader { position: fixed; inset: 0; background: var(--primary); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        
+        /* Estilo para Reportes PDF/WhatsApp */
+        .btn-whatsapp { background: #25d366; color: white; font-weight: 900; border-radius: 20px; transition: 0.3s; }
+        .btn-whatsapp:hover { background: #128c7e; transform: scale(1.05); }
+
     </style>
 </head>
 <body>
 
 <div id="loader">
-    <div class="w-20 h-20 border-4 border-gold border-t-transparent rounded-full animate-spin mb-4"></div>
-    <h2 class="font-nexus text-xs tracking-widest text-white">ENLAZANDO CON NEXUS-X...</h2>
+    <div class="relative">
+        <div class="w-24 h-24 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
+        <i class="fas fa-satellite text-gold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl animate-pulse"></i>
+    </div>
+    <h2 class="font-nexus text-[10px] tracking-[5px] text-white mt-8 uppercase">Enlazando con TallerPro360...</h2>
 </div>
 
 <div class="bg-mesh"></div>
 
-<header class="p-6 glass sticky top-0 z-[1000] border-b border-white/5 flex justify-between items-center">
+<header class="p-6 glass sticky top-0 z-[1000] border-b border-white/10 flex justify-between items-center">
     <div class="flex items-center gap-5">
-        <div class="w-14 h-14 bg-gradient-to-br from-gold to-yellow-600 rounded-2xl flex items-center justify-center text-black shadow-[0_0_30px_rgba(245,158,11,0.3)]">
-            <i class="fas fa-satellite text-2xl animate-pulse"></i>
+        <div class="w-16 h-16 bg-gradient-to-br from-gold to-orange-600 rounded-[22px] flex items-center justify-center text-black shadow-[0_10px_30px_rgba(245,158,11,0.4)]">
+            <i class="fas fa-satellite-dish text-3xl"></i>
         </div>
         <div>
-            <h1 class="font-nexus text-xs tracking-[0.4em] text-white font-black uppercase">Nexus-X Starlink</h1>
-            <p id="live-clock" class="text-[10px] text-gold font-mono tracking-tighter mt-1 italic">ORBITAL SYNC...</p>
+            <h1 class="font-nexus text-xs tracking-[0.5em] text-white font-black uppercase">TallerPro360</h1>
+            <p class="text-[9px] text-gold font-bold tracking-[2px] mt-1 uppercase">Colombian Trucks Logistics LLC</p>
+            <p id="live-clock" class="text-[10px] text-slate-500 font-mono mt-1">ORBITAL SYNC: OK</p>
         </div>
     </div>
     <div class="text-right">
-        <p class="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em]">Global Yield</p>
-        <p id="total-pg" class="text-2xl font-nexus text-success font-black drop-shadow-2xl">$ 0</p>
+        <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mb-1">Total Yield (NET)</p>
+        <p id="total-pg" class="text-3xl font-nexus text-success font-black tracking-tighter">$ 0</p>
     </div>
 </header>
 
-<main class="p-4 max-w-7xl mx-auto">
+<main class="p-4 max-w-7xl mx-auto space-y-12">
 
     <section id="sec-patio" class="space-y-8 animate-slide">
-        <div class="glass p-8 rounded-[45px] border-t-2 border-accent/30 relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-10 opacity-5 pointer-events-none text-9xl"><i class="fas fa-folder-plus"></i></div>
-            <h2 class="font-nexus text-[11px] text-accent tracking-[6px] uppercase mb-10 flex items-center gap-4">
-                <span class="w-12 h-1px bg-accent"></span> Apertura de Misión
+        <div class="glass p-10 rounded-[50px] border-t-2 border-accent/20 relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 opacity-5 pointer-events-none text-[200px] text-white"><i class="fas fa-truck-monster"></i></div>
+            
+            <h2 class="font-nexus text-[12px] text-accent tracking-[8px] uppercase mb-10 flex items-center gap-5">
+                <span class="w-16 h-[2px] bg-accent"></span> Apertura de Misión Técnica
             </h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div class="space-y-2">
-                    <label class="text-[10px] font-black text-slate-500 ml-2 uppercase">Identificador (Placa)</label>
-                    <input id="in-placa" placeholder="ABC-123" class="neo-input font-nexus text-3xl text-gold uppercase text-center">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="space-y-3 relative">
+                    <label class="text-[11px] font-black text-slate-500 ml-4 uppercase">Identificador (Placa)</label>
+                    <input id="in-placa" placeholder="ESPERANDO..." class="neo-input font-nexus text-4xl text-gold uppercase text-center tracking-tighter">
+                    <button onclick="startNexusVoice('in-placa')" class="absolute right-4 bottom-4 w-10 h-10 bg-white/5 rounded-full hover:text-gold transition-all"><i class="fas fa-microphone"></i></button>
                 </div>
-                <div class="space-y-2">
-                    <label class="text-[10px] font-black text-slate-500 ml-2 uppercase">Técnico Asignado</label>
-                    <input id="in-mecanico" placeholder="NOMBRE DEL MECÁNICO" class="neo-input uppercase">
+                <div class="space-y-3 relative">
+                    <label class="text-[11px] font-black text-slate-500 ml-4 uppercase">Operador Nexus</label>
+                    <input id="in-mecanico" placeholder="TÉCNICO" class="neo-input uppercase">
+                    <button onclick="startNexusVoice('in-mecanico')" class="absolute right-4 bottom-4 text-slate-500"><i class="fas fa-microphone text-xs"></i></button>
                 </div>
-                <div class="space-y-2">
-                    <label class="text-[10px] font-black text-slate-500 ml-2 uppercase">Contacto Cliente</label>
-                    <input id="in-cliente" placeholder="NOMBRE COMPLETO" class="neo-input uppercase">
+                <div class="space-y-3 relative">
+                    <label class="text-[11px] font-black text-slate-500 ml-4 uppercase">Cliente Final</label>
+                    <input id="in-cliente" placeholder="NOMBRE" class="neo-input uppercase">
+                    <button onclick="startNexusVoice('in-cliente')" class="absolute right-4 bottom-4 text-slate-500"><i class="fas fa-microphone text-xs"></i></button>
                 </div>
-                <div class="space-y-2">
-                    <label class="text-[10px] font-black text-slate-500 ml-2 uppercase">WhatsApp Link</label>
-                    <input id="in-tel" type="tel" placeholder="+57 300..." class="neo-input">
+                <div class="space-y-3">
+                    <label class="text-[11px] font-black text-slate-500 ml-4 uppercase">WhatsApp (Link)</label>
+                    <input id="in-tel" type="tel" placeholder="573..." class="neo-input">
                 </div>
             </div>
 
-            <div class="mt-8 p-8 bg-black/40 rounded-[35px] border border-white/5 shadow-inner">
-                <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-                    <h4 class="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                        <i class="fas fa-clipboard-list text-gold"></i> Inventario de Recepción
+            <div class="mt-10 p-10 bg-black/40 rounded-[40px] border border-white/5">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
+                    <h4 class="text-[12px] font-black text-slate-400 uppercase tracking-[4px] flex items-center gap-3">
+                        <i class="fas fa-tasks text-gold"></i> Inventario de Recepción Logística
                     </h4>
-                    <button onclick="startVoiceInventory()" id="btn-voice-inv" class="px-6 py-3 bg-white/5 text-white border border-white/10 rounded-2xl text-[10px] font-black uppercase hover:bg-gold hover:text-black transition-all">
-                        <i class="fas fa-microphone-alt mr-2 text-danger"></i> Escaneo de Voz Nexus-V
+                    <button onclick="startNexusVoice('in-reporte')" class="px-8 py-4 bg-white/5 text-white border border-white/10 rounded-2xl text-[10px] font-black uppercase hover:bg-gold hover:text-black transition-all">
+                        <i class="fas fa-brain mr-2 text-danger"></i> Dictado de Diagnóstico
                     </button>
                 </div>
-                <div class="grid grid-cols-2 md:grid-cols-6 gap-4" id="inv-grid">
+                
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-5" id="inv-grid">
                     <div class="inv-item" onclick="toggleInv(this)" data-val="LLANTA">LLANTA REP.</div>
-                    <div class="inv-item" onclick="toggleInv(this)" data-val="GATO">GATO</div>
-                    <div class="inv-item" onclick="toggleInv(this)" data-val="CRUCETA">CRUCETA</div>
-                    <div class="inv-item" onclick="toggleInv(this)" data-val="RADIO">RADIO/PANTALLA</div>
+                    <div class="inv-item" onclick="toggleInv(this)" data-val="GATO">GATO / PALANCA</div>
+                    <div class="inv-item" onclick="toggleInv(this)" data-val="RADIO">RADIO / PANTALLA</div>
                     <div class="inv-item" onclick="toggleInv(this)" data-val="HERRAMIENTA">KIT HERRAM.</div>
-                    <div class="inv-item" onclick="toggleInv(this)" data-val="ESTRIBOS">ESTRIBOS</div>
+                    <div class="inv-item" onclick="toggleInv(this)" data-val="EXTINTOR">EXTINTOR</div>
+                    <div class="inv-item" onclick="toggleInv(this)" data-val="FRONTAL">PANEL FRONTAL</div>
                 </div>
-                <textarea id="in-reporte" rows="3" placeholder="Diagnóstico preliminar o descripción de daños detectados..." class="neo-input mt-6 italic bg-transparent border-dashed border-white/20"></textarea>
+                
+                <textarea id="in-reporte" rows="4" placeholder="Dicta o escribe el estado actual del vehículo..." class="neo-input mt-8 italic bg-transparent border-dashed border-white/10"></textarea>
             </div>
 
-            <button id="btn-registrar" onclick="registrarMision()" class="w-full mt-8 bg-gradient-to-r from-white to-slate-200 text-black font-nexus py-6 rounded-[30px] text-xs font-black tracking-[5px] uppercase shadow-[0_15px_40px_rgba(255,255,255,0.1)] hover:scale-[1.01] transition-all">
-                Desplegar Protocolo de Ingreso
+            <button id="btn-registrar" onclick="registrarMision()" class="w-full mt-10 bg-gradient-to-r from-white to-slate-300 text-black font-nexus py-7 rounded-[35px] text-xs font-black tracking-[8px] uppercase shadow-2xl hover:scale-[1.01] active:scale-[0.98] transition-all">
+                Inicializar Protocolo TallerPro360
             </button>
         </div>
 
-        <div class="flex items-center gap-4 px-4">
-            <i class="fas fa-signal text-accent animate-pulse"></i>
-            <h3 class="font-nexus text-[11px] text-slate-400 tracking-[4px] uppercase">Unidades en Operación</h3>
+        <div class="flex items-center gap-5 px-6">
+            <i class="fas fa-satellite text-gold animate-bounce"></i>
+            <h3 class="font-nexus text-[12px] text-slate-400 tracking-[6px] uppercase">Unidades en Frecuencia Operativa</h3>
         </div>
-        <div id="lista-misiones" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-10"></div>
+        
+        <div id="lista-misiones" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 pb-12"></div>
     </section>
 
     <section id="sec-caja" class="hidden space-y-8 animate-slide">
-        <div class="glass p-10 rounded-[45px] border-l-8 border-emerald-500 bg-gradient-to-br from-slate-900/80 to-black">
-            <div class="flex justify-between items-end mb-10">
+        <div class="glass p-12 rounded-[55px] border-l-[10px] border-emerald-500">
+            <div class="flex justify-between items-end mb-12">
                 <div>
-                    <h2 class="font-nexus text-2xl text-white italic font-black uppercase tracking-tighter leading-none">Caja & Facturación</h2>
-                    <p class="text-emerald-400 text-[10px] font-black uppercase tracking-[3px] mt-2">Monitoreo de Flujo de Efectivo</p>
+                    <h2 class="font-nexus text-3xl text-white font-black uppercase tracking-tighter">Módulo de Tesorería</h2>
+                    <p class="text-emerald-400 text-[11px] font-black uppercase tracking-[5px] mt-3">Sincronización de Flujo Real</p>
                 </div>
                 <div class="text-right">
-                    <p class="text-[9px] text-slate-500 uppercase font-black">Pendiente Cobro</p>
-                    <p id="total-pend" class="text-3xl font-nexus text-white">$ 0</p>
+                    <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest">Cartera Pendiente</p>
+                    <p id="total-pend" class="text-4xl font-nexus text-white drop-shadow-xl">$ 0</p>
                 </div>
             </div>
             
-            <div class="relative mb-8">
-                <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                <input type="text" placeholder="BUSCAR PLACA O CLIENTE EN CAJA..." class="neo-input pl-14 uppercase" onkeyup="filterCaja(this.value)">
-            </div>
-
-            <div id="lista-caja" class="grid grid-cols-1 gap-4"></div>
+            <div id="lista-caja" class="space-y-5"></div>
         </div>
     </section>
 
     <section id="sec-stock" class="hidden space-y-8 animate-slide">
-        <div class="glass p-8 rounded-[40px] border-t-2 border-gold/30">
-            <h2 class="font-nexus text-xs text-gold tracking-[5px] uppercase mb-8">Control de Stock Nexus-X</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <input id="st-item" placeholder="NOMBRE REPUESTO" class="neo-input uppercase">
+        <div class="glass p-10 rounded-[45px] border-t-2 border-gold/30">
+            <h2 class="font-nexus text-[12px] text-gold tracking-[6px] uppercase mb-10">Control de Suministros Nexus-X</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <input id="st-item" placeholder="NOMBRE DEL REPUESTO" class="neo-input uppercase">
                 <input id="st-cant" type="number" placeholder="CANTIDAD" class="neo-input">
-                <button onclick="addStock()" class="bg-gold text-black font-black rounded-2xl uppercase text-[10px]">Actualizar Stock</button>
+                <button onclick="addStock()" class="bg-gold text-black font-black rounded-2xl uppercase text-[11px] hover:bg-white transition-all">Sincronizar Stock</button>
             </div>
-            <div id="lista-stock" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+            <div id="lista-stock" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6"></div>
         </div>
     </section>
 
 </main>
 
 <nav class="nav-nexus">
-    <div onclick="switchSec('patio', this)" class="nav-item active"><i class="fas fa-rocket"></i>Patio</div>
-    <div onclick="switchSec('caja', this)" class="nav-item"><i class="fas fa-cash-register"></i>Caja / Cot</div>
-    <div onclick="switchSec('stock', this)" class="nav-item"><i class="fas fa-box-open"></i>Stock</div>
+    <div onclick="switchSec('patio', this)" class="nav-item active"><i class="fas fa-layer-group"></i>Patio</div>
+    <div onclick="switchSec('caja', this)" class="nav-item"><i class="fas fa-vault"></i>Caja</div>
+    <div onclick="switchSec('stock', this)" class="nav-item"><i class="fas fa-boxes-stacked"></i>Stock</div>
     <div onclick="location.reload()" class="nav-item"><i class="fas fa-sync-alt text-slate-500"></i>Sync</div>
 </nav>
 
-<div id="modal-orden" class="fixed inset-0 bg-black/95 z-[6000] hidden overflow-y-auto p-4 md:p-10 backdrop-blur-2xl">
-    <div class="max-w-7xl mx-auto pb-32">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-10 mb-12">
-            <div class="flex gap-8 items-center">
-                <div id="mod-icon" class="w-24 h-24 rounded-[35px] bg-gradient-to-br from-gold to-orange-600 flex items-center justify-center text-black text-5xl shadow-[0_15px_50px_rgba(245,158,11,0.4)]">
-                    <i class="fas fa-truck-pickup"></i>
+<div id="modal-orden" class="fixed inset-0 bg-black/98 z-[6000] hidden overflow-y-auto p-4 md:p-12 backdrop-blur-3xl">
+    <div class="max-w-7xl mx-auto pb-40">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center gap-10 mb-16">
+            <div class="flex gap-10 items-center">
+                <div id="mod-icon" class="w-28 h-28 rounded-[40px] bg-gradient-to-br from-gold to-orange-700 flex items-center justify-center text-black text-6xl shadow-[0_20px_60px_rgba(245,158,11,0.5)]">
+                    <i class="fas fa-car-side"></i>
                 </div>
                 <div>
-                    <h3 id="mod-placa" class="font-nexus text-7xl text-white italic font-black leading-none tracking-tighter uppercase">---</h3>
-                    <p id="mod-ticket" class="text-[11px] text-gold font-nexus mt-4 opacity-80 uppercase tracking-[4px]"></p>
+                    <h3 id="mod-placa" class="font-nexus text-8xl text-white italic font-black leading-none tracking-tighter uppercase">---</h3>
+                    <p id="mod-ticket" class="text-[12px] text-gold font-nexus mt-5 opacity-70 tracking-[6px] uppercase"></p>
                 </div>
             </div>
 
-            <div class="flex items-center gap-4 bg-white/5 p-5 rounded-[35px] border border-white/10 shadow-2xl">
-                <div id="step-patio" class="step-pill border-2 border-white/10 p-4 rounded-2xl flex flex-col items-center min-w-[80px]">
-                    <i class="fas fa-warehouse mb-2 text-xl"></i><span class="text-[9px] font-black uppercase">Patio</span>
+            <div class="flex items-center gap-6 bg-white/5 p-6 rounded-[40px] border border-white/10">
+                <div id="step-patio" class="step-pill p-5 rounded-3xl flex flex-col items-center min-w-[90px] border border-white/5">
+                    <i class="fas fa-sign-in-alt mb-2 text-2xl"></i><span class="text-[10px] font-black uppercase tracking-widest">Patio</span>
                 </div>
-                <div id="step-proceso" class="step-pill border-2 border-white/10 p-4 rounded-2xl flex flex-col items-center min-w-[80px]">
-                    <i class="fas fa-cog animate-spin-slow mb-2 text-xl"></i><span class="text-[9px] font-black uppercase">Proceso</span>
+                <div id="step-proceso" class="step-pill p-5 rounded-3xl flex flex-col items-center min-w-[90px] border border-white/5">
+                    <i class="fas fa-screwdriver-wrench animate-pulse mb-2 text-2xl"></i><span class="text-[10px] font-black uppercase tracking-widest">Proceso</span>
                 </div>
-                <div id="step-listo" class="step-pill border-2 border-white/10 p-4 rounded-2xl flex flex-col items-center min-w-[80px]">
-                    <i class="fas fa-check-double mb-2 text-xl"></i><span class="text-[9px] font-black uppercase">Listo</span>
+                <div id="step-listo" class="step-pill p-5 rounded-3xl flex flex-col items-center min-w-[90px] border border-white/5">
+                    <i class="fas fa-flag-checkered mb-2 text-2xl"></i><span class="text-[10px] font-black uppercase tracking-widest">Listo</span>
                 </div>
-                <button onclick="closeModal()" class="ml-6 w-14 h-14 bg-white/10 rounded-full text-3xl hover:bg-danger hover:text-white transition-all">&times;</button>
+                <button onclick="closeModal()" class="ml-8 w-16 h-16 bg-white/10 rounded-full text-4xl hover:bg-danger transition-all text-white">&times;</button>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            <div class="lg:col-span-2 space-y-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            
+            <div class="lg:col-span-2 space-y-10">
                 
-                <div class="glass p-10 rounded-[45px] border-l-4 border-accent relative">
-                    <div class="flex justify-between items-center mb-8">
-                        <h4 class="text-[11px] font-black text-accent uppercase tracking-[5px] italic">Inyección de Registros</h4>
-                        <div class="flex gap-4 p-1 bg-black/40 rounded-xl border border-white/10">
-                            <div onclick="setModo('GASTO')" id="mode-gasto" class="badge-mode active-gasto">LOGÍSTICA REAL</div>
+                <div class="glass p-12 rounded-[55px] border-l-8 border-accent relative">
+                    <div class="flex justify-between items-center mb-10">
+                        <h4 class="text-[12px] font-black text-accent uppercase tracking-[6px] italic">Inyección de Logística Real</h4>
+                        <div class="flex gap-5 p-2 bg-black/50 rounded-2xl border border-white/10">
+                            <div onclick="setModo('GASTO')" id="mode-gasto" class="badge-mode active-gasto">CARGO FINAL</div>
                             <div onclick="setModo('COT')" id="mode-cot" class="badge-mode inactive">COTIZACIÓN</div>
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div class="md:col-span-1">
-                            <label class="text-[9px] text-slate-500 uppercase ml-2 mb-1 block">Descripción</label>
-                            <input id="g-desc" placeholder="REPUESTO O SERVICIO" class="neo-input uppercase">
+                            <label class="text-[10px] text-slate-500 uppercase ml-3 mb-2 block font-black">Descripción Item</label>
+                            <input id="g-desc" placeholder="REPUESTO / SERVICIO" class="neo-input uppercase">
                         </div>
                         <div>
-                            <label class="text-[9px] text-slate-500 uppercase ml-2 mb-1 block">Costo ($)</label>
+                            <label class="text-[10px] text-slate-500 uppercase ml-3 mb-2 block font-black">Costo Compra ($)</label>
                             <input id="g-costo" type="number" placeholder="0" class="neo-input">
                         </div>
                         <div>
-                            <label class="text-[9px] text-slate-500 uppercase ml-2 mb-1 block">Venta ($)</label>
-                            <input id="g-venta" type="number" placeholder="0" class="neo-input text-emerald-400 font-bold">
+                            <label class="text-[10px] text-slate-500 uppercase ml-3 mb-2 block font-black">Precio Venta ($)</label>
+                            <input id="g-venta" type="number" placeholder="0" class="neo-input text-emerald-400 font-black">
                         </div>
                     </div>
 
-                    <div class="flex flex-col md:flex-row gap-5 mt-6">
-                        <select id="g-tipo" class="neo-input md:w-1/3">
-                            <option value="GASTO">CARGO / REPUESTO</option>
-                            <option value="ABONO">ABONO DE CLIENTE (+)</option>
+                    <div class="flex flex-col md:flex-row gap-6 mt-10">
+                        <select id="g-tipo" class="neo-input md:w-1/3 font-bold">
+                            <option value="GASTO">CARGO LOGÍSTICO</option>
+                            <option value="ABONO">ABONO CLIENTE (+)</option>
                         </select>
-                        <button onclick="addMovimiento()" class="bg-accent px-12 rounded-2xl font-black text-xs uppercase shadow-[0_10px_30px_rgba(59,130,246,0.3)] btn-action grow">Ejecutar Comando</button>
+                        <button onclick="addMovimiento()" class="bg-accent text-white px-12 rounded-[25px] font-black text-xs uppercase shadow-2xl hover:bg-white hover:text-black transition-all grow">Ejecutar Comando Nexus</button>
                     </div>
                 </div>
 
-                <div class="glass p-10 rounded-[45px] min-h-[500px]">
-                    <div class="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
-                        <h4 class="text-[11px] font-black text-slate-500 uppercase tracking-[5px]">Logística de Misión</h4>
-                        <button onclick="enviarProforma()" class="text-gold text-[10px] font-black uppercase border border-gold/30 px-4 py-2 rounded-xl hover:bg-gold hover:text-black transition-all">
-                            <i class="fab fa-whatsapp mr-2"></i> Generar Proforma
+                <div class="glass p-12 rounded-[55px] min-h-[600px]">
+                    <div class="flex justify-between items-center mb-10 border-b border-white/10 pb-6">
+                        <h4 class="text-[12px] font-black text-slate-500 uppercase tracking-[6px]">Historial de Movimientos</h4>
+                        <button onclick="enviarProforma()" class="text-gold text-[11px] font-black uppercase border-2 border-gold/40 px-6 py-3 rounded-2xl hover:bg-gold hover:text-black transition-all">
+                            <i class="fab fa-whatsapp mr-3"></i> Generar Proforma
                         </button>
                     </div>
-                    <div id="mod-items" class="space-y-4"></div>
+                    <div id="mod-items" class="space-y-5"></div>
                 </div>
             </div>
 
-            <div class="space-y-8">
-                <div class="glass p-10 rounded-[45px] border border-white/10 bg-gradient-to-b from-white/5 to-transparent">
-                    <h4 class="text-[11px] font-black text-gold uppercase mb-10 tracking-[5px] text-center italic">Telemetría Financiera</h4>
+            <div class="space-y-10">
+                <div class="glass p-12 rounded-[55px] border border-white/10 bg-gradient-to-b from-white/5 to-transparent">
+                    <h4 class="text-[12px] font-black text-gold uppercase mb-12 tracking-[8px] text-center italic">Telemetría de Cobro</h4>
                     
-                    <div class="space-y-8">
+                    <div class="space-y-10">
                         <div>
-                            <label class="text-[10px] text-slate-500 uppercase font-black block mb-3">Mano de Obra (Cliente)</label>
-                            <div class="flex items-center bg-black/40 p-4 rounded-2xl border border-white/5">
-                                <span class="text-gold font-nexus mr-4">$</span>
-                                <input id="mo-cliente" type="number" oninput="updateCalculos()" class="bg-transparent font-nexus text-3xl text-white w-full outline-none" value="0">
+                            <label class="text-[11px] text-slate-500 uppercase font-black block mb-4 ml-2">Mano de Obra (Técnica)</label>
+                            <div class="flex items-center bg-black/60 p-6 rounded-[30px] border border-white/10 shadow-inner">
+                                <span class="text-gold font-nexus text-2xl mr-5">$</span>
+                                <input id="mo-cliente" type="number" oninput="updateCalculos()" class="bg-transparent font-nexus text-4xl text-white w-full outline-none font-black" value="0">
                             </div>
                         </div>
 
-                        <div class="py-6 border-y border-white/5 space-y-5">
-                            <div class="flex justify-between items-center">
-                                <span class="text-[10px] text-slate-400 font-black uppercase">Cotización Pendiente:</span>
-                                <span id="mod-cotizado" class="font-nexus text-accent text-lg">$ 0</span>
+                        <div class="py-10 border-y border-white/10 space-y-6">
+                            <div class="flex justify-between items-center px-2">
+                                <span class="text-[11px] text-slate-400 font-black uppercase">Pendiente Cotización:</span>
+                                <span id="mod-cotizado" class="font-nexus text-accent text-xl">$ 0</span>
                             </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-[10px] text-slate-400 font-black uppercase">Abonos Recibidos:</span>
-                                <span id="mod-abonos" class="font-nexus text-success text-lg">$ 0</span>
+                            <div class="flex justify-between items-center px-2">
+                                <span class="text-[11px] text-slate-400 font-black uppercase">Abonos Aplicados:</span>
+                                <span id="mod-abonos" class="font-nexus text-success text-xl">$ 0</span>
                             </div>
                         </div>
 
-                        <div class="text-center pt-4">
-                            <p class="text-[11px] text-slate-500 font-black uppercase mb-4 tracking-[2px]">Saldo Final a Liquidar</p>
-                            <h2 id="mod-saldo" class="font-nexus text-6xl text-white font-black drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">$ 0</h2>
+                        <div class="text-center pt-6">
+                            <p class="text-[12px] text-slate-500 font-black uppercase mb-6 tracking-[4px]">Saldo Final a Liquidar</p>
+                            <h2 id="mod-saldo" class="font-nexus text-7xl text-white font-black drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">$ 0</h2>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 gap-4">
-                    <button onclick="enviarWhatsApp('LOG')" class="w-full bg-emerald-600/10 text-emerald-400 py-5 rounded-[25px] font-black text-[11px] uppercase border border-emerald-500/20 hover:bg-emerald-600 hover:text-white transition-all">
-                        <i class="fab fa-whatsapp mr-2 text-lg"></i> Enviar Reporte Real
+                <div class="grid grid-cols-1 gap-5">
+                    <button onclick="enviarWhatsApp('LOG')" class="btn-whatsapp w-full py-6 font-black text-[12px] uppercase shadow-xl flex items-center justify-center gap-3">
+                        <i class="fab fa-whatsapp text-2xl"></i> Enviar Reporte de Avance
                     </button>
-                    <button id="btn-avanzar" onclick="avanzarFase()" class="w-full bg-white text-black font-nexus py-6 rounded-[30px] text-xs font-black uppercase tracking-[4px] shadow-2xl hover:bg-gold transition-all">
-                        Avanzar Misión
+                    <button id="btn-avanzar" onclick="avanzarFase()" class="w-full bg-white text-black font-nexus py-7 rounded-[35px] text-xs font-black uppercase tracking-[6px] shadow-2xl hover:bg-gold transition-all">
+                        Evolucionar Misión
                     </button>
+                    <button onclick="borrarMision()" class="text-danger/50 text-[10px] font-black uppercase hover:text-danger transition-all">Abortar Misión (Borrar)</button>
                 </div>
             </div>
         </div>
@@ -349,33 +375,65 @@
     let currentId = null;
     let modoIngreso = 'GASTO';
 
+    // --- NEXUS-X VOICE ENGINE (STABLE Vercel) ---
     const recognition = window.webkitSpeechRecognition ? new webkitSpeechRecognition() : null;
     if(recognition) {
         recognition.lang = 'es-CO';
-        recognition.continuous = true;
+        recognition.continuous = false; // Mejor para inputs individuales
+        recognition.interimResults = false;
     }
 
+    window.startNexusVoice = (targetId) => {
+        if(!recognition) return alert("SISTEMA: Navegador no soporta IA de voz.");
+        
+        const input = document.getElementById(targetId);
+        const btn = event.currentTarget;
+        
+        recognition.onstart = () => {
+            btn.classList.add('recording');
+            input.placeholder = "ESCUCHANDO...";
+        };
+
+        recognition.onresult = (e) => {
+            const transcript = e.results[0][0].transcript.toUpperCase();
+            if(targetId === 'in-placa') {
+                input.value = transcript.replace(/\s/g, ''); // Placas sin espacios
+            } else {
+                input.value = transcript;
+            }
+            btn.classList.remove('recording');
+        };
+
+        recognition.onerror = () => {
+            btn.classList.remove('recording');
+            input.placeholder = "ERROR DE SEÑAL";
+        };
+
+        recognition.onend = () => btn.classList.remove('recording');
+
+        try { recognition.start(); } catch(err) { recognition.stop(); }
+    };
+
+    // --- MANEJO DE SESIÓN ---
     onAuthStateChanged(auth, (user) => {
         if (user) {
             document.getElementById('loader').style.display = 'none';
-            initData();
+            initDataSync();
         } else {
             window.location.href = "index.html"; 
         }
     });
 
-    function initData() {
-        // Listener de Órdenes
+    function initDataSync() {
         const q = query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid), orderBy("timestamp", "desc"));
         onSnapshot(q, (snap) => {
             misionesGlobal = [];
-            let profit = 0;
-            let saldoCaja = 0;
+            let totalProfit = 0;
 
             snap.forEach(d => {
                 const o = {id: d.id, ...d.data()};
                 misionesGlobal.push(o);
-                if(o.status === 'ARCHIVADO') profit += (o.utilidad || 0);
+                if(o.status === 'ARCHIVADO') totalProfit += (o.utilidad || 0);
             });
 
             renderPatio();
@@ -386,53 +444,26 @@
                 if(active) renderLog(active);
             }
 
-            document.getElementById('total-pg').innerText = `$ ${profit.toLocaleString()}`;
+            document.getElementById('total-pg').innerText = `$ ${totalProfit.toLocaleString()}`;
         });
 
-        // Listener de Stock
         onSnapshot(collection(db, "stock"), (snap) => {
             stockGlobal = [];
-            snap.forEach(d => stockGlobal.push({id: d.id, ...d.data()}));
+            snap.forEach(d => {
+                const data = d.data();
+                if(data.tallerId === auth.currentUser.uid) stockGlobal.push({id: d.id, ...data});
+            });
             renderStock();
         });
     }
 
+    // --- RENDERIZADO DE INTERFAZ ---
     function renderPatio() {
         const list = document.getElementById('lista-misiones');
         list.innerHTML = misionesGlobal
             .filter(o => o.status !== 'ARCHIVADO')
             .map(o => renderCard(o))
             .join("");
-    }
-
-    function renderCaja() {
-        const list = document.getElementById('lista-caja');
-        let totalPendiente = 0;
-
-        const html = misionesGlobal
-            .filter(o => o.status !== 'ARCHIVADO')
-            .map(o => {
-                const movs = o.movimientos || [];
-                const rV = movs.filter(m => m.tipo === 'GASTO').reduce((a,b) => a + b.venta, 0) + (o.moCliente || 0);
-                const ab = movs.filter(m => m.tipo === 'ABONO').reduce((a,b) => a + b.venta, 0);
-                const saldo = rV - ab;
-                totalPendiente += saldo;
-
-                return `
-                <div onclick="abrirOrden('${o.id}')" class="bg-white/5 p-6 rounded-3xl border border-white/5 flex justify-between items-center hover:bg-white/10 transition-all cursor-pointer">
-                    <div>
-                        <h4 class="font-nexus text-xl text-white italic uppercase">${o.placa}</h4>
-                        <p class="text-[9px] text-slate-500 font-black uppercase mt-1">${o.cliente}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[8px] text-slate-500 uppercase mb-1">Saldo Deudor</p>
-                        <p class="font-nexus text-emerald-400 text-lg">$ ${saldo.toLocaleString()}</p>
-                    </div>
-                </div>`;
-            }).join("");
-        
-        list.innerHTML = html;
-        document.getElementById('total-pend').innerText = `$ ${totalPendiente.toLocaleString()}`;
     }
 
     function renderCard(o) {
@@ -442,44 +473,78 @@
         const saldo = rV - ab;
 
         return `
-            <div onclick="abrirOrden('${o.id}')" class="glass p-7 rounded-[35px] card-nexus status-${o.status} animate-slide">
-                <div class="flex justify-between items-start mb-6">
+            <div onclick="abrirOrden('${o.id}')" class="glass p-8 rounded-[40px] card-nexus status-${o.status} animate-slide">
+                <div class="flex justify-between items-start mb-8">
                     <div>
-                        <h3 class="font-nexus text-3xl text-white uppercase italic leading-none tracking-tighter">${o.placa}</h3>
-                        <p class="text-[9px] text-slate-500 font-black uppercase mt-3 tracking-widest">${o.mecanico} | ${o.cliente}</p>
+                        <h3 class="font-nexus text-4xl text-white uppercase italic leading-none tracking-tighter">${o.placa}</h3>
+                        <p class="text-[10px] text-slate-500 font-black uppercase mt-4 tracking-[3px]">${o.mecanico} • ${o.cliente}</p>
                     </div>
-                    <span class="text-[8px] px-3 py-1.5 rounded-lg bg-white/5 text-gold font-black uppercase border border-white/10">${o.status}</span>
+                    <span class="text-[9px] px-4 py-2 rounded-xl bg-white/5 text-gold font-black uppercase border border-white/10 tracking-widest">${o.status}</span>
                 </div>
-                <div class="flex justify-between items-end">
-                    <div class="flex -space-x-2">
-                        <div class="w-8 h-8 rounded-full bg-accent border-2 border-primary flex items-center justify-center text-[10px]"><i class="fas fa-tools"></i></div>
-                        <div class="w-8 h-8 rounded-full bg-gold border-2 border-primary flex items-center justify-center text-[10px]"><i class="fas fa-file-invoice"></i></div>
+                <div class="flex justify-between items-end border-t border-white/5 pt-6">
+                    <div class="flex -space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-accent border-4 border-primary flex items-center justify-center text-xs shadow-lg"><i class="fas fa-microchip"></i></div>
+                        <div class="w-10 h-10 rounded-full bg-gold border-4 border-primary flex items-center justify-center text-xs shadow-lg"><i class="fas fa-dollar-sign"></i></div>
                     </div>
                     <div class="text-right">
-                        <p class="text-[7px] text-slate-500 uppercase font-bold">Saldo a Pagar</p>
-                        <p class="font-nexus text-white text-md">$ ${saldo.toLocaleString()}</p>
+                        <p class="text-[8px] text-slate-500 uppercase font-black mb-1">Saldo deudor</p>
+                        <p class="font-nexus text-white text-xl font-black tracking-tighter">$ ${saldo.toLocaleString()}</p>
                     </div>
                 </div>
             </div>`;
     }
 
+    function renderCaja() {
+        const list = document.getElementById('lista-caja');
+        let totalPendiente = 0;
+
+        list.innerHTML = misionesGlobal
+            .filter(o => o.status !== 'ARCHIVADO')
+            .map(o => {
+                const movs = o.movimientos || [];
+                const rV = movs.filter(m => m.tipo === 'GASTO').reduce((a,b) => a + b.venta, 0) + (o.moCliente || 0);
+                const ab = movs.filter(m => m.tipo === 'ABONO').reduce((a,b) => a + b.venta, 0);
+                const saldo = rV - ab;
+                totalPendiente += saldo;
+
+                return `
+                <div onclick="abrirOrden('${o.id}')" class="bg-black/30 p-8 rounded-[35px] border border-white/5 flex justify-between items-center hover:bg-white/5 transition-all cursor-pointer shadow-xl">
+                    <div class="flex items-center gap-6">
+                        <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-gold border border-white/10"><i class="fas fa-file-invoice"></i></div>
+                        <div>
+                            <h4 class="font-nexus text-2xl text-white italic uppercase tracking-tighter">${o.placa}</h4>
+                            <p class="text-[10px] text-slate-500 font-black uppercase mt-1 tracking-widest">${o.cliente}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[9px] text-slate-500 uppercase mb-2 font-black">Por recaudar</p>
+                        <p class="font-nexus text-emerald-400 text-2xl font-black">$ ${saldo.toLocaleString()}</p>
+                    </div>
+                </div>`;
+            }).join("");
+        
+        document.getElementById('total-pend').innerText = `$ ${totalPendiente.toLocaleString()}`;
+    }
+
+    // --- LÓGICA DE NEGOCIO ---
     window.toggleInv = (el) => el.classList.toggle('active');
 
     window.registrarMision = async () => {
         const btn = document.getElementById('btn-registrar');
         const placa = document.getElementById('in-placa').value.toUpperCase();
-        if(!placa) return alert("SISTEMA: REQUIERE PLACA VÁLIDA");
+        if(!placa) return alert("NEXUS: SE REQUIERE IDENTIFICADOR VÁLIDO");
         
         const inv = [];
         document.querySelectorAll('.inv-item.active').forEach(i => inv.push(i.dataset.val));
         btn.disabled = true;
+        btn.innerText = "SINCRONIZANDO...";
 
         try {
             await addDoc(collection(db, "ordenes"), {
                 tallerId: auth.currentUser.uid,
-                ticket: `NX-${Date.now().toString().slice(-5)}`,
+                ticket: `NX-${Date.now().toString().slice(-6)}`,
                 placa,
-                mecanico: document.getElementById('in-mecanico').value.toUpperCase() || "TÉCNICO 1",
+                mecanico: document.getElementById('in-mecanico').value.toUpperCase() || "TÉCNICO ASIGNADO",
                 cliente: document.getElementById('in-cliente').value.toUpperCase() || "CLIENTE GENERAL",
                 telefono: document.getElementById('in-tel').value,
                 reporte: document.getElementById('in-reporte').value,
@@ -492,6 +557,7 @@
             document.querySelectorAll('input, textarea').forEach(i => i.value = "");
             document.querySelectorAll('.inv-item').forEach(i => i.classList.remove('active'));
             btn.disabled = false;
+            btn.innerText = "INICIALIZAR PROTOCOLO TALLERPRO360";
         } catch (e) { alert("ERROR DE ENLACE SATELITAL"); btn.disabled = false; }
     };
 
@@ -501,16 +567,16 @@
         if(!o) return;
 
         document.getElementById('mod-placa').innerText = o.placa;
-        document.getElementById('mod-ticket').innerText = `ORDEN: ${o.ticket} | TEL: ${o.telefono}`;
+        document.getElementById('mod-ticket').innerText = `TICKET: ${o.ticket} | TEL: ${o.telefono}`;
         document.getElementById('mo-cliente').value = o.moCliente || 0;
         
         document.querySelectorAll('.step-pill').forEach(s => s.classList.remove('active'));
         document.getElementById(`step-${o.status.toLowerCase()}`).classList.add('active');
 
         const btnA = document.getElementById('btn-avanzar');
-        if(o.status === 'PATIO') btnA.innerText = "PASAR A PROCESO";
-        else if(o.status === 'PROCESO') btnA.innerText = "MARCAR COMO LISTO";
-        else btnA.innerText = "LIQUIDAR Y ARCHIVAR";
+        if(o.status === 'PATIO') btnA.innerText = "PASAR A PROCESO TÉCNICO";
+        else if(o.status === 'PROCESO') btnA.innerText = "MARCAR COMO LISTO / CAJA";
+        else btnA.innerText = "LIQUIDAR Y ARCHIVAR MISIÓN";
 
         renderLog(o);
         document.getElementById('modal-orden').classList.remove('hidden');
@@ -527,7 +593,7 @@
         const v = parseFloat(document.getElementById('g-venta').value) || 0;
         const c = parseFloat(document.getElementById('g-costo').value) || 0;
         const t = document.getElementById('g-tipo').value;
-        if(!d || !v) return;
+        if(!d || !v) return alert("NEXUS: Complete descripción y venta.");
 
         await updateDoc(doc(db, "ordenes", currentId), {
             movimientos: arrayUnion({ 
@@ -542,14 +608,20 @@
     function renderLog(o) {
         const l = document.getElementById('mod-items');
         l.innerHTML = (o.movimientos || []).map(m => `
-            <div class="flex justify-between items-center bg-white/5 p-5 rounded-[25px] border border-white/5 ${m.tipo === 'COT' ? 'border-dashed border-gold/40' : ''}">
-                <div>
-                    <span class="text-[11px] font-black uppercase ${m.tipo === 'ABONO' ? 'text-success' : (m.tipo === 'COT' ? 'text-gold' : 'text-slate-100')}">${m.desc}</span>
-                    <p class="text-[8px] font-bold uppercase opacity-30 mt-1">${m.tipo}</p>
+            <div class="flex justify-between items-center bg-white/5 p-6 rounded-[30px] border border-white/5 shadow-lg">
+                <div class="flex items-center gap-5">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-black/50 border border-white/10">
+                        <i class="fas ${m.tipo === 'ABONO' ? 'fa-plus text-success' : (m.tipo === 'COT' ? 'fa-hourglass-half text-gold' : 'fa-minus text-danger')} text-[10px]"></i>
+                    </div>
+                    <div>
+                        <span class="text-[12px] font-black uppercase tracking-widest ${m.tipo === 'COT' ? 'text-gold' : 'text-slate-100'}">${m.desc}</span>
+                        <p class="text-[8px] font-bold uppercase opacity-30 mt-1">${m.tipo} • NEXUS-ID: ${m.id.toString().slice(-4)}</p>
+                    </div>
                 </div>
-                <div class="flex items-center gap-4">
-                    <span class="font-nexus text-sm ${m.tipo === 'ABONO' ? 'text-success' : (m.tipo === 'COT' ? 'text-gold' : 'text-emerald-400')}">$${m.venta.toLocaleString()}</span>
-                    ${m.tipo === 'COT' ? `<button onclick="aprobarCot(${m.id})" class="bg-gold text-black p-2 rounded-lg text-[8px] font-black uppercase">Aprobar</button>` : ''}
+                <div class="flex items-center gap-6">
+                    <span class="font-nexus text-lg font-black ${m.tipo === 'ABONO' ? 'text-success' : (m.tipo === 'COT' ? 'text-gold' : 'text-emerald-400')}">$ ${m.venta.toLocaleString()}</span>
+                    ${m.tipo === 'COT' ? `<button onclick="aprobarCot(${m.id})" class="bg-gold text-black px-4 py-2 rounded-xl text-[9px] font-black uppercase shadow-lg">Aprobar</button>` : ''}
+                    <button onclick="borrarMov(${m.id})" class="text-white/20 hover:text-danger transition-all"><i class="fas fa-trash-alt text-xs"></i></button>
                 </div>
             </div>
         `).join("");
@@ -562,6 +634,13 @@
             if(m.id === mid) m.tipo = 'GASTO';
             return m;
         });
+        await updateDoc(doc(db, "ordenes", currentId), { movimientos: nm });
+    };
+
+    window.borrarMov = async (mid) => {
+        if(!confirm("¿ELIMINAR ESTE REGISTRO?")) return;
+        const o = misionesGlobal.find(x => x.id === currentId);
+        const nm = o.movimientos.filter(m => m.id !== mid);
         await updateDoc(doc(db, "ordenes", currentId), { movimientos: nm });
     };
 
@@ -583,14 +662,14 @@
         const o = misionesGlobal.find(x => x.id === currentId);
         let nE = o.status === 'PATIO' ? 'PROCESO' : (o.status === 'PROCESO' ? 'LISTO' : 'ARCHIVADO');
         
-        if(confirm(`NEXUS-X: ¿Confirmar transición a ${nE}?`)) {
+        if(confirm(`SISTEMA NEXUS: ¿Confirmar transición a FASE: ${nE}?`)) {
             const upd = { status: nE, moCliente: parseFloat(document.getElementById('mo-cliente').value) || 0 };
             
             if(nE === 'ARCHIVADO') {
                 const movs = o.movimientos || [];
-                const gV = movs.filter(m => m.tipo === 'GASTO').reduce((a,b) => a+b.venta, 0);
+                const gV = movs.filter(m => m.tipo === 'GASTO').reduce((a,b) => a+b.venta, 0) + upd.moCliente;
                 const gC = movs.filter(m => m.tipo === 'GASTO').reduce((a,b) => a+b.costo, 0);
-                upd.utilidad = (gV - gC) + (upd.moCliente * 0.5); // 50% utilidad MO
+                upd.utilidad = (gV - gC); // Utilidad neta de la orden
                 closeModal();
             }
             await updateDoc(doc(db, "ordenes", currentId), upd);
@@ -600,7 +679,7 @@
     window.addStock = async () => {
         const item = document.getElementById('st-item').value.toUpperCase();
         const cant = parseInt(document.getElementById('st-cant').value);
-        if(!item || isNaN(cant)) return;
+        if(!item || isNaN(cant)) return alert("SISTEMA: Datos de stock inválidos.");
         await addDoc(collection(db, "stock"), { item, cant, tallerId: auth.currentUser.uid });
         document.getElementById('st-item').value = "";
         document.getElementById('st-cant').value = "";
@@ -609,15 +688,22 @@
     function renderStock() {
         const list = document.getElementById('lista-stock');
         list.innerHTML = stockGlobal.map(s => `
-            <div class="bg-white/5 p-4 rounded-2xl border border-white/5 text-center">
-                <p class="text-[10px] font-black uppercase">${s.item}</p>
-                <p class="font-nexus text-gold text-2xl mt-1">${s.cant}</p>
-                <button onclick="borrarStock('${s.id}')" class="text-danger text-[8px] mt-2 font-black uppercase underline">Eliminar</button>
+            <div class="bg-black/40 p-6 rounded-3xl border border-white/5 text-center shadow-lg animate-slide">
+                <p class="text-[10px] font-black uppercase text-slate-500 mb-2 tracking-widest">${s.item}</p>
+                <p class="font-nexus text-gold text-3xl font-black">${s.cant}</p>
+                <button onclick="borrarStock('${s.id}')" class="text-danger/40 text-[9px] mt-4 font-black uppercase hover:text-danger transition-all underline">Remover</button>
             </div>
         `).join("");
     }
 
-    window.borrarStock = async (id) => { if(confirm("¿Eliminar item?")) await deleteDoc(doc(db, "stock", id)); };
+    window.borrarStock = async (id) => { if(confirm("¿ELIMINAR ITEM DE STOCK?")) await deleteDoc(doc(db, "stock", id)); };
+
+    window.borrarMision = async () => {
+        if(confirm("¿⚠️ ELIMINAR TODA LA ORDEN? Esta acción no se puede deshacer.")) {
+            await deleteDoc(doc(db, "ordenes", currentId));
+            closeModal();
+        }
+    }
 
     window.switchSec = (sec, el) => {
         document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
@@ -626,21 +712,35 @@
         el.classList.add('active');
     };
 
+    // --- GENERACIÓN DE REPORTES (WhatsApp) ---
     window.enviarWhatsApp = (tipo) => {
         const o = misionesGlobal.find(x => x.id === currentId);
-        const msg = `*🚀 NEXUS-X STARLINK*\n*UNIDAD:* ${o.placa}\n*ESTADO:* ${o.status}\n*SALDO:* ${document.getElementById('mod-saldo').innerText}\n\n_Nexus Logistics System_`;
+        const saldo = document.getElementById('mod-saldo').innerText;
+        const msg = `*🚀 TALLERPRO360 - REPORTE DE ESTADO*\n\n*CLIENTE:* ${o.cliente}\n*VEHÍCULO:* ${o.placa}\n*ESTADO:* ${o.status}\n*PAGO PENDIENTE:* ${saldo}\n\n_Gestionado por Colombian Trucks Logistics LLC_`;
         window.open(`https://wa.me/${o.telefono}?text=${encodeURIComponent(msg)}`);
     };
 
     window.enviarProforma = () => {
         const o = misionesGlobal.find(x => x.id === currentId);
-        const cots = (o.movimientos || []).filter(m => m.tipo === 'COT').map(m => `- ${m.desc}: $${m.venta.toLocaleString()}`).join("\n");
-        const msg = `*📋 PROFORMA ESTIMADA NEXUS*\n*PLACA:* ${o.placa}\n\n${cots}\n\n*ESTIMADO TOTAL:* ${document.getElementById('mod-cotizado').innerText}`;
+        const movs = o.movimientos || [];
+        const cotList = movs.filter(m => m.tipo === 'COT').map(m => `• ${m.desc}: $${m.venta.toLocaleString()}`).join("\n");
+        const totalCot = document.getElementById('mod-cotizado').innerText;
+        
+        const msg = `*📋 COTIZACIÓN ESTIMADA NEXUS*\n\n*PLACA:* ${o.placa}\n\n*SERVICIOS/REPUESTOS:*\n${cotList}\n\n*TOTAL ESTIMADO:* ${totalCot}\n\n_Precios sujetos a cambios. TallerPro360._`;
         window.open(`https://wa.me/${o.telefono}?text=${encodeURIComponent(msg)}`);
     };
 
-    window.closeModal = () => { document.getElementById('modal-orden').classList.add('hidden'); currentId = null; };
-    setInterval(() => { document.getElementById('live-clock').innerText = `${new Date().toLocaleTimeString()} | NX-GATEWAY: STABLE`; }, 1000);
+    window.closeModal = () => { 
+        document.getElementById('modal-orden').classList.add('hidden'); 
+        currentId = null; 
+    };
+
+    // Reloj Global
+    setInterval(() => { 
+        const clock = document.getElementById('live-clock');
+        if(clock) clock.innerText = `${new Date().toLocaleTimeString()} | NX-STABLE: 100%`; 
+    }, 1000);
+
 </script>
 </body>
 </html>
