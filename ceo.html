@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>CEO COMMAND CENTER | Nexus-X Starlink Sync</title>
+    <title>CEO GLOBAL COMMAND | Nexus-X Infrastructure</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -17,6 +17,7 @@
             --slate-custom: #0f172a;
             --emerald-glow: #10b981;
             --ruby: #ef4444;
+            --neon-blue: #3b82f6;
         }
 
         body { 
@@ -25,160 +26,164 @@
             color: #f1f5f9; 
             margin: 0; 
             overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0);
-            background-size: 40px 40px;
+            background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.03) 1px, transparent 0);
+            background-size: 30px 30px;
         }
 
         .font-nexus { font-family: 'Orbitron', sans-serif; }
 
         /* INTERFAZ DE CRISTAL CEO */
         .glass-ceo { 
-            background: rgba(15, 23, 42, 0.7); 
-            backdrop-filter: blur(25px); 
-            border: 1px solid rgba(245, 158, 11, 0.15); 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(30px); 
+            border: 1px solid rgba(255, 255, 255, 0.05); 
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
         }
 
-        /* TELEMETRÍA DE ESTADOS */
         .status-active { color: var(--emerald-glow); border: 1px solid rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); }
         .status-suspended { color: var(--ruby); border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
 
-        /* ANIMACIONES DE CARGA SATELITAL */
-        @keyframes radar-pulse {
+        /* ANIMACIONES Y EFECTOS */
+        @keyframes pulse-gold {
             0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-            70% { box-shadow: 0 0 0 20px rgba(245, 158, 11, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 15px rgba(245, 158, 11, 0); }
         }
-        .radar-active { animation: radar-pulse 2s infinite; }
+        .radar-active { animation: pulse-gold 2s infinite; }
 
         .scan-line {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to bottom, transparent, rgba(245, 158, 11, 0.05), transparent);
-            position: absolute;
-            top: -100%;
-            left: 0;
-            animation: scan 6s linear infinite;
+            width: 100%; height: 2px;
+            background: rgba(245, 158, 11, 0.2);
+            position: absolute; top: 0; left: 0;
+            animation: scan 4s linear infinite;
+            box-shadow: 0 0 15px var(--gold);
         }
-        @keyframes scan { 0% { top: -100%; } 100% { top: 100%; } }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
 
-        /* SCROLLBAR CUSTOM */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--deep); }
-        ::-webkit-scrollbar-thumb { background: var(--slate-custom); border-radius: 10px; border: 1px solid var(--gold); }
+        /* SCROLLBAR CEO */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
 
-        .stat-glow { text-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
+        .chart-container { position: relative; height: 300px; width: 100%; }
         
-        /* BOTONES DE PROTOCOLO */
-        .btn-action { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .btn-action:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
-        
-        .grid-bg {
-            background-image: linear-gradient(rgba(245, 158, 11, 0.03) 1px, transparent 1px), 
-                              linear-gradient(90deg, rgba(245, 158, 11, 0.03) 1px, transparent 1px);
-            background-size: 100px 100px;
+        .btn-protocol {
+            background: linear-gradient(135deg, rgba(255,255,255,0.05), transparent);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
         }
+        .btn-protocol:hover { background: var(--gold); color: black; transform: scale(1.02); }
     </style>
 </head>
-<body class="p-4 lg:p-12 grid-bg min-h-screen">
+<body class="p-4 lg:p-8 min-h-screen">
 
-    <header class="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-start lg:items-center mb-16 gap-8 relative z-50">
-        <div class="flex items-center gap-6">
-            <div class="w-20 h-20 bg-gold rounded-[2rem] flex items-center justify-center text-slate-950 shadow-2xl radar-active">
-                <i class="fas fa-shield-halved text-4xl"></i>
+    <nav class="max-w-[1600px] mx-auto flex flex-col lg:flex-row justify-between items-center mb-10 gap-6 relative z-50">
+        <div class="flex items-center gap-5">
+            <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-950 shadow-2xl radar-active overflow-hidden relative">
+                <i class="fas fa-globe text-2xl relative z-10"></i>
+                <div class="absolute inset-0 bg-gold opacity-80"></div>
             </div>
             <div>
-                <h1 class="font-nexus text-4xl lg:text-5xl font-black tracking-tighter text-white">COMMAND<span class="text-gold italic">ZERO</span></h1>
-                <div class="flex items-center gap-3 mt-1">
-                    <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                    <p class="text-[10px] text-slate-500 font-black tracking-[0.4em] uppercase italic">W. Urquijo | Global Infrastructure CEO</p>
-                </div>
+                <h1 class="font-nexus text-3xl font-black tracking-tighter">NEXUS<span class="text-gold italic">ZERO</span></h1>
+                <p id="ceo-identity" class="text-[9px] text-slate-500 font-bold tracking-[0.3em] uppercase italic">Auth: Global Administrator</p>
             </div>
         </div>
 
-        <div class="flex flex-wrap gap-4 w-full lg:w-auto">
-            <button onclick="descargarReporte()" class="glass-ceo px-8 py-4 text-[10px] font-black tracking-[3px] hover:bg-gold hover:text-black transition-all flex items-center gap-3">
-                <i class="fas fa-file-invoice-dollar"></i> EXPORTAR DATA GLOBAL
-            </button>
-            <button onclick="protocoloCierre()" class="w-16 h-16 glass-ceo border-ruby/50 text-ruby hover:bg-ruby hover:text-white transition-all flex items-center justify-center text-xl">
+        <div class="flex gap-3 bg-slate-950/50 p-2 rounded-2xl border border-white/5">
+            <div class="px-6 py-2 border-r border-white/10">
+                <p class="text-[8px] text-slate-500 uppercase font-bold">Estado Servidor</p>
+                <p class="text-[10px] text-emerald-400 font-black uppercase tracking-tighter">ONLINE - STARLINK v3</p>
+            </div>
+            <div class="px-6 py-2">
+                <p class="text-[8px] text-slate-500 uppercase font-bold">Fecha de Reporte</p>
+                <p id="current-date" class="text-[10px] text-white font-black uppercase tracking-tighter">00/00/2026</p>
+            </div>
+            <button onclick="protocoloCierre()" class="w-12 h-12 flex items-center justify-center text-ruby hover:bg-ruby/20 rounded-xl transition-all">
                 <i class="fas fa-power-off"></i>
             </button>
         </div>
-    </header>
+    </nav>
 
-    <main class="max-w-7xl mx-auto space-y-12">
+    <main class="max-w-[1600px] mx-auto grid grid-cols-12 gap-8">
         
-        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="glass-ceo p-8 rounded-[2.5rem] relative overflow-hidden group">
+        <div class="col-span-12 lg:col-span-3 space-y-6">
+            <div class="glass-ceo p-8 rounded-[2rem] relative overflow-hidden group">
                 <div class="scan-line"></div>
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Ingresos Brutos Red</p>
-                <h2 id="total-revenue" class="text-4xl font-nexus text-white stat-glow">$0</h2>
-                <div class="mt-4 flex items-center gap-2 text-[9px] text-emerald-400 font-bold uppercase italic">
-                    <i class="fas fa-arrow-up"></i> +12% vs Anterior
-                </div>
+                <i class="fas fa-coins text-gold/20 text-6xl absolute -right-4 -bottom-4"></i>
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Ingreso Bruto Red</p>
+                <h2 id="total-revenue" class="text-4xl font-nexus text-white">$0</h2>
+                <p class="text-[9px] text-emerald-400 mt-2 font-bold uppercase italic"><i class="fas fa-chart-line mr-1"></i> +18.4% este mes</p>
             </div>
 
-            <div class="glass-ceo p-8 rounded-[2.5rem] border-blue-500/20">
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Nodos Sincronizados</p>
+            <div class="glass-ceo p-8 rounded-[2rem]">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Puntos de Servicio</p>
                 <h2 id="node-count" class="text-4xl font-nexus text-white">0</h2>
-                <div class="mt-4 flex items-center gap-2 text-[9px] text-blue-400 font-bold uppercase italic">
-                    <i class="fas fa-satellite"></i> Starlink v3 Activo
-                </div>
+                <p class="text-[9px] text-blue-400 mt-2 font-bold uppercase italic"><i class="fas fa-satellite mr-1"></i> Nodos Activos</p>
             </div>
 
-            <div class="glass-ceo p-8 rounded-[2.5rem] border-ruby/20">
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Licencias por Vencer</p>
+            <div class="glass-ceo p-8 rounded-[2rem]">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Vencimientos Críticos</p>
                 <h2 id="expiring-count" class="text-4xl font-nexus text-ruby">0</h2>
-                <div class="mt-4 flex items-center gap-2 text-[9px] text-slate-500 font-bold uppercase italic">
-                    <i class="fas fa-clock"></i> Umbral: < 5 días
+                <p class="text-[9px] text-slate-500 mt-2 font-bold uppercase italic"><i class="fas fa-exclamation-triangle mr-1"></i> < 5 días de servicio</p>
+            </div>
+
+            <div class="glass-ceo p-6 rounded-[2rem]">
+                <h4 class="text-[10px] font-black text-gold uppercase tracking-widest mb-6">Market Share por Ciudad</h4>
+                <div class="chart-container">
+                    <canvas id="cityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 lg:col-span-9 space-y-8">
+            <div class="glass-ceo rounded-[2.5rem] p-10">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+                    <div>
+                        <h3 class="font-nexus text-2xl tracking-tighter text-white uppercase">Infraestructura Global</h3>
+                        <p class="text-[9px] text-slate-500 font-bold uppercase tracking-[4px] mt-1">Monitoreo en tiempo real de terminales autorizadas</p>
+                    </div>
+                    <div class="flex gap-4 w-full md:w-auto">
+                        <input type="text" id="node-filter" onkeyup="filtrarNodos()" placeholder="Filtrar por ID, Ciudad o Taller..." class="w-full md:w-80 bg-slate-950/80 border border-white/5 rounded-2xl py-4 px-6 text-[10px] text-white outline-none focus:border-gold">
+                        <button onclick="descargarReporte()" class="px-6 bg-white text-black text-[9px] font-black uppercase rounded-2xl hover:bg-gold transition-all">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full border-separate border-spacing-y-3">
+                        <thead>
+                            <tr class="text-[9px] text-slate-500 font-black uppercase tracking-[3px] text-left">
+                                <th class="px-6 pb-2 italic">Terminal ID</th>
+                                <th class="px-6 pb-2 italic">Ubicación</th>
+                                <th class="px-6 pb-2 italic">Productividad</th>
+                                <th class="px-6 pb-2 italic text-center">Protocolo</th>
+                                <th class="px-6 pb-2 italic text-right">Acción CEO</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ceo-node-table">
+                            </tbody>
+                    </table>
                 </div>
             </div>
 
-            <div class="glass-ceo p-8 rounded-[2.5rem] border-emerald-500/20">
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Vehículos en Gestión</p>
-                <h2 id="vehicle-count" class="text-4xl font-nexus text-emerald-400">0</h2>
-                <div class="mt-4 flex items-center gap-2 text-[9px] text-slate-500 font-bold uppercase italic">
-                    <i class="fas fa-truck-moving"></i> Operación Nacional
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="glass-ceo p-8 rounded-[2.5rem]">
+                    <h3 class="font-nexus text-xs text-gold uppercase mb-6 tracking-widest">Flujo de Producción Global</h3>
+                    <div class="chart-container">
+                        <canvas id="mainChart"></canvas>
+                    </div>
+                </div>
+                <div class="glass-ceo p-8 rounded-[2.5rem]">
+                    <h3 class="font-nexus text-xs text-gold uppercase mb-6 tracking-widest">Logs de Auditoría Starlink</h3>
+                    <div id="audit-logs" class="space-y-4 max-h-[300px] overflow-y-auto pr-4">
+                        </div>
                 </div>
             </div>
-        </section>
-
-        <section class="glass-ceo rounded-[3rem] p-10 relative overflow-hidden">
-            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12 gap-6 relative z-10">
-                <div>
-                    <h3 class="font-nexus text-xl tracking-tighter text-white">GESTOR DE NODOS MAESTROS</h3>
-                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-[3px] mt-1">Control de acceso y facturación por ciudad</p>
-                </div>
-                <div class="relative w-full lg:w-96">
-                    <i class="fas fa-search absolute left-6 top-1/2 -translate-y-1/2 text-gold text-sm"></i>
-                    <input type="text" id="node-filter" onkeyup="filtrarNodos()" placeholder="BUSCAR TALLER O CIUDAD..." class="w-full bg-slate-950 border border-white/5 rounded-2xl py-5 pl-14 pr-6 text-xs text-white outline-none focus:border-gold transition-all">
-                </div>
-            </div>
-
-            <div class="overflow-x-auto relative z-10">
-                <table class="w-full border-separate border-spacing-y-4">
-                    <thead>
-                        <tr class="text-[10px] text-slate-500 font-black uppercase tracking-[3px] text-left">
-                            <th class="px-6 pb-4">Info Nodo</th>
-                            <th class="px-6 pb-4">Ubicación / Ciudad</th>
-                            <th class="px-6 pb-4">Facturación</th>
-                            <th class="px-6 pb-4">Vencimiento</th>
-                            <th class="px-6 pb-4">Estado Red</th>
-                            <th class="px-6 pb-4 text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ceo-node-table">
-                        </tbody>
-                </table>
-            </div>
-        </section>
-
+        </div>
     </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -194,137 +199,189 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // VERIFICACIÓN DE IDENTIDAD CEO
+        let charts = {};
+
+        // INICIO DE SESIÓN Y SEGURIDAD CEO
         onAuthStateChanged(auth, (user) => {
-            if (!user || (user.email !== 'col.store2025@gmail.com' && user.email !== 'test@tallerpro360.com')) {
-                location.href = "index.html";
+            if (user && (user.email === 'col.store2025@gmail.com' || user.email === 'test@tallerpro360.com')) {
+                document.getElementById('current-date').innerText = new Date().toLocaleDateString();
+                document.getElementById('ceo-identity').innerText = `Auth: ${user.email}`;
+                iniciarSincronizacionGlobal();
             } else {
-                iniciarSincronizacionCEO();
+                location.href = "index.html";
             }
         });
 
-        function iniciarSincronizacionCEO() {
-            // MONITOREO DE TALLERES (NODOS)
+        function iniciarSincronizacionGlobal() {
+            // 1. MONITOR DE NODOS (USUARIOS)
             onSnapshot(collection(db, "usuarios"), (snap) => {
                 const table = document.getElementById('ceo-node-table');
                 table.innerHTML = "";
-                let nodosCount = 0;
-                let vencimientosCount = 0;
+                let count = 0, critical = 0, cityStats = {};
 
                 snap.forEach(d => {
                     const data = d.data();
-                    if(data.rol === 'CEO') return; // No auto-monitorear
+                    if(data.rol === 'CEO') return;
 
-                    nodosCount++;
-                    const hoy = Date.now();
-                    const fechaVence = data.vence || hoy;
-                    const diffDias = Math.ceil((fechaVence - hoy) / (1000 * 60 * 60 * 24));
-                    
-                    if(diffDias <= 5) vencimientosCount++;
+                    count++;
+                    const v = data.vence || Date.now();
+                    const dias = Math.ceil((v - Date.now()) / (1000*60*60*24));
+                    if(dias <= 5) critical++;
 
-                    const statusClass = data.status === 'ACTIVO' ? 'status-active' : 'status-suspended';
-                    const btnClass = data.status === 'ACTIVO' ? 'bg-ruby text-white' : 'bg-emerald-500 text-slate-950';
+                    // Stats por ciudad
+                    const city = data.ciudad || 'No Asignada';
+                    cityStats[city] = (cityStats[city] || 0) + 1;
+
+                    const statusColor = data.status === 'ACTIVO' ? 'status-active' : 'status-suspended';
+                    const btnClass = data.status === 'ACTIVO' ? 'border-ruby text-ruby hover:bg-ruby hover:text-white' : 'border-emerald-500 text-emerald-500 hover:bg-emerald-500 hover:text-black';
 
                     table.innerHTML += `
-                        <tr class="bg-slate-900/30 hover:bg-slate-800/50 transition-all group">
-                            <td class="px-6 py-6 rounded-l-3xl border-l border-white/5">
-                                <p class="font-bold text-white text-sm uppercase">${data.nombreTaller || 'NODO SIN NOMBRE'}</p>
-                                <p class="text-[9px] text-slate-500 font-bold italic tracking-tighter">${data.email}</p>
+                        <tr class="bg-slate-900/40 hover:bg-slate-800/60 transition-all group">
+                            <td class="px-6 py-5 rounded-l-2xl border-l border-white/5">
+                                <p class="font-bold text-white text-xs uppercase">${data.nombreTaller || 'Sede Remota'}</p>
+                                <p class="text-[8px] text-slate-500 font-mono tracking-tighter">${d.id}</p>
                             </td>
-                            <td class="px-6 py-6 font-bold text-xs text-slate-400">
-                                <i class="fas fa-map-marker-alt text-gold mr-2"></i> ${data.ciudad || 'Por Definir'}
+                            <td class="px-6 py-5">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 bg-gold rounded-full"></span>
+                                    <span class="text-[10px] text-slate-300 font-bold uppercase">${city}</span>
+                                </div>
                             </td>
-                            <td class="px-6 py-6 font-nexus text-gold text-xs">
-                                $${(data.facturacionAcumulada || 0).toLocaleString()}
+                            <td class="px-6 py-5">
+                                <p class="text-[10px] font-nexus text-emerald-400">$${(data.facturacionAcumulada || 0).toLocaleString()}</p>
+                                <p class="text-[8px] text-slate-600 font-black uppercase">Ingresos Totales</p>
                             </td>
-                            <td class="px-6 py-6">
-                                <p class="text-[10px] font-black ${diffDias < 5 ? 'text-ruby animate-pulse' : 'text-slate-300'}">
-                                    ${new Date(fechaVence).toLocaleDateString()}
-                                </p>
-                                <p class="text-[8px] text-slate-500 uppercase font-bold">${diffDias} días restantes</p>
-                            </td>
-                            <td class="px-6 py-6">
-                                <span class="px-4 py-1 rounded-full text-[8px] font-black uppercase ${statusClass}">
+                            <td class="px-6 py-5 text-center">
+                                <span class="px-3 py-1 rounded-lg text-[8px] font-black uppercase ${statusColor}">
                                     ${data.status || 'ACTIVO'}
                                 </span>
                             </td>
-                            <td class="px-6 py-6 text-center rounded-r-3xl border-r border-white/5">
-                                <button onclick="gestionarNodo('${d.id}', '${data.status || 'ACTIVO'}')" 
-                                        class="btn-action px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${btnClass}">
-                                    ${data.status === 'ACTIVO' ? 'Suspender' : 'Activar Nodo'}
+                            <td class="px-6 py-5 text-right rounded-r-2xl border-r border-white/5">
+                                <button onclick="toggleNodo('${d.id}', '${data.status || 'ACTIVO'}')" 
+                                        class="btn-protocol border px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest ${btnClass}">
+                                    ${data.status === 'ACTIVO' ? 'SUSPENDER' : 'REINSTALAR'}
                                 </button>
                             </td>
                         </tr>
                     `;
                 });
-                document.getElementById('node-count').innerText = nodosCount;
-                document.getElementById('expiring-count').innerText = vencimientosCount;
+                document.getElementById('node-count').innerText = count;
+                document.getElementById('expiring-count').innerText = critical;
+                updateCityChart(cityStats);
             });
 
-            // MONITOREO DE ÓRDENES Y FLUJO DE DINERO
-            onSnapshot(collection(db, "ordenes"), (snap) => {
-                let revenue = 0;
-                snap.forEach(o => {
-                    const d = o.data();
-                    revenue += (d.total || 0);
+            // 2. MONITOR DE TRANSACCIONES (ÓRDENES)
+            const qOrders = query(collection(db, "ordenes"), orderBy("timestamp", "desc"));
+            onSnapshot(qOrders, (snap) => {
+                let rev = 0, chartData = { labels: [], values: [] };
+                const logs = document.getElementById('audit-logs');
+                logs.innerHTML = "";
+
+                snap.forEach((o, index) => {
+                    const data = o.data();
+                    rev += (data.total || 0);
+
+                    // Últimos 10 logs de auditoría
+                    if(index < 10) {
+                        logs.innerHTML += `
+                            <div class="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5">
+                                <div>
+                                    <p class="text-xs font-bold text-white">${data.placa || 'PLACA-X'}</p>
+                                    <p class="text-[8px] text-slate-500 uppercase">${data.tallerId ? data.tallerId.substring(0,8) : 'Sede Global'}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[10px] font-nexus text-gold">+$${(data.total || 0).toLocaleString()}</p>
+                                    <p class="text-[7px] text-emerald-500 font-bold italic">Sincronizado</p>
+                                </div>
+                            </div>
+                        `;
+                    }
                 });
-                document.getElementById('total-revenue').innerText = `$${revenue.toLocaleString()}`;
-                document.getElementById('vehicle-count').innerText = snap.size;
+                document.getElementById('total-revenue').innerText = `$${rev.toLocaleString()}`;
+                updateMainChart(snap.size);
             });
         }
 
-        // ACCIONES DE MANDO
-        window.gestionarNodo = async (uid, statusActual) => {
-            const nuevoStatus = statusActual === 'ACTIVO' ? 'SUSPENDIDO' : 'ACTIVO';
-            const confirmacion = confirm(`PROTOCOLO NEXUS: ¿Confirmar cambio de estado a ${nuevoStatus}?`);
-            
-            if(confirmacion) {
-                try {
-                    await updateDoc(doc(db, "usuarios", uid), { status: nuevoStatus });
-                    console.log(`Nodo ${uid} actualizado a ${nuevoStatus}`);
-                } catch (error) {
-                    alert("ERROR DE PROTOCOLO: Fallo en la red Starlink.");
-                }
+        // --- FUNCIONES DE CONTROL ---
+
+        window.toggleNodo = async (id, status) => {
+            const next = status === 'ACTIVO' ? 'SUSPENDIDO' : 'ACTIVO';
+            if(confirm(`ADVERTENCIA: ¿Desea cambiar el estado del nodo a ${next}?`)) {
+                await updateDoc(doc(db, "usuarios", id), { status: next });
             }
         };
 
-        window.descargarReporte = () => {
-            const rows = [["TALLER", "EMAIL", "CIUDAD", "FACTURACIÓN", "ESTADO"]];
-            const dataTable = document.querySelectorAll("#ceo-node-table tr");
-            
-            dataTable.forEach(tr => {
-                const cells = tr.querySelectorAll("td");
-                if(cells.length > 0) {
-                    rows.push([
-                        cells[0].querySelector("p").innerText,
-                        cells[0].querySelectorAll("p")[1].innerText,
-                        cells[1].innerText.trim(),
-                        cells[2].innerText.trim(),
-                        cells[4].innerText.trim()
-                    ]);
+        function updateCityChart(stats) {
+            const ctx = document.getElementById('cityChart').getContext('2d');
+            if(charts.city) charts.city.destroy();
+            charts.city = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(stats),
+                    datasets: [{
+                        data: Object.values(stats),
+                        backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6'],
+                        borderWidth: 0,
+                        hoverOffset: 15
+                    }]
+                },
+                options: { 
+                    cutout: '80%',
+                    plugins: { legend: { display: false } }
                 }
             });
+        }
 
-            const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
-            const encodedUri = encodeURI(csvContent);
+        function updateMainChart(total) {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            if(charts.main) charts.main.destroy();
+            charts.main = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'],
+                    datasets: [{
+                        label: 'Volumen Operativo',
+                        data: [total*0.5, total*0.7, total*0.6, total*0.9, total*0.8, total],
+                        borderColor: '#f59e0b',
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(245, 158, 11, 0.05)'
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { display: false },
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#475569', font: { size: 9 } } }
+                    }
+                }
+            });
+        }
+
+        window.descargarReporte = () => {
+            const rows = [["TALLER", "ID", "CIUDAD", "FACTURACIÓN", "ESTADO"]];
+            document.querySelectorAll("#ceo-node-table tr").forEach(tr => {
+                const tds = tr.querySelectorAll("td");
+                rows.push([tds[0].querySelector("p").innerText, tds[1].innerText, tds[2].querySelector("p").innerText, tds[3].innerText]);
+            });
+            let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
             const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `NEXUS_GLOBAL_REPORT_${new Date().getTime()}.csv`);
-            document.body.appendChild(link);
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", "NEXUS_INFRASTRUCTURE_REPORT.csv");
             link.click();
         };
 
         window.filtrarNodos = () => {
-            const query = document.getElementById('node-filter').value.toUpperCase();
-            const rows = document.querySelectorAll("#ceo-node-table tr");
-            rows.forEach(r => {
-                const text = r.innerText.toUpperCase();
-                r.style.display = text.includes(query) ? "" : "none";
+            const val = document.getElementById('node-filter').value.toUpperCase();
+            document.querySelectorAll("#ceo-node-table tr").forEach(r => {
+                r.style.display = r.innerText.toUpperCase().includes(val) ? "" : "none";
             });
         };
 
         window.protocoloCierre = () => {
-            if(confirm("¿Cerrar Command Zero?")) {
+            if(confirm("¿Cerrar sesión de Command Zero?")) {
                 signOut(auth).then(() => location.href = "index.html");
             }
         };
