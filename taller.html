@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS-X STARLINK | COMMAND CENTER v4.2 PRO</title>
+    <title>NEXUS-X STARLINK | COMMAND CENTER v5.0</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -12,22 +12,18 @@
             --primary: #020617; --gold: #f59e0b; --accent: #3b82f6; 
             --success: #10b981; --danger: #ef4444; --surface: rgba(15, 23, 42, 0.9);
         }
-        
         body { 
             font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; 
             padding-bottom: 120px; overflow-x: hidden;
             background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #020617 100%);
         }
-
         .font-nexus { font-family: 'Orbitron', sans-serif; }
         .glass { background: var(--surface); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.8); }
-        
         .neo-input { 
             background: rgba(0,0,0,0.6); border: 1px solid #334155; border-radius: 16px; 
             padding: 14px; color: white; width: 100%; outline: none; transition: 0.3s; font-size: 14px;
         }
         .neo-input:focus { border-color: var(--gold); box-shadow: 0 0 20px rgba(245, 158, 11, 0.2); }
-
         .nav-nexus { 
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             width: 95%; max-width: 600px; height: 85px; border-radius: 30px; 
@@ -36,26 +32,18 @@
         }
         .nav-item { color: #94a3b8; font-size: 10px; font-weight: 800; text-align: center; transition: 0.4s; cursor: pointer; flex: 1; }
         .nav-item.active { color: var(--gold); }
-        .nav-item.active i { transform: translateY(-8px); text-shadow: 0 0 15px var(--gold); }
-
         .status-PATIO { border-left: 5px solid var(--accent); }
         .status-PROCESO { border-left: 5px solid var(--gold); }
         .status-LISTO { border-left: 5px solid var(--success); }
-
         .inv-item { border: 1px solid rgba(255,255,255,0.1); padding: 8px; border-radius: 12px; cursor: pointer; transition: 0.3s; font-size: 10px; font-weight: 800; text-align: center; }
-        .inv-item.active { background: var(--gold); color: black; border-color: var(--gold); box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
-
+        .inv-item.active { background: var(--gold); color: black; border-color: var(--gold); }
         .recording { animation: pulse-red 1s infinite; background: var(--danger) !important; color: white !important; }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-
         .hidden { display: none !important; }
-        .card-nexus { transition: 0.3s; cursor: pointer; position: relative; overflow: hidden; }
-        .card-nexus:hover { transform: translateY(-5px); background: rgba(255,255,255,0.05); }
-
-        /* Estilos de Pestañas Internas Modal */
-        .tab-btn { padding: 10px 20px; border-radius: 12px; font-[9px]; font-weight: 800; text-transform: uppercase; cursor: pointer; transition: 0.3s; border: 1px solid transparent; }
-        .tab-btn.active { background: var(--gold); color: black; }
-        .tab-btn:not(.active) { background: rgba(255,255,255,0.05); color: #94a3b8; }
+        .card-nexus { transition: 0.3s; cursor: pointer; }
+        .card-nexus:hover { transform: translateY(-5px); }
+        .toggle-btn { padding: 10px; border-radius: 12px; font-size: 9px; font-weight: 900; text-transform: uppercase; transition: 0.3s; flex: 1; text-align: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
+        .toggle-btn.active { background: var(--gold); color: black; border-color: var(--gold); }
     </style>
 </head>
 <body>
@@ -67,195 +55,126 @@
         </div>
         <div>
             <h1 class="font-nexus text-[10px] tracking-[0.3em] text-white font-black uppercase">Nexus-X Starlink SAS</h1>
-            <p id="live-clock" class="text-[9px] text-gold font-mono italic">SYSTEM ONLINE</p>
+            <p id="live-clock" class="text-[9px] text-gold font-mono italic">SIGNAL: EXCELLENT</p>
         </div>
     </div>
     <div class="text-right">
-        <p class="text-[8px] text-slate-500 font-black uppercase tracking-widest">Global Ops Colombia</p>
+        <p class="text-[8px] text-slate-500 font-black uppercase tracking-widest">Utilidad Acumulada</p>
         <p id="total-pg" class="text-xl font-nexus text-success font-black">$ 0</p>
     </div>
 </header>
 
 <main class="p-4 max-w-7xl mx-auto space-y-8">
 
-    <div class="max-w-md mx-auto relative group">
-        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-gold transition-colors"></i>
-        <input type="text" id="search-mision" oninput="searchMision()" placeholder="LLAMAR PLACA O # MISIÓN..." class="neo-input pl-12 font-nexus uppercase tracking-widest text-center border-gold/20">
-    </div>
-
     <section id="sec-patio" class="space-y-6">
         <div class="glass p-8 rounded-[40px] border-t-2 border-accent">
-            <h2 class="font-nexus text-xs text-accent tracking-[5px] uppercase mb-8 flex items-center gap-3">
-                <span class="w-10 h-[1px] bg-accent"></span> Apertura de Misión Técnica
-            </h2>
-            
+            <h2 class="font-nexus text-xs text-accent tracking-[5px] uppercase mb-8">Apertura de Misión</h2>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="relative">
-                    <label class="text-[9px] font-black text-slate-500 ml-2 uppercase italic">Placa Identificada</label>
-                    <input id="in-placa" placeholder="ABC-123" class="neo-input font-nexus text-2xl text-gold uppercase text-center">
-                    <button onclick="startVoice('in-placa')" class="absolute right-4 bottom-4 text-slate-500 hover:text-gold"><i class="fas fa-microphone"></i></button>
-                </div>
-                <div>
-                    <label class="text-[9px] font-black text-slate-500 ml-2 uppercase italic">Técnico Asignado</label>
-                    <input id="in-mecanico" placeholder="NOMBRE MECÁNICO" class="neo-input uppercase">
-                </div>
-                <div>
-                    <label class="text-[9px] font-black text-slate-500 ml-2 uppercase italic">Propietario</label>
-                    <input id="in-cliente" placeholder="NOMBRE CLIENTE" class="neo-input uppercase">
-                </div>
-                <div>
-                    <label class="text-[9px] font-black text-slate-500 ml-2 uppercase italic">WhatsApp Link</label>
-                    <input id="in-tel" type="tel" placeholder="573..." class="neo-input">
-                </div>
+                <input id="in-placa" placeholder="PLACA" class="neo-input font-nexus text-gold">
+                <input id="in-mecanico" placeholder="TÉCNICO" class="neo-input uppercase">
+                <input id="in-cliente" placeholder="CLIENTE" class="neo-input uppercase">
+                <input id="in-tel" type="tel" placeholder="WHATSAPP (57...)" class="neo-input">
             </div>
-
-            <div class="mt-6 p-6 bg-black/40 rounded-3xl border border-white/5 shadow-inner">
-                <div class="flex justify-between items-center mb-4">
-                    <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocolo de Recepción (Dictado de Voz)</h4>
-                    <button onclick="startVoiceInventory()" id="btn-voice-inv" class="px-6 py-2 bg-accent text-white rounded-xl text-[9px] font-black uppercase shadow-lg transition-all">
-                        <i class="fas fa-microphone mr-2"></i> Iniciar Escaneo
-                    </button>
-                </div>
-                <div class="grid grid-cols-2 md:grid-cols-6 gap-3" id="inv-grid">
-                    <div class="inv-item" onclick="toggleInv(this)" data-val="LLANTA">LLANTA REP.</div>
+            <div class="mt-6 p-6 bg-black/40 rounded-3xl border border-white/5">
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4" id="inv-grid">
+                    <div class="inv-item" onclick="toggleInv(this)" data-val="LLANTA">LLANTA</div>
                     <div class="inv-item" onclick="toggleInv(this)" data-val="GATO">GATO</div>
-                    <div class="inv-item" onclick="toggleInv(this)" data-val="CRUCETA">CRUCETA</div>
                     <div class="inv-item" onclick="toggleInv(this)" data-val="RADIO">RADIO</div>
-                    <div class="inv-item" onclick="toggleInv(this)" data-val="PANTALLAS">PANTALLAS</div>
-                    <div class="inv-item" onclick="toggleInv(this)" data-val="KIT">KIT CARRETERA</div>
+                    <div class="inv-item" onclick="toggleInv(this)" data-val="HERRAMIENTA">HERRAMIENTA</div>
+                    <div class="inv-item" onclick="toggleInv(this)" data-val="PAPELES">PAPELES</div>
+                    <div class="inv-item" onclick="toggleInv(this)" data-val="ESPEJOS">ESPEJOS</div>
                 </div>
-                <textarea id="in-reporte" rows="2" placeholder="Notas de diagnóstico o ítems adicionales por voz..." class="neo-input mt-4 italic text-slate-400"></textarea>
+                <textarea id="in-reporte" rows="2" placeholder="Diagnóstico Inicial..." class="neo-input"></textarea>
             </div>
-
-            <button id="btn-registrar" onclick="registrarMision()" class="w-full mt-6 bg-white text-black font-nexus py-5 rounded-3xl text-xs font-black tracking-[4px] uppercase hover:bg-gold transition-all shadow-2xl">
-                Inicializar Protocolo Nexus-X
-            </button>
+            <button onclick="registrarMision()" class="w-full mt-6 bg-white text-black font-nexus py-5 rounded-3xl text-xs font-black tracking-[4px] uppercase hover:bg-gold transition-all">Registrar Entrada</button>
         </div>
-
         <div id="lista-misiones" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </section>
 
     <section id="sec-caja" class="hidden space-y-6">
-        <div class="glass p-8 rounded-[40px] border-t-4 border-emerald-500 shadow-emerald-900/20 shadow-xl">
-            <h2 class="font-nexus text-xl text-emerald-400 italic mb-8 flex items-center justify-between">
-                Financial Center
-                <span class="text-[10px] bg-emerald-500/10 px-4 py-1 rounded-full text-emerald-500 font-nexus not-italic">SAS COLOMBIA</span>
-            </h2>
-            <div id="lista-caja" class="space-y-4"></div>
+        <div class="glass p-8 rounded-[40px] border-t-4 border-emerald-500">
+            <h2 class="font-nexus text-xl text-emerald-400 italic mb-8 italic">Financial Command Center</h2>
+            <div id="lista-caja" class="grid grid-cols-1 gap-4"></div>
         </div>
     </section>
 
 </main>
 
 <nav class="nav-nexus glass">
-    <div onclick="switchSec('patio', this)" class="nav-item active"><i class="fas fa-rocket text-2xl mb-1"></i><br>PATIO</div>
-    <div onclick="switchSec('caja', this)" class="nav-item"><i class="fas fa-cash-register text-2xl mb-1"></i><br>CAJA</div>
-    <div onclick="location.reload()" class="nav-item"><i class="fas fa-sync text-2xl mb-1"></i><br>REFRESH</div>
+    <div onclick="switchSec('patio', this)" class="nav-item active"><i class="fas fa-tools text-2xl mb-1"></i><br>PATIO</div>
+    <div onclick="switchSec('caja', this)" class="nav-item"><i class="fas fa-wallet text-2xl mb-1"></i><br>CAJA</div>
+    <div onclick="location.reload()" class="nav-item"><i class="fas fa-sync text-2xl mb-1"></i><br>RELOAD</div>
 </nav>
 
-<div id="modal-orden" class="fixed inset-0 bg-black/95 z-[6000] hidden overflow-y-auto p-4 md:p-12">
+<div id="modal-orden" class="fixed inset-0 bg-black/98 z-[6000] hidden overflow-y-auto p-4 md:p-12">
     <div class="max-w-7xl mx-auto">
-        
-        <div class="flex flex-col md:flex-row justify-between gap-8 mb-10">
+        <div class="flex justify-between items-center mb-10">
             <div class="flex gap-6 items-center">
-                <div id="mod-icon" class="w-20 h-20 rounded-[30px] bg-gold flex items-center justify-center text-black text-4xl shadow-2xl">
-                    <i class="fas fa-truck-pickup"></i>
-                </div>
+                <div class="w-16 h-16 rounded-2xl bg-gold flex items-center justify-center text-black text-3xl"><i class="fas fa-car"></i></div>
                 <div>
-                    <h3 id="mod-placa" class="font-nexus text-6xl text-white italic font-black">---</h3>
-                    <p id="mod-ticket" class="text-xs text-gold font-nexus mt-4 opacity-70 uppercase tracking-widest"></p>
+                    <h3 id="mod-placa" class="font-nexus text-5xl text-white italic font-black">---</h3>
+                    <p id="mod-ticket" class="text-xs text-gold font-nexus uppercase opacity-60"></p>
                 </div>
             </div>
-            
-            <div class="flex items-center gap-4 bg-white/5 p-5 rounded-[35px] border border-white/10">
-                <div id="step-patio" class="step-pill border-2 p-3 rounded-2xl flex flex-col items-center">
-                    <i class="fas fa-warehouse text-lg"></i><span class="text-[8px] font-black mt-1 uppercase">Recepción</span>
-                </div>
-                <div id="step-proceso" class="step-pill border-2 p-3 rounded-2xl flex flex-col items-center">
-                    <i class="fas fa-tools text-lg"></i><span class="text-[8px] font-black mt-1 uppercase">Arreglo</span>
-                </div>
-                <div id="step-listo" class="step-pill border-2 p-3 rounded-2xl flex flex-col items-center">
-                    <i class="fas fa-check-double text-lg"></i><span class="text-[8px] font-black mt-1 uppercase">Listo</span>
-                </div>
-                <button onclick="closeModal()" class="ml-4 w-12 h-12 bg-white/10 rounded-full text-2xl hover:bg-danger transition-all">&times;</button>
-            </div>
+            <button onclick="closeModal()" class="w-12 h-12 bg-white/10 rounded-full text-2xl">&times;</button>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
             <div class="lg:col-span-2 space-y-6">
-                <div class="flex gap-4 mb-4">
-                    <div id="tab-log" onclick="switchTab('log')" class="tab-btn active">Logística Real</div>
-                    <div id="tab-cot" onclick="switchTab('cot')" class="tab-btn">Prospección (Cotizar)</div>
-                </div>
-
-                <div class="glass p-8 rounded-[40px] border-l-4 border-accent">
+                <div class="glass p-8 rounded-[40px] border-l-4 border-gold">
+                    <div class="flex gap-4 mb-6">
+                        <div id="btn-modo-gasto" onclick="setModo('GASTO')" class="toggle-btn active">Gasto Real</div>
+                        <div id="btn-modo-cot" onclick="setModo('COT')" class="toggle-btn">Cotización</div>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <input id="g-desc" placeholder="REPUESTO O SERVICIO" class="neo-input uppercase md:col-span-1">
+                        <input id="g-desc" placeholder="DESCRIPCIÓN" class="neo-input uppercase md:col-span-1">
                         <input id="g-costo" type="number" placeholder="$ COSTO" class="neo-input">
-                        <input id="g-venta" type="number" placeholder="$ VENTA / MONTO" class="neo-input text-emerald-400 font-bold">
+                        <input id="g-venta" type="number" placeholder="$ VENTA / ABONO" class="neo-input text-emerald-400 font-bold">
                     </div>
                     <div class="flex gap-4 mt-4">
                         <select id="g-tipo" class="neo-input">
-                            <option value="GASTO">CARGO / GASTO</option>
-                            <option value="ABONO">ABONO DEL CLIENTE (+)</option>
+                            <option value="CARGO">CARGO (TRABAJO/REPUESTO)</option>
+                            <option value="ABONO">ABONO CLIENTE (+)</option>
                         </select>
-                        <button onclick="addMovimiento()" class="bg-accent px-12 rounded-2xl font-black text-[10px] uppercase shadow-lg grow">Registrar en Misión</button>
+                        <button onclick="addMovimiento()" class="bg-gold text-black px-12 rounded-2xl font-black text-[10px] uppercase shadow-lg grow">Inyectar a Misión</button>
                         <button onclick="startVoice('g-desc')" class="bg-white/10 px-6 rounded-2xl"><i class="fas fa-microphone"></i></button>
                     </div>
                 </div>
 
-                <div class="glass p-8 rounded-[40px] min-h-[500px]">
-                    <div id="log-view">
-                        <h4 class="text-[10px] font-black text-slate-500 uppercase mb-6 tracking-[4px]">Historial de Gastos y Abonos Reales</h4>
-                        <div id="mod-items" class="space-y-3"></div>
-                    </div>
-                    <div id="cot-view" class="hidden">
-                        <div class="flex justify-between items-center mb-6">
-                            <h4 class="text-[10px] font-black text-gold uppercase tracking-[4px]">Ítems de Prospección / Cotización</h4>
-                            <button onclick="enviarProforma()" class="bg-emerald-600 px-4 py-2 rounded-xl text-[9px] font-black uppercase"><i class="fab fa-whatsapp mr-1"></i> Enviar Proforma</button>
-                        </div>
-                        <div id="mod-cot-items" class="space-y-3"></div>
-                    </div>
+                <div class="glass p-8 rounded-[40px] min-h-[400px]">
+                    <h4 class="text-[10px] font-black text-slate-500 uppercase mb-6 tracking-[4px]">Historial Logístico y Financiero</h4>
+                    <div id="mod-items" class="space-y-3"></div>
                 </div>
             </div>
 
             <div class="space-y-6">
                 <div class="glass p-8 rounded-[40px] border border-gold/30">
-                    <h4 class="text-[10px] font-black text-gold uppercase mb-8 tracking-[4px] text-center italic">Resumen Financiero NX</h4>
+                    <h4 class="text-[10px] font-black text-gold uppercase mb-8 tracking-[4px] text-center italic">Balance de Misión</h4>
                     <div class="space-y-6">
                         <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-black text-slate-400 uppercase italic">Mano de Obra:</span>
-                            <input id="mo-cliente" type="number" oninput="updateCalculos()" class="bg-transparent text-right font-nexus text-2xl text-white w-32 outline-none border-b border-white/10" value="0">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Mano de Obra:</span>
+                            <input id="mo-cliente" type="number" oninput="updateCalculos()" class="bg-transparent text-right font-nexus text-xl text-white w-24 border-b border-white/10">
                         </div>
                         <div class="py-4 border-y border-white/5 space-y-4">
                             <div class="flex justify-between text-[10px]"><span class="text-slate-500 font-bold">VALOR COTIZADO</span><span id="res-cot" class="text-accent font-nexus">$ 0</span></div>
-                            <div class="flex justify-between text-[10px]"><span class="text-slate-500 font-bold">TOTAL ABONADO</span><span id="res-abonos" class="text-success font-nexus">$ 0</span></div>
+                            <div class="flex justify-between text-[10px]"><span class="text-slate-500 font-bold">ABONOS RECIBIDOS</span><span id="res-abonos" class="text-success font-nexus">$ 0</span></div>
                         </div>
                         <div class="text-center pt-4">
-                            <p class="text-[9px] text-slate-500 font-black uppercase mb-1">Deuda Pendiente Real</p>
-                            <h2 id="res-saldo" class="font-nexus text-5xl text-white font-black leading-none">$ 0</h2>
+                            <p class="text-[9px] text-slate-500 font-black uppercase mb-1">Saldo Pendiente Real</p>
+                            <h2 id="res-saldo" class="font-nexus text-4xl text-white font-black">$ 0</h2>
                         </div>
                     </div>
                 </div>
-
-                <div class="space-y-3">
-                    <button onclick="enviarWhatsApp('AVANCE')" class="w-full bg-emerald-600/20 text-emerald-400 py-4 rounded-2xl font-black text-[10px] uppercase border border-emerald-500/20 shadow-lg">
-                        <i class="fab fa-whatsapp mr-2"></i> Enviar Estado de Cuenta
-                    </button>
-                    <button id="btn-avanzar" onclick="avanzarFase()" class="w-full bg-white text-black font-nexus py-5 rounded-3xl text-xs font-black uppercase tracking-[3px] shadow-2xl hover:bg-gold transition-all">
-                        SIGUIENTE FASE
-                    </button>
-                </div>
+                <button onclick="enviarProforma()" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg hover:bg-emerald-500 transition-all"><i class="fab fa-whatsapp mr-2"></i> Enviar Proforma al Cliente</button>
+                <button onclick="avanzarFase()" id="btn-avanzar" class="w-full bg-white text-black font-nexus py-5 rounded-2xl text-xs font-black uppercase tracking-[3px]">Avanzar Fase</button>
             </div>
-
         </div>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp, orderBy, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp, orderBy, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -273,98 +192,82 @@
 
     let misionesActivas = [];
     let ordenActualId = null;
-    let currentTab = 'log'; // log o cot
-
-    // --- RECONOCIMIENTO DE VOZ ANALÍTICO ---
-    const recognition = window.webkitSpeechRecognition ? new webkitSpeechRecognition() : null;
-    if(recognition) {
-        recognition.lang = 'es-CO';
-        window.startVoice = (id) => {
-            const r = new webkitSpeechRecognition(); r.lang = 'es-CO';
-            r.start();
-            r.onresult = (e) => { document.getElementById(id).value = e.results[0][0].transcript.toUpperCase(); };
-        };
-
-        window.startVoiceInventory = () => {
-            const btn = document.getElementById('btn-voice-inv');
-            btn.classList.add('recording');
-            recognition.start();
-            recognition.onresult = (e) => {
-                const txt = e.results[e.results.length - 1][0].transcript.toUpperCase();
-                document.querySelectorAll('.inv-item').forEach(el => {
-                    if(txt.includes(el.dataset.val)) el.classList.add('active');
-                });
-                if(!txt.includes('GATO') && !txt.includes('LLANTA')) {
-                    document.getElementById('in-reporte').value += txt + ". ";
-                }
-            };
-            recognition.onend = () => btn.classList.remove('recording');
-        };
-    }
+    let modoGlobal = 'GASTO';
 
     onAuthStateChanged(auth, (user) => { if (user) initApp(); else window.location.href = "index.html"; });
 
     function initApp() {
+        // QUERY TOTAL: Trae todo lo que no esté archivado para que aparezca en Patio y Caja
         const q = query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid), orderBy("timestamp", "desc"));
         onSnapshot(q, (snap) => {
             const patio = document.getElementById('lista-misiones');
             const caja = document.getElementById('lista-caja');
             patio.innerHTML = ""; caja.innerHTML = "";
             misionesActivas = [];
-            let globalUtil = 0;
+            let totalUtilidad = 0;
 
             snap.forEach(d => {
                 const o = {id: d.id, ...d.data()};
                 misionesActivas.push(o);
+                
                 if(o.status !== 'ARCHIVADO') {
-                    const card = renderCard(o);
+                    const card = renderCard(o, 'PATIO');
+                    const cardCaja = renderCard(o, 'CAJA');
                     patio.innerHTML += card;
-                    caja.innerHTML += card;
+                    caja.innerHTML += cardCaja;
                 } else {
-                    globalUtil += (o.utilidad || 0);
+                    totalUtilidad += (o.utilidad || 0);
                 }
                 if(ordenActualId === o.id) renderLog(o);
             });
-            document.getElementById('total-pg').innerText = `$ ${globalUtil.toLocaleString()}`;
+            document.getElementById('total-pg').innerText = `$ ${totalUtilidad.toLocaleString()}`;
         });
     }
 
-    function renderCard(o) {
+    function renderCard(o, vista) {
         const mv = o.movimientos || [];
         const realV = mv.filter(m => m.tipo === 'GASTO').reduce((a, b) => a + b.venta, 0) + (o.moCliente || 0);
         const ab = mv.filter(m => m.tipo === 'ABONO').reduce((a, b) => a + b.venta, 0);
+        const saldo = realV - ab;
+
         return `
-            <div onclick="abrirOrden('${o.id}')" class="glass p-6 rounded-[35px] card-nexus status-${o.status}">
-                <div class="flex justify-between items-start">
+            <div onclick="abrirOrden('${o.id}')" class="glass p-6 rounded-[30px] card-nexus status-${o.status} border border-white/5">
+                <div class="flex justify-between items-center">
                     <div>
-                        <h3 class="font-nexus text-2xl text-white uppercase italic">${o.placa}</h3>
-                        <p class="text-[9px] text-slate-500 font-bold uppercase mt-2">${o.mecanico} | ${o.cliente}</p>
+                        <h3 class="font-nexus text-xl text-white italic">${o.placa}</h3>
+                        <p class="text-[9px] text-slate-500 font-bold uppercase">${o.mecanico} | ${o.cliente}</p>
                     </div>
                     <div class="text-right">
-                        <span class="text-[8px] px-2 py-1 rounded bg-white/5 text-gold font-black uppercase">${o.status}</span>
-                        <p class="font-nexus text-white text-xs mt-3">$ ${(realV - ab).toLocaleString()}</p>
+                        <p class="font-nexus ${saldo > 0 ? 'text-gold' : 'text-success'} text-sm">$ ${saldo.toLocaleString()}</p>
+                        <span class="text-[7px] bg-white/5 px-2 py-1 rounded text-slate-400 uppercase tracking-widest">${o.status}</span>
                     </div>
                 </div>
             </div>`;
     }
 
-    window.toggleInv = (el) => el.classList.toggle('active');
+    window.setModo = (m) => {
+        modoGlobal = m;
+        document.getElementById('btn-modo-gasto').classList.toggle('active', m === 'GASTO');
+        document.getElementById('btn-modo-cot').classList.toggle('active', m === 'COT');
+    };
 
     window.registrarMision = async () => {
-        const placa = document.getElementById('in-placa').value.toUpperCase();
-        if(!placa) return alert("SISTEMA REQUIERE PLACA");
+        const p = document.getElementById('in-placa').value.toUpperCase();
+        if(!p) return alert("PLACA REQUERIDA");
         const inv = [];
         document.querySelectorAll('.inv-item.active').forEach(i => inv.push(i.dataset.val));
-
+        
         await addDoc(collection(db, "ordenes"), {
             tallerId: auth.currentUser.uid,
-            ticket: `NX-${Math.floor(10000 + Math.random() * 90000)}`,
-            placa, mecanico: document.getElementById('in-mecanico').value.toUpperCase(),
+            placa: p,
+            mecanico: document.getElementById('in-mecanico').value.toUpperCase(),
             cliente: document.getElementById('in-cliente').value.toUpperCase(),
             telefono: document.getElementById('in-tel').value,
             reporte: document.getElementById('in-reporte').value,
-            inventario: inv, status: 'PATIO',
-            movimientos: [], moCliente: 0, moMecanico: 0,
+            inventario: inv,
+            status: 'PATIO',
+            movimientos: [],
+            moCliente: 0,
             timestamp: serverTimestamp()
         });
         document.querySelectorAll('input, textarea').forEach(i => i.value = "");
@@ -375,27 +278,10 @@
         ordenActualId = id;
         const o = misionesActivas.find(x => x.id === id);
         document.getElementById('mod-placa').innerText = o.placa;
-        document.getElementById('mod-ticket').innerText = `ORDEN: ${o.ticket}`;
+        document.getElementById('mod-ticket').innerText = `ID: ${o.id.substring(0,8)}`;
         document.getElementById('mo-cliente').value = o.moCliente || 0;
-        
-        document.querySelectorAll('.step-pill').forEach(s => s.classList.remove('active'));
-        document.getElementById(`step-${o.status.toLowerCase()}`).classList.add('active');
-
-        const btnA = document.getElementById('btn-avanzar');
-        if(o.status === 'PATIO') btnA.innerText = "PASAR A ARREGLO";
-        else if(o.status === 'PROCESO') btnA.innerText = "MARCAR COMO LISTO";
-        else btnA.innerText = "LIQUIDAR Y ARCHIVAR";
-
         renderLog(o);
         document.getElementById('modal-orden').classList.remove('hidden');
-    };
-
-    window.switchTab = (tab) => {
-        currentTab = tab;
-        document.getElementById('tab-log').classList.toggle('active', tab === 'log');
-        document.getElementById('tab-cot').classList.toggle('active', tab === 'cot');
-        document.getElementById('log-view').classList.toggle('hidden', tab !== 'log');
-        document.getElementById('cot-view').classList.toggle('hidden', tab !== 'cot');
     };
 
     window.addMovimiento = async () => {
@@ -405,112 +291,63 @@
         const t = document.getElementById('g-tipo').value;
         if(!d || !v) return;
 
-        const tipoFinal = currentTab === 'cot' ? 'COT' : t;
-
         await updateDoc(doc(db, "ordenes", ordenActualId), {
-            movimientos: arrayUnion({ 
-                desc: d, costo: c, venta: v, tipo: tipoFinal, 
-                fecha: new Date().toISOString(), id: Date.now() 
+            movimientos: arrayUnion({
+                desc: d, costo: c, venta: v, 
+                tipo: t === 'ABONO' ? 'ABONO' : modoGlobal,
+                id: Date.now()
             })
         });
         ['g-desc', 'g-costo', 'g-venta'].forEach(i => document.getElementById(i).value = "");
     };
 
     function renderLog(o) {
-        const logList = document.getElementById('mod-items');
-        const cotList = document.getElementById('mod-cot-items');
-        const mv = o.movimientos || [];
-        
-        logList.innerHTML = mv.filter(m => m.tipo !== 'COT').map(m => `
-            <div class="flex justify-between items-center bg-white/5 p-4 rounded-3xl border border-white/5">
+        const list = document.getElementById('mod-items');
+        list.innerHTML = (o.movimientos || []).map(m => `
+            <div class="flex justify-between items-center p-4 rounded-2xl bg-white/5 border border-white/5 ${m.tipo === 'COT' ? 'border-dashed border-accent/40' : ''}">
                 <div>
-                    <span class="text-[10px] font-black ${m.tipo === 'ABONO' ? 'text-success' : 'text-slate-200'} uppercase">${m.desc}</span>
-                    <p class="text-[8px] opacity-40 font-bold uppercase">${m.tipo}</p>
-                </div>
-                <div class="text-right">
-                    <span class="font-nexus text-xs ${m.tipo === 'ABONO' ? 'text-success' : 'text-emerald-400'}">${m.tipo === 'ABONO' ? '+' : ''}$${m.venta.toLocaleString()}</span>
-                </div>
-            </div>
-        `).join("");
-
-        cotList.innerHTML = mv.filter(m => m.tipo === 'COT').map(m => `
-            <div class="flex justify-between items-center bg-accent/5 p-4 rounded-3xl border border-accent/20">
-                <div>
-                    <span class="text-[10px] font-black text-accent uppercase">${m.desc}</span>
-                    <p class="text-[8px] opacity-40 font-bold uppercase italic">Prospección</p>
+                    <span class="text-[10px] font-black ${m.tipo === 'COT' ? 'text-accent' : 'text-slate-300'} uppercase">${m.desc}</span>
+                    <p class="text-[8px] opacity-40 uppercase">${m.tipo}</p>
                 </div>
                 <div class="flex items-center gap-4">
-                    <span class="font-nexus text-xs text-white">$${m.venta.toLocaleString()}</span>
-                    <button onclick="convertirACargo(${m.id})" class="bg-gold text-black p-2 rounded-lg text-[8px] font-black"><i class="fas fa-check"></i></button>
+                    <span class="font-nexus text-xs">$${m.venta.toLocaleString()}</span>
+                    ${m.tipo === 'COT' ? `<button onclick="convertir(${m.id})" class="bg-gold text-black p-1 rounded text-[8px] font-bold">APROBAR</button>` : ''}
                 </div>
             </div>
         `).join("");
-
         updateCalculos();
     }
 
-    window.convertirACargo = async (mid) => {
+    window.convertir = async (mid) => {
         const o = misionesActivas.find(x => x.id === ordenActualId);
-        const nuevosMovs = o.movimientos.map(m => {
-            if(m.id === mid) { m.tipo = 'GASTO'; }
-            return m;
-        });
-        await updateDoc(doc(db, "ordenes", ordenActualId), { movimientos: nuevosMovs });
+        const nuevos = o.movimientos.map(m => { if(m.id === mid) m.tipo = 'GASTO'; return m; });
+        await updateDoc(doc(db, "ordenes", ordenActualId), { movimientos: nuevos });
     };
 
     window.updateCalculos = () => {
         const o = misionesActivas.find(x => x.id === ordenActualId);
-        if(!o) return;
         const moC = parseFloat(document.getElementById('mo-cliente').value) || 0;
         const mv = o.movimientos || [];
-        
-        const realV = mv.filter(m => m.tipo === 'GASTO').reduce((a, b) => a + b.venta, 0) + moC;
-        const cotV = mv.filter(m => m.tipo === 'COT').reduce((a, b) => a + b.venta, 0);
-        const ab = mv.filter(m => m.tipo === 'ABONO').reduce((a, b) => a + b.venta, 0);
+        const rV = mv.filter(m => m.tipo === 'GASTO').reduce((a,b) => a+b.venta, 0) + moC;
+        const cV = mv.filter(m => m.tipo === 'COT').reduce((a,b) => a+b.venta, 0);
+        const ab = mv.filter(m => m.tipo === 'ABONO').reduce((a,b) => a+b.venta, 0);
 
-        document.getElementById('res-cot').innerText = `$ ${cotV.toLocaleString()}`;
+        document.getElementById('res-cot').innerText = `$ ${cV.toLocaleString()}`;
         document.getElementById('res-abonos').innerText = `$ ${ab.toLocaleString()}`;
-        document.getElementById('res-saldo').innerText = `$ ${(realV - ab).toLocaleString()}`;
+        document.getElementById('res-saldo').innerText = `$ ${(rV - ab).toLocaleString()}`;
     };
 
     window.enviarProforma = () => {
         const o = misionesActivas.find(x => x.id === ordenActualId);
-        const items = o.movimientos.filter(m => m.tipo === 'COT').map(m => `- ${m.desc}: $${m.venta.toLocaleString()}`).join("%0A");
-        const msg = `*🚀 NEXUS-X STARLINK SAS*%0A*ESTIMADO DE PROSPECCIÓN*%0A%0A*UNIDAD:* ${o.placa}%0A%0A*DETALLE:*%0A${items}%0A%0A*VALOR TOTAL:* $${document.getElementById('res-cot').innerText}`;
+        const msg = `*NEXUS-X STARLINK*%0A*PROFORMA:* ${o.placa}%0A*COTIZADO:* ${document.getElementById('res-cot').innerText}`;
         window.open(`https://wa.me/${o.telefono}?text=${msg}`);
-    };
-
-    window.searchMision = () => {
-        const busqueda = document.getElementById('search-mision').value.toUpperCase();
-        if(!busqueda) { initApp(); return; }
-        const cards = document.querySelectorAll('.card-nexus');
-        cards.forEach(c => {
-            const txt = c.innerText.toUpperCase();
-            c.classList.toggle('hidden', !txt.includes(busqueda));
-        });
     };
 
     window.avanzarFase = async () => {
         const o = misionesActivas.find(x => x.id === ordenActualId);
-        let nE = o.status === 'PATIO' ? 'PROCESO' : (o.status === 'PROCESO' ? 'LISTO' : 'ARCHIVADO');
-        if(confirm(`¿Confirmar cambio a ${nE}?`)) {
-            const moC = parseFloat(document.getElementById('mo-cliente').value) || 0;
-            const gV = (o.movimientos || []).filter(m => m.tipo === 'GASTO').reduce((a, b) => a + b.venta, 0);
-            const gC = (o.movimientos || []).filter(m => m.tipo === 'GASTO').reduce((a, b) => a + b.costo, 0);
-            
-            await updateDoc(doc(db, "ordenes", ordenActualId), { 
-                status: nE, 
-                moCliente: moC,
-                utilidad: nE === 'ARCHIVADO' ? (gV - gC + (moC * 0.4)) : 0 
-            });
-            if(nE === 'ARCHIVADO') closeModal();
-        }
-    };
-
-    window.enviarWhatsApp = (t) => {
-        const o = misionesActivas.find(x => x.id === ordenActualId);
-        const msg = `*🚀 NEXUS-X REPORT*%0A*PLACA:* ${o.placa}%0A*ESTADO:* ${o.status}%0A*SALDO:* ${document.getElementById('res-saldo').innerText}`;
-        window.open(`https://wa.me/${o.telefono}?text=${msg}`);
+        let n = o.status === 'PATIO' ? 'PROCESO' : (o.status === 'PROCESO' ? 'LISTO' : 'ARCHIVADO');
+        await updateDoc(doc(db, "ordenes", ordenActualId), { status: n, moCliente: parseFloat(document.getElementById('mo-cliente').value) || 0 });
+        if(n === 'ARCHIVADO') closeModal();
     };
 
     window.switchSec = (sec, el) => {
@@ -520,8 +357,9 @@
         el.classList.add('active');
     };
 
-    window.closeModal = () => { document.getElementById('modal-orden').classList.add('hidden'); ordenActualId = null; };
-    setInterval(() => { document.getElementById('live-clock').innerText = `${new Date().toLocaleTimeString()} | NX-SIG: 100%`; }, 1000);
+    window.toggleInv = (el) => el.classList.toggle('active');
+    window.closeModal = () => document.getElementById('modal-orden').classList.add('hidden');
+    setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleTimeString(); }, 1000);
 </script>
 </body>
 </html>
