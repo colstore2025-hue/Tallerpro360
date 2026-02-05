@@ -1,144 +1,246 @@
-
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS-X STARLINK SAS | COLOMBIA OPERATIONS</title>
+    <title>NEXUS-X STARLINK | COMMAND CENTER v4.0 PRO</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #020617; --gold: #f59e0b; --accent: #3b82f6; --success: #10b981; --surface: rgba(15, 23, 42, 0.9); }
-        body { font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; padding-bottom: 120px; background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #020617 100%); }
+        :root { 
+            --primary: #020617; --gold: #f59e0b; --accent: #3b82f6; 
+            --success: #10b981; --danger: #ef4444; --surface: rgba(15, 23, 42, 0.9);
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; 
+            padding-bottom: 120px; overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #020617 100%);
+        }
+
         .font-nexus { font-family: 'Orbitron', sans-serif; }
-        .glass { background: var(--surface); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.08); }
-        .neo-input { background: rgba(0,0,0,0.4); border: 1px solid #334155; border-radius: 12px; padding: 12px; color: white; width: 100%; outline: none; transition: 0.3s; }
-        .neo-input:focus { border-color: var(--gold); }
-        .nav-nexus { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 95%; max-width: 600px; height: 75px; border-radius: 25px; display: flex; justify-content: space-around; align-items: center; z-index: 5000; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.1); }
-        .btn-action { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn-action:active { transform: scale(0.95); }
-        .inventory-item { border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); padding: 10px; border-radius: 15px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .inventory-item.active { border-color: var(--gold); background: rgba(245, 158, 11, 0.1); color: var(--gold); }
-        .recording { animation: pulse 1.5s infinite; color: #ef4444 !important; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .glass { background: var(--surface); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.8); }
+        
+        .neo-input { 
+            background: rgba(0,0,0,0.6); border: 1px solid #334155; border-radius: 16px; 
+            padding: 14px; color: white; width: 100%; outline: none; transition: 0.3s; font-size: 14px;
+        }
+        .neo-input:focus { border-color: var(--gold); box-shadow: 0 0 20px rgba(245, 158, 11, 0.2); }
+
+        .nav-nexus { 
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 95%; max-width: 600px; height: 85px; border-radius: 30px; 
+            display: flex; justify-content: space-around; align-items: center; z-index: 5000; 
+            border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.8);
+        }
+        .nav-item { color: #94a3b8; font-size: 10px; font-weight: 800; text-align: center; transition: 0.4s; cursor: pointer; flex: 1; }
+        .nav-item.active { color: var(--gold); }
+        .nav-item.active i { transform: translateY(-8px); text-shadow: 0 0 15px var(--gold); }
+
+        .status-PATIO { border-left: 5px solid var(--accent); }
+        .status-PROCESO { border-left: 5px solid var(--gold); }
+        .status-LISTO { border-left: 5px solid var(--success); }
+
+        .step-pill { opacity: 0.2; transition: 0.5s; }
+        .step-pill.active { opacity: 1; border-color: var(--gold) !important; color: var(--gold); transform: scale(1.1); }
+
+        .inv-item { border: 1px solid rgba(255,255,255,0.1); padding: 8px; border-radius: 12px; cursor: pointer; transition: 0.3s; font-size: 10px; font-weight: 800; text-align: center; }
+        .inv-item.active { background: var(--gold); color: black; border-color: var(--gold); box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .recording { animation: pulse-red 1s infinite; background: var(--danger) !important; color: white !important; }
+
         .hidden { display: none !important; }
+        .card-nexus { transition: 0.3s; cursor: pointer; }
+        .card-nexus:hover { transform: translateY(-5px); background: rgba(255,255,255,0.05); }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
     </style>
 </head>
 <body>
 
-<header class="p-4 glass sticky top-0 z-[1000] flex justify-between items-center border-b border-white/5">
-    <div class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-gold rounded-xl flex items-center justify-center text-black shadow-lg"><i class="fas fa-bolt"></i></div>
+<header class="p-4 glass sticky top-0 z-[1000] border-b border-white/10 flex justify-between items-center">
+    <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-gold rounded-2xl flex items-center justify-center text-black shadow-xl">
+            <i class="fas fa-satellite-dish text-2xl"></i>
+        </div>
         <div>
-            <h1 class="font-nexus text-[10px] tracking-widest text-white font-black uppercase">Nexus-X Starlink SAS</h1>
-            <p class="text-[8px] text-gold uppercase tracking-[3px]">Colombia Operations</p>
+            <h1 class="font-nexus text-[10px] tracking-[0.3em] text-white font-black uppercase">Nexus-X Starlink</h1>
+            <p id="live-clock" class="text-[9px] text-gold font-mono italic">SYNCING WITH SATELLITE...</p>
         </div>
     </div>
-    <div id="status-cloud" class="text-[8px] font-black text-success uppercase"><i class="fas fa-satellite mr-1"></i> Online</div>
+    <div class="text-right">
+        <p class="text-[8px] text-slate-500 font-black uppercase tracking-widest">Revenue Nexus Monthly</p>
+        <p id="total-pg" class="text-xl font-nexus text-success font-black">$ 0</p>
+    </div>
 </header>
 
-<main class="p-4 max-w-5xl mx-auto space-y-6">
+<main class="p-4 max-w-7xl mx-auto space-y-8">
 
     <section id="sec-patio" class="space-y-6">
-        <div class="glass p-6 rounded-[35px] border-t-2 border-accent">
-            <h2 class="font-nexus text-[10px] text-accent tracking-[4px] uppercase mb-6 italic">Módulo de Ingreso Técnico</h2>
+        <div class="glass p-8 rounded-[40px]">
+            <h2 class="font-nexus text-xs text-accent tracking-[5px] uppercase mb-8 flex items-center gap-3">
+                <span class="w-10 h-[1px] bg-accent"></span> Apertura de Misión Técnica
+            </h2>
             
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                <input id="in-placa" placeholder="PLACA" class="neo-input font-nexus text-xl text-gold text-center uppercase">
-                <input id="in-cliente" placeholder="CLIENTE" class="neo-input uppercase">
-                <input id="in-tel" type="tel" placeholder="WHATSAPP (57...)" class="neo-input">
-                <input id="in-mecanico" placeholder="TÉCNICO" class="neo-input uppercase">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="relative">
+                    <label class="text-[9px] font-black text-slate-500 ml-2 uppercase">Placa / VIN</label>
+                    <input id="in-placa" placeholder="ABC-123" class="neo-input font-nexus text-2xl text-gold uppercase text-center">
+                    <button onclick="startVoice('in-placa')" class="absolute right-4 bottom-4 text-slate-500 hover:text-gold"><i class="fas fa-microphone"></i></button>
+                </div>
+                <div>
+                    <label class="text-[9px] font-black text-slate-500 ml-2 uppercase">Operador Nexus</label>
+                    <input id="in-mecanico" placeholder="NOMBRE MECÁNICO" class="neo-input uppercase">
+                </div>
+                <div>
+                    <label class="text-[9px] font-black text-slate-500 ml-2 uppercase">Cliente</label>
+                    <input id="in-cliente" placeholder="NOMBRE CLIENTE" class="neo-input uppercase">
+                </div>
+                <div>
+                    <label class="text-[9px] font-black text-slate-500 ml-2 uppercase">WhatsApp Link</label>
+                    <input id="in-tel" type="tel" placeholder="573..." class="neo-input">
+                </div>
             </div>
 
-            <div class="bg-black/20 p-4 rounded-3xl border border-white/5">
+            <div class="mt-6 p-6 bg-black/30 rounded-3xl border border-white/5">
                 <div class="flex justify-between items-center mb-4">
-                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Inventario de Recepción (Voz Activa)</span>
-                    <button onclick="startVoiceInventory()" id="btn-voice-inv" class="w-10 h-10 bg-white/5 rounded-full text-accent hover:bg-accent hover:text-white transition-all">
-                        <i class="fas fa-microphone"></i>
+                    <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Inventario de Recepción</h4>
+                    <button onclick="startVoiceInventory()" id="btn-voice-inv" class="px-4 py-2 bg-accent/20 text-accent rounded-xl text-[9px] font-black uppercase hover:bg-accent hover:text-white transition-all">
+                        <i class="fas fa-microphone mr-2"></i> Activar Escaneo de Voz
                     </button>
                 </div>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-2" id="inventory-grid">
-                    <div class="inventory-item" data-item="LLANTA REPUESTO"><i class="fas fa-circle-notch"></i> <span class="text-[9px] uppercase font-bold">Llanta Rep.</span></div>
-                    <div class="inventory-item" data-item="GATO"><i class="fas fa-arrow-up"></i> <span class="text-[9px] uppercase font-bold">Gato</span></div>
-                    <div class="inventory-item" data-item="CRUCETA"><i class="fas fa-plus"></i> <span class="text-[9px] uppercase font-bold">Cruceta</span></div>
-                    <div class="inventory-item" data-item="RADIO"><i class="fas fa-music"></i> <span class="text-[9px] uppercase font-bold">Radio/Pantalla</span></div>
-                    <div class="inventory-item" data-item="KIT CARRETERA"><i class="fas fa-toolbox"></i> <span class="text-[9px] uppercase font-bold">Kit Carretera</span></div>
-                    <div class="inventory-item" data-item="PANTALLAS"><i class="fas fa-tablet-alt"></i> <span class="text-[9px] uppercase font-bold">Pantallas</span></div>
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-3" id="inv-grid">
+                    <div class="inv-item" onclick="toggleInv(this)" data-val="LLANTA">LLANTA REP.</div>
+                    <div class="inv-item" onclick="toggleInv(this)" data-val="GATO">GATO</div>
+                    <div class="inv-item" onclick="toggleInv(this)" data-val="CRUCETA">CRUCETA</div>
+                    <div class="inv-item" onclick="toggleInv(this)" data-val="RADIO">RADIO</div>
+                    <div class="inv-item" onclick="toggleInv(this)" data-val="PANTALLAS">PANTALLAS</div>
+                    <div class="inv-item" onclick="toggleInv(this)" data-val="KIT">KIT CARRETERA</div>
                 </div>
-                <textarea id="in-obs" placeholder="DIAGNÓSTICO INICIAL Y OBSERVACIONES ADICIONALES..." class="neo-input mt-4 text-xs italic"></textarea>
+                <textarea id="in-reporte" rows="2" placeholder="Describa fallas o ítems adicionales detectados por voz..." class="neo-input mt-4 italic"></textarea>
             </div>
 
-            <button onclick="registrarMision()" class="w-full mt-6 bg-white text-black font-nexus py-4 rounded-2xl text-[10px] font-black tracking-[3px] uppercase hover:bg-gold btn-action">
+            <button id="btn-registrar" onclick="registrarMision()" class="w-full mt-6 bg-white text-black font-nexus py-5 rounded-3xl text-xs font-black tracking-[4px] uppercase hover:bg-gold transition-all">
                 Inicializar Protocolo Nexus-X
             </button>
         </div>
 
-        <div id="lista-misiones" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        <h3 class="font-nexus text-[10px] text-slate-400 tracking-widest uppercase px-4 flex items-center gap-2">
+            <i class="fas fa-broadcast-tower animate-pulse text-accent"></i> Unidades en Orbita Actual
+        </h3>
+        <div id="lista-misiones" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </section>
 
     <section id="sec-caja" class="hidden space-y-6">
-        <div class="glass p-6 rounded-[35px] border-l-4 border-emerald-500">
-            <h2 class="font-nexus text-[10px] text-emerald-400 tracking-[4px] uppercase mb-6 italic italic">Financial Command & Prospección</h2>
-            <div id="lista-caja" class="space-y-3"></div>
+        <div class="glass p-8 rounded-[40px] border-t-4 border-emerald-500">
+            <h2 class="font-nexus text-xl text-emerald-400 italic mb-8">Financial Command & Prospección</h2>
+            <div id="lista-caja" class="space-y-4"></div>
         </div>
     </section>
 
 </main>
 
-<div id="modal-cot" class="fixed inset-0 bg-black/95 z-[6000] hidden p-4 overflow-y-auto">
-    <div class="max-w-4xl mx-auto mt-10">
-        <div class="glass p-8 rounded-[40px] border border-gold/20 shadow-2xl relative">
-            <button onclick="closeModalCot()" class="absolute right-6 top-6 text-2xl opacity-50">&times;</button>
-            
-            <div class="flex flex-col md:flex-row justify-between gap-6 mb-10 border-b border-white/5 pb-8">
+<nav class="nav-nexus glass">
+    <div onclick="switchSec('patio', this)" class="nav-item active"><i class="fas fa-rocket text-2xl mb-1"></i><br>PATIO</div>
+    <div onclick="switchSec('caja', this)" class="nav-item"><i class="fas fa-file-invoice-dollar text-2xl mb-1"></i><br>CAJA / COT</div>
+    <div onclick="location.reload()" class="nav-item"><i class="fas fa-sync text-2xl mb-1"></i><br>RECARGAR</div>
+</nav>
+
+<div id="modal-orden" class="fixed inset-0 bg-black/98 z-[6000] hidden overflow-y-auto p-4 md:p-12 backdrop-blur-3xl">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between gap-8 mb-10">
+            <div class="flex gap-6 items-center">
+                <div id="mod-icon" class="w-20 h-20 rounded-[30px] bg-gold flex items-center justify-center text-black text-4xl shadow-2xl">
+                    <i class="fas fa-truck-monster"></i>
+                </div>
                 <div>
-                    <h2 class="font-nexus text-4xl text-white font-black italic" id="cot-placa">---</h2>
-                    <p class="text-[10px] text-gold uppercase tracking-[4px] mt-2">Cotización de Prospección Digital</p>
-                </div>
-                <div class="text-right">
-                    <p class="text-[9px] text-slate-500 font-bold uppercase">NEXUS-X STARLINK SAS</p>
-                    <p class="text-[9px] text-slate-500 font-bold uppercase">NIT: 901.XXX.XXX-X</p>
-                    <p class="text-[9px] text-slate-500 font-bold uppercase" id="cot-id">ID: NX-00000</p>
+                    <h3 id="mod-placa" class="font-nexus text-6xl text-white italic font-black leading-none">---</h3>
+                    <p id="mod-ticket" class="text-xs text-gold font-nexus mt-4 opacity-70 uppercase tracking-widest"></p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <div class="space-y-4">
-                    <h4 class="text-[9px] font-black text-accent uppercase tracking-widest">Añadir Ítem a Cotización</h4>
-                    <input id="it-desc" placeholder="REPUESTO O SERVICIO" class="neo-input uppercase text-xs">
-                    <div class="flex gap-2">
-                        <input id="it-val" type="number" placeholder="VALOR ESTIMADO" class="neo-input font-nexus text-emerald-400">
-                        <button onclick="addItemCot()" class="bg-accent px-6 rounded-xl font-black text-[10px] uppercase">Añadir</button>
+            <div class="flex items-center gap-4 bg-white/5 p-4 rounded-[30px] border border-white/10">
+                <div id="step-patio" class="step-pill border-2 p-3 rounded-2xl flex flex-col items-center">
+                    <i class="fas fa-warehouse mb-1"></i><span class="text-[8px] font-black uppercase">Patio</span>
+                </div>
+                <div id="step-proceso" class="step-pill border-2 p-3 rounded-2xl flex flex-col items-center">
+                    <i class="fas fa-tools mb-1"></i><span class="text-[8px] font-black uppercase">Proceso</span>
+                </div>
+                <div id="step-listo" class="step-pill border-2 p-3 rounded-2xl flex flex-col items-center">
+                    <i class="fas fa-flag-checkered mb-1"></i><span class="text-[8px] font-black uppercase">Listo</span>
+                </div>
+                <button onclick="closeModal()" class="ml-4 w-12 h-12 bg-white/10 rounded-full text-2xl hover:bg-danger transition-all">&times;</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <div class="lg:col-span-2 space-y-6">
+                <div class="glass p-8 rounded-[40px] border-l-4 border-accent">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 class="text-[10px] font-black text-accent uppercase tracking-[4px] italic">Inyectar Logística o Prospección</h4>
+                        <div class="flex gap-2">
+                            <button onclick="setModo('GASTO')" id="mode-gasto" class="px-4 py-2 rounded-xl text-[9px] font-black bg-accent text-white uppercase">Real</button>
+                            <button onclick="setModo('COT')" id="mode-cot" class="px-4 py-2 rounded-xl text-[9px] font-black bg-white/5 text-slate-400 uppercase">Cotización</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input id="g-desc" placeholder="REPUESTO / TRABAJO / ABONO" class="neo-input uppercase md:col-span-1">
+                        <input id="g-costo" type="number" placeholder="$ COSTO" class="neo-input">
+                        <input id="g-venta" type="number" placeholder="$ VENTA / MONTO" class="neo-input text-emerald-400 font-bold">
+                    </div>
+                    <div class="flex gap-4 mt-4">
+                        <select id="g-tipo" class="neo-input">
+                            <option value="GASTO">CARGO DIRECTO</option>
+                            <option value="ABONO">ABONO CLIENTE (+)</option>
+                        </select>
+                        <button onclick="addMovimiento()" class="bg-accent px-12 rounded-2xl font-black text-[10px] uppercase shadow-lg btn-action">Registrar</button>
+                        <button onclick="startVoice('g-desc')" class="bg-white/10 px-6 rounded-2xl"><i class="fas fa-microphone"></i></button>
                     </div>
                 </div>
-                <div class="bg-white/5 p-6 rounded-3xl">
-                    <h4 class="text-[9px] font-black text-slate-500 uppercase mb-4 tracking-widest text-center">Resumen de Prospección</h4>
-                    <div id="cot-items" class="space-y-2 mb-4 max-h-[200px] overflow-y-auto"></div>
-                    <div class="border-t border-white/10 pt-4 flex justify-between items-center">
-                        <span class="font-nexus text-[10px] text-white uppercase">Total Estimado</span>
-                        <span id="cot-total" class="font-nexus text-2xl text-emerald-400 font-black">$ 0</span>
+
+                <div class="glass p-8 rounded-[40px] min-h-[400px]">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-[4px]">Logística & Cotizaciones</h4>
+                        <button onclick="enviarProforma()" class="text-gold text-[9px] font-black uppercase border-b border-gold/30"><i class="fab fa-whatsapp mr-1"></i> Enviar Proforma</button>
                     </div>
+                    <div id="mod-items" class="space-y-3"></div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button onclick="enviarProspeccion()" class="md:col-span-2 bg-emerald-600 text-white font-nexus py-4 rounded-2xl text-[10px] font-black uppercase tracking-[2px] btn-action">
-                    <i class="fab fa-whatsapp mr-2"></i> Enviar Cotización al Cliente
-                </button>
-                <button onclick="convertirOrden()" class="bg-white text-black font-nexus py-4 rounded-2xl text-[10px] font-black uppercase tracking-[2px] btn-action">
-                    Iniciar Misión
-                </button>
+            <div class="space-y-6">
+                <div class="glass p-8 rounded-[40px] border border-gold/30">
+                    <h4 class="text-[10px] font-black text-gold uppercase mb-8 tracking-[4px] text-center">Balance de Misión</h4>
+                    <div class="space-y-6">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-black text-slate-400 uppercase">Mano de Obra:</span>
+                            <input id="mo-cliente" type="number" oninput="updateCalculos()" class="bg-transparent text-right font-nexus text-2xl text-white w-32 outline-none border-b border-white/10" value="0">
+                        </div>
+                        <div class="py-4 border-y border-white/5 space-y-4">
+                            <div class="flex justify-between"><span class="text-[9px] text-slate-500 uppercase">Cotizado (Prospección)</span><span id="mod-cotizado" class="font-nexus text-accent">$ 0</span></div>
+                            <div class="flex justify-between"><span class="text-[9px] text-slate-500 uppercase">Total Abonos</span><span id="mod-abonos" class="font-nexus text-success">$ 0</span></div>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-[10px] text-slate-500 font-black uppercase mb-2">Saldo Real a Pagar</p>
+                            <h2 id="mod-saldo" class="font-nexus text-5xl text-white font-black">$ 0</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <button onclick="enviarWhatsApp('LOG')" class="w-full bg-emerald-600/20 text-emerald-400 py-4 rounded-2xl font-black text-[10px] uppercase border border-emerald-500/20">
+                        <i class="fab fa-whatsapp mr-2"></i> Reportar Avance Real
+                    </button>
+                    <button id="btn-avanzar" onclick="avanzarFase()" class="w-full bg-white text-black font-nexus py-5 rounded-3xl text-xs font-black uppercase tracking-[3px] shadow-2xl">
+                        Avanzar Misión
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-<nav class="nav-nexus glass">
-    <div onclick="switchSec('patio', this)" class="text-gold text-center flex-1 cursor-pointer"><i class="fas fa-truck-pickup text-xl"></i><p class="text-[8px] font-black mt-1 uppercase">Patio</p></div>
-    <div onclick="switchSec('caja', this)" class="text-slate-500 text-center flex-1 cursor-pointer"><i class="fas fa-file-invoice-dollar text-xl"></i><p class="text-[8px] font-black mt-1 uppercase">Caja / Cot</p></div>
-</nav>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -160,39 +262,44 @@
 
     let misionesActivas = [];
     let ordenActualId = null;
+    let modoIngreso = 'GASTO'; // GASTO o COT
 
-    // --- RECONOCIMIENTO DE VOZ PARA INVENTARIO ---
     const recognition = window.webkitSpeechRecognition ? new webkitSpeechRecognition() : null;
     if(recognition) {
         recognition.lang = 'es-CO';
         recognition.continuous = true;
-        
+
+        window.startVoice = (tid) => {
+            const btn = event.currentTarget; btn.classList.add('recording');
+            const r = new webkitSpeechRecognition(); r.lang = 'es-CO';
+            r.start();
+            r.onresult = (e) => {
+                document.getElementById(tid).value = e.results[0][0].transcript.toUpperCase();
+                btn.classList.remove('recording');
+            };
+        };
+
         window.startVoiceInventory = () => {
             const btn = document.getElementById('btn-voice-inv');
-            if(btn.classList.contains('recording')) {
-                recognition.stop();
-                btn.classList.remove('recording');
-                return;
-            }
+            if(btn.classList.contains('recording')) { recognition.stop(); btn.classList.remove('recording'); return; }
             btn.classList.add('recording');
             recognition.start();
-            
             recognition.onresult = (e) => {
-                const transcript = e.results[e.results.length - 1][0].transcript.toUpperCase();
-                document.querySelectorAll('.inventory-item').forEach(el => {
-                    if(transcript.includes(el.dataset.item)) {
-                        el.classList.add('active');
-                    }
+                const text = e.results[e.results.length - 1][0].transcript.toUpperCase();
+                document.querySelectorAll('.inv-item').forEach(el => {
+                    if(text.includes(el.dataset.val)) el.classList.add('active');
                 });
-                // Si no es algo común, anexar a observaciones
-                if(!transcript.includes('LLANTA') && !transcript.includes('GATO')) {
-                    document.getElementById('in-obs').value += transcript + ". ";
+                if(!text.includes('GATO') && !text.includes('LLANTA') && !text.includes('RADIO')) {
+                    document.getElementById('in-reporte').value += text + ". ";
                 }
             };
-        }
+        };
     }
 
-    onAuthStateChanged(auth, (user) => { if (user) initApp(); });
+    onAuthStateChanged(auth, (user) => {
+        if (user) initApp();
+        else window.location.href = "index.html"; 
+    });
 
     function initApp() {
         const q = query(collection(db, "ordenes"), where("tallerId", "==", auth.currentUser.uid), orderBy("timestamp", "desc"));
@@ -201,106 +308,171 @@
             const caja = document.getElementById('lista-caja');
             feed.innerHTML = ""; caja.innerHTML = "";
             misionesActivas = [];
-            
+            let utilGlobal = 0;
+
             snap.forEach(d => {
                 const o = {id: d.id, ...d.data()};
                 misionesActivas.push(o);
-                feed.innerHTML += renderCard(o, 'PATIO');
-                caja.innerHTML += renderCard(o, 'CAJA');
+                if(o.status !== 'ARCHIVADO') {
+                    const card = renderCard(o);
+                    feed.innerHTML += card;
+                    caja.innerHTML += card;
+                } else {
+                    utilGlobal += (o.utilidad || 0);
+                }
+                if(ordenActualId === o.id) renderLog(o);
             });
+            document.getElementById('total-pg').innerText = `$ ${utilGlobal.toLocaleString()}`;
         });
     }
 
-    function renderCard(o, context) {
+    function renderCard(o) {
+        const tV = (o.movimientos || []).filter(m => m.tipo === 'GASTO').reduce((acc, m) => acc + m.venta, 0) + (o.moCliente || 0);
+        const ab = (o.movimientos || []).filter(m => m.tipo === 'ABONO').reduce((acc, m) => acc + m.venta, 0);
+        const saldo = tV - ab;
         return `
-            <div onclick="abrirOrdenCot('${o.id}')" class="glass p-5 rounded-[30px] border-l-4 ${o.status === 'PATIO' ? 'border-accent' : 'border-success'} cursor-pointer hover:bg-white/5 transition-all">
+            <div onclick="abrirOrden('${o.id}')" class="glass p-6 rounded-[35px] card-nexus status-${o.status}">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h3 class="font-nexus text-xl text-white italic">${o.placa}</h3>
-                        <p class="text-[8px] text-slate-500 font-black uppercase mt-1">${o.cliente} | ${o.ticket}</p>
+                        <h3 class="font-nexus text-2xl text-white uppercase italic leading-none">${o.placa}</h3>
+                        <p class="text-[9px] text-slate-500 font-bold uppercase mt-3">${o.mecanico} | ${o.cliente}</p>
                     </div>
                     <div class="text-right">
-                        <span class="text-[7px] px-2 py-1 rounded bg-white/5 text-gold font-black uppercase">${o.status}</span>
-                        <p class="text-[9px] text-accent font-bold mt-2 italic">VER DETALLES / COTIZAR</p>
+                        <span class="text-[8px] px-2 py-1 rounded bg-white/5 text-gold font-black uppercase tracking-widest">${o.status}</span>
+                        <p class="font-nexus text-white text-xs mt-3">$ ${saldo.toLocaleString()}</p>
                     </div>
                 </div>
             </div>`;
     }
 
+    window.toggleInv = (el) => el.classList.toggle('active');
+
     window.registrarMision = async () => {
+        const btn = document.getElementById('btn-registrar');
         const placa = document.getElementById('in-placa').value.toUpperCase();
-        if(!placa) return alert("REQUIERE PLACA");
+        if(!placa) return alert("REQUERIDO: PLACA");
         
         const inv = [];
-        document.querySelectorAll('.inventory-item.active').forEach(i => inv.push(i.dataset.item));
+        document.querySelectorAll('.inv-item.active').forEach(i => inv.push(i.dataset.val));
 
-        await addDoc(collection(db, "ordenes"), {
-            tallerId: auth.currentUser.uid,
-            ticket: `NX-${Math.floor(10000 + Math.random() * 90000)}`,
-            placa, cliente: document.getElementById('in-cliente').value.toUpperCase(),
-            telefono: document.getElementById('in-tel').value,
-            mecanico: document.getElementById('in-mecanico').value.toUpperCase(),
-            reporte: document.getElementById('in-obs').value,
-            inventario: inv,
-            cotizacion: [],
-            status: 'PATIO',
-            timestamp: serverTimestamp()
-        });
+        btn.innerText = "DESPLEGANDO PROTOCOLO...";
+        btn.disabled = true;
 
-        // Reset
-        ['in-placa', 'in-cliente', 'in-tel', 'in-mecanico', 'in-obs'].forEach(i => document.getElementById(i).value = "");
-        document.querySelectorAll('.inventory-item').forEach(i => i.classList.remove('active'));
+        try {
+            await addDoc(collection(db, "ordenes"), {
+                tallerId: auth.currentUser.uid,
+                ticket: `NX-${Math.floor(10000 + Math.random() * 90000)}`,
+                placa,
+                mecanico: document.getElementById('in-mecanico').value.toUpperCase() || "STAFF",
+                cliente: document.getElementById('in-cliente').value.toUpperCase() || "GENERAL",
+                telefono: document.getElementById('in-tel').value,
+                reporte: document.getElementById('in-reporte').value,
+                inventario: inv,
+                status: 'PATIO',
+                movimientos: [],
+                moCliente: 0, moMecanico: 0,
+                timestamp: serverTimestamp()
+            });
+            document.querySelectorAll('input, textarea').forEach(i => i.value = "");
+            document.querySelectorAll('.inv-item').forEach(i => i.classList.remove('active'));
+            btn.innerText = "INICIALIZAR PROTOCOLO NEXUS-X";
+            btn.disabled = false;
+        } catch (e) { alert("Error Satelital"); btn.disabled = false; }
     };
 
-    window.abrirOrdenCot = (id) => {
+    window.abrirOrden = (id) => {
         ordenActualId = id;
         const o = misionesActivas.find(x => x.id === id);
-        document.getElementById('cot-placa').innerText = o.placa;
-        document.getElementById('cot-id').innerText = `ID: ${o.ticket}`;
-        renderCotItems(o);
-        document.getElementById('modal-cot').classList.remove('hidden');
+        document.getElementById('mod-placa').innerText = o.placa;
+        document.getElementById('mod-ticket').innerText = `ID: ${o.ticket} | TEL: ${o.telefono}`;
+        document.getElementById('mo-cliente').value = o.moCliente || 0;
+        document.querySelectorAll('.step-pill').forEach(s => s.classList.remove('active'));
+        document.getElementById(`step-${o.status.toLowerCase()}`).classList.add('active');
+        renderLog(o);
+        document.getElementById('modal-orden').classList.remove('hidden');
     };
 
-    window.addItemCot = async () => {
-        const d = document.getElementById('it-desc').value.toUpperCase();
-        const v = parseFloat(document.getElementById('it-val').value) || 0;
+    window.setModo = (m) => {
+        modoIngreso = m;
+        document.getElementById('mode-gasto').className = m === 'GASTO' ? 'px-4 py-2 rounded-xl text-[9px] font-black bg-accent text-white uppercase' : 'px-4 py-2 rounded-xl text-[9px] font-black bg-white/5 text-slate-400 uppercase';
+        document.getElementById('mode-cot').className = m === 'COT' ? 'px-4 py-2 rounded-xl text-[9px] font-black bg-accent text-white uppercase' : 'px-4 py-2 rounded-xl text-[9px] font-black bg-white/5 text-slate-400 uppercase';
+    };
+
+    window.addMovimiento = async () => {
+        const d = document.getElementById('g-desc').value.toUpperCase();
+        const v = parseFloat(document.getElementById('g-venta').value) || 0;
+        const c = parseFloat(document.getElementById('g-costo').value) || 0;
+        const t = document.getElementById('g-tipo').value;
         if(!d || !v) return;
 
         await updateDoc(doc(db, "ordenes", ordenActualId), {
-            cotizacion: arrayUnion({ desc: d, val: v })
+            movimientos: arrayUnion({ desc: d, costo: c, venta: v, tipo: t === 'ABONO' ? 'ABONO' : modoIngreso, fecha: new Date().toISOString() })
         });
-        document.getElementById('it-desc').value = "";
-        document.getElementById('it-val').value = "";
+        ['g-desc', 'g-costo', 'g-venta'].forEach(i => document.getElementById(i).value = "");
     };
 
-    function renderCotItems(o) {
-        const l = document.getElementById('cot-items');
-        let t = 0;
-        l.innerHTML = (o.cotizacion || []).map(i => {
-            t += i.val;
-            return `<div class="flex justify-between text-[10px] bg-white/5 p-3 rounded-xl border border-white/5 uppercase font-bold">
-                <span>${i.desc}</span><span class="text-emerald-400">$${i.val.toLocaleString()}</span>
-            </div>`;
-        }).join("");
-        document.getElementById('cot-total').innerText = `$ ${t.toLocaleString()}`;
+    function renderLog(o) {
+        const l = document.getElementById('mod-items');
+        l.innerHTML = (o.movimientos || []).map(m => `
+            <div class="flex justify-between items-center bg-white/5 p-4 rounded-3xl border border-white/5 ${m.tipo === 'COT' ? 'opacity-60 border-dashed border-accent' : ''}">
+                <div>
+                    <span class="text-[10px] font-black ${m.tipo === 'ABONO' ? 'text-success' : (m.tipo === 'COT' ? 'text-accent' : 'text-slate-200')} uppercase">${m.desc}</span>
+                    <p class="text-[8px] font-bold uppercase opacity-40">${m.tipo}</p>
+                </div>
+                <div class="text-right">
+                    <span class="font-nexus text-xs ${m.tipo === 'ABONO' ? 'text-success' : (m.tipo === 'COT' ? 'text-accent' : 'text-emerald-400')}">$${m.venta.toLocaleString()}</span>
+                </div>
+            </div>
+        `).join("");
+        updateCalculos();
     }
 
-    window.enviarProspeccion = () => {
+    window.updateCalculos = () => {
         const o = misionesActivas.find(x => x.id === ordenActualId);
-        const total = document.getElementById('cot-total').innerText;
-        let itemsStr = (o.cotizacion || []).map(i => `- ${i.desc}: $${i.val.toLocaleString()}`).join("%0A");
-        const msg = `*🚀 NEXUS-X STARLINK SAS*%0A*ESTIMADO DE PROSPECCIÓN*%0A%0A*UNIDAD:* ${o.placa}%0A%0A*DETALLES:*%0A${itemsStr}%0A%0A*TOTAL ESTIMADO:* ${total}%0A%0A_Este es un valor aproximado sujeto a desmonte técnico._`;
+        if(!o) return;
+        const moC = parseFloat(document.getElementById('mo-cliente').value) || 0;
+        const movs = o.movimientos || [];
+        const realV = movs.filter(m => m.tipo === 'GASTO').reduce((a, m) => a + m.venta, 0) + moC;
+        const cotV = movs.filter(m => m.tipo === 'COT').reduce((a, m) => a + m.venta, 0);
+        const ab = movs.filter(m => m.tipo === 'ABONO').reduce((a, m) => a + m.venta, 0);
+
+        document.getElementById('mod-cotizado').innerText = `$ ${cotV.toLocaleString()}`;
+        document.getElementById('mod-abonos').innerText = `$ ${ab.toLocaleString()}`;
+        document.getElementById('mod-saldo').innerText = `$ ${(realV - ab).toLocaleString()}`;
+    };
+
+    window.enviarProforma = () => {
+        const o = misionesActivas.find(x => x.id === ordenActualId);
+        const cotItems = (o.movimientos || []).filter(m => m.tipo === 'COT').map(m => `- ${m.desc}: $${m.venta.toLocaleString()}`).join("%0A");
+        const total = document.getElementById('mod-cotizado').innerText;
+        const msg = `*🚀 NEXUS-X STARLINK SAS*%0A*PROFORMA DE ESTIMADO*%0A%0A*UNIDAD:* ${o.placa}%0A%0A*DETALLE:*%0A${cotItems}%0A%0A*TOTAL ESTIMADO:* ${total}%0A%0A_Sujeto a cambios técnicos._`;
+        window.open(`https://wa.me/${o.telefono}?text=${msg}`);
+    };
+
+    window.avanzarFase = async () => {
+        const o = misionesActivas.find(x => x.id === ordenActualId);
+        let nE = o.status === 'PATIO' ? 'PROCESO' : (o.status === 'PROCESO' ? 'LISTO' : 'ARCHIVADO');
+        if(confirm(`Mover a ${nE}?`)) {
+            await updateDoc(doc(db, "ordenes", ordenActualId), { status: nE, moCliente: parseFloat(document.getElementById('mo-cliente').value) || 0 });
+            if(nE === 'ARCHIVADO') closeModal();
+        }
+    };
+
+    window.enviarWhatsApp = (tipo) => {
+        const o = misionesActivas.find(x => x.id === ordenActualId);
+        const msg = `*🚀 NEXUS-X REPORT*%0A*PLACA:* ${o.placa}%0A*ESTADO:* ${o.status}%0A*SALDO:* ${document.getElementById('mod-saldo').innerText}`;
         window.open(`https://wa.me/${o.telefono}?text=${msg}`);
     };
 
     window.switchSec = (sec, el) => {
         document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
         document.getElementById('sec-' + sec).classList.remove('hidden');
-        document.querySelectorAll('nav div').forEach(i => i.classList.replace('text-gold', 'text-slate-500'));
-        el.classList.replace('text-slate-500', 'text-gold');
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
     };
 
-    window.closeModalCot = () => document.getElementById('modal-cot').classList.add('hidden');
+    window.closeModal = () => { document.getElementById('modal-orden').classList.add('hidden'); ordenActualId = null; };
+    setInterval(() => { document.getElementById('live-clock').innerText = `${new Date().toLocaleTimeString()} | NX-SIGNAL: STABLE`; }, 1000);
 </script>
 </body>
 </html>
