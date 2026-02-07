@@ -58,7 +58,6 @@
   <!-- DASHBOARD -->
   <section id="dashboard" class="hidden max-w-3xl mx-auto p-6">
 
-    <!-- HEADER -->
     <div class="mb-6">
       <h1 class="text-2xl font-black text-emerald-400">
         Estado de tu vehículo
@@ -68,7 +67,6 @@
       </p>
     </div>
 
-    <!-- INFO CARD -->
     <div class="bg-slate-800 rounded-xl p-5 mb-6 shadow">
       <div class="grid grid-cols-2 gap-4 text-sm">
         <div>
@@ -90,7 +88,6 @@
       </div>
     </div>
 
-    <!-- TIMELINE -->
     <div class="bg-slate-800 rounded-xl p-5 shadow">
       <h3 class="font-bold mb-4 text-sm uppercase text-slate-300">
         Progreso del servicio
@@ -99,15 +96,16 @@
       <div id="timeline" class="space-y-6 relative pl-8"></div>
     </div>
 
-    <!-- FOOTER -->
     <p class="text-center text-[10px] text-slate-500 mt-6">
       Información generada automáticamente · TallerPRO360 © 2026
     </p>
   </section>
 
-  <!-- FIREBASE + LOGIC -->
+  <!-- LOGIC -->
   <script type="module">
     import { db } from "./firebase-config.js";
+    import { speakStage, initVoice } from "./serviceOrders.voice.js";
+
     import {
       doc,
       getDoc,
@@ -116,6 +114,11 @@
       query,
       orderBy
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // 🔊 Inicializar voz tras interacción humana
+    document.body.addEventListener("click", () => {
+      initVoice();
+    }, { once: true });
 
     const loader = document.getElementById("loader");
     const dashboard = document.getElementById("dashboard");
@@ -141,11 +144,14 @@
 
     const order = orderSnap.data();
 
-    // Render info base
+    // Render info
     document.getElementById("orderId").textContent = order.orderId;
     document.getElementById("currentStatus").textContent = order.status;
     document.getElementById("vehicle").textContent = order.vehicle || "—";
     document.getElementById("plate").textContent = order.plate || "—";
+
+    // 🔊 Voz por estado actual
+    speakStage(order.orderId, order.status);
 
     // Timeline
     const stagesRef = collection(db, "serviceOrders", orderId, "stages");
@@ -156,10 +162,11 @@
 
     stagesSnap.forEach(docSnap => {
       const s = docSnap.data();
+
       timeline.innerHTML += `
-        <div class="relative ${s.completed ? '' : 'step-pending'}">
+        <div class="relative">
           <div class="step-node">
-            <i class="fas ${s.completed ? 'fa-check' : 'fa-clock'}"></i>
+            <i class="fas fa-check"></i>
           </div>
           <div>
             <p class="text-sm font-bold">${s.stage}</p>
