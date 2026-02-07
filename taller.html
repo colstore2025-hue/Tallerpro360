@@ -1,817 +1,107 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>TallerPro360 | ERP Multinacional & Nexus-X</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-    
-    <style>
-        :root { 
-            --primary: #020617; --gold: #f59e0b; --accent: #3b82f6; 
-            --success: #10b981; --danger: #ef4444; --surface: rgba(15, 23, 42, 0.98);
-        }
-        
-        body { 
-            font-family: 'Inter', sans-serif; background: var(--primary); color: #f1f5f9; 
-            padding-bottom: 140px; overflow-x: hidden;
-            background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #020617 100%);
-            min-height: 100vh;
-        }
+  <meta charset="UTF-8" />
+  <title>TallerPRO360 | Taller</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-        .font-nexus { font-family: 'Orbitron', sans-serif; }
-        .glass { background: var(--surface); backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
-        
-        /* Inputs Estilo Aeroespacial */
-        .neo-input { 
-            background: rgba(0,0,0,0.5); border: 1px solid #334155; border-radius: 18px; 
-            padding: 16px; color: white; width: 100%; outline: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-size: 14px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-        }
-        .neo-input:focus { border-color: var(--gold); background: rgba(0,0,0,0.7); box-shadow: 0 0 25px rgba(245, 158, 11, 0.2); }
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0ea5e9">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
 
-        /* Navegación Elevada */
-        .nav-nexus { 
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            width: 94%; max-width: 800px; height: 90px; border-radius: 35px; 
-            display: flex; justify-content: space-around; align-items: center; z-index: 5000; 
-            border: 1px solid rgba(255,255,255,0.15); background: rgba(7, 10, 25, 0.95);
-            box-shadow: 0 15px 50px rgba(0,0,0,0.8); backdrop-filter: blur(20px);
-        }
-        .nav-item { color: #64748b; font-size: 8px; font-weight: 900; text-align: center; transition: 0.4s; cursor: pointer; flex: 1; text-transform: uppercase; letter-spacing: 1px; }
-        .nav-item i { font-size: 22px; margin-bottom: 8px; display: block; transition: 0.4s; }
-        .nav-item.active { color: var(--gold); }
-        .nav-item.active i { transform: translateY(-12px) scale(1.2); text-shadow: 0 0 20px var(--gold); }
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-        .flota-card { border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 20px; text-align: center; cursor: pointer; transition: 0.3s; opacity: 0.5; filter: grayscale(1); }
-        .flota-card.active { border-color: var(--gold); background: rgba(245,158,11,0.1); filter: grayscale(0); opacity: 1; box-shadow: 0 10px 20px rgba(245, 158, 11, 0.1); }
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-        .recording { animation: pulse-red 1.2s infinite; background: var(--danger) !important; color: white !important; }
-        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-
-        #sidebar-owner { position: fixed; right: -400px; top: 0; width: 400px; height: 100vh; z-index: 7000; transition: 0.5s cubic-bezier(0.77, 0, 0.175, 1); }
-        #sidebar-owner.open { right: 0; }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
-
-        .btn-gold { background: linear-gradient(135deg, var(--gold), #d97706); color: black; font-weight: 900; transition: 0.3s; }
-        .btn-gold:hover { transform: scale(1.02); box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3); }
-
-        #loader { position: fixed; inset: 0; z-index: 9999; background: var(--primary); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    </style>
+  <style>
+    body { background:#f8fafc; }
+  </style>
 </head>
-<body>
 
-<div id="loader">
-    <div class="relative">
-        <div class="w-32 h-32 border-4 border-gold/10 border-t-gold rounded-full animate-spin"></div>
-        <i class="fas fa-satellite text-gold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl animate-pulse"></i>
-    </div>
-    <h2 class="font-nexus text-[10px] tracking-[8px] text-white mt-8 uppercase text-center">Protocolo Nexus-X Starlink</h2>
-    <p class="text-[8px] text-slate-500 mt-2 font-black">COLOMBIAN TRUCKS LOGISTICS LLC</p>
-</div>
+<body class="min-h-screen flex flex-col">
 
-<div id="sidebar-owner" class="glass border-l border-white/10 p-8 overflow-y-auto">
-    <div class="flex justify-between items-center mb-10">
-        <h2 class="font-nexus text-xs tracking-widest text-gold uppercase">Master Configuration</h2>
-        <button onclick="toggleSidebar()" class="text-white text-3xl">&times;</button>
+<!-- HEADER -->
+<header class="bg-white shadow-sm px-4 py-3 flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <img src="logo-tallerpro360.png" class="w-9 h-9 rounded-xl" />
+    <div>
+      <p class="text-sm font-bold">TallerPRO360</p>
+      <p class="text-[11px] text-slate-500">Panel del Taller</p>
     </div>
-    
-    <div class="space-y-8">
-        <div class="p-6 bg-white/5 rounded-3xl border border-white/5">
-            <h3 class="text-[10px] font-black uppercase text-slate-500 mb-4">Empresa / Tax ID</h3>
-            <input id="cfg-nombre" placeholder="Nombre Comercial" class="neo-input mb-3" onchange="saveLocalConfig()">
-            <input id="cfg-nit" placeholder="NIT / EIN / VAT" class="neo-input mb-3" onchange="saveLocalConfig()">
-            <input id="cfg-iva" type="number" placeholder="IVA % (ej: 19)" class="neo-input" onchange="saveLocalConfig()">
-        </div>
+  </div>
 
-        <div class="p-6 bg-white/5 rounded-3xl border border-white/5">
-            <h3 class="text-[10px] font-black uppercase text-slate-500 mb-4">Finanzas & Pagos</h3>
-            <input id="cfg-nequi" placeholder="Celular Nequi" class="neo-input mb-3" onchange="saveLocalConfig()">
-            <input id="cfg-pse" placeholder="Link de Cobro PSE" class="neo-input" onchange="saveLocalConfig()">
-        </div>
-
-        <div class="p-6 bg-blue-500/10 rounded-3xl border border-blue-500/20">
-            <h3 class="text-[10px] font-black uppercase text-blue-500 mb-4">Integración GitHub</h3>
-            <p class="text-[10px] text-slate-400 mb-4 leading-relaxed">Sincronización automática de algoritmos de mantenimiento preventivo.</p>
-            <div class="flex items-center gap-3">
-                <i class="fab fa-github text-xl"></i>
-                <span class="text-[9px] font-bold text-slate-200">v2.4.0 Stable Build</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<header class="p-6 glass sticky top-0 z-[1000] border-b border-white/10 flex justify-between items-center">
-    <div class="flex items-center gap-5">
-        <div class="w-16 h-16 bg-gradient-to-br from-gold to-orange-600 rounded-2xl flex items-center justify-center text-black shadow-2xl">
-            <i class="fas fa-microchip text-3xl"></i>
-        </div>
-        <div>
-            <h1 id="header-name" class="font-nexus text-[14px] tracking-[0.3em] text-white font-black uppercase">TallerPro360</h1>
-            <div class="flex items-center gap-2 mt-1">
-                <span class="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
-                <p class="text-[9px] text-gold font-bold tracking-[1px] uppercase">Nexus-X Online</p>
-            </div>
-        </div>
-    </div>
-    <div class="flex items-center gap-8">
-        <div class="text-right hidden md:block">
-            <p class="text-[8px] text-slate-500 font-black uppercase tracking-widest">EBITDA Mensual Estimado</p>
-            <p id="total-pg" class="text-3xl font-nexus text-success font-black">$ 0</p>
-        </div>
-        <button onclick="toggleSidebar()" class="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-white border border-white/10 hover:bg-gold hover:text-black transition-all">
-            <i class="fas fa-sliders text-xl"></i>
-        </button>
-    </div>
+  <button class="text-slate-600">
+    <i class="fas fa-sign-out-alt"></i>
+  </button>
 </header>
 
-<main class="p-4 max-w-7xl mx-auto space-y-12 pb-32">
+<!-- CONTENIDO -->
+<main class="flex-1 p-4 space-y-6">
 
-    <section id="sec-patio" class="space-y-8">
-        <div class="glass p-10 rounded-[45px] border-t-4 border-gold/30">
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-6 mb-10">
-                <div class="flota-card active" onclick="setFlota('CAMION', this)">
-                    <i class="fas fa-truck-monster block text-3xl mb-3"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest">Heavy Duty</span>
-                </div>
-                <div class="flota-card" onclick="setFlota('AUTO', this)">
-                    <i class="fas fa-car-side block text-3xl mb-3"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest">Pasajeros</span>
-                </div>
-                <div class="flota-card" onclick="setFlota('VAN', this)">
-                    <i class="fas fa-shuttle-van block text-3xl mb-3"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest">Last Mile</span>
-                </div>
-                <div class="flota-card" onclick="setFlota('MOTO', this)">
-                    <i class="fas fa-motorcycle block text-3xl mb-3"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest">Delivery</span>
-                </div>
-                <div class="flota-card" onclick="setFlota('MAQ', this)">
-                    <i class="fas fa-tractor block text-3xl mb-3"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest">Mining/Agro</span>
-                </div>
-            </div>
+  <!-- NUEVA ORDEN -->
+  <button
+    onclick="crearOrden()"
+    class="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 shadow">
+    <i class="fas fa-plus-circle"></i>
+    Nueva Orden de Servicio
+  </button>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="space-y-3 relative">
-                    <label class="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">Identificador de Unidad (Placa)</label>
-                    <input id="in-placa" placeholder="AAAA000" class="neo-input font-nexus text-3xl text-gold text-center uppercase">
-                    <button onclick="startNexusVoice('in-placa')" class="absolute right-5 bottom-4 text-white/30 hover:text-gold transition-colors text-xl">
-                        <i class="fas fa-microphone"></i>
-                    </button>
-                </div>
-                <div class="space-y-3">
-                    <label class="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">Ingreso Operativo</label>
-                    <input id="in-fecha-in" type="datetime-local" class="neo-input">
-                </div>
-                <div class="space-y-3">
-                    <label class="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">Compromiso Salida (SLA)</label>
-                    <input id="in-fecha-out" type="date" class="neo-input text-accent font-bold">
-                </div>
-            </div>
+  <!-- LISTA DE ÓRDENES -->
+  <section id="ordenes" class="space-y-4">
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-                <div class="space-y-3">
-                    <label class="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">Titular / Flota Cliente</label>
-                    <input id="in-cliente" placeholder="NOMBRE O RAZÓN SOCIAL" class="neo-input uppercase">
-                </div>
-                <div class="space-y-3">
-                    <label class="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">Vínculo WhatsApp (Push)</label>
-                    <input id="in-tel" type="tel" placeholder="+57 3..." class="neo-input">
-                </div>
-            </div>
+    <!-- ORDEN -->
+    <div class="bg-white rounded-2xl shadow p-4 border-l-8 border-blue-500">
+      <div class="flex justify-between items-center mb-2">
+        <p class="font-bold">Orden #TP360-000123</p>
+        <span class="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-bold">
+          DIAGNÓSTICO
+        </span>
+      </div>
 
-            <button onclick="registrarMision()" class="w-full mt-12 btn-gold py-6 rounded-3xl text-[12px] uppercase tracking-[6px]">
-                Inicializar Misión de Servicio Nexus
-            </button>
-        </div>
+      <p class="text-sm text-slate-600">
+        Chevrolet Spark · ABC123
+      </p>
 
-        <div class="flex items-center gap-4 py-4">
-            <div class="h-[1px] grow bg-white/10"></div>
-            <h3 class="font-nexus text-[10px] text-slate-500 uppercase tracking-[4px]">Unidades en Terminal de Patio</h3>
-            <div class="h-[1px] grow bg-white/10"></div>
-        </div>
+      <div class="mt-4 flex justify-between items-center">
+        <button
+          onclick="verOrden()"
+          class="text-blue-600 font-bold text-sm">
+          Ver orden
+        </button>
 
-        <div id="lista-misiones" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            </div>
-    </section>
+        <button
+          onclick="avanzarEstado()"
+          class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold">
+          Avanzar
+        </button>
+      </div>
+    </div>
 
-    <section id="sec-dash" class="hidden animate-in fade-in duration-500 space-y-10">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div class="glass p-10 rounded-[35px] border-b-4 border-emerald-500 shadow-emerald-500/5 shadow-2xl">
-                <p class="text-[10px] font-black text-slate-500 uppercase mb-4 tracking-widest">Utilidad Neta Acumulada</p>
-                <h3 id="dash-utilidad" class="text-4xl font-nexus text-white">$ 0</h3>
-                <p class="text-[9px] text-emerald-400 mt-2 font-bold italic">Sincronizado con Starlink</p>
-            </div>
-            <div class="glass p-10 rounded-[35px] border-b-4 border-gold shadow-gold/5 shadow-2xl">
-                <p class="text-[10px] font-black text-slate-500 uppercase mb-4 tracking-widest">Índice BSC (Cumplimiento)</p>
-                <h3 id="dash-bsc" class="text-4xl font-nexus text-gold">98.5%</h3>
-                <div class="w-full bg-white/5 h-1 rounded-full mt-4 overflow-hidden">
-                    <div class="bg-gold h-full" style="width: 98%;"></div>
-                </div>
-            </div>
-            <div class="glass p-10 rounded-[35px] border-b-4 border-accent shadow-accent/5 shadow-2xl">
-                <p class="text-[10px] font-black text-slate-500 uppercase mb-4 tracking-widest">Throughput (Ordenes/Mes)</p>
-                <h3 id="dash-activas" class="text-4xl font-nexus text-white">0</h3>
-                <p class="text-[9px] text-slate-500 mt-2 font-bold uppercase">Capacidad Instalada: 85%</p>
-            </div>
-            <div class="glass p-10 rounded-[35px] flex flex-col justify-center items-center gap-6 border border-white/5">
-                <button onclick="exportarExcel()" class="group text-center">
-                    <div class="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-emerald-500 group-hover:text-black transition-all">
-                        <i class="fas fa-file-excel text-2xl"></i>
-                    </div>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Exportar DIAN XML</span>
-                </button>
-            </div>
-        </div>
-
-        <div class="glass p-10 rounded-[45px]">
-            <h4 class="font-nexus text-xs text-white uppercase tracking-widest mb-10">Curva de Crecimiento Logístico</h4>
-            <div class="h-[400px]">
-                <canvas id="chartPG"></canvas>
-            </div>
-        </div>
-    </section>
-
-    <section id="sec-stock" class="hidden animate-in fade-in duration-500">
-        <div class="glass p-10 rounded-[45px] space-y-8">
-            <div class="flex justify-between items-center">
-                <h3 class="font-nexus text-xl text-white italic">MASTER INVENTORY</h3>
-                <button onclick="alert('Módulo de Escaneo de Códigos QR')" class="bg-white/5 px-6 py-3 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-widest">
-                    <i class="fas fa-barcode mr-2"></i> Escanear Arribo
-                </button>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="text-[10px] text-slate-500 font-black uppercase tracking-widest">
-                        <tr>
-                            <th class="pb-6 px-4">Referencia / Repuesto</th>
-                            <th class="pb-6 px-4">Existencia</th>
-                            <th class="pb-6 px-4">Punto Reorden</th>
-                            <th class="pb-6 px-4">Valorización</th>
-                            <th class="pb-6 px-4">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="stock-table" class="text-sm">
-                        <tr class="border-t border-white/5">
-                            <td class="py-6 px-4 font-bold uppercase">Kit Filtración Heavy Duty</td>
-                            <td class="py-6 px-4 text-emerald-400 font-nexus">24 UND</td>
-                            <td class="py-6 px-4 text-slate-500">5 UND</td>
-                            <td class="py-6 px-4 font-nexus">$ 4.850.000</td>
-                            <td class="py-6 px-4">
-                                <button class="text-gold"><i class="fas fa-plus-circle"></i></button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </section>
-
+  </section>
 </main>
 
-<nav class="nav-nexus">
-    <div onclick="switchSec('patio', this)" class="nav-item active"><i class="fas fa-warehouse"></i>Patio</div>
-    <div onclick="switchSec('dash', this)" class="nav-item"><i class="fas fa-chart-pie"></i>Analytics</div>
-    <div onclick="switchSec('stock', this)" class="nav-item"><i class="fas fa-box-open"></i>Inventario</div>
-    <div onclick="switchSec('caja', this)" class="nav-item"><i class="fas fa-receipt"></i>Contabilidad</div>
-</nav>
-
-<div id="modal-orden" class="fixed inset-0 bg-black/98 z-[6000] hidden overflow-y-auto p-4 backdrop-blur-3xl animate-in zoom-in duration-300">
-    <div class="max-w-7xl mx-auto py-12">
-        <div class="flex justify-between items-center mb-12">
-            <div class="flex items-center gap-8">
-                <div id="mod-flota-icon" class="w-24 h-24 rounded-3xl bg-gold flex items-center justify-center text-black text-4xl shadow-2xl shadow-gold/20"></div>
-                <div>
-                    <h2 id="mod-placa" class="font-nexus text-7xl text-white italic font-black uppercase tracking-tighter">---</h2>
-                    <div class="flex items-center gap-3 mt-2">
-                        <span id="mod-status-badge" class="px-4 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-black uppercase border border-emerald-500/20">Activo en Red</span>
-                        <p id="mod-cliente" class="text-[11px] text-slate-500 font-bold tracking-[2px] uppercase"></p>
-                    </div>
-                </div>
-            </div>
-            <button onclick="closeModal()" class="w-16 h-16 bg-white/5 rounded-full text-4xl text-white border border-white/10 hover:bg-danger transition-all">&times;</button>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-            <div class="lg:col-span-8 space-y-8">
-                <div class="glass p-10 rounded-[45px] border-l-4 border-accent">
-                    <h4 class="text-[11px] font-black text-accent uppercase mb-8 tracking-[4px]">Telemetría de Costos & Ejecución</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
-                        <div class="md:col-span-5">
-                            <input id="g-desc" placeholder="TRABAJO / REPUESTO / INSUMO" class="neo-input uppercase">
-                        </div>
-                        <div class="md:col-span-2">
-                            <input id="g-costo" type="number" placeholder="COSTO ($)" class="neo-input">
-                        </div>
-                        <div class="md:col-span-2">
-                            <input id="g-venta" type="number" placeholder="VENTA ($)" class="neo-input text-emerald-400 font-bold">
-                        </div>
-                        <div class="md:col-span-3">
-                            <select id="g-actor" class="neo-input text-[10px] font-black">
-                                <option value="MECANICO">ING. MECÁNICO</option>
-                                <option value="LATONERO">ESPEC. LATONERÍA</option>
-                                <option value="ELECTRICO">ELECTRÓNICA/IA</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button onclick="addItem()" class="w-full mt-6 py-5 bg-accent text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-accent/10">
-                        Sincronizar Item a Misión
-                    </button>
-                </div>
-
-                <div class="glass p-10 rounded-[45px] min-h-[500px] border border-white/5 relative">
-                    <div class="flex items-center gap-4 mb-8">
-                        <i class="fas fa-list-check text-slate-500"></i>
-                        <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Logs de Servicio</h4>
-                    </div>
-                    <div id="mod-items" class="space-y-4">
-                        </div>
-                    
-                    <div id="empty-items" class="absolute inset-0 flex flex-col items-center justify-center opacity-20 pointer-events-none">
-                        <i class="fas fa-boxes-packing text-7xl mb-4"></i>
-                        <p class="font-nexus text-[10px] uppercase tracking-widest">Sin Cargos Registrados</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="lg:col-span-4 space-y-8">
-                <div class="glass p-10 rounded-[45px] bg-gradient-to-b from-white/5 to-transparent border border-white/10 sticky top-32">
-                    <h4 class="text-[11px] font-black text-gold uppercase text-center mb-10 tracking-[5px]">Protocolo de Liquidación</h4>
-                    
-                    <div class="space-y-8">
-                        <div class="flex justify-between items-center text-[12px] font-bold border-b border-white/5 pb-5">
-                            <span class="text-slate-500 uppercase">Subtotal Neto:</span>
-                            <span id="liq-sub" class="text-white font-nexus">$ 0</span>
-                        </div>
-                        <div class="flex justify-between items-center text-[12px] font-bold border-b border-white/5 pb-5">
-                            <span class="text-slate-500 uppercase">Impuesto (VAT):</span>
-                            <span id="liq-iva" class="text-white font-nexus">$ 0</span>
-                        </div>
-                        <div class="text-center py-6">
-                            <p class="text-[10px] text-slate-500 font-black uppercase mb-3 tracking-[3px]">Total a Recaudar</p>
-                            <h2 id="liq-total" class="font-nexus text-6xl text-white font-black tracking-tighter">$ 0</h2>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <button onclick="pagoLocal('NEQUI')" class="p-5 bg-[#d81b60] hover:bg-[#ad1457] rounded-2xl text-[10px] font-black uppercase text-white transition-all shadow-xl">
-                                <i class="fas fa-qrcode mr-2"></i> QR Nequi
-                            </button>
-                            <button onclick="pagoLocal('PSE')" class="p-5 bg-[#1a237e] hover:bg-[#0d47a1] rounded-2xl text-[10px] font-black uppercase text-white transition-all shadow-xl">
-                                <i class="fas fa-building-columns mr-2"></i> PSE / Link
-                            </button>
-                        </div>
-                        
-                        <div class="h-[1px] bg-white/5"></div>
-                        
-                        <button onclick="generarCertificadoPDF()" class="w-full py-5 border border-white/10 rounded-2xl text-[11px] font-black uppercase text-white hover:bg-white hover:text-black transition-all flex items-center justify-center gap-3">
-                            <i class="fas fa-file-pdf text-lg"></i> Certificado de Salud (PDF)
-                        </button>
-                        
-                        <button onclick="finalizarOrden()" class="w-full py-6 bg-emerald-500 text-black font-black rounded-[2.5rem] text-[12px] uppercase tracking-[4px] shadow-2xl shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all">
-                            Finalizar & Archivar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- FOOTER -->
+<footer class="bg-white border-t text-center py-2 text-[11px] text-slate-500">
+  TallerPRO360 · Hecho para talleres de Colombia 🇨🇴
+</footer>
 
 <script type="module">
-    // IMPORTACIÓN CORE FIREBASE
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp, orderBy, arrayUnion, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  // Aquí luego conectamos Firebase
+  window.crearOrden = () => {
+    alert("Crear nueva orden (INGRESO)");
+  };
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-        authDomain: "tallerpro360.firebaseapp.com",
-        projectId: "tallerpro360",
-        storageBucket: "tallerpro360.appspot.com",
-        messagingSenderId: "636224778184",
-        appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-    };
+  window.verOrden = () => {
+    alert("Vista detallada de la orden");
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-
-    let misiones = [];
-    let currentId = null;
-    let currentFlota = 'CAMION';
-    let configLocal = { nombre: "TallerPro360 Master", nit: "000-000", iva: 19 };
-    let chartInstance = null;
-
-    // MOTOR DE RECONOCIMIENTO DE VOZ NEXUS
-    const recognition = (window.webkitSpeechRecognition || window.SpeechRecognition) ? new (window.webkitSpeechRecognition || window.SpeechRecognition)() : null;
-    if(recognition) {
-        recognition.lang = 'es-CO';
-        recognition.continuous = false;
-    }
-
-    window.startNexusVoice = (id) => {
-        const input = document.getElementById(id);
-        recognition.onstart = () => input.classList.add('recording');
-        recognition.onresult = (e) => {
-            let text = e.results[0][0].transcript.toUpperCase();
-            input.value = (id === 'in-placa') ? text.replace(/\s/g, '').replace(/[^a-zA-Z0-9]/g, '') : text;
-        };
-        recognition.onend = () => input.classList.remove('recording');
-        recognition.start();
-    };
-
-    // SEGURIDAD & SESIÓN
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            document.getElementById('loader').style.display = 'none';
-            loadLocalConfig();
-            initRealTimeSync();
-        } else {
-            window.location.href = "index.html"; 
-        }
-    });
-
-    // SINCRONIZACIÓN DE DATOS STARLINK
-    function initRealTimeSync() {
-        const q = query(
-            collection(db, "ordenes"), 
-            where("tallerId", "==", auth.currentUser.uid), 
-            orderBy("timestamp", "desc")
-        );
-
-        onSnapshot(q, (snap) => {
-            misiones = [];
-            let globalProfit = 0;
-            let activeCount = 0;
-            let timelineData = [];
-
-            snap.forEach(d => {
-                const data = { id: d.id, ...d.data() };
-                misiones.push(data);
-                
-                if(data.status === 'ARCHIVADO') {
-                    globalProfit += (data.utilidad || 0);
-                    timelineData.push({ t: data.timestamp?.toDate() || new Date(), y: globalProfit });
-                } else {
-                    activeCount++;
-                }
-            });
-
-            renderPatio();
-            updateDashboard(globalProfit, activeCount, timelineData);
-            if(currentId) renderModItems();
-        });
-    }
-
-    // ALGORITMOS DE NEGOCIO (ERP)
-    window.setFlota = (f, el) => {
-        currentFlota = f;
-        document.querySelectorAll('.flota-card').forEach(c => c.classList.remove('active'));
-        el.classList.add('active');
-    };
-
-    window.registrarMision = async () => {
-        const p = document.getElementById('in-placa').value;
-        const c = document.getElementById('in-cliente').value;
-        if(!p || !c) return alert("Complete los campos de Auditoría.");
-        
-        try {
-            await addDoc(collection(db, "ordenes"), {
-                tallerId: auth.currentUser.uid,
-                placa: p.toUpperCase(),
-                flota: currentFlota,
-                cliente: c.toUpperCase(),
-                telefono: document.getElementById('in-tel').value,
-                fechaIn: document.getElementById('in-fecha-in').value,
-                fechaOutEst: document.getElementById('in-fecha-out').value,
-                status: 'PATIO',
-                items: [],
-                utilidad: 0,
-                timestamp: serverTimestamp()
-            });
-            limpiarFormIngreso();
-        } catch (e) {
-            alert("Error de Escritura en Red Nexus.");
-        }
-    };
-
-    window.addItem = async () => {
-        const desc = document.getElementById('g-desc').value.toUpperCase();
-        const venta = parseFloat(document.getElementById('g-venta').value) || 0;
-        const costo = parseFloat(document.getElementById('g-costo').value) || 0;
-        const actor = document.getElementById('g-actor').value;
-
-        if(!desc || venta <= 0) return alert("Verifique el Precio de Venta.");
-
-        await updateDoc(doc(db, "ordenes", currentId), {
-            items: arrayUnion({ 
-                desc, venta, costo, actor, 
-                id: Date.now(),
-                timestamp: new Date().toISOString() 
-            })
-        });
-        
-        document.getElementById('g-desc').value = "";
-        document.getElementById('g-venta').value = "";
-        document.getElementById('g-costo').value = "";
-    };
-
-    window.removeItem = async (itemId) => {
-        const o = misiones.find(x => x.id === currentId);
-        const nuevosItems = o.items.filter(i => i.id !== itemId);
-        await updateDoc(doc(db, "ordenes", currentId), { items: nuevosItems });
-    };
-
-    // RENDERIZADO DE PATIO (REAL-TIME)
-    function renderPatio() {
-        const container = document.getElementById('lista-misiones');
-        const activas = misiones.filter(m => m.status !== 'ARCHIVADO');
-        
-        container.innerHTML = activas.map(o => {
-            const icons = { CAMION: 'fa-truck-monster', AUTO: 'fa-car-side', MOTO: 'fa-motorcycle', MAQ: 'fa-tractor', VAN: 'fa-shuttle-van' };
-            return `
-                <div onclick="abrirOrden('${o.id}')" class="glass p-8 rounded-[40px] border-l-4 border-gold cursor-pointer hover:scale-[1.03] active:scale-95 transition-all group">
-                    <div class="flex justify-between items-start mb-6">
-                        <div class="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-gold">
-                            <i class="fas ${icons[o.flota]} text-xl"></i>
-                        </div>
-                        <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">SLA: ${o.fechaOutEst || 'N/A'}</span>
-                    </div>
-                    <h3 class="font-nexus text-3xl text-white italic font-black group-hover:text-gold transition-colors">${o.placa}</h3>
-                    <p class="text-[10px] text-slate-500 font-bold mt-2 uppercase tracking-widest truncate">${o.cliente}</p>
-                    <div class="mt-6 pt-6 border-t border-white/5 flex justify-between items-center">
-                        <span class="text-[9px] font-black text-accent uppercase">En Servicio</span>
-                        <i class="fas fa-chevron-right text-[10px] text-slate-700"></i>
-                    </div>
-                </div>
-            `;
-        }).join("");
-    }
-
-    // GESTIÓN DE MODAL Y LIQUIDACIÓN
-    window.abrirOrden = (id) => {
-        currentId = id;
-        const o = misiones.find(x => x.id === id);
-        document.getElementById('mod-placa').innerText = o.placa;
-        document.getElementById('mod-cliente').innerText = `${o.cliente} | UNIT-${o.id.substring(0,5).toUpperCase()}`;
-        
-        const icons = { CAMION: 'fa-truck-monster', AUTO: 'fa-car-side', MOTO: 'fa-motorcycle', MAQ: 'fa-tractor', VAN: 'fa-shuttle-van' };
-        document.getElementById('mod-flota-icon').innerHTML = `<i class="fas ${icons[o.flota]}"></i>`;
-        
-        renderModItems();
-        document.getElementById('modal-orden').classList.remove('hidden');
-    };
-
-    function renderModItems() {
-        const o = misiones.find(x => x.id === currentId);
-        if(!o) return;
-        
-        const container = document.getElementById('mod-items');
-        const empty = document.getElementById('empty-items');
-        
-        if(o.items.length > 0) {
-            empty.classList.add('hidden');
-            container.innerHTML = o.items.map(i => `
-                <div class="flex justify-between items-center p-6 bg-white/5 rounded-3xl border border-white/5 hover:border-gold/20 transition-all">
-                    <div class="flex items-center gap-5">
-                        <div class="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent">
-                            <i class="fas fa-tools"></i>
-                        </div>
-                        <div>
-                            <p class="text-[12px] font-black uppercase text-white">${i.desc}</p>
-                            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">${i.actor}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-8">
-                        <div class="text-right">
-                            <p class="font-nexus text-emerald-400 font-black text-lg">$ ${i.venta.toLocaleString()}</p>
-                            <p class="text-[8px] text-slate-600 font-bold">COSTO: $${i.costo.toLocaleString()}</p>
-                        </div>
-                        <button onclick="removeItem(${i.id})" class="w-10 h-10 rounded-xl text-danger/30 hover:text-danger hover:bg-danger/10 transition-all">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join("");
-        } else {
-            empty.classList.remove('hidden');
-            container.innerHTML = "";
-        }
-        
-        updateCalculosMod(o);
-    }
-
-    function updateCalculosMod(orden) {
-        const sub = (orden.items || []).reduce((a, b) => a + b.venta, 0);
-        const iva = sub * (configLocal.iva / 100);
-        const total = sub + iva;
-
-        document.getElementById('liq-sub').innerText = `$ ${sub.toLocaleString()}`;
-        document.getElementById('liq-iva').innerText = `$ ${iva.toLocaleString()}`;
-        document.getElementById('liq-total').innerText = `$ ${total.toLocaleString()}`;
-    }
-
-    window.finalizarOrden = async () => {
-        const o = misiones.find(x => x.id === currentId);
-        const subVenta = (o.items || []).reduce((a, b) => a + b.venta, 0);
-        const subCosto = (o.items || []).reduce((a, b) => a + b.costo, 0);
-        const utilidad = subVenta - subCosto;
-
-        if(confirm("¿Desea cerrar la misión y archivar en el histórico de CTL LLC?")) {
-            await updateDoc(doc(db, "ordenes", currentId), {
-                status: 'ARCHIVADO',
-                utilidad: utilidad,
-                finalizadoTimestamp: serverTimestamp()
-            });
-            closeModal();
-            alert("MISION ARCHIVADA EXITOSAMENTE");
-        }
-    };
-
-    // DASHBOARD & ANALYTICS ENGINE
-    function updateDashboard(totalProfit, activeCount, timeline) {
-        document.getElementById('total-pg').innerText = `$ ${totalProfit.toLocaleString()}`;
-        document.getElementById('dash-utilidad').innerText = `$ ${totalProfit.toLocaleString()}`;
-        document.getElementById('dash-activas').innerText = activeCount;
-
-        renderChart(timeline);
-    }
-
-    function renderChart(data) {
-        const ctx = document.getElementById('chartPG').getContext('2d');
-        if(chartInstance) chartInstance.destroy();
-
-        // Ordenar datos por fecha
-        data.sort((a,b) => a.t - b.t);
-
-        chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.map(d => d.t.toLocaleDateString()),
-                datasets: [{
-                    label: 'Utilidad Neta ($)',
-                    data: data.map(d => d.y),
-                    borderColor: '#f59e0b',
-                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                    borderWidth: 4,
-                    tension: 0.4,
-                    fill: true,
-                    pointRadius: 5,
-                    pointBackgroundColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { family: 'Orbitron', size: 8 } } },
-                    x: { grid: { display: false }, ticks: { color: '#64748b', font: { family: 'Orbitron', size: 8 } } }
-                }
-            }
-        });
-    }
-
-    // EXPORTACIÓN EXCEL (DIAN / TAX)
-    window.exportarExcel = () => {
-        const reportData = misiones.map(m => ({
-            PLACA: m.placa,
-            CLIENTE: m.cliente,
-            FLOTA: m.flota,
-            ESTADO: m.status,
-            FACTURADO: (m.items || []).reduce((a,b) => a + b.venta, 0),
-            COSTOS: (m.items || []).reduce((a,b) => a + b.costo, 0),
-            UTILIDAD: m.utilidad || 0,
-            FECHA: m.timestamp?.toDate().toLocaleString()
-        }));
-
-        const ws = XLSX.utils.json_to_sheet(reportData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Reporte_Nexus");
-        XLSX.writeFile(wb, `TallerPro360_Fiscal_${new Date().getFullYear()}.xlsx`);
-    };
-
-    // UI UTILS
-    window.switchSec = (s, el) => {
-        document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
-        document.getElementById('sec-' + s).classList.remove('hidden');
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        el.classList.add('active');
-        if(s === 'dash') setTimeout(() => renderChart(misiones.filter(m => m.status === 'ARCHIVADO').map(m => ({t: m.timestamp?.toDate() || new Date(), y: m.utilidad}))), 100);
-    };
-
-    window.toggleSidebar = () => document.getElementById('sidebar-owner').classList.toggle('open');
-    window.closeModal = () => {
-        document.getElementById('modal-orden').classList.add('hidden');
-        currentId = null;
-    };
-
-    function limpiarFormIngreso() {
-        document.getElementById('in-placa').value = "";
-        document.getElementById('in-cliente').value = "";
-        document.getElementById('in-tel').value = "";
-    }
-
-    // CONFIGURACIÓN LOCAL
-    window.saveLocalConfig = () => {
-        configLocal = {
-            nombre: document.getElementById('cfg-nombre').value,
-            nit: document.getElementById('cfg-nit').value,
-            iva: parseFloat(document.getElementById('cfg-iva').value) || 0,
-            nequi: document.getElementById('cfg-nequi').value,
-            pse: document.getElementById('cfg-pse').value
-        };
-        localStorage.setItem('t360_config', JSON.stringify(configLocal));
-        document.getElementById('header-name').innerText = configLocal.nombre || "TallerPro360";
-    };
-
-    function loadLocalConfig() {
-        const saved = localStorage.getItem('t360_config');
-        if(saved) {
-            configLocal = JSON.parse(saved);
-            document.getElementById('cfg-nombre').value = configLocal.nombre;
-            document.getElementById('cfg-nit').value = configLocal.nit;
-            document.getElementById('cfg-iva').value = configLocal.iva;
-            document.getElementById('cfg-nequi').value = configLocal.nequi;
-            document.getElementById('cfg-pse').value = configLocal.pse;
-            document.getElementById('header-name').innerText = configLocal.nombre || "TallerPro360";
-        }
-    }
-
-    window.generarCertificadoPDF = () => {
-        const { jsPDF } = window.jspdf;
-        const docPDF = new jsPDF();
-        const o = misiones.find(x => x.id === currentId);
-        
-        // Estética Corporativa CTL LLC
-        docPDF.setFillColor(2, 6, 23);
-        docPDF.rect(0, 0, 210, 40, 'F');
-        
-        docPDF.setTextColor(245, 158, 11);
-        docPDF.setFontSize(22);
-        docPDF.text(configLocal.nombre.toUpperCase(), 20, 25);
-        
-        docPDF.setTextColor(255, 255, 255);
-        docPDF.setFontSize(8);
-        docPDF.text(`NIT: ${configLocal.nit} | CERTIFICADO TÉCNICO NEXUS-X`, 20, 33);
-        
-        docPDF.setTextColor(0, 0, 0);
-        docPDF.setFontSize(14);
-        docPDF.text(`ORDEN DE SERVICIO: ${o.placa}`, 20, 60);
-        docPDF.setFontSize(10);
-        docPDF.text(`CLIENTE: ${o.cliente}`, 20, 70);
-        docPDF.text(`FECHA: ${new Date().toLocaleString()}`, 20, 75);
-        
-        docPDF.line(20, 80, 190, 80);
-        
-        let y = 90;
-        docPDF.setFont(undefined, 'bold');
-        docPDF.text("DESCRIPCIÓN DEL SERVICIO", 20, y);
-        docPDF.text("VALOR", 170, y);
-        docPDF.setFont(undefined, 'normal');
-        
-        y += 10;
-        o.items.forEach(i => {
-            docPDF.text(i.desc, 20, y);
-            docPDF.text(`$${i.venta.toLocaleString()}`, 170, y);
-            y += 8;
-        });
-        
-        docPDF.line(20, y + 5, 190, y + 5);
-        y += 15;
-        
-        const sub = o.items.reduce((a,b) => a + b.venta, 0);
-        docPDF.text(`SUBTOTAL: $${sub.toLocaleString()}`, 140, y);
-        docPDF.text(`TOTAL NETO: $${(sub * (1 + configLocal.iva/100)).toLocaleString()}`, 140, y + 8);
-        
-        docPDF.setFontSize(8);
-        docPDF.text("Este documento es un soporte técnico de operación. Colombian Trucks Logistics LLC.", 20, 280);
-        
-        docPDF.save(`Certificado_Nexus_${o.placa}.pdf`);
-    };
-
-    window.pagoLocal = (tipo) => {
-        const o = misiones.find(x => x.id === currentId);
-        const sub = o.items.reduce((a,b) => a + b.venta, 0);
-        const total = sub * (1 + configLocal.iva/100);
-        
-        if(tipo === 'NEQUI') {
-            alert(`DIRECCIONANDO A PASARELA NEQUI\nCELULAR: ${configLocal.nequi}\nTOTAL: $${total.toLocaleString()}`);
-        } else {
-            window.open(configLocal.pse, '_blank');
-        }
-    };
-
+  window.avanzarEstado = () => {
+    alert("Avanza al siguiente estado");
+  };
 </script>
+
 </body>
 </html>
