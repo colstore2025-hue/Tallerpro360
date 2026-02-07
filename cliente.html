@@ -145,4 +145,35 @@
     document.getElementById("orderId").textContent = order.orderId;
     document.getElementById("currentStatus").textContent = order.status;
     document.getElementById("vehicle").textContent = order.vehicle || "—";
-    document.getElementById("plate").textContent = order.plate
+    document.getElementById("plate").textContent = order.plate || "—";
+
+    // Timeline
+    const stagesRef = collection(db, "serviceOrders", orderId, "stages");
+    const q = query(stagesRef, orderBy("at", "asc"));
+    const stagesSnap = await getDocs(q);
+
+    const timeline = document.getElementById("timeline");
+
+    stagesSnap.forEach(docSnap => {
+      const s = docSnap.data();
+      timeline.innerHTML += `
+        <div class="relative ${s.completed ? '' : 'step-pending'}">
+          <div class="step-node">
+            <i class="fas ${s.completed ? 'fa-check' : 'fa-clock'}"></i>
+          </div>
+          <div>
+            <p class="text-sm font-bold">${s.stage}</p>
+            <p class="text-[10px] text-slate-400">
+              ${new Date(s.at.seconds * 1000).toLocaleString()}
+            </p>
+          </div>
+        </div>
+      `;
+    });
+
+    loader.classList.add("hidden");
+    dashboard.classList.remove("hidden");
+  </script>
+
+</body>
+</html>
