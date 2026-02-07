@@ -1,9 +1,7 @@
 // serviceOrders.voice.js
-
 /**
- * Genera voz automática cuando una orden cambia de etapa
- * Usa Web Speech API (compatible con Chrome / Android)
- * Preparado para Colombia (es-CO)
+ * Voz automática por cambio de etapa
+ * TallerPRO360 – Colombia
  */
 
 const stageMessages = {
@@ -14,42 +12,57 @@ const stageMessages = {
   PRUEBAS: "El vehículo está en pruebas finales.",
   FACTURACION: "Su vehículo está en proceso de facturación.",
   LISTO: "Su vehículo está listo para ser entregado.",
-  ENTREGADO: "Gracias por confiar en TallerPRO360. Su vehículo fue entregado."
+  ENTREGADO: "Gracias por confiar en Taller Pro tres seis cero. Su vehículo fue entregado."
 };
 
+let voicesLoaded = false;
+
 /**
- * Ejecuta voz si la etapa es nueva
- * @param {string} orderId
- * @param {string} stage
+ * Inicializa voces (OBLIGATORIO llamar tras un click del usuario)
+ */
+export function initVoice() {
+  if (!("speechSynthesis" in window)) return;
+
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = () => {
+    voicesLoaded = true;
+  };
+}
+
+/**
+ * Habla una etapa solo si es nueva
  */
 export function speakStage(orderId, stage) {
-  if (!("speechSynthesis" in window)) {
-    console.warn("❌ Voz no soportada en este navegador");
-    return;
-  }
+  if (!("speechSynthesis" in window)) return;
 
   const message = stageMessages[stage];
-  if (!message) {
-    console.warn(`❌ No hay mensaje de voz para la etapa ${stage}`);
-    return;
-  }
+  if (!message) return;
 
-  // Evitar repetir voz
   const lastSpoken = localStorage.getItem(`tp360_voice_${orderId}`);
-  if (lastSpoken === stage) {
-    return;
+  if (lastSpoken === stage) return;
+
+  const speak = () => {
+    const utterance = new SpeechSynthesisUtterance(
+      `Atención. Taller Pro tres seis cero informa. ${message}`
+    );
+
+    const voices = speechSynthesis.getVoices();
+    const voiceES = voices.find(v => v.lang.startsWith("es"));
+
+    if (voiceES) utterance.voice = voiceES;
+
+    utterance.lang = "es-CO";
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+
+    speechSynthesis.speak(utterance);
+    localStorage.setItem(`tp360_voice_${orderId}`, stage);
+  };
+
+  // Evitar bug Android
+  if (!voicesLoaded) {
+    setTimeout(speak, 500);
+  } else {
+    speak();
   }
-
-  const utterance = new SpeechSynthesisUtterance(
-    `Taller PRO tres seis cero informa: ${message}`
-  );
-
-  utterance.lang = "es-CO";
-  utterance.rate = 0.95;
-  utterance.pitch = 1;
-
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
-
-  localStorage.setItem(`tp360_voice_${orderId}`, stage);
 }
