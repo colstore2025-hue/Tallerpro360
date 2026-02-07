@@ -1,345 +1,195 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>TallerPro360 | Global Logistics Systems - Powered by CTL LLC</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-    
-    <style>
-        :root { --gold: #f59e0b; --deep: #0f172a; --emerald: #10b981; --wa: #25d366; }
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background: radial-gradient(circle at top right, #1e293b 0%, #0f172a 100%); 
-            color: #f1f5f9; 
-            overflow-x: hidden; 
-        }
-        .font-nexus { font-family: 'Orbitron', sans-serif; }
-        
-        /* Efectos de Cristal */
-        .glass-card { 
-            background: rgba(255, 255, 255, 0.02); 
-            backdrop-filter: blur(20px); 
-            border: 1px solid rgba(255, 255, 255, 0.08); 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-        
-        /* Animaciones y Botones */
-        .btn-gold { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn-gold:hover { transform: scale(1.05) translateY(-2px); box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3); }
-        
-        .wa-float { 
-            background: var(--wa); 
-            animation: pulse-wa 2s infinite; 
-            box-shadow: 0 0 20px rgba(37, 211, 102, 0.4);
-        }
-        
-        @keyframes pulse-wa { 
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
-            70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(37, 211, 102, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
-        }
+  <meta charset="UTF-8" />
+  <title>TallerPRO360 | Gestión inteligente para talleres</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-        .text-glow-gold { text-shadow: 0 0 20px rgba(245, 158, 11, 0.4); }
-        .gradient-border { border-image: linear-gradient(to right, #f59e0b, transparent) 1; border-width: 1px; }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
-        
-        .hidden { display: none !important; }
-    </style>
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    :root{
+      --green:#16a34a;
+      --blue:#2563eb;
+      --orange:#f97316;
+    }
+  </style>
 </head>
-<body class="selection:bg-gold selection:text-black">
 
-    <div class="fixed bottom-8 right-8 z-[1000]">
-        <button onclick="enviarWhatsApp('General', 'soporte')" class="wa-float w-16 h-16 rounded-full flex items-center justify-center text-white text-3xl transition-transform active:scale-90">
-            <i class="fab fa-whatsapp"></i>
-        </button>
+<body class="bg-white text-slate-800">
+
+<!-- NAV -->
+<nav class="w-full border-b bg-white sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center text-white font-black">
+        360
+      </div>
+      <span class="font-black text-xl">
+        Taller<span class="text-green-600">PRO</span>360
+      </span>
+    </div>
+    <div class="flex gap-6 text-sm font-semibold">
+      <a href="#como-funciona" class="hover:text-green-600">Cómo funciona</a>
+      <a href="#planes" class="hover:text-green-600">Planes</a>
+      <a href="login.html" class="text-white bg-green-600 px-4 py-2 rounded-lg hover:bg-green-700">
+        Ingresar
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="bg-gradient-to-br from-green-50 via-blue-50 to-white py-20">
+  <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+    <div>
+      <h1 class="text-4xl md:text-5xl font-black leading-tight mb-6">
+        El control total de tu taller,<br>
+        <span class="text-green-600">vehículo por vehículo</span>
+      </h1>
+      <p class="text-lg text-slate-600 mb-8">
+        TallerPRO360 te permite gestionar cada auto por etapas, informar al cliente en tiempo real
+        y tener trazabilidad completa desde el ingreso hasta la entrega.
+      </p>
+      <div class="flex gap-4">
+        <a href="login.html" class="bg-green-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-green-700">
+          Probar el sistema
+        </a>
+        <a href="#planes" class="border border-green-600 text-green-600 px-8 py-4 rounded-xl font-bold hover:bg-green-50">
+          Ver planes
+        </a>
+      </div>
     </div>
 
-    <nav class="fixed top-0 w-full z-[100] border-b border-white/5 bg-slate-900/90 backdrop-blur-xl px-6 py-4">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-5">
-                <div class="bg-gradient-to-br from-gold to-yellow-600 p-2.5 rounded-2xl shadow-xl rotate-3"><i class="fas fa-satellite text-slate-950 text-xl"></i></div>
-                <div class="flex flex-col">
-                    <span class="font-nexus text-2xl font-black tracking-tighter text-white">TALLERPRO<span class="text-gold">360</span></span>
-                    <span class="text-[9px] text-emerald-400 font-black uppercase tracking-[4px]">Powered by Colombian Trucks Logistics LLC</span>
-                </div>
-            </div>
-            
-            <div class="hidden lg:flex items-center gap-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                <a href="#bondades" class="hover:text-gold transition">Ingeniería</a>
-                <a href="#precios" class="hover:text-gold transition">Suscripciones</a>
-                <a href="#" class="hover:text-gold transition">Documentación</a>
-            </div>
-
-            <div class="flex items-center gap-4">
-                <button onclick="abrirAuth()" class="group relative px-7 py-2.5 overflow-hidden rounded-full bg-white/5 border border-white/10 transition-all hover:border-gold/50">
-                    <span class="relative z-10 text-[10px] font-black uppercase tracking-widest text-white group-hover:text-gold transition-colors">Terminal Acceso</span>
-                    <div class="absolute inset-0 bg-gold/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                </button>
-            </div>
-        </div>
-    </nav>
-
-    <header class="relative min-h-screen flex items-center pt-32 pb-20 overflow-hidden">
-        <div class="absolute top-1/4 -right-20 w-96 h-96 bg-gold/10 blur-[120px] rounded-full"></div>
-        <div class="absolute bottom-0 -left-20 w-96 h-96 bg-emerald-500/5 blur-[120px] rounded-full"></div>
-
-        <div class="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-20 items-center relative z-10">
-            <div class="space-y-8">
-                <div class="inline-flex items-center gap-3 px-5 py-2.5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl">
-                    <span class="relative flex h-3 w-3">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                    </span>
-                    <span class="text-[10px] font-black text-emerald-400 uppercase tracking-[3px]">Nodo Central Activo: Charlotte, NC</span>
-                </div>
-
-                <h1 class="text-6xl md:text-8xl font-black leading-[0.9] tracking-tighter text-white">
-                    DOMINE SU <br>
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-gold via-yellow-200 to-gold text-glow-gold italic">LOGÍSTICA.</span>
-                </h1>
-                
-                <p class="text-xl text-slate-400 max-w-xl leading-relaxed font-light">
-                    Sincronice su taller con la red <span class="text-white font-bold">Nexus-X</span>. Gestión financiera, peritaje avanzado e inventarios predictivos bajo estándares de ingeniería de EE.UU.
-                </p>
-
-                <div class="flex flex-wrap gap-5 pt-4">
-                    <button onclick="abrirAuth()" class="btn-gold text-slate-950 font-black py-6 px-12 rounded-[2rem] text-xs tracking-[4px] uppercase flex items-center gap-4 shadow-2xl">
-                        <i class="fas fa-microchip text-lg"></i> Iniciar Nodo Maestro
-                    </button>
-                    <a href="#precios" class="px-12 py-6 rounded-[2rem] border border-white/10 text-xs font-black uppercase tracking-[4px] hover:bg-white/5 transition flex items-center gap-4">
-                        Explorar Planes
-                    </a>
-                </div>
-            </div>
-
-            <div class="relative lg:block hidden">
-                <div class="glass-card p-4 rounded-[3rem] rotate-2 hover:rotate-0 transition-transform duration-700">
-                    <img src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&q=80&w=1200" 
-                         class="rounded-[2.5rem] brightness-90 contrast-125" alt="TallerPro360 Interface">
-                </div>
-                <div class="absolute -bottom-10 -left-10 glass-card p-8 rounded-3xl animate-bounce-slow">
-                    <p class="text-[9px] font-black text-emerald-400 uppercase mb-1">Status Global</p>
-                    <p class="text-2xl font-nexus font-black text-white">99.9% Uptime</p>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <section id="bondades" class="py-32 relative">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="grid md:grid-cols-3 gap-12">
-                <div class="space-y-6 group">
-                    <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-gold transition-colors">
-                        <i class="fas fa-vault text-2xl text-gold"></i>
-                    </div>
-                    <h3 class="text-2xl font-black uppercase tracking-tight italic">Caja Blindada</h3>
-                    <p class="text-slate-400 leading-relaxed text-sm">Control financiero multinacional. Conciliación automática de ingresos, gastos y reportes P&L en tiempo real para Bogotá, Medellín e Ibagué.</p>
-                </div>
-                <div class="space-y-6 group">
-                    <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-gold transition-colors">
-                        <i class="fas fa-boxes-packing text-2xl text-gold"></i>
-                    </div>
-                    <h3 class="text-2xl font-black uppercase tracking-tight italic">Stock Inteligente</h3>
-                    <p class="text-slate-400 leading-relaxed text-sm">No pierda un solo tornillo. Gestión de inventario con alertas de stock mínimo y trazabilidad completa de repuestos por orden de servicio.</p>
-                </div>
-                <div class="space-y-6 group">
-                    <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-gold transition-colors">
-                        <i class="fas fa-camera-retro text-2xl text-gold"></i>
-                    </div>
-                    <h3 class="text-2xl font-black uppercase tracking-tight italic">Evidencia Visual</h3>
-                    <p class="text-slate-400 leading-relaxed text-sm">Peritaje fotográfico en la nube. Respalde cada reparación con imágenes de alta resolución accesibles para el cliente mediante Starlink.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="precios" class="py-40 bg-slate-900/40 border-y border-white/5">
-        <div class="max-w-7xl mx-auto px-6 text-center mb-24">
-            <h2 class="font-nexus text-gold text-xs tracking-[12px] uppercase mb-6">Membresías</h2>
-            <h3 class="text-5xl md:text-6xl font-black uppercase tracking-tighter">Inversión de Alto Rendimiento</h3>
-        </div>
-
-        <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
-            <div class="glass-card p-12 rounded-[3rem] flex flex-col items-center text-center">
-                <span class="text-[10px] font-black text-slate-500 uppercase tracking-[4px] mb-8">Flexibilidad Total</span>
-                <h4 class="text-2xl font-bold mb-4">Plan Mensual</h4>
-                <div class="flex items-baseline gap-2 mb-10">
-                    <span class="text-5xl font-black text-white">$129.000</span>
-                    <span class="text-xs text-slate-500 uppercase font-bold">COP</span>
-                </div>
-                <ul class="text-xs space-y-5 mb-12 text-slate-400 font-semibold w-full text-left">
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-emerald-500"></i> Acceso ERP Completo</li>
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-emerald-500"></i> Fotos Ilimitadas</li>
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-emerald-500"></i> Soporte Básico</li>
-                </ul>
-                <button onclick="enviarWhatsApp('Plan Mensual', '$129.000')" class="w-full py-5 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[3px] hover:bg-white/10 transition">Seleccionar Plan</button>
-            </div>
-
-            <div class="glass-card p-12 rounded-[3rem] flex flex-col items-center text-center relative border-gold/30 ring-1 ring-gold/20 shadow-gold/10">
-                <div class="absolute -top-5 bg-gold text-slate-950 font-black px-8 py-2 rounded-full text-[10px] uppercase tracking-widest shadow-xl">Más Popular</div>
-                <span class="text-[10px] font-black text-gold uppercase tracking-[4px] mb-8">Escalabilidad</span>
-                <h4 class="text-2xl font-bold mb-4">Plan Trimestral</h4>
-                <div class="flex items-baseline gap-2 mb-2">
-                    <span class="text-5xl font-black text-gold">$300.000</span>
-                    <span class="text-xs text-slate-500 uppercase font-bold">COP</span>
-                </div>
-                <p class="text-[10px] font-black text-emerald-400 mb-8 uppercase tracking-widest">Ahorro Efectivo de $87.000</p>
-                <ul class="text-xs space-y-5 mb-12 text-slate-200 font-bold w-full text-left">
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-gold"></i> Dashboard Financiero Pro</li>
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-gold"></i> Gestión Multiusuario</li>
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-gold"></i> Soporte Prioritario</li>
-                </ul>
-                <button onclick="enviarWhatsApp('Plan Trimestral', '$300.000')" class="w-full py-5 bg-gold text-slate-950 rounded-2xl text-[10px] font-black uppercase tracking-[3px] shadow-lg shadow-gold/20 hover:scale-105 transition">Activar Ahora</button>
-            </div>
-
-            <div class="glass-card p-12 rounded-[3rem] flex flex-col items-center text-center">
-                <span class="text-[10px] font-black text-slate-500 uppercase tracking-[4px] mb-8">Nodo Élite Global</span>
-                <h4 class="text-2xl font-bold mb-4">Plan Anual</h4>
-                <div class="flex items-baseline gap-2 mb-2">
-                    <span class="text-5xl font-black text-white">$1.200.000</span>
-                    <span class="text-xs text-slate-500 uppercase font-bold">COP</span>
-                </div>
-                <p class="text-[10px] font-black text-emerald-400 mb-8 uppercase tracking-widest">2 Meses de Cortesía</p>
-                <ul class="text-xs space-y-5 mb-12 text-slate-400 font-semibold w-full text-left">
-                    <li class="flex items-center gap-3"><i class="fas fa-crown text-gold"></i> Auditoría de Procesos CTL LLC</li>
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-emerald-500"></i> Backup Starlink Gold</li>
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-emerald-500"></i> Personalización Marca Blanca</li>
-                </ul>
-                <button onclick="enviarWhatsApp('Plan Anual Élite', '$1.200.000')" class="w-full py-5 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[3px] hover:bg-white/10 transition">Seleccionar Plan</button>
-            </div>
-        </div>
-    </section>
-
-    <footer class="py-20 border-t border-white/5 bg-slate-950">
-        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-16 items-center">
-            <div class="space-y-4">
-                <p class="font-nexus text-xl font-black">TALLERPRO<span class="text-gold">360</span></p>
-                <p class="text-[10px] text-slate-500 leading-relaxed uppercase font-bold tracking-widest">
-                    Tecnología de gestión ERP para talleres de alta ingeniería. <br>
-                    Charlotte, NC • Ibagué, COL.
-                </p>
-            </div>
-            
-            <div class="flex flex-col items-center gap-4">
-                <a href="/admin" class="text-[10px] font-black text-slate-600 hover:text-gold uppercase tracking-[5px] transition">Acceso Master CEO</a>
-                <div class="flex gap-6 text-slate-400">
-                    <i class="fab fa-facebook-f hover:text-white transition cursor-pointer"></i>
-                    <i class="fab fa-instagram hover:text-white transition cursor-pointer"></i>
-                    <i class="fab fa-linkedin-in hover:text-white transition cursor-pointer"></i>
-                </div>
-            </div>
-
-            <div class="md:text-right space-y-2">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Registered Firm</p>
-                <p class="text-sm font-black text-white uppercase tracking-tighter italic">Colombian Trucks Logistics LLC</p>
-                <p class="text-[10px] text-emerald-500 font-black uppercase">Ley 1581 Habeas Data Compliant</p>
-            </div>
-        </div>
-    </footer>
-
-    <div id="modal-legal" class="fixed inset-0 z-[2000] hidden flex items-center justify-center p-6 bg-slate-950/98 backdrop-blur-2xl">
-        <div class="glass-card w-full max-w-2xl p-12 rounded-[3rem] border-emerald-500/20 max-h-[90vh] overflow-y-auto">
-            <h3 class="font-nexus text-2xl text-emerald-400 mb-8 uppercase italic tracking-tighter">Tratamiento de Datos Personales</h3>
-            <div class="text-xs text-slate-400 space-y-6 leading-loose text-justify font-medium">
-                <p class="border-l-2 border-emerald-500/30 pl-4">En cumplimiento de la <strong>Ley 1581 de 2012</strong>, informamos que los datos capturados en esta plataforma serán tratados bajo la responsabilidad de <strong>Colombian Trucks Logistics LLC</strong> para fines de soporte, facturación y gestión comercial del software TallerPro360.</p>
-                <p>Al hacer clic en "Aceptar y Continuar", usted autoriza el almacenamiento de su información en los servidores seguros de Firebase y Starlink Sync.</p>
-                <p><strong>Derechos del Titular:</strong> Usted podrá conocer, actualizar y rectificar sus datos personales enviando un correo a soporte@tallerpro360.com</p>
-            </div>
-            <div class="mt-10 pt-10 border-t border-white/5">
-                <button onclick="confirmarAceptacion()" class="w-full bg-emerald-500 text-slate-950 font-black py-5 rounded-2xl uppercase text-[10px] tracking-[4px] shadow-xl shadow-emerald-500/10 active:scale-95 transition">Aceptar y Continuar a WhatsApp</button>
-            </div>
-        </div>
+    <div class="bg-white rounded-3xl shadow-xl p-8 border">
+      <p class="font-bold mb-4 text-slate-700">Ejemplo de proceso:</p>
+      <ul class="space-y-3 text-sm">
+        <li class="flex items-center gap-3">
+          <i class="fas fa-circle-check text-green-600"></i> Ingreso del vehículo
+        </li>
+        <li class="flex items-center gap-3">
+          <i class="fas fa-circle-check text-blue-600"></i> Diagnóstico
+        </li>
+        <li class="flex items-center gap-3">
+          <i class="fas fa-circle-check text-orange-500"></i> Aprobación del cliente
+        </li>
+        <li class="flex items-center gap-3">
+          <i class="fas fa-circle-check text-slate-500"></i> Reparación
+        </li>
+        <li class="flex items-center gap-3">
+          <i class="fas fa-circle-check text-slate-500"></i> Listo / Entregado
+        </li>
+      </ul>
     </div>
+  </div>
+</section>
 
-    <div id="modal-auth" class="fixed inset-0 z-[1100] hidden flex items-center justify-center p-6 bg-slate-950/95 backdrop-blur-xl">
-        <div class="glass-card w-full max-w-md p-12 rounded-[3rem] border border-gold/20 relative shadow-2xl">
-            <button onclick="document.getElementById('modal-auth').classList.add('hidden')" class="absolute top-8 right-8 text-slate-500 hover:text-white transition text-2xl">&times;</button>
-            
-            <div class="text-center mb-10">
-                <div class="w-20 h-20 bg-gradient-to-br from-gold to-yellow-600 rounded-3xl flex items-center justify-center text-slate-950 mx-auto mb-6 shadow-xl shadow-gold/20 rotate-3">
-                    <i class="fas fa-fingerprint text-4xl"></i>
-                </div>
-                <h3 class="font-nexus text-xl text-white mb-2 uppercase tracking-tighter">Acceso Nexus-X</h3>
-                <p class="text-[10px] text-emerald-500 uppercase font-black tracking-widest">Global Authentication Layer</p>
-            </div>
+<!-- COMO FUNCIONA -->
+<section id="como-funciona" class="py-24">
+  <div class="max-w-7xl mx-auto px-6">
+    <h2 class="text-3xl font-black text-center mb-16">
+      Cómo funciona TallerPRO360
+    </h2>
 
-            <div class="space-y-4">
-                <div class="space-y-2">
-                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2">ID Satelital</label>
-                    <input id="auth-email" type="email" placeholder="email@tallerpro360.com" class="w-full bg-slate-900 border border-white/5 p-5 rounded-2xl text-white outline-none focus:border-gold/50 transition font-bold text-xs">
-                </div>
-                <div class="space-y-2">
-                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2">Código de Seguridad</label>
-                    <input id="auth-pass" type="password" placeholder="••••••••" class="w-full bg-slate-900 border border-white/5 p-5 rounded-2xl text-white outline-none focus:border-gold/50 transition font-bold">
-                </div>
-                <button id="btn-login" class="w-full btn-gold text-slate-950 font-black py-5 rounded-2xl uppercase text-[11px] tracking-[4px] mt-6 shadow-xl shadow-gold/10 active:scale-95 transition">Sincronizar Nodo</button>
-            </div>
+    <div class="grid md:grid-cols-4 gap-8 text-center">
+      <div>
+        <div class="w-14 h-14 mx-auto bg-green-100 text-green-600 rounded-xl flex items-center justify-center mb-4">
+          <i class="fas fa-car"></i>
         </div>
+        <h3 class="font-bold mb-2">Ingreso</h3>
+        <p class="text-sm text-slate-500">Creas la orden y el sistema asigna un ID único.</p>
+      </div>
+
+      <div>
+        <div class="w-14 h-14 mx-auto bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4">
+          <i class="fas fa-screwdriver-wrench"></i>
+        </div>
+        <h3 class="font-bold mb-2">Proceso</h3>
+        <p class="text-sm text-slate-500">El vehículo avanza por etapas controladas.</p>
+      </div>
+
+      <div>
+        <div class="w-14 h-14 mx-auto bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center mb-4">
+          <i class="fas fa-bell"></i>
+        </div>
+        <h3 class="font-bold mb-2">Cliente informado</h3>
+        <p class="text-sm text-slate-500">El cliente ve el estado en tiempo real.</p>
+      </div>
+
+      <div>
+        <div class="w-14 h-14 mx-auto bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center mb-4">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <h3 class="font-bold mb-2">Control</h3>
+        <p class="text-sm text-slate-500">Historial completo y trazabilidad.</p>
+      </div>
     </div>
+  </div>
+</section>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-            authDomain: "tallerpro360.firebaseapp.com",
-            projectId: "tallerpro360",
-            storageBucket: "tallerpro360.appspot.com",
-            messagingSenderId: "636224778184",
-            appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-        };
+<!-- PLANES -->
+<section id="planes" class="py-24 bg-slate-50">
+  <div class="max-w-7xl mx-auto px-6 text-center">
+    <h2 class="text-3xl font-black mb-4">Planes pensados para Colombia</h2>
+    <p class="text-slate-500 mb-16">Sin contratos largos. Cancela cuando quieras.</p>
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+    <div class="grid md:grid-cols-3 gap-8">
+      <!-- BASICO -->
+      <div class="bg-white border rounded-3xl p-8 shadow">
+        <h3 class="font-bold text-lg mb-2">Plan Básico</h3>
+        <p class="text-4xl font-black mb-4">$49.999</p>
+        <p class="text-sm text-slate-500 mb-6">COP / mes</p>
+        <ul class="text-sm text-left space-y-3 mb-8">
+          <li>✔ Órdenes ilimitadas</li>
+          <li>✔ Seguimiento por etapas</li>
+          <li>✔ Vista cliente</li>
+        </ul>
+        <a href="login.html" class="block bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700">
+          Empezar
+        </a>
+      </div>
 
-        window.abrirAuth = () => document.getElementById('modal-auth').classList.remove('hidden');
+      <!-- PRO -->
+      <div class="bg-white border-2 border-green-600 rounded-3xl p-8 shadow-xl">
+        <h3 class="font-bold text-lg mb-2">Plan Pro</h3>
+        <p class="text-4xl font-black mb-4">$79.999</p>
+        <p class="text-sm text-slate-500 mb-6">COP / mes</p>
+        <ul class="text-sm text-left space-y-3 mb-8">
+          <li>✔ Todo el Básico</li>
+          <li>✔ Historial detallado</li>
+          <li>✔ Prioridad de soporte</li>
+        </ul>
+        <a href="login.html" class="block bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700">
+          Elegir Pro
+        </a>
+      </div>
 
-        document.getElementById('btn-login').onclick = async () => {
-            const email = document.getElementById('auth-email').value;
-            const pass = document.getElementById('auth-pass').value;
+      <!-- ANUAL -->
+      <div class="bg-white border rounded-3xl p-8 shadow">
+        <h3 class="font-bold text-lg mb-2">Plan Anual</h3>
+        <p class="text-4xl font-black mb-4">$499.999</p>
+        <p class="text-sm text-slate-500 mb-6">COP / año</p>
+        <ul class="text-sm text-left space-y-3 mb-8">
+          <li>✔ Ahorro total</li>
+          <li>✔ Todas las funciones</li>
+          <li>✔ Soporte preferente</li>
+        </ul>
+        <a href="login.html" class="block bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700">
+          Activar
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
 
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-                if(email === 'test@tallerpro360.com') {
-                    localStorage.setItem('nexus_role', 'TEST_ADMIN');
-                }
-                window.location.href = "taller.html";
-            } catch (e) {
-                alert("SISTEMA NEXUS-X: Credenciales no válidas en la red satelital.");
-            }
-        };
+<!-- FOOTER -->
+<footer class="py-10 border-t text-center text-sm text-slate-500">
+  TallerPRO360 © 2026 · Hecho para talleres colombianos 🇨🇴
+</footer>
 
-        // LÓGICA DE WHATSAPP Y LEGAL
-        window.enviarWhatsApp = (plan, tipo) => {
-            const mensaje = tipo === 'soporte' 
-                ? "Hola TallerPro360! 👋 Necesito soporte técnico para mi taller."
-                : `Hola TallerPro360! 👋 Estoy interesado en el *${plan}*. Deseo activar el sistema en mi ciudad.`;
-            
-            const waUrl = `https://wa.me/573000000000?text=${encodeURIComponent(mensaje)}`;
-            
-            if (!localStorage.getItem('habeas_data_accepted')) {
-                window.pendingAction = () => window.open(waUrl, '_blank');
-                document.getElementById('modal-legal').classList.remove('hidden');
-            } else {
-                window.open(waUrl, '_blank');
-            }
-        };
-
-        window.confirmarAceptacion = () => {
-            localStorage.setItem('habeas_data_accepted', 'true');
-            document.getElementById('modal-legal').classList.add('hidden');
-            if (window.pendingAction) window.pendingAction();
-        };
-    </script>
 </body>
 </html>
