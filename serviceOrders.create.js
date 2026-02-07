@@ -1,11 +1,10 @@
-// serviceOrders.create.js
 import { db } from "./firebase-config.js";
 import {
-  collection,
   doc,
   setDoc,
   runTransaction,
-  serverTimestamp
+  serverTimestamp,
+  collection
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 export async function createServiceOrder(data) {
@@ -13,11 +12,7 @@ export async function createServiceOrder(data) {
 
   return await runTransaction(db, async (transaction) => {
     const counterSnap = await transaction.get(counterRef);
-
-    let current = 0;
-    if (counterSnap.exists()) {
-      current = counterSnap.data().current;
-    }
+    const current = counterSnap.exists() ? counterSnap.data().current : 0;
 
     const next = current + 1;
     const year = new Date().getFullYear();
@@ -25,15 +20,24 @@ export async function createServiceOrder(data) {
 
     const orderRef = doc(db, "serviceOrders", orderId);
 
+    // Documento principal
     transaction.set(orderRef, {
       orderId,
       status: "INGRESO",
       createdAt: serverTimestamp(),
-      history: [{
-        stage: "INGRESO",
-        at: new Date().toISOString()
-      }],
       ...data
+    });
+
+    // Subcolección de etapas (trazabilidad)
+    const stageRef = doc(
+      collection(orderRef, "stages"),
+      "INGRESO"
+    );
+
+    transaction.set(stageRef, {
+      stage: "INGRESO",
+      at: serverTimestamp(),
+      source: "system"
     });
 
     transaction.set(counterRef, { current: next });
