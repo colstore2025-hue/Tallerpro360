@@ -1,434 +1,161 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>CEO GLOBAL COMMAND | Nexus-X Infrastructure</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
-    
-    <style>
-        :root { 
-            --gold: #f59e0b; 
-            --deep: #020617; 
-            --slate-custom: #0f172a;
-            --emerald-glow: #10b981;
-            --ruby: #ef4444;
-            --neon-blue: #3b82f6;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEO GLOBAL DASHBOARD | TallerPRO360</title>
 
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background: var(--deep); 
-            color: #f1f5f9; 
-            margin: 0; 
-            overflow-x: hidden;
-            background-image: radial-gradient(circle at 2px 2px, rgba(245, 158, 11, 0.03) 1px, transparent 0);
-            background-size: 30px 30px;
-        }
+<!-- Tailwind & FontAwesome -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-        .font-nexus { font-family: 'Orbitron', sans-serif; }
-
-        /* INTERFAZ DE CRISTAL CEO V2 */
-        .glass-ceo { 
-            background: rgba(15, 23, 42, 0.7); 
-            backdrop-filter: blur(40px); 
-            border: 1px solid rgba(255, 255, 255, 0.05); 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-            transition: all 0.3s ease;
-        }
-        .glass-ceo:hover { border-color: rgba(245, 158, 11, 0.2); }
-
-        .status-active { color: var(--emerald-glow); border: 1px solid rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.1); }
-        .status-suspended { color: var(--ruby); border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); }
-
-        /* ANIMACIONES Y EFECTOS SATELITALES */
-        @keyframes pulse-gold {
-            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-            100% { box-shadow: 0 0 0 20px rgba(245, 158, 11, 0); }
-        }
-        .radar-active { animation: pulse-gold 2s infinite; }
-
-        .scan-line {
-            width: 100%; height: 2px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
-            position: absolute; top: 0; left: 0;
-            animation: scan 5s linear infinite;
-            opacity: 0.5;
-        }
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
-
-        /* SCROLLBAR CUSTOM CEO */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: var(--deep); }
-        ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 20px; }
-
-        .chart-container { position: relative; height: 260px; width: 100%; }
-        
-        .btn-protocol {
-            background: linear-gradient(135deg, rgba(255,255,255,0.05), transparent);
-            border: 1px solid rgba(255,255,255,0.1);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .btn-protocol:hover { transform: translateY(-2px) scale(1.05); }
-
-        .terminal-text { font-family: 'Courier New', monospace; color: var(--emerald-glow); }
-    </style>
+<style>
+  body { background:#0f172a; font-family: 'Inter', sans-serif; color:#f1f5f9; }
+  .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(20px); border-radius: 2rem; border:1px solid rgba(255,255,255,0.05); padding:1rem; }
+  .status-active { color:#10b981; border:1px solid rgba(16,185,129,0.3); background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:8px; font-weight:bold; font-size:10px;}
+  .status-suspended { color:#ef4444; border:1px solid rgba(239,68,68,0.3); background:rgba(239,68,68,0.1); padding:2px 6px; border-radius:8px; font-weight:bold; font-size:10px;}
+</style>
 </head>
-<body class="p-4 lg:p-10 min-h-screen">
 
-    <nav class="max-w-[1700px] mx-auto flex flex-col lg:flex-row justify-between items-center mb-12 gap-8 relative z-50">
-        <div class="flex items-center gap-6">
-            <div class="w-20 h-20 bg-white rounded-3xl flex items-center justify-center text-slate-950 shadow-2xl radar-active overflow-hidden relative group">
-                <i class="fas fa-satellite-dish text-3xl relative z-10 transition-transform group-hover:rotate-45"></i>
-                <div class="absolute inset-0 bg-gold opacity-90"></div>
-            </div>
-            <div>
-                <h1 class="font-nexus text-4xl font-black tracking-tighter text-white">COMMAND<span class="text-gold italic">ZERO</span></h1>
-                <div class="flex items-center gap-2">
-                    <span id="ping-status" class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                    <p id="ceo-identity" class="text-[10px] text-slate-500 font-bold tracking-[0.4em] uppercase italic">ESTABLISHING SECURE UPLINK...</p>
-                </div>
-            </div>
-        </div>
+<body class="p-6">
 
-        <div class="flex flex-wrap justify-center gap-4 bg-slate-950/80 p-3 rounded-[2rem] border border-white/5 shadow-inner">
-            <div class="px-8 py-2 border-r border-white/10 text-center">
-                <p class="text-[8px] text-slate-500 uppercase font-black">Network Health</p>
-                <p class="text-[10px] text-emerald-400 font-black tracking-widest">99.9% UPTIME</p>
-            </div>
-            <div class="px-8 py-2 border-r border-white/10 text-center">
-                <p class="text-[8px] text-slate-500 uppercase font-black">Sync Date</p>
-                <p id="current-date" class="text-[10px] text-white font-black uppercase">--/--/2026</p>
-            </div>
-            <button onclick="protocoloCierre()" class="w-14 h-14 flex items-center justify-center text-ruby hover:bg-ruby/20 rounded-2xl transition-all">
-                <i class="fas fa-power-off text-xl"></i>
-            </button>
-        </div>
-    </nav>
+<header class="flex justify-between items-center mb-8">
+  <h1 class="text-3xl font-black">TallerPRO360 <span class="text-amber-500">CEO</span></h1>
+  <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-white font-bold">
+    <i class="fas fa-power-off"></i> Cerrar Sesión
+  </button>
+</header>
 
-    <main class="max-w-[1700px] mx-auto grid grid-cols-12 gap-10">
-        
-        <div class="col-span-12 lg:col-span-3 space-y-8">
-            <div class="glass-ceo p-8 rounded-[2.5rem] relative overflow-hidden group">
-                <div class="scan-line"></div>
-                <i class="fas fa-vault text-gold/10 text-7xl absolute -right-4 -bottom-4"></i>
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Ingresos Globales Red</p>
-                <h2 id="total-revenue" class="text-4xl font-nexus text-white stat-glow font-black">$0</h2>
-                <div class="flex items-center justify-between mt-4">
-                    <p class="text-[9px] text-emerald-400 font-bold uppercase italic"><i class="fas fa-level-up-alt"></i> +18% Target</p>
-                    <p class="text-[9px] text-slate-500 font-nexus">USD/COP</p>
-                </div>
-            </div>
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  <div class="glass">
+    <p class="text-xs uppercase font-bold text-gray-400">Talleres Totales</p>
+    <h2 id="total-talleres" class="text-2xl font-black mt-1">0</h2>
+  </div>
+  <div class="glass">
+    <p class="text-xs uppercase font-bold text-gray-400">Talleres Próximos a Vencer (<5 días)</p>
+    <h2 id="vencimientos" class="text-2xl font-black mt-1">0</h2>
+  </div>
+  <div class="glass">
+    <p class="text-xs uppercase font-bold text-gray-400">Ingresos Totales</p>
+    <h2 id="total-ingresos" class="text-2xl font-black mt-1">$0</h2>
+  </div>
+</section>
 
-            <div class="glass-ceo p-8 rounded-[2.5rem]">
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Terminales en Línea</p>
-                <h2 id="node-count" class="text-4xl font-nexus text-white font-black">0</h2>
-                <div class="w-full bg-slate-800 h-1 mt-4 rounded-full overflow-hidden">
-                    <div id="node-progress" class="bg-gold h-full transition-all duration-1000" style="width: 0%"></div>
-                </div>
-            </div>
+<section class="glass mb-8">
+  <div class="flex justify-between mb-4">
+    <input type="text" id="filtroTaller" placeholder="Filtrar por taller o ciudad..." class="w-1/2 p-2 rounded bg-slate-900 text-white focus:outline-none" onkeyup="filtrarTalleres()">
+    <button onclick="exportCSV()" class="bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded font-bold text-black">
+      <i class="fas fa-file-csv"></i> Exportar CSV
+    </button>
+  </div>
+  <table class="w-full text-left border-collapse">
+    <thead>
+      <tr class="text-xs text-gray-400 uppercase">
+        <th class="px-4 py-2">Taller</th>
+        <th class="px-4 py-2">Ciudad</th>
+        <th class="px-4 py-2">Estado</th>
+        <th class="px-4 py-2">Fecha Vencimiento</th>
+        <th class="px-4 py-2 text-right">Acción</th>
+      </tr>
+    </thead>
+    <tbody id="tablaTalleres"></tbody>
+  </table>
+</section>
 
-            <div class="glass-ceo p-8 rounded-[2.5rem] border-ruby/20">
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Vencimientos < 5 Días</p>
-                <h2 id="expiring-count" class="text-4xl font-nexus text-ruby font-black">0</h2>
-                <p class="text-[9px] text-slate-500 mt-2 font-bold uppercase tracking-tighter">Acción inmediata requerida</p>
-            </div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-            <div class="glass-ceo p-8 rounded-[2.5rem]">
-                <h4 class="text-[10px] font-black text-gold uppercase tracking-[0.3em] mb-6 text-center">Distribución Geográfica</h4>
-                <div class="chart-container">
-                    <canvas id="cityChart"></canvas>
-                </div>
-            </div>
-        </div>
+// Config Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+  authDomain: "tallerpro360.firebaseapp.com",
+  projectId: "tallerpro360",
+  storageBucket: "tallerpro360.appspot.com",
+  messagingSenderId: "636224778184",
+  appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-        <div class="col-span-12 lg:col-span-9 space-y-10">
-            <div class="glass-ceo rounded-[3rem] p-10">
-                <div class="flex flex-col xl:flex-row justify-between items-center mb-10 gap-8">
-                    <div>
-                        <h3 class="font-nexus text-3xl tracking-tighter text-white uppercase font-black">Infraestructura <span class="text-gold">Nexus-X</span></h3>
-                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[5px] mt-2">Control Maestro de Colombian Trucks Logistics LLC</p>
-                    </div>
-                    <div class="flex gap-4 w-full xl:w-auto">
-                        <div class="relative flex-grow">
-                            <i class="fas fa-search absolute left-6 top-1/2 -translate-y-1/2 text-gold"></i>
-                            <input type="text" id="node-filter" onkeyup="filtrarNodos()" placeholder="AUDITAR NODO, CIUDAD O TALLER..." class="w-full xl:w-96 bg-slate-950/90 border border-white/10 rounded-2xl py-5 pl-16 pr-6 text-xs text-white outline-none focus:border-gold transition-all uppercase font-bold tracking-widest">
-                        </div>
-                        <button onclick="descargarReporte()" class="w-16 h-16 bg-white text-black rounded-2xl hover:bg-gold transition-all flex items-center justify-center text-xl shadow-lg">
-                            <i class="fas fa-file-csv"></i>
-                        </button>
-                    </div>
-                </div>
+// Seguridad CEO
+onAuthStateChanged(auth, (user) => {
+  const allowed = ["ceo@colombiantrucks.com", "col.store2025@gmail.com"];
+  if(!user || !allowed.includes(user.email)) location.href = "index.html";
+});
 
-                <div class="overflow-x-auto">
-                    <table class="w-full border-separate border-spacing-y-4">
-                        <thead>
-                            <tr class="text-[10px] text-slate-500 font-black uppercase tracking-[4px] text-left">
-                                <th class="px-8 pb-4">Info Terminal</th>
-                                <th class="px-8 pb-4">Nodo / Ciudad</th>
-                                <th class="px-8 pb-4">Productividad</th>
-                                <th class="px-8 pb-4 text-center">Uplink</th>
-                                <th class="px-8 pb-4 text-right">Acción Global</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ceo-node-table">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
+// Sincronización talleres
+onSnapshot(collection(db, "usuarios"), (snap) => {
+  let total = 0, vencimientos = 0, ingresos = 0;
+  const tbody = document.getElementById("tablaTalleres");
+  tbody.innerHTML = "";
 
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-10">
-                <div class="glass-ceo p-10 rounded-[3rem]">
-                    <h3 class="font-nexus text-xs text-gold uppercase mb-8 tracking-[4px]">Proyección Operativa Semanal</h3>
-                    <div class="chart-container">
-                        <canvas id="mainChart"></canvas>
-                    </div>
-                </div>
-                <div class="glass-ceo p-10 rounded-[3rem] overflow-hidden">
-                    <div class="flex justify-between items-center mb-8">
-                        <h3 class="font-nexus text-xs text-gold uppercase tracking-[4px]">Live Audit Feed</h3>
-                        <span class="text-[8px] bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full font-black animate-pulse uppercase">Real-Time</span>
-                    </div>
-                    <div id="audit-logs" class="space-y-4 max-h-[350px] overflow-y-auto pr-4 custom-scroll">
-                        </div>
-                </div>
-            </div>
-        </div>
-    </main>
+  snap.forEach(docu => {
+    const data = docu.data();
+    if(data.rol !== "taller") return;
 
-    <footer class="max-w-[1700px] mx-auto mt-16 flex justify-between items-center text-[9px] font-black text-slate-600 uppercase tracking-[5px] border-t border-white/5 pt-8">
-        <p>© 2026 Colombian Trucks Logistics LLC - Charlotte, NC</p>
-        <p class="terminal-text">System ID: NEXUS-ZERO-ADMIN-PRO360</p>
-    </footer>
+    total++;
+    ingresos += data.facturacionAcumulada || 0;
+    const vence = data.vence?.toDate ? data.vence.toDate() : new Date(data.vence || Date.now());
+    const diff = Math.ceil((vence - new Date())/(1000*60*60*24));
+    if(diff <= 5) vencimientos++;
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    const stCls = data.status === "ACTIVO" ? "status-active" : "status-suspended";
 
-        // FIREBASE CONFIGURATION - NEXUS ZERO
-        const firebaseConfig = {
-            apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-            authDomain: "tallerpro360.firebaseapp.com",
-            projectId: "tallerpro360",
-            storageBucket: "tallerpro360.appspot.com",
-            messagingSenderId: "636224778184",
-            appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-        };
+    tbody.innerHTML += `
+      <tr class="border-b border-gray-700 hover:bg-slate-900/50">
+        <td class="px-4 py-2 font-bold">${data.nombreTaller || 'Taller N/A'}</td>
+        <td class="px-4 py-2">${data.ciudad || 'No asignada'}</td>
+        <td class="px-4 py-2"><span class="${stCls}">${data.status || 'ACTIVO'}</span></td>
+        <td class="px-4 py-2">${vence.toLocaleDateString()}</td>
+        <td class="px-4 py-2 text-right">
+          <button onclick="toggleEstado('${docu.id}','${data.status || 'ACTIVO'}')" class="px-3 py-1 rounded border font-bold ${data.status==='ACTIVO'?'bg-red-600 text-white':'bg-green-600 text-white'}">
+            ${data.status==='ACTIVO'?'Suspender':'Reactivar'}
+          </button>
+        </td>
+      </tr>
+    `;
+  });
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+  document.getElementById("total-talleres").innerText = total;
+  document.getElementById("vencimientos").innerText = vencimientos;
+  document.getElementById("total-ingresos").innerText = `$${ingresos.toLocaleString()}`;
+});
 
-        let charts = {};
+// Funciones CEO
+window.toggleEstado = async (uid, current) => {
+  const next = current === "ACTIVO" ? "SUSPENDIDO" : "ACTIVO";
+  if(confirm(`Cambiar estado a ${next}?`)) {
+    await updateDoc(doc(db,"usuarios",uid), { status: next });
+  }
+};
 
-        // SEGURIDAD DE ACCESO MAESTRO
-        onAuthStateChanged(auth, (user) => {
-            const authorized = ['col.store2025@gmail.com', 'test@tallerpro360.com', 'ceo@colombiantrucks.com'];
-            if (user && authorized.includes(user.email)) {
-                document.getElementById('current-date').innerText = new Date().toLocaleDateString('es-CO');
-                document.getElementById('ceo-identity').innerText = `ACCESS GRANTED: ${user.email}`;
-                iniciarSincronizacionTotal();
-            } else {
-                location.href = "index.html";
-            }
-        });
+window.filtrarTalleres = () => {
+  const query = document.getElementById("filtroTaller").value.toUpperCase();
+  document.querySelectorAll("#tablaTalleres tr").forEach(r => {
+    r.style.display = r.innerText.toUpperCase().includes(query) ? "" : "none";
+  });
+};
 
-        function iniciarSincronizacionTotal() {
-            // 1. MONITOR DE NODOS Y TALLERES (ESTADÍSTICAS GLOBALES)
-            onSnapshot(collection(db, "usuarios"), (snap) => {
-                const table = document.getElementById('ceo-node-table');
-                table.innerHTML = "";
-                let count = 0, critical = 0, cityStats = {};
+window.exportCSV = () => {
+  const rows = [["TALLER","CIUDAD","STATUS","VENCIMIENTO"]];
+  document.querySelectorAll("#tablaTalleres tr").forEach(tr => {
+    const tds = tr.querySelectorAll("td");
+    if(tds.length) rows.push([tds[0].innerText, tds[1].innerText, tds[2].innerText, tds[3].innerText]);
+  });
+  const csv = "data:text/csv;charset=utf-8," + rows.map(e=>e.join(",")).join("\n");
+  const link = document.createElement("a");
+  link.href = encodeURI(csv);
+  link.download = `TallerPRO360_CEO_${Date.now()}.csv`;
+  link.click();
+};
 
-                snap.forEach(d => {
-                    const data = d.data();
-                    if(data.rol === 'CEO') return;
+function cerrarSesion() {
+  signOut(auth).then(()=> location.href="index.html");
+}
+</script>
 
-                    count++;
-                    const vence = data.vence || Date.now();
-                    const diff = Math.ceil((vence - Date.now()) / (1000*60*60*24));
-                    if(diff <= 5) critical++;
-
-                    const city = data.ciudad || 'No Asignada';
-                    cityStats[city] = (cityStats[city] || 0) + 1;
-
-                    const stCls = data.status === 'ACTIVO' ? 'status-active' : 'status-suspended';
-                    const btnCls = data.status === 'ACTIVO' ? 'border-ruby text-ruby hover:bg-ruby hover:text-white' : 'border-emerald-500 text-emerald-500 hover:bg-emerald-500 hover:text-black';
-
-                    table.innerHTML += `
-                        <tr class="bg-slate-900/30 hover:bg-slate-800/50 transition-all group border-b border-white/[0.02]">
-                            <td class="px-8 py-6 rounded-l-[1.5rem]">
-                                <p class="font-black text-white text-sm uppercase">${data.nombreTaller || 'Taller Nexus'}</p>
-                                <p class="text-[9px] text-slate-600 font-mono tracking-tighter uppercase">${d.id}</p>
-                            </td>
-                            <td class="px-8 py-6">
-                                <div class="flex items-center gap-3">
-                                    <i class="fas fa-location-crosshairs text-gold"></i>
-                                    <span class="text-[11px] text-slate-300 font-black uppercase tracking-widest">${city}</span>
-                                </div>
-                            </td>
-                            <td class="px-8 py-6">
-                                <p class="text-sm font-nexus text-emerald-400 font-black">$${(data.facturacionAcumulada || 0).toLocaleString()}</p>
-                                <p class="text-[8px] text-slate-600 font-bold uppercase">Revenue Acumulado</p>
-                            </td>
-                            <td class="px-8 py-6 text-center">
-                                <span class="px-5 py-2 rounded-xl text-[9px] font-black uppercase ${stCls}">
-                                    ${data.status || 'ACTIVO'}
-                                </span>
-                            </td>
-                            <td class="px-8 py-6 text-right rounded-r-[1.5rem]">
-                                <button onclick="toggleNodo('${d.id}', '${data.status || 'ACTIVO'}')" 
-                                        class="btn-protocol border px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] ${btnCls}">
-                                    ${data.status === 'ACTIVO' ? 'SUSPENDER' : 'REINSTALAR'}
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                
-                document.getElementById('node-count').innerText = count;
-                document.getElementById('expiring-count').innerText = critical;
-                document.getElementById('node-progress').style.width = '100%';
-                updateCityChart(cityStats);
-            });
-
-            // 2. MONITOR DE ÓRDENES Y AUDITORÍA DE FACTURACIÓN
-            const qOrders = query(collection(db, "ordenes"), orderBy("timestamp", "desc"));
-            onSnapshot(qOrders, (snap) => {
-                let totalRev = 0;
-                const logs = document.getElementById('audit-logs');
-                logs.innerHTML = "";
-
-                snap.forEach((o, index) => {
-                    const d = o.data();
-                    totalRev += (d.total || 0);
-
-                    if(index < 12) {
-                        logs.innerHTML += `
-                            <div class="flex justify-between items-center p-5 bg-slate-900/50 rounded-[1.5rem] border border-white/5 hover:border-gold/30 transition-all">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 bg-gold/10 rounded-xl flex items-center justify-center text-gold">
-                                        <i class="fas fa-truck-pickup text-xs"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs font-black text-white uppercase">${d.placa || 'UNIT-X'}</p>
-                                        <p class="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">Nodo: ${d.tallerId ? d.tallerId.substring(0,10) : 'Global'}</p>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-xs font-nexus text-gold font-black">+$${(d.total || 0).toLocaleString()}</p>
-                                    <p class="text-[8px] text-slate-600 font-bold uppercase italic">${new Date(d.timestamp).toLocaleTimeString()}</p>
-                                </div>
-                            </div>
-                        `;
-                    }
-                });
-                document.getElementById('total-revenue').innerText = `$${totalRev.toLocaleString()}`;
-                updateMainChart(snap.size);
-            });
-        }
-
-        // --- FUNCIONES DE COMANDO CEO ---
-
-        window.toggleNodo = async (uid, current) => {
-            const next = current === 'ACTIVO' ? 'SUSPENDIDO' : 'ACTIVO';
-            if(confirm(`Nexus Zero Protocol: Confirmar cambio de estado a ${next} para la terminal ${uid}?`)) {
-                await updateDoc(doc(db, "usuarios", uid), { status: next });
-            }
-        };
-
-        function updateCityChart(data) {
-            const ctx = document.getElementById('cityChart').getContext('2d');
-            if(charts.city) charts.city.destroy();
-            charts.city = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(data),
-                    datasets: [{
-                        data: Object.values(data),
-                        backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4'],
-                        borderWidth: 0,
-                        hoverOffset: 20
-                    }]
-                },
-                options: { 
-                    cutout: '85%',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }
-                }
-            });
-        }
-
-        function updateMainChart(total) {
-            const ctx = document.getElementById('mainChart').getContext('2d');
-            if(charts.main) charts.main.destroy();
-            charts.main = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['LU', 'MA', 'MI', 'JU', 'VI', 'SA'],
-                    datasets: [{
-                        label: 'Prod',
-                        data: [total*0.4, total*0.6, total*0.5, total*0.8, total*0.7, total],
-                        borderColor: '#f59e0b',
-                        borderWidth: 4,
-                        tension: 0.5,
-                        fill: true,
-                        backgroundColor: 'rgba(245, 158, 11, 0.05)',
-                        pointRadius: 0
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { 
-                        y: { display: false },
-                        x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#475569', font: { size: 9, weight: 'bold' } } }
-                    }
-                }
-            });
-        }
-
-        window.descargarReporte = () => {
-            const rows = [["TALLER", "ID_TERMINAL", "CIUDAD", "REVENUE_TOTAL", "STATUS"]];
-            document.querySelectorAll("#ceo-node-table tr").forEach(tr => {
-                const tds = tr.querySelectorAll("td");
-                if(tds.length > 0) {
-                    rows.push([
-                        tds[0].querySelector("p").innerText,
-                        tds[0].querySelectorAll("p")[1].innerText,
-                        tds[1].innerText.trim(),
-                        tds[2].querySelector("p").innerText,
-                        tds[3].innerText.trim()
-                    ]);
-                }
-            });
-            let csv = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
-            const link = document.createElement("a");
-            link.setAttribute("href", encodeURI(csv));
-            link.setAttribute("download", `CTL_LLC_GLOBAL_REPORT_${new Date().getTime()}.csv`);
-            link.click();
-        };
-
-        window.filtrarNodos = () => {
-            const query = document.getElementById('node-filter').value.toUpperCase();
-            document.querySelectorAll("#ceo-node-table tr").forEach(r => {
-                r.style.display = r.innerText.toUpperCase().includes(query) ? "" : "none";
-            });
-        };
-
-        window.protocoloCierre = () => {
-            if(confirm("TERMINATE CONNECTION: ¿Cerrar Command Zero?")) {
-                signOut(auth).then(() => location.href = "index.html");
-            }
-        };
-
-    </script>
 </body>
 </html>
