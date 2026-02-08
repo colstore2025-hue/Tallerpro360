@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TallerPRO360 | CEO Command Center</title>
+<title>CEO Ultimate Command Center | TallerPRO360</title>
 
 <!-- Tailwind & FontAwesome -->
 <script src="https://cdn.tailwindcss.com"></script>
@@ -11,14 +11,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
 
 <style>
-  body { background:#0f172a; font-family: 'Inter', sans-serif; color:#f1f5f9; overflow-x:hidden; }
-  .font-nexus { font-family: 'Orbitron', sans-serif; }
-  .glass { background: rgba(15,23,42,0.65); backdrop-filter: blur(30px); border-radius:2rem; border:1px solid rgba(255,255,255,0.05); padding:1.5rem; transition: all 0.3s ease; }
+  body { background:#0f172a; font-family:'Inter',sans-serif; color:#f1f5f9; overflow-x:hidden; }
+  .font-nexus { font-family:'Orbitron',sans-serif; }
+  .glass { background:rgba(15,23,42,0.65); backdrop-filter: blur(30px); border-radius:2rem; border:1px solid rgba(255,255,255,0.05); padding:1.5rem; transition: all 0.3s ease; }
   .glass:hover { border-color:#f59e0b; }
   .status-active { color:#10b981; border:1px solid rgba(16,185,129,0.3); background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:8px; font-weight:bold; font-size:10px;}
   .status-suspended { color:#ef4444; border:1px solid rgba(239,68,68,0.3); background:rgba(239,68,68,0.1); padding:2px 6px; border-radius:8px; font-weight:bold; font-size:10px;}
   .scanline { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; background:linear-gradient(0deg,transparent 0%,rgba(255,255,255,0.05) 50%,transparent 100%); animation:scan 3s linear infinite; }
   @keyframes scan { 0% {background-position-y:0} 100% {background-position-y:100%} }
+  .glow { text-shadow:0 0 8px #f59e0b,0 0 16px #f59e0b; transition: all 0.3s ease; }
+  .alerta { animation: parpadeo 1s infinite; }
+  @keyframes parpadeo { 0%{opacity:1} 50%{opacity:0.3} 100%{opacity:1} }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: #0f172a; }
   ::-webkit-scrollbar-thumb { background: #f59e0b; border-radius:20px; }
@@ -32,27 +35,27 @@
 
 <!-- HEADER -->
 <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-  <h1 class="text-3xl font-nexus font-black tracking-tight text-amber-500">TallerPRO360 <span class="text-white">CEO Command Center</span></h1>
+  <h1 class="text-3xl font-nexus font-black tracking-tight text-amber-500">TallerPRO360 <span class="text-white">Ultimate CEO</span></h1>
   <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-white font-bold flex items-center gap-2">
     <i class="fas fa-power-off"></i> Cerrar Sesión
   </button>
 </header>
 
-<!-- KPIs HUD -->
-<section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-  <div class="glass text-center p-6 relative">
+<!-- KPIs HUD FLOTA -->
+<section class="relative grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+  <div class="glass text-center p-6 relative animate-fadeIn" style="animation-delay:0.2s">
     <p class="text-xs uppercase font-bold text-gray-400 tracking-widest">Talleres Totales</p>
     <h2 id="total-talleres" class="text-4xl font-nexus font-black mt-2 text-amber-500 glow">0</h2>
   </div>
-  <div class="glass text-center p-6 relative">
+  <div class="glass text-center p-6 relative animate-fadeIn" style="animation-delay:0.4s">
     <p class="text-xs uppercase font-bold text-gray-400 tracking-widest">Vencimientos <5 días</p>
     <h2 id="vencimientos" class="text-4xl font-nexus font-black mt-2 text-red-500 glow">0</h2>
   </div>
-  <div class="glass text-center p-6 relative">
+  <div class="glass text-center p-6 relative animate-fadeIn" style="animation-delay:0.6s">
     <p class="text-xs uppercase font-bold text-gray-400 tracking-widest">Ingresos Totales</p>
     <h2 id="total-ingresos" class="text-4xl font-nexus font-black mt-2 text-green-500 glow">$0</h2>
   </div>
-  <div class="glass text-center p-6 relative">
+  <div class="glass text-center p-6 relative animate-fadeIn" style="animation-delay:0.8s">
     <p class="text-xs uppercase font-bold text-gray-400 tracking-widest">Terminales Activas</p>
     <h2 id="terminales-act" class="text-4xl font-nexus font-black mt-2 text-blue-500 glow">0</h2>
   </div>
@@ -82,7 +85,7 @@
   </div>
 </section>
 
-<!-- GRÁFICOS INTERACTIVOS -->
+<!-- GRÁFICOS -->
 <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
   <div class="glass p-6 relative">
     <h3 class="text-xs font-nexus text-amber-500 uppercase tracking-widest mb-4">Distribución por Ciudad</h3>
@@ -91,6 +94,14 @@
   <div class="glass p-6 relative">
     <h3 class="text-xs font-nexus text-amber-500 uppercase tracking-widest mb-4">Ingresos Semanales</h3>
     <canvas id="chartIngresos" class="w-full h-64"></canvas>
+  </div>
+</section>
+
+<!-- MAPA INTERACTIVO -->
+<section class="glass p-6 mb-8 relative">
+  <h3 class="text-xs font-nexus text-amber-500 uppercase tracking-widest mb-4">Mapa de Talleres</h3>
+  <div id="mapaTalleres" class="w-full h-96 bg-slate-900 rounded-lg flex items-center justify-center text-gray-500">
+    Aquí se cargará el mapa interactivo
   </div>
 </section>
 
@@ -103,10 +114,9 @@
 </section>
 
 <footer class="text-xs text-gray-400 uppercase tracking-widest text-center mt-8">
-  © 2026 TallerPRO360 - CEO Command Center
+  © 2026 TallerPRO360 - Ultimate CEO Command Center
 </footer>
 
-<!-- SCRIPT -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -114,12 +124,12 @@ import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/fi
 import Chart from "https://cdn.jsdelivr.net/npm/chart.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-  authDomain: "tallerpro360.firebaseapp.com",
-  projectId: "tallerpro360",
-  storageBucket: "tallerpro360.appspot.com",
-  messagingSenderId: "636224778184",
-  appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_AUTH_DOMAIN",
+  projectId: "TU_PROJECT_ID",
+  storageBucket: "TU_STORAGE_BUCKET",
+  messagingSenderId: "TU_MESSAGING_SENDER_ID",
+  appId: "TU_APP_ID"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -136,7 +146,7 @@ onAuthStateChanged(auth,user=>{
 // Funciones principales
 function sincronizarTalleres() {
   onSnapshot(collection(db,"usuarios"),snap=>{
-    let total=0,vencimientos=0,ingresos=0,terminalesAct=0,cityData={};
+    let total=0,vencimientos=0,ingresos=0,terminalesAct=0,cityData={},logs=[];
     const tbody=document.getElementById("tablaTalleres"); tbody.innerHTML="";
 
     snap.forEach(docu=>{
@@ -144,10 +154,12 @@ function sincronizarTalleres() {
       total++; ingresos+=data.facturacionAcumulada||0; if(data.status==="ACTIVO") terminalesAct++;
       const vence=data.vence?.toDate ? data.vence.toDate() : new Date(data.vence||Date.now());
       if(Math.ceil((vence-new Date())/(1000*60*60*24))<=5) vencimientos++;
+
       const stCls=data.status==="ACTIVO"?"status-active":"status-suspended";
+      const alertaClass = (Math.ceil((vence-new Date())/(1000*60*60*24))<=5) ? "alerta" : "";
 
       tbody.innerHTML+=`
-        <tr class="border-b border-gray-700 hover:bg-slate-900/50">
+        <tr class="border-b border-gray-700 hover:bg-slate-900/50 ${alertaClass}">
           <td class="px-4 py-2 font-bold">${data.nombreTaller||'Taller N/A'}</td>
           <td class="px-4 py-2">${data.ciudad||'No asignada'}</td>
           <td class="px-4 py-2"><span class="${stCls}">${data.status||'ACTIVO'}</span></td>
@@ -160,8 +172,8 @@ function sincronizarTalleres() {
         </tr>
       `;
 
-      const city=data.ciudad||"No asignada";
-      cityData[city]=(cityData[city]||0)+1;
+      cityData[data.ciudad||"No asignada"] = (cityData[data.ciudad||"No asignada"]||0)+1;
+      logs.push({nombre:data.nombreTaller,ciudad:data.ciudad,status:data.status,ingreso:data.facturacionAcumulada});
     });
 
     document.getElementById("total-talleres").innerText=total;
@@ -170,8 +182,8 @@ function sincronizarTalleres() {
     document.getElementById("terminales-act").innerText=terminalesAct;
 
     actualizarGraficoCiudades(cityData);
-    actualizarGraficoIngresos(snap.size);
-    actualizarLogs(snap);
+    actualizarGraficoIngresos(total);
+    actualizarLogs(logs);
   });
 }
 
@@ -218,22 +230,17 @@ function actualizarGraficoIngresos(total){
   });
 }
 
-function actualizarLogs(snap){
+function actualizarLogs(logs){
   const container=document.getElementById("actividadLogs"); container.innerHTML="";
-  let index=0;
-  snap.forEach(docu=>{
-    if(index>=15) return;
-    const data=docu.data();
+  logs.slice(0,15).forEach(log=>{
     container.innerHTML+=`
       <div class="flex justify-between items-center p-3 bg-slate-900/50 rounded-md border border-white/5 hover:border-amber-500 transition-all">
-        <div><p class="font-bold text-white text-sm">${data.nombreTaller||'Taller N/A'}</p><p class="text-xs text-gray-400 uppercase">${data.ciudad||'No asignada'}</p></div>
-        <div class="text-right"><p class="text-xs text-amber-500 font-bold">$${(data.facturacionAcumulada||0).toLocaleString()}</p><p class="text-[8px] text-gray-400 italic">${data.status||'ACTIVO'}</p></div>
+        <div><p class="font-bold text-white text-sm">${log.nombre||'Taller N/A'}</p><p class="text-xs text-gray-400 uppercase">${log.ciudad||'No asignada'}</p></div>
+        <div class="text-right"><p class="text-xs text-amber-500 font-bold">$${(log.ingreso||0).toLocaleString()}</p><p class="text-[8px] text-gray-400 italic">${log.status||'ACTIVO'}</p></div>
       </div>
     `;
-    index++;
   });
 }
 </script>
-
 </body>
 </html>
