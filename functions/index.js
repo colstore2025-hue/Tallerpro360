@@ -49,3 +49,40 @@ exports.billingCron = billingCron;
 // Mercado Pago
 exports.crearPago = crearPago;
 exports.webhookMP = webhookMP;
+
+/* ===============================
+   🔰 ACTIVAR PLAN TRIAL AL REGISTRO
+================================ */
+exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
+  const uid = user.uid;
+  const ahora = admin.firestore.Timestamp.now();
+
+  const vence = admin.firestore.Timestamp.fromDate(
+    new Date(Date.now() + 7 * 86400000)
+  );
+
+  await db.collection("talleres").doc(uid).set({
+    planId: "trial",
+    planNombre: "Trial",
+    tipoPlan: "trial",
+    estadoPlan: "ACTIVO",
+    inicioPlan: ahora,
+    venceEn: vence,
+    ordenesCreadas: 0,
+    limites: {
+      ordenes_max: 10,
+      usuarios: 1
+    },
+    features: {
+      inventario: true,
+      reportes: true,
+      excel: false,
+      multiusuario: false,
+      facturacion: false
+    },
+    metodoPago: "trial",
+    creadoEn: ahora
+  });
+
+  console.log(`✅ Trial activado para usuario ${uid}`);
+});
