@@ -4,14 +4,16 @@ const mercadopago = require("mercadopago");
 
 admin.initializeApp();
 
-// Configuración Mercado Pago (TOKEN OCULTO)
+/* ===============================
+   CONFIG MERCADO PAGO
+================================ */
 mercadopago.configure({
   access_token: functions.config().mp.token
 });
 
-/**
- * CREA EL PAGO (Checkout)
- */
+/* ===============================
+   1️⃣ CREAR PAGO (Callable)
+================================ */
 exports.crearPago = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
@@ -20,27 +22,43 @@ exports.crearPago = functions.https.onCall(async (data, context) => {
     );
   }
 
-  const { plan, precio } = data;
+  const { planId } = data;
   const uid = context.auth.uid;
   const email = context.auth.token.email;
+
+  // 🔎 Buscar plan en Firestore
+  const planRef = admin.firestore().collection("planes").doc(planId);
+  const planSnap = await planRef.get();
+
+  if (!planSnap.exists || !planSnap.data().activo) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Plan inválido o inactivo"
+    );
+  }
+
+  const plan = planSnap.data();
 
   const preference = {
     items: [
       {
-        title: `TallerPRO360 - Plan ${plan}`,
+        title: `TallerPRO360 - ${plan.nombre}`,
         quantity: 1,
         currency_id: "COP",
-        unit_price: precio
+        unit_price: plan.precio
       }
     ],
     payer: { email },
-    metadata: { uid, plan },
-    back_urls: {
-      success: "https://tudominio.com/pago-exitoso.html",
-      failure: "https://tudominio.com/pago-fallido.html",
-      pending: "https://tudominio.com/pago-pendiente.html"
+    metadata: {
+      uid,
+      planId
     },
     auto_return: "approved",
+    back_urls: {
+      success: "https://tallerpro360.com/pago-exitoso.html",
+      failure: "https://tallerpro360.com/pago-fallido.html",
+      pending: "https://tallerpro360.com/pago-pendiente.html"
+    },
     notification_url:
       "https://us-central1-tallerpro360.cloudfunctions.net/webhookMP"
   };
@@ -49,12 +67,12 @@ exports.crearPago = functions.https.onCall(async (data, context) => {
   return { init_point: response.body.init_point };
 });
 
-/**
- * WEBHOOK (ACTIVA EL PLAN)
- */
+/* ===============================
+   2️⃣ WEBHOOK MERCADO PAGO
+================================ */
 exports.webhookMP = functions.https.onRequest(async (req, res) => {
   try {
-    const paymentId = req.query?.["data.id"];
+    const paymentId = req.query["data.id"];
     if (!paymentId) return res.sendStatus(200);
 
     const payment = await mercadopago.payment.findById(paymentId);
@@ -62,24 +80,39 @@ exports.webhookMP = functions.https.onRequest(async (req, res) => {
 
     if (data.status !== "approved") return res.sendStatus(200);
 
-    const { uid, plan } = data.metadata;
+    const { uid, planId } = data.metadata;
+
+    // 🔎 Buscar plan
+    const planSnap = await admin.firestore()
+      .collection("planes")
+      .doc(planId)
+      .get();
+
+    if (!planSnap.exists) return res.sendStatus(200);
+
+    const plan = planSnap.data();
 
     const ahora = admin.firestore.Timestamp.now();
     const vence = admin.firestore.Timestamp.fromDate(
-      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      new Date(Date.now() + plan.duracion_dias * 24 * 60 * 60 * 1000)
     );
 
-    await admin.firestore().collection("talleres").doc(uid).update({
-      plan,
-      estadoPlan: "activo",
-      inicioPlan: ahora,
-      venceEn: vence,
-      alertas: { d7: false, d3: false, d1: false }
-    });
+    await admin.firestore().collection("talleres").doc(uid).set(
+      {
+        planId,
+        planNombre: plan.nombre,
+        estadoPlan: "activo",
+        inicioPlan: ahora,
+        venceEn: vence,
+        metodoPago: "mercado_pago",
+        alertas: { d7: false, d3: false, d1: false }
+      },
+      { merge: true }
+    );
 
     res.sendStatus(200);
-  } catch (err) {
-    console.error("Webhook error:", err);
+  } catch (error) {
+    console.error("Webhook error:", error);
     res.sendStatus(500);
   }
 });
