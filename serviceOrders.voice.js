@@ -1,68 +1,83 @@
-// serviceOrders.voice.js
 /**
- * Voz automática por cambio de etapa
- * TallerPRO360 – Colombia
+ * serviceOrders.voice.js
+ * Voz automática por cambio de estado de orden
+ * TallerPRO360
+ * Compatible Chrome / Android / PWA
+ * Idioma: Español Colombia (es-CO)
  */
 
-const stageMessages = {
+// ===============================
+// 🎙️ Mensajes por estado
+// ===============================
+const STAGE_MESSAGES = {
   INGRESO: "Su vehículo ha sido ingresado al taller.",
   DIAGNOSTICO: "Su vehículo está en diagnóstico técnico.",
-  APROBACION: "Su vehículo está pendiente de aprobación.",
-  REPARACION: "Su vehículo se encuentra en reparación.",
-  PRUEBAS: "El vehículo está en pruebas finales.",
-  FACTURACION: "Su vehículo está en proceso de facturación.",
+  APROBADO: "El servicio de su vehículo ha sido aprobado.",
+  "EN PROCESO": "Su vehículo se encuentra en reparación.",
   LISTO: "Su vehículo está listo para ser entregado.",
-  ENTREGADO: "Gracias por confiar en Taller Pro tres seis cero. Su vehículo fue entregado."
+  ENTREGADO: "Gracias por confiar en Taller PRO tres seis cero. Su vehículo fue entregado."
 };
 
-let voicesLoaded = false;
-
-/**
- * Inicializa voces (OBLIGATORIO llamar tras un click del usuario)
- */
-export function initVoice() {
-  if (!("speechSynthesis" in window)) return;
-
-  speechSynthesis.getVoices();
-  speechSynthesis.onvoiceschanged = () => {
-    voicesLoaded = true;
-  };
+// ===============================
+// 🔐 Control local para no repetir
+// ===============================
+function alreadySpoken(orderCode, stage) {
+  return localStorage.getItem(`tp360_voice_${orderCode}`) === stage;
 }
 
-/**
- * Habla una etapa solo si es nueva
- */
-export function speakStage(orderId, stage) {
-  if (!("speechSynthesis" in window)) return;
+function markAsSpoken(orderCode, stage) {
+  localStorage.setItem(`tp360_voice_${orderCode}`, stage);
+}
 
-  const message = stageMessages[stage];
+// ===============================
+// 🔊 Función principal de voz
+// ===============================
+export function speakOrderStage(order) {
+  if (!("speechSynthesis" in window)) {
+    console.warn("🔇 Navegador sin soporte de voz");
+    return;
+  }
+
+  if (!order || !order.estado || !order.codigo) return;
+
+  const message = STAGE_MESSAGES[order.estado];
   if (!message) return;
 
-  const lastSpoken = localStorage.getItem(`tp360_voice_${orderId}`);
-  if (lastSpoken === stage) return;
+  if (alreadySpoken(order.codigo, order.estado)) return;
 
-  const speak = () => {
-    const utterance = new SpeechSynthesisUtterance(
-      `Atención. Taller Pro tres seis cero informa. ${message}`
-    );
+  const utterance = new SpeechSynthesisUtterance(
+    `Taller PRO tres seis cero informa. ${message}`
+  );
 
-    const voices = speechSynthesis.getVoices();
-    const voiceES = voices.find(v => v.lang.startsWith("es"));
+  utterance.lang = "es-CO";
+  utterance.rate = 0.95;
+  utterance.pitch = 1;
+  utterance.volume = 1;
 
-    if (voiceES) utterance.voice = voiceES;
+  // Cancelar cualquier voz anterior
+  window.speechSynthesis.cancel();
 
-    utterance.lang = "es-CO";
-    utterance.rate = 0.95;
-    utterance.pitch = 1;
+  // Esperar carga de voces (Android fix)
+  setTimeout(() => {
+    window.speechSynthesis.speak(utterance);
+    markAsSpoken(order.codigo, order.estado);
+  }, 300);
+}
 
-    speechSynthesis.speak(utterance);
-    localStorage.setItem(`tp360_voice_${orderId}`, stage);
-  };
+// ===============================
+// 🔄 Listener Firestore (opcional)
+// ===============================
+// Úsalo si quieres que el script se conecte solo
+// al documento de la orden
 
-  // Evitar bug Android
-  if (!voicesLoaded) {
-    setTimeout(speak, 500);
-  } else {
-    speak();
-  }
+export function listenOrderVoice(db, orderId) {
+  import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js")
+    .then(({ doc, onSnapshot }) => {
+      const ref = doc(db, "ordenes", orderId);
+
+      onSnapshot(ref, (snap) => {
+        if (!snap.exists()) return;
+        speakOrderStage(snap.data());
+      });
+    });
 }
