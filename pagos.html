@@ -12,7 +12,7 @@
   body { background:#0f172a; color:#f1f5f9; }
   .glass {
     background:rgba(15,23,42,.75);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(18px);
     border-radius:1.5rem;
     border:1px solid rgba(255,255,255,.08);
   }
@@ -33,17 +33,41 @@
     <p><strong>Plan:</strong> Mensual</p>
     <p><strong>Valor:</strong> <span class="text-green-400 font-bold">$XX.XXX COP</span></p>
     <p class="text-xs text-gray-400">
-      Una vez validado el pago, tu sistema se activa automáticamente.
+      Tu suscripción se activa automáticamente una vez validemos el pago.
     </p>
   </div>
 
-  <!-- MÉTODOS -->
+  <!-- OPCIÓN 1: MERCADOPAGO -->
+  <div class="bg-slate-900/60 rounded-lg p-4 text-sm space-y-3 border border-amber-500/30">
+    <p class="font-bold text-amber-400 flex items-center gap-2">
+      <i class="fa-brands fa-cc-visa"></i> Pago con Tarjeta / PSE
+    </p>
+
+    <p class="text-xs text-gray-300">
+      Paga de forma segura con tarjeta débito, crédito o PSE usando MercadoPago.
+    </p>
+
+    <!-- LINK DE PAGO (Fase 1) -->
+    <a href="https://link.mercadopago.com/tallerpro360"
+       target="_blank"
+       class="block text-center bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded">
+      Pagar con MercadoPago
+    </a>
+
+    <p class="text-[11px] text-gray-400">
+      * MercadoPago procesa tu pago de forma segura.
+    </p>
+  </div>
+
+  <!-- OPCIÓN 2: TRANSFERENCIAS -->
   <div class="bg-slate-900/60 rounded-lg p-4 text-sm space-y-3">
-    <p class="font-bold text-amber-400">📲 Métodos de pago disponibles</p>
+    <p class="font-bold text-amber-400 flex items-center gap-2">
+      <i class="fa-solid fa-money-bill-transfer"></i> Transferencia Manual
+    </p>
 
     <div>
       <p><strong>Nequi:</strong> 311 570 9730</p>
-      <p class="text-xs text-gray-400">Titular: William Jeffry Urquijo Cubillos</p>
+      <p class="text-xs text-gray-400">William Jeffry Urquijo Cubillos</p>
     </div>
 
     <div class="pt-2 border-t border-slate-700">
@@ -55,18 +79,19 @@
     </div>
   </div>
 
-  <!-- FORMULARIO -->
+  <!-- FORMULARIO COMPROBANTE -->
   <form id="formPago" class="space-y-4">
 
     <select id="metodo"
       class="w-full p-2 rounded bg-slate-800 text-white outline-none" required>
-      <option value="">Selecciona método de pago</option>
+      <option value="">Selecciona método usado</option>
       <option value="nequi">Nequi</option>
       <option value="nubank">Nubank</option>
+      <option value="mercadopago">MercadoPago</option>
     </select>
 
     <input type="text" id="referencia"
-      placeholder="Referencia del pago (opcional)"
+      placeholder="Referencia / ID de pago (opcional)"
       class="w-full p-2 rounded bg-slate-800 text-white outline-none">
 
     <input type="file" id="comprobante"
@@ -115,13 +140,11 @@ onAuthStateChanged(auth, async user => {
   if (!user) location.href = "login.html";
   usuario = user;
 
-  const userSnap = await getDoc(doc(db,"usuarios",user.uid));
-  if (userSnap.exists()) {
-    tallerId = userSnap.data().tallerId || null;
-  }
+  const snap = await getDoc(doc(db,"usuarios",user.uid));
+  if (snap.exists()) tallerId = snap.data().tallerId || null;
 });
 
-document.getElementById("formPago").addEventListener("submit", async e => {
+formPago.addEventListener("submit", async e => {
   e.preventDefault();
 
   const file = comprobante.files[0];
@@ -150,13 +173,13 @@ document.getElementById("formPago").addEventListener("submit", async e => {
       creadoEn: serverTimestamp()
     });
 
-    msg.textContent = "✅ Pago enviado. Validaremos y activaremos tu plan.";
+    msg.textContent = "✅ Pago registrado. Activaremos tu plan en breve.";
     msg.className = "text-green-400";
     formPago.reset();
 
   } catch (err) {
     console.error(err);
-    msg.textContent = "❌ Error al enviar el pago";
+    msg.textContent = "❌ Error al registrar el pago";
     msg.className = "text-red-400";
   }
 });
