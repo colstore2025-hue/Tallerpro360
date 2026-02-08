@@ -41,19 +41,14 @@ exports.crearPago = functions.https.onCall(async (data, context) => {
   const plan = planSnap.data();
 
   const preference = {
-    items: [
-      {
-        title: `TallerPRO360 · ${plan.nombre}`,
-        quantity: 1,
-        currency_id: "COP",
-        unit_price: plan.precio
-      }
-    ],
+    items: [{
+      title: `TallerPRO360 · ${plan.nombre}`,
+      quantity: 1,
+      currency_id: "COP",
+      unit_price: plan.precio
+    }],
     payer: { email },
-    metadata: {
-      uid,
-      planId
-    },
+    metadata: { uid, planId },
     auto_return: "approved",
     back_urls: {
       success: "https://tallerpro360.com/pago-exitoso.html",
@@ -64,11 +59,8 @@ exports.crearPago = functions.https.onCall(async (data, context) => {
       "https://us-central1-tallerpro360.cloudfunctions.net/webhookMP"
   };
 
-  const response = await mercadopago.preferences.create(preference);
-
-  return {
-    init_point: response.body.init_point
-  };
+  const resp = await mercadopago.preferences.create(preference);
+  return { init_point: resp.body.init_point };
 });
 
 /* ===============================
@@ -85,9 +77,7 @@ exports.webhookMP = functions.https.onRequest(async (req, res) => {
     if (data.status !== "approved") return res.sendStatus(200);
 
     const { uid, planId } = data.metadata;
-    if (!uid || !planId) return res.sendStatus(200);
 
-    // 🔎 Buscar plan
     const planSnap = await db.collection("planes").doc(planId).get();
     if (!planSnap.exists) return res.sendStatus(200);
 
@@ -95,26 +85,34 @@ exports.webhookMP = functions.https.onRequest(async (req, res) => {
 
     const ahora = admin.firestore.Timestamp.now();
     const vence = admin.firestore.Timestamp.fromDate(
-      new Date(Date.now() + plan.duracion_dias * 24 * 60 * 60 * 1000)
+      new Date(Date.now() + plan.duracion_dias * 86400000)
     );
 
-    // 🔓 Activar plan del taller
-    await db.collection("talleres").doc(uid).set(
-      {
-        planId,
-        planNombre: plan.nombre,
-        estadoPlan: "ACTIVO",
-        inicioPlan: ahora,
-        venceEn: vence,
-        metodoPago: "mercado_pago",
-        alertas: { d7: false, d3: false, d1: false }
-      },
-      { merge: true }
-    );
+    // 🔥 ACTIVACIÓN AUTOMÁTICA SaaS
+    await db.collection("talleres").doc(uid).set({
+      planId,
+      planNombre: plan.nombre,
+      estadoPlan: "ACTIVO",
+      inicioPlan: ahora,
+      venceEn: vence,
+      metodoPago: "mercado_pago",
+      diasRestantes: plan.duracion_dias,
+      alertas: { d7: false, d3: false, d1: false }
+    }, { merge: true });
 
-    // 🧾 Registrar pago
+    // Log contable
     await db.collection("pagos").add({
       uid,
       planId,
+      monto: plan.precio,
+      estado: "aprobado",
       metodo: "mercado_pago",
-      monto: plan.precio
+      creadoEn: ahora
+    });
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("Webhook error:", err);
+    res.sendStatus(500);
+  }
+});
