@@ -1,211 +1,175 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>TallerPRO360 | Panel del Taller</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#020617" />
-
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TallerPRO360 - Ordenes de Servicio</title>
+  <link rel="icon" href="logo-tallerpro360.png" type="image/png">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
   <style>
-    * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
-
-    body {
-      margin: 0;
-      background: #020617;
-      color: #E5E7EB;
+    body { font-family: 'Segoe UI', sans-serif; background-color: #f5f6fa; }
+    .container { max-width: 600px; margin-top: 20px; }
+    .estado-badge { font-size: 0.9em; }
+    .timeline { list-style: none; padding-left: 0; }
+    .timeline li { margin-bottom: 10px; padding-left: 20px; position: relative; }
+    .timeline li::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 5px;
+      width: 10px; height: 10px;
+      background-color: #0d6efd;
+      border-radius: 50%;
     }
-
-    header {
-      padding: 16px;
-      background: #020617;
-      border-bottom: 1px solid #0F172A;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    header h1 {
-      font-size: 18px;
-      margin: 0;
-      font-weight: 700;
-    }
-
-    .btn-new {
-      background: linear-gradient(90deg, #38BDF8, #0EA5E9);
-      border: none;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 13px;
-      cursor: pointer;
-    }
-
-    .container {
-      padding: 16px;
-    }
-
-    .order-card {
-      background: #0F172A;
-      border-radius: 14px;
-      padding: 16px;
-      margin-bottom: 14px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-    }
-
-    .order-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-
-    .placa {
-      font-size: 16px;
-      font-weight: 700;
-    }
-
-    .estado {
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 20px;
-      background: #1E293B;
-      font-weight: 600;
-    }
-
-    .info {
-      font-size: 13px;
-      color: #CBD5F5;
-      margin-bottom: 6px;
-    }
-
-    .timeline {
-      display: flex;
-      gap: 6px;
-      margin-top: 10px;
-      flex-wrap: wrap;
-    }
-
-    .step {
-      font-size: 10px;
-      padding: 4px 8px;
-      border-radius: 8px;
-      background: #020617;
-      border: 1px solid #1E293B;
-    }
-
-    .step.active {
-      background: #38BDF8;
-      color: #020617;
-      font-weight: 700;
-    }
-
-    footer {
-      height: 70px;
-    }
+    .btn-next { margin-top: 10px; }
   </style>
 </head>
-
 <body>
+  <div class="container">
+    <div class="text-center mb-4">
+      <img src="logo-tallerpro360.png" alt="TallerPRO360" width="120">
+      <h2 class="mt-2">Gestión de Órdenes</h2>
+    </div>
 
-<header>
-  <h1>🚗 TallerPRO360</h1>
-  <button class="btn-new" onclick="crearOrden()">+ Orden</button>
-</header>
-
-<div class="container" id="ordersContainer">
-  <!-- Órdenes dinámicas -->
-</div>
-
-<footer></footer>
-
-<!-- Firebase -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import {
-    getFirestore,
-    collection,
-    addDoc,
-    query,
-    orderBy,
-    onSnapshot,
-    serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "TU_API_KEY",
-    authDomain: "TU_AUTH_DOMAIN",
-    projectId: "TU_PROJECT_ID",
-    storageBucket: "TU_STORAGE_BUCKET",
-    messagingSenderId: "TU_MESSAGING_ID",
-    appId: "TU_APP_ID"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  const estados = [
-    "INGRESO",
-    "DIAGNOSTICO",
-    "APROBADO",
-    "EN PROCESO",
-    "LISTO",
-    "ENTREGADO"
-  ];
-
-  const ordersRef = collection(db, "ordenes");
-
-  const q = query(ordersRef, orderBy("creadoEn", "desc"));
-
-  onSnapshot(q, (snapshot) => {
-    const container = document.getElementById("ordersContainer");
-    container.innerHTML = "";
-
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      container.innerHTML += renderOrden(data);
-    });
-  });
-
-  function renderOrden(o) {
-    return `
-      <div class="order-card">
-        <div class="order-header">
-          <div class="placa">${o.placa}</div>
-          <div class="estado">${o.estado}</div>
+    <!-- Formulario de creación de orden -->
+    <div id="crearOrden" class="card mb-3 p-3 shadow-sm">
+      <h5>Crear nueva orden</h5>
+      <form id="formOrden">
+        <div class="mb-2">
+          <label>Placa del vehículo</label>
+          <input type="text" id="placa" class="form-control" placeholder="ABC123" required>
         </div>
-
-        <div class="info"><b>Vehículo:</b> ${o.vehiculo}</div>
-        <div class="info"><b>Cliente:</b> ${o.cliente.nombre}</div>
-        <div class="info"><b>Tel:</b> ${o.cliente.telefono}</div>
-
-        <div class="timeline">
-          ${estados.map(e =>
-            `<div class="step ${e === o.estado ? "active" : ""}">${e}</div>`
-          ).join("")}
+        <div class="mb-2">
+          <label>Marca/Modelo</label>
+          <input type="text" id="vehiculo" class="form-control" placeholder="Chevrolet Spark" required>
         </div>
-      </div>
-    `;
-  }
+        <div class="mb-2">
+          <label>Nombre del cliente</label>
+          <input type="text" id="clienteNombre" class="form-control" placeholder="Juan Pérez" required>
+        </div>
+        <div class="mb-2">
+          <label>Teléfono</label>
+          <input type="tel" id="clienteTelefono" class="form-control" placeholder="3001234567" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 mt-2">Crear Orden</button>
+      </form>
+    </div>
 
-  window.crearOrden = async function () {
-    await addDoc(ordersRef, {
-      codigo: `TP360-CO-${Date.now()}`,
-      placa: "ABC123",
-      vehiculo: "Chevrolet Spark",
-      cliente: {
-        nombre: "Juan Pérez",
-        telefono: "3001234567"
-      },
-      estado: "INGRESO",
-      timeline: [
-        { estado: "INGRESO", fecha: serverTimestamp() }
-      ],
-      creadoEn: serverTimestamp(),
-      actualizadoEn: serverTimestamp()
+    <!-- Lista de ordenes -->
+    <div id="ordenesList" class="card p-3 shadow-sm" style="display:none;">
+      <h5>Órdenes activas</h5>
+      <ul class="list-group" id="ordenesUl"></ul>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="serviceOrders.voice.js"></script>
+
+  <script>
+    // Config Firebase
+    const firebaseConfig = {
+      apiKey: "TU_API_KEY",
+      authDomain: "tu-proyecto.firebaseapp.com",
+      projectId: "tu-proyecto",
+      storageBucket: "tu-proyecto.appspot.com",
+      messagingSenderId: "TU_ID",
+      appId: "TU_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Estados de taller
+    const estados = ["INGRESO", "DIAGNOSTICO", "APROBACION", "REPARACION", "ENTREGA"];
+
+    // Crear orden
+    document.getElementById('formOrden').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const placa = document.getElementById('placa').value.toUpperCase();
+      const vehiculo = document.getElementById('vehiculo').value;
+      const clienteNombre = document.getElementById('clienteNombre').value;
+      const clienteTelefono = document.getElementById('clienteTelefono').value;
+
+      const codigo = `TP360-CO-2026-${Math.floor(Math.random()*1000000).toString().padStart(6,'0')}`;
+      const timestamp = firebase.firestore.Timestamp.now();
+
+      const orden = {
+        codigo,
+        placa,
+        vehiculo,
+        cliente: { nombre: clienteNombre, telefono: clienteTelefono },
+        estado: "INGRESO",
+        timeline: [{ estado: "INGRESO", fecha: timestamp }],
+        creadoEn: timestamp,
+        actualizadoEn: timestamp
+      };
+
+      await db.collection('ordenes').doc(codigo).set(orden);
+
+      speak(`Orden ${codigo} creada para ${clienteNombre}`);
+      mostrarOrdenes();
+      document.getElementById('formOrden').reset();
     });
-  };
-</script>
 
+    // Mostrar ordenes
+    async function mostrarOrdenes() {
+      const snapshot = await db.collection('ordenes').orderBy('actualizadoEn','desc').get();
+      const ul = document.getElementById('ordenesUl');
+      ul.innerHTML = '';
+      snapshot.forEach(doc => {
+        const orden = doc.data();
+        const li = document.createElement('li');
+        li.className = 'list-group-item';
+        li.innerHTML = `
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <strong>${orden.codigo}</strong> - ${orden.vehiculo} (${orden.placa})
+              <span class="badge bg-info estado-badge">${orden.estado}</span>
+              <br>
+              Cliente: ${orden.cliente.nombre} - ${orden.cliente.telefono}
+            </div>
+            <button class="btn btn-sm btn-success btn-next">Avanzar Estado</button>
+          </div>
+          <ul class="timeline mt-2"></ul>
+        `;
+
+        // Timeline
+        const timelineUl = li.querySelector('.timeline');
+        orden.timeline.forEach(t => {
+          const tLi = document.createElement('li');
+          tLi.textContent = `${t.estado} - ${t.fecha.toDate().toLocaleString()}`;
+          timelineUl.appendChild(tLi);
+        });
+
+        // Avanzar estado
+        li.querySelector('.btn-next').addEventListener('click', async () => {
+          const currentIndex = estados.indexOf(orden.estado);
+          if(currentIndex < estados.length - 1) {
+            const nuevoEstado = estados[currentIndex + 1];
+            const timestamp = firebase.firestore.Timestamp.now();
+            orden.estado = nuevoEstado;
+            orden.timeline.push({ estado: nuevoEstado, fecha: timestamp });
+            orden.actualizadoEn = timestamp;
+
+            await db.collection('ordenes').doc(orden.codigo).update({
+              estado: nuevoEstado,
+              timeline: orden.timeline,
+              actualizadoEn: timestamp
+            });
+            speak(`Orden ${orden.codigo} actualizada a ${nuevoEstado}`);
+            mostrarOrdenes();
+          } else {
+            alert('La orden ya está en estado final.');
+          }
+        });
+
+        ul.appendChild(li);
+      });
+      document.getElementById('ordenesList').style.display = ul.children.length ? 'block' : 'none';
+    }
+
+    // Carga inicial
+    mostrarOrdenes();
+  </script>
 </body>
 </html>
