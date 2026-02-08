@@ -1,19 +1,60 @@
 {
   "taller_info": {
-    "nombre_comercial": "TallerPro Medellin Centro",
-    "nit": "900.123.456-7",
+    "nombre_comercial": "TallerPro Medellín Centro",
+    "razon_social": "TallerPro360 S.A.S",
+    "nit": "9001234567",
     "moneda": "COP",
-    "impuestos_iva": 0.19
+    "iva": 0.19,
+    "ciudad": "Medellín",
+    "pais": "CO"
   },
+
+  "planes": {
+    "mensual": {
+      "precio": 49000,
+      "duracion_dias": 30
+    },
+    "anual": {
+      "precio": 499000,
+      "duracion_dias": 365
+    }
+  },
+
   "pasarela_pagos": {
-    "nequi_phone": "3001234567",
-    "daviplata_phone": "3001234567",
-    "pse_link": "https://www.pse.com.co/tu-taller",
-    "nubank_qr_id": "uuid-12345"
+    "mercadopago": {
+      "activo": true,
+      "moneda": "COP"
+    },
+    "nequi": {
+      "telefono": "3001234567",
+      "titular": "William Jeffry Urquijo Cubillos"
+    },
+    "daviplata": {
+      "telefono": "3001234567"
+    }
   },
+
   "equipo_trabajo": [
-    {"id": 1, "nombre": "Carlos Perez", "rol": "Mecánico Senior", "comision_porcentaje": 0.15},
-    {"id": 2, "nombre": "Luis Gomez", "rol": "Latonero/Pintor", "comision_porcentaje": 0.20}
+    {
+      "id": "emp_001",
+      "nombre": "Carlos Pérez",
+      "rol": "Mecánico Senior",
+      "comision": 0.15
+    },
+    {
+      "id": "emp_002",
+      "nombre": "Luis Gómez",
+      "rol": "Latonero / Pintor",
+      "comision": 0.20
+    }
   ],
-  "categorias_stock": ["Insumos", "Repuestos Originales", "Genéricos", "Mano de Obra"]
+
+  "inventario": {
+    "categorias": [
+      "Insumos",
+      "Repuestos Originales",
+      "Repuestos Genéricos",
+      "Mano de Obra"
+    ]
+  }
 }
