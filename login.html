@@ -78,30 +78,33 @@
 <!-- FIREBASE AUTH -->
 <script type="module">
   import { auth, db } from "./firebase-config.js";
-  import {
-    signInWithEmailAndPassword
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-  import {
-    doc,
-    getDoc
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   const form = document.getElementById("loginForm");
   const errorMsg = document.getElementById("errorMsg");
+
+  const emailInput = document.getElementById("email");
+  const passwordInput = document.getElementById("password");
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     errorMsg.classList.add("hidden");
 
-    const email = email.value;
-    const password = password.value;
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
+    if (!email || !password) {
+      errorMsg.textContent = "Correo y contraseña requeridos";
+      errorMsg.classList.remove("hidden");
+      return;
+    }
 
     try {
-      // 1️⃣ Login Firebase
+      // 1️⃣ Autenticación
       const cred = await signInWithEmailAndPassword(auth, email, password);
 
-      // 2️⃣ Validar rol
+      // 2️⃣ Buscar perfil en Firestore
       const userRef = doc(db, "usuarios", cred.user.uid);
       const userSnap = await getDoc(userRef);
 
@@ -111,21 +114,28 @@
 
       const user = userSnap.data();
 
-      // 3️⃣ Redirección por rol
+      // 3️⃣ Validar estado
+      if (user.activo === false) {
+        throw new Error("Usuario suspendido");
+      }
+
+      // 4️⃣ Redirección por rol
       if (user.rol === "taller") {
-  window.location.href = "/taller.html";
-} else if (user.rol === "ceo") {
-  window.location.href = "/ceo.html";
-} else {
-  throw new Error("Rol inválido");
-}
+        window.location.href = "/taller.html";
+      } 
+      else if (user.rol === "ceo") {
+        window.location.href = "/ceo.html";
+      } 
+      else {
+        throw new Error("Rol inválido");
+      }
 
     } catch (err) {
+      console.error(err);
       errorMsg.textContent = err.message || "Error de autenticación";
       errorMsg.classList.remove("hidden");
     }
   });
 </script>
-
 </body>
 </html>
