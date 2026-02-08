@@ -1,141 +1,149 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TallerPRO360 - Clientes</title>
-    <link rel="icon" href="A_digital_vector_logo_design_for_'TallerPRO360'_fe.png">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #f5f5f5;
-        }
-        header {
-            background-color: #0a74da;
-            color: white;
-            text-align: center;
-            padding: 15px 0;
-        }
-        h1 { margin: 0; font-size: 1.5em; }
-        .container { padding: 15px; }
-        input, button {
-            padding: 10px;
-            margin: 5px 0;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        .client-list { margin-top: 20px; }
-        .client-item {
-            background: white;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-        .btn-edit { background-color: #ffc107; border: none; color: white; cursor: pointer; }
-        .btn-delete { background-color: #dc3545; border: none; color: white; cursor: pointer; margin-left: 10px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TallerPRO360 - Clientes</title>
+<link rel="icon" href="logo-tallerpro360.png">
+<style>
+  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f5f5f5; }
+  header { background-color:#0a74da; color:white; text-align:center; padding:15px 0; }
+  h1 { margin:0; font-size:1.5em; }
+  .container { padding:15px; max-width:600px; margin:auto; }
+  input, button { padding:10px; margin:5px 0; width:100%; box-sizing:border-box; border-radius:5px; border:1px solid #ccc; }
+  button { cursor:pointer; background:#0a74da; color:white; border:none; font-weight:bold; }
+  .client-list { margin-top:20px; }
+  .client-item { background:white; padding:10px; margin-bottom:10px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+  .btn-edit { background-color:#ffc107; border:none; color:white; cursor:pointer; margin-top:5px; padding:5px 10px; }
+  .btn-delete { background-color:#dc3545; border:none; color:white; cursor:pointer; margin-left:5px; padding:5px 10px; }
+</style>
 </head>
 <body>
-    <header>
-        <h1><img src="A_digital_vector_logo_design_for_'TallerPRO360'_fe.png" alt="TallerPRO360" style="height:40px; vertical-align: middle;"> Clientes</h1>
-    </header>
+<header>
+  <h1><img src="logo-tallerpro360.png" alt="TallerPRO360" style="height:40px; vertical-align: middle;"> Clientes</h1>
+</header>
 
-    <div class="container">
-        <h2>Registrar Cliente</h2>
-        <input type="text" id="nombre" placeholder="Nombre del Cliente">
-        <input type="text" id="telefono" placeholder="Teléfono">
-        <input type="text" id="placa" placeholder="Placa del Vehículo">
-        <input type="text" id="vehiculo" placeholder="Modelo del Vehículo">
-        <button onclick="agregarCliente()">Agregar Cliente</button>
+<div class="container">
+  <h2>Registrar Cliente</h2>
+  <input type="text" id="nombre" placeholder="Nombre del Cliente">
+  <input type="text" id="telefono" placeholder="Teléfono">
+  <input type="text" id="placa" placeholder="Placa del Vehículo">
+  <input type="text" id="vehiculo" placeholder="Modelo del Vehículo">
+  <button onclick="agregarCliente()">Agregar Cliente</button>
 
-        <div class="client-list" id="clientList">
-            <!-- Lista de clientes -->
-        </div>
-    </div>
+  <div class="client-list" id="clientList">
+    <!-- Lista de clientes -->
+  </div>
+</div>
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-    <script>
-        // Configuración de Firebase - reemplaza con tus claves
-        const firebaseConfig = {
-      apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-      authDomain: "tallerpro360.firebaseapp.com",
-      projectId: "tallerpro360",
-      storageBucket: "tallerpro360.appspot.com",
-      messagingSenderId: "636224778184",
-      appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-    };"
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+<!-- Script de voz -->
+<script type="module">
+  import { speakOrderStage, listenOrderVoice, initVoiceActivation } from './serviceOrders.voice.js';
+  
+  // Activar voz en PWA/móviles al primer click
+  initVoiceActivation();
 
-        // Función para agregar cliente
-        function agregarCliente() {
-            const nombre = document.getElementById("nombre").value;
-            const telefono = document.getElementById("telefono").value;
-            const placa = document.getElementById("placa").value;
-            const vehiculo = document.getElementById("vehiculo").value;
+  // Config Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+    authDomain: "tallerpro360.firebaseapp.com",
+    projectId: "tallerpro360",
+    storageBucket: "tallerpro360.appspot.com",
+    messagingSenderId: "636224778184",
+    appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
 
-            if (!nombre || !telefono || !placa || !vehiculo) {
-                alert("Todos los campos son obligatorios");
-                return;
-            }
+  // Agregar cliente
+  function agregarCliente() {
+    const nombre = document.getElementById("nombre").value.trim();
+    const telefono = document.getElementById("telefono").value.trim();
+    const placa = document.getElementById("placa").value.trim().toUpperCase();
+    const vehiculo = document.getElementById("vehiculo").value.trim();
 
-            db.collection("clientes").add({
-                nombre,
-                telefono,
-                placa,
-                vehiculo,
-                creadoEn: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                document.getElementById("nombre").value = "";
-                document.getElementById("telefono").value = "";
-                document.getElementById("placa").value = "";
-                document.getElementById("vehiculo").value = "";
-            });
-        }
+    if (!nombre || !telefono || !placa || !vehiculo) {
+      alert("Todos los campos son obligatorios");
+      return;
+    }
 
-        // Escuchar cambios en tiempo real
-        db.collection("clientes").orderBy("creadoEn", "desc").onSnapshot(snapshot => {
-            const list = document.getElementById("clientList");
-            list.innerHTML = "";
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const div = document.createElement("div");
-                div.className = "client-item";
-                div.innerHTML = `
-                    <strong>${data.nombre}</strong><br>
-                    Tel: ${data.telefono}<br>
-                    Placa: ${data.placa}<br>
-                    Vehículo: ${data.vehiculo}
-                    <button class="btn-edit" onclick="editarCliente('${doc.id}')">Editar</button>
-                    <button class="btn-delete" onclick="eliminarCliente('${doc.id}')">Eliminar</button>
-                `;
-                list.appendChild(div);
-            });
+    db.collection("clientes").add({
+      nombre, telefono, placa, vehiculo,
+      creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+      document.getElementById("nombre").value = "";
+      document.getElementById("telefono").value = "";
+      document.getElementById("placa").value = "";
+      document.getElementById("vehiculo").value = "";
+    });
+  }
+
+  // Mostrar clientes y sus órdenes en tiempo real
+  db.collection("clientes").orderBy("creadoEn", "desc").onSnapshot(snapshot => {
+    const list = document.getElementById("clientList");
+    list.innerHTML = "";
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const div = document.createElement("div");
+      div.className = "client-item";
+      div.innerHTML = `
+        <strong>${data.nombre}</strong><br>
+        Tel: ${data.telefono}<br>
+        Placa: ${data.placa}<br>
+        Vehículo: ${data.vehiculo}
+        <button class="btn-edit" onclick="editarCliente('${doc.id}')">Editar</button>
+        <button class="btn-delete" onclick="eliminarCliente('${doc.id}')">Eliminar</button>
+        <div id="ordenes-${doc.id}" style="margin-top:10px;"></div>
+      `;
+      list.appendChild(div);
+
+      // Escuchar órdenes por placa del cliente en tiempo real
+      db.collection("ordenes")
+        .where("placa", "==", data.placa)
+        .orderBy("actualizadoEn", "desc")
+        .onSnapshot(ordenSnapshot => {
+          const ordenesDiv = document.getElementById(`ordenes-${doc.id}`);
+          ordenesDiv.innerHTML = "";
+          ordenSnapshot.forEach(ordenDoc => {
+            const orden = ordenDoc.data();
+            const estadoBadge = `<span style="background:#0d6efd;color:white;padding:2px 6px;border-radius:4px;font-size:0.85em;">${orden.estado}</span>`;
+            const oDiv = document.createElement("div");
+            oDiv.innerHTML = `<strong>${orden.codigo}</strong> - ${orden.vehiculo} ${estadoBadge}<br>
+                              Última actualización: ${orden.actualizadoEn.toDate().toLocaleString()}`;
+            ordenesDiv.appendChild(oDiv);
+
+            // Activar voz por cambio de estado
+            listenOrderVoice(db, orden.codigo);
+          });
         });
+    });
+  });
 
-        function editarCliente(id) {
-            const nombre = prompt("Nuevo nombre:");
-            const telefono = prompt("Nuevo teléfono:");
-            const placa = prompt("Nueva placa:");
-            const vehiculo = prompt("Nuevo modelo de vehículo:");
+  // Editar cliente
+  function editarCliente(id) {
+    const nombre = prompt("Nuevo nombre:");
+    const telefono = prompt("Nuevo teléfono:");
+    const placa = prompt("Nueva placa:");
+    const vehiculo = prompt("Nuevo modelo de vehículo:");
 
-            db.collection("clientes").doc(id).update({
-                nombre, telefono, placa, vehiculo,
-                actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        }
+    if (nombre && telefono && placa && vehiculo) {
+      db.collection("clientes").doc(id).update({
+        nombre, telefono, placa, vehiculo,
+        actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  }
 
-        function eliminarCliente(id) {
-            if (confirm("¿Desea eliminar este cliente?")) {
-                db.collection("clientes").doc(id).delete();
-            }
-        }
-    </script>
+  // Eliminar cliente
+  function eliminarCliente(id) {
+    if (confirm("¿Desea eliminar este cliente?")) {
+      db.collection("clientes").doc(id).delete();
+    }
+  }
+</script>
 </body>
 </html>
