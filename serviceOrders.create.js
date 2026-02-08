@@ -1,47 +1,37 @@
-import { db } from "./firebase-config.js";
 import {
+  getFirestore,
   doc,
+  getDoc,
   setDoc,
-  runTransaction,
-  serverTimestamp,
-  collection
+  updateDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-export async function createServiceOrder(data) {
+const db = getFirestore();
+
+export async function crearOrden(data) {
   const counterRef = doc(db, "counters", "serviceOrders");
+  const counterSnap = await getDoc(counterRef);
 
-  return await runTransaction(db, async (transaction) => {
-    const counterSnap = await transaction.get(counterRef);
-    const current = counterSnap.exists() ? counterSnap.data().current : 0;
+  let current = counterSnap.exists() ? counterSnap.data().current : 0;
+  current++;
 
-    const next = current + 1;
-    const year = new Date().getFullYear();
-    const orderId = `TP360-CO-${year}-${String(next).padStart(6, "0")}`;
+  const codigo = `TP360-CO-2026-${String(current).padStart(6, "0")}`;
 
-    const orderRef = doc(db, "serviceOrders", orderId);
+  const ordenRef = doc(db, "ordenes", codigo);
 
-    // Documento principal
-    transaction.set(orderRef, {
-      orderId,
-      status: "INGRESO",
-      createdAt: serverTimestamp(),
-      ...data
-    });
-
-    // Subcolección de etapas (trazabilidad)
-    const stageRef = doc(
-      collection(orderRef, "stages"),
-      "INGRESO"
-    );
-
-    transaction.set(stageRef, {
-      stage: "INGRESO",
-      at: serverTimestamp(),
-      source: "system"
-    });
-
-    transaction.set(counterRef, { current: next });
-
-    return orderId;
+  await setDoc(ordenRef, {
+    codigo,
+    ...data,
+    estado: "INGRESO",
+    timeline: [
+      { estado: "INGRESO", fecha: serverTimestamp() }
+    ],
+    creadoEn: serverTimestamp(),
+    actualizadoEn: serverTimestamp()
   });
+
+  await updateDoc(counterRef, { current });
+
+  return codigo;
 }
