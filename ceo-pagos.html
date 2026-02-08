@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEO · Pagos & Suscripciones | TallerPRO360</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+  body { background:#0f172a; color:#f1f5f9; }
+  .glass {
+    background:rgba(15,23,42,.8);
+    backdrop-filter: blur(18px);
+    border-radius:1.5rem;
+    border:1px solid rgba(255,255,255,.08);
+  }
+</style>
+</head>
+
+<body class="min-h-screen p-6">
+
+<header class="flex flex-wrap justify-between items-center gap-4 mb-6">
+  <h1 class="text-2xl font-bold text-amber-500">
+    📊 TallerPRO360 · Panel CEO
+  </h1>
+  <div class="flex gap-3">
+    <button onclick="exportarExcel()" class="bg-emerald-600 px-4 py-2 rounded font-bold">
+      <i class="fa fa-file-excel"></i> Exportar Excel
+    </button>
+    <button onclick="logout()" class="bg-red-600 px-4 py-2 rounded font-bold">
+      Cerrar sesión
+    </button>
+  </div>
+</header>
+
+<!-- KPIs -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  <div class="glass p-4 text-center">
+    <p class="text-gray-400">Pagos pendientes</p>
+    <p id="kpiPendientes" class="text-3xl font-bold text-amber-400">0</p>
+  </div>
+  <div class="glass p-4 text-center">
+    <p class="text-gray-400">Talleres activos</p>
+    <p id="kpiActivos" class="text-3xl font-bold text-green-400">0</p>
+  </div>
+  <div class="glass p-4 text-center">
+    <p class="text-gray-400">Ingresos aprobados</p>
+    <p id="kpiIngresos" class="text-3xl font-bold text-cyan-400">$0</p>
+  </div>
+</section>
+
+<!-- Tabla -->
+<div class="glass p-6 overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead class="text-gray-400 border-b border-gray-700">
+      <tr>
+        <th class="py-2 text-left">UID</th>
+        <th>Email</th>
+        <th>Plan</th>
+        <th>Método</th>
+        <th>Monto</th>
+        <th>Comprobante</th>
+        <th>Fecha</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody id="tablaPagos"></tbody>
+  </table>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, collection, onSnapshot, doc, updateDoc, getDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+  authDomain: "tallerpro360.firebaseapp.com",
+  projectId: "tallerpro360",
+  storageBucket: "tallerpro360.appspot.com",
+  messagingSenderId: "636224778184",
+  appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const tabla = document.getElementById("tablaPagos");
+
+let pagosCache = [];
+let activos = 0;
+let ingresos = 0;
+let pendientes = 0;
+
+// 🔐 Seguridad CEO
+onAuthStateChanged(auth, async user => {
+  if (!user) location.href="login.html";
+
+  const ref = doc(db,"usuarios",user.uid);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists() || snap.data().rol !== "ceo") {
+    alert("Acceso denegado");
+    signOut(auth);
+    return;
+  }
+
+  cargarPagos();
+});
+
+function diasPorPlan(plan){
+  if(plan === "ANUAL") return 365;
+  return 30;
+}
+
+function cargarPagos(){
+  onSnapshot(collection(db,"pagos"), snap => {
+    tabla.innerHTML = "";
+    pagosCache = [];
+    activos = ingresos = pendientes = 0;
+
+    snap.forEach(d => {
+      const p = d.data();
+      pagosCache.push(p);
+
+      if (p.estado === "pendiente") pendientes++;
+      if (p.estado === "aprobado") ingresos += p.monto || 0;
+
+      if (p.estado !== "pendiente") return;
+
+      const fecha = p.creadoEn?.toDate().toLocaleString() || "";
+
+      tabla.innerHTML += `
+      <tr class="border-b border-gray-800 hover:bg-slate-900/50">
+        <td class="py-2 font-mono">${p.uid}</td>
+        <td>${p.email}</td>
+        <td class="font-bold">${p.plan}</td>
+        <td>${p.metodo}</td>
+        <td>$${(p.monto||0).toLocaleString()}</td>
+        <td>
+          <a href="${p.comprobanteURL}" target="_blank"
+            class="text-amber-400 underline">Ver</a>
+        </td>
+        <td>${fecha}</td>
+        <td>
+          <button
+            onclick="aprobarPago('${d.id}','${p.uid}','${p.plan}')"
+            class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded font-bold">
+            Aprobar
+          </button>
+        </td>
+      </tr>`;
+    });
+
+    document.getElementById("kpiPendientes").innerText = pendientes;
+    document.getElementById("kpiIngresos").innerText = "$" + ingresos.toLocaleString();
+  });
+}
+
+window.aprobarPago = async (pagoId, uid, plan) => {
+  if (!confirm("¿Aprobar este pago y activar el plan?")) return;
+
+  const hoy = new Date();
+  const vence = new Date();
+  vence.setDate(hoy.getDate() + diasPorPlan(plan));
+
+  await updateDoc(doc(db,"usuarios",uid),{
+    plan,
+    estadoPlan:"ACTIVO",
+    inicioPlan: Timestamp.now(),
+    venceEn: Timestamp.fromDate(vence)
+  });
+
+  await updateDoc(doc(db,"pagos",pagoId),{
+    estado:"aprobado",
+    aprobadoEn: Timestamp.now()
+  });
+
+  alert("✅ Pago aprobado y suscripción activada");
+};
+
+window.exportarExcel = () => {
+  let csv = "UID,Email,Plan,Método,Monto,Estado\n";
+  pagosCache.forEach(p=>{
+    csv += `${p.uid},${p.email},${p.plan},${p.metodo},${p.monto},${p.estado}\n`;
+  });
+
+  const blob = new Blob([csv],{type:"text/csv"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "pagos_tallerpro360.csv";
+  a.click();
+};
+
+window.logout = () => signOut(auth).then(()=>location.href="login.html");
+</script>
+
+</body>
+</html>
