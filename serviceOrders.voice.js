@@ -19,14 +19,29 @@ const STAGE_MESSAGES = {
 };
 
 // ===============================
-// 🔐 Control local para no repetir
+// 💬 Introducciones dinámicas
+// ===============================
+const STAGE_INTRO = {
+  INGRESO: "Hola,",
+  DIAGNOSTICO: "Atención,",
+  APROBADO: "Importante:",
+  "EN PROCESO": "Información:",
+  LISTO: "Buenas noticias:",
+  ENTREGADO: "Gracias por su confianza,"
+};
+
+// ===============================
+// 🔐 Control local para no repetir mensajes por orden
 // ===============================
 function alreadySpoken(orderCode, stage) {
-  return localStorage.getItem(`tp360_voice_${orderCode}`) === stage;
+  const data = JSON.parse(localStorage.getItem('tp360_voice') || '{}');
+  return data[orderCode] === stage;
 }
 
 function markAsSpoken(orderCode, stage) {
-  localStorage.setItem(`tp360_voice_${orderCode}`, stage);
+  const data = JSON.parse(localStorage.getItem('tp360_voice') || '{}');
+  data[orderCode] = stage;
+  localStorage.setItem('tp360_voice', JSON.stringify(data));
 }
 
 // ===============================
@@ -46,7 +61,7 @@ export function speakOrderStage(order) {
   if (alreadySpoken(order.codigo, order.estado)) return;
 
   const utterance = new SpeechSynthesisUtterance(
-    `Taller PRO tres seis cero informa. ${message}`
+    `${STAGE_INTRO[order.estado] || ""} ${message}`
   );
 
   utterance.lang = "es-CO";
@@ -65,19 +80,34 @@ export function speakOrderStage(order) {
 }
 
 // ===============================
-// 🔄 Listener Firestore (opcional)
+// 🔄 Inicialización de voz para PWA/móvil
 // ===============================
-// Úsalo si quieres que el script se conecte solo
-// al documento de la orden
+export function initVoiceActivation() {
+  document.body.addEventListener('click', () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel(); // activa la voz
+      console.log("🎤 TallerPRO360: Voz activada manualmente (PWA/Android)");
+    }
+  }, { once: true });
+}
 
+// ===============================
+// 🔄 Listener Firestore para actualización automática
+// ===============================
 export function listenOrderVoice(db, orderId) {
   import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js")
     .then(({ doc, onSnapshot }) => {
-      const ref = doc(db, "ordenes", orderId);
+      try {
+        const ref = doc(db, "ordenes", orderId);
 
-      onSnapshot(ref, (snap) => {
-        if (!snap.exists()) return;
-        speakOrderStage(snap.data());
-      });
+        onSnapshot(ref, (snap) => {
+          if (!snap.exists()) return;
+          speakOrderStage(snap.data());
+        });
+      } catch (err) {
+        console.error("❌ Error escuchando Firestore:", err);
+        // Reintento automático cada 5s
+        setTimeout(() => listenOrderVoice(db, orderId), 5000);
+      }
     });
 }
