@@ -1,77 +1,79 @@
-<script type="module">
-import { getAuth, onAuthStateChanged } 
-  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, getDoc } 
-  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-const auth = getAuth();
-const db = getFirestore();
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  Timestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+import { app } from "./firebase-config.js";
+
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ===============================
+   GUARDIA DE TALLER ACTIVO
+================================ */
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
-    window.location.href = "login.html";
+    location.href = "login.html";
     return;
   }
 
-  const userRef = doc(db, "usuarios", user.uid);
-  const userSnap = await getDoc(userRef);
+  const ref = doc(db, "talleres", user.uid);
+  const snap = await getDoc(ref);
 
-  if (!userSnap.exists()) {
-    bloquear("Usuario no autorizado");
+  if (!snap.exists()) {
+    location.href = "billing.html";
     return;
   }
 
-  const userData = userSnap.data();
+  const t = snap.data();
+  const ahora = Timestamp.now();
 
-  if (!userData.activo) {
-    bloquear("Usuario inactivo. Contacte soporte.");
+  // 🚫 Plan vencido
+  if (!t.venceEn || t.venceEn.toMillis() < ahora.toMillis()) {
+    await auth.signOut();
+    location.href = "billing.html?estado=vencido";
     return;
   }
 
-  const tallerRef = doc(db, "talleres", userData.tallerId);
-  const tallerSnap = await getDoc(tallerRef);
+  // ⚠️ Plan limitado
+  if (t.estadoPlan === "LIMITADO") {
+    mostrarBanner("⚠️ Tu plan vence pronto. Renueva para evitar suspensión.");
+  }
 
-  if (!tallerSnap.exists()) {
-    bloquear("Taller no registrado");
+  // 🚨 Plan suspendido
+  if (t.estadoPlan === "SUSPENDIDO") {
+    await auth.signOut();
+    location.href = "billing.html?estado=suspendido";
     return;
   }
 
-  const taller = tallerSnap.data();
-  const hoy = new Date();
-  const vence = taller.venceEn?.toDate?.() || null;
-
-  if (!taller.activo) {
-    bloquear("Su plan está suspendido");
-    return;
-  }
-
-  if (vence && vence < hoy) {
-    bloquear("Su plan ha vencido. Renueve para continuar.");
-    return;
-  }
-
-  // ✅ Todo OK → la app continúa
-  console.log("✅ Taller activo:", taller.nombre);
+  console.log("✅ Taller activo:", t.estadoPlan);
 });
 
-function bloquear(mensaje) {
-  document.body.innerHTML = `
-    <div style="
-      display:flex;
-      height:100vh;
-      justify-content:center;
-      align-items:center;
-      background:#0f172a;
-      color:white;
-      font-family:sans-serif;
-      text-align:center;
-    ">
-      <div>
-        <h1>🔒 Acceso restringido</h1>
-        <p>${mensaje}</p>
-        <p>📞 Contacte a TallerPRO360</p>
-      </div>
-    </div>
+/* ===============================
+   UI ALERTA
+================================ */
+function mostrarBanner(texto) {
+  const banner = document.createElement("div");
+  banner.innerHTML = texto;
+  banner.style.cssText = `
+    position:fixed;
+    bottom:0;
+    left:0;
+    width:100%;
+    background:#f59e0b;
+    color:#000;
+    padding:10px;
+    text-align:center;
+    font-weight:bold;
+    z-index:9999;
   `;
+  document.body.appendChild(banner);
 }
-</script>
