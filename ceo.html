@@ -3,104 +3,92 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CEO Ultimate BI Dashboard | TallerPRO360</title>
+<title>CEO Dashboard | TallerPRO360</title>
 
-<!-- Tailwind, FontAwesome, Leaflet & Chart.js -->
+<!-- Tailwind + Icons + Charts + Maps -->
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-  body { background:#0f172a; font-family:'Inter',sans-serif; color:#f1f5f9; overflow-x:hidden; }
-  .font-nexus { font-family:'Orbitron',sans-serif; }
-  .glass { background:rgba(15,23,42,0.65); backdrop-filter: blur(30px); border-radius:2rem; border:1px solid rgba(255,255,255,0.05); padding:1.5rem; transition: all 0.3s ease; }
-  .glass:hover { border-color:#f59e0b; }
-  .status-active { color:#10b981; border:1px solid rgba(16,185,129,0.3); background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:8px; font-weight:bold; font-size:10px;}
-  .status-suspended { color:#ef4444; border:1px solid rgba(239,68,68,0.3); background:rgba(239,68,68,0.1); padding:2px 6px; border-radius:8px; font-weight:bold; font-size:10px;}
-  .alerta { animation: parpadeo 1s infinite; }
-  @keyframes parpadeo { 0%{opacity:1} 50%{opacity:0.3} 100%{opacity:1} }
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: #0f172a; }
-  ::-webkit-scrollbar-thumb { background: #f59e0b; border-radius:20px; }
-  #mapaTalleres { height:400px; border-radius:1rem; }
-  .animate-scroll { animation: scrollUp 15s linear infinite; }
-  @keyframes scrollUp { 0%{top:100%} 100%{top:-100%} }
+body{background:#0f172a;font-family:'Inter',sans-serif;color:#f1f5f9}
+.font-nexus{font-family:'Orbitron',sans-serif}
+.glass{background:rgba(15,23,42,.7);backdrop-filter:blur(20px);border-radius:1.5rem;border:1px solid rgba(255,255,255,.05)}
+.status-activo{color:#10b981;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700}
+.status-suspendido{color:#ef4444;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700}
+#mapa{height:380px;border-radius:1rem}
 </style>
 </head>
+
 <body class="p-6">
 
-<header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-  <h1 class="text-3xl font-nexus font-black tracking-tight text-amber-500">TallerPRO360 <span class="text-white">Ultimate BI CEO</span></h1>
-  <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-white font-bold flex items-center gap-2">
-    <i class="fas fa-power-off"></i> Cerrar Sesión
+<header class="flex justify-between items-center mb-8">
+  <h1 class="text-3xl font-nexus font-black text-amber-500">
+    TallerPRO360 <span class="text-white">CEO</span>
+  </h1>
+  <button onclick="logout()" class="bg-red-600 px-4 py-2 rounded font-bold">
+    <i class="fas fa-power-off"></i> Salir
   </button>
 </header>
 
-<section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-  <div class="glass text-center p-6"><p class="text-xs uppercase font-bold text-gray-400 tracking-widest">Talleres Totales</p><h2 id="total-talleres" class="text-4xl font-nexus font-black mt-2 text-amber-500">0</h2></div>
-  <div class="glass text-center p-6"><p class="text-xs uppercase font-bold text-gray-400 tracking-widest">Vencimientos <5 días</p><h2 id="vencimientos" class="text-4xl font-nexus font-black mt-2 text-red-500">0</h2></div>
-  <div class="glass text-center p-6"><p class="text-xs uppercase font-bold text-gray-400 tracking-widest">Ingresos Totales</p><h2 id="total-ingresos" class="text-4xl font-nexus font-black mt-2 text-green-500">$0</h2></div>
-  <div class="glass text-center p-6"><p class="text-xs uppercase font-bold text-gray-400 tracking-widest">Terminales Activas</p><h2 id="terminales-act" class="text-4xl font-nexus font-black mt-2 text-blue-500">0</h2></div>
-</section>
-
-<section class="glass mb-8 p-6">
-  <div class="flex flex-col md:flex-row justify-between mb-4 gap-4">
-    <input type="text" id="filtroTaller" placeholder="Filtrar por taller o ciudad..." class="w-full md:w-1/2 p-2 rounded bg-slate-900 text-white focus:outline-none" onkeyup="filtrarTalleres()">
-    <button onclick="exportCSV()" class="bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded font-bold text-black flex items-center gap-2">
-      <i class="fas fa-file-csv"></i> Exportar CSV
-    </button>
+<!-- KPIs -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+  <div class="glass p-6 text-center">
+    <p class="text-xs uppercase text-gray-400">Talleres</p>
+    <h2 id="kpiTalleres" class="text-4xl font-nexus text-amber-500">0</h2>
   </div>
-  <div class="overflow-x-auto">
-    <table class="w-full text-left border-collapse">
-      <thead>
-        <tr class="text-xs text-gray-400 uppercase tracking-wide">
-          <th class="px-4 py-2">Taller</th>
-          <th class="px-4 py-2">Ciudad</th>
-          <th class="px-4 py-2">Estado</th>
-          <th class="px-4 py-2">Fecha Vencimiento</th>
-          <th class="px-4 py-2 text-right">Acción</th>
-        </tr>
-      </thead>
-      <tbody id="tablaTalleres"></tbody>
-    </table>
+  <div class="glass p-6 text-center">
+    <p class="text-xs uppercase text-gray-400">Activos</p>
+    <h2 id="kpiActivos" class="text-4xl font-nexus text-green-500">0</h2>
+  </div>
+  <div class="glass p-6 text-center">
+    <p class="text-xs uppercase text-gray-400">Por vencer (≤5 días)</p>
+    <h2 id="kpiVence" class="text-4xl font-nexus text-red-500">0</h2>
+  </div>
+  <div class="glass p-6 text-center">
+    <p class="text-xs uppercase text-gray-400">Planes activos</p>
+    <h2 id="kpiPlanes" class="text-4xl font-nexus text-blue-500">0</h2>
   </div>
 </section>
 
+<!-- Tabla -->
+<section class="glass p-6 mb-8">
+<table class="w-full text-sm">
+<thead class="text-gray-400">
+<tr>
+<th>Taller</th>
+<th>Ciudad</th>
+<th>Plan</th>
+<th>Estado</th>
+<th>Vence</th>
+<th class="text-right">Acción</th>
+</tr>
+</thead>
+<tbody id="tabla"></tbody>
+</table>
+</section>
+
+<!-- Charts + Map -->
 <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
   <div class="glass p-6">
-    <h3 class="text-xs font-nexus text-amber-500 uppercase tracking-widest mb-4">Distribución por Ciudad</h3>
-    <canvas id="chartCiudades" class="w-full h-64"></canvas>
+    <canvas id="chartCiudades"></canvas>
   </div>
   <div class="glass p-6">
-    <h3 class="text-xs font-nexus text-amber-500 uppercase tracking-widest mb-4">Ingresos Semanales</h3>
-    <canvas id="chartIngresos" class="w-full h-64"></canvas>
+    <div id="mapa"></div>
   </div>
 </section>
 
-<section class="glass p-6 mb-8">
-  <h3 class="text-xs font-nexus text-amber-500 uppercase tracking-widest mb-4">Mapa de Talleres</h3>
-  <div id="mapaTalleres"></div>
-</section>
-
-<section class="glass p-6 mb-8">
-  <h3 class="text-xs font-nexus text-amber-500 uppercase tracking-widest mb-4">Actividad Reciente</h3>
-  <div class="overflow-hidden h-64 relative">
-    <div id="actividadLogs" class="absolute top-0 animate-scroll space-y-3 w-full"></div>
-  </div>
-</section>
-
-<footer class="text-xs text-gray-400 uppercase tracking-widest text-center mt-8">
-  © 2026 TallerPRO360 - Ultimate CEO BI Dashboard
+<footer class="text-center text-xs text-gray-500">
+© 2026 TallerPRO360 · CEO Control Panel
 </footer>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, doc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import Chart from "https://cdn.jsdelivr.net/npm/chart.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
@@ -110,85 +98,98 @@ const firebaseConfig = {
   messagingSenderId: "636224778184",
   appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-let charts={};
-let map, markers=[];
 
-// Seguridad CEO
-onAuthStateChanged(auth,user=>{
-  const allowed=["ceo@colombiantrucks.com","col.store2025@gmail.com"];
-  if(!user || !allowed.includes(user.email)) location.href="index.html";
-  initMap();
-  sincronizarTalleres();
+let map, markers=[], chart;
+
+onAuthStateChanged(auth, async user=>{
+  if(!user) return location.href="index.html";
+  const ref = doc(db,"usuarios",user.uid);
+  const snap = await getDoc(ref);
+  if(!snap.exists() || snap.data().rol!=="ceo") location.href="index.html";
+  iniciar();
 });
 
-// INICIALIZAR MAPA
-function initMap(){
-  map = L.map('mapaTalleres').setView([4.5709,-74.2973],6);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
+function iniciar(){
+  initMap();
+  cargarTalleres();
 }
 
-// FUNCIONES PRINCIPALES
-function sincronizarTalleres(){
-  onSnapshot(collection(db,"usuarios"),snap=>{
-    let total=0,vencimientos=0,ingresos=0,terminalesAct=0,cityData={},logs=[];
-    const tbody=document.getElementById("tablaTalleres"); tbody.innerHTML="";
+function initMap(){
+  map=L.map("mapa").setView([4.57,-74.29],6);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18}).addTo(map);
+}
+
+function cargarTalleres(){
+  onSnapshot(collection(db,"usuarios"), snap=>{
+    let total=0, activos=0, vence=0, planes=0, ciudades={};
+    const tbody=document.getElementById("tabla");
+    tbody.innerHTML="";
     markers.forEach(m=>map.removeLayer(m)); markers=[];
 
-    snap.forEach(docu=>{
-      const data=docu.data(); if(data.rol!=="taller") return;
-      total++; ingresos+=data.facturacionAcumulada||0; if(data.status==="ACTIVO") terminalesAct++;
-      const vence=data.vence?.toDate?data.vence.toDate():new Date(data.vence||Date.now());
-      if(Math.ceil((vence-new Date())/(1000*60*60*24))<=5)vencimientos++;
-      const stCls=data.status==="ACTIVO"?"status-active":"status-suspended";
-      const alertaClass=(Math.ceil((vence-new Date())/(1000*60*60*24))<=5)?"alerta":"";
+    snap.forEach(d=>{
+      const u=d.data();
+      if(u.rol!=="taller") return;
 
-      tbody.innerHTML+=`<tr class="border-b border-gray-700 hover:bg-slate-900/50 ${alertaClass}">
-        <td class="px-4 py-2 font-bold">${data.nombreTaller||'Taller N/A'}</td>
-        <td class="px-4 py-2">${data.ciudad||'No asignada'}</td>
-        <td class="px-4 py-2"><span class="${stCls}">${data.status||'ACTIVO'}</span></td>
-        <td class="px-4 py-2">${vence.toLocaleDateString()}</td>
-        <td class="px-4 py-2 text-right">
-          <button onclick="toggleEstado('${docu.id}','${data.status||'ACTIVO'}')" class="px-3 py-1 rounded border font-bold ${data.status==='ACTIVO'?'bg-red-600 text-white':'bg-green-600 text-white'}">
-            ${data.status==='ACTIVO'?'Suspender':'Reactivar'}
+      total++;
+      if(u.status==="activo") activos++;
+      if(u.plan) planes++;
+
+      let fechaVence=null;
+      if(u.vence?.toDate) fechaVence=u.vence.toDate();
+      if(fechaVence){
+        const diff=(fechaVence-new Date())/(1000*60*60*24);
+        if(diff<=5) vence++;
+      }
+
+      ciudades[u.ciudad]=(ciudades[u.ciudad]||0)+1;
+
+      tbody.innerHTML+=`
+      <tr class="border-b border-slate-700">
+        <td>${u.nombreTaller||"N/A"}</td>
+        <td>${u.ciudad||"N/A"}</td>
+        <td>${u.plan||"-"}</td>
+        <td><span class="status-${u.status||'activo'}">${u.status||'activo'}</span></td>
+        <td>${fechaVence?fechaVence.toLocaleDateString():"-"}</td>
+        <td class="text-right">
+          <button onclick="toggle('${d.id}','${u.status||'activo'}')" class="text-xs font-bold px-3 py-1 rounded bg-slate-800">
+            ${u.status==="activo"?"Suspender":"Activar"}
           </button>
-        </td></tr>`;
+        </td>
+      </tr>`;
 
-      cityData[data.ciudad||"No asignada"]=(cityData[data.ciudad||"No asignada"]||0)+1;
-      logs.push({nombre:data.nombreTaller,ciudad:data.ciudad,status:data.status,ingreso:data.facturacionAcumulada});
-
-      // COORDENADAS SIMULADAS (puedes reemplazar por lat/lng reales de cada ciudad)
-      const coords = {Bogotá:[4.711,-74.072], Medellín:[6.2442,-75.5812], Cali:[3.4516,-76.532], Barranquilla:[10.9685,-74.781], Cartagena:[10.391, -75.479]};
-      let latlng = coords[data.ciudad] || [4.5709,-74.2973];
-      const color = data.status==="ACTIVO"?"green":"red";
-      const marker = L.circleMarker(latlng,{radius:8,color,fillColor:color,fillOpacity:0.8}).addTo(map).bindPopup(`<b>${data.nombreTaller}</b><br>${data.ciudad}<br>Status: ${data.status}`);
-      markers.push(marker);
+      const coords={Bogotá:[4.7,-74.07],Medellín:[6.24,-75.58],Cali:[3.45,-76.53]};
+      const pos=coords[u.ciudad]||[4.57,-74.29];
+      markers.push(L.circleMarker(pos,{radius:7,color:u.status==="activo"?"#10b981":"#ef4444"}).addTo(map));
     });
 
-    document.getElementById("total-talleres").innerText=total;
-    document.getElementById("vencimientos").innerText=vencimientos;
-    document.getElementById("total-ingresos").innerText=`$${ingresos.toLocaleString()}`;
-    document.getElementById("terminales-act").innerText=terminalesAct;
-    actualizarGraficoCiudades(cityData);
-    actualizarGraficoIngresos(total);
-    actualizarLogs(logs);
+    document.getElementById("kpiTalleres").innerText=total;
+    document.getElementById("kpiActivos").innerText=activos;
+    document.getElementById("kpiVence").innerText=vence;
+    document.getElementById("kpiPlanes").innerText=planes;
+    renderChart(ciudades);
   });
 }
 
-window.toggleEstado=async(uid,current)=>{
-  const next=current==="ACTIVO"?"SUSPENDIDO":"ACTIVO";
-  if(confirm(`Cambiar estado a ${next}?`)) await updateDoc(doc(db,"usuarios",uid),{status:next});
+window.toggle=async(id,status)=>{
+  const next=status==="activo"?"suspendido":"activo";
+  if(confirm(`Cambiar estado a ${next}?`))
+    await updateDoc(doc(db,"usuarios",id),{status:next});
 };
-window.filtrarTalleres=()=>{const q=document.getElementById("filtroTaller").value.toUpperCase();document.querySelectorAll("#tablaTalleres tr").forEach(r=>r.style.display=r.innerText.toUpperCase().includes(q)?"":"none");};
-window.exportCSV=()=>{const rows=[["TALLER","CIUDAD","STATUS","VENCIMIENTO"]];document.querySelectorAll("#tablaTalleres tr").forEach(tr=>{const tds=tr.querySelectorAll("td");if(tds.length)rows.push([tds[0].innerText,tds[1].innerText,tds[2].innerText,tds[3].innerText]);});const csv="data:text/csv;charset=utf-8,"+rows.map(e=>e.join(",")).join("\n");const link=document.createElement("a");link.href=encodeURI(csv);link.download=`TallerPRO360_CEO_${Date.now()}.csv`;link.click();};
-function cerrarSesion(){signOut(auth).then(()=>location.href="index.html");}
 
-// GRÁFICOS
-function actualizarGraficoCiudades(data){const ctx=document.getElementById("chartCiudades").getContext("2d");if(charts.ciudades)charts.ciudades.destroy();charts.ciudades=new Chart(ctx,{type:'doughnut',data:{labels:Object.keys(data),datasets:[{data:Object.values(data),backgroundColor:['#f59e0b','#3b82f6','#10b981','#ef4444','#8b5cf6','#06b6d4'],borderWidth:0,hoverOffset:10}]},options:{cutout:'70%',responsive:true,plugins:{legend:{display:true,position:'bottom'}}}});}
-function actualizarGraficoIngresos(total){const ctx=document.getElementById("chartIngresos").getContext("2d");if(charts.ingresos)charts.ingresos.destroy();charts.ingresos=new Chart(ctx,{type:'line',data:{labels:['LU','MA','MI','JU','VI','SA','DO'],datasets:[{label:'Ingresos',data:[total*0.3,total*0.5,total*0.4,total*0.6,total*0.7,total*0.9,total],borderColor:'#f59e0b',borderWidth:3,tension:0.4,fill:true,backgroundColor:'rgba(245,158,11,0.1)',pointRadius:3}]} ,options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{display:false},x:{grid:{color:'rgba(255,255,255,0.05)'}}}}});}
-function actualizarLogs(logs){const container=document.getElementById("actividadLogs");container.innerHTML="";logs.slice(0,15).forEach(log=>{container.innerHTML+=`<div class="flex justify-between items-center p-3 bg-slate-900/50 rounded-md border border-white/5 hover:border-amber-500 transition-all"><div><p class="font-bold text-white text-sm">${log.nombre||'Taller N/A'}</p><p class="text-xs text-gray-400 uppercase">${log.ciudad||'No asignada'}</p></div><div class="text-right"><p class="text-xs text-amber-500 font-bold">$${(log.ingreso||0).toLocaleString()}</p><p class="text-[8px] text-gray-400 italic">${log.status||'ACTIVO'}</p></div></div>`});}
+function renderChart(data){
+  if(chart) chart.destroy();
+  chart=new Chart(document.getElementById("chartCiudades"),{
+    type:"doughnut",
+    data:{labels:Object.keys(data),datasets:[{data:Object.values(data),backgroundColor:["#f59e0b","#10b981","#3b82f6","#ef4444"]}]},
+    options:{plugins:{legend:{position:"bottom"}}}
+  });
+}
+
+window.logout=()=>signOut(auth).then(()=>location.href="index.html");
 </script>
 </body>
 </html>
