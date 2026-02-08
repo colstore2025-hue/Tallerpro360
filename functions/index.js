@@ -3,6 +3,7 @@ const admin = require("firebase-admin");
 const mercadopago = require("mercadopago");
 
 admin.initializeApp();
+const db = admin.firestore();
 
 /* ===============================
    CONFIG MERCADO PAGO
@@ -26,8 +27,8 @@ exports.crearPago = functions.https.onCall(async (data, context) => {
   const uid = context.auth.uid;
   const email = context.auth.token.email;
 
-  // 🔎 Buscar plan en Firestore
-  const planRef = admin.firestore().collection("planes").doc(planId);
+  // 🔎 Buscar plan
+  const planRef = db.collection("planes").doc(planId);
   const planSnap = await planRef.get();
 
   if (!planSnap.exists || !planSnap.data().activo) {
@@ -42,7 +43,7 @@ exports.crearPago = functions.https.onCall(async (data, context) => {
   const preference = {
     items: [
       {
-        title: `TallerPRO360 - ${plan.nombre}`,
+        title: `TallerPRO360 · ${plan.nombre}`,
         quantity: 1,
         currency_id: "COP",
         unit_price: plan.precio
@@ -64,7 +65,10 @@ exports.crearPago = functions.https.onCall(async (data, context) => {
   };
 
   const response = await mercadopago.preferences.create(preference);
-  return { init_point: response.body.init_point };
+
+  return {
+    init_point: response.body.init_point
+  };
 });
 
 /* ===============================
@@ -81,13 +85,10 @@ exports.webhookMP = functions.https.onRequest(async (req, res) => {
     if (data.status !== "approved") return res.sendStatus(200);
 
     const { uid, planId } = data.metadata;
+    if (!uid || !planId) return res.sendStatus(200);
 
     // 🔎 Buscar plan
-    const planSnap = await admin.firestore()
-      .collection("planes")
-      .doc(planId)
-      .get();
-
+    const planSnap = await db.collection("planes").doc(planId).get();
     if (!planSnap.exists) return res.sendStatus(200);
 
     const plan = planSnap.data();
@@ -97,11 +98,12 @@ exports.webhookMP = functions.https.onRequest(async (req, res) => {
       new Date(Date.now() + plan.duracion_dias * 24 * 60 * 60 * 1000)
     );
 
-    await admin.firestore().collection("talleres").doc(uid).set(
+    // 🔓 Activar plan del taller
+    await db.collection("talleres").doc(uid).set(
       {
         planId,
         planNombre: plan.nombre,
-        estadoPlan: "activo",
+        estadoPlan: "ACTIVO",
         inicioPlan: ahora,
         venceEn: vence,
         metodoPago: "mercado_pago",
@@ -110,9 +112,9 @@ exports.webhookMP = functions.https.onRequest(async (req, res) => {
       { merge: true }
     );
 
-    res.sendStatus(200);
-  } catch (error) {
-    console.error("Webhook error:", error);
-    res.sendStatus(500);
-  }
-});
+    // 🧾 Registrar pago
+    await db.collection("pagos").add({
+      uid,
+      planId,
+      metodo: "mercado_pago",
+      monto: plan.precio
