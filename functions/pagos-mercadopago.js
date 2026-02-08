@@ -2,7 +2,6 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const mercadopago = require("mercadopago");
 
-admin.initializeApp();
 const db = admin.firestore();
 
 /* ===============================
