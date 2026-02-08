@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TallerPRO360 - Ordenes de Servicio</title>
+  <title>TallerPRO360 - Órdenes de Servicio</title>
   <link rel="icon" href="logo-tallerpro360.png" type="image/png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
   <style>
@@ -54,7 +54,7 @@
       </form>
     </div>
 
-    <!-- Lista de ordenes -->
+    <!-- Lista de órdenes -->
     <div id="ordenesList" class="card p-3 shadow-sm" style="display:none;">
       <h5>Órdenes activas</h5>
       <ul class="list-group" id="ordenesUl"></ul>
@@ -64,9 +64,14 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <script src="serviceOrders.voice.js"></script>
 
-  <script>
+  <!-- Script de voz -->
+  <script type="module">
+    import { speakOrderStage, initVoiceActivation, listenOrderVoice } from './serviceOrders.voice.js';
+
+    // Activar voz al primer click (PWA/Android)
+    initVoiceActivation();
+
     // Config Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
@@ -75,13 +80,17 @@
       storageBucket: "tallerpro360.appspot.com",
       messagingSenderId: "636224778184",
       appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-    };"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
     // Estados de taller
-    const estados = ["INGRESO", "DIAGNOSTICO", "APROBACION", "REPARACION", "ENTREGA"];
+    const estados = ["INGRESO", "DIAGNOSTICO", "APROBADO", "EN PROCESO", "LISTO", "ENTREGADO"];
+
+    // Función de voz simplificada
+    function speak(text) {
+      speakOrderStage({ codigo: "TEMP", estado: text });
+    }
 
     // Crear orden
     document.getElementById('formOrden').addEventListener('submit', async (e) => {
@@ -107,12 +116,12 @@
 
       await db.collection('ordenes').doc(codigo).set(orden);
 
-      speak(`Orden ${codigo} creada para ${clienteNombre}`);
+      speakOrderStage(orden); // Mensaje de voz al crear
       mostrarOrdenes();
       document.getElementById('formOrden').reset();
     });
 
-    // Mostrar ordenes
+    // Mostrar órdenes
     async function mostrarOrdenes() {
       const snapshot = await db.collection('ordenes').orderBy('actualizadoEn','desc').get();
       const ul = document.getElementById('ordenesUl');
@@ -157,7 +166,8 @@
               timeline: orden.timeline,
               actualizadoEn: timestamp
             });
-            speak(`Orden ${orden.codigo} actualizada a ${nuevoEstado}`);
+
+            speakOrderStage(orden); // Mensaje de voz al avanzar
             mostrarOrdenes();
           } else {
             alert('La orden ya está en estado final.');
@@ -165,6 +175,9 @@
         });
 
         ul.appendChild(li);
+
+        // Listener Firestore para cambios en tiempo real
+        listenOrderVoice(db, orden.codigo);
       });
       document.getElementById('ordenesList').style.display = ul.children.length ? 'block' : 'none';
     }
