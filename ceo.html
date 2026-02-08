@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TallerPRO360 | CEO Dashboard</title>
+<title>TallerPRO360 | CEO Command Center</title>
 
 <!-- Tailwind & FontAwesome -->
 <script src="https://cdn.tailwindcss.com"></script>
@@ -11,55 +11,55 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
 
 <style>
-  body {
-    background: #0f172a;
-    font-family: 'Inter', sans-serif;
-    color: #f1f5f9;
-    overflow-x: hidden;
-  }
+  body { background:#0f172a; font-family: 'Inter', sans-serif; color:#f1f5f9; overflow-x:hidden; }
   .font-nexus { font-family: 'Orbitron', sans-serif; }
-  .glass { background: rgba(15,23,42,0.75); backdrop-filter: blur(25px); border-radius: 2rem; border:1px solid rgba(255,255,255,0.05); padding:1.5rem; transition: all 0.3s ease; }
-  .glass:hover { border-color: #f59e0b; }
+  .glass { background: rgba(15,23,42,0.65); backdrop-filter: blur(30px); border-radius:2rem; border:1px solid rgba(255,255,255,0.05); padding:1.5rem; transition: all 0.3s ease; }
+  .glass:hover { border-color:#f59e0b; }
   .status-active { color:#10b981; border:1px solid rgba(16,185,129,0.3); background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:8px; font-weight:bold; font-size:10px;}
   .status-suspended { color:#ef4444; border:1px solid rgba(239,68,68,0.3); background:rgba(239,68,68,0.1); padding:2px 6px; border-radius:8px; font-weight:bold; font-size:10px;}
+  .scanline { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; background:linear-gradient(0deg,transparent 0%,rgba(255,255,255,0.05) 50%,transparent 100%); animation:scan 3s linear infinite; }
+  @keyframes scan { 0% {background-position-y:0} 100% {background-position-y:100%} }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: #0f172a; }
   ::-webkit-scrollbar-thumb { background: #f59e0b; border-radius:20px; }
 </style>
 </head>
 
-<body class="p-6">
+<body class="relative p-6">
+
+<!-- SCANLINE ANIM -->
+<div class="scanline"></div>
 
 <!-- HEADER -->
 <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-  <h1 class="text-3xl font-nexus font-black tracking-tight">TallerPRO360 <span class="text-amber-500">CEO Dashboard</span></h1>
+  <h1 class="text-3xl font-nexus font-black tracking-tight text-amber-500">TallerPRO360 <span class="text-white">CEO Command Center</span></h1>
   <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-white font-bold flex items-center gap-2">
     <i class="fas fa-power-off"></i> Cerrar Sesión
   </button>
 </header>
 
-<!-- KPIs -->
+<!-- KPIs HUD -->
 <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-  <div class="glass text-center">
-    <p class="text-xs uppercase font-bold text-gray-400">Talleres Totales</p>
-    <h2 id="total-talleres" class="text-3xl font-nexus font-black mt-2">0</h2>
+  <div class="glass text-center p-6 relative">
+    <p class="text-xs uppercase font-bold text-gray-400 tracking-widest">Talleres Totales</p>
+    <h2 id="total-talleres" class="text-4xl font-nexus font-black mt-2 text-amber-500 glow">0</h2>
   </div>
-  <div class="glass text-center">
-    <p class="text-xs uppercase font-bold text-gray-400">Vencimientos <5 días</p>
-    <h2 id="vencimientos" class="text-3xl font-nexus font-black mt-2">0</h2>
+  <div class="glass text-center p-6 relative">
+    <p class="text-xs uppercase font-bold text-gray-400 tracking-widest">Vencimientos <5 días</p>
+    <h2 id="vencimientos" class="text-4xl font-nexus font-black mt-2 text-red-500 glow">0</h2>
   </div>
-  <div class="glass text-center">
-    <p class="text-xs uppercase font-bold text-gray-400">Ingresos Totales</p>
-    <h2 id="total-ingresos" class="text-3xl font-nexus font-black mt-2">$0</h2>
+  <div class="glass text-center p-6 relative">
+    <p class="text-xs uppercase font-bold text-gray-400 tracking-widest">Ingresos Totales</p>
+    <h2 id="total-ingresos" class="text-4xl font-nexus font-black mt-2 text-green-500 glow">$0</h2>
   </div>
-  <div class="glass text-center">
-    <p class="text-xs uppercase font-bold text-gray-400">Terminales Activas</p>
-    <h2 id="terminales-act" class="text-3xl font-nexus font-black mt-2">0</h2>
+  <div class="glass text-center p-6 relative">
+    <p class="text-xs uppercase font-bold text-gray-400 tracking-widest">Terminales Activas</p>
+    <h2 id="terminales-act" class="text-4xl font-nexus font-black mt-2 text-blue-500 glow">0</h2>
   </div>
 </section>
 
-<!-- FILTROS Y TABLA -->
-<section class="glass mb-8">
+<!-- FILTROS + TABLA -->
+<section class="glass mb-8 relative p-6">
   <div class="flex flex-col md:flex-row justify-between mb-4 gap-4">
     <input type="text" id="filtroTaller" placeholder="Filtrar por taller o ciudad..." class="w-full md:w-1/2 p-2 rounded bg-slate-900 text-white focus:outline-none" onkeyup="filtrarTalleres()">
     <button onclick="exportCSV()" class="bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded font-bold text-black flex items-center gap-2">
@@ -82,33 +82,34 @@
   </div>
 </section>
 
-<!-- GRÁFICOS -->
+<!-- GRÁFICOS INTERACTIVOS -->
 <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-  <div class="glass p-6">
+  <div class="glass p-6 relative">
     <h3 class="text-xs font-nexus text-amber-500 uppercase tracking-widest mb-4">Distribución por Ciudad</h3>
     <canvas id="chartCiudades" class="w-full h-64"></canvas>
   </div>
-  <div class="glass p-6">
+  <div class="glass p-6 relative">
     <h3 class="text-xs font-nexus text-amber-500 uppercase tracking-widest mb-4">Ingresos Semanales</h3>
     <canvas id="chartIngresos" class="w-full h-64"></canvas>
   </div>
 </section>
 
-<!-- LOGS / ACTIVIDAD EN TIEMPO REAL -->
-<section class="glass p-6 mb-8">
+<!-- ACTIVIDAD TICKER -->
+<section class="glass p-6 mb-8 relative">
   <h3 class="text-xs font-nexus text-amber-500 uppercase tracking-widest mb-4">Actividad Reciente</h3>
-  <div id="actividadLogs" class="space-y-3 max-h-72 overflow-y-auto"></div>
+  <div class="overflow-hidden h-64 relative">
+    <div id="actividadLogs" class="absolute top-0 animate-scroll space-y-3 w-full"></div>
+  </div>
 </section>
 
-<!-- FOOTER -->
 <footer class="text-xs text-gray-400 uppercase tracking-widest text-center mt-8">
-  © 2026 TallerPRO360 - Sistema CEO Dashboard
+  © 2026 TallerPRO360 - CEO Command Center
 </footer>
 
-<!-- SCRIPTS -->
+<!-- SCRIPT -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot, doc, updateDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import Chart from "https://cdn.jsdelivr.net/npm/chart.js";
 
@@ -124,60 +125,49 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-
 let charts = {};
 
-// Seguridad CEO
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth,user=>{
   const allowed = ["ceo@colombiantrucks.com","col.store2025@gmail.com"];
-  if(!user || !allowed.includes(user.email)) location.href = "index.html";
+  if(!user || !allowed.includes(user.email)) location.href="index.html";
   sincronizarTalleres();
 });
 
-// Sincronización talleres
+// Funciones principales
 function sincronizarTalleres() {
-  onSnapshot(collection(db,"usuarios"), snap => {
-    let total = 0, vencimientos = 0, ingresos = 0, terminalesAct = 0, cityData = {};
-    const tbody = document.getElementById("tablaTalleres");
-    tbody.innerHTML = "";
+  onSnapshot(collection(db,"usuarios"),snap=>{
+    let total=0,vencimientos=0,ingresos=0,terminalesAct=0,cityData={};
+    const tbody=document.getElementById("tablaTalleres"); tbody.innerHTML="";
 
-    snap.forEach(docu => {
-      const data = docu.data();
-      if(data.rol !== "taller") return;
+    snap.forEach(docu=>{
+      const data=docu.data(); if(data.rol!=="taller") return;
+      total++; ingresos+=data.facturacionAcumulada||0; if(data.status==="ACTIVO") terminalesAct++;
+      const vence=data.vence?.toDate ? data.vence.toDate() : new Date(data.vence||Date.now());
+      if(Math.ceil((vence-new Date())/(1000*60*60*24))<=5) vencimientos++;
+      const stCls=data.status==="ACTIVO"?"status-active":"status-suspended";
 
-      total++;
-      ingresos += data.facturacionAcumulada || 0;
-      if(data.status==="ACTIVO") terminalesAct++;
-
-      const vence = data.vence?.toDate ? data.vence.toDate() : new Date(data.vence || Date.now());
-      const diff = Math.ceil((vence - new Date())/(1000*60*60*24));
-      if(diff <= 5) vencimientos++;
-
-      const stCls = data.status === "ACTIVO" ? "status-active" : "status-suspended";
-
-      tbody.innerHTML += `
+      tbody.innerHTML+=`
         <tr class="border-b border-gray-700 hover:bg-slate-900/50">
-          <td class="px-4 py-2 font-bold">${data.nombreTaller || 'Taller N/A'}</td>
-          <td class="px-4 py-2">${data.ciudad || 'No asignada'}</td>
-          <td class="px-4 py-2"><span class="${stCls}">${data.status || 'ACTIVO'}</span></td>
+          <td class="px-4 py-2 font-bold">${data.nombreTaller||'Taller N/A'}</td>
+          <td class="px-4 py-2">${data.ciudad||'No asignada'}</td>
+          <td class="px-4 py-2"><span class="${stCls}">${data.status||'ACTIVO'}</span></td>
           <td class="px-4 py-2">${vence.toLocaleDateString()}</td>
           <td class="px-4 py-2 text-right">
-            <button onclick="toggleEstado('${docu.id}','${data.status || 'ACTIVO'}')" class="px-3 py-1 rounded border font-bold ${data.status==='ACTIVO'?'bg-red-600 text-white':'bg-green-600 text-white'}">
+            <button onclick="toggleEstado('${docu.id}','${data.status||'ACTIVO'}')" class="px-3 py-1 rounded border font-bold ${data.status==='ACTIVO'?'bg-red-600 text-white':'bg-green-600 text-white'}">
               ${data.status==='ACTIVO'?'Suspender':'Reactivar'}
             </button>
           </td>
         </tr>
       `;
 
-      // Datos para gráfico por ciudad
-      const city = data.ciudad || "No asignada";
-      cityData[city] = (cityData[city] || 0) + 1;
+      const city=data.ciudad||"No asignada";
+      cityData[city]=(cityData[city]||0)+1;
     });
 
-    document.getElementById("total-talleres").innerText = total;
-    document.getElementById("vencimientos").innerText = vencimientos;
-    document.getElementById("total-ingresos").innerText = `$${ingresos.toLocaleString()}`;
-    document.getElementById("terminales-act").innerText = terminalesAct;
+    document.getElementById("total-talleres").innerText=total;
+    document.getElementById("vencimientos").innerText=vencimientos;
+    document.getElementById("total-ingresos").innerText=`$${ingresos.toLocaleString()}`;
+    document.getElementById("terminales-act").innerText=terminalesAct;
 
     actualizarGraficoCiudades(cityData);
     actualizarGraficoIngresos(snap.size);
@@ -185,95 +175,59 @@ function sincronizarTalleres() {
   });
 }
 
-// Funciones CEO
-window.toggleEstado = async (uid,current) => {
-  const next = current==="ACTIVO"?"SUSPENDIDO":"ACTIVO";
-  if(confirm(`Cambiar estado a ${next}?`)) await updateDoc(doc(db,"usuarios",uid), {status:next});
+window.toggleEstado=async(uid,current)=>{
+  const next=current==="ACTIVO"?"SUSPENDIDO":"ACTIVO";
+  if(confirm(`Cambiar estado a ${next}?`)) await updateDoc(doc(db,"usuarios",uid),{status:next});
 };
 
-window.filtrarTalleres = () => {
-  const query = document.getElementById("filtroTaller").value.toUpperCase();
-  document.querySelectorAll("#tablaTalleres tr").forEach(r=>{
-    r.style.display = r.innerText.toUpperCase().includes(query)?"":"none";
-  });
+window.filtrarTalleres=()=>{
+  const q=document.getElementById("filtroTaller").value.toUpperCase();
+  document.querySelectorAll("#tablaTalleres tr").forEach(r=>r.style.display=r.innerText.toUpperCase().includes(q)?"":"none");
 };
 
-window.exportCSV = () => {
-  const rows = [["TALLER","CIUDAD","STATUS","VENCIMIENTO"]];
+window.exportCSV=()=>{
+  const rows=[["TALLER","CIUDAD","STATUS","VENCIMIENTO"]];
   document.querySelectorAll("#tablaTalleres tr").forEach(tr=>{
-    const tds = tr.querySelectorAll("td");
-    if(tds.length) rows.push([tds[0].innerText, tds[1].innerText, tds[2].innerText, tds[3].innerText]);
+    const tds=tr.querySelectorAll("td");
+    if(tds.length) rows.push([tds[0].innerText,tds[1].innerText,tds[2].innerText,tds[3].innerText]);
   });
-  const csv = "data:text/csv;charset=utf-8," + rows.map(e=>e.join(",")).join("\n");
-  const link = document.createElement("a");
-  link.href = encodeURI(csv);
-  link.download = `TallerPRO360_CEO_${Date.now()}.csv`;
-  link.click();
+  const csv="data:text/csv;charset=utf-8,"+rows.map(e=>e.join(",")).join("\n");
+  const link=document.createElement("a"); link.href=encodeURI(csv); link.download=`TallerPRO360_CEO_${Date.now()}.csv`; link.click();
 };
 
-function cerrarSesion() {
-  signOut(auth).then(()=>location.href="index.html");
-}
+function cerrarSesion(){signOut(auth).then(()=>location.href="index.html");}
 
 // GRÁFICOS
-function actualizarGraficoCiudades(data) {
-  const ctx = document.getElementById("chartCiudades").getContext("2d");
+function actualizarGraficoCiudades(data){
+  const ctx=document.getElementById("chartCiudades").getContext("2d");
   if(charts.ciudades) charts.ciudades.destroy();
-  charts.ciudades = new Chart(ctx,{
-    type: 'doughnut',
-    data: {
-      labels: Object.keys(data),
-      datasets: [{
-        data: Object.values(data),
-        backgroundColor: ['#f59e0b','#3b82f6','#10b981','#ef4444','#8b5cf6','#06b6d4'],
-        borderWidth:0,
-        hoverOffset:10
-      }]
-    },
-    options:{ cutout:'70%', responsive:true, plugins:{legend:{display:true,position:'bottom'}} }
+  charts.ciudades=new Chart(ctx,{
+    type:'doughnut',
+    data:{labels:Object.keys(data),datasets:[{data:Object.values(data),backgroundColor:['#f59e0b','#3b82f6','#10b981','#ef4444','#8b5cf6','#06b6d4'],borderWidth:0,hoverOffset:10}]},
+    options:{cutout:'70%',responsive:true,plugins:{legend:{display:true,position:'bottom'}}}
   });
 }
 
-function actualizarGraficoIngresos(total) {
-  const ctx = document.getElementById("chartIngresos").getContext("2d");
+function actualizarGraficoIngresos(total){
+  const ctx=document.getElementById("chartIngresos").getContext("2d");
   if(charts.ingresos) charts.ingresos.destroy();
-  charts.ingresos = new Chart(ctx,{
+  charts.ingresos=new Chart(ctx,{
     type:'line',
-    data:{
-      labels:['LU','MA','MI','JU','VI','SA','DO'],
-      datasets:[{
-        label:'Ingresos',
-        data:[total*0.3,total*0.5,total*0.4,total*0.6,total*0.7,total*0.9,total],
-        borderColor:'#f59e0b',
-        borderWidth:3,
-        tension:0.4,
-        fill:true,
-        backgroundColor:'rgba(245,158,11,0.1)',
-        pointRadius:3
-      }]
-    },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{display:false},x:{grid:{color:'rgba(255,255,255,0.05)'}}} }
+    data:{labels:['LU','MA','MI','JU','VI','SA','DO'],datasets:[{label:'Ingresos',data:[total*0.3,total*0.5,total*0.4,total*0.6,total*0.7,total*0.9,total],borderColor:'#f59e0b',borderWidth:3,tension:0.4,fill:true,backgroundColor:'rgba(245,158,11,0.1)',pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{display:false},x:{grid:{color:'rgba(255,255,255,0.05)'}}}}
   });
 }
 
-// Logs de actividad reciente
-function actualizarLogs(snap) {
-  const container = document.getElementById("actividadLogs");
-  container.innerHTML = "";
-  let index = 0;
+function actualizarLogs(snap){
+  const container=document.getElementById("actividadLogs"); container.innerHTML="";
+  let index=0;
   snap.forEach(docu=>{
-    if(index>=10) return;
-    const data = docu.data();
-    container.innerHTML += `
+    if(index>=15) return;
+    const data=docu.data();
+    container.innerHTML+=`
       <div class="flex justify-between items-center p-3 bg-slate-900/50 rounded-md border border-white/5 hover:border-amber-500 transition-all">
-        <div>
-          <p class="font-bold text-white text-sm">${data.nombreTaller || 'Taller N/A'}</p>
-          <p class="text-xs text-gray-400 uppercase">${data.ciudad || 'No asignada'}</p>
-        </div>
-        <div class="text-right">
-          <p class="text-xs text-amber-500 font-bold">$${(data.facturacionAcumulada || 0).toLocaleString()}</p>
-          <p class="text-[8px] text-gray-400 italic">${data.status || 'ACTIVO'}</p>
-        </div>
+        <div><p class="font-bold text-white text-sm">${data.nombreTaller||'Taller N/A'}</p><p class="text-xs text-gray-400 uppercase">${data.ciudad||'No asignada'}</p></div>
+        <div class="text-right"><p class="text-xs text-amber-500 font-bold">$${(data.facturacionAcumulada||0).toLocaleString()}</p><p class="text-[8px] text-gray-400 italic">${data.status||'ACTIVO'}</p></div>
       </div>
     `;
     index++;
