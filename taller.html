@@ -2,104 +2,208 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>TallerPRO360 | Taller</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TallerPRO360 | Panel del Taller</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#020617" />
 
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0ea5e9">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
-
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    body { background:#f8fafc; }
+    * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+    body {
+      margin: 0;
+      background: #020617;
+      color: #E5E7EB;
+    }
+
+    header {
+      padding: 16px;
+      background: #020617;
+      border-bottom: 1px solid #0F172A;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 18px;
+      margin: 0;
+      font-weight: 700;
+    }
+
+    .btn-new {
+      background: linear-gradient(90deg, #38BDF8, #0EA5E9);
+      border: none;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .container {
+      padding: 16px;
+    }
+
+    .order-card {
+      background: #0F172A;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .placa {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .estado {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: #1E293B;
+      font-weight: 600;
+    }
+
+    .info {
+      font-size: 13px;
+      color: #CBD5F5;
+      margin-bottom: 6px;
+    }
+
+    .timeline {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .step {
+      font-size: 10px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      background: #020617;
+      border: 1px solid #1E293B;
+    }
+
+    .step.active {
+      background: #38BDF8;
+      color: #020617;
+      font-weight: 700;
+    }
+
+    footer {
+      height: 70px;
+    }
   </style>
 </head>
 
-<body class="min-h-screen flex flex-col">
+<body>
 
-<!-- HEADER -->
-<header class="bg-white shadow-sm px-4 py-3 flex items-center justify-between">
-  <div class="flex items-center gap-3">
-    <img src="logo-tallerpro360.png" class="w-9 h-9 rounded-xl" />
-    <div>
-      <p class="text-sm font-bold">TallerPRO360</p>
-      <p class="text-[11px] text-slate-500">Panel del Taller</p>
-    </div>
-  </div>
-
-  <button class="text-slate-600">
-    <i class="fas fa-sign-out-alt"></i>
-  </button>
+<header>
+  <h1>🚗 TallerPRO360</h1>
+  <button class="btn-new" onclick="crearOrden()">+ Orden</button>
 </header>
 
-<!-- CONTENIDO -->
-<main class="flex-1 p-4 space-y-6">
+<div class="container" id="ordersContainer">
+  <!-- Órdenes dinámicas -->
+</div>
 
-  <!-- NUEVA ORDEN -->
-  <button
-    onclick="crearOrden()"
-    class="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 shadow">
-    <i class="fas fa-plus-circle"></i>
-    Nueva Orden de Servicio
-  </button>
+<footer></footer>
 
-  <!-- LISTA DE ÓRDENES -->
-  <section id="ordenes" class="space-y-4">
-
-    <!-- ORDEN -->
-    <div class="bg-white rounded-2xl shadow p-4 border-l-8 border-blue-500">
-      <div class="flex justify-between items-center mb-2">
-        <p class="font-bold">Orden #TP360-000123</p>
-        <span class="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-bold">
-          DIAGNÓSTICO
-        </span>
-      </div>
-
-      <p class="text-sm text-slate-600">
-        Chevrolet Spark · ABC123
-      </p>
-
-      <div class="mt-4 flex justify-between items-center">
-        <button
-          onclick="verOrden()"
-          class="text-blue-600 font-bold text-sm">
-          Ver orden
-        </button>
-
-        <button
-          onclick="avanzarEstado()"
-          class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold">
-          Avanzar
-        </button>
-      </div>
-    </div>
-
-  </section>
-</main>
-
-<!-- FOOTER -->
-<footer class="bg-white border-t text-center py-2 text-[11px] text-slate-500">
-  TallerPRO360 · Hecho para talleres de Colombia 🇨🇴
-</footer>
-
+<!-- Firebase -->
 <script type="module">
-  // Aquí luego conectamos Firebase
-  window.crearOrden = () => {
-    alert("Crear nueva orden (INGRESO)");
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    query,
+    orderBy,
+    onSnapshot,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "TU_API_KEY",
+    authDomain: "TU_AUTH_DOMAIN",
+    projectId: "TU_PROJECT_ID",
+    storageBucket: "TU_STORAGE_BUCKET",
+    messagingSenderId: "TU_MESSAGING_ID",
+    appId: "TU_APP_ID"
   };
 
-  window.verOrden = () => {
-    alert("Vista detallada de la orden");
-  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-  window.avanzarEstado = () => {
-    alert("Avanza al siguiente estado");
+  const estados = [
+    "INGRESO",
+    "DIAGNOSTICO",
+    "APROBADO",
+    "EN PROCESO",
+    "LISTO",
+    "ENTREGADO"
+  ];
+
+  const ordersRef = collection(db, "ordenes");
+
+  const q = query(ordersRef, orderBy("creadoEn", "desc"));
+
+  onSnapshot(q, (snapshot) => {
+    const container = document.getElementById("ordersContainer");
+    container.innerHTML = "";
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      container.innerHTML += renderOrden(data);
+    });
+  });
+
+  function renderOrden(o) {
+    return `
+      <div class="order-card">
+        <div class="order-header">
+          <div class="placa">${o.placa}</div>
+          <div class="estado">${o.estado}</div>
+        </div>
+
+        <div class="info"><b>Vehículo:</b> ${o.vehiculo}</div>
+        <div class="info"><b>Cliente:</b> ${o.cliente.nombre}</div>
+        <div class="info"><b>Tel:</b> ${o.cliente.telefono}</div>
+
+        <div class="timeline">
+          ${estados.map(e =>
+            `<div class="step ${e === o.estado ? "active" : ""}">${e}</div>`
+          ).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  window.crearOrden = async function () {
+    await addDoc(ordersRef, {
+      codigo: `TP360-CO-${Date.now()}`,
+      placa: "ABC123",
+      vehiculo: "Chevrolet Spark",
+      cliente: {
+        nombre: "Juan Pérez",
+        telefono: "3001234567"
+      },
+      estado: "INGRESO",
+      timeline: [
+        { estado: "INGRESO", fecha: serverTimestamp() }
+      ],
+      creadoEn: serverTimestamp(),
+      actualizadoEn: serverTimestamp()
+    });
   };
 </script>
 
