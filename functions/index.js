@@ -4,14 +4,20 @@ const mercadopago = require("mercadopago");
 
 admin.initializeApp();
 
-// 🔐 ACCESS TOKEN (guárdalo luego en config)
+// Configuración Mercado Pago (TOKEN OCULTO)
 mercadopago.configure({
   access_token: functions.config().mp.token
 });
 
+/**
+ * CREA EL PAGO (Checkout)
+ */
 exports.crearPago = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "No autorizado");
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Usuario no autenticado"
+    );
   }
 
   const { plan, precio } = data;
@@ -28,20 +34,52 @@ exports.crearPago = functions.https.onCall(async (data, context) => {
       }
     ],
     payer: { email },
+    metadata: { uid, plan },
     back_urls: {
-      success: "https://tallerpro360.vercel.app/pago-exitoso.html",
-      failure: "https://tallerpro360.vercel.app/pago-fallido.html",
-      pending: "https://tallerpro360.vercel.app/pago-pendiente.html"
+      success: "https://tudominio.com/pago-exitoso.html",
+      failure: "https://tudominio.com/pago-fallido.html",
+      pending: "https://tudominio.com/pago-pendiente.html"
     },
     auto_return: "approved",
-    metadata: {
-      uid,
-      plan
-    },
     notification_url:
       "https://us-central1-tallerpro360.cloudfunctions.net/webhookMP"
   };
 
-  const res = await mercadopago.preferences.create(preference);
-  return { init_point: res.body.init_point };
+  const response = await mercadopago.preferences.create(preference);
+  return { init_point: response.body.init_point };
+});
+
+/**
+ * WEBHOOK (ACTIVA EL PLAN)
+ */
+exports.webhookMP = functions.https.onRequest(async (req, res) => {
+  try {
+    const paymentId = req.query?.["data.id"];
+    if (!paymentId) return res.sendStatus(200);
+
+    const payment = await mercadopago.payment.findById(paymentId);
+    const data = payment.body;
+
+    if (data.status !== "approved") return res.sendStatus(200);
+
+    const { uid, plan } = data.metadata;
+
+    const ahora = admin.firestore.Timestamp.now();
+    const vence = admin.firestore.Timestamp.fromDate(
+      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    );
+
+    await admin.firestore().collection("talleres").doc(uid).update({
+      plan,
+      estadoPlan: "activo",
+      inicioPlan: ahora,
+      venceEn: vence,
+      alertas: { d7: false, d3: false, d1: false }
+    });
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("Webhook error:", err);
+    res.sendStatus(500);
+  }
 });
