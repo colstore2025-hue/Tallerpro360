@@ -1,5 +1,6 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+
 const db = admin.firestore();
 
 exports.verificarVencimientos = functions.pubsub
@@ -8,9 +9,8 @@ exports.verificarVencimientos = functions.pubsub
   .onRun(async () => {
 
     const hoy = new Date();
-    const snap = await db.collection("talleres")
-      .where("estadoPlan", "!=", "SUSPENDIDO")
-      .get();
+
+    const snap = await db.collection("talleres").get();
 
     for (const doc of snap.docs) {
       const t = doc.data();
