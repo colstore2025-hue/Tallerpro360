@@ -113,12 +113,12 @@
 
       // 3️⃣ Redirección por rol
       if (user.rol === "taller") {
-        window.location.href = "/taller.html";
-      } else if (user.rol === "admin") {
-        window.location.href = "/ceo.html";
-      } else {
-        throw new Error("Rol inválido");
-      }
+  window.location.href = "/taller.html";
+} else if (user.rol === "ceo") {
+  window.location.href = "/ceo.html";
+} else {
+  throw new Error("Rol inválido");
+}
 
     } catch (err) {
       errorMsg.textContent = err.message || "Error de autenticación";
