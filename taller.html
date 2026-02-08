@@ -6,6 +6,7 @@
   <title>TallerPRO360 - Órdenes de Servicio</title>
   <link rel="icon" href="logo-tallerpro360.png" type="image/png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
   <style>
     body { font-family: 'Segoe UI', sans-serif; background-color: #f5f6fa; }
     .container { max-width: 600px; margin-top: 20px; }
@@ -21,169 +22,187 @@
       border-radius: 50%;
     }
     .btn-next { margin-top: 10px; }
+
+    .banner-plan {
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      padding: 12px;
+      text-align: center;
+      font-weight: bold;
+    }
+    .plan-ok { background:#d1fae5; color:#065f46; }
+    .plan-warning { background:#fef3c7; color:#92400e; }
+    .plan-danger { background:#fee2e2; color:#991b1b; }
   </style>
 </head>
+
 <body>
-  <div class="container">
-    <div class="text-center mb-4">
-      <img src="logo-tallerpro360.png" alt="TallerPRO360" width="120">
-      <h2 class="mt-2">Gestión de Órdenes</h2>
-    </div>
 
-    <!-- Formulario de creación de orden -->
-    <div id="crearOrden" class="card mb-3 p-3 shadow-sm">
-      <h5>Crear nueva orden</h5>
-      <form id="formOrden">
-        <div class="mb-2">
-          <label>Placa del vehículo</label>
-          <input type="text" id="placa" class="form-control" placeholder="ABC123" required>
-        </div>
-        <div class="mb-2">
-          <label>Marca/Modelo</label>
-          <input type="text" id="vehiculo" class="form-control" placeholder="Chevrolet Spark" required>
-        </div>
-        <div class="mb-2">
-          <label>Nombre del cliente</label>
-          <input type="text" id="clienteNombre" class="form-control" placeholder="Juan Pérez" required>
-        </div>
-        <div class="mb-2">
-          <label>Teléfono</label>
-          <input type="tel" id="clienteTelefono" class="form-control" placeholder="3001234567" required>
-        </div>
-        <button type="submit" class="btn btn-primary w-100 mt-2">Crear Orden</button>
-      </form>
-    </div>
+<!-- BANNER PLAN -->
+<div id="bannerPlan" class="banner-plan d-none"></div>
 
-    <!-- Lista de órdenes -->
-    <div id="ordenesList" class="card p-3 shadow-sm" style="display:none;">
-      <h5>Órdenes activas</h5>
-      <ul class="list-group" id="ordenesUl"></ul>
-    </div>
+<div class="container">
+  <div class="text-center mb-4">
+    <img src="logo-tallerpro360.png" alt="TallerPRO360" width="120">
+    <h2 class="mt-2">Gestión de Órdenes</h2>
   </div>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <!-- Crear orden -->
+  <div id="crearOrden" class="card mb-3 p-3 shadow-sm">
+    <h5>Crear nueva orden</h5>
+    <form id="formOrden">
+      <div class="mb-2">
+        <label>Placa del vehículo</label>
+        <input type="text" id="placa" class="form-control" required>
+      </div>
+      <div class="mb-2">
+        <label>Marca / Modelo</label>
+        <input type="text" id="vehiculo" class="form-control" required>
+      </div>
+      <div class="mb-2">
+        <label>Nombre del cliente</label>
+        <input type="text" id="clienteNombre" class="form-control" required>
+      </div>
+      <div class="mb-2">
+        <label>Teléfono</label>
+        <input type="tel" id="clienteTelefono" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-primary w-100 mt-2">Crear Orden</button>
+    </form>
+  </div>
 
-  <!-- Script de voz -->
-  <script type="module">
-    import { speakOrderStage, initVoiceActivation, listenOrderVoice } from './serviceOrders.voice.js';
+  <!-- Órdenes -->
+  <div id="ordenesList" class="card p-3 shadow-sm d-none">
+    <h5>Órdenes activas</h5>
+    <ul class="list-group" id="ordenesUl"></ul>
+  </div>
+</div>
 
-    // Activar voz al primer click (PWA/Android)
-    initVoiceActivation();
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
-    // Config Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-      authDomain: "tallerpro360.firebaseapp.com",
-      projectId: "tallerpro360",
-      storageBucket: "tallerpro360.appspot.com",
-      messagingSenderId: "636224778184",
-      appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+<!-- VOZ -->
+<script type="module">
+import { speakOrderStage, initVoiceActivation, listenOrderVoice } from './serviceOrders.voice.js';
+initVoiceActivation();
+</script>
+
+<!-- BILLING GUARD -->
+<script type="module" src="./billing-guard.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+  authDomain: "tallerpro360.firebaseapp.com",
+  projectId: "tallerpro360",
+  storageBucket: "tallerpro360.appspot.com",
+  messagingSenderId: "636224778184",
+  appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+};
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+const estados = ["INGRESO","DIAGNOSTICO","APROBADO","EN PROCESO","LISTO","ENTREGADO"];
+
+let tallerStatus = "ACTIVO";
+
+// 🔐 CONTROL DE PLAN
+auth.onAuthStateChanged(async (user)=>{
+  if(!user) return;
+
+  const userSnap = await db.collection("usuarios").doc(user.uid).get();
+  if(!userSnap.exists) return;
+
+  const data = userSnap.data();
+  tallerStatus = data.status || "ACTIVO";
+
+  const banner = document.getElementById("bannerPlan");
+
+  if(tallerStatus === "SUSPENDIDO"){
+    banner.className = "banner-plan plan-danger";
+    banner.innerHTML = `🚨 Tu plan está vencido. 
+      <a href="pagos.html" class="btn btn-sm btn-dark ms-2">Pagar ahora</a>`;
+    banner.classList.remove("d-none");
+    document.getElementById("crearOrden").style.display="none";
+  }
+});
+
+// CREAR ORDEN
+document.getElementById("formOrden").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  if(tallerStatus !== "ACTIVO"){
+    alert("Tu plan está vencido. No puedes crear órdenes.");
+    return;
+  }
+
+  const codigo = `TP360-${Date.now()}`;
+  const ts = firebase.firestore.Timestamp.now();
+
+  const orden = {
+    codigo,
+    placa: placa.value.toUpperCase(),
+    vehiculo: vehiculo.value,
+    cliente: { nombre: clienteNombre.value, telefono: clienteTelefono.value },
+    estado:"INGRESO",
+    timeline:[{estado:"INGRESO",fecha:ts}],
+    creadoEn:ts,
+    actualizadoEn:ts
+  };
+
+  await db.collection("ordenes").doc(codigo).set(orden);
+  speakOrderStage(orden);
+  formOrden.reset();
+  cargarOrdenes();
+});
+
+// LISTAR ÓRDENES
+async function cargarOrdenes(){
+  const snap = await db.collection("ordenes").orderBy("actualizadoEn","desc").get();
+  const ul = document.getElementById("ordenesUl");
+  ul.innerHTML="";
+
+  snap.forEach(doc=>{
+    const o = doc.data();
+    const li = document.createElement("li");
+    li.className="list-group-item";
+
+    li.innerHTML=`
+      <strong>${o.codigo}</strong> - ${o.vehiculo} (${o.placa})
+      <span class="badge bg-info ms-2">${o.estado}</span>
+      <br>Cliente: ${o.cliente.nombre}
+      <button class="btn btn-sm btn-success mt-2">Avanzar</button>
+    `;
+
+    li.querySelector("button").onclick = async ()=>{
+      if(tallerStatus!=="ACTIVO"){
+        alert("Plan vencido. No puedes avanzar órdenes.");
+        return;
+      }
+      const i = estados.indexOf(o.estado);
+      if(i < estados.length-1){
+        const nuevo = estados[i+1];
+        o.estado=nuevo;
+        o.timeline.push({estado:nuevo,fecha:firebase.firestore.Timestamp.now()});
+        await db.collection("ordenes").doc(o.codigo).update(o);
+        speakOrderStage(o);
+        cargarOrdenes();
+      }
     };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
 
-    // Estados de taller
-    const estados = ["INGRESO", "DIAGNOSTICO", "APROBADO", "EN PROCESO", "LISTO", "ENTREGADO"];
+    ul.appendChild(li);
+    listenOrderVoice(db,o.codigo);
+  });
 
-    // Función de voz simplificada
-    function speak(text) {
-      speakOrderStage({ codigo: "TEMP", estado: text });
-    }
+  document.getElementById("ordenesList").classList.toggle("d-none",!ul.children.length);
+}
 
-    // Crear orden
-    document.getElementById('formOrden').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const placa = document.getElementById('placa').value.toUpperCase();
-      const vehiculo = document.getElementById('vehiculo').value;
-      const clienteNombre = document.getElementById('clienteNombre').value;
-      const clienteTelefono = document.getElementById('clienteTelefono').value;
+cargarOrdenes();
+</script>
 
-      const codigo = `TP360-CO-2026-${Math.floor(Math.random()*1000000).toString().padStart(6,'0')}`;
-      const timestamp = firebase.firestore.Timestamp.now();
-
-      const orden = {
-        codigo,
-        placa,
-        vehiculo,
-        cliente: { nombre: clienteNombre, telefono: clienteTelefono },
-        estado: "INGRESO",
-        timeline: [{ estado: "INGRESO", fecha: timestamp }],
-        creadoEn: timestamp,
-        actualizadoEn: timestamp
-      };
-
-      await db.collection('ordenes').doc(codigo).set(orden);
-
-      speakOrderStage(orden); // Mensaje de voz al crear
-      mostrarOrdenes();
-      document.getElementById('formOrden').reset();
-    });
-
-    // Mostrar órdenes
-    async function mostrarOrdenes() {
-      const snapshot = await db.collection('ordenes').orderBy('actualizadoEn','desc').get();
-      const ul = document.getElementById('ordenesUl');
-      ul.innerHTML = '';
-      snapshot.forEach(doc => {
-        const orden = doc.data();
-        const li = document.createElement('li');
-        li.className = 'list-group-item';
-        li.innerHTML = `
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <strong>${orden.codigo}</strong> - ${orden.vehiculo} (${orden.placa})
-              <span class="badge bg-info estado-badge">${orden.estado}</span>
-              <br>
-              Cliente: ${orden.cliente.nombre} - ${orden.cliente.telefono}
-            </div>
-            <button class="btn btn-sm btn-success btn-next">Avanzar Estado</button>
-          </div>
-          <ul class="timeline mt-2"></ul>
-        `;
-
-        // Timeline
-        const timelineUl = li.querySelector('.timeline');
-        orden.timeline.forEach(t => {
-          const tLi = document.createElement('li');
-          tLi.textContent = `${t.estado} - ${t.fecha.toDate().toLocaleString()}`;
-          timelineUl.appendChild(tLi);
-        });
-
-        // Avanzar estado
-        li.querySelector('.btn-next').addEventListener('click', async () => {
-          const currentIndex = estados.indexOf(orden.estado);
-          if(currentIndex < estados.length - 1) {
-            const nuevoEstado = estados[currentIndex + 1];
-            const timestamp = firebase.firestore.Timestamp.now();
-            orden.estado = nuevoEstado;
-            orden.timeline.push({ estado: nuevoEstado, fecha: timestamp });
-            orden.actualizadoEn = timestamp;
-
-            await db.collection('ordenes').doc(orden.codigo).update({
-              estado: nuevoEstado,
-              timeline: orden.timeline,
-              actualizadoEn: timestamp
-            });
-
-            speakOrderStage(orden); // Mensaje de voz al avanzar
-            mostrarOrdenes();
-          } else {
-            alert('La orden ya está en estado final.');
-          }
-        });
-
-        ul.appendChild(li);
-
-        // Listener Firestore para cambios en tiempo real
-        listenOrderVoice(db, orden.codigo);
-      });
-      document.getElementById('ordenesList').style.display = ul.children.length ? 'block' : 'none';
-    }
-
-    // Carga inicial
-    mostrarOrdenes();
-  </script>
 </body>
 </html>
