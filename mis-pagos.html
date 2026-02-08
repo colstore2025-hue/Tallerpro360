@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mis Pagos | TallerPRO360</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f1f3f6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: #ffffff;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 8px 25px rgba(0,0,0,.08);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 5px;
+      color: #2c3e50;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #7f8c8d;
+      margin-bottom: 25px;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #e1e1e1;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    th {
+      background: #2e86de;
+      color: white;
+      font-weight: 600;
+    }
+
+    tr:hover {
+      background: #f8f9fb;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 25px;
+      color: #7f8c8d;
+      font-style: italic;
+    }
+
+    .logout-btn {
+      margin-top: 25px;
+      padding: 12px;
+      width: 100%;
+      border: none;
+      background: #c0392b;
+      color: white;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 15px;
+      transition: background .3s;
+    }
+
+    .logout-btn:hover {
+      background: #a93226;
+    }
+
+    .badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: white;
+      display: inline-block;
+    }
+
+    .badge-nequi { background: #6c3483; }
+    .badge-mercadopago { background: #2ecc71; }
+    .badge-efectivo { background: #95a5a6; }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>Mis Pagos</h2>
+  <div class="subtitle">Historial de pagos registrados en TallerPRO360</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Monto</th>
+        <th>Método</th>
+        <th>Referencia</th>
+        <th>Plan</th>
+      </tr>
+    </thead>
+    <tbody id="tablaPagos">
+      <tr>
+        <td colspan="5" class="empty">Cargando pagos...</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+  import {
+    getFirestore,
+    collection,
+    query,
+    where,
+    orderBy,
+    onSnapshot
+  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+    authDomain: "tallerpro360.firebaseapp.com",
+    projectId: "tallerpro360",
+    storageBucket: "tallerpro360.appspot.com",
+    messagingSenderId: "636224778184",
+    appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const tabla = document.getElementById("tablaPagos");
+
+  const formatoCOP = new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: "COP"
+  });
+
+  function metodoBadge(metodo) {
+    if (metodo === "Nequi") return `<span class="badge badge-nequi">Nequi</span>`;
+    if (metodo === "MercadoPago") return `<span class="badge badge-mercadopago">MercadoPago</span>`;
+    return `<span class="badge badge-efectivo">${metodo}</span>`;
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      window.location.href = "login.html";
+      return;
+    }
+
+    const q = query(
+      collection(db, "pagos"),
+      where("userId", "==", user.uid),
+      orderBy("fecha", "desc")
+    );
+
+    onSnapshot(q, (snapshot) => {
+      tabla.innerHTML = "";
+
+      if (snapshot.empty) {
+        tabla.innerHTML = `
+          <tr>
+            <td colspan="5" class="empty">Aún no tienes pagos registrados</td>
+          </tr>
+        `;
+        return;
+      }
+
+      snapshot.forEach((doc) => {
+        const p = doc.data();
+        const fecha = p.fecha?.toDate().toLocaleDateString("es-CO") || "-";
+
+        tabla.innerHTML += `
+          <tr>
+            <td>${fecha}</td>
+            <td>${formatoCOP.format(p.monto)}</td>
+            <td>${metodoBadge(p.metodo)}</td>
+            <td>${p.referencia || "-"}</td>
+            <td>${p.plan || "-"}</td>
+          </tr>
+        `;
+      });
+    });
+  });
+
+  window.logout = async function () {
+    await signOut(auth);
+    window.location.href = "login.html";
+  };
+</script>
+
+</body>
+</html>
