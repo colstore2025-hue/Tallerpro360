@@ -19,173 +19,150 @@
   <link rel="icon" type="image/png" sizes="32x32" href="icons/32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="icons/16.png">
 
-  <!-- ===================== UI ===================== -->
+  <!-- UI -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
     :root {
-      --green: #16a34a;
-      --blue: #2563eb;
-      --orange: #f97316;
+      --green:#16a34a;
+      --blue:#2563eb;
+      --orange:#f97316;
     }
 
     .hover-scale:hover {
       transform: scale(1.05);
-      transition: all 0.3s ease-in-out;
+      transition: all .3s ease;
     }
 
     .fade-in {
-      opacity: 0;
-      transform: translateY(20px);
-      animation: fadeIn 1s forwards;
+      opacity:0;
+      transform:translateY(20px);
+      animation:fadeIn 1s forwards;
     }
 
     @keyframes fadeIn {
-      to { opacity: 1; transform: translateY(0); }
+      to { opacity:1; transform:none; }
     }
 
-    /* ===================== SPLASH SCREEN ===================== */
+    /* SPLASH */
     #splash {
-      position: fixed;
-      inset: 0;
-      background: linear-gradient(135deg, #16a34a, #2563eb);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      animation: splashOut 1s ease forwards;
-      animation-delay: 2s;
-    }
-
-    #splash.hidden {
-      display: none;
-    }
-
-    @keyframes splashOut {
-      to {
-        opacity: 0;
-        visibility: hidden;
-      }
+      position:fixed;
+      inset:0;
+      background:linear-gradient(135deg,#16a34a,#2563eb);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
     }
   </style>
 </head>
 
 <body class="bg-white text-slate-800 font-sans">
 
-<!-- ===================== SPLASH ===================== -->
+<!-- SPLASH -->
 <div id="splash">
   <div class="text-center text-white">
-    <div class="text-6xl font-black mb-4 animate-pulse">360</div>
-    <div class="text-xl font-bold tracking-wide">
-      TallerPRO360
-    </div>
-    <p class="text-sm opacity-80 mt-2">
-      Gestión inteligente para talleres
-    </p>
+    <img src="icons/ios-180.png" class="w-28 mx-auto mb-4" />
+    <h1 class="text-2xl font-black">TallerPRO360</h1>
+    <p class="opacity-80 text-sm mt-2">Gestión inteligente para talleres</p>
   </div>
 </div>
 
-<!-- ===================== NAV ===================== -->
+<!-- NAV -->
 <nav class="w-full border-b bg-white sticky top-0 z-50 shadow-sm">
   <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center text-white font-black">
-        360
-      </div>
-      <span class="font-black text-xl">
-        Taller<span class="text-green-600">PRO</span>360
-      </span>
+      <div class="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center text-white font-black">360</div>
+      <span class="font-black text-xl">Taller<span class="text-green-600">PRO</span>360</span>
     </div>
     <div class="flex gap-6 text-sm font-semibold">
       <a href="#como-funciona" class="hover:text-green-600">Cómo funciona</a>
       <a href="#planes" class="hover:text-green-600">Planes</a>
-      <a href="login.html" class="text-white bg-green-600 px-4 py-2 rounded-lg hover:bg-green-700">
-        Ingresar
-      </a>
+      <a href="login.html" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Ingresar</a>
     </div>
   </div>
 </nav>
 
-<!-- ===================== HERO ===================== -->
-<section class="bg-gradient-to-br from-green-50 via-blue-50 to-white py-28 relative overflow-hidden">
+<!-- HERO -->
+<section class="bg-gradient-to-br from-green-50 via-blue-50 to-white py-28">
   <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
 
-    <div class="z-10 fade-in">
-      <h1 class="text-5xl md:text-6xl font-black leading-tight mb-6 text-slate-800">
+    <div class="fade-in">
+      <h1 class="text-5xl md:text-6xl font-black mb-6">
         Control total de tu taller,<br>
         <span class="text-green-600">vehículo por vehículo</span>
       </h1>
       <p class="text-lg text-slate-600 mb-8">
-        Gestiona cada etapa del vehículo, informa al cliente en tiempo real y garantiza trazabilidad completa.
+        Gestiona cada etapa del vehículo e informa al cliente en tiempo real.
       </p>
-      <div class="flex gap-4 flex-wrap">
-        <a href="login.html" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-green-700 transition">
-          Probar el sistema
-        </a>
-        <a href="#planes" class="border border-green-600 text-green-600 px-8 py-4 rounded-2xl font-bold hover:bg-green-50 transition">
-          Ver planes
-        </a>
+      <div class="flex gap-4">
+        <a href="login.html" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold">Probar el sistema</a>
+        <a href="#planes" class="border border-green-600 text-green-600 px-8 py-4 rounded-2xl font-bold">Ver planes</a>
       </div>
     </div>
 
-    <!-- ======= DIAGRAMA ORIGINAL COMPLETO (NO TOCADO) ======= -->
-    <!-- (se mantiene exactamente como lo enviaste) -->
-    <!-- … TU BLOQUE COMPLETO AQUÍ … -->
+    <!-- DIAGRAMA -->
+    <div class="bg-white rounded-3xl shadow-xl p-8 grid grid-cols-5 gap-4 text-center">
+      <div><i class="fas fa-car text-green-600 text-3xl"></i><p>Ingreso</p></div>
+      <div><i class="fas fa-arrow-right text-green-400"></i></div>
+      <div><i class="fas fa-screwdriver-wrench text-blue-600 text-3xl"></i><p>Diagnóstico</p></div>
+      <div><i class="fas fa-arrow-right text-blue-400"></i></div>
+      <div><i class="fas fa-bell text-orange-600 text-3xl"></i><p>Aprobación</p></div>
+    </div>
 
   </div>
 </section>
 
-<!-- ===================== COMO FUNCIONA ===================== -->
-<!-- (SECCIÓN COMPLETA ORIGINAL CONSERVADA) -->
+<!-- COMO FUNCIONA -->
+<section id="como-funciona" class="py-28">
+  <h2 class="text-4xl font-black text-center mb-16">Cómo funciona TallerPRO360</h2>
+  <div class="grid md:grid-cols-4 gap-10 max-w-7xl mx-auto px-6 text-center">
+    <div><i class="fas fa-car text-green-600 text-3xl mb-4"></i><p>Ingreso</p></div>
+    <div><i class="fas fa-tools text-blue-600 text-3xl mb-4"></i><p>Proceso</p></div>
+    <div><i class="fas fa-bell text-orange-600 text-3xl mb-4"></i><p>Cliente informado</p></div>
+    <div><i class="fas fa-chart-line text-slate-600 text-3xl mb-4"></i><p>Control total</p></div>
+  </div>
+</section>
 
-<!-- ===================== PLANES ===================== -->
-<!-- (SECCIÓN COMPLETA ORIGINAL CONSERVADA) -->
+<!-- PLANES -->
+<section id="planes" class="py-28 bg-slate-50">
+  <h2 class="text-4xl font-black text-center mb-16">Planes</h2>
+  <div class="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto px-6">
+    <div class="bg-white p-8 rounded-3xl shadow">
+      <h3 class="font-bold">Básico</h3><p>$49.999 / mes</p>
+    </div>
+    <div class="bg-white p-8 rounded-3xl shadow border-2 border-green-600">
+      <h3 class="font-bold">Pro</h3><p>$79.999 / mes</p>
+    </div>
+    <div class="bg-white p-8 rounded-3xl shadow">
+      <h3 class="font-bold">Anual</h3><p>$499.999 / año</p>
+    </div>
+  </div>
+</section>
 
 <footer class="py-10 border-t text-center text-sm text-slate-500">
   TallerPRO360 © 2026 · Hecho para talleres colombianos 🇨🇴
 </footer>
 
-<!-- ===================== PWA LOGIC ===================== -->
+<!-- PWA LOGIC -->
 <script>
-  // Splash
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      document.getElementById('splash')?.classList.add('hidden');
-    }, 2300);
-  });
+  window.addEventListener('load',()=>setTimeout(()=>document.getElementById('splash').remove(),2000));
 
-  // Service Worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js');
   }
 
-  // Install Prompt personalizado
   let deferredPrompt;
-  window.addEventListener('beforeinstallprompt', (e) => {
+  window.addEventListener('beforeinstallprompt',e=>{
     e.preventDefault();
-    deferredPrompt = e;
-
-    const btn = document.createElement('button');
-    btn.innerText = 'Instalar TallerPRO360';
-    btn.className =
-      'fixed bottom-6 right-6 bg-green-600 text-white px-6 py-3 rounded-2xl shadow-xl font-bold z-50 hover:bg-green-700';
-
-    btn.onclick = async () => {
-      btn.remove();
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      deferredPrompt = null;
-    };
-
+    deferredPrompt=e;
+    const btn=document.createElement('button');
+    btn.textContent='Instalar TallerPRO360';
+    btn.className='fixed bottom-6 right-6 bg-green-600 text-white px-6 py-3 rounded-2xl shadow-xl';
+    btn.onclick=()=>{btn.remove();deferredPrompt.prompt();}
     document.body.appendChild(btn);
   });
-
-  // Branding dinámico por taller (future-ready)
-  const branding = localStorage.getItem('taller_logo');
-  if (branding) {
-    document.querySelectorAll('[data-logo]').forEach(el => el.src = branding);
-  }
 </script>
 
 </body>
