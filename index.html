@@ -12,18 +12,34 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
-    :root{
-      --green:#16a34a;
-      --blue:#2563eb;
-      --orange:#f97316;
+    :root {
+      --green: #16a34a;
+      --blue: #2563eb;
+      --orange: #f97316;
+    }
+
+    /* Animaciones suaves */
+    .hover-scale:hover {
+      transform: scale(1.05);
+      transition: all 0.3s ease-in-out;
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeIn 1s forwards;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 
-<body class="bg-white text-slate-800">
+<body class="bg-white text-slate-800 font-sans">
 
 <!-- NAV -->
-<nav class="w-full border-b bg-white sticky top-0 z-50">
+<nav class="w-full border-b bg-white sticky top-0 z-50 shadow-sm">
   <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center text-white font-black">
@@ -44,102 +60,116 @@
 </nav>
 
 <!-- HERO -->
-<section class="bg-gradient-to-br from-green-50 via-blue-50 to-white py-20">
+<section class="bg-gradient-to-br from-green-50 via-blue-50 to-white py-28 relative overflow-hidden">
   <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
-    <div>
-      <h1 class="text-4xl md:text-5xl font-black leading-tight mb-6">
-        El control total de tu taller,<br>
+    <div class="z-10 fade-in">
+      <h1 class="text-5xl md:text-6xl font-black leading-tight mb-6 text-slate-800">
+        Control total de tu taller,<br>
         <span class="text-green-600">vehículo por vehículo</span>
       </h1>
       <p class="text-lg text-slate-600 mb-8">
-        TallerPRO360 te permite gestionar cada auto por etapas, informar al cliente en tiempo real
-        y tener trazabilidad completa desde el ingreso hasta la entrega.
+        Gestiona cada etapa del vehículo, informa al cliente en tiempo real y garantiza trazabilidad completa.
       </p>
       <div class="flex gap-4">
-        <a href="login.html" class="bg-green-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-green-700">
+        <a href="login.html" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-green-700 transition">
           Probar el sistema
         </a>
-        <a href="#planes" class="border border-green-600 text-green-600 px-8 py-4 rounded-xl font-bold hover:bg-green-50">
+        <a href="#planes" class="border border-green-600 text-green-600 px-8 py-4 rounded-2xl font-bold hover:bg-green-50 transition">
           Ver planes
         </a>
       </div>
     </div>
 
-    <div class="bg-white rounded-3xl shadow-xl p-8 border">
-      <p class="font-bold mb-4 text-slate-700">Ejemplo de proceso:</p>
-      <ul class="space-y-3 text-sm">
-        <li class="flex items-center gap-3">
-          <i class="fas fa-circle-check text-green-600"></i> Ingreso del vehículo
-        </li>
-        <li class="flex items-center gap-3">
-          <i class="fas fa-circle-check text-blue-600"></i> Diagnóstico
-        </li>
-        <li class="flex items-center gap-3">
-          <i class="fas fa-circle-check text-orange-500"></i> Aprobación del cliente
-        </li>
-        <li class="flex items-center gap-3">
-          <i class="fas fa-circle-check text-slate-500"></i> Reparación
-        </li>
-        <li class="flex items-center gap-3">
-          <i class="fas fa-circle-check text-slate-500"></i> Listo / Entregado
-        </li>
-      </ul>
+    <div class="relative fade-in">
+      <!-- DIAGRAMA DE FLUJO PUBLICIDAD -->
+      <div class="bg-white rounded-3xl shadow-2xl p-8 border grid grid-cols-5 gap-4 text-center">
+        <div class="flex flex-col items-center gap-2 hover-scale">
+          <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+            <i class="fas fa-car"></i>
+          </div>
+          <p class="font-bold text-sm">Ingreso</p>
+        </div>
+        <div class="flex flex-col items-center gap-2 hover-scale">
+          <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+            <i class="fas fa-screwdriver-wrench"></i>
+          </div>
+          <p class="font-bold text-sm">Diagnóstico</p>
+        </div>
+        <div class="flex flex-col items-center gap-2 hover-scale">
+          <div class="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center">
+            <i class="fas fa-bell"></i>
+          </div>
+          <p class="font-bold text-sm">Aprobación</p>
+        </div>
+        <div class="flex flex-col items-center gap-2 hover-scale">
+          <div class="w-16 h-16 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center">
+            <i class="fas fa-tools"></i>
+          </div>
+          <p class="font-bold text-sm">Reparación</p>
+        </div>
+        <div class="flex flex-col items-center gap-2 hover-scale">
+          <div class="w-16 h-16 bg-green-50 text-green-700 rounded-full flex items-center justify-center">
+            <i class="fas fa-check"></i>
+          </div>
+          <p class="font-bold text-sm">Entrega</p>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- COMO FUNCIONA -->
-<section id="como-funciona" class="py-24">
+<section id="como-funciona" class="py-28 bg-white">
   <div class="max-w-7xl mx-auto px-6">
-    <h2 class="text-3xl font-black text-center mb-16">
+    <h2 class="text-4xl md:text-5xl font-black text-center mb-16 fade-in">
       Cómo funciona TallerPRO360
     </h2>
 
-    <div class="grid md:grid-cols-4 gap-8 text-center">
-      <div>
-        <div class="w-14 h-14 mx-auto bg-green-100 text-green-600 rounded-xl flex items-center justify-center mb-4">
+    <div class="grid md:grid-cols-4 gap-12 text-center">
+      <div class="fade-in hover-scale">
+        <div class="w-16 h-16 mx-auto bg-green-100 text-green-600 rounded-xl flex items-center justify-center mb-4">
           <i class="fas fa-car"></i>
         </div>
         <h3 class="font-bold mb-2">Ingreso</h3>
         <p class="text-sm text-slate-500">Creas la orden y el sistema asigna un ID único.</p>
       </div>
 
-      <div>
-        <div class="w-14 h-14 mx-auto bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4">
+      <div class="fade-in hover-scale">
+        <div class="w-16 h-16 mx-auto bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4">
           <i class="fas fa-screwdriver-wrench"></i>
         </div>
         <h3 class="font-bold mb-2">Proceso</h3>
         <p class="text-sm text-slate-500">El vehículo avanza por etapas controladas.</p>
       </div>
 
-      <div>
-        <div class="w-14 h-14 mx-auto bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center mb-4">
+      <div class="fade-in hover-scale">
+        <div class="w-16 h-16 mx-auto bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center mb-4">
           <i class="fas fa-bell"></i>
         </div>
         <h3 class="font-bold mb-2">Cliente informado</h3>
         <p class="text-sm text-slate-500">El cliente ve el estado en tiempo real.</p>
       </div>
 
-      <div>
-        <div class="w-14 h-14 mx-auto bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center mb-4">
+      <div class="fade-in hover-scale">
+        <div class="w-16 h-16 mx-auto bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center mb-4">
           <i class="fas fa-chart-line"></i>
         </div>
         <h3 class="font-bold mb-2">Control</h3>
-        <p class="text-sm text-slate-500">Historial completo y trazabilidad.</p>
+        <p class="text-sm text-slate-500">Historial completo y trazabilidad de cada vehículo.</p>
       </div>
     </div>
   </div>
 </section>
 
 <!-- PLANES -->
-<section id="planes" class="py-24 bg-slate-50">
+<section id="planes" class="py-28 bg-slate-50">
   <div class="max-w-7xl mx-auto px-6 text-center">
-    <h2 class="text-3xl font-black mb-4">Planes pensados para Colombia</h2>
-    <p class="text-slate-500 mb-16">Sin contratos largos. Cancela cuando quieras.</p>
+    <h2 class="text-4xl md:text-5xl font-black mb-4 fade-in">Planes pensados para Colombia</h2>
+    <p class="text-slate-500 mb-16 fade-in">Sin contratos largos. Cancela cuando quieras.</p>
 
     <div class="grid md:grid-cols-3 gap-8">
       <!-- BASICO -->
-      <div class="bg-white border rounded-3xl p-8 shadow">
+      <div class="bg-white border rounded-3xl p-8 shadow hover-scale fade-in">
         <h3 class="font-bold text-lg mb-2">Plan Básico</h3>
         <p class="text-4xl font-black mb-4">$49.999</p>
         <p class="text-sm text-slate-500 mb-6">COP / mes</p>
@@ -148,13 +178,13 @@
           <li>✔ Seguimiento por etapas</li>
           <li>✔ Vista cliente</li>
         </ul>
-        <a href="login.html" class="block bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700">
+        <a href="login.html" class="block bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition">
           Empezar
         </a>
       </div>
 
       <!-- PRO -->
-      <div class="bg-white border-2 border-green-600 rounded-3xl p-8 shadow-xl">
+      <div class="bg-white border-2 border-green-600 rounded-3xl p-8 shadow-xl hover-scale fade-in">
         <h3 class="font-bold text-lg mb-2">Plan Pro</h3>
         <p class="text-4xl font-black mb-4">$79.999</p>
         <p class="text-sm text-slate-500 mb-6">COP / mes</p>
@@ -163,22 +193,22 @@
           <li>✔ Historial detallado</li>
           <li>✔ Prioridad de soporte</li>
         </ul>
-        <a href="login.html" class="block bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700">
+        <a href="login.html" class="block bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition">
           Elegir Pro
         </a>
       </div>
 
       <!-- ANUAL -->
-      <div class="bg-white border rounded-3xl p-8 shadow">
+      <div class="bg-white border rounded-3xl p-8 shadow hover-scale fade-in">
         <h3 class="font-bold text-lg mb-2">Plan Anual</h3>
         <p class="text-4xl font-black mb-4">$499.999</p>
         <p class="text-sm text-slate-500 mb-6">COP / año</p>
         <ul class="text-sm text-left space-y-3 mb-8">
-          <li>✔ Ahorro total</li>
           <li>✔ Todas las funciones</li>
           <li>✔ Soporte preferente</li>
+          <li>✔ Facturación Electrónica</li>
         </ul>
-        <a href="login.html" class="block bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700">
+        <a href="login.html" class="block bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition">
           Activar
         </a>
       </div>
