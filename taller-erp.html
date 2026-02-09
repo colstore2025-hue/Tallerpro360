@@ -28,7 +28,8 @@ body{background:#0f172a;color:#f1f5f9;font-family:'Inter',sans-serif;}
 .fade-in{opacity:0;transform:translateY(20px);animation:fadeIn 1s forwards;}
 @keyframes fadeIn{to{opacity:1;transform:translateY(0);}}
 button.excel-btn{background:#3b82f6;color:white;font-weight:bold;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;}
-input[type=date]{padding:6px;border-radius:6px;border:1px solid #ccc;margin-right:5px;}
+button.pdf-btn{background:#10b981;color:white;font-weight:bold;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;}
+input[type="date"]{padding:6px;border-radius:6px;border:1px solid #ccc;}
 </style>
 </head>
 <body class="p-6">
@@ -42,12 +43,11 @@ input[type=date]{padding:6px;border-radius:6px;border:1px solid #ccc;margin-righ
   </button>
 </header>
 
-<!-- Filtros por rango de fechas -->
-<section class="glass p-4 mb-6 flex items-center gap-4">
+<!-- Filtro por fechas -->
+<section class="glass p-4 mb-6 flex gap-4 items-center">
   <label>Desde: <input type="date" id="fechaInicio"></label>
   <label>Hasta: <input type="date" id="fechaFin"></label>
-  <button class="excel-btn" onclick="filtrarPorFecha()">Aplicar Filtro</button>
-  <button class="excel-btn" onclick="resetFiltro()">Reset</button>
+  <button class="excel-btn" onclick="filtrarDatos()">Filtrar</button>
 </section>
 
 <!-- KPIs -->
@@ -82,7 +82,10 @@ input[type=date]{padding:6px;border-radius:6px;border:1px solid #ccc;margin-righ
 <section class="glass p-6 mb-8 fade-in">
   <div class="flex justify-between items-center mb-3">
     <h2 class="text-lg font-bold">Órdenes de Servicio</h2>
-    <button class="excel-btn" onclick="exportOrdenesExcel()">Exportar Excel</button>
+    <div class="flex gap-2">
+      <button class="excel-btn" onclick="exportOrdenesExcel()">Exportar Excel</button>
+      <button class="pdf-btn" onclick="exportOrdenesPDF()">Exportar PDF</button>
+    </div>
   </div>
   <div class="overflow-x-auto">
     <table class="w-full text-sm" id="tablaOrdenes">
@@ -105,7 +108,10 @@ input[type=date]{padding:6px;border-radius:6px;border:1px solid #ccc;margin-righ
 <section class="glass p-6 mb-8 fade-in">
   <div class="flex justify-between items-center mb-3">
     <h2 class="text-lg font-bold">Inventario</h2>
-    <button class="excel-btn" onclick="exportInventarioExcel()">Exportar Excel</button>
+    <div class="flex gap-2">
+      <button class="excel-btn" onclick="exportInventarioExcel()">Exportar Excel</button>
+      <button class="pdf-btn" onclick="exportInventarioPDF()">Exportar PDF</button>
+    </div>
   </div>
   <div class="overflow-x-auto">
     <table class="w-full text-sm" id="tablaInventario">
@@ -126,8 +132,10 @@ input[type=date]{padding:6px;border-radius:6px;border:1px solid #ccc;margin-righ
 <section class="glass p-6 mb-8 fade-in">
   <div class="flex justify-between items-center mb-3">
     <h2 class="text-lg font-bold">Finanzas</h2>
-    <button class="excel-btn" onclick="exportFinanzasExcel()">Exportar Excel</button>
-    <button class="excel-btn" onclick="exportFinanzasPDF()">Exportar PDF</button>
+    <div class="flex gap-2">
+      <button class="excel-btn" onclick="exportFinanzasExcel()">Exportar Excel</button>
+      <button class="pdf-btn" onclick="exportFinanzasPDF()">Exportar PDF</button>
+    </div>
   </div>
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <div class="glass p-3 text-center">
@@ -149,7 +157,10 @@ input[type=date]{padding:6px;border-radius:6px;border:1px solid #ccc;margin-righ
 <section class="glass p-6 mb-8 fade-in">
   <div class="flex justify-between items-center mb-3">
     <h2 class="text-lg font-bold">Nómina por Orden / Quincenal</h2>
-    <button class="excel-btn" onclick="exportNominaExcel()">Exportar Excel</button>
+    <div class="flex gap-2">
+      <button class="excel-btn" onclick="exportNominaExcel()">Exportar Excel</button>
+      <button class="pdf-btn" onclick="exportNominaPDF()">Exportar PDF</button>
+    </div>
   </div>
   <div class="overflow-x-auto">
     <table class="w-full text-sm" id="tablaNomina">
@@ -166,7 +177,7 @@ input[type=date]{padding:6px;border-radius:6px;border:1px solid #ccc;margin-righ
   </div>
 </section>
 
-<!-- Gráficos y Mapas -->
+<!-- Gráficos y Mapa -->
 <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
   <div class="glass p-6 fade-in">
     <canvas id="chartIngresos"></canvas>
@@ -182,7 +193,7 @@ input[type=date]{padding:6px;border-radius:6px;border:1px solid #ccc;margin-righ
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import Chart from "https://cdn.jsdelivr.net/npm/chart.js";
 import * as XLSX from "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
@@ -201,7 +212,8 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-let map, chartIngresos, rangoFecha={inicio:null,fin:null};
+let map, chartIngresos;
+let fechaInicio, fechaFin;
 
 // Verificar usuario
 onAuthStateChanged(auth, user=>{
@@ -211,16 +223,19 @@ onAuthStateChanged(auth, user=>{
 
 function iniciar(){
   initMap();
-  cargarTodos();
+  cargarDatos();
 }
 
+// Inicializar mapa
 function initMap(){
   map = L.map("mapa").setView([4.57,-74.29],6);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18}).addTo(map);
 }
 
-// Cargar todo con filtro de fecha
-function cargarTodos(){
+// Cargar todos los datos
+function cargarDatos(){
+  fechaInicio = document.getElementById("fechaInicio").value;
+  fechaFin = document.getElementById("fechaFin").value;
   cargarKPIs();
   cargarOrdenes();
   cargarInventario();
@@ -228,27 +243,23 @@ function cargarTodos(){
   cargarNomina();
 }
 
-function aplicarFiltroFechas(docData){
-  if(!rangoFecha.inicio || !rangoFecha.fin) return true;
-  const fechaDoc = docData.actualizadoEn?.toDate ? docData.actualizadoEn.toDate() : null;
-  if(!fechaDoc) return false;
-  return fechaDoc >= rangoFecha.inicio && fechaDoc <= rangoFecha.fin;
-}
+// Filtrar por fechas
+window.filtrarDatos = () => { cargarDatos(); };
 
 // KPIs
 function cargarKPIs(){
   onSnapshot(collection(db,"ordenes"), snap=>{
-    let total=0, activas=0, clientesSet=new Set(), ingresos=0, egresos=0;
+    let totalOrdenes=0, activas=0, clientesSet=new Set(), ingresos=0, egresos=0;
     snap.forEach(doc=>{
-      if(!aplicarFiltroFechas(doc.data())) return;
-      total++;
       const o = doc.data();
+      if(filtroFecha(o.fecha)) return;
+      totalOrdenes++;
       if(o.estado!=="ENTREGADO") activas++;
-      clientesSet.add(o.cliente?.nombre||"");
+      clientesSet.add(o.cliente?.nombre || "");
       ingresos += o.total||0;
       egresos += o.costoRepuestos||0;
     });
-    document.getElementById("kpiOrdenes").innerText = total;
+    document.getElementById("kpiOrdenes").innerText = totalOrdenes;
     document.getElementById("kpiActivas").innerText = activas;
     document.getElementById("kpiClientes").innerText = clientesSet.size;
     document.getElementById("kpiIngresos").innerText = ingresos.toLocaleString();
@@ -257,36 +268,42 @@ function cargarKPIs(){
   });
 }
 
-// Cargar órdenes
+// Filtrado de fechas
+function filtroFecha(fecha){
+  if(!fechaInicio && !fechaFin) return false;
+  const f = fecha.toDate ? fecha.toDate() : new Date(fecha);
+  if(fechaInicio && f < new Date(fechaInicio)) return true;
+  if(fechaFin && f > new Date(fechaFin)) return true;
+  return false;
+}
+
+// Funciones similares para órdenes, inventario, finanzas y nómina
 function cargarOrdenes(){
   onSnapshot(query(collection(db,"ordenes"), orderBy("actualizadoEn","desc")), snap=>{
-    const tbody=document.querySelector("#tablaOrdenes tbody");
+    const tbody = document.querySelector("#tablaOrdenes tbody");
     tbody.innerHTML="";
     snap.forEach(doc=>{
-      if(!aplicarFiltroFechas(doc.data())) return;
       const o = doc.data();
-      const tr=document.createElement("tr");
-      tr.innerHTML = `
-        <td class="p-2">${o.codigo}</td>
-        <td class="p-2">${o.cliente?.nombre||"N/A"}</td>
-        <td class="p-2">${o.vehiculo||"N/A"}</td>
-        <td class="p-2"><span class="status-${o.estado==="ENTREGADO"?"activo":"activo"}">${o.estado}</span></td>
-        <td class="p-2">${o.actualizadoEn?.toDate().toLocaleString()||"-"}</td>
-        <td class="p-2">${o.total?.toLocaleString()||0}</td>
-      `;
+      if(filtroFecha(o.fecha)) return;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td class="p-2">${o.codigo}</td>
+                      <td class="p-2">${o.cliente?.nombre||"N/A"}</td>
+                      <td class="p-2">${o.vehiculo||"N/A"}</td>
+                      <td class="p-2"><span class="status-${o.estado==="ENTREGADO"?"activo":"activo"}">${o.estado}</span></td>
+                      <td class="p-2">${o.fecha?.toDate ? o.fecha.toDate().toLocaleDateString() : "-"}</td>
+                      <td class="p-2">${o.total?.toLocaleString()||0}</td>`;
       tbody.appendChild(tr);
     });
   });
 }
 
-// Inventario
 function cargarInventario(){
   onSnapshot(collection(db,"inventario"), snap=>{
-    const tbody=document.querySelector("#tablaInventario tbody");
+    const tbody = document.querySelector("#tablaInventario tbody");
     tbody.innerHTML="";
     snap.forEach(doc=>{
       const p = doc.data();
-      const valorTotal=(p.stock||0)*(p.costo||0);
+      const valorTotal = (p.stock||0)*(p.costo||0);
       tbody.innerHTML += `<tr>
         <td class="p-2">${p.nombre}</td>
         <td class="p-2">${p.stock||0}</td>
@@ -297,52 +314,21 @@ function cargarInventario(){
   });
 }
 
-// Finanzas
 function cargarFinanzas(){
   onSnapshot(collection(db,"ordenes"), snap=>{
     let ingresos=0, egresos=0;
     snap.forEach(doc=>{
-      if(!aplicarFiltroFechas(doc.data())) return;
-      const o=doc.data();
-      ingresos+=o.total||0;
-      egresos+=o.costoRepuestos||0;
+      const o = doc.data();
+      if(filtroFecha(o.fecha)) return;
+      ingresos += o.total||0;
+      egresos += o.costoRepuestos||0;
     });
-    document.getElementById("ingresosTotales").innerText=ingresos.toLocaleString();
-    document.getElementById("egresosTotales").innerText=egresos.toLocaleString();
-    document.getElementById("utilidadTotal").innerText=(ingresos-egresos).toLocaleString();
+    document.getElementById("ingresosTotales").innerText = ingresos.toLocaleString();
+    document.getElementById("egresosTotales").innerText = egresos.toLocaleString();
+    document.getElementById("utilidadTotal").innerText = (ingresos-egresos).toLocaleString();
 
-    const ctx=document.getElementById("chartIngresos");
-    if(chartIngresos) chartIngresos.destroy();
-    chartIngresos=new Chart(ctx,{
+    const ctx = document.getElementById("chartIngresos");
+    if(window.chartIngresos) window.chartIngresos.destroy();
+    window.chartIngresos = new Chart(ctx,{
       type:"bar",
-      data:{labels:["Ingresos","Egresos","Utilidad"],datasets:[{label:"COP",data:[ingresos,egresos,ingresos-egresos],backgroundColor:["#10b981","#ef4444","#facc15"]}]}
-    });
-  });
-}
-
-// Nómina
-function cargarNomina(){
-  onSnapshot(collection(db,"nomina"), snap=>{
-    const tbody=document.querySelector("#tablaNomina tbody");
-    tbody.innerHTML="";
-    snap.forEach(doc=>{
-      const n=doc.data();
-      tbody.innerHTML += `<tr>
-        <td class="p-2">${n.empleado}</td>
-        <td class="p-2">${n.tipo}</td>
-        <td class="p-2">${n.horas}</td>
-        <td class="p-2">${n.pago?.toLocaleString()||0}</td>
-      </tr>`;
-    });
-  });
-}
-
-// Exportar Excel
-function exportTableToExcel(tableId,fileName){
-  const wb=XLSX.utils.table_to_book(document.getElementById(tableId));
-  XLSX.writeFile(wb,fileName);
-}
-
-window.exportOrdenesExcel=()=>exportTableToExcel("tablaOrdenes","Ordenes.xlsx");
-window.exportInventarioExcel=()=>exportTableToExcel("tablaInventario","Inventario.xlsx");
-window
+      data:{ labels:["Ingresos","Egresos","Utilidad"], datasets:[{label:"COP",data:[ingresos,egresos,ingresos-egresos],backgroundColor:["#10b981
