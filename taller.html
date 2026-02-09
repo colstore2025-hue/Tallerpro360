@@ -103,7 +103,10 @@ body { font-family: 'Segoe UI', sans-serif; background-color: #f5f6fa; }
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
-<script>
+<!-- ASISTENTE DE VOZ -->
+<script type="module">
+import { speakOrderStage, initVoiceActivation, listenOrderVoice } from './serviceOrders.voice.js';
+
 const firebaseConfig = {
   apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
   authDomain: "tallerpro360.firebaseapp.com",
@@ -117,7 +120,8 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
-const estados = ["INGRESO","DIAGNOSTICO","APROBADO","EN PROCESO","LISTO","ENTREGADO"];
+initVoiceActivation(); // Activa la voz al primer click
+
 let userCliente = null;
 
 // ===== REGISTRO CLIENTE =====
@@ -179,6 +183,12 @@ document.getElementById("formOrden").addEventListener("submit", async (e)=>{
   alert("Orden creada!");
   formOrden.reset();
   cargarOrdenes();
+
+  // Voz inmediata
+  speakOrderStage(orden);
+
+  // Listener tiempo real
+  listenOrderVoice(db, codigo);
 });
 
 // ===== LISTAR ÓRDENES =====
@@ -198,6 +208,12 @@ async function cargarOrdenes(){
       Timeline: ${o.timeline.map(t=>t.estado).join(" → ")}
     `;
     ul.appendChild(li);
+
+    // Voz para órdenes existentes
+    speakOrderStage(o);
+
+    // Listener tiempo real
+    listenOrderVoice(db, o.codigo);
   });
   document.getElementById("ordenesList").classList.toggle("d-none", !ul.children.length);
 }
