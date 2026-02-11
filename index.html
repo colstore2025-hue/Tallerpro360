@@ -1,43 +1,38 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>TallerPRO360 | El sistema inteligente para talleres</title>
+<meta charset="UTF-8" />
+<title>TallerPRO360 | El sistema inteligente para talleres</title>
 
-  <meta name="description" content="TallerPRO360 controla órdenes, vehículos, clientes y procesos completos con voz, evidencias y trazabilidad total.">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="TallerPRO360 controla órdenes, vehículos, clientes y procesos completos con voz, evidencias y trazabilidad total.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- ===================== PWA ===================== -->
+<!-- ===================== PWA ===================== -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#16a34a">
+<meta name="mobile-web-app-capable" content="yes">
 
-<!-- ===================== iOS Soporte Completo ===================== -->
+<!-- ===================== iOS ===================== -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="TallerPRO360">
-
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo-180.png">
 <link rel="apple-touch-icon" sizes="192x192" href="/assets/logo-192.png">
 <link rel="apple-touch-icon" sizes="512x512" href="/assets/logo-512.png">
 
-<meta name="mobile-web-app-capable" content="yes">
+<!-- ===================== ICONOS ===================== -->
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/logo-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/assets/logo-512.png">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
 
-  <!-- ===================== ANDROID / WINDOWS ===================== -->
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/logo-192.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="assets/logo-512.png">
-  <link rel="icon" type="image/png" href="assets/favicon.png">
+<!-- ===================== UI ===================== -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-  <!-- ===================== UI ===================== -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-  <style>
-    body { -webkit-tap-highlight-color: transparent; }
-    .glass {
-      backdrop-filter: blur(14px);
-      background: rgba(255,255,255,.75);
-    }
-  </style>
+<style>
+body { -webkit-tap-highlight-color: transparent; }
+.glass { backdrop-filter: blur(14px); background: rgba(255,255,255,.75); }
+</style>
 </head>
 
 <body class="bg-white text-slate-800 font-sans">
@@ -45,17 +40,16 @@
 <!-- ===================== SPLASH ===================== -->
 <div id="splash" class="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-green-600 to-blue-600">
   <div class="text-center text-white animate-pulse">
-    <img src="assets/logo-512.png" alt="TallerPRO360" class="w-28 h-28 mx-auto mb-4">
-    <h1 class="text-2xl font-black tracking-wide">TallerPRO360</h1>
-    <p class="text-sm opacity-80 mt-2">Gestión inteligente para talleres</p>
+    <img src="/assets/logo-512.png" class="w-28 h-28 mx-auto mb-4">
+    <h1 class="text-2xl font-black">TallerPRO360</h1>
   </div>
 </div>
 
 <!-- ===================== NAV ===================== -->
-<nav class="sticky top-0 z-50 bg-white border-b shadow-sm">
+<nav class="sticky top-0 z-40 bg-white border-b shadow-sm">
   <div class="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">
-      <img src="assets/logo-192.png" alt="TallerPRO360" class="w-10 h-10 rounded-xl">
+      <img src="/assets/logo-192.png" class="w-10 h-10 rounded-xl">
       <span class="font-black text-xl">
         Taller<span class="text-green-600">PRO</span>360
       </span>
@@ -67,157 +61,153 @@
 </nav>
 
 <!-- ===================== HERO ===================== -->
-<section class="relative overflow-hidden bg-gradient-to-br from-green-50 via-blue-50 to-white">
-  <div class="max-w-7xl mx-auto px-6 py-24 grid md:grid-cols-2 gap-16 items-center">
+<section class="py-24 bg-gradient-to-br from-green-50 via-blue-50 to-white">
+<div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
 
-    <div>
-      <h1 class="text-5xl md:text-6xl font-black leading-tight mb-6">
-        Control total de tu taller,<br>
-        <span class="text-green-600">vehículo por vehículo</span>
-      </h1>
+<div>
+<h1 class="text-5xl md:text-6xl font-black mb-6">
+Control total de tu taller<br>
+<span class="text-green-600">vehículo por vehículo</span>
+</h1>
 
-      <p class="text-lg text-slate-600 mb-8">
-        Registra órdenes por voz, controla cada etapa del proceso,
-        documenta con evidencias y mantén informado al cliente en tiempo real.
-      </p>
+<p class="text-lg text-slate-600 mb-8">
+Registra órdenes por voz, controla cada etapa y documenta todo el proceso.
+</p>
 
-      <!-- BOTONES CORRECTAMENTE AGRUPADOS -->
-      <div class="flex flex-col sm:flex-row gap-4">
-        <a href="login.html"
-           class="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold text-center hover:bg-green-700">
-          Probar gratis 7 días
-        </a>
+<div class="flex flex-col sm:flex-row gap-4">
+<a href="login.html" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold text-center hover:bg-green-700">
+Probar gratis 7 días
+</a>
 
-        <a href="#planes"
-           class="border-2 border-green-600 text-green-600 px-8 py-4 rounded-2xl font-bold text-center hover:bg-green-50">
-          Ver planes
-        </a>
+<a href="#planes" class="border-2 border-green-600 text-green-600 px-8 py-4 rounded-2xl font-bold text-center hover:bg-green-50">
+Ver planes
+</a>
 
-        <!-- BOTÓN INSTALAR -->
-        <button id="installBtn"
-          class="hidden bg-black text-white px-8 py-4 rounded-2xl font-bold hover:bg-slate-800 transition duration-300">
-          Instalar App
-        </button>
-      </div>
-    </div>
+<button id="installBtn"
+class="hidden bg-black text-white px-8 py-4 rounded-2xl font-bold hover:bg-slate-800">
+Instalar App
+</button>
+</div>
+</div>
 
-<script>
-  function isIOS() {
-    return /iphone|ipad|ipod/i.test(navigator.userAgent);
-  }
+<div class="flex justify-center">
+<div class="glass rounded-3xl p-8 shadow-xl text-center">
+<img src="/assets/logo-512.png" class="w-40 h-40 mx-auto mb-4">
+<p class="font-bold text-lg">La herramienta que tu taller necesitaba</p>
+</div>
+</div>
 
-  function isInStandaloneMode() {
-    return ('standalone' in window.navigator) && (window.navigator.standalone);
-  }
+</div>
+</section>
 
-  window.addEventListener("load", () => {
-    if (isIOS() && !isInStandaloneMode()) {
-      const iosBanner = document.createElement("div");
-      iosBanner.className = "fixed bottom-0 left-0 right-0 bg-black text-white p-4 text-center z-50";
-      iosBanner.innerHTML = `
-        📲 Para instalar TallerPRO360 en tu iPhone:
-        <br>1️⃣ Toca el botón Compartir
-        <br>2️⃣ Selecciona "Agregar a pantalla de inicio"
-      `;
-      document.body.appendChild(iosBanner);
-    }
-  });
-</script>
+<!-- ===================== PROCESO ===================== -->
+<section class="py-24 bg-white">
+<div class="max-w-7xl mx-auto px-6 text-center">
+<h2 class="text-4xl font-black mb-16">
+Del ingreso a la entrega <span class="text-green-600">todo bajo control</span>
+</h2>
 
-    <div class="flex justify-center">
-      <div class="glass rounded-3xl p-8 shadow-xl text-center">
-        <img src="assets/logo-512.png" alt="TallerPRO360" class="w-40 h-40 mx-auto mb-4">
-        <p class="font-bold text-lg">La herramienta que tu taller necesitaba</p>
-        <p class="text-sm text-slate-500 mt-2">Rápido · Claro · Profesional</p>
-      </div>
-    </div>
+<div class="grid md:grid-cols-5 gap-8">
+<div><i class="fa-solid fa-car text-green-600 text-4xl mb-4"></i><h3 class="font-bold">Ingreso</h3></div>
+<div><i class="fa-solid fa-microphone text-green-600 text-4xl mb-4"></i><h3 class="font-bold">Diagnóstico</h3></div>
+<div><i class="fa-solid fa-file-signature text-green-600 text-4xl mb-4"></i><h3 class="font-bold">Aprobación</h3></div>
+<div><i class="fa-solid fa-screwdriver-wrench text-green-600 text-4xl mb-4"></i><h3 class="font-bold">Reparación</h3></div>
+<div><i class="fa-solid fa-flag-checkered text-green-600 text-4xl mb-4"></i><h3 class="font-bold">Entrega</h3></div>
+</div>
+</div>
+</section>
 
-  </div>
+<!-- ===================== PLANES ===================== -->
+<section id="planes" class="py-24 bg-slate-50">
+<div class="max-w-7xl mx-auto px-6 text-center">
+<h2 class="text-4xl font-black mb-16">Planes claros</h2>
+
+<div class="grid md:grid-cols-3 gap-10">
+
+<div class="rounded-3xl border p-8">
+<h3 class="font-black text-2xl mb-2">Básico</h3>
+<p class="text-4xl font-black text-green-600 mb-4">$49.999</p>
+</div>
+
+<div class="rounded-3xl border-4 border-green-600 p-8 shadow-xl scale-105">
+<h3 class="font-black text-2xl mb-2">PRO</h3>
+<p class="text-4xl font-black text-green-600 mb-4">$79.000</p>
+</div>
+
+<div class="rounded-3xl border p-8 bg-slate-900 text-white">
+<h3 class="font-black text-2xl mb-2">Anual</h3>
+<p class="text-4xl font-black text-green-400 mb-4">$499.000</p>
+</div>
+
+</div>
+</div>
 </section>
 
 <!-- ===================== FOOTER ===================== -->
 <footer class="py-10 border-t text-center text-sm text-slate-500">
-  <img src="assets/logo-192.png" class="w-12 mx-auto mb-3" alt="TallerPRO360">
-  TallerPRO360 © 2026 · Hecho para talleres colombianos 🇨🇴
+<img src="/assets/logo-192.png" class="w-12 mx-auto mb-3">
+TallerPRO360 © 2026 · Colombia
 </footer>
 
-<!-- ===================== JS ===================== -->
+<!-- ===================== BANNER PLAY STORE ===================== -->
+<div id="appBanner" class="hidden fixed top-0 left-0 right-0 bg-white shadow-md z-50 flex items-center justify-between px-4 py-3">
+<div class="flex items-center gap-3">
+<img src="/assets/logo-192.png" class="w-10 h-10 rounded-xl">
+<div>
+<p class="font-bold text-sm">TallerPRO360</p>
+<p class="text-xs text-slate-500">Instálala en tu dispositivo</p>
+</div>
+</div>
+<button id="bannerInstall"
+class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold">
+Instalar
+</button>
+</div>
+
+<!-- ===================== SCRIPTS ===================== -->
 <script>
-  // Splash control
-  window.addEventListener('load', () => {
-    setTimeout(() => document.getElementById('splash')?.remove(), 2000);
-  });
+window.addEventListener('load', () => {
+setTimeout(() => document.getElementById('splash')?.remove(), 1500);
+});
 
-  // Service Worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js')
-      .then(() => console.log("🛰️ Service Worker activo"))
-      .catch(err => console.log("SW error:", err));
-  }
+if ('serviceWorker' in navigator) {
+navigator.serviceWorker.register('/service-worker.js');
+}
 
-  // PWA Install Logic
-  let deferredPrompt;
-  const installBtn = document.getElementById("installBtn");
+let deferredPrompt;
+const installBtn = document.getElementById("installBtn");
+const banner = document.getElementById("appBanner");
+const bannerInstall = document.getElementById("bannerInstall");
 
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    installBtn.classList.remove("hidden");
-    installBtn.classList.add("animate-pulse");
-  });
+window.addEventListener("beforeinstallprompt", (e) => {
+e.preventDefault();
+deferredPrompt = e;
+installBtn.classList.remove("hidden");
+banner.classList.remove("hidden");
+});
 
-  installBtn.addEventListener("click", async () => {
-    if (!deferredPrompt) return;
+installBtn.addEventListener("click", installApp);
+bannerInstall.addEventListener("click", installApp);
 
-    installBtn.classList.remove("animate-pulse");
-    deferredPrompt.prompt();
+async function installApp() {
+if (!deferredPrompt) return;
+deferredPrompt.prompt();
+await deferredPrompt.userChoice;
+banner.classList.add("hidden");
+installBtn.classList.add("hidden");
+deferredPrompt = null;
+}
 
-    const { outcome } = await deferredPrompt.userChoice;
+function isIOS() {
+return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
 
-    if (outcome === "accepted") {
-      console.log("✅ TallerPRO360 instalado");
-    }
-
-    deferredPrompt = null;
-    installBtn.classList.add("hidden");
-  });
-
-  window.addEventListener("appinstalled", () => {
-    console.log("🎉 Instalación completada");
-    installBtn.classList.add("hidden");
-  });
+window.addEventListener("load", () => {
+if (isIOS() && !window.navigator.standalone) {
+alert("En iPhone: presiona Compartir → Agregar a pantalla de inicio");
+}
+});
 </script>
 
 </body>
-<div id="appBanner" class="hidden fixed top-0 left-0 right-0 bg-white shadow-md z-50 flex items-center justify-between px-4 py-3">
-  <div class="flex items-center gap-3">
-    <img src="assets/logo-192.png" class="w-10 h-10 rounded-xl">
-    <div>
-      <p class="font-bold text-sm">TallerPRO360</p>
-      <p class="text-xs text-slate-500">Sistema inteligente para talleres</p>
-    </div>
-  </div>
-  <button id="bannerInstall"
-    class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold">
-    Instalar
-  </button>
-</div>
-
-<script>
-  const banner = document.getElementById("appBanner");
-  const bannerInstall = document.getElementById("bannerInstall");
-
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    banner.classList.remove("hidden");
-  });
-
-  bannerInstall.addEventListener("click", async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    banner.classList.add("hidden");
-  });
-</script>
 </html>
