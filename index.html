@@ -96,6 +96,29 @@
       </div>
     </div>
 
+<script>
+  function isIOS() {
+    return /iphone|ipad|ipod/i.test(navigator.userAgent);
+  }
+
+  function isInStandaloneMode() {
+    return ('standalone' in window.navigator) && (window.navigator.standalone);
+  }
+
+  window.addEventListener("load", () => {
+    if (isIOS() && !isInStandaloneMode()) {
+      const iosBanner = document.createElement("div");
+      iosBanner.className = "fixed bottom-0 left-0 right-0 bg-black text-white p-4 text-center z-50";
+      iosBanner.innerHTML = `
+        📲 Para instalar TallerPRO360 en tu iPhone:
+        <br>1️⃣ Toca el botón Compartir
+        <br>2️⃣ Selecciona "Agregar a pantalla de inicio"
+      `;
+      document.body.appendChild(iosBanner);
+    }
+  });
+</script>
+
     <div class="flex justify-center">
       <div class="glass rounded-3xl p-8 shadow-xl text-center">
         <img src="assets/logo-512.png" alt="TallerPRO360" class="w-40 h-40 mx-auto mb-4">
