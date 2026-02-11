@@ -1,4 +1,4 @@
-const CACHE_NAME = "nexus-x-starlink-v4";
+const CACHE_NAME = "tallerpro360-v5";
 
 // Activos críticos para la interfaz Élite
 const ASSETS_TO_CACHE = [
