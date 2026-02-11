@@ -197,4 +197,22 @@
     Instalar
   </button>
 </div>
+
+<script>
+  const banner = document.getElementById("appBanner");
+  const bannerInstall = document.getElementById("bannerInstall");
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    banner.classList.remove("hidden");
+  });
+
+  bannerInstall.addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    banner.classList.add("hidden");
+  });
+</script>
 </html>
