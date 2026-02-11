@@ -3,41 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <title>TallerPRO360 | El sistema inteligente para talleres</title>
-  <meta name="description" content="TallerPRO360: controla órdenes, vehículos, clientes y procesos completos con voz, evidencias y trazabilidad total.">
+
+  <meta name="description" content="TallerPRO360 controla órdenes, vehículos, clientes y procesos completos con voz, evidencias y trazabilidad total.">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- ===================== PWA CORE ===================== -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#16a34a">
+  <!-- ===================== PWA ===================== -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#16a34a">
 
-<!-- ===================== APPLE (iOS) ===================== -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="TallerPRO360">
+  <!-- ===================== iOS ===================== -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="TallerPRO360">
+  <link rel="apple-touch-icon" href="assets/logo-180.png">
 
-<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/icon-180.png">
-<link rel="apple-touch-icon" sizes="152x152" href="assets/icons/icon-152.png">
-<link rel="apple-touch-icon" sizes="144x144" href="assets/icons/icon-144.png">
+  <!-- ===================== ANDROID / WINDOWS ===================== -->
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/logo-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/logo-512.png">
 
-<!-- ===================== ANDROID / CHROME ===================== -->
-<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="assets/icons/icon-512.png">
+  <!-- ===================== FAVICON ===================== -->
+  <link rel="icon" type="image/png" href="assets/favicon.png">
 
-<!-- ===================== WINDOWS ===================== -->
-<meta name="msapplication-TileColor" content="#16a34a">
-<meta name="msapplication-TileImage" content="assets/icons/icon-144.png">
-
-<!-- ===================== FALLBACK ===================== -->
-<link rel="icon" type="image/png" href="assets/icons/icon-96.png">
-
-  <!-- UI -->
+  <!-- ===================== UI ===================== -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
     body { -webkit-tap-highlight-color: transparent; }
     .glass {
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(14px);
       background: rgba(255,255,255,.75);
     }
   </style>
@@ -48,7 +42,7 @@
 <!-- ===================== SPLASH ===================== -->
 <div id="splash" class="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-green-600 to-blue-600">
   <div class="text-center text-white animate-pulse">
-    <img src="assets/logo-tallerpro360.png" alt="TallerPRO360" class="w-28 h-28 mx-auto mb-4">
+    <img src="assets/logo-512.png" alt="TallerPRO360" class="w-28 h-28 mx-auto mb-4">
     <h1 class="text-2xl font-black tracking-wide">TallerPRO360</h1>
     <p class="text-sm opacity-80 mt-2">Gestión inteligente para talleres</p>
   </div>
@@ -58,7 +52,7 @@
 <nav class="sticky top-0 z-50 bg-white border-b shadow-sm">
   <div class="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">
-      <img src="assets/logo-tallerpro360.png" alt="TallerPRO360" class="w-10 h-10 rounded-xl">
+      <img src="assets/logo-192.png" alt="TallerPRO360" class="w-10 h-10 rounded-xl">
       <span class="font-black text-xl">
         Taller<span class="text-green-600">PRO</span>360
       </span>
@@ -75,13 +69,13 @@
 
     <div>
       <h1 class="text-5xl md:text-6xl font-black leading-tight mb-6">
-        El control total de tu taller,<br>
+        Control total de tu taller,<br>
         <span class="text-green-600">vehículo por vehículo</span>
       </h1>
 
       <p class="text-lg text-slate-600 mb-8">
         Registra órdenes por voz, controla cada etapa del proceso,
-        informa al cliente en tiempo real y elimina el caos operativo.
+        documenta con evidencias y mantén informado al cliente en tiempo real.
       </p>
 
       <div class="flex flex-col sm:flex-row gap-4">
@@ -98,7 +92,7 @@
 
     <div class="flex justify-center">
       <div class="glass rounded-3xl p-8 shadow-xl text-center">
-        <img src="assets/logo-tallerpro360.png" alt="TallerPRO360" class="w-40 h-40 mx-auto mb-4">
+        <img src="assets/logo-512.png" alt="TallerPRO360" class="w-40 h-40 mx-auto mb-4">
         <p class="font-bold text-lg">La herramienta que tu taller necesitaba</p>
         <p class="text-sm text-slate-500 mt-2">Rápido · Claro · Profesional</p>
       </div>
@@ -107,36 +101,42 @@
   </div>
 </section>
 
-<!-- ===================== DIFERENCIALES ===================== -->
+<!-- ===================== PROCESO ===================== -->
 <section class="py-24 bg-white">
   <div class="max-w-7xl mx-auto px-6">
     <h2 class="text-4xl font-black text-center mb-16">
-      Diseñado para trabajar <span class="text-green-600">como un taller real</span>
+      Del ingreso a la entrega, <span class="text-green-600">todo bajo control</span>
     </h2>
 
-    <div class="grid md:grid-cols-3 gap-10">
-      <div class="p-8 rounded-3xl border hover:shadow-xl transition">
-        <i class="fa-solid fa-microphone text-green-600 text-4xl mb-4"></i>
-        <h3 class="font-black text-xl mb-2">Órdenes por voz</h3>
-        <p class="text-slate-600">
-          Dicta diagnósticos y trabajos sin soltar las herramientas.
-        </p>
-      </div>
-
-      <div class="p-8 rounded-3xl border hover:shadow-xl transition">
+    <div class="grid md:grid-cols-5 gap-8 text-center">
+      <div>
         <i class="fa-solid fa-car text-green-600 text-4xl mb-4"></i>
-        <h3 class="font-black text-xl mb-2">Proceso completo</h3>
-        <p class="text-slate-600">
-          Recepción, diagnóstico, aprobación, reparación y entrega.
-        </p>
+        <h3 class="font-bold">Ingreso</h3>
+        <p class="text-sm text-slate-600">Datos del vehículo, cliente y estado inicial.</p>
       </div>
 
-      <div class="p-8 rounded-3xl border hover:shadow-xl transition">
-        <i class="fa-solid fa-shield-halved text-green-600 text-4xl mb-4"></i>
-        <h3 class="font-black text-xl mb-2">Trazabilidad total</h3>
-        <p class="text-slate-600">
-          Todo queda registrado, claro para ti y para el cliente.
-        </p>
+      <div>
+        <i class="fa-solid fa-microphone text-green-600 text-4xl mb-4"></i>
+        <h3 class="font-bold">Diagnóstico por voz</h3>
+        <p class="text-sm text-slate-600">Dicta fallas y trabajos sin escribir.</p>
+      </div>
+
+      <div>
+        <i class="fa-solid fa-file-signature text-green-600 text-4xl mb-4"></i>
+        <h3 class="font-bold">Aprobación</h3>
+        <p class="text-sm text-slate-600">Cliente informado y todo documentado.</p>
+      </div>
+
+      <div>
+        <i class="fa-solid fa-screwdriver-wrench text-green-600 text-4xl mb-4"></i>
+        <h3 class="font-bold">Reparación</h3>
+        <p class="text-sm text-slate-600">Control del trabajo y evidencias.</p>
+      </div>
+
+      <div>
+        <i class="fa-solid fa-flag-checkered text-green-600 text-4xl mb-4"></i>
+        <h3 class="font-bold">Entrega</h3>
+        <p class="text-sm text-slate-600">Historial completo y trazabilidad total.</p>
       </div>
     </div>
   </div>
@@ -151,38 +151,35 @@
 
     <div class="grid md:grid-cols-3 gap-10">
 
-      <!-- Básico -->
       <div class="rounded-3xl border p-8 text-center">
         <h3 class="font-black text-2xl mb-2">Básico</h3>
         <p class="text-4xl font-black text-green-600 mb-4">$49.999</p>
-        <ul class="space-y-2 text-slate-600 mb-6">
+        <ul class="space-y-2 text-slate-600">
           <li>✔ Órdenes ilimitadas</li>
-          <li>✔ Un solo usuario</li>
-          <li>✔ Control básico</li>
+          <li>✔ Un usuario</li>
+          <li>✔ Control esencial</li>
         </ul>
       </div>
 
-      <!-- PRO -->
       <div class="rounded-3xl border-4 border-green-600 p-8 text-center shadow-xl scale-105">
         <h3 class="font-black text-2xl mb-2">PRO</h3>
         <p class="text-4xl font-black text-green-600 mb-4">$79.000</p>
-        <ul class="space-y-2 text-slate-600 mb-6">
+        <ul class="space-y-2 text-slate-600">
           <li>✔ Multiusuarios</li>
-          <li>✔ Exportar a Excel</li>
           <li>✔ Dictado por voz</li>
+          <li>✔ Exportación</li>
         </ul>
-        <span class="inline-block bg-green-600 text-white px-4 py-1 rounded-full text-sm font-bold">
+        <span class="inline-block mt-4 bg-green-600 text-white px-4 py-1 rounded-full text-sm font-bold">
           Más vendido
         </span>
       </div>
 
-      <!-- Anual -->
       <div class="rounded-3xl border p-8 text-center bg-slate-900 text-white">
         <h3 class="font-black text-2xl mb-2">Anual PRO</h3>
         <p class="text-4xl font-black text-green-400 mb-4">$499.000</p>
-        <ul class="space-y-2 mb-6">
+        <ul class="space-y-2">
           <li>✔ Todo ilimitado</li>
-          <li>✔ Facturación electrónica</li>
+          <li>✔ Prioridad soporte</li>
           <li>✔ Ahorro anual</li>
         </ul>
       </div>
@@ -192,16 +189,14 @@
 </section>
 
 <footer class="py-10 border-t text-center text-sm text-slate-500">
-  <img src="assets/logo-tallerpro360.png" class="w-12 mx-auto mb-3" alt="TallerPRO360">
+  <img src="assets/logo-192.png" class="w-12 mx-auto mb-3" alt="TallerPRO360">
   TallerPRO360 © 2026 · Hecho para talleres colombianos 🇨🇴
 </footer>
 
 <!-- ===================== JS ===================== -->
 <script>
   window.addEventListener('load', () => {
-    setTimeout(() => {
-      document.getElementById('splash')?.remove();
-    }, 2200);
+    setTimeout(() => document.getElementById('splash')?.remove(), 2200);
   });
 
   if ('serviceWorker' in navigator) {
