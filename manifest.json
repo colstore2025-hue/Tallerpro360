@@ -9,6 +9,8 @@
   "scope": "/",
   "lang": "es-CO",
 
+<meta name="apple-mobile-web-app-capable" content="yes">
+
   "icons": [
     {
       "src": "assets/logo-192.png",
