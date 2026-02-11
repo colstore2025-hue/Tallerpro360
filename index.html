@@ -20,8 +20,6 @@
   <!-- ===================== ANDROID / WINDOWS ===================== -->
   <link rel="icon" type="image/png" sizes="192x192" href="assets/logo-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="assets/logo-512.png">
-
-  <!-- ===================== FAVICON ===================== -->
   <link rel="icon" type="image/png" href="assets/favicon.png">
 
   <!-- ===================== UI ===================== -->
@@ -78,22 +76,25 @@
         documenta con evidencias y mantén informado al cliente en tiempo real.
       </p>
 
+      <!-- BOTONES CORRECTAMENTE AGRUPADOS -->
       <div class="flex flex-col sm:flex-row gap-4">
         <a href="login.html"
            class="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold text-center hover:bg-green-700">
           Probar gratis 7 días
         </a>
+
         <a href="#planes"
            class="border-2 border-green-600 text-green-600 px-8 py-4 rounded-2xl font-bold text-center hover:bg-green-50">
           Ver planes
         </a>
+
+        <!-- BOTÓN INSTALAR -->
+        <button id="installBtn"
+          class="hidden bg-black text-white px-8 py-4 rounded-2xl font-bold hover:bg-slate-800 transition duration-300">
+          Instalar App
+        </button>
       </div>
     </div>
-
-<button id="installBtn"
-  class="hidden bg-black text-white px-8 py-4 rounded-2xl font-bold hover:bg-slate-800">
-  Instalar App
-</button>
 
     <div class="flex justify-center">
       <div class="glass rounded-3xl p-8 shadow-xl text-center">
@@ -106,93 +107,7 @@
   </div>
 </section>
 
-<!-- ===================== PROCESO ===================== -->
-<section class="py-24 bg-white">
-  <div class="max-w-7xl mx-auto px-6">
-    <h2 class="text-4xl font-black text-center mb-16">
-      Del ingreso a la entrega, <span class="text-green-600">todo bajo control</span>
-    </h2>
-
-    <div class="grid md:grid-cols-5 gap-8 text-center">
-      <div>
-        <i class="fa-solid fa-car text-green-600 text-4xl mb-4"></i>
-        <h3 class="font-bold">Ingreso</h3>
-        <p class="text-sm text-slate-600">Datos del vehículo, cliente y estado inicial.</p>
-      </div>
-
-      <div>
-        <i class="fa-solid fa-microphone text-green-600 text-4xl mb-4"></i>
-        <h3 class="font-bold">Diagnóstico por voz</h3>
-        <p class="text-sm text-slate-600">Dicta fallas y trabajos sin escribir.</p>
-      </div>
-
-      <div>
-        <i class="fa-solid fa-file-signature text-green-600 text-4xl mb-4"></i>
-        <h3 class="font-bold">Aprobación</h3>
-        <p class="text-sm text-slate-600">Cliente informado y todo documentado.</p>
-      </div>
-
-      <div>
-        <i class="fa-solid fa-screwdriver-wrench text-green-600 text-4xl mb-4"></i>
-        <h3 class="font-bold">Reparación</h3>
-        <p class="text-sm text-slate-600">Control del trabajo y evidencias.</p>
-      </div>
-
-      <div>
-        <i class="fa-solid fa-flag-checkered text-green-600 text-4xl mb-4"></i>
-        <h3 class="font-bold">Entrega</h3>
-        <p class="text-sm text-slate-600">Historial completo y trazabilidad total.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===================== PLANES ===================== -->
-<section id="planes" class="py-24 bg-gradient-to-br from-slate-50 to-white">
-  <div class="max-w-7xl mx-auto px-6">
-    <h2 class="text-4xl font-black text-center mb-16">
-      Planes claros, sin letras pequeñas
-    </h2>
-
-    <div class="grid md:grid-cols-3 gap-10">
-
-      <div class="rounded-3xl border p-8 text-center">
-        <h3 class="font-black text-2xl mb-2">Básico</h3>
-        <p class="text-4xl font-black text-green-600 mb-4">$49.999</p>
-        <ul class="space-y-2 text-slate-600">
-          <li>✔ Órdenes ilimitadas</li>
-          <li>✔ Un usuario</li>
-          <li>✔ Control esencial</li>
-        </ul>
-      </div>
-
-      <div class="rounded-3xl border-4 border-green-600 p-8 text-center shadow-xl scale-105">
-        <h3 class="font-black text-2xl mb-2">PRO</h3>
-        <p class="text-4xl font-black text-green-600 mb-4">$79.000</p>
-        <ul class="space-y-2 text-slate-600">
-          <li>✔ Multiusuarios</li>
-          <li>✔ Dictado por voz</li>
-          <li>✔ Exportación</li>
-        </ul>
-        <span class="inline-block mt-4 bg-green-600 text-white px-4 py-1 rounded-full text-sm font-bold">
-          Más vendido
-        </span>
-      </div>
-
-      <div class="rounded-3xl border p-8 text-center bg-slate-900 text-white">
-        <h3 class="font-black text-2xl mb-2">Anual PRO</h3>
-        <p class="text-4xl font-black text-green-400 mb-4">$499.000</p>
-        <ul class="space-y-2">
-          <li>✔ Todo ilimitado</li>
-          <li>✔ Prioridad soporte</li>
-          <li>✔ Ahorro anual</li>
-        </ul>
-      </div>
-
-    </div>
-  </div>
-</section>
-
+<!-- ===================== FOOTER ===================== -->
 <footer class="py-10 border-t text-center text-sm text-slate-500">
   <img src="assets/logo-192.png" class="w-12 mx-auto mb-3" alt="TallerPRO360">
   TallerPRO360 © 2026 · Hecho para talleres colombianos 🇨🇴
@@ -200,15 +115,19 @@
 
 <!-- ===================== JS ===================== -->
 <script>
+  // Splash control
   window.addEventListener('load', () => {
-    setTimeout(() => document.getElementById('splash')?.remove(), 2200);
+    setTimeout(() => document.getElementById('splash')?.remove(), 2000);
   });
 
+  // Service Worker
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js');
+    navigator.serviceWorker.register('service-worker.js')
+      .then(() => console.log("🛰️ Service Worker activo"))
+      .catch(err => console.log("SW error:", err));
   }
-</script>
-<script>
+
+  // PWA Install Logic
   let deferredPrompt;
   const installBtn = document.getElementById("installBtn");
 
@@ -216,16 +135,19 @@
     e.preventDefault();
     deferredPrompt = e;
     installBtn.classList.remove("hidden");
+    installBtn.classList.add("animate-pulse");
   });
 
   installBtn.addEventListener("click", async () => {
     if (!deferredPrompt) return;
 
+    installBtn.classList.remove("animate-pulse");
     deferredPrompt.prompt();
+
     const { outcome } = await deferredPrompt.userChoice;
 
     if (outcome === "accepted") {
-      console.log("✅ App instalada");
+      console.log("✅ TallerPRO360 instalado");
     }
 
     deferredPrompt = null;
@@ -233,9 +155,10 @@
   });
 
   window.addEventListener("appinstalled", () => {
-    console.log("🎉 TallerPRO360 instalado");
+    console.log("🎉 Instalación completada");
     installBtn.classList.add("hidden");
   });
 </script>
+
 </body>
 </html>
