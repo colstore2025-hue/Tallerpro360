@@ -1,85 +1,55 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta name="robots" content="index, follow">
-<meta property="og:title" content="TallerPRO360">
-<meta property="og:description" content="Sistema inteligente para talleres en Colombia">
-<meta property="og:image" content="/assets/logo-512.webp">
+
+<meta charset="UTF-8">
+<title>TallerPRO360 | Software para talleres en Colombia</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Software profesional para talleres automotrices en Colombia. Control total de órdenes, vehículos y clientes.">
+<meta name="robots" content="index, follow">
+
+<!-- Open Graph -->
+<meta property="og:title" content="TallerPRO360">
+<meta property="og:description" content="Sistema inteligente para talleres en Colombia">
+<meta property="og:image" content="/assets/logo-512.webp">
+<meta property="og:type" content="website">
 
 <!-- PWA -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#16a34a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="dns-prefetch" href="//fonts.googleapis.com">
 
 <!-- ICONOS -->
-<link rel="icon" href="/assets/logo-192.png">
-<img src="/assets/logo-192.webp" width="90" height="90" loading="lazy">
+<link rel="icon" href="/assets/logo-192.webp" type="image/webp">
+<link rel="apple-touch-icon" href="/assets/logo-192.webp">
 
-<!-- CSS LOCAL (PRODUCCIÓN) -->
+<!-- PRELOAD CSS -->
 <link rel="preload" href="/assets/css/styles.css" as="style">
 <link rel="stylesheet" href="/assets/css/styles.css">
 
 <style>
-.hero-bg{
-background: linear-gradient(135deg,#ecfdf5,#eff6ff);
-}
-.section{
-padding:80px 20px;
-}
-.container{
-max-width:1200px;
-margin:auto;
-}
-.center{
-text-align:center;
-}
-.price{
-font-size:36px;
-font-weight:800;
-color:#16a34a;
-}
-.plan{
-background:#fff;
-padding:30px;
-border-radius:16px;
-box-shadow:0 10px 25px rgba(0,0,0,0.06);
-transition:0.3s;
-}
-.plan:hover{
-transform:translateY(-6px);
-}
-.highlight{
-border:3px solid #16a34a;
-transform:scale(1.05);
-}
-.btn-main{
-background:#16a34a;
-color:#fff;
-padding:14px 22px;
-border:none;
-border-radius:12px;
-cursor:pointer;
-font-weight:700;
-}
-.btn-main:hover{
-opacity:.9;
-}
+.hero-bg{background:linear-gradient(135deg,#ecfdf5,#eff6ff);}
+.section{padding:80px 20px;}
+.container{max-width:1200px;margin:auto;}
+.center{text-align:center;}
+.price{font-size:36px;font-weight:800;color:#16a34a;}
+.plan{background:#fff;padding:30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.06);transition:.3s;}
+.plan:hover{transform:translateY(-6px);}
+.highlight{border:3px solid #16a34a;transform:scale(1.05);}
+.btn-main{background:#16a34a;color:#fff;padding:14px 22px;border:none;border-radius:12px;cursor:pointer;font-weight:700;}
+.btn-main:hover{opacity:.9;}
 </style>
+
 </head>
 
 <body>
 
 <!-- HERO -->
 <section class="section hero-bg">
-<div class="container">
-<div class="center">
-<img src="/assets/logo-192.png" width="90">
+<div class="container center">
+<img src="/assets/logo-192.webp" width="90" height="90" alt="TallerPRO360 Logo">
 <h1 style="font-size:42px;font-weight:900;margin-top:20px;">
 Control total de tu taller
 </h1>
@@ -90,7 +60,6 @@ Desde el ingreso hasta la entrega. Todo digital, profesional y organizado.
 <a href="login.html">
 <button class="btn-main">Probar gratis 7 días</button>
 </a>
-</div>
 </div>
 </div>
 </section>
@@ -120,12 +89,10 @@ Planes diseñados para talleres colombianos
 
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:30px;">
 
-<!-- BASICO -->
 <div class="plan">
 <h3 style="font-size:22px;font-weight:800;">Básico</h3>
 <p class="price">$29.900</p>
-<p style="margin-bottom:15px;">Ideal para talleres pequeños</p>
-
+<p>Ideal para talleres pequeños</p>
 <ul style="text-align:left;margin-top:15px;line-height:28px;">
 <li>✔ Registro ilimitado de vehículos</li>
 <li>✔ Gestión de órdenes</li>
@@ -135,12 +102,10 @@ Planes diseñados para talleres colombianos
 </ul>
 </div>
 
-<!-- PRO -->
 <div class="plan highlight">
 <h3 style="font-size:22px;font-weight:800;">PRO</h3>
 <p class="price">$59.900</p>
-<p style="margin-bottom:15px;">Para talleres en crecimiento</p>
-
+<p>Para talleres en crecimiento</p>
 <ul style="text-align:left;margin-top:15px;line-height:28px;">
 <li>✔ Todo lo del plan Básico</li>
 <li>✔ Diagnóstico por voz</li>
@@ -151,12 +116,10 @@ Planes diseñados para talleres colombianos
 </ul>
 </div>
 
-<!-- ANUAL -->
 <div class="plan" style="background:#111827;color:#fff;">
 <h3 style="font-size:22px;font-weight:800;">PRO Anual</h3>
 <p class="price" style="color:#22c55e;">$599.000</p>
-<p style="margin-bottom:15px;">Ahorra 2 meses</p>
-
+<p>Ahorra 2 meses</p>
 <ul style="text-align:left;margin-top:15px;line-height:28px;">
 <li>✔ Todo lo del plan PRO</li>
 <li>✔ Capacitación personalizada</li>
@@ -171,13 +134,13 @@ Planes diseñados para talleres colombianos
 
 <!-- FOOTER -->
 <section class="section center">
-<img src="/assets/logo-192.png" width="60">
+<img src="/assets/logo-192.webp" width="60" height="60" alt="Logo">
 <p style="margin-top:15px;color:#666;">
 TallerPRO360 © 2026 · Hecho para talleres colombianos 🇨🇴
 </p>
 </section>
 
-<!-- SCRIPTS -->
+<!-- SERVICE WORKER -->
 <script>
 if ('serviceWorker' in navigator) {
 navigator.serviceWorker.register('/service-worker.js');
