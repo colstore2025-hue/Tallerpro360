@@ -131,10 +131,16 @@
       }
 
     } catch (err) {
-      console.error(err);
-      errorMsg.textContent = err.message || "Error de autenticación";
-      errorMsg.classList.remove("hidden");
-    }
+  console.error("ERROR COMPLETO:", err);
+
+  errorMsg.textContent = `
+  ${err.message}
+  `;
+
+  errorMsg.classList.remove("hidden");
+
+  alert("Error: " + err.message);
+}
   });
 </script>
 </body>
