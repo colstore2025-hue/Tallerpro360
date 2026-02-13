@@ -108,10 +108,11 @@ onAuthStateChanged(auth, async (user) => {
   const ref = doc(db, "usuarios", user.uid);
   const snap = await getDoc(ref);
 
-  if (!snap.exists() || snap.data().rol !== "ceo") {
-    window.location.href = "index.html";
-    return;
-  }
+  if (!snap.exists() || 
+   (snap.data().rol !== "ceo" && snap.data().rol !== "superadmin")) {
+  window.location.href = "index.html";
+  return;
+}
 
   iniciar();
 });
