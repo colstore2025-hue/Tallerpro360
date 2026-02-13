@@ -210,7 +210,7 @@ document.getElementById("formLogin").addEventListener("submit", async (e)=>{
 });
 
 // ===============================
-// 🚗 CREAR ORDEN (SaaS)
+// 🚗 CREAR ORDEN (SaaS CORREGIDO)
 // ===============================
 document.getElementById("formOrden").addEventListener("submit", async (e)=>{
   e.preventDefault();
@@ -231,19 +231,37 @@ document.getElementById("formOrden").addEventListener("submit", async (e)=>{
     actualizadoEn: ts
   };
 
-  await db.collection("talleres")
-    .doc(TALLER_ID)
-    .collection("ordenes")
-    .doc(codigo)
-    .set(orden);
+  try {
 
-  alert("Orden creada correctamente!");
-  formOrden.reset();
+    await db.collection("talleres")
+      .doc(TALLER_ID)
+      .collection("ordenes")
+      .doc(codigo)
+      .set(orden);
 
-  speakOrderStage(orden);
-  listenOrderVoice(db, `talleres/${TALLER_ID}/ordenes/${codigo}`);
+    alert("Orden creada correctamente!");
+    formOrden.reset();
 
-  cargarOrdenes();
+    // 🔊 Voz inmediata SOLO UNA VEZ
+    speakOrderStage(orden);
+
+    // 🔥 Listener controlado (evita duplicados)
+    if (!window.ordenesEscuchadas) {
+      window.ordenesEscuchadas = new Set();
+    }
+
+    if (!window.ordenesEscuchadas.has(codigo)) {
+      listenOrderVoice(db, `talleres/${TALLER_ID}/ordenes/${codigo}`);
+      window.ordenesEscuchadas.add(codigo);
+    }
+
+    cargarOrdenes();
+
+  } catch(err){
+    console.error(err);
+    alert("Error al crear la orden.");
+  }
+
 });
 
 // ===============================
