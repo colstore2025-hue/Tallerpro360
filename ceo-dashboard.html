@@ -87,9 +87,39 @@ body { background:#0f172a; font-family:'Inter',sans-serif; color:#f1f5f9; }
 </footer>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, doc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { auth, db } from "./firebase-config.js";
+  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  onAuthStateChanged(auth, async (user) => {
+
+    // 🔒 Si no hay sesión → fuera
+    if (!user) {
+      window.location.href = "index.html";
+      return;
+    }
+
+    // 🔎 2️⃣ Validar rol CEO
+    const docRef = doc(db, "usuarios", user.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      window.location.href = "index.html";
+      return;
+    }
+
+    const userData = docSnap.data();
+
+    if (userData.rol !== "ceo") {
+      window.location.href = "index.html";
+      return;
+    }
+
+    // ✅ Si pasa todo, puede quedarse en el dashboard
+    console.log("Acceso autorizado CEO");
+
+  });
+</script>
 
 // Configuración Firebase
 const firebaseConfig = {
