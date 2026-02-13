@@ -1,3 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TallerPRO360 - Órdenes de Servicio</title>
+<link rel="icon" href="logo-tallerpro360.png" type="image/png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
+<style>
+body { font-family: 'Segoe UI', sans-serif; background-color: #f5f6fa; }
+.container { max-width: 800px; margin-top: 20px; }
+.estado-badge { font-size: 0.9em; }
+.timeline { list-style: none; padding-left: 0; }
+.timeline li { margin-bottom: 10px; padding-left: 20px; position: relative; }
+.timeline li::before { content: ''; position: absolute; left: 0; top: 5px; width: 10px; height: 10px; background-color: #0d6efd; border-radius: 50%; }
+.btn-next { margin-top: 10px; }
+.banner-plan { position: sticky; top: 0; z-index: 999; padding: 12px; text-align: center; font-weight: bold; }
+.plan-ok { background:#d1fae5; color:#065f46; }
+.plan-warning { background:#fef3c7; color:#92400e; }
+.plan-danger { background:#fee2e2; color:#991b1b; }
+</style>
+</head>
+
+<body>
+
+<!-- BANNER PLAN -->
+<div id="bannerPlan" class="banner-plan d-none"></div>
+
+<div class="container">
+
+  <!-- LOGO Y TÍTULO -->
+  <div class="text-center mb-4">
+    <img src="logo-tallerpro360.png" alt="TallerPRO360" width="120">
+    <h2 class="mt-2">Gestión de Órdenes de Servicio</h2>
+  </div>
+
+  <!-- REGISTRO CLIENTE -->
+  <div id="registroCliente" class="card mb-3 p-3 shadow-sm">
+    <h5>Registrar Cliente</h5>
+    <form id="formCliente">
+      <div class="mb-2">
+        <label>Nombre completo</label>
+        <input type="text" id="clienteNombreReg" class="form-control" required>
+      </div>
+      <div class="mb-2">
+        <label>Correo electrónico</label>
+        <input type="email" id="clienteEmailReg" class="form-control" required>
+      </div>
+      <div class="mb-2">
+        <label>Teléfono</label>
+        <input type="tel" id="clienteTelefonoReg" class="form-control" required>
+      </div>
+      <div class="mb-2">
+        <label>Contraseña</label>
+        <input type="password" id="clientePasswordReg" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-primary w-100 mt-2">Registrar Cliente</button>
+    </form>
+  </div>
+
+  <!-- LOGIN CLIENTE -->
+  <div id="loginCliente" class="card mb-3 p-3 shadow-sm">
+    <h5>Ingresar Cliente</h5>
+    <form id="formLogin">
+      <div class="mb-2">
+        <label>Correo electrónico</label>
+        <input type="email" id="clienteEmailLogin" class="form-control" required>
+      </div>
+      <div class="mb-2">
+        <label>Contraseña</label>
+        <input type="password" id="clientePasswordLogin" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-success w-100 mt-2">Ingresar</button>
+    </form>
+  </div>
+
+  <!-- CREAR ORDEN -->
+  <div id="crearOrden" class="card mb-3 p-3 shadow-sm d-none">
+    <h5>Crear nueva orden</h5>
+    <form id="formOrden">
+      <div class="mb-2">
+        <label>Placa del vehículo</label>
+        <input type="text" id="placa" class="form-control" required>
+      </div>
+      <div class="mb-2">
+        <label>Marca / Modelo</label>
+        <input type="text" id="vehiculo" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-primary w-100 mt-2">Crear Orden</button>
+    </form>
+  </div>
+
+  <!-- LISTADO ÓRDENES -->
+  <div id="ordenesList" class="card p-3 shadow-sm d-none">
+    <h5>Órdenes activas</h5>
+    <ul class="list-group" id="ordenesUl"></ul>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+<!-- ASISTENTE DE VOZ -->
+<script type="module">
+import { speakOrderStage, initVoiceActivation, listenOrderVoice } from './serviceOrders.voice.js';
+
 <script type="module">
 import { speakOrderStage, initVoiceActivation, listenOrderVoice } from './serviceOrders.voice.js';
 
@@ -166,3 +275,5 @@ async function cargarOrdenes(){
     .classList.toggle("d-none", !ul.children.length);
 }
 </script>
+</body>
+</html>
