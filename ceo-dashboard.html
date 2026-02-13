@@ -121,10 +121,6 @@ body { background:#0f172a; font-family:'Inter',sans-serif; color:#f1f5f9; }
   });
 </script>
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
 let map, markers=[], chart;
 
 // 🔐 Verificar sesión y rol
