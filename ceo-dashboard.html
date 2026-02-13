@@ -88,13 +88,16 @@ body { background:#0f172a; font-family:'Inter',sans-serif; color:#f1f5f9; }
 
 <script type="module">
 import { auth, db } from "./firebase-config.js";
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { onAuthStateChanged, signOut } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, collection, onSnapshot, updateDoc } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let map, markers = [], chart;
 
-// 🔐 Verificar sesión y rol
+// ===============================
+// 🔐 VALIDAR SESIÓN CEO GLOBAL
+// ===============================
 onAuthStateChanged(auth, async (user) => {
 
   if (!user) {
@@ -113,51 +116,62 @@ onAuthStateChanged(auth, async (user) => {
   iniciar();
 });
 
+// ===============================
 function iniciar(){
   initMap();
   cargarTalleres();
 }
 
+// ===============================
 function initMap(){
   map = L.map("mapa").setView([4.57,-74.29],6);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18}).addTo(map);
 }
 
+// ===============================
+// 🏭 CARGAR TALLERES (SaaS REAL)
+// ===============================
 function cargarTalleres(){
-  onSnapshot(collection(db,"usuarios"), snap=>{
+
+  onSnapshot(collection(db,"talleres"), snap=>{
+
     let total=0, activos=0, vence=0, planes=0, ciudades={};
+
     const tbody=document.getElementById("tabla");
     tbody.innerHTML="";
+
     markers.forEach(m=>map.removeLayer(m));
     markers=[];
 
     snap.forEach(d=>{
-      const u=d.data();
-      if(u.rol!=="taller") return;
 
+      const t=d.data();
       total++;
-      if(u.status==="activo") activos++;
-      if(u.plan) planes++;
+
+      if(t.estado==="activo") activos++;
+      if(t.plan) planes++;
 
       let fechaVence=null;
-      if(u.vence?.toDate) fechaVence=u.vence.toDate();
+      if(t.fechaVence?.toDate) fechaVence=t.fechaVence.toDate();
+
       if(fechaVence){
         const diff=(fechaVence-new Date())/(1000*60*60*24);
         if(diff<=5) vence++;
       }
 
-      ciudades[u.ciudad]=(ciudades[u.ciudad]||0)+1;
+      ciudades[t.ciudad]=(ciudades[t.ciudad]||0)+1;
 
       tbody.innerHTML+=`
       <tr class="border-b border-slate-700">
-        <td>${u.nombreTaller||"N/A"}</td>
-        <td>${u.ciudad||"N/A"}</td>
-        <td>${u.plan||"-"}</td>
-        <td><span class="status-${u.status||'activo'}">${u.status||'activo'}</span></td>
+        <td>${t.nombreTaller||"N/A"}</td>
+        <td>${t.ciudad||"N/A"}</td>
+        <td>${t.plan||"-"}</td>
+        <td><span class="status-${t.estado||'activo'}">${t.estado||'activo'}</span></td>
         <td>${fechaVence?fechaVence.toLocaleDateString():"-"}</td>
         <td class="text-right">
-          <button onclick="toggle('${d.id}','${u.status||'activo'}')" class="text-xs font-bold px-3 py-1 rounded bg-slate-800">
-            ${u.status==="activo"?"Suspender":"Activar"}
+          <button onclick="toggle('${d.id}','${t.estado||'activo'}')" 
+            class="text-xs font-bold px-3 py-1 rounded bg-slate-800">
+            ${t.estado==="activo"?"Suspender":"Activar"}
           </button>
         </td>
       </tr>`;
@@ -168,12 +182,12 @@ function cargarTalleres(){
         "Cali":[3.45,-76.53]
       };
 
-      const pos=coords[u.ciudad]||[4.57,-74.29];
+      const pos=coords[t.ciudad]||[4.57,-74.29];
 
       markers.push(
         L.circleMarker(pos,{
           radius:7,
-          color:u.status==="activo"?"#10b981":"#ef4444"
+          color:t.estado==="activo"?"#10b981":"#ef4444"
         }).addTo(map)
       );
     });
@@ -187,15 +201,20 @@ function cargarTalleres(){
   });
 }
 
-window.toggle=async(id,status)=>{
-  const next=status==="activo"?"suspendido":"activo";
+// ===============================
+window.toggle=async(id,estadoActual)=>{
+
+  const next=estadoActual==="activo"?"suspendido":"activo";
+
   if(confirm(`Cambiar estado a ${next}?`)){
-    await updateDoc(doc(db,"usuarios",id),{status:next});
+    await updateDoc(doc(db,"talleres",id),{estado:next});
   }
 };
 
+// ===============================
 function renderChart(data){
   if(chart) chart.destroy();
+
   chart=new Chart(document.getElementById("chartCiudades"),{
     type:"doughnut",
     data:{
@@ -205,10 +224,13 @@ function renderChart(data){
         backgroundColor:["#f59e0b","#10b981","#3b82f6","#ef4444"]
       }]
     },
-    options:{plugins:{legend:{position:"bottom"}}}
+    options:{
+      plugins:{legend:{position:"bottom"}}
+    }
   });
 }
 
+// ===============================
 window.logout=()=>{
   signOut(auth).then(()=>window.location.href="index.html");
 };
