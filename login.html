@@ -44,7 +44,7 @@
           id="email"
           required
           class="w-full mt-1 px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 focus:outline-none focus:border-emerald-400"
-          placeholder="taller@correo.com"
+          placeholder="usuario@correo.com"
         />
       </div>
 
@@ -71,40 +71,38 @@
 
     <!-- FOOTER -->
     <p class="text-center text-[10px] text-slate-500 mt-6">
-      Uso exclusivo para talleres autorizados
+      Acceso para Superadmin · CEO · Staff
     </p>
   </div>
 
 <!-- FIREBASE AUTH -->
 <script type="module">
   import { auth, db } from "./firebase-config.js";
-  import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { signInWithEmailAndPassword } 
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { doc, getDoc } 
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   const form = document.getElementById("loginForm");
   const errorMsg = document.getElementById("errorMsg");
-
-  const emailInput = document.getElementById("email");
-  const passwordInput = document.getElementById("password");
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     errorMsg.classList.add("hidden");
 
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
 
     if (!email || !password) {
-      errorMsg.textContent = "Correo y contraseña requeridos";
-      errorMsg.classList.remove("hidden");
+      showError("Correo y contraseña requeridos");
       return;
     }
 
     try {
-      // 1️⃣ Autenticación
+      // 🔐 1. Login Firebase
       const cred = await signInWithEmailAndPassword(auth, email, password);
 
-      // 2️⃣ Buscar perfil en Firestore
+      // 📂 2. Buscar perfil
       const userRef = doc(db, "usuarios", cred.user.uid);
       const userSnap = await getDoc(userRef);
 
@@ -114,34 +112,42 @@
 
       const user = userSnap.data();
 
-      // 3️⃣ Validar estado
+      // 🚫 3. Verificar estado
       if (user.activo === false) {
         throw new Error("Usuario suspendido");
       }
 
-      // 4️⃣ Redirección por rol
-      if (user.rol === "taller") {
-        window.location.href = "/taller.html";
-      } 
-      else if (user.rol === "ceo") {
-        window.location.href = "/ceo-dashboard.html";
-      } 
-      else {
-        throw new Error("Rol inválido");
+      // 🎯 4. Redirección inteligente por rol
+      switch (user.rol) {
+
+        case "superadmin":
+          window.location.href = "/ceo-dashboard.html";
+          break;
+
+        case "ceo":
+          window.location.href = "/panel-taller.html";
+          break;
+
+        case "staff":
+          window.location.href = "/panel-taller.html";
+          break;
+
+        default:
+          throw new Error("Rol inválido");
       }
 
     } catch (err) {
-  console.error("ERROR COMPLETO:", err);
-
-  errorMsg.textContent = `
-  ${err.message}
-  `;
-
-  errorMsg.classList.remove("hidden");
-
-  alert("Error: " + err.message);
-}
+      console.error("ERROR LOGIN:", err);
+      showError(err.message);
+    }
   });
+
+  function showError(message) {
+    errorMsg.textContent = message;
+    errorMsg.classList.remove("hidden");
+    alert("Error: " + message);
+  }
 </script>
+
 </body>
 </html>
