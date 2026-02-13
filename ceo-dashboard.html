@@ -55,7 +55,7 @@ body { background:#0f172a; font-family:'Inter',sans-serif; color:#f1f5f9; }
   </div>
 </section>
 
-<!-- Tabla de Talleres -->
+<!-- Tabla -->
 <section class="glass p-6 mb-8">
 <table class="w-full text-sm">
 <thead class="text-gray-400">
@@ -87,49 +87,29 @@ body { background:#0f172a; font-family:'Inter',sans-serif; color:#f1f5f9; }
 </footer>
 
 <script type="module">
-  import { auth, db } from "./firebase-config.js";
+import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, collection, onSnapshot, updateDoc } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  onAuthStateChanged(auth, async (user) => {
-
-    // 🔒 Si no hay sesión → fuera
-    if (!user) {
-      window.location.href = "index.html";
-      return;
-    }
-
-    // 🔎 2️⃣ Validar rol CEO
-    const docRef = doc(db, "usuarios", user.uid);
-    const docSnap = await getDoc(docRef);
-
-    if (!docSnap.exists()) {
-      window.location.href = "index.html";
-      return;
-    }
-
-    const userData = docSnap.data();
-
-    if (userData.rol !== "ceo") {
-      window.location.href = "index.html";
-      return;
-    }
-
-    // ✅ Si pasa todo, puede quedarse en el dashboard
-    console.log("Acceso autorizado CEO");
-
-  });
-</script>
-
-let map, markers=[], chart;
+let map, markers = [], chart;
 
 // 🔐 Verificar sesión y rol
-onAuthStateChanged(auth, async user=>{
-  if(!user) return location.href="index.html";
-  const ref = doc(db,"usuarios",user.uid);
+onAuthStateChanged(auth, async (user) => {
+
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
+
+  const ref = doc(db, "usuarios", user.uid);
   const snap = await getDoc(ref);
-  if(!snap.exists() || snap.data().rol!=="ceo") location.href="index.html";
+
+  if (!snap.exists() || snap.data().rol !== "ceo") {
+    window.location.href = "index.html";
+    return;
+  }
+
   iniciar();
 });
 
@@ -139,7 +119,7 @@ function iniciar(){
 }
 
 function initMap(){
-  map=L.map("mapa").setView([4.57,-74.29],6);
+  map = L.map("mapa").setView([4.57,-74.29],6);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18}).addTo(map);
 }
 
@@ -148,7 +128,8 @@ function cargarTalleres(){
     let total=0, activos=0, vence=0, planes=0, ciudades={};
     const tbody=document.getElementById("tabla");
     tbody.innerHTML="";
-    markers.forEach(m=>map.removeLayer(m)); markers=[];
+    markers.forEach(m=>map.removeLayer(m));
+    markers=[];
 
     snap.forEach(d=>{
       const u=d.data();
@@ -181,35 +162,57 @@ function cargarTalleres(){
         </td>
       </tr>`;
 
-      const coords={Bogotá:[4.7,-74.07],Medellín:[6.24,-75.58],Cali:[3.45,-76.53]};
+      const coords={
+        "Bogotá":[4.7,-74.07],
+        "Medellín":[6.24,-75.58],
+        "Cali":[3.45,-76.53]
+      };
+
       const pos=coords[u.ciudad]||[4.57,-74.29];
-      markers.push(L.circleMarker(pos,{radius:7,color:u.status==="activo"?"#10b981":"#ef4444"}).addTo(map));
+
+      markers.push(
+        L.circleMarker(pos,{
+          radius:7,
+          color:u.status==="activo"?"#10b981":"#ef4444"
+        }).addTo(map)
+      );
     });
 
     document.getElementById("kpiTalleres").innerText=total;
     document.getElementById("kpiActivos").innerText=activos;
     document.getElementById("kpiVence").innerText=vence;
     document.getElementById("kpiPlanes").innerText=planes;
+
     renderChart(ciudades);
   });
 }
 
 window.toggle=async(id,status)=>{
   const next=status==="activo"?"suspendido":"activo";
-  if(confirm(`Cambiar estado a ${next}?`))
+  if(confirm(`Cambiar estado a ${next}?`)){
     await updateDoc(doc(db,"usuarios",id),{status:next});
+  }
 };
 
 function renderChart(data){
   if(chart) chart.destroy();
   chart=new Chart(document.getElementById("chartCiudades"),{
     type:"doughnut",
-    data:{labels:Object.keys(data),datasets:[{data:Object.values(data),backgroundColor:["#f59e0b","#10b981","#3b82f6","#ef4444"]}]},
+    data:{
+      labels:Object.keys(data),
+      datasets:[{
+        data:Object.values(data),
+        backgroundColor:["#f59e0b","#10b981","#3b82f6","#ef4444"]
+      }]
+    },
     options:{plugins:{legend:{position:"bottom"}}}
   });
 }
 
-window.logout=()=>signOut(auth).then(()=>location.href="index.html");
+window.logout=()=>{
+  signOut(auth).then(()=>window.location.href="index.html");
+};
 </script>
+
 </body>
 </html>
