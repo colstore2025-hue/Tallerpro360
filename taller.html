@@ -132,15 +132,29 @@ let userCliente = null;
 // 🔐 OBSERVADOR DE SESIÓN
 // ===============================
 auth.onAuthStateChanged(async (user) => {
-  if (user) {
-    userCliente = user;
 
-    document.getElementById("loginCliente").style.display = "none";
-    document.getElementById("registroCliente").style.display = "none";
-    document.getElementById("crearOrden").style.display = "block";
+  if (!user) return;
 
-    cargarOrdenes();
+  const clienteRef = db.collection("talleres")
+    .doc(TALLER_ID)
+    .collection("clientes")
+    .doc(user.uid);
+
+  const snap = await clienteRef.get();
+
+  if (!snap.exists) {
+    await auth.signOut();
+    alert("No perteneces a este taller.");
+    return;
   }
+
+  userCliente = user;
+
+  document.getElementById("loginCliente").style.display = "none";
+  document.getElementById("registroCliente").style.display = "none";
+  document.getElementById("crearOrden").style.display = "block";
+
+  cargarOrdenes();
 });
 
 // ===============================
