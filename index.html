@@ -42,6 +42,7 @@
 .btn-main:hover{opacity:.9;}
 .footer{background:#f8fafc;padding:40px 20px;}
 .badge{display:inline-block;background:#16a34a;color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;margin-top:15px;}
+.dark-plan{background:#111827;color:#fff;}
 </style>
 
 </head>
@@ -108,13 +109,10 @@ Empieza pequeño. Crece sin límites.
 
 <!-- BÁSICO -->
 <div class="plan" style="border:1px solid #e5e7eb;">
-
 <h3 style="font-size:24px;font-weight:900;">Básico</h3>
-
 <p class="price">
 $29.900<span style="font-size:16px;font-weight:600;color:#555;"> / mes</span>
 </p>
-
 <p style="color:#666;margin-bottom:20px;">
 Ideal para talleres pequeños
 </p>
@@ -128,13 +126,14 @@ Ideal para talleres pequeños
 <li>✔ Soporte básico</li>
 </ul>
 
-<button class="btn-main" style="width:100%;">Comenzar ahora</button>
+<button class="btn-main" style="width:100%;" onclick="irPago('basico')">
+Comenzar ahora
+</button>
 
 </div>
 
 <!-- PRO -->
 <div class="plan highlight" style="position:relative;background:#ffffff;">
-
 <div style="position:absolute;top:-15px;left:50%;transform:translateX(-50%);background:#16a34a;color:#fff;padding:6px 18px;border-radius:20px;font-size:13px;font-weight:800;">
 🔥 MÁS VENDIDO
 </div>
@@ -160,13 +159,14 @@ Para talleres en crecimiento
 <li>✔ Soporte prioritario</li>
 </ul>
 
-<button class="btn-main" style="width:100%;">Actualizar a PRO</button>
+<button class="btn-main" style="width:100%;" onclick="irPago('pro')">
+Actualizar a PRO
+</button>
 
 </div>
 
 <!-- PRO ANUAL -->
-<div class="plan" style="background:#111827;color:#fff;">
-
+<div class="plan dark-plan">
 <h3 style="font-size:24px;font-weight:900;">PRO Anual</h3>
 
 <p class="price" style="color:#22c55e;">
@@ -186,7 +186,9 @@ Ahorra 2 meses pagando anual
 <li>✔ Soporte directo por WhatsApp</li>
 </ul>
 
-<button class="btn-main" style="width:100%;">Elegir plan anual</button>
+<button class="btn-main" style="width:100%;" onclick="irPago('pro_anual')">
+Elegir plan anual
+</button>
 
 </div>
 
@@ -206,6 +208,13 @@ TallerPRO360 © 2026 · Hecho para talleres colombianos 🇨🇴
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/service-worker.js');
+}
+</script>
+
+<!-- REDIRECCIÓN PLANES -->
+<script>
+function irPago(plan) {
+  window.location.href = "pagos.html?plan=" + plan;
 }
 </script>
 
