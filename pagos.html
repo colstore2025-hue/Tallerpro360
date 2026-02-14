@@ -1,189 +1,117 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pagos | TallerPRO360</title>
+  <meta charset="UTF-8">
+  <title>Pago de Plan</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { 
+      getFirestore, 
+      collection, 
+      addDoc, 
+      serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    const firebaseConfig = {
+      apiKey: "TU_API_KEY",
+      authDomain: "TU_AUTH_DOMAIN",
+      projectId: "TU_PROJECT_ID",
+      storageBucket: "TU_STORAGE_BUCKET",
+      messagingSenderId: "TU_SENDER_ID",
+      appId: "TU_APP_ID"
+    };
 
-<style>
-  body { background:#0f172a; color:#f1f5f9; }
-  .glass {
-    background:rgba(15,23,42,.75);
-    backdrop-filter: blur(18px);
-    border-radius:1.5rem;
-    border:1px solid rgba(255,255,255,.08);
-  }
-</style>
-</head>
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-<body class="min-h-screen flex items-center justify-center p-6">
+    const params = new URLSearchParams(window.location.search);
+    const planSeleccionado = params.get("plan") || "basico";
 
-<div class="glass w-full max-w-xl p-6 space-y-6">
+    const precios = {
+      basico: 29900,
+      pro: 59900,
+      pro_anual: 599000
+    };
 
-  <h1 class="text-2xl font-bold text-amber-500 text-center">
-    💳 Pago de Suscripción
-  </h1>
+    const montoPlan = precios[planSeleccionado];
 
-  <!-- INFO PLAN -->
-  <div class="bg-slate-900/60 rounded-lg p-4 space-y-2 text-sm">
-    <p><strong>Producto:</strong> TallerPRO360</p>
-    <p><strong>Plan:</strong> Mensual</p>
-    <p><strong>Valor:</strong> <span class="text-green-400 font-bold">$XX.XXX COP</span></p>
-    <p class="text-xs text-gray-400">
-      Tu suscripción se activa automáticamente una vez validemos el pago.
-    </p>
-  </div>
-
-  <!-- OPCIÓN 1: MERCADOPAGO -->
-  <div class="bg-slate-900/60 rounded-lg p-4 text-sm space-y-3 border border-amber-500/30">
-    <p class="font-bold text-amber-400 flex items-center gap-2">
-      <i class="fa-brands fa-cc-visa"></i> Pago con Tarjeta / PSE
-    </p>
-
-    <p class="text-xs text-gray-300">
-      Paga de forma segura con tarjeta débito, crédito o PSE usando MercadoPago.
-    </p>
-
-    <!-- LINK DE PAGO (Fase 1) -->
-    <a href="https://link.mercadopago.com/tallerpro360"
-       target="_blank"
-       class="block text-center bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded">
-      Pagar con MercadoPago
-    </a>
-
-    <p class="text-[11px] text-gray-400">
-      * MercadoPago procesa tu pago de forma segura.
-    </p>
-  </div>
-
-  <!-- OPCIÓN 2: TRANSFERENCIAS -->
-  <div class="bg-slate-900/60 rounded-lg p-4 text-sm space-y-3">
-    <p class="font-bold text-amber-400 flex items-center gap-2">
-      <i class="fa-solid fa-money-bill-transfer"></i> Transferencia Manual
-    </p>
-
-    <div>
-      <p><strong>Nequi:</strong> 311 570 9730</p>
-      <p class="text-xs text-gray-400">William Jeffry Urquijo Cubillos</p>
-    </div>
-
-    <div class="pt-2 border-t border-slate-700">
-      <p><strong>Nubank – Cuenta de Ahorros</strong></p>
-      <p>N°: <strong>69000706</strong></p>
-      <p class="text-xs text-gray-400">
-        CC: 79.646.721 – William Jeffry Urquijo Cubillos
-      </p>
-    </div>
-  </div>
-
-  <!-- FORMULARIO COMPROBANTE -->
-  <form id="formPago" class="space-y-4">
-
-    <select id="metodo"
-      class="w-full p-2 rounded bg-slate-800 text-white outline-none" required>
-      <option value="">Selecciona método usado</option>
-      <option value="nequi">Nequi</option>
-      <option value="nubank">Nubank</option>
-      <option value="mercadopago">MercadoPago</option>
-    </select>
-
-    <input type="text" id="referencia"
-      placeholder="Referencia / ID de pago (opcional)"
-      class="w-full p-2 rounded bg-slate-800 text-white outline-none">
-
-    <input type="file" id="comprobante"
-      accept="image/*"
-      class="w-full p-2 rounded bg-slate-800 text-white outline-none"
-      required>
-
-    <button
-      class="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold py-2 rounded flex items-center justify-center gap-2">
-      <i class="fas fa-upload"></i> Enviar comprobante
-    </button>
-
-  </form>
-
-  <p id="msg" class="text-center text-sm"></p>
-
-</div>
-
-<!-- FIREBASE -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, doc, getDoc, serverTimestamp } 
-  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } 
-  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-  authDomain: "tallerpro360.firebaseapp.com",
-  projectId: "tallerpro360",
-  storageBucket: "tallerpro360.appspot.com",
-  messagingSenderId: "636224778184",
-  appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
-
-let usuario = null;
-let tallerId = null;
-
-onAuthStateChanged(auth, async user => {
-  if (!user) location.href = "login.html";
-  usuario = user;
-
-  const snap = await getDoc(doc(db,"usuarios",user.uid));
-  if (snap.exists()) tallerId = snap.data().tallerId || null;
-});
-
-formPago.addEventListener("submit", async e => {
-  e.preventDefault();
-
-  const file = comprobante.files[0];
-  const metodo = document.getElementById("metodo").value;
-  const refTxt = referencia.value;
-  const msg = document.getElementById("msg");
-
-  if (!file || !metodo) return;
-
-  msg.textContent = "⏳ Enviando comprobante...";
-  msg.className = "text-yellow-400";
-
-  try {
-    const storageRef = ref(storage, `pagos/${usuario.uid}/${Date.now()}`);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-
-    await addDoc(collection(db, "pagos"), {
-      uid: usuario.uid,
-      email: usuario.email,
-      tallerId,
-      metodo,
-      referencia: refTxt || null,
-      comprobanteURL: url,
-      estado: "pendiente",
-      creadoEn: serverTimestamp()
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("planTxt").textContent = planSeleccionado.toUpperCase();
+      document.getElementById("valorTxt").textContent =
+        new Intl.NumberFormat("es-CO", {
+          style: "currency",
+          currency: "COP"
+        }).format(montoPlan);
     });
 
-    msg.textContent = "✅ Pago registrado. Activaremos tu plan en breve.";
-    msg.className = "text-green-400";
-    formPago.reset();
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        alert("Debes iniciar sesión.");
+        window.location.href = "login.html";
+      }
+    });
 
-  } catch (err) {
-    console.error(err);
-    msg.textContent = "❌ Error al registrar el pago";
-    msg.className = "text-red-400";
-  }
-});
-</script>
+    window.enviarPago = async function () {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const metodo = document.getElementById("metodo").value;
+      const referencia = document.getElementById("referencia").value;
+
+      try {
+        await addDoc(collection(db, "pagos"), {
+          uid: user.uid,
+          email: user.email,
+          tallerId: "demo", // luego lo hacemos dinámico
+
+          plan: planSeleccionado,
+          monto: montoPlan,
+
+          metodo: metodo,
+          referencia: referencia || null,
+
+          comprobanteURL: null, // luego agregamos subida de imagen
+
+          estado: "pendiente",
+
+          creadoEn: serverTimestamp(),
+          aprobadoEn: null
+        });
+
+        alert("Pago registrado correctamente. Esperando aprobación.");
+        window.location.href = "mis-pagos.html";
+
+      } catch (error) {
+        alert("Error al guardar el pago");
+        console.error(error);
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <h2>Confirmar Pago</h2>
+
+  <p><strong>Plan:</strong> <span id="planTxt"></span></p>
+  <p><strong>Valor:</strong> <span id="valorTxt"></span></p>
+
+  <label>Método de pago:</label>
+  <select id="metodo">
+    <option value="nequi">Nequi</option>
+    <option value="nubank">Nubank</option>
+    <option value="mercadopago">MercadoPago</option>
+  </select>
+
+  <br><br>
+
+  <label>Referencia:</label>
+  <input type="text" id="referencia" placeholder="Número de comprobante">
+
+  <br><br>
+
+  <button onclick="enviarPago()">Enviar Pago</button>
 
 </body>
 </html>
