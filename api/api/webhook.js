@@ -1,6 +1,19 @@
+import admin from "firebase-admin";
+
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n")
+    })
+  });
+}
+
+const db = admin.firestore();
+
 export default async function handler(req, res) {
 
-  // ✅ MercadoPago envía POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método no permitido" });
   }
@@ -12,12 +25,12 @@ export default async function handler(req, res) {
     const paymentId = req.body?.data?.id;
     const type = req.body?.type;
 
-    // ✅ Solo procesamos pagos
+    // ✅ Solo procesar pagos
     if (type !== "payment" || !paymentId) {
       return res.status(200).json({ message: "Evento ignorado" });
     }
 
-    // ✅ Consultar el pago real en MercadoPago (anti-fraude)
+    // ✅ Consultar pago real en MercadoPago
     const paymentResponse = await fetch(
       `https://api.mercadopago.com/v1/payments/${paymentId}`,
       {
@@ -34,35 +47,50 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Error consultando pago" });
     }
 
-    console.log("Pago consultado:", paymentData);
+    console.log("Pago consultado:", paymentData.status);
 
-    // ✅ Verificar estado aprobado
+    // ✅ Solo activar si está aprobado
     if (paymentData.status !== "approved") {
-      console.log("Pago no aprobado:", paymentData.status);
       return res.status(200).json({ message: "Pago no aprobado aún" });
     }
 
-    // ✅ Extraer metadata
     const plan = paymentData.metadata?.plan;
+    const userId = paymentData.metadata?.userId;
 
-    if (!plan) {
-      console.error("No se encontró plan en metadata");
+    if (!plan || !userId) {
+      console.error("Metadata incompleta");
       return res.status(400).json({ error: "Metadata inválida" });
     }
 
-    // 🔥 AQUÍ ACTIVAMOS EL PLAN EN FIRESTORE
-    // -------------------------------------------------
-    // Ejemplo:
-    // await db.collection("talleres").doc(userId).update({
-    //   plan: plan,
-    //   estado: "activo",
-    //   fechaActivacion: new Date()
-    // });
-    // -------------------------------------------------
+    // ✅ Verificar que no esté ya activado (evitar duplicados)
+    const tallerRef = db.collection("talleres").doc(userId);
+    const tallerDoc = await tallerRef.get();
 
-    console.log(`Plan ${plan} activado correctamente`);
+    if (!tallerDoc.exists) {
+      console.error("Usuario no encontrado en Firestore");
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
 
-    return res.status(200).json({ message: "Plan activado correctamente" });
+    const tallerData = tallerDoc.data();
+
+    if (tallerData.plan === plan && tallerData.estado === "activo") {
+      console.log("Plan ya estaba activo");
+      return res.status(200).json({ message: "Plan ya activo" });
+    }
+
+    // 🔥 ACTIVAR PLAN
+    await tallerRef.update({
+      plan: plan,
+      estado: "activo",
+      fechaActivacion: new Date(),
+      ultimoPagoId: paymentId
+    });
+
+    console.log(`Plan ${plan} activado para usuario ${userId}`);
+
+    return res.status(200).json({
+      message: "Plan activado correctamente"
+    });
 
   } catch (error) {
 
