@@ -6,7 +6,6 @@
 <title>CEO Dashboard | TallerPRO360</title>
 <link rel="icon" href="logo-tallerpro360.png">
 
-<!-- Tailwind + FontAwesome + Chart.js + Leaflet -->
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
@@ -35,7 +34,6 @@ body { background:#0f172a; font-family:'Inter',sans-serif; color:#f1f5f9; }
   </button>
 </header>
 
-<!-- KPIs -->
 <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
   <div class="glass p-6 text-center">
     <p class="text-xs uppercase text-gray-400">Talleres</p>
@@ -55,7 +53,6 @@ body { background:#0f172a; font-family:'Inter',sans-serif; color:#f1f5f9; }
   </div>
 </section>
 
-<!-- Tabla -->
 <section class="glass p-6 mb-8">
 <table class="w-full text-sm">
 <thead class="text-gray-400">
@@ -72,7 +69,6 @@ body { background:#0f172a; font-family:'Inter',sans-serif; color:#f1f5f9; }
 </table>
 </section>
 
-<!-- Charts + Mapa -->
 <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
   <div class="glass p-6">
     <canvas id="chartCiudades"></canvas>
@@ -96,7 +92,7 @@ from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 let map, markers = [], chart;
 
 // ===============================
-// 🔐 VALIDAR SESIÓN CEO GLOBAL
+// 🔐 VALIDAR SESIÓN + PLAN
 // ===============================
 onAuthStateChanged(auth, async (user) => {
 
@@ -109,10 +105,29 @@ onAuthStateChanged(auth, async (user) => {
   const snap = await getDoc(ref);
 
   if (!snap.exists() || 
-   (snap.data().rol !== "ceo" && snap.data().rol !== "superadmin")) {
-  window.location.href = "index.html";
-  return;
-}
+     (snap.data().rol !== "ceo" && snap.data().rol !== "superadmin")) {
+    window.location.href = "index.html";
+    return;
+  }
+
+  // 🔥 Verificación backend del plan
+  try {
+    const response = await fetch("/api/verificar-plan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.uid })
+    });
+
+    if (!response.ok) {
+      window.location.href = "planes.html";
+      return;
+    }
+
+  } catch (error) {
+    console.error("Error verificando plan:", error);
+    window.location.href = "planes.html";
+    return;
+  }
 
   iniciar();
 });
@@ -130,14 +145,11 @@ function initMap(){
 }
 
 // ===============================
-// 🏭 CARGAR TALLERES (SaaS REAL)
-// ===============================
 function cargarTalleres(){
 
   onSnapshot(collection(db,"talleres"), snap=>{
 
     let total=0, activos=0, vence=0, planes=0, ciudades={};
-
     const tbody=document.getElementById("tabla");
     tbody.innerHTML="";
 
@@ -153,7 +165,12 @@ function cargarTalleres(){
       if(t.plan) planes++;
 
       let fechaVence=null;
-      if(t.fechaVence?.toDate) fechaVence=t.fechaVence.toDate();
+
+      // 🔥 Compatible con ambos nombres
+      if(t.fechaVencimiento?.toDate)
+        fechaVence=t.fechaVencimiento.toDate();
+      else if(t.fechaVence?.toDate)
+        fechaVence=t.fechaVence.toDate();
 
       if(fechaVence){
         const diff=(fechaVence-new Date())/(1000*60*60*24);
@@ -204,9 +221,7 @@ function cargarTalleres(){
 
 // ===============================
 window.toggle=async(id,estadoActual)=>{
-
   const next=estadoActual==="activo"?"suspendido":"activo";
-
   if(confirm(`Cambiar estado a ${next}?`)){
     await updateDoc(doc(db,"talleres",id),{estado:next});
   }
@@ -225,9 +240,7 @@ function renderChart(data){
         backgroundColor:["#f59e0b","#10b981","#3b82f6","#ef4444"]
       }]
     },
-    options:{
-      plugins:{legend:{position:"bottom"}}
-    }
+    options:{ plugins:{legend:{position:"bottom"}} }
   });
 }
 
