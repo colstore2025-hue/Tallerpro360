@@ -79,12 +79,23 @@ export default async function handler(req, res) {
     }
 
     // 🔥 ACTIVAR PLAN
-    await tallerRef.update({
-      plan: plan,
-      estado: "activo",
-      fechaActivacion: new Date(),
-      ultimoPagoId: paymentId
-    });
+    let duracionDias = 30;
+
+if (plan === "pro_anual") {
+  duracionDias = 365;
+}
+
+const fechaInicio = new Date();
+const fechaFin = new Date();
+fechaFin.setDate(fechaFin.getDate() + duracionDias);
+
+await tallerRef.update({
+  plan: plan,
+  estado: "activo",
+  fechaActivacion: fechaInicio,
+  fechaVencimiento: fechaFin,
+  ultimoPagoId: paymentId
+});
 
     console.log(`Plan ${plan} activado para usuario ${userId}`);
 
