@@ -7,15 +7,27 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Software profesional para talleres automotrices en Colombia. Control total de órdenes, vehículos y clientes.">
+<meta name="robots" content="index, follow">
 
+<!-- Open Graph -->
+<meta property="og:title" content="TallerPRO360">
+<meta property="og:description" content="Sistema inteligente para talleres en Colombia">
+<meta property="og:image" content="/assets/logo-512.png">
+<meta property="og:type" content="website">
+
+<!-- PWA -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#16a34a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 
 <link rel="icon" href="/assets/logo-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/logo-192.png">
+
+<link rel="preload" href="/assets/css/styles.css" as="style">
 <link rel="stylesheet" href="/assets/css/styles.css">
 
 <style>
-body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#f9fafb;}
 .hero-bg{background:linear-gradient(135deg,#ecfdf5,#eff6ff);}
 .section{padding:80px 20px;}
 .container{max-width:1200px;margin:auto;}
@@ -24,77 +36,138 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#f9fafb;
 .plan{background:#fff;padding:30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.06);transition:.3s;}
 .plan:hover{transform:translateY(-6px);}
 .highlight{border:3px solid #16a34a;transform:scale(1.05);}
-.btn-main{background:#16a34a;color:#fff;padding:14px 22px;border:none;border-radius:12px;cursor:pointer;font-weight:700;width:100%;}
-.btn-main:disabled{opacity:.6;cursor:not-allowed;}
-.loader{display:none;margin-top:10px;font-size:14px;color:#555;}
-.footer{background:#f3f4f6;padding:40px 20px;}
+.btn-main{background:#16a34a;color:#fff;padding:14px 22px;border:none;border-radius:12px;cursor:pointer;font-weight:700;}
+.btn-main:hover{opacity:.9;}
+.footer{background:#f8fafc;padding:40px 20px;}
+.badge{display:inline-block;background:#16a34a;color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;margin-top:15px;}
+.dark-plan{background:#111827;color:#fff;}
+.loader{display:none;margin-top:10px;font-size:14px;color:#16a34a;}
 </style>
 
 </head>
+
 <body>
 
 <!-- HERO -->
-<section class="section hero-bg center">
-<img src="/assets/logo-192.png" width="90">
+<section class="section hero-bg">
+<div class="container center">
+
+<img src="/assets/logo-192.png" width="90" height="90" alt="TallerPRO360 Logo">
+
 <h1 style="font-size:42px;font-weight:900;margin-top:20px;">
 Control total de tu taller
 </h1>
+
 <p style="margin-top:15px;font-size:18px;color:#555;">
 Desde el ingreso hasta la entrega. Todo digital, profesional y organizado.
 </p>
+
+<div style="margin-top:30px;">
+<a href="login.html">
+<button class="btn-main">Iniciar sesión</button>
+</a>
+</div>
+
+<div class="badge">
+Acceso para Superadmin · CEO · Staff
+</div>
+
+</div>
 </section>
 
 <!-- PLANES -->
-<section class="section">
-<div class="container" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:30px;">
+<section class="section" style="background:linear-gradient(135deg,#f0fdf4,#f8fafc);">
+<div class="container center">
 
-<!-- BÁSICO -->
+<h2 style="font-size:34px;font-weight:900;margin-bottom:15px;">
+Planes diseñados para hacer crecer tu taller
+</h2>
+
+<p style="color:#555;margin-bottom:60px;">
+Empieza pequeño. Crece sin límites.
+</p>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:35px;align-items:stretch;">
+
+<!-- BASICO -->
 <div class="plan">
-<h3>Básico</h3>
-<p class="price">$29.900 <span style="font-size:16px;color:#666;">/ mes</span></p>
-<ul>
-<li>✔ Hasta 30 órdenes</li>
-<li>✔ 3 usuarios</li>
+<h3 style="font-size:24px;font-weight:900;">Básico</h3>
+<p class="price">$29.900 <span style="font-size:16px;color:#555;">/ mes</span></p>
+
+<ul style="text-align:left;line-height:30px;margin-bottom:30px;">
+<li>✔ Hasta 30 órdenes activas</li>
+<li>✔ Hasta 3 usuarios</li>
+<li>✔ Gestión digital</li>
 <li>✔ Historial clientes</li>
 </ul>
-<button class="btn-main" onclick="iniciarPago('basico', this)">Comenzar ahora</button>
-<div class="loader">Redirigiendo a MercadoPago...</div>
+
+<button class="btn-main" style="width:100%;" onclick="iniciarPago('basico', this)">
+Comenzar ahora
+</button>
+
+<div class="loader">Redirigiendo a pago...</div>
+
 </div>
 
 <!-- PRO -->
 <div class="plan highlight">
-<h3>PRO</h3>
-<p class="price">$59.900 <span style="font-size:16px;color:#666;">/ mes</span></p>
-<ul>
-<li>✔ 150 órdenes</li>
+<h3 style="font-size:24px;font-weight:900;">PRO</h3>
+<p class="price">$59.900 <span style="font-size:16px;color:#555;">/ mes</span></p>
+
+<ul style="text-align:left;line-height:30px;margin-bottom:30px;">
+<li>✔ Hasta 150 órdenes</li>
 <li>✔ 6 usuarios</li>
 <li>✔ Diagnóstico por voz</li>
-<li>✔ Evidencias fotográficas</li>
+<li>✔ Reportes inteligentes</li>
 </ul>
-<button class="btn-main" onclick="iniciarPago('pro', this)">Actualizar a PRO</button>
-<div class="loader">Redirigiendo a MercadoPago...</div>
+
+<button class="btn-main" style="width:100%;" onclick="iniciarPago('pro', this)">
+Actualizar a PRO
+</button>
+
+<div class="loader">Redirigiendo a pago...</div>
+
 </div>
 
 <!-- PRO ANUAL -->
-<div class="plan">
-<h3>PRO Anual</h3>
-<p class="price">$599.000 <span style="font-size:16px;color:#666;">/ año</span></p>
-<ul>
+<div class="plan dark-plan">
+<h3 style="font-size:24px;font-weight:900;">PRO Anual</h3>
+<p class="price" style="color:#22c55e;">$599.000 <span style="font-size:16px;color:#9ca3af;">/ año</span></p>
+
+<ul style="text-align:left;line-height:30px;margin-bottom:30px;">
+<li>✔ Todo lo PRO</li>
 <li>✔ Órdenes ilimitadas</li>
 <li>✔ 20 usuarios</li>
-<li>✔ Soporte premium</li>
+<li>✔ Soporte directo</li>
 </ul>
-<button class="btn-main" onclick="iniciarPago('pro_anual', this)">Elegir plan anual</button>
-<div class="loader">Redirigiendo a MercadoPago...</div>
+
+<button class="btn-main" style="width:100%;" onclick="iniciarPago('pro_anual', this)">
+Elegir plan anual
+</button>
+
+<div class="loader">Redirigiendo a pago...</div>
+
 </div>
 
+</div>
 </div>
 </section>
 
 <footer class="footer center">
-<p>TallerPRO360 © 2026 · SaaS profesional 🇨🇴</p>
+<img src="/assets/logo-192.png" width="60" height="60" alt="Logo">
+<p style="margin-top:15px;color:#666;">
+TallerPRO360 © 2026 · Hecho para talleres colombianos 🇨🇴
+</p>
 </footer>
 
+<!-- SERVICE WORKER -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js');
+}
+</script>
+
+<!-- SISTEMA DE PAGOS -->
 <script>
 async function iniciarPago(plan, boton) {
 
@@ -104,31 +177,26 @@ async function iniciarPago(plan, boton) {
 
   try {
 
+    // 🔥 TEMPORAL hasta conectar Firebase Auth real
+    const userId = "demo-user-123";
+
     const response = await fetch("/api/create-preference", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ plan })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan, userId })
     });
-
-    if (!response.ok) {
-      throw new Error("Error en servidor");
-    }
 
     const data = await response.json();
 
-    if (!data.init_point) {
-      throw new Error("No se recibió init_point");
+    if (!response.ok || !data.init_point) {
+      throw new Error(data.error || "Error creando pago");
     }
 
     window.location.href = data.init_point;
 
   } catch (error) {
 
-    console.error("Error iniciando pago:", error);
-
-    alert("Error iniciando el pago. Intenta nuevamente.");
+    alert("Error iniciando el pago: " + error.message);
 
     boton.disabled = false;
     loader.style.display = "none";
