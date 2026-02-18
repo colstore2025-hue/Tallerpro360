@@ -9,28 +9,14 @@
 <meta name="description" content="Software profesional para talleres automotrices en Colombia. Control total de órdenes, vehículos y clientes.">
 <meta name="robots" content="index, follow">
 
-<!-- Open Graph -->
-<meta property="og:title" content="TallerPRO360">
-<meta property="og:description" content="Sistema inteligente para talleres en Colombia">
-<meta property="og:image" content="/assets/logo-512.png">
-<meta property="og:type" content="website">
-
-<!-- PWA -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#16a34a">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
 
-<!-- ICONOS -->
 <link rel="icon" href="/assets/logo-192.png" type="image/png">
-<link rel="apple-touch-icon" href="/assets/logo-192.png">
-
-<!-- PRELOAD CSS -->
-<link rel="preload" href="/assets/css/styles.css" as="style">
 <link rel="stylesheet" href="/assets/css/styles.css">
 
 <style>
-.hero-bg{background:linear-gradient(135deg,#ecfdf5,#eff6ff);}
+body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#f9fafb;}
 .section{padding:80px 20px;}
 .container{max-width:1200px;margin:auto;}
 .center{text-align:center;}
@@ -38,190 +24,71 @@
 .plan{background:#fff;padding:30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.06);transition:.3s;}
 .plan:hover{transform:translateY(-6px);}
 .highlight{border:3px solid #16a34a;transform:scale(1.05);}
-.btn-main{background:#16a34a;color:#fff;padding:14px 22px;border:none;border-radius:12px;cursor:pointer;font-weight:700;}
-.btn-main:hover{opacity:.9;}
-.footer{background:#f8fafc;padding:40px 20px;}
-.badge{display:inline-block;background:#16a34a;color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;margin-top:15px;}
-.dark-plan{background:#111827;color:#fff;}
+.btn-main{background:#16a34a;color:#fff;padding:14px 22px;border:none;border-radius:12px;cursor:pointer;font-weight:700;width:100%;}
+.btn-main:disabled{opacity:.6;cursor:not-allowed;}
+.loader{display:none;margin-top:10px;font-size:14px;color:#555;}
 </style>
 
 </head>
 
 <body>
 
-<!-- HERO -->
-<section class="section hero-bg">
-<div class="container center">
-
-<img src="/assets/logo-192.png" width="90" height="90" alt="TallerPRO360 Logo">
-
-<h1 style="font-size:42px;font-weight:900;margin-top:20px;">
-Control total de tu taller
-</h1>
-
-<p style="margin-top:15px;font-size:18px;color:#555;">
-Desde el ingreso hasta la entrega. Todo digital, profesional y organizado.
-</p>
-
-<div style="margin-top:30px;">
-<a href="login.html">
-<button class="btn-main">Iniciar sesión</button>
-</a>
-</div>
-
-<div class="badge">
-Acceso para Superadmin · CEO · Staff
-</div>
-
-</div>
+<section class="section center">
+<h1>Planes TallerPRO360</h1>
+<p>Empieza pequeño. Crece sin límites.</p>
 </section>
 
-<!-- PROCESO -->
 <section class="section">
-<div class="container center">
+<div class="container" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:30px;">
 
-<h2 style="font-size:32px;font-weight:800;margin-bottom:50px;">
-Flujo inteligente del vehículo
-</h2>
+<div class="plan">
+<h3>Básico</h3>
+<p class="price">$29.900 <span style="font-size:16px;color:#666;">/ mes</span></p>
+<ul>
+<li>Hasta 30 órdenes</li>
+<li>3 usuarios</li>
+<li>Historial clientes</li>
+</ul>
+<button class="btn-main" onclick="iniciarPago('basico', this)">Comenzar ahora</button>
+<div class="loader">Redirigiendo a MercadoPago...</div>
+</div>
 
-<p><strong>1.</strong> Registro del vehículo y cliente</p>
-<p><strong>2.</strong> Diagnóstico por voz o manual</p>
-<p><strong>3.</strong> Cotización digital con aprobación</p>
-<p><strong>4.</strong> Control de reparación por etapas</p>
-<p><strong>5.</strong> Entrega con historial guardado</p>
+<div class="plan highlight">
+<h3>PRO</h3>
+<p class="price">$59.900 <span style="font-size:16px;color:#666;">/ mes</span></p>
+<ul>
+<li>150 órdenes</li>
+<li>6 usuarios</li>
+<li>Diagnóstico por voz</li>
+</ul>
+<button class="btn-main" onclick="iniciarPago('pro', this)">Actualizar a PRO</button>
+<div class="loader">Redirigiendo a MercadoPago...</div>
+</div>
+
+<div class="plan">
+<h3>PRO Anual</h3>
+<p class="price">$599.000 <span style="font-size:16px;color:#666;">/ año</span></p>
+<ul>
+<li>Órdenes ilimitadas</li>
+<li>20 usuarios</li>
+<li>Soporte premium</li>
+</ul>
+<button class="btn-main" onclick="iniciarPago('pro_anual', this)">Elegir plan anual</button>
+<div class="loader">Redirigiendo a MercadoPago...</div>
+</div>
 
 </div>
 </section>
 
-<!-- PLANES -->
-<section class="section" style="background:linear-gradient(135deg,#f0fdf4,#f8fafc);">
-<div class="container center">
-
-<h2 style="font-size:34px;font-weight:900;margin-bottom:15px;">
-Planes diseñados para hacer crecer tu taller
-</h2>
-
-<p style="color:#555;margin-bottom:60px;">
-Empieza pequeño. Crece sin límites.
-</p>
-
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:35px;align-items:stretch;">
-
-<!-- BÁSICO -->
-<div class="plan" style="border:1px solid #e5e7eb;">
-<h3 style="font-size:24px;font-weight:900;">Básico</h3>
-<p class="price">
-$29.900<span style="font-size:16px;font-weight:600;color:#555;"> / mes</span>
-</p>
-<p style="color:#666;margin-bottom:20px;">
-Ideal para talleres pequeños
-</p>
-
-<ul style="text-align:left;line-height:30px;margin-bottom:30px;">
-<li>✔ Hasta 30 órdenes activas</li>
-<li>✔ Hasta 3 usuarios</li>
-<li>✔ Registro limitado de vehículos</li>
-<li>✔ Gestión de órdenes digital</li>
-<li>✔ Historial de clientes</li>
-<li>✔ Soporte básico</li>
-</ul>
-
-<button class="btn-main" style="width:100%;" onclick="irPago('basico')">
-Comenzar ahora
-</button>
-
-</div>
-
-<!-- PRO -->
-<div class="plan highlight" style="position:relative;background:#ffffff;">
-<div style="position:absolute;top:-15px;left:50%;transform:translateX(-50%);background:#16a34a;color:#fff;padding:6px 18px;border-radius:20px;font-size:13px;font-weight:800;">
-🔥 MÁS VENDIDO
-</div>
-
-<h3 style="font-size:24px;font-weight:900;margin-top:20px;">PRO</h3>
-
-<p class="price">
-$59.900<span style="font-size:16px;font-weight:600;color:#555;"> / mes</span>
-</p>
-
-<p style="color:#666;margin-bottom:20px;">
-Para talleres en crecimiento
-</p>
-
-<ul style="text-align:left;line-height:30px;margin-bottom:30px;">
-<li>✔ Hasta 150 órdenes activas</li>
-<li>✔ Hasta 6 usuarios</li>
-<li>✔ Todo lo del plan Básico</li>
-<li>✔ Diagnóstico por voz</li>
-<li>✔ Evidencias fotográficas</li>
-<li>✔ Aprobación digital del cliente</li>
-<li>✔ Reportes inteligentes</li>
-<li>✔ Soporte prioritario</li>
-</ul>
-
-<button class="btn-main" style="width:100%;" onclick="irPago('pro')">
-Actualizar a PRO
-</button>
-
-</div>
-
-<!-- PRO ANUAL -->
-<div class="plan dark-plan">
-<h3 style="font-size:24px;font-weight:900;">PRO Anual</h3>
-
-<p class="price" style="color:#22c55e;">
-$599.000<span style="font-size:16px;font-weight:600;color:#9ca3af;"> / año</span>
-</p>
-
-<p style="color:#9ca3af;margin-bottom:20px;">
-Ahorra 2 meses pagando anual
-</p>
-
-<ul style="text-align:left;line-height:30px;margin-bottom:30px;">
-<li>✔ Todo lo del plan PRO</li>
-<li>✔ Órdenes ilimitadas</li>
-<li>✔ Hasta 20 usuarios</li>
-<li>✔ Capacitación personalizada</li>
-<li>✔ Prioridad en nuevas funciones</li>
-<li>✔ Soporte directo por WhatsApp</li>
-</ul>
-
-<button class="btn-main" style="width:100%;" onclick="irPago('pro_anual')">
-Elegir plan anual
-</button>
-
-</div>
-
-</div>
-</div>
-</section>
-
-<!-- FOOTER -->
-<footer class="footer center">
-<img src="/assets/logo-192.png" width="60" height="60" alt="Logo">
-<p style="margin-top:15px;color:#666;">
-TallerPRO360 © 2026 · Hecho para talleres colombianos 🇨🇴
-</p>
+<footer class="section center">
+<p>TallerPRO360 © 2026 · SaaS profesional 🇨🇴</p>
 </footer>
 
-<!-- SERVICE WORKER -->
 <script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js');
-}
-</script>
+async function iniciarPago(plan, boton) {
 
-<!-- REDIRECCIÓN PLANES -->
-<script>
-function irPago(plan) {
-  window.location.href = "pagos.html?plan=" + plan;
-}
-</script>
-<!-- MERCADOPAGO SDK -->
-<script src="https://sdk.mercadopago.com/js/v2"></script>
-
-<script>
-async function irPago(plan) {
+  boton.disabled = true;
+  boton.nextElementSibling.style.display = "block";
 
   try {
 
@@ -230,9 +97,7 @@ async function irPago(plan) {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        plan: plan
-      })
+      body: JSON.stringify({ plan })
     });
 
     const data = await response.json();
@@ -240,13 +105,14 @@ async function irPago(plan) {
     if (data.init_point) {
       window.location.href = data.init_point;
     } else {
-      alert("Error creando preferencia");
-      console.log(data);
+      throw new Error("No se recibió init_point");
     }
 
   } catch (error) {
-    console.error(error);
-    alert("Error conectando con el servidor");
+    console.error("Error:", error);
+    alert("Error iniciando el pago. Intenta nuevamente.");
+    boton.disabled = false;
+    boton.nextElementSibling.style.display = "none";
   }
 
 }
