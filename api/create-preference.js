@@ -1,22 +1,24 @@
 export default async function handler(req, res) {
 
-  // ✅ Solo permitir POST
+  // ✅ Solo permitir método POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  // ✅ Verificar que exista token
+  // ✅ Validar token configurado
   if (!process.env.MP_ACCESS_TOKEN) {
+    console.error("MP_ACCESS_TOKEN no configurado");
     return res.status(500).json({ error: "Access Token no configurado" });
   }
 
-  const { plan } = req.body;
+  const { plan, userId } = req.body;
 
-  if (!plan) {
-    return res.status(400).json({ error: "Plan no especificado" });
+  // ✅ Validar datos recibidos
+  if (!plan || !userId) {
+    return res.status(400).json({ error: "Datos incompletos" });
   }
 
-  // ✅ Planes reales SaaS
+  // ✅ Planes SaaS oficiales
   const PLANES = {
     basico: {
       title: "Plan Básico - TallerPRO360",
@@ -40,50 +42,56 @@ export default async function handler(req, res) {
 
   try {
 
-    const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.MP_ACCESS_TOKEN}`
-      },
-      body: JSON.stringify({
-
-        items: [
-          {
-            title: selectedPlan.title,
-            quantity: 1,
-            currency_id: "COP",
-            unit_price: selectedPlan.price
-          }
-        ],
-
-        back_urls: {
-          success: "https://tallerpro360.vercel.app/success.html",
-          failure: "https://tallerpro360.vercel.app/error.html",
-          pending: "https://tallerpro360.vercel.app/pending.html"
+    const mpResponse = await fetch(
+      "https://api.mercadopago.com/checkout/preferences",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.MP_ACCESS_TOKEN}`
         },
+        body: JSON.stringify({
 
-        auto_return: "approved",
+          items: [
+            {
+              title: selectedPlan.title,
+              quantity: 1,
+              currency_id: "COP",
+              unit_price: selectedPlan.price
+            }
+          ],
 
-        notification_url: "https://tallerpro360.vercel.app/api/webhook",
+          back_urls: {
+            success: "https://tallerpro360.vercel.app/success.html",
+            failure: "https://tallerpro360.vercel.app/error.html",
+            pending: "https://tallerpro360.vercel.app/pending.html"
+          },
 
-        statement_descriptor: "TALLERPRO360",
+          auto_return: "approved",
 
-        metadata: {
-          plan: plan,
-          environment: process.env.NODE_ENV || "production",
-          created_at: new Date().toISOString()
-        }
+          notification_url: "https://tallerpro360.vercel.app/api/webhook",
 
-      })
-    });
+          statement_descriptor: "TALLERPRO360",
 
-    const data = await response.json();
+          metadata: {
+            plan: plan,
+            userId: userId,
+            created_at: new Date().toISOString(),
+            environment: process.env.NODE_ENV || "production"
+          }
 
-    // ✅ Validar respuesta de MercadoPago
-    if (!response.ok || !data.init_point) {
+        })
+      }
+    );
+
+    const data = await mpResponse.json();
+
+    // ✅ Validar respuesta MercadoPago
+    if (!mpResponse.ok || !data.init_point) {
       console.error("Error MercadoPago:", data);
-      return res.status(500).json({ error: "Error creando preferencia en MercadoPago" });
+      return res.status(500).json({
+        error: "Error creando preferencia en MercadoPago"
+      });
     }
 
     return res.status(200).json({
@@ -99,5 +107,4 @@ export default async function handler(req, res) {
     });
 
   }
-
 }
