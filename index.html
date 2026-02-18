@@ -7,7 +7,6 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Software profesional para talleres automotrices en Colombia. Control total de órdenes, vehículos y clientes.">
-<meta name="robots" content="index, follow">
 
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#16a34a">
@@ -17,6 +16,7 @@
 
 <style>
 body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#f9fafb;}
+.hero-bg{background:linear-gradient(135deg,#ecfdf5,#eff6ff);}
 .section{padding:80px 20px;}
 .container{max-width:1200px;margin:auto;}
 .center{text-align:center;}
@@ -27,51 +27,62 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#f9fafb;
 .btn-main{background:#16a34a;color:#fff;padding:14px 22px;border:none;border-radius:12px;cursor:pointer;font-weight:700;width:100%;}
 .btn-main:disabled{opacity:.6;cursor:not-allowed;}
 .loader{display:none;margin-top:10px;font-size:14px;color:#555;}
+.footer{background:#f3f4f6;padding:40px 20px;}
 </style>
 
 </head>
-
 <body>
 
-<section class="section center">
-<h1>Planes TallerPRO360</h1>
-<p>Empieza pequeño. Crece sin límites.</p>
+<!-- HERO -->
+<section class="section hero-bg center">
+<img src="/assets/logo-192.png" width="90">
+<h1 style="font-size:42px;font-weight:900;margin-top:20px;">
+Control total de tu taller
+</h1>
+<p style="margin-top:15px;font-size:18px;color:#555;">
+Desde el ingreso hasta la entrega. Todo digital, profesional y organizado.
+</p>
 </section>
 
+<!-- PLANES -->
 <section class="section">
 <div class="container" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:30px;">
 
+<!-- BÁSICO -->
 <div class="plan">
 <h3>Básico</h3>
 <p class="price">$29.900 <span style="font-size:16px;color:#666;">/ mes</span></p>
 <ul>
-<li>Hasta 30 órdenes</li>
-<li>3 usuarios</li>
-<li>Historial clientes</li>
+<li>✔ Hasta 30 órdenes</li>
+<li>✔ 3 usuarios</li>
+<li>✔ Historial clientes</li>
 </ul>
 <button class="btn-main" onclick="iniciarPago('basico', this)">Comenzar ahora</button>
 <div class="loader">Redirigiendo a MercadoPago...</div>
 </div>
 
+<!-- PRO -->
 <div class="plan highlight">
 <h3>PRO</h3>
 <p class="price">$59.900 <span style="font-size:16px;color:#666;">/ mes</span></p>
 <ul>
-<li>150 órdenes</li>
-<li>6 usuarios</li>
-<li>Diagnóstico por voz</li>
+<li>✔ 150 órdenes</li>
+<li>✔ 6 usuarios</li>
+<li>✔ Diagnóstico por voz</li>
+<li>✔ Evidencias fotográficas</li>
 </ul>
 <button class="btn-main" onclick="iniciarPago('pro', this)">Actualizar a PRO</button>
 <div class="loader">Redirigiendo a MercadoPago...</div>
 </div>
 
+<!-- PRO ANUAL -->
 <div class="plan">
 <h3>PRO Anual</h3>
 <p class="price">$599.000 <span style="font-size:16px;color:#666;">/ año</span></p>
 <ul>
-<li>Órdenes ilimitadas</li>
-<li>20 usuarios</li>
-<li>Soporte premium</li>
+<li>✔ Órdenes ilimitadas</li>
+<li>✔ 20 usuarios</li>
+<li>✔ Soporte premium</li>
 </ul>
 <button class="btn-main" onclick="iniciarPago('pro_anual', this)">Elegir plan anual</button>
 <div class="loader">Redirigiendo a MercadoPago...</div>
@@ -80,7 +91,7 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#f9fafb;
 </div>
 </section>
 
-<footer class="section center">
+<footer class="footer center">
 <p>TallerPRO360 © 2026 · SaaS profesional 🇨🇴</p>
 </footer>
 
@@ -88,7 +99,8 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#f9fafb;
 async function iniciarPago(plan, boton) {
 
   boton.disabled = true;
-  boton.nextElementSibling.style.display = "block";
+  const loader = boton.nextElementSibling;
+  loader.style.display = "block";
 
   try {
 
@@ -100,21 +112,27 @@ async function iniciarPago(plan, boton) {
       body: JSON.stringify({ plan })
     });
 
+    if (!response.ok) {
+      throw new Error("Error en servidor");
+    }
+
     const data = await response.json();
 
-    if (data.init_point) {
-      window.location.href = data.init_point;
-    } else {
+    if (!data.init_point) {
       throw new Error("No se recibió init_point");
     }
 
-  } catch (error) {
-    console.error("Error:", error);
-    alert("Error iniciando el pago. Intenta nuevamente.");
-    boton.disabled = false;
-    boton.nextElementSibling.style.display = "none";
-  }
+    window.location.href = data.init_point;
 
+  } catch (error) {
+
+    console.error("Error iniciando pago:", error);
+
+    alert("Error iniciando el pago. Intenta nuevamente.");
+
+    boton.disabled = false;
+    loader.style.display = "none";
+  }
 }
 </script>
 
