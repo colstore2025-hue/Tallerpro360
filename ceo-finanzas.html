@@ -1,0 +1,68 @@
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// 🔥 TU CONFIG ACTUAL
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_AUTH_DOMAIN",
+  projectId: "TU_PROJECT_ID",
+  storageBucket: "TU_BUCKET",
+  messagingSenderId: "TU_SENDER",
+  appId: "TU_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const precios = {
+  basico: 29900,
+  pro: 59900,
+  pro_anual: 599000 / 12
+};
+
+async function cargarMetricas() {
+
+  const snapshot = await getDocs(collection(db, "talleres"));
+
+  let activos = 0;
+  let ingresosMensuales = 0;
+  let basicos = 0;
+  let pros = 0;
+  let proAnuales = 0;
+
+  snapshot.forEach(doc => {
+    const data = doc.data();
+
+    if (data.estado === "activo") {
+      activos++;
+
+      if (data.plan === "basico") {
+        ingresosMensuales += precios.basico;
+        basicos++;
+      }
+
+      if (data.plan === "pro") {
+        ingresosMensuales += precios.pro;
+        pros++;
+      }
+
+      if (data.plan === "pro_anual") {
+        ingresosMensuales += precios.pro_anual;
+        proAnuales++;
+      }
+    }
+  });
+
+  const ingresosAnuales = ingresosMensuales * 12;
+
+  document.getElementById("activos").innerText = activos;
+  document.getElementById("mrr").innerText = "$" + ingresosMensuales.toLocaleString();
+  document.getElementById("arr").innerText = "$" + ingresosAnuales.toLocaleString();
+  document.getElementById("basicos").innerText = basicos;
+  document.getElementById("pros").innerText = pros;
+  document.getElementById("proAnuales").innerText = proAnuales;
+}
+
+cargarMetricas();
+</script>
