@@ -1,3 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEO · Pagos & Suscripciones | TallerPRO360</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script type="module" src="./ceo-auth.js"></script>
+
+<style>
+  body { background:#0f172a; color:#f1f5f9; }
+  .glass {
+    background:rgba(15,23,42,.8);
+    backdrop-filter: blur(18px);
+    border-radius:1.5rem;
+    border:1px solid rgba(255,255,255,.08);
+  }
+</style>
+</head>
+
+<body class="min-h-screen p-6">
+
+<header class="flex flex-wrap justify-between items-center gap-4 mb-6">
+  <h1 class="text-2xl font-bold text-amber-500">
+    📊 TallerPRO360 · Panel CEO
+  </h1>
+  <div class="flex gap-3">
+    <button onclick="exportarExcel()" class="bg-emerald-600 px-4 py-2 rounded font-bold">
+      <i class="fa fa-file-excel"></i> Exportar Excel
+    </button>
+    <button onclick="logout()" class="bg-red-600 px-4 py-2 rounded font-bold">
+      Cerrar sesión
+    </button>
+  </div>
+</header>
+
+<!-- KPIs -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  <div class="glass p-4 text-center">
+    <p class="text-gray-400">Pagos pendientes</p>
+    <p id="kpiPendientes" class="text-3xl font-bold text-amber-400">0</p>
+  </div>
+  <div class="glass p-4 text-center">
+    <p class="text-gray-400">Talleres activos</p>
+    <p id="kpiActivos" class="text-3xl font-bold text-green-400">0</p>
+  </div>
+  <div class="glass p-4 text-center">
+    <p class="text-gray-400">Ingresos aprobados</p>
+    <p id="kpiIngresos" class="text-3xl font-bold text-cyan-400">$0</p>
+  </div>
+</section>
+
+<!-- Tabla -->
+<div class="glass p-6 overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead class="text-gray-400 border-b border-gray-700">
+      <tr>
+        <th class="py-2 text-left">UID</th>
+        <th>Email</th>
+        <th>Plan</th>
+        <th>Método</th>
+        <th>Monto</th>
+        <th>Comprobante</th>
+        <th>Fecha</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody id="tablaPagos"></tbody>
+  </table>
+</div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
