@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CEO · Pagos & Suscripciones | TallerPRO360</title>
+<title>CEO · Dashboard Financiero | TallerPRO360</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -26,55 +26,50 @@
   <h1 class="text-2xl font-bold text-amber-500">
     📊 TallerPRO360 · Panel CEO
   </h1>
-  <div class="flex gap-3">
-    <button onclick="exportarExcel()" class="bg-emerald-600 px-4 py-2 rounded font-bold">
-      <i class="fa fa-file-excel"></i> Exportar Excel
-    </button>
-    <button onclick="logout()" class="bg-red-600 px-4 py-2 rounded font-bold">
-      Cerrar sesión
-    </button>
-  </div>
+  <button onclick="logout()" class="bg-red-600 px-4 py-2 rounded font-bold">
+    Cerrar sesión
+  </button>
 </header>
 
-<!-- KPIs -->
-<section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-  <div class="glass p-4 text-center">
-    <p class="text-gray-400">Pagos pendientes</p>
-    <p id="kpiPendientes" class="text-3xl font-bold text-amber-400">0</p>
+<!-- KPIs FINANCIEROS -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-center">
+
+  <div class="glass p-4">
+    <p>MRR</p>
+    <h2 id="mrr" class="text-2xl font-bold text-green-400">$0</h2>
   </div>
-  <div class="glass p-4 text-center">
-    <p class="text-gray-400">Talleres activos</p>
-    <p id="kpiActivos" class="text-3xl font-bold text-green-400">0</p>
+
+  <div class="glass p-4">
+    <p>ARR</p>
+    <h2 id="arr" class="text-2xl font-bold text-cyan-400">$0</h2>
   </div>
-  <div class="glass p-4 text-center">
-    <p class="text-gray-400">Ingresos aprobados</p>
-    <p id="kpiIngresos" class="text-3xl font-bold text-cyan-400">$0</p>
+
+  <div class="glass p-4">
+    <p>Talleres Activos</p>
+    <h2 id="activos" class="text-2xl font-bold text-emerald-400">0</h2>
   </div>
+
+  <div class="glass p-4">
+    <p>Básicos</p>
+    <h2 id="basicos" class="text-xl font-bold">0</h2>
+  </div>
+
+  <div class="glass p-4">
+    <p>PRO Mensual</p>
+    <h2 id="pros" class="text-xl font-bold">0</h2>
+  </div>
+
+  <div class="glass p-4">
+    <p>PRO Anual</p>
+    <h2 id="proAnuales" class="text-xl font-bold">0</h2>
+  </div>
+
 </section>
 
-<!-- Tabla -->
-<div class="glass p-6 overflow-x-auto">
-  <table class="w-full text-sm">
-    <thead class="text-gray-400 border-b border-gray-700">
-      <tr>
-        <th class="py-2 text-left">UID</th>
-        <th>Email</th>
-        <th>Plan</th>
-        <th>Método</th>
-        <th>Monto</th>
-        <th>Comprobante</th>
-        <th>Fecha</th>
-        <th>Acción</th>
-      </tr>
-    </thead>
-    <tbody id="tablaPagos"></tbody>
-  </table>
-</div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🔥 TU CONFIG ACTUAL
 const firebaseConfig = {
   apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
   authDomain: "tallerpro360.firebaseapp.com",
@@ -137,37 +132,7 @@ async function cargarMetricas() {
 }
 
 cargarMetricas();
-<section class="grid grid-cols-3 gap-4 mb-8 text-center">
-
-  <div class="glass p-4">
-    <p>MRR</p>
-    <h2 id="mrr" class="text-xl font-bold">$0</h2>
-  </div>
-
-  <div class="glass p-4">
-    <p>ARR</p>
-    <h2 id="arr" class="text-xl font-bold">$0</h2>
-  </div>
-
-  <div class="glass p-4">
-    <p>Talleres Activos</p>
-    <h2 id="activos" class="text-xl font-bold">0</h2>
-  </div>
-
-  <div class="glass p-4">
-    <p>Básicos</p>
-    <h2 id="basicos" class="text-xl font-bold">0</h2>
-  </div>
-
-  <div class="glass p-4">
-    <p>PRO Mensual</p>
-    <h2 id="pros" class="text-xl font-bold">0</h2>
-  </div>
-
-  <div class="glass p-4">
-    <p>PRO Anual</p>
-    <h2 id="proAnuales" class="text-xl font-bold">0</h2>
-  </div>
-
-</section>
 </script>
+
+</body>
+</html>
