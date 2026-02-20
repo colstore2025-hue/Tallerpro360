@@ -94,15 +94,14 @@
     const password = document.getElementById("password").value;
 
     if (!email || !password) {
-      showError("Correo y contraseña requeridos");
-      return;
+      return showError("Correo y contraseña requeridos");
     }
 
     try {
-      // 🔐 1. Login Firebase
+      // 🔐 Login Firebase
       const cred = await signInWithEmailAndPassword(auth, email, password);
 
-      // 📂 2. Buscar perfil
+      // 📂 Obtener perfil
       const userRef = doc(db, "usuarios", cred.user.uid);
       const userSnap = await getDoc(userRef);
 
@@ -112,29 +111,51 @@
 
       const user = userSnap.data();
 
-      // 🚫 3. Verificar estado
+      // 🚫 Verificar estado
       if (user.activo === false) {
         throw new Error("Usuario suspendido");
       }
 
-      // 🎯 4. Redirección inteligente por rol
-      switch (user.rol) {
+      // ================================
+      // 🎯 REDIRECCIÓN INTELIGENTE
+      // ================================
 
-        case "superadmin":
-          window.location.href = "/ceo-dashboard.html";
-          break;
-
-        case "ceo":
-          window.location.href = "/panel-taller.html";
-          break;
-
-        case "staff":
-          window.location.href = "/panel-taller.html";
-          break;
-
-        default:
-          throw new Error("Rol inválido");
+      // 1️⃣ Superadmin global
+      if (user.rolGlobal === "superadmin") {
+        window.location.href = "/ceo-dashboard.html";
+        return;
       }
+
+      // 2️⃣ Usuarios con empresa
+      if (!user.empresaId) {
+        throw new Error("Usuario sin empresa asignada");
+      }
+
+      // Verificar empresa activa
+      const empresaRef = doc(db, "empresas", user.empresaId);
+      const empresaSnap = await getDoc(empresaRef);
+
+      if (!empresaSnap.exists()) {
+        throw new Error("Empresa no encontrada");
+      }
+
+      const empresa = empresaSnap.data();
+
+      if (empresa.estado !== "activa") {
+        throw new Error("Empresa suspendida");
+      }
+
+      // 3️⃣ Validar talleres asignados
+      if (!user.talleresAsignados || user.talleresAsignados.length === 0) {
+        throw new Error("Sin talleres asignados");
+      }
+
+      // Guardamos el primer taller como activo
+      localStorage.setItem("tallerActivoId", user.talleresAsignados[0]);
+      localStorage.setItem("empresaActivaId", user.empresaId);
+
+      // 4️⃣ Redirigir a módulo taller
+      window.location.href = "/panel-taller.html";
 
     } catch (err) {
       console.error("ERROR LOGIN:", err);
@@ -145,7 +166,6 @@
   function showError(message) {
     errorMsg.textContent = message;
     errorMsg.classList.remove("hidden");
-    alert("Error: " + message);
   }
 </script>
 
