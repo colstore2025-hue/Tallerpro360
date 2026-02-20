@@ -105,53 +105,38 @@ let map, markers = [], chart;
 onAuthStateChanged(auth, async (user) => {
 
   if (!user) {
-    window.location.href = "index.html";
+    window.location.replace("index.html");
     return;
   }
 
   try {
+
     const ref = doc(db, "usuarios", user.uid);
     const snap = await getDoc(ref);
 
     if (!snap.exists()) {
-      throw new Error("Usuario no encontrado en Firestore");
+      window.location.replace("index.html");
+      return;
     }
 
     const data = snap.data();
 
-    // ✅ NUEVO MODELO SaaS
+    // ✅ Solo superadmin puede entrar
     if (data.rolGlobal !== "superadmin") {
-      window.location.href = "index.html";
+      window.location.replace("index.html");
       return;
     }
 
-    console.log("Superadmin validado correctamente");
+    console.log("✅ Superadmin validado correctamente");
 
-    // 🔥 Verificación opcional de plan global
-    try {
-      const response = await fetch("/api/verificar-plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.uid })
-      });
-
-      if (!response.ok) {
-        console.warn("Plan no válido o error backend");
-        window.location.href = "planes.html";
-        return;
-      }
-
-    } catch (error) {
-      console.error("Error verificando plan:", error);
-      window.location.href = "planes.html";
-      return;
-    }
-
+    // 🚀 SIN validación de plan aquí
     iniciar();
 
   } catch (error) {
+
     console.error("Error validando sesión:", error);
-    window.location.href = "index.html";
+    window.location.replace("index.html");
+
   }
 
 });
