@@ -26,19 +26,38 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Falta userId" });
     }
 
-    const doc = await db.collection("talleres").doc(userId).get();
+    // 🔎 1. Buscar usuario
+    const userDoc = await db.collection("usuarios").doc(userId).get();
 
-    if (!doc.exists) {
-      return res.status(404).json({ error: "Usuario no encontrado" });
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: "Usuario no existe" });
     }
 
-    const data = doc.data();
+    const userData = userDoc.data();
 
+    if (!userData.empresaId) {
+      return res.status(400).json({ error: "Usuario sin empresa asignada" });
+    }
+
+    // 🔎 2. Buscar taller por empresaId
+    const tallerDoc = await db.collection("talleres")
+      .doc(userData.empresaId)
+      .get();
+
+    if (!tallerDoc.exists) {
+      return res.status(404).json({ error: "Empresa no encontrada" });
+    }
+
+    const data = tallerDoc.data();
+
+    // 🔒 3. Validar estado
     if (data.estado !== "activo") {
       return res.status(403).json({ error: "Plan inactivo" });
     }
 
+    // 📅 4. Validar vencimiento
     if (data.fechaVencimiento) {
+
       const hoy = new Date();
       const vencimiento = data.fechaVencimiento.toDate();
 
