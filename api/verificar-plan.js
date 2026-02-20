@@ -39,8 +39,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Usuario sin empresa asignada" });
     }
 
-    // 🔎 2. Buscar taller por empresaId
-    const tallerDoc = await db.collection("talleres")
+    // 🔎 2. Buscar empresa (taller principal)
+    const tallerDoc = await db
+      .collection("talleres")
       .doc(userData.empresaId)
       .get();
 
@@ -55,7 +56,7 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: "Plan inactivo" });
     }
 
-    // 📅 4. Validar vencimiento
+    // 📅 4. Validar vencimiento (si existe)
     if (data.fechaVencimiento) {
 
       const hoy = new Date();
@@ -67,13 +68,13 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).json({
-      plan: data.plan,
+      plan: data.plan || "demo",
       estado: "activo"
     });
 
   } catch (error) {
 
-    console.error(error);
+    console.error("Error en verificar-plan:", error);
 
     return res.status(500).json({
       error: "Error verificando plan"
