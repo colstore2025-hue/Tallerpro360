@@ -3,320 +3,113 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TallerPRO360 - Órdenes de Servicio</title>
-<link rel="icon" href="logo-tallerpro360.png" type="image/png">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<title>TallerPRO360 | Panel Cliente</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
-body { font-family: 'Segoe UI', sans-serif; background-color: #f5f6fa; }
-.container { max-width: 800px; margin-top: 20px; }
-.estado-badge { font-size: 0.9em; }
-.timeline { list-style: none; padding-left: 0; }
-.timeline li { margin-bottom: 10px; padding-left: 20px; position: relative; }
-.timeline li::before { content: ''; position: absolute; left: 0; top: 5px; width: 10px; height: 10px; background-color: #0d6efd; border-radius: 50%; }
-.btn-next { margin-top: 10px; }
-.banner-plan { position: sticky; top: 0; z-index: 999; padding: 12px; text-align: center; font-weight: bold; }
-.plan-ok { background:#d1fae5; color:#065f46; }
-.plan-warning { background:#fef3c7; color:#92400e; }
-.plan-danger { background:#fee2e2; color:#991b1b; }
+body{
+  background: linear-gradient(135deg,#0f172a,#111827);
+  color:#f1f5f9;
+  font-family:'Inter',sans-serif;
+}
+
+.glass{
+  background: rgba(15,23,42,.7);
+  backdrop-filter: blur(20px);
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255,255,255,.05);
+  padding: 1.5rem;
+}
+
+.title-gradient{
+  background: linear-gradient(90deg,#22c55e,#38bdf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight:900;
+}
+
+.badge-status{
+  padding:6px 12px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:700;
+}
+
+.badge-ingreso{ background:rgba(59,130,246,.2); color:#38bdf8;}
+.badge-proceso{ background:rgba(34,197,94,.2); color:#22c55e;}
+.badge-entregado{ background:rgba(250,204,21,.2); color:#facc15;}
+
+button{
+  border-radius:12px !important;
+}
+
+input{
+  background:#1e293b !important;
+  border:1px solid rgba(255,255,255,.1) !important;
+  color:#fff !important;
+}
+
+.fade-in{
+  opacity:0;
+  transform:translateY(20px);
+  animation:fadeIn 1s forwards;
+}
+
+@keyframes fadeIn{
+  to{opacity:1; transform:translateY(0);}
+}
 </style>
 </head>
 
-<body>
-
-<!-- BANNER PLAN -->
-<div id="bannerPlan" class="banner-plan d-none"></div>
+<body class="p-4">
 
 <div class="container">
 
-  <!-- LOGO Y TÍTULO -->
-  <div class="text-center mb-4">
-    <img src="logo-tallerpro360.png" alt="TallerPRO360" width="120">
-    <h2 class="mt-2">Gestión de Órdenes de Servicio</h2>
+  <div class="text-center mb-5 fade-in">
+    <h1 class="title-gradient">Panel Cliente</h1>
+    <p class="text-secondary">Gestiona tus órdenes en tiempo real</p>
   </div>
 
-  <!-- REGISTRO CLIENTE -->
-  <div id="registroCliente" class="card mb-3 p-3 shadow-sm">
-    <h5>Registrar Cliente</h5>
+  <!-- REGISTRO -->
+  <div id="registroCliente" class="glass mb-4 fade-in">
+    <h5 class="mb-3">Registrar Cliente</h5>
     <form id="formCliente">
-      <div class="mb-2">
-        <label>Nombre completo</label>
-        <input type="text" id="clienteNombreReg" class="form-control" required>
-      </div>
-      <div class="mb-2">
-        <label>Correo electrónico</label>
-        <input type="email" id="clienteEmailReg" class="form-control" required>
-      </div>
-      <div class="mb-2">
-        <label>Teléfono</label>
-        <input type="tel" id="clienteTelefonoReg" class="form-control" required>
-      </div>
-      <div class="mb-2">
-        <label>Contraseña</label>
-        <input type="password" id="clientePasswordReg" class="form-control" required>
-      </div>
-      <button type="submit" class="btn btn-primary w-100 mt-2">Registrar Cliente</button>
+      <input type="text" id="clienteNombreReg" class="form-control mb-2" placeholder="Nombre completo" required>
+      <input type="email" id="clienteEmailReg" class="form-control mb-2" placeholder="Correo electrónico" required>
+      <input type="tel" id="clienteTelefonoReg" class="form-control mb-2" placeholder="Teléfono" required>
+      <input type="password" id="clientePasswordReg" class="form-control mb-2" placeholder="Contraseña" required>
+      <button type="submit" class="btn btn-success w-100 mt-2">Registrar</button>
     </form>
   </div>
 
-  <!-- LOGIN CLIENTE -->
-  <div id="loginCliente" class="card mb-3 p-3 shadow-sm">
-    <h5>Ingresar Cliente</h5>
+  <!-- LOGIN -->
+  <div id="loginCliente" class="glass mb-4 fade-in">
+    <h5 class="mb-3">Ingresar</h5>
     <form id="formLogin">
-      <div class="mb-2">
-        <label>Correo electrónico</label>
-        <input type="email" id="clienteEmailLogin" class="form-control" required>
-      </div>
-      <div class="mb-2">
-        <label>Contraseña</label>
-        <input type="password" id="clientePasswordLogin" class="form-control" required>
-      </div>
-      <button type="submit" class="btn btn-success w-100 mt-2">Ingresar</button>
+      <input type="email" id="clienteEmailLogin" class="form-control mb-2" placeholder="Correo electrónico" required>
+      <input type="password" id="clientePasswordLogin" class="form-control mb-2" placeholder="Contraseña" required>
+      <button type="submit" class="btn btn-primary w-100 mt-2">Ingresar</button>
     </form>
   </div>
 
   <!-- CREAR ORDEN -->
-  <div id="crearOrden" class="card mb-3 p-3 shadow-sm d-none">
-    <h5>Crear nueva orden</h5>
+  <div id="crearOrden" class="glass mb-4 d-none fade-in">
+    <h5 class="mb-3">Nueva Orden</h5>
     <form id="formOrden">
-      <div class="mb-2">
-        <label>Placa del vehículo</label>
-        <input type="text" id="placa" class="form-control" required>
-      </div>
-      <div class="mb-2">
-        <label>Marca / Modelo</label>
-        <input type="text" id="vehiculo" class="form-control" required>
-      </div>
-      <button type="submit" class="btn btn-primary w-100 mt-2">Crear Orden</button>
+      <input type="text" id="placa" class="form-control mb-2" placeholder="Placa del vehículo" required>
+      <input type="text" id="vehiculo" class="form-control mb-2" placeholder="Marca / Modelo" required>
+      <button type="submit" class="btn btn-success w-100 mt-2">Crear Orden</button>
     </form>
   </div>
 
-  <!-- LISTADO ÓRDENES -->
-  <div id="ordenesList" class="card p-3 shadow-sm d-none">
-    <h5>Órdenes activas</h5>
-    <ul class="list-group" id="ordenesUl"></ul>
+  <!-- LISTADO -->
+  <div id="ordenesList" class="glass d-none fade-in">
+    <h5 class="mb-3">Órdenes Activas</h5>
+    <ul class="list-group bg-transparent" id="ordenesUl"></ul>
   </div>
+
 </div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-
-<!-- ASISTENTE DE VOZ -->
-<script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getFirestore,
-  doc,
-  collection,
-  setDoc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-import { updateServiceStage } from "./serviceOrders.updateStage.js";
-
-
-// ============================
-// 🔥 CONFIG
-// ============================
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-  authDomain: "tallerpro360.firebaseapp.com",
-  projectId: "tallerpro360",
-  storageBucket: "tallerpro360.appspot.com",
-  messagingSenderId: "636224778184",
-  appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-const TALLER_ID = "demo";
-
-let userCliente = null;
-
-
-// ============================
-// 🔐 SESIÓN
-// ============================
-
-onAuthStateChanged(auth, async (user) => {
-
-  if (!user) return;
-
-  const clienteRef = doc(db, "talleres", TALLER_ID, "clientes", user.uid);
-  const snap = await getDoc(clienteRef);
-
-  if (!snap.exists()) {
-    await signOut(auth);
-    alert("No perteneces a este taller.");
-    return;
-  }
-
-  userCliente = user;
-
-  loginCliente.style.display = "none";
-  registroCliente.style.display = "none";
-  crearOrden.style.display = "block";
-
-  cargarOrdenes();
-});
-
-
-// ============================
-// 📝 REGISTRO CLIENTE
-// ============================
-
-formCliente.addEventListener("submit", async (e)=>{
-  e.preventDefault();
-
-  try {
-
-    const cred = await createUserWithEmailAndPassword(
-      auth,
-      clienteEmailReg.value.trim(),
-      clientePasswordReg.value
-    );
-
-    await setDoc(
-      doc(db, "talleres", TALLER_ID, "clientes", cred.user.uid),
-      {
-        nombre: clienteNombreReg.value.trim(),
-        telefono: clienteTelefonoReg.value.trim(),
-        email: clienteEmailReg.value.trim(),
-        tallerId: TALLER_ID,
-        createdAt: serverTimestamp()
-      }
-    );
-
-    alert("Cliente registrado correctamente.");
-    formCliente.reset();
-
-  } catch(err){
-    alert(err.message);
-  }
-});
-
-
-// ============================
-// 🔑 LOGIN
-// ============================
-
-formLogin.addEventListener("submit", async (e)=>{
-  e.preventDefault();
-
-  try {
-    await signInWithEmailAndPassword(
-      auth,
-      clienteEmailLogin.value.trim(),
-      clientePasswordLogin.value
-    );
-  } catch(err){
-    alert(err.message);
-  }
-});
-
-
-// ============================
-// 🚗 CREAR ORDEN
-// ============================
-
-formOrden.addEventListener("submit", async (e)=>{
-  e.preventDefault();
-
-  if(!userCliente) return alert("Debes iniciar sesión");
-
-  const codigo = `TP360-${Date.now()}`;
-
-  const ordenRef = doc(
-    db,
-    "talleres",
-    TALLER_ID,
-    "ordenes",
-    codigo
-  );
-
-  try {
-
-    await setDoc(ordenRef, {
-      codigo,
-      clienteId: userCliente.uid,
-      vehiculo: vehiculo.value.trim(),
-      placa: placa.value.trim().toUpperCase(),
-      status: "INGRESO",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-
-    // 🔥 Registrar primera etapa (ERP REAL)
-    await updateServiceStage(
-      `talleres/${TALLER_ID}/ordenes/${codigo}`,
-      "INGRESO",
-      "cliente"
-    );
-
-    alert("Orden creada correctamente");
-
-    formOrden.reset();
-    cargarOrdenes();
-
-  } catch(err){
-    console.error(err);
-    alert("Error al crear orden");
-  }
-});
-
-
-// ============================
-// 📋 LISTAR ÓRDENES
-// ============================
-
-async function cargarOrdenes(){
-
-  const q = query(
-    collection(db, "talleres", TALLER_ID, "ordenes"),
-    where("clienteId","==",userCliente.uid),
-    orderBy("updatedAt","desc")
-  );
-
-  const snap = await getDocs(q);
-
-  ordenesUl.innerHTML = "";
-
-  snap.forEach(docSnap => {
-
-    const o = docSnap.data();
-
-    const li = document.createElement("li");
-    li.className="list-group-item";
-
-    li.innerHTML=`
-      <strong>${o.codigo}</strong> - ${o.vehiculo} (${o.placa})
-      <span class="badge bg-info ms-2">${o.status}</span>
-    `;
-
-    ordenesUl.appendChild(li);
-  });
-
-  ordenesList.classList.toggle("d-none", !ordenesUl.children.length);
-}
-
-</script>
 </body>
 </html>
