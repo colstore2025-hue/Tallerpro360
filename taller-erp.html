@@ -32,303 +32,143 @@ button.pdf-btn{background:#10b981;color:white;font-weight:bold;border:none;paddi
 input[type="date"]{padding:6px;border-radius:6px;border:1px solid #ccc;}
 </style>
 </head>
-<body class="p-6">
 
-<header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-  <h1 class="text-3xl font-nexus font-black text-amber-500">
-    TallerPRO360 <span class="text-white text-lg md:text-2xl">Mini ERP Taller</span>
-  </h1>
-  <button onclick="logout()" class="bg-red-600 px-4 py-2 rounded font-bold hover:bg-red-700 transition">
-    <i class="fas fa-power-off"></i> Salir
-  </button>
-</header>
+<body>
 
-<!-- Filtro por fechas -->
-<section class="glass p-4 mb-6 flex gap-4 items-center">
-  <label>Desde: <input type="date" id="fechaInicio"></label>
-  <label>Hasta: <input type="date" id="fechaFin"></label>
-  <button class="excel-btn" onclick="filtrarDatos()">Filtrar</button>
-</section>
+<div class="erp-wrapper">
 
-<!-- KPIs -->
-<section class="grid grid-cols-1 md:grid-cols-6 gap-6 mb-8">
-  <div class="glass text-center fade-in hover-scale">
-    <p class="text-xs uppercase text-gray-400">Órdenes Totales</p>
-    <h2 id="kpiOrdenes" class="text-3xl font-nexus text-amber-500">0</h2>
-  </div>
-  <div class="glass text-center fade-in hover-scale">
-    <p class="text-xs uppercase text-gray-400">Órdenes Activas</p>
-    <h2 id="kpiActivas" class="text-3xl font-nexus text-green-500">0</h2>
-  </div>
-  <div class="glass text-center fade-in hover-scale">
-    <p class="text-xs uppercase text-gray-400">Clientes</p>
-    <h2 id="kpiClientes" class="text-3xl font-nexus text-blue-500">0</h2>
-  </div>
-  <div class="glass text-center fade-in hover-scale">
-    <p class="text-xs uppercase text-gray-400">Ingresos</p>
-    <h2 id="kpiIngresos" class="text-3xl font-nexus text-green-400">0</h2>
-  </div>
-  <div class="glass text-center fade-in hover-scale">
-    <p class="text-xs uppercase text-gray-400">Egresos</p>
-    <h2 id="kpiEgresos" class="text-3xl font-nexus text-red-400">0</h2>
-  </div>
-  <div class="glass text-center fade-in hover-scale">
-    <p class="text-xs uppercase text-gray-400">Utilidad</p>
-    <h2 id="kpiUtilidad" class="text-3xl font-nexus text-yellow-400">0</h2>
-  </div>
-</section>
-
-<!-- Órdenes de Servicio -->
-<section class="glass p-6 mb-8 fade-in">
-  <div class="flex justify-between items-center mb-3">
-    <h2 class="text-lg font-bold">Órdenes de Servicio</h2>
-    <div class="flex gap-2">
-      <button class="excel-btn" onclick="exportOrdenesExcel()">Exportar Excel</button>
-      <button class="pdf-btn" onclick="exportOrdenesPDF()">Exportar PDF</button>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      Taller<span>PRO360</span>
     </div>
-  </div>
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm" id="tablaOrdenes">
-      <thead class="text-gray-400 uppercase text-xs">
-        <tr>
-          <th class="p-2 text-left">Código</th>
-          <th class="p-2 text-left">Cliente</th>
-          <th class="p-2 text-left">Vehículo</th>
-          <th class="p-2 text-left">Estado</th>
-          <th class="p-2 text-left">Fecha</th>
-          <th class="p-2 text-left">Total</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</section>
 
-<!-- Inventario -->
-<section class="glass p-6 mb-8 fade-in">
-  <div class="flex justify-between items-center mb-3">
-    <h2 class="text-lg font-bold">Inventario</h2>
-    <div class="flex gap-2">
-      <button class="excel-btn" onclick="exportInventarioExcel()">Exportar Excel</button>
-      <button class="pdf-btn" onclick="exportInventarioPDF()">Exportar PDF</button>
-    </div>
-  </div>
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm" id="tablaInventario">
-      <thead class="text-gray-400 uppercase text-xs">
-        <tr>
-          <th class="p-2 text-left">Producto</th>
-          <th class="p-2 text-left">Stock</th>
-          <th class="p-2 text-left">Costo Unitario</th>
-          <th class="p-2 text-left">Valor Total</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</section>
+    <nav>
+      <button class="nav-btn active" data-section="dashboard">Dashboard</button>
+      <button class="nav-btn" data-section="ordenes">Órdenes</button>
+      <button class="nav-btn" data-section="inventario">Inventario</button>
+      <button class="nav-btn" data-section="finanzas">Finanzas</button>
+      <button class="nav-btn" data-section="nomina">Nómina</button>
+      <button class="nav-btn" data-section="mapa">Mapa</button>
+    </nav>
+  </aside>
 
-<!-- Finanzas -->
-<section class="glass p-6 mb-8 fade-in">
-  <div class="flex justify-between items-center mb-3">
-    <h2 class="text-lg font-bold">Finanzas</h2>
-    <div class="flex gap-2">
-      <button class="excel-btn" onclick="exportFinanzasExcel()">Exportar Excel</button>
-      <button class="pdf-btn" onclick="exportFinanzasPDF()">Exportar PDF</button>
-    </div>
-  </div>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div class="glass p-3 text-center">
-      <p class="text-xs uppercase text-gray-400">Ingresos</p>
-      <h3 id="ingresosTotales" class="text-2xl font-bold text-green-400">0</h3>
-    </div>
-    <div class="glass p-3 text-center">
-      <p class="text-xs uppercase text-gray-400">Egresos</p>
-      <h3 id="egresosTotales" class="text-2xl font-bold text-red-400">0</h3>
-    </div>
-    <div class="glass p-3 text-center">
-      <p class="text-xs uppercase text-gray-400">Utilidad</p>
-      <h3 id="utilidadTotal" class="text-2xl font-bold text-yellow-400">0</h3>
-    </div>
-  </div>
-</section>
+  <!-- CONTENIDO -->
+  <main class="main-content">
 
-<!-- Nómina -->
-<section class="glass p-6 mb-8 fade-in">
-  <div class="flex justify-between items-center mb-3">
-    <h2 class="text-lg font-bold">Nómina por Orden / Quincenal</h2>
-    <div class="flex gap-2">
-      <button class="excel-btn" onclick="exportNominaExcel()">Exportar Excel</button>
-      <button class="pdf-btn" onclick="exportNominaPDF()">Exportar PDF</button>
-    </div>
-  </div>
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm" id="tablaNomina">
-      <thead class="text-gray-400 uppercase text-xs">
-        <tr>
-          <th class="p-2 text-left">Empleado</th>
-          <th class="p-2 text-left">Tipo</th>
-          <th class="p-2 text-left">Horas</th>
-          <th class="p-2 text-left">Pago</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</section>
+    <header class="topbar">
+      <div>
+        <h2 id="sectionTitle">Dashboard</h2>
+        <small class="text-muted">Centro de control operativo</small>
+      </div>
 
-<!-- Gráficos y Mapa -->
-<section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-  <div class="glass p-6 fade-in">
-    <canvas id="chartIngresos"></canvas>
-  </div>
-  <div class="glass p-6 fade-in">
-    <div id="mapa"></div>
-  </div>
-</section>
+      <div class="user-box">
+        <span id="userRole">Cargando...</span>
+        <button id="logoutBtn" class="btn btn-sm btn-outline-light">Salir</button>
+      </div>
+    </header>
 
-<footer class="text-center text-xs text-gray-500 mt-8">
-© 2026 TallerPRO360 · Mini ERP Taller
-</footer>
+    <!-- CONTENIDO DINÁMICO -->
+    <section id="contentArea">
+      <!-- Aquí inyectaremos módulos -->
+    </section>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import Chart from "https://cdn.jsdelivr.net/npm/chart.js";
-import * as XLSX from "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
-import { jsPDF } from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+  </main>
+</div>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-  authDomain: "tallerpro360.firebaseapp.com",
-  projectId: "tallerpro360",
-  storageBucket: "tallerpro360.appspot.com",
-  messagingSenderId: "636224778184",
-  appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-};
+<style>
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+body{
+  margin:0;
+  font-family:'Inter',sans-serif;
+  background:linear-gradient(135deg,#0f172a,#111827);
+  color:#f1f5f9;
+}
 
-let map, chartIngresos;
-let fechaInicio, fechaFin;
+.erp-wrapper{
+  display:flex;
+  height:100vh;
+}
 
-// Verificar usuario
-onAuthStateChanged(auth, user=>{
-  if(!user) location.href="index.html";
-  iniciar();
+/* SIDEBAR */
+.sidebar{
+  width:240px;
+  background:rgba(15,23,42,.9);
+  backdrop-filter:blur(20px);
+  border-right:1px solid rgba(255,255,255,.05);
+  padding:25px 15px;
+  display:flex;
+  flex-direction:column;
+}
+
+.logo{
+  font-size:22px;
+  font-weight:900;
+  margin-bottom:40px;
+}
+
+.logo span{
+  background:linear-gradient(90deg,#22c55e,#38bdf8);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+.nav-btn{
+  background:none;
+  border:none;
+  color:#cbd5e1;
+  padding:12px;
+  text-align:left;
+  border-radius:10px;
+  margin-bottom:5px;
+  transition:.3s;
+}
+
+.nav-btn:hover,
+.nav-btn.active{
+  background:rgba(34,197,94,.1);
+  color:#22c55e;
+}
+
+/* MAIN */
+.main-content{
+  flex:1;
+  padding:30px;
+  overflow-y:auto;
+}
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:30px;
+}
+
+.user-box{
+  display:flex;
+  align-items:center;
+  gap:15px;
+}
+
+#contentArea{
+  background:rgba(15,23,42,.7);
+  border:1px solid rgba(255,255,255,.05);
+  backdrop-filter:blur(20px);
+  border-radius:20px;
+  padding:25px;
+  min-height:500px;
+}
+
+</style>
+
+<script>
+document.querySelectorAll(".nav-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("sectionTitle").innerText = btn.innerText;
+  });
 });
+</script>
 
-function iniciar(){
-  initMap();
-  cargarDatos();
-}
-
-// Inicializar mapa
-function initMap(){
-  map = L.map("mapa").setView([4.57,-74.29],6);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18}).addTo(map);
-}
-
-// Cargar todos los datos
-function cargarDatos(){
-  fechaInicio = document.getElementById("fechaInicio").value;
-  fechaFin = document.getElementById("fechaFin").value;
-  cargarKPIs();
-  cargarOrdenes();
-  cargarInventario();
-  cargarFinanzas();
-  cargarNomina();
-}
-
-// Filtrar por fechas
-window.filtrarDatos = () => { cargarDatos(); };
-
-// KPIs
-function cargarKPIs(){
-  onSnapshot(collection(db,"ordenes"), snap=>{
-    let totalOrdenes=0, activas=0, clientesSet=new Set(), ingresos=0, egresos=0;
-    snap.forEach(doc=>{
-      const o = doc.data();
-      if(filtroFecha(o.fecha)) return;
-      totalOrdenes++;
-      if(o.estado!=="ENTREGADO") activas++;
-      clientesSet.add(o.cliente?.nombre || "");
-      ingresos += o.total||0;
-      egresos += o.costoRepuestos||0;
-    });
-    document.getElementById("kpiOrdenes").innerText = totalOrdenes;
-    document.getElementById("kpiActivas").innerText = activas;
-    document.getElementById("kpiClientes").innerText = clientesSet.size;
-    document.getElementById("kpiIngresos").innerText = ingresos.toLocaleString();
-    document.getElementById("kpiEgresos").innerText = egresos.toLocaleString();
-    document.getElementById("kpiUtilidad").innerText = (ingresos-egresos).toLocaleString();
-  });
-}
-
-// Filtrado de fechas
-function filtroFecha(fecha){
-  if(!fechaInicio && !fechaFin) return false;
-  const f = fecha.toDate ? fecha.toDate() : new Date(fecha);
-  if(fechaInicio && f < new Date(fechaInicio)) return true;
-  if(fechaFin && f > new Date(fechaFin)) return true;
-  return false;
-}
-
-// Funciones similares para órdenes, inventario, finanzas y nómina
-function cargarOrdenes(){
-  onSnapshot(query(collection(db,"ordenes"), orderBy("actualizadoEn","desc")), snap=>{
-    const tbody = document.querySelector("#tablaOrdenes tbody");
-    tbody.innerHTML="";
-    snap.forEach(doc=>{
-      const o = doc.data();
-      if(filtroFecha(o.fecha)) return;
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td class="p-2">${o.codigo}</td>
-                      <td class="p-2">${o.cliente?.nombre||"N/A"}</td>
-                      <td class="p-2">${o.vehiculo||"N/A"}</td>
-                      <td class="p-2"><span class="status-${o.estado==="ENTREGADO"?"activo":"activo"}">${o.estado}</span></td>
-                      <td class="p-2">${o.fecha?.toDate ? o.fecha.toDate().toLocaleDateString() : "-"}</td>
-                      <td class="p-2">${o.total?.toLocaleString()||0}</td>`;
-      tbody.appendChild(tr);
-    });
-  });
-}
-
-function cargarInventario(){
-  onSnapshot(collection(db,"inventario"), snap=>{
-    const tbody = document.querySelector("#tablaInventario tbody");
-    tbody.innerHTML="";
-    snap.forEach(doc=>{
-      const p = doc.data();
-      const valorTotal = (p.stock||0)*(p.costo||0);
-      tbody.innerHTML += `<tr>
-        <td class="p-2">${p.nombre}</td>
-        <td class="p-2">${p.stock||0}</td>
-        <td class="p-2">${p.costo||0}</td>
-        <td class="p-2">${valorTotal}</td>
-      </tr>`;
-    });
-  });
-}
-
-function cargarFinanzas(){
-  onSnapshot(collection(db,"ordenes"), snap=>{
-    let ingresos=0, egresos=0;
-    snap.forEach(doc=>{
-      const o = doc.data();
-      if(filtroFecha(o.fecha)) return;
-      ingresos += o.total||0;
-      egresos += o.costoRepuestos||0;
-    });
-    document.getElementById("ingresosTotales").innerText = ingresos.toLocaleString();
-    document.getElementById("egresosTotales").innerText = egresos.toLocaleString();
-    document.getElementById("utilidadTotal").innerText = (ingresos-egresos).toLocaleString();
-
-    const ctx = document.getElementById("chartIngresos");
-    if(window.chartIngresos) window.chartIngresos.destroy();
-    window.chartIngresos = new Chart(ctx,{
-      type:"bar",
-      data:{ labels:["Ingresos","Egresos","Utilidad"], datasets:[{label:"COP",data:[ingresos,egresos,ingresos-egresos],backgroundColor:["#10b981
+</body>
