@@ -105,7 +105,34 @@ body { font-family: 'Segoe UI', sans-serif; background-color: #f5f6fa; }
 
 <!-- ASISTENTE DE VOZ -->
 <script type="module">
-import { speakOrderStage, initVoiceActivation, listenOrderVoice } from './serviceOrders.voice.js';
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  collection,
+  setDoc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+import { updateServiceStage } from "./serviceOrders.updateStage.js";
+
+
+// ============================
+// 🔥 CONFIG
+// ============================
 
 const firebaseConfig = {
   apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
@@ -116,75 +143,69 @@ const firebaseConfig = {
   appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
 };
 
-firebase.initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-const db = firebase.firestore();
-const auth = firebase.auth();
-
-// 🔥 ID del taller (SaaS multiempresa)
 const TALLER_ID = "demo";
-
-initVoiceActivation();
 
 let userCliente = null;
 
-// ===============================
-// 🔐 OBSERVADOR DE SESIÓN
-// ===============================
-auth.onAuthStateChanged(async (user) => {
+
+// ============================
+// 🔐 SESIÓN
+// ============================
+
+onAuthStateChanged(auth, async (user) => {
 
   if (!user) return;
 
-  const clienteRef = db.collection("talleres")
-    .doc(TALLER_ID)
-    .collection("clientes")
-    .doc(user.uid);
+  const clienteRef = doc(db, "talleres", TALLER_ID, "clientes", user.uid);
+  const snap = await getDoc(clienteRef);
 
-  const snap = await clienteRef.get();
-
-  if (!snap.exists) {
-    await auth.signOut();
+  if (!snap.exists()) {
+    await signOut(auth);
     alert("No perteneces a este taller.");
     return;
   }
 
   userCliente = user;
 
-  document.getElementById("loginCliente").style.display = "none";
-  document.getElementById("registroCliente").style.display = "none";
-  document.getElementById("crearOrden").style.display = "block";
+  loginCliente.style.display = "none";
+  registroCliente.style.display = "none";
+  crearOrden.style.display = "block";
 
   cargarOrdenes();
 });
 
-// ===============================
-// 📝 REGISTRO CLIENTE (SaaS)
-// ===============================
-document.getElementById("formCliente").addEventListener("submit", async (e)=>{
-  e.preventDefault();
 
-  const email = clienteEmailReg.value.trim();
-  const pass = clientePasswordReg.value;
-  const nombre = clienteNombreReg.value.trim();
-  const telefono = clienteTelefonoReg.value.trim();
+// ============================
+// 📝 REGISTRO CLIENTE
+// ============================
+
+formCliente.addEventListener("submit", async (e)=>{
+  e.preventDefault();
 
   try {
 
-    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    const cred = await createUserWithEmailAndPassword(
+      auth,
+      clienteEmailReg.value.trim(),
+      clientePasswordReg.value
+    );
 
-    await db.collection("talleres")
-      .doc(TALLER_ID)
-      .collection("clientes")
-      .doc(cred.user.uid)
-      .set({
-        nombre,
-        telefono,
-        email,
+    await setDoc(
+      doc(db, "talleres", TALLER_ID, "clientes", cred.user.uid),
+      {
+        nombre: clienteNombreReg.value.trim(),
+        telefono: clienteTelefonoReg.value.trim(),
+        email: clienteEmailReg.value.trim(),
         tallerId: TALLER_ID,
-        creadoEn: firebase.firestore.Timestamp.now()
-      });
+        createdAt: serverTimestamp()
+      }
+    );
 
-    alert("Cliente registrado correctamente. Ahora inicia sesión.");
+    alert("Cliente registrado correctamente.");
     formCliente.reset();
 
   } catch(err){
@@ -192,117 +213,110 @@ document.getElementById("formCliente").addEventListener("submit", async (e)=>{
   }
 });
 
-// ===============================
-// 🔑 LOGIN CLIENTE
-// ===============================
-document.getElementById("formLogin").addEventListener("submit", async (e)=>{
+
+// ============================
+// 🔑 LOGIN
+// ============================
+
+formLogin.addEventListener("submit", async (e)=>{
   e.preventDefault();
 
-  const email = clienteEmailLogin.value.trim();
-  const pass = clientePasswordLogin.value;
-
   try {
-    await auth.signInWithEmailAndPassword(email, pass);
-    alert("Ingreso exitoso!");
+    await signInWithEmailAndPassword(
+      auth,
+      clienteEmailLogin.value.trim(),
+      clientePasswordLogin.value
+    );
   } catch(err){
     alert(err.message);
   }
 });
 
-// ===============================
-// 🚗 CREAR ORDEN (SaaS CORREGIDO)
-// ===============================
-document.getElementById("formOrden").addEventListener("submit", async (e)=>{
+
+// ============================
+// 🚗 CREAR ORDEN
+// ============================
+
+formOrden.addEventListener("submit", async (e)=>{
   e.preventDefault();
 
-  if(!userCliente) return alert("Debes iniciar sesión primero.");
+  if(!userCliente) return alert("Debes iniciar sesión");
 
   const codigo = `TP360-${Date.now()}`;
-  const ts = firebase.firestore.Timestamp.now();
 
-  const orden = {
-    codigo,
-    clienteId: userCliente.uid,
-    vehiculo: vehiculo.value.trim(),
-    placa: placa.value.trim().toUpperCase(),
-    estado: "INGRESO",
-    timeline: [{estado:"INGRESO", fecha:ts}],
-    creadoEn: ts,
-    actualizadoEn: ts
-  };
+  const ordenRef = doc(
+    db,
+    "talleres",
+    TALLER_ID,
+    "ordenes",
+    codigo
+  );
 
   try {
 
-    await db.collection("talleres")
-      .doc(TALLER_ID)
-      .collection("ordenes")
-      .doc(codigo)
-      .set(orden);
+    await setDoc(ordenRef, {
+      codigo,
+      clienteId: userCliente.uid,
+      vehiculo: vehiculo.value.trim(),
+      placa: placa.value.trim().toUpperCase(),
+      status: "INGRESO",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
 
-    alert("Orden creada correctamente!");
+    // 🔥 Registrar primera etapa (ERP REAL)
+    await updateServiceStage(
+      `talleres/${TALLER_ID}/ordenes/${codigo}`,
+      "INGRESO",
+      "cliente"
+    );
+
+    alert("Orden creada correctamente");
+
     formOrden.reset();
-
-    // 🔊 Voz inmediata SOLO UNA VEZ
-    speakOrderStage(orden);
-
-    // 🔥 Listener controlado (evita duplicados)
-    if (!window.ordenesEscuchadas) {
-      window.ordenesEscuchadas = new Set();
-    }
-
-    if (!window.ordenesEscuchadas.has(codigo)) {
-      listenOrderVoice(db, `talleres/${TALLER_ID}/ordenes/${codigo}`);
-      window.ordenesEscuchadas.add(codigo);
-    }
-
     cargarOrdenes();
 
   } catch(err){
     console.error(err);
-    alert("Error al crear la orden.");
+    alert("Error al crear orden");
   }
-
 });
 
-// ===============================
-// 📋 LISTAR ÓRDENES DEL CLIENTE
-// ===============================
+
+// ============================
+// 📋 LISTAR ÓRDENES
+// ============================
+
 async function cargarOrdenes(){
 
-  if(!userCliente) return;
+  const q = query(
+    collection(db, "talleres", TALLER_ID, "ordenes"),
+    where("clienteId","==",userCliente.uid),
+    orderBy("updatedAt","desc")
+  );
 
-  const snap = await db.collection("talleres")
-    .doc(TALLER_ID)
-    .collection("ordenes")
-    .where("clienteId","==",userCliente.uid)
-    .orderBy("actualizadoEn","desc")
-    .get();
+  const snap = await getDocs(q);
 
-  const ul = document.getElementById("ordenesUl");
-  ul.innerHTML="";
+  ordenesUl.innerHTML = "";
 
-  snap.forEach(doc=>{
-    const o = doc.data();
+  snap.forEach(docSnap => {
+
+    const o = docSnap.data();
 
     const li = document.createElement("li");
     li.className="list-group-item";
 
     li.innerHTML=`
       <strong>${o.codigo}</strong> - ${o.vehiculo} (${o.placa})
-      <span class="badge bg-info ms-2">${o.estado}</span>
-      <br>
-      Timeline: ${o.timeline.map(t=>t.estado).join(" → ")}
+      <span class="badge bg-info ms-2">${o.status}</span>
     `;
 
-    ul.appendChild(li);
-
-    speakOrderStage(o);
-    listenOrderVoice(db, `talleres/${TALLER_ID}/ordenes/${o.codigo}`);
+    ordenesUl.appendChild(li);
   });
 
-  document.getElementById("ordenesList")
-    .classList.toggle("d-none", !ul.children.length);
+  ordenesList.classList.toggle("d-none", !ordenesUl.children.length);
 }
+
 </script>
 </body>
 </html>
