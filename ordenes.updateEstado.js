@@ -125,7 +125,15 @@ export async function cambiarEstadoOrden(
     /* =====================================================
        🔄 ACTUALIZAR ESTADO + TIMELINE
     ===================================================== */
+const ahora = new Date();
 
+let duracionEstadoAnterior = null;
+
+if (ordenData.fechaInicioEstado?.toDate) {
+  const inicio = ordenData.fechaInicioEstado.toDate();
+  duracionEstadoAnterior =
+    Math.floor((ahora - inicio) / 1000); // segundos
+}
     transaction.update(ordenRef, {
       estado: nuevoEstado,
       actualizadoEn: serverTimestamp(),
