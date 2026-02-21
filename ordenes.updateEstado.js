@@ -8,12 +8,57 @@ import {
 
 import { db } from "./firebase-config.js";
 
+/* =====================================================
+   🔄 FLUJO OFICIAL DE ESTADOS (Máquina de estados)
+===================================================== */
+
+const FLUJO_ESTADOS = {
+  INGRESADO: ["DIAGNOSTICO"],
+  DIAGNOSTICO: ["APROBADO", "CANCELADO"],
+  APROBADO: ["REPARACION", "CANCELADO"],
+  REPARACION: ["LISTO"],
+  LISTO: ["ENTREGADO"],
+  ENTREGADO: [],
+  CANCELADO: []
+};
+
+/* =====================================================
+   🔐 PERMISOS POR ROL
+===================================================== */
+
+const PERMISOS_ROL = {
+  tecnico: ["DIAGNOSTICO", "REPARACION", "LISTO"],
+  admin: [
+    "DIAGNOSTICO",
+    "APROBADO",
+    "REPARACION",
+    "LISTO",
+    "ENTREGADO",
+    "CANCELADO"
+  ],
+  taller: [
+    "DIAGNOSTICO",
+    "APROBADO",
+    "REPARACION",
+    "LISTO",
+    "ENTREGADO",
+    "CANCELADO"
+  ],
+  sistema: ["ENTREGADO"]
+};
+
+/* =====================================================
+   🚀 FUNCIÓN PRINCIPAL
+===================================================== */
+
 /**
  * Cambia estado de orden (ERP completo)
  * - Multiempresa
- * - Timeline array
- * - Descuento inventario
+ * - Máquina de estados
+ * - Permisos por rol
+ * - Inventario automático
  * - Movimiento financiero
+ * - Timeline inmutable
  */
 export async function cambiarEstadoOrden(
   empresaId,
@@ -44,19 +89,42 @@ export async function cambiarEstadoOrden(
     const ordenData = ordenSnap.data();
     const estadoActual = ordenData.estado;
 
+    /* =====================================================
+       ✅ VALIDACIONES
+    ===================================================== */
+
+    // 1️⃣ Validar que el estado exista
+    if (!FLUJO_ESTADOS.hasOwnProperty(nuevoEstado)) {
+      throw new Error(`Estado inválido: ${nuevoEstado}`);
+    }
+
+    // 2️⃣ Evitar mismo estado
     if (estadoActual === nuevoEstado) {
       console.warn("La orden ya está en ese estado");
       return;
     }
 
-    // 🔒 No permitir reprocesar entrega
-    if (estadoActual === "ENTREGADO") {
-      throw new Error("La orden ya fue entregada");
+    // 3️⃣ Validar transición permitida
+    const estadosPermitidos = FLUJO_ESTADOS[estadoActual] || [];
+
+    if (!estadosPermitidos.includes(nuevoEstado)) {
+      throw new Error(
+        `Transición inválida: no se puede pasar de ${estadoActual} a ${nuevoEstado}`
+      );
     }
 
-    // ============================================
-    // 1️⃣ ACTUALIZAR ESTADO + TIMELINE
-    // ============================================
+    // 4️⃣ Validar permisos por rol
+    const permisos = PERMISOS_ROL[userRole] || [];
+
+    if (!permisos.includes(nuevoEstado)) {
+      throw new Error(
+        `El rol ${userRole} no puede cambiar al estado ${nuevoEstado}`
+      );
+    }
+
+    /* =====================================================
+       🔄 ACTUALIZAR ESTADO + TIMELINE
+    ===================================================== */
 
     transaction.update(ordenRef, {
       estado: nuevoEstado,
@@ -69,9 +137,9 @@ export async function cambiarEstadoOrden(
       })
     });
 
-    // ============================================
-    // 2️⃣ SI ES ENTREGADO → INVENTARIO + FINANZAS
-    // ============================================
+    /* =====================================================
+       📦 SI ES ENTREGADO → INVENTARIO + FINANZAS
+    ===================================================== */
 
     if (nuevoEstado === "ENTREGADO") {
 
@@ -91,14 +159,18 @@ export async function cambiarEstadoOrden(
           const itemSnap = await transaction.get(itemRef);
 
           if (!itemSnap.exists()) {
-            throw new Error(`Repuesto no existe: ${repuesto.inventarioId}`);
+            throw new Error(
+              `Repuesto no existe: ${repuesto.inventarioId}`
+            );
           }
 
           const stockActual = itemSnap.data().stockActual;
           const nuevoStock = stockActual - repuesto.cantidad;
 
           if (nuevoStock < 0) {
-            throw new Error(`Stock insuficiente para ${repuesto.inventarioId}`);
+            throw new Error(
+              `Stock insuficiente para ${repuesto.inventarioId}`
+            );
           }
 
           transaction.update(itemRef, {
@@ -119,7 +191,8 @@ export async function cambiarEstadoOrden(
         monto: ordenData.totales?.total || 0,
         categoria: "servicios",
         descripcion: `Ingreso por orden ${ordenData.codigo || ordenId}`,
-        fecha: serverTimestamp()
+        fecha: serverTimestamp(),
+        creadoPor: userRole
       });
     }
 
