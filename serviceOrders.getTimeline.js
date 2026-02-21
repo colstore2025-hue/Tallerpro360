@@ -1,21 +1,19 @@
-// serviceOrders.getTimeline.js
+// ordenes.getTimeline.js
+
 import { db } from "./firebase-config.js";
-import {
-  doc,
-  collection,
-  getDocs,
-  query,
-  orderBy
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-export async function getServiceTimeline(orderId) {
-  const stagesRef = collection(
-    doc(db, "serviceOrders", orderId),
-    "stages"
-  );
+export async function getServiceTimeline(empresaId, ordenId) {
 
-  const q = query(stagesRef, orderBy("at", "asc"));
-  const snapshot = await getDocs(q);
+  const ordenRef = doc(db, "talleres", empresaId, "ordenes", ordenId);
 
-  return snapshot.docs.map(doc => doc.data());
+  const snap = await getDoc(ordenRef);
+
+  if (!snap.exists()) {
+    throw new Error("Orden no existe");
+  }
+
+  const data = snap.data();
+
+  return data.timeline || [];
 }
