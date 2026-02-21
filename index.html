@@ -86,7 +86,7 @@ Observa cómo se organiza tu taller en segundos.
 
 <div style="background:#0f172a;border-radius:20px;padding:30px;color:#fff;max-width:900px;margin:auto;box-shadow:0 20px 50px rgba(0,0,0,.2);">
 
-<div style="display:flex;justify-content:space-between;margin-bottom:20px;font-weight:700;">
+<div style="display:flex;justify-content:space-between;margin-bottom:20px;font-weight:700;flex-wrap:wrap;gap:10px;">
 <span>Órdenes Activas: <span id="demoOrdenes">12</span></span>
 <span>Ingresos Hoy: $ <span id="demoIngresos">850.000</span></span>
 <span>Estado: EN PROCESO</span>
@@ -138,7 +138,6 @@ Del caos a la tranquilidad operativa
 </div>
 </section>
 
-
 <!-- BENEFICIOS -->
 <section class="section center">
 <div class="container fade-in">
@@ -150,32 +149,32 @@ Del caos a la tranquilidad operativa
 <div class="feature">
 <div class="icon">🎙️</div>
 <h3>Operado por Voz</h3>
-<p>Dicta diagnósticos, actualiza órdenes y registra notas técnicas sin tocar el celular.</p>
+<p>Dicta diagnósticos y actualiza órdenes sin tocar el celular.</p>
 </div>
 
 <div class="feature">
 <div class="icon">📋</div>
-<h3>Control Total de Órdenes</h3>
-<p>Desde ingreso hasta entrega con historial automático por etapas.</p>
+<h3>Control Total</h3>
+<p>Seguimiento completo desde ingreso hasta entrega.</p>
 </div>
 
 <div class="feature">
 <div class="icon">📊</div>
 <h3>Reportes Inteligentes</h3>
-<p>Visualiza ingresos, utilidad, órdenes activas y rendimiento del taller en segundos.</p>
+<p>Visualiza ingresos y rendimiento en segundos.</p>
 </div>
 
 <div class="feature">
 <div class="icon">🔐</div>
 <h3>Multiusuario Seguro</h3>
-<p>Controla accesos de técnicos, staff y administradores.</p>
+<p>Controla accesos del equipo con seguridad avanzada.</p>
 </div>
 
 </div>
 </div>
 </section>
 
-<!-- PROCESO VISUAL -->
+<!-- PROCESO -->
 <section class="section hero-bg center">
 <div class="container fade-in">
 
@@ -190,15 +189,13 @@ Del caos a la tranquilidad operativa
 </div>
 
 <p style="margin-top:40px;font-size:18px;color:#555;">
-Todo sincronizado en tiempo real.  
-Tus clientes reciben actualizaciones automáticas.  
-Tu equipo trabaja organizado.
+Todo sincronizado en tiempo real. Tus clientes reciben actualizaciones automáticas.
 </p>
 
 </div>
 </section>
 
-<!-- PLANES (SIN CAMBIOS DE CONTENIDO) -->
+<!-- PLANES (IGUALES) -->
 <section class="section" style="background:linear-gradient(135deg,#f0fdf4,#f8fafc);">
 <div class="container center">
 
@@ -212,7 +209,6 @@ Empieza pequeño. Crece sin límites.
 
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:35px;align-items:stretch;">
 
-<!-- BASICO -->
 <div class="plan">
 <h3 style="font-size:24px;font-weight:900;">Básico</h3>
 <p class="price">$29.900 <span style="font-size:16px;color:#555;">/ mes</span></p>
@@ -226,7 +222,6 @@ Empieza pequeño. Crece sin límites.
 <div class="loader">Redirigiendo a pago...</div>
 </div>
 
-<!-- PRO -->
 <div class="plan highlight">
 <h3 style="font-size:24px;font-weight:900;">PRO</h3>
 <p class="price">$59.900 <span style="font-size:16px;color:#555;">/ mes</span></p>
@@ -240,7 +235,6 @@ Empieza pequeño. Crece sin límites.
 <div class="loader">Redirigiendo a pago...</div>
 </div>
 
-<!-- PRO ANUAL -->
 <div class="plan dark-plan">
 <h3 style="font-size:24px;font-weight:900;">PRO Anual</h3>
 <p class="price" style="color:#22c55e;">$599.000 <span style="font-size:16px;color:#9ca3af;">/ año</span></p>
@@ -258,6 +252,18 @@ Empieza pequeño. Crece sin límites.
 </div>
 </section>
 
+<!-- AUTORIDAD -->
+<section class="section center">
+<div class="container fade-in">
+<h2 style="font-size:34px;font-weight:900;">
+Más que un software. Es tu socio estratégico.
+</h2>
+<p style="max-width:800px;margin:auto;font-size:18px;color:#555;margin-top:20px;">
+Reduce errores, mejora tu imagen profesional y aumenta tu rentabilidad.
+</p>
+</div>
+</section>
+
 <footer class="footer">
 <img src="/assets/logo-192.png" width="60">
 <p style="margin-top:15px;color:#555;">
@@ -265,7 +271,7 @@ TallerPRO360 © 2026 · Tu ayudante inteligente en el taller
 </p>
 </footer>
 
-<!-- ANIMACIÓN SCROLL -->
+<!-- ANIMACIONES -->
 <script>
 const observer = new IntersectionObserver(entries=>{
 entries.forEach(entry=>{
@@ -274,34 +280,40 @@ entry.target.classList.add("visible");
 }
 });
 },{threshold:0.2});
+document.querySelectorAll('.fade-in').forEach(el=>observer.observe(el));
 
-document.querySelectorAll('.fade-in').forEach(el=>{
-observer.observe(el);
-});
+let ingresos = 850000;
+let ordenes = 12;
+setInterval(()=>{
+ingresos += Math.floor(Math.random()*20000);
+ordenes = 10 + Math.floor(Math.random()*5);
+document.getElementById("demoIngresos").innerText = ingresos.toLocaleString("es-CO");
+document.getElementById("demoOrdenes").innerText = ordenes;
+},2500);
 </script>
 
 <!-- PAGOS -->
 <script>
-async function iniciarPago(plan, boton) {
-boton.disabled = true;
-const loader = boton.nextElementSibling;
-loader.style.display = "block";
-try {
-const userId = "demo-user-123";
-const response = await fetch("/api/create-preference", {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ plan, userId })
+async function iniciarPago(plan, boton){
+boton.disabled=true;
+const loader=boton.nextElementSibling;
+loader.style.display="block";
+try{
+const userId="demo-user-123";
+const response=await fetch("/api/create-preference",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({plan,userId})
 });
-const data = await response.json();
-if (!response.ok || !data.init_point) {
-throw new Error(data.error || "Error creando pago");
+const data=await response.json();
+if(!response.ok||!data.init_point){
+throw new Error(data.error||"Error creando pago");
 }
-window.location.href = data.init_point;
-} catch (error) {
-alert("Error iniciando el pago: " + error.message);
-boton.disabled = false;
-loader.style.display = "none";
+window.location.href=data.init_point;
+}catch(error){
+alert("Error iniciando el pago: "+error.message);
+boton.disabled=false;
+loader.style.display="none";
 }
 }
 </script>
