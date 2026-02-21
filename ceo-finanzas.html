@@ -6,81 +6,87 @@
 <title>CEO · Dashboard Financiero | TallerPRO360</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<script type="module" src="./ceo-auth.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-  body { background:#0f172a; color:#f1f5f9; }
-  .glass {
-    background:rgba(15,23,42,.8);
-    backdrop-filter: blur(18px);
-    border-radius:1.5rem;
-    border:1px solid rgba(255,255,255,.08);
-  }
+body { background:#0f172a; color:#f1f5f9; font-family:system-ui; }
+.glass {
+  background:rgba(15,23,42,.8);
+  backdrop-filter: blur(18px);
+  border-radius:1.5rem;
+  border:1px solid rgba(255,255,255,.08);
+}
 </style>
 </head>
 
 <body class="min-h-screen p-6">
 
-<header class="flex flex-wrap justify-between items-center gap-4 mb-6">
+<header class="flex justify-between items-center mb-8">
   <h1 class="text-2xl font-bold text-amber-500">
-    📊 TallerPRO360 · Panel CEO
+    💰 TallerPRO360 · CEO Finanzas
   </h1>
-  <button onclick="logout()" class="bg-red-600 px-4 py-2 rounded font-bold">
+  <button onclick="logout()" class="bg-red-600 px-4 py-2 rounded font-bold hover:bg-red-700">
     Cerrar sesión
   </button>
 </header>
 
-<!-- KPIs FINANCIEROS -->
-<section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-center">
+<!-- KPIs -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10 text-center">
 
-  <div class="glass p-4">
-    <p>MRR</p>
-    <h2 id="mrr" class="text-2xl font-bold text-green-400">$0</h2>
+  <div class="glass p-6">
+    <p class="text-gray-400 text-sm">MRR</p>
+    <h2 id="mrr" class="text-3xl font-bold text-green-400">$0</h2>
   </div>
 
-  <div class="glass p-4">
-    <p>ARR</p>
-    <h2 id="arr" class="text-2xl font-bold text-cyan-400">$0</h2>
+  <div class="glass p-6">
+    <p class="text-gray-400 text-sm">ARR</p>
+    <h2 id="arr" class="text-3xl font-bold text-cyan-400">$0</h2>
   </div>
 
-  <div class="glass p-4">
-    <p>Talleres Activos</p>
-    <h2 id="activos" class="text-2xl font-bold text-emerald-400">0</h2>
+  <div class="glass p-6">
+    <p class="text-gray-400 text-sm">ARPU</p>
+    <h2 id="arpu" class="text-3xl font-bold text-amber-400">$0</h2>
   </div>
 
-  <div class="glass p-4">
-    <p>Básicos</p>
-    <h2 id="basicos" class="text-xl font-bold">0</h2>
+  <div class="glass p-6">
+    <p class="text-gray-400 text-sm">Talleres Activos</p>
+    <h2 id="activos" class="text-3xl font-bold text-emerald-400">0</h2>
   </div>
 
-  <div class="glass p-4">
-    <p>PRO Mensual</p>
-    <h2 id="pros" class="text-xl font-bold">0</h2>
+</section>
+
+<!-- DISTRIBUCIÓN PLANES -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+  <div class="glass p-6 text-center">
+    <h3 class="mb-4 text-lg font-bold">Distribución por Plan</h3>
+    <canvas id="chartPlanes"></canvas>
   </div>
 
-  <div class="glass p-4">
-    <p>PRO Anual</p>
-    <h2 id="proAnuales" class="text-xl font-bold">0</h2>
+  <div class="glass p-6 text-center">
+    <h3 class="mb-4 text-lg font-bold">Resumen Planes</h3>
+    <div class="space-y-2 text-sm">
+      <p>Básico: <span id="basicos" class="font-bold"></span></p>
+      <p>PRO Mensual: <span id="pros" class="font-bold"></span></p>
+      <p>PRO Anual: <span id="proAnuales" class="font-bold"></span></p>
+    </div>
   </div>
 
 </section>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, signOut }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-  authDomain: "tallerpro360.firebaseapp.com",
-  projectId: "tallerpro360",
-  storageBucket: "tallerpro360.appspot.com",
-  messagingSenderId: "636224778184",
-  appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-};
+import {
+  doc,
+  getDoc,
+  collection,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+/* ================= PRECIOS SaaS ================= */
 
 const precios = {
   basico: 29900,
@@ -88,50 +94,106 @@ const precios = {
   pro_anual: 599000 / 12
 };
 
-async function cargarMetricas() {
+let chart;
 
-  const snapshot = await getDocs(collection(db, "talleres"));
+/* ================= VALIDAR SUPERADMIN ================= */
 
-  let activos = 0;
-  let ingresosMensuales = 0;
-  let basicos = 0;
-  let pros = 0;
-  let proAnuales = 0;
+onAuthStateChanged(auth, async (user)=>{
 
-  snapshot.forEach(doc => {
-    const data = doc.data();
+  if(!user){
+    window.location.replace("index.html");
+    return;
+  }
 
-    if (data.estado === "activo") {
-      activos++;
+  const snap = await getDoc(doc(db,"usuarios",user.uid));
 
-      if (data.plan === "basico") {
-        ingresosMensuales += precios.basico;
-        basicos++;
+  if(!snap.exists() || snap.data().rolGlobal!=="superadmin"){
+    window.location.replace("index.html");
+    return;
+  }
+
+  cargarMetricas();
+});
+
+/* ================= MÉTRICAS EN TIEMPO REAL ================= */
+
+function cargarMetricas(){
+
+  onSnapshot(collection(db,"talleres"), snapshot=>{
+
+    let activos=0;
+    let ingresosMensuales=0;
+    let basicos=0, pros=0, proAnuales=0;
+
+    snapshot.forEach(docSnap=>{
+      const data=docSnap.data();
+
+      if(data.estado==="activo"){
+        activos++;
+
+        if(data.plan==="basico"){
+          ingresosMensuales+=precios.basico;
+          basicos++;
+        }
+
+        if(data.plan==="pro"){
+          ingresosMensuales+=precios.pro;
+          pros++;
+        }
+
+        if(data.plan==="pro_anual"){
+          ingresosMensuales+=precios.pro_anual;
+          proAnuales++;
+        }
       }
+    });
 
-      if (data.plan === "pro") {
-        ingresosMensuales += precios.pro;
-        pros++;
-      }
+    const arr=ingresosMensuales*12;
+    const arpu=activos>0 ? ingresosMensuales/activos : 0;
 
-      if (data.plan === "pro_anual") {
-        ingresosMensuales += precios.pro_anual;
-        proAnuales++;
-      }
-    }
+    document.getElementById("activos").innerText=activos;
+    document.getElementById("mrr").innerText="$"+ingresosMensuales.toLocaleString();
+    document.getElementById("arr").innerText="$"+arr.toLocaleString();
+    document.getElementById("arpu").innerText="$"+Math.round(arpu).toLocaleString();
+
+    document.getElementById("basicos").innerText=basicos;
+    document.getElementById("pros").innerText=pros;
+    document.getElementById("proAnuales").innerText=proAnuales;
+
+    renderChart(basicos,pros,proAnuales);
   });
-
-  const ingresosAnuales = ingresosMensuales * 12;
-
-  document.getElementById("activos").innerText = activos;
-  document.getElementById("mrr").innerText = "$" + ingresosMensuales.toLocaleString();
-  document.getElementById("arr").innerText = "$" + ingresosAnuales.toLocaleString();
-  document.getElementById("basicos").innerText = basicos;
-  document.getElementById("pros").innerText = pros;
-  document.getElementById("proAnuales").innerText = proAnuales;
 }
 
-cargarMetricas();
+/* ================= GRÁFICO ================= */
+
+function renderChart(basicos,pros,proAnuales){
+
+  if(chart) chart.destroy();
+
+  chart=new Chart(
+    document.getElementById("chartPlanes"),
+    {
+      type:"doughnut",
+      data:{
+        labels:["Básico","PRO Mensual","PRO Anual"],
+        datasets:[{
+          data:[basicos,pros,proAnuales],
+          backgroundColor:["#3b82f6","#10b981","#f59e0b"]
+        }]
+      },
+      options:{
+        plugins:{legend:{position:"bottom"}}
+      }
+    }
+  );
+}
+
+/* ================= LOGOUT ================= */
+
+window.logout=()=>{
+  signOut(auth).then(()=>window.location.href="index.html");
+};
+
 </script>
 
 </body>
