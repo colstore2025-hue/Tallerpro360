@@ -15,16 +15,15 @@
   .container { padding:15px; max-width:800px; margin:auto; }
   input, button { padding:10px; margin:5px 0; width:100%; box-sizing:border-box; border-radius:5px; border:1px solid #ccc; }
   button { cursor:pointer; background:#0a74da; color:white; border:none; font-weight:bold; }
-  .client-list { margin-top:20px; }
   .client-item { background:white; padding:15px; margin-bottom:15px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
-  .badge-estado { padding:2px 6px; border-radius:5px; font-size:0.85em; color:white; font-weight:bold; }
+  .badge-estado { padding:4px 8px; border-radius:5px; font-size:0.85em; color:white; font-weight:bold; }
   .estado-INGRESO { background:#0d6efd; }
   .estado-DIAGNOSTICO { background:#fd7e14; }
   .estado-APROBADO { background:#198754; }
   .estado-EN_PROCESO { background:#ffc107; color:black; }
   .estado-LISTO { background:#0dcaf0; color:black; }
   .estado-ENTREGADO { background:#6c757d; }
-  .timeline { list-style:none; padding-left:0; margin-top:5px; }
+  .timeline { list-style:none; padding-left:0; margin-top:10px; font-size:0.9em; }
   .timeline li { margin-bottom:5px; }
   .logout-btn { float:right; background:#dc3545; margin-top:-35px; }
 </style>
@@ -40,20 +39,8 @@
 
 <div class="container">
 
-  <!-- Bienvenida -->
   <div id="bienvenida" class="mb-4 text-center"></div>
 
-  <!-- Registrar Cliente (oculto para clientes existentes) -->
-  <div id="registroCliente" class="card mb-3 p-3 shadow-sm d-none">
-    <h5>Registrar Cliente</h5>
-    <input type="text" id="clienteNombreReg" placeholder="Nombre completo" required>
-    <input type="email" id="clienteEmailReg" placeholder="Correo electrónico" required>
-    <input type="tel" id="clienteTelefonoReg" placeholder="Teléfono" required>
-    <input type="password" id="clientePasswordReg" placeholder="Contraseña" required>
-    <button onclick="registrarCliente()">Registrar Cliente</button>
-  </div>
-
-  <!-- Login Cliente -->
   <div id="loginCliente" class="card mb-3 p-3 shadow-sm">
     <h5>Ingresar</h5>
     <input type="email" id="clienteEmailLogin" placeholder="Correo electrónico" required>
@@ -61,96 +48,137 @@
     <button onclick="loginCliente()">Ingresar</button>
   </div>
 
-  <!-- Lista de órdenes -->
-  <div id="ordenesList" class="client-list d-none"></div>
+  <div id="ordenesList" class="d-none"></div>
+
 </div>
 
-<!-- Firebase SDKs -->
+<!-- Firebase Compat -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <script type="module">
-import { speakOrderStage, listenOrderVoice, initVoiceActivation } from './serviceOrders.voice.js';
-initVoiceActivation(); // Activar voz
+import { listenOrderVoice, initVoiceActivation } from './serviceOrders.voice.js';
+
+initVoiceActivation();
+
+// 🔥 CAMBIAR POR EL ID REAL DEL TALLER
+const EMPRESA_ID = "demo"; 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-  authDomain: "tallerpro360.firebaseapp.com",
-  projectId: "tallerpro360",
-  storageBucket: "tallerpro360.appspot.com",
-  messagingSenderId: "636224778184",
-  appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_AUTH_DOMAIN",
+  projectId: "TU_PROJECT_ID"
 };
+
 firebase.initializeApp(firebaseConfig);
 
 const db = firebase.firestore();
 const auth = firebase.auth();
+
 let userCliente = null;
 
-// === REGISTRAR CLIENTE ===
-window.registrarCliente = async () => {
-  const nombre = document.getElementById("clienteNombreReg").value.trim();
-  const email = document.getElementById("clienteEmailReg").value.trim();
-  const telefono = document.getElementById("clienteTelefonoReg").value.trim();
-  const pass = document.getElementById("clientePasswordReg").value.trim();
-  if(!nombre || !email || !telefono || !pass) return alert("Todos los campos son obligatorios");
-  try {
-    const cred = await auth.createUserWithEmailAndPassword(email, pass);
-    await db.collection("clientes").doc(cred.user.uid).set({nombre,email,telefono,creadoEn:firebase.firestore.Timestamp.now()});
-    alert("Cliente registrado correctamente. Ya puede iniciar sesión.");
-    document.getElementById("registroCliente").style.display="none";
-  } catch(err){ alert(err.message); }
-};
+// ===============================
+// LOGIN
+// ===============================
 
-// === LOGIN CLIENTE ===
 window.loginCliente = async () => {
   const email = document.getElementById("clienteEmailLogin").value.trim();
   const pass = document.getElementById("clientePasswordLogin").value.trim();
+
   if(!email || !pass) return alert("Completa todos los campos");
+
   try {
     const cred = await auth.signInWithEmailAndPassword(email, pass);
     userCliente = cred.user;
+
     document.getElementById("loginCliente").style.display="none";
-    document.getElementById("bienvenida").innerHTML = `<h4>Bienvenido, ${userCliente.email}</h4>`;
+    document.getElementById("bienvenida").innerHTML =
+      `<h4>Bienvenido, ${userCliente.email}</h4>`;
+
     cargarOrdenes();
-  } catch(err){ alert(err.message); }
+
+  } catch(err){
+    alert(err.message);
+  }
 };
 
-// === LOGOUT ===
+// ===============================
+// LOGOUT
+// ===============================
+
 window.logout = async () => {
   await auth.signOut();
   location.reload();
 };
 
-// === CARGAR ORDENES ===
+// ===============================
+// CARGAR ÓRDENES (MULTIEMPRESA)
+// ===============================
+
 function cargarOrdenes(){
-  if(!userCliente) return;
+
   const ordenesDiv = document.getElementById("ordenesList");
-  ordenesDiv.innerHTML="";
   ordenesDiv.classList.remove("d-none");
 
-  db.collection("ordenes").where("clienteId","==",userCliente.uid)
-    .orderBy("actualizadoEn","desc")
-    .onSnapshot(snapshot=>{
-      ordenesDiv.innerHTML="";
-      snapshot.forEach(doc=>{
-        const o = doc.data();
+  db.collection("talleres")
+    .doc(EMPRESA_ID)
+    .collection("ordenes")
+    .where("clienteId","==",userCliente.uid)
+    .orderBy("updatedAt","desc")
+    .onSnapshot(async snapshot => {
+
+      ordenesDiv.innerHTML = "";
+
+      for (const docSnap of snapshot.docs) {
+
+        const o = docSnap.data();
+        const ordenId = docSnap.id;
+
+        // 🔹 Cargar stages reales
+        const stagesSnap = await db
+          .collection("talleres")
+          .doc(EMPRESA_ID)
+          .collection("ordenes")
+          .doc(ordenId)
+          .collection("stages")
+          .orderBy("at","desc")
+          .get();
+
+        const timelineHTML = stagesSnap.docs.map(s => {
+          const data = s.data();
+          const fecha = data.at?.toDate()?.toLocaleString() || "";
+          return `<li>${data.stage || data.type} - ${fecha}</li>`;
+        }).join("");
+
         const div = document.createElement("div");
         div.className = "client-item";
-        const timelineHTML = o.timeline?.map(t=>`<li>${t.estado} - ${t.fecha?.toDate().toLocaleString() || ''}</li>`).join("");
+
         div.innerHTML = `
           <strong>${o.codigo}</strong><br>
-          Vehículo: ${o.vehiculo} (${o.placa})<br>
-          Estado: <span class="badge-estado estado-${o.estado}">${o.estado}</span>
-          <ul class="timeline">${timelineHTML}</ul>
-          Última actualización: ${o.actualizadoEn?.toDate().toLocaleString() || ''}
+          Vehículo: ${o.vehiculo || ""} (${o.placa || ""})<br>
+          Estado: 
+          <span class="badge-estado estado-${o.status}">
+            ${o.status}
+          </span>
+
+          <ul class="timeline">
+            ${timelineHTML}
+          </ul>
+
+          Última actualización:
+          ${o.updatedAt?.toDate()?.toLocaleString() || ""}
         `;
+
         ordenesDiv.appendChild(div);
-        listenOrderVoice(db,o.codigo);
-      });
+
+        // 🔊 Activar voz automática
+        listenOrderVoice(db, EMPRESA_ID, ordenId);
+      }
+
     });
 }
+
 </script>
 
 </body>
