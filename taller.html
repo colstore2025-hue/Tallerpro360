@@ -13,7 +13,6 @@ body{
   color:#f1f5f9;
   font-family:'Inter',sans-serif;
 }
-
 .glass{
   background: rgba(15,23,42,.7);
   backdrop-filter: blur(20px);
@@ -21,44 +20,33 @@ body{
   border: 1px solid rgba(255,255,255,.05);
   padding: 1.5rem;
 }
-
 .title-gradient{
   background: linear-gradient(90deg,#22c55e,#38bdf8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight:900;
 }
-
 .badge-status{
   padding:6px 12px;
   border-radius:20px;
   font-size:12px;
   font-weight:700;
 }
-
 .badge-ingreso{ background:rgba(59,130,246,.2); color:#38bdf8;}
 .badge-proceso{ background:rgba(34,197,94,.2); color:#22c55e;}
 .badge-entregado{ background:rgba(250,204,21,.2); color:#facc15;}
-
-button{
-  border-radius:12px !important;
-}
-
+button{ border-radius:12px !important; }
 input{
   background:#1e293b !important;
   border:1px solid rgba(255,255,255,.1) !important;
   color:#fff !important;
 }
-
 .fade-in{
   opacity:0;
   transform:translateY(20px);
   animation:fadeIn 1s forwards;
 }
-
-@keyframes fadeIn{
-  to{opacity:1; transform:translateY(0);}
-}
+@keyframes fadeIn{ to{opacity:1; transform:translateY(0);} }
 </style>
 </head>
 
@@ -110,6 +98,144 @@ input{
   </div>
 
 </div>
+
+<!-- FIREBASE SCRIPT -->
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+  authDomain: "tallerpro360.firebaseapp.com",
+  projectId: "tallerpro360",
+  storageBucket: "tallerpro360.appspot.com",
+  messagingSenderId: "636224778184",
+  appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const empresaId = "empresa_001";
+const sucursalId = "sucursal_001";
+
+const registroDiv = document.getElementById("registroCliente");
+const loginDiv = document.getElementById("loginCliente");
+const crearOrdenDiv = document.getElementById("crearOrden");
+const ordenesListDiv = document.getElementById("ordenesList");
+const ordenesUl = document.getElementById("ordenesUl");
+
+/* REGISTRO */
+document.getElementById("formCliente").addEventListener("submit", async e=>{
+  e.preventDefault();
+
+  const nombre = clienteNombreReg.value;
+  const email = clienteEmailReg.value;
+  const telefono = clienteTelefonoReg.value;
+  const password = clientePasswordReg.value;
+
+  const userCredential = await createUserWithEmailAndPassword(auth,email,password);
+  const user = userCredential.user;
+
+  await addDoc(
+    collection(db,"empresas",empresaId,"sucursales",sucursalId,"clientes"),
+    {
+      uid:user.uid,
+      nombre,
+      email,
+      telefono,
+      fechaRegistro:new Date()
+    }
+  );
+
+  alert("Cliente registrado correctamente");
+});
+
+/* LOGIN */
+document.getElementById("formLogin").addEventListener("submit", async e=>{
+  e.preventDefault();
+  await signInWithEmailAndPassword(auth,clienteEmailLogin.value,clientePasswordLogin.value);
+});
+
+/* AUTH STATE */
+onAuthStateChanged(auth, async user=>{
+  if(user){
+    registroDiv.classList.add("d-none");
+    loginDiv.classList.add("d-none");
+    crearOrdenDiv.classList.remove("d-none");
+    ordenesListDiv.classList.remove("d-none");
+    cargarOrdenes(user.uid);
+  }
+});
+
+/* CREAR ORDEN */
+document.getElementById("formOrden").addEventListener("submit", async e=>{
+  e.preventDefault();
+
+  const user = auth.currentUser;
+
+  await addDoc(
+    collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
+    {
+      uid:user.uid,
+      placa:placa.value,
+      vehiculo:vehiculo.value,
+      estado:"ingreso",
+      fecha:new Date()
+    }
+  );
+
+  alert("Orden creada");
+  cargarOrdenes(user.uid);
+});
+
+/* CARGAR ORDENES */
+async function cargarOrdenes(uid){
+
+  ordenesUl.innerHTML="";
+
+  const q = query(
+    collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
+    where("uid","==",uid)
+  );
+
+  const snapshot = await getDocs(q);
+
+  snapshot.forEach(doc=>{
+    const data = doc.data();
+    const li = document.createElement("li");
+    li.className="list-group-item bg-transparent text-white d-flex justify-content-between";
+
+    let badgeClass="badge-ingreso";
+    if(data.estado==="proceso") badgeClass="badge-proceso";
+    if(data.estado==="entregado") badgeClass="badge-entregado";
+
+    li.innerHTML=`
+      <span>${data.placa} - ${data.vehiculo}</span>
+      <span class="badge-status ${badgeClass}">${data.estado}</span>
+    `;
+
+    ordenesUl.appendChild(li);
+  });
+}
+
+</script>
 
 </body>
 </html>
