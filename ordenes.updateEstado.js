@@ -135,15 +135,21 @@ if (ordenData.fechaInicioEstado?.toDate) {
     Math.floor((ahora - inicio) / 1000); // segundos
 }
     transaction.update(ordenRef, {
-      estado: nuevoEstado,
-      actualizadoEn: serverTimestamp(),
-      lastChangedBy: userRole,
-      timeline: arrayUnion({
-        estado: nuevoEstado,
-        fecha: serverTimestamp(),
-        por: userRole
-      })
-    });
+  estado: nuevoEstado,
+  actualizadoEn: serverTimestamp(),
+  fechaInicioEstado: serverTimestamp(),
+  lastChangedBy: userRole,
+  timeline: arrayUnion({
+    estado: nuevoEstado,
+    fecha: serverTimestamp(),
+    por: userRole
+  }),
+  metricas: arrayUnion({
+    estado: estadoActual,
+    duracionSegundos: duracionEstadoAnterior,
+    cerradoEn: serverTimestamp()
+  })
+});
 
     /* =====================================================
        📦 SI ES ENTREGADO → INVENTARIO + FINANZAS
