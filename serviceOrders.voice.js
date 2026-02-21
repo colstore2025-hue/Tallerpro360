@@ -1,116 +1,180 @@
 /**
  * serviceOrders.voice.js
- * Voz automática por cambio de estado de orden
- * TallerPRO360
+ * Sistema inteligente de voz por cambio de estado
+ * TallerPRO360 ERP SaaS
+ * Versión PRO 2026
  * Compatible Chrome / Android / iOS / PWA
  * Idioma: Español Colombia (es-CO)
  */
 
-// ===============================
-// 🎙️ Mensajes por estado
-// ===============================
+// ======================================================
+// 🎙️ MENSAJES POR ESTADO (status real del sistema)
+// ======================================================
+
 const STAGE_MESSAGES = {
   INGRESO: "Su vehículo ha sido ingresado al taller.",
   DIAGNOSTICO: "Su vehículo está en diagnóstico técnico.",
   APROBADO: "El servicio de su vehículo ha sido aprobado.",
-  "EN PROCESO": "Su vehículo se encuentra en reparación.",
+  EN_PROCESO: "Su vehículo se encuentra en reparación.",
   LISTO: "Su vehículo está listo para ser entregado.",
-  ENTREGADO: "Gracias por confiar en Taller PRO tres seis cero. Su vehículo fue entregado."
+  ENTREGADO: "Gracias por confiar en Taller Pro tres sesenta. Su vehículo fue entregado."
 };
 
-// ===============================
-// 💬 Introducciones dinámicas
-// ===============================
+// ======================================================
+// 💬 INTRODUCCIONES DINÁMICAS
+// ======================================================
+
 const STAGE_INTRO = {
   INGRESO: "Hola,",
   DIAGNOSTICO: "Atención,",
   APROBADO: "Importante:",
-  "EN PROCESO": "Información:",
+  EN_PROCESO: "Información:",
   LISTO: "Buenas noticias:",
   ENTREGADO: "Gracias por su confianza,"
 };
 
-// ===============================
-// 🔐 Control local para no repetir mensajes por orden
-// ===============================
+// ======================================================
+// 🔐 CONTROL LOCAL ANTI-REPETICIÓN
+// ======================================================
+
+function getVoiceMemory() {
+  return JSON.parse(localStorage.getItem("tp360_voice") || "{}");
+}
+
 function alreadySpoken(orderCode, stage) {
-  const data = JSON.parse(localStorage.getItem('tp360_voice') || '{}');
+  const data = getVoiceMemory();
   return data[orderCode] === stage;
 }
 
 function markAsSpoken(orderCode, stage) {
-  const data = JSON.parse(localStorage.getItem('tp360_voice') || '{}');
+  const data = getVoiceMemory();
   data[orderCode] = stage;
-  localStorage.setItem('tp360_voice', JSON.stringify(data));
+  localStorage.setItem("tp360_voice", JSON.stringify(data));
 }
 
-// ===============================
-// 🔊 Función principal de voz
-// ===============================
+// ======================================================
+// 🎤 SELECCIÓN INTELIGENTE DE VOZ
+// ======================================================
+
+function getBestSpanishVoice() {
+  const voices = speechSynthesis.getVoices();
+
+  // Prioridad 1: Español Colombia
+  let voice = voices.find(v => v.lang === "es-CO");
+
+  // Prioridad 2: Español general
+  if (!voice) {
+    voice = voices.find(v => v.lang.startsWith("es"));
+  }
+
+  return voice || null;
+}
+
+// ======================================================
+// 🔊 FUNCIÓN PRINCIPAL
+// ======================================================
+
 export function speakOrderStage(order) {
-  // ============================
-  // ✅ Compatibilidad reforzada
-  // ============================
+
   if (typeof speechSynthesis === "undefined" || !speechSynthesis) {
-    console.warn("🔇 Navegador sin soporte de voz (speechSynthesis)");
+    console.warn("🔇 Navegador sin soporte de voz");
     return;
   }
 
-  if (!order || !order.estado || !order.codigo) return;
+  if (!order || !order.status || !order.codigo) return;
 
-  const message = STAGE_MESSAGES[order.estado];
+  const stage = order.status;
+  const message = STAGE_MESSAGES[stage];
+
   if (!message) return;
 
-  if (alreadySpoken(order.codigo, order.estado)) return;
+  // Evita repetir
+  if (alreadySpoken(order.codigo, stage)) return;
 
-  const utterance = new SpeechSynthesisUtterance(
-    `${STAGE_INTRO[order.estado] || ""} ${message}`
-  );
+  const fullMessage = `${STAGE_INTRO[stage] || ""} ${message}`;
+
+  const utterance = new SpeechSynthesisUtterance(fullMessage);
 
   utterance.lang = "es-CO";
   utterance.rate = 0.95;
   utterance.pitch = 1;
   utterance.volume = 1;
 
-  // Cancelar cualquier voz anterior
+  const selectedVoice = getBestSpanishVoice();
+  if (selectedVoice) {
+    utterance.voice = selectedVoice;
+  }
+
+  // Limpia cola anterior
   window.speechSynthesis.cancel();
 
-  // Esperar carga de voces (Android / iOS fix)
+  // Delay pequeño para estabilidad en móviles
   setTimeout(() => {
     window.speechSynthesis.speak(utterance);
-    markAsSpoken(order.codigo, order.estado);
-  }, 300);
+    markAsSpoken(order.codigo, stage);
+  }, 250);
 }
 
-// ===============================
-// 🔄 Inicialización de voz para PWA/móvil
-// ===============================
+// ======================================================
+// 📱 ACTIVACIÓN PARA PWA / iOS
+// ======================================================
+
 export function initVoiceActivation() {
-  document.body.addEventListener('click', () => {
-    if (typeof speechSynthesis !== "undefined" && speechSynthesis) {
-      window.speechSynthesis.cancel(); // activa la voz
-      console.log("🎤 TallerPRO360: Voz activada manualmente (PWA/Android/iOS)");
+
+  const activate = () => {
+    if (typeof speechSynthesis !== "undefined") {
+      const dummy = new SpeechSynthesisUtterance("");
+      speechSynthesis.speak(dummy);
+      speechSynthesis.cancel();
+      console.log("🎤 Voz activada correctamente");
     }
-  }, { once: true });
+  };
+
+  document.addEventListener("click", activate, { once: true });
+  document.addEventListener("touchstart", activate, { once: true });
 }
 
-// ===============================
-// 🔄 Listener Firestore para actualización automática
-// ===============================
-export function listenOrderVoice(db, orderId) {
-  import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js")
-    .then(({ doc, onSnapshot }) => {
-      try {
-        const ref = doc(db, "ordenes", orderId);
+// ======================================================
+// 🔄 LISTENER FIRESTORE MULTIEMPRESA (VERSIÓN ERP)
+// ======================================================
 
-        onSnapshot(ref, (snap) => {
-          if (!snap.exists()) return;
-          speakOrderStage(snap.data());
-        });
-      } catch (err) {
-        console.error("❌ Error escuchando Firestore:", err);
-        // Reintento automático cada 5s
-        setTimeout(() => listenOrderVoice(db, orderId), 5000);
-      }
+import {
+  doc,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+/**
+ * Escucha cambios en una orden específica
+ * @param {object} db - instancia Firestore
+ * @param {string} empresaId - ID del taller
+ * @param {string} ordenId - código de orden
+ */
+export function listenOrderVoice(db, empresaId, ordenId) {
+
+  try {
+
+    const ref = doc(db, "talleres", empresaId, "ordenes", ordenId);
+
+    onSnapshot(ref, (snap) => {
+
+      if (!snap.exists()) return;
+
+      const data = snap.data();
+
+      if (!data.status) return;
+
+      speakOrderStage(data);
+
     });
+
+  } catch (err) {
+
+    console.error("❌ Error escuchando orden:", err);
+
+    // Reintento automático
+    setTimeout(() => {
+      listenOrderVoice(db, empresaId, ordenId);
+    }, 5000);
+
+  }
 }
