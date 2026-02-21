@@ -3,63 +3,60 @@
 <head>
 
 <meta charset="UTF-8">
-<title>TallerPRO360 | Software para talleres en Colombia</title>
+<title>TallerPRO360 | ERP Inteligente para Talleres en Colombia</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Software profesional para talleres automotrices en Colombia. Control total de órdenes, vehículos y clientes.">
+<meta name="description" content="TallerPRO360 es el ERP inteligente operado por voz que transforma la gestión de talleres automotrices en Colombia.">
 <meta name="robots" content="index, follow">
 
-<!-- Open Graph -->
-<meta property="og:title" content="TallerPRO360">
-<meta property="og:description" content="Sistema inteligente para talleres en Colombia">
-<meta property="og:image" content="/assets/logo-512.png">
-<meta property="og:type" content="website">
-
-<!-- PWA -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#16a34a">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
 
 <link rel="icon" href="/assets/logo-192.png" type="image/png">
-<link rel="apple-touch-icon" href="/assets/logo-192.png">
-
-<link rel="preload" href="/assets/css/styles.css" as="style">
 <link rel="stylesheet" href="/assets/css/styles.css">
 
 <style>
-.hero-bg{background:linear-gradient(135deg,#ecfdf5,#eff6ff);}
-.section{padding:80px 20px;}
+body{font-family:Arial,sans-serif;margin:0;background:#f9fafb;}
+.section{padding:90px 20px;}
 .container{max-width:1200px;margin:auto;}
 .center{text-align:center;}
+.hero-bg{background:linear-gradient(135deg,#ecfdf5,#eff6ff);}
+h1{font-size:46px;font-weight:900;}
+.subtitle{font-size:20px;color:#555;margin-top:20px;}
+.btn-main{background:#16a34a;color:#fff;padding:14px 24px;border:none;border-radius:14px;font-weight:700;cursor:pointer;}
+.btn-main:hover{opacity:.9;}
+.badge{background:#16a34a;color:#fff;padding:6px 14px;border-radius:30px;font-size:13px;font-weight:700;margin-top:20px;display:inline-block;}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:40px;margin-top:60px;}
+.feature{background:#fff;padding:30px;border-radius:18px;box-shadow:0 10px 25px rgba(0,0,0,.05);transition:.3s;}
+.feature:hover{transform:translateY(-8px);}
+.icon{font-size:40px;margin-bottom:15px;}
+.process{display:flex;flex-wrap:wrap;gap:25px;justify-content:center;margin-top:60px;}
+.step{background:#fff;padding:20px 30px;border-radius:30px;box-shadow:0 5px 15px rgba(0,0,0,.05);font-weight:700;}
+.footer{background:#f1f5f9;padding:40px;text-align:center;margin-top:60px;}
 .price{font-size:36px;font-weight:800;color:#16a34a;}
 .plan{background:#fff;padding:30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.06);transition:.3s;}
 .plan:hover{transform:translateY(-6px);}
 .highlight{border:3px solid #16a34a;transform:scale(1.05);}
-.btn-main{background:#16a34a;color:#fff;padding:14px 22px;border:none;border-radius:12px;cursor:pointer;font-weight:700;}
-.btn-main:hover{opacity:.9;}
-.footer{background:#f8fafc;padding:40px 20px;}
-.badge{display:inline-block;background:#16a34a;color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;margin-top:15px;}
 .dark-plan{background:#111827;color:#fff;}
 .loader{display:none;margin-top:10px;font-size:14px;color:#16a34a;}
+.fade-in{opacity:0;transform:translateY(20px);transition:all .8s ease;}
+.fade-in.visible{opacity:1;transform:translateY(0);}
 </style>
 
 </head>
-
 <body>
 
 <!-- HERO -->
-<section class="section hero-bg">
-<div class="container center">
+<section class="section hero-bg center">
+<div class="container fade-in">
 
-<img src="/assets/logo-192.png" width="90" height="90" alt="TallerPRO360 Logo">
+<img src="/assets/logo-192.png" width="100" alt="Logo">
 
-<h1 style="font-size:42px;font-weight:900;margin-top:20px;">
-Control total de tu taller
-</h1>
+<h1>Tu ayudante inteligente en el taller</h1>
 
-<p style="margin-top:15px;font-size:18px;color:#555;">
-Desde el ingreso hasta la entrega. Todo digital, profesional y organizado.
+<p class="subtitle">
+TallerPRO360 es un ERP operado por voz que organiza, controla y profesionaliza tu taller automotriz.
+<br><strong>Más control. Más orden. Más tranquilidad.</strong>
 </p>
 
 <div style="margin-top:30px;">
@@ -69,13 +66,72 @@ Desde el ingreso hasta la entrega. Todo digital, profesional y organizado.
 </div>
 
 <div class="badge">
-Acceso para Superadmin · CEO · Staff
+Sistema operado por voz · ERP Colombiano 🇨🇴
 </div>
 
 </div>
 </section>
 
-<!-- PLANES -->
+<!-- BENEFICIOS -->
+<section class="section center">
+<div class="container fade-in">
+
+<h2 style="font-size:36px;font-weight:900;">Transforma tu taller en una empresa organizada</h2>
+
+<div class="feature-grid">
+
+<div class="feature">
+<div class="icon">🎙️</div>
+<h3>Operado por Voz</h3>
+<p>Dicta diagnósticos, actualiza órdenes y registra notas técnicas sin tocar el celular.</p>
+</div>
+
+<div class="feature">
+<div class="icon">📋</div>
+<h3>Control Total de Órdenes</h3>
+<p>Desde ingreso hasta entrega con historial automático por etapas.</p>
+</div>
+
+<div class="feature">
+<div class="icon">📊</div>
+<h3>Reportes Inteligentes</h3>
+<p>Visualiza ingresos, utilidad, órdenes activas y rendimiento del taller en segundos.</p>
+</div>
+
+<div class="feature">
+<div class="icon">🔐</div>
+<h3>Multiusuario Seguro</h3>
+<p>Controla accesos de técnicos, staff y administradores.</p>
+</div>
+
+</div>
+</div>
+</section>
+
+<!-- PROCESO VISUAL -->
+<section class="section hero-bg center">
+<div class="container fade-in">
+
+<h2 style="font-size:34px;font-weight:900;">Tranquilidad en tu logística de taller</h2>
+
+<div class="process">
+<div class="step">Ingreso 🚗</div>
+<div class="step">Diagnóstico 🔎</div>
+<div class="step">Aprobación ✔</div>
+<div class="step">Reparación 🔧</div>
+<div class="step">Entrega 🤝</div>
+</div>
+
+<p style="margin-top:40px;font-size:18px;color:#555;">
+Todo sincronizado en tiempo real.  
+Tus clientes reciben actualizaciones automáticas.  
+Tu equipo trabaja organizado.
+</p>
+
+</div>
+</section>
+
+<!-- PLANES (SIN CAMBIOS DE CONTENIDO) -->
 <section class="section" style="background:linear-gradient(135deg,#f0fdf4,#f8fafc);">
 <div class="container center">
 
@@ -93,114 +149,93 @@ Empieza pequeño. Crece sin límites.
 <div class="plan">
 <h3 style="font-size:24px;font-weight:900;">Básico</h3>
 <p class="price">$29.900 <span style="font-size:16px;color:#555;">/ mes</span></p>
-
 <ul style="text-align:left;line-height:30px;margin-bottom:30px;">
 <li>✔ Hasta 30 órdenes activas</li>
 <li>✔ Hasta 3 usuarios</li>
 <li>✔ Gestión digital</li>
 <li>✔ Historial clientes</li>
 </ul>
-
-<button class="btn-main" style="width:100%;" onclick="iniciarPago('basico', this)">
-Comenzar ahora
-</button>
-
+<button class="btn-main" style="width:100%;" onclick="iniciarPago('basico', this)">Comenzar ahora</button>
 <div class="loader">Redirigiendo a pago...</div>
-
 </div>
 
 <!-- PRO -->
 <div class="plan highlight">
 <h3 style="font-size:24px;font-weight:900;">PRO</h3>
 <p class="price">$59.900 <span style="font-size:16px;color:#555;">/ mes</span></p>
-
 <ul style="text-align:left;line-height:30px;margin-bottom:30px;">
 <li>✔ Hasta 150 órdenes</li>
 <li>✔ 6 usuarios</li>
 <li>✔ Diagnóstico por voz</li>
 <li>✔ Reportes inteligentes</li>
 </ul>
-
-<button class="btn-main" style="width:100%;" onclick="iniciarPago('pro', this)">
-Actualizar a PRO
-</button>
-
+<button class="btn-main" style="width:100%;" onclick="iniciarPago('pro', this)">Actualizar a PRO</button>
 <div class="loader">Redirigiendo a pago...</div>
-
 </div>
 
 <!-- PRO ANUAL -->
 <div class="plan dark-plan">
 <h3 style="font-size:24px;font-weight:900;">PRO Anual</h3>
 <p class="price" style="color:#22c55e;">$599.000 <span style="font-size:16px;color:#9ca3af;">/ año</span></p>
-
 <ul style="text-align:left;line-height:30px;margin-bottom:30px;">
 <li>✔ Todo lo PRO</li>
 <li>✔ Órdenes ilimitadas</li>
 <li>✔ 20 usuarios</li>
 <li>✔ Soporte directo</li>
 </ul>
-
-<button class="btn-main" style="width:100%;" onclick="iniciarPago('pro_anual', this)">
-Elegir plan anual
-</button>
-
+<button class="btn-main" style="width:100%;" onclick="iniciarPago('pro_anual', this)">Elegir plan anual</button>
 <div class="loader">Redirigiendo a pago...</div>
-
 </div>
 
 </div>
 </div>
 </section>
 
-<footer class="footer center">
-<img src="/assets/logo-192.png" width="60" height="60" alt="Logo">
-<p style="margin-top:15px;color:#666;">
-TallerPRO360 © 2026 · Hecho para talleres colombianos 🇨🇴
+<footer class="footer">
+<img src="/assets/logo-192.png" width="60">
+<p style="margin-top:15px;color:#555;">
+TallerPRO360 © 2026 · Tu ayudante inteligente en el taller
 </p>
 </footer>
 
-<!-- SERVICE WORKER -->
+<!-- ANIMACIÓN SCROLL -->
 <script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js');
+const observer = new IntersectionObserver(entries=>{
+entries.forEach(entry=>{
+if(entry.isIntersecting){
+entry.target.classList.add("visible");
 }
+});
+},{threshold:0.2});
+
+document.querySelectorAll('.fade-in').forEach(el=>{
+observer.observe(el);
+});
 </script>
 
-<!-- SISTEMA DE PAGOS -->
+<!-- PAGOS -->
 <script>
 async function iniciarPago(plan, boton) {
-
-  boton.disabled = true;
-  const loader = boton.nextElementSibling;
-  loader.style.display = "block";
-
-  try {
-
-    // 🔥 TEMPORAL hasta conectar Firebase Auth real
-    const userId = "demo-user-123";
-
-    const response = await fetch("/api/create-preference", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan, userId })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok || !data.init_point) {
-      throw new Error(data.error || "Error creando pago");
-    }
-
-    window.location.href = data.init_point;
-
-  } catch (error) {
-
-    alert("Error iniciando el pago: " + error.message);
-
-    boton.disabled = false;
-    loader.style.display = "none";
-  }
+boton.disabled = true;
+const loader = boton.nextElementSibling;
+loader.style.display = "block";
+try {
+const userId = "demo-user-123";
+const response = await fetch("/api/create-preference", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ plan, userId })
+});
+const data = await response.json();
+if (!response.ok || !data.init_point) {
+throw new Error(data.error || "Error creando pago");
+}
+window.location.href = data.init_point;
+} catch (error) {
+alert("Error iniciando el pago: " + error.message);
+boton.disabled = false;
+loader.style.display = "none";
+}
 }
 </script>
 
