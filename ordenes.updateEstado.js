@@ -9,7 +9,7 @@ import {
 import { db } from "./firebase-config.js";
 
 /* =====================================================
-   🔄 FLUJO OFICIAL DE ESTADOS (Máquina de estados)
+   🔄 FLUJO OFICIAL DE ESTADOS
 ===================================================== */
 
 const FLUJO_ESTADOS = {
@@ -51,15 +51,6 @@ const PERMISOS_ROL = {
    🚀 FUNCIÓN PRINCIPAL
 ===================================================== */
 
-/**
- * Cambia estado de orden (ERP completo)
- * - Multiempresa
- * - Máquina de estados
- * - Permisos por rol
- * - Inventario automático
- * - Movimiento financiero
- * - Timeline inmutable
- */
 export async function cambiarEstadoOrden(
   empresaId,
   ordenId,
@@ -89,75 +80,69 @@ export async function cambiarEstadoOrden(
     const ordenData = ordenSnap.data();
     const estadoActual = ordenData.estado;
 
-    /* =====================================================
-       ✅ VALIDACIONES
-    ===================================================== */
+    /* ================= VALIDACIONES ================= */
 
-    // 1️⃣ Validar que el estado exista
     if (!FLUJO_ESTADOS.hasOwnProperty(nuevoEstado)) {
       throw new Error(`Estado inválido: ${nuevoEstado}`);
     }
 
-    // 2️⃣ Evitar mismo estado
     if (estadoActual === nuevoEstado) {
       console.warn("La orden ya está en ese estado");
       return;
     }
 
-    // 3️⃣ Validar transición permitida
     const estadosPermitidos = FLUJO_ESTADOS[estadoActual] || [];
-
     if (!estadosPermitidos.includes(nuevoEstado)) {
       throw new Error(
-        `Transición inválida: no se puede pasar de ${estadoActual} a ${nuevoEstado}`
+        `Transición inválida: ${estadoActual} → ${nuevoEstado}`
       );
     }
 
-    // 4️⃣ Validar permisos por rol
     const permisos = PERMISOS_ROL[userRole] || [];
-
     if (!permisos.includes(nuevoEstado)) {
       throw new Error(
         `El rol ${userRole} no puede cambiar al estado ${nuevoEstado}`
       );
     }
 
-    /* =====================================================
-       🔄 ACTUALIZAR ESTADO + TIMELINE
-    ===================================================== */
-const ahora = new Date();
+    /* ================= MÉTRICAS ================= */
 
-let duracionEstadoAnterior = null;
+    const ahora = new Date();
+    let duracionEstadoAnterior = 0;
 
-if (ordenData.fechaInicioEstado?.toDate) {
-  const inicio = ordenData.fechaInicioEstado.toDate();
-  duracionEstadoAnterior =
-    Math.floor((ahora - inicio) / 1000); // segundos
-}
+    if (ordenData.fechaInicioEstado?.toDate) {
+      const inicio = ordenData.fechaInicioEstado.toDate();
+      duracionEstadoAnterior =
+        Math.floor((ahora - inicio) / 1000);
+    }
+
+    /* ================= ACTUALIZAR ORDEN ================= */
+
     transaction.update(ordenRef, {
-  estado: nuevoEstado,
-  actualizadoEn: serverTimestamp(),
-  fechaInicioEstado: serverTimestamp(),
-  lastChangedBy: userRole,
-  timeline: arrayUnion({
-    estado: nuevoEstado,
-    fecha: serverTimestamp(),
-    por: userRole
-  }),
-  metricas: arrayUnion({
-    estado: estadoActual,
-    duracionSegundos: duracionEstadoAnterior,
-    cerradoEn: serverTimestamp()
-  })
-});
+      estado: nuevoEstado,
+      actualizadoEn: serverTimestamp(),
+      fechaInicioEstado: serverTimestamp(),
+      lastChangedBy: userRole,
+      timeline: arrayUnion({
+        estado: nuevoEstado,
+        fecha: serverTimestamp(),
+        por: userRole
+      }),
+      metricas: arrayUnion({
+        estado: estadoActual,
+        duracionSegundos: duracionEstadoAnterior,
+        cerradoEn: serverTimestamp()
+      })
+    });
 
     /* =====================================================
-       📦 SI ES ENTREGADO → INVENTARIO + FINANZAS
+       📦 SI ES ENTREGADO → INVENTARIO + FINANZAS + KPI
     ===================================================== */
 
     if (nuevoEstado === "ENTREGADO") {
 
-      // 🧰 DESCONTAR INVENTARIO
+      /* ========= INVENTARIO ========= */
+
       if (ordenData.repuestos?.length) {
 
         for (const repuesto of ordenData.repuestos) {
@@ -193,21 +178,68 @@ if (ordenData.fechaInicioEstado?.toDate) {
         }
       }
 
-      // 💰 CREAR MOVIMIENTO FINANCIERO
+      /* ========= MOVIMIENTO FINANCIERO ========= */
+
       const movimientoRef = doc(
         collection(db, "talleres", empresaId, "movimientos")
       );
+
+      const totalOrden = ordenData.totales?.total || 0;
 
       transaction.set(movimientoRef, {
         tipo: "INGRESO",
         origen: "orden",
         referenciaId: ordenId,
-        monto: ordenData.totales?.total || 0,
+        monto: totalOrden,
         categoria: "servicios",
         descripcion: `Ingreso por orden ${ordenData.codigo || ordenId}`,
         fecha: serverTimestamp(),
         creadoPor: userRole
       });
+
+      /* ========= ACTUALIZAR KPI GLOBAL ========= */
+
+      const statsRef = doc(
+        db,
+        "talleres",
+        empresaId,
+        "estadisticas",
+        "global"
+      );
+
+      const statsSnap = await transaction.get(statsRef);
+
+      if (!statsSnap.exists()) {
+        // Primera vez que se crea
+        transaction.set(statsRef, {
+          totalOrdenes: 0,
+          ordenesActivas: 0,
+          ordenesEntregadas: 1,
+          ingresosTotales: totalOrden,
+          ticketPromedio: totalOrden,
+          actualizadoEn: serverTimestamp()
+        });
+      } else {
+        const stats = statsSnap.data();
+
+        const nuevasEntregadas =
+          (stats.ordenesEntregadas || 0) + 1;
+
+        const nuevosIngresos =
+          (stats.ingresosTotales || 0) + totalOrden;
+
+        const nuevoTicket =
+          nuevasEntregadas > 0
+            ? nuevosIngresos / nuevasEntregadas
+            : 0;
+
+        transaction.update(statsRef, {
+          ordenesEntregadas: nuevasEntregadas,
+          ingresosTotales: nuevosIngresos,
+          ticketPromedio: nuevoTicket,
+          actualizadoEn: serverTimestamp()
+        });
+      }
     }
 
     console.log(
