@@ -6,14 +6,10 @@
 <title>TallerPRO360 | ERP</title>
 <link rel="icon" href="logo-tallerpro360.png">
 
-<!-- Tailwind -->
 <script src="https://cdn.tailwindcss.com"></script>
-
-<!-- Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-<!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body{
@@ -23,14 +19,8 @@ body{
   color:#f1f5f9;
 }
 
-/* Layout */
-.erp-wrapper{
-  display:flex;
-  height:100vh;
-  overflow:hidden;
-}
+.erp-wrapper{ display:flex; height:100vh; overflow:hidden; }
 
-/* Sidebar */
 .sidebar{
   width:260px;
   background:rgba(15,23,42,.95);
@@ -47,7 +37,6 @@ body{
   font-weight:900;
   margin-bottom:50px;
 }
-
 .logo span{
   background:linear-gradient(90deg,#22c55e,#38bdf8);
   -webkit-background-clip:text;
@@ -65,32 +54,19 @@ body{
   transition:.3s;
   font-weight:600;
 }
-
 .nav-btn:hover,
 .nav-btn.active{
   background:rgba(34,197,94,.1);
   color:#22c55e;
 }
 
-/* Main */
-.main-content{
-  flex:1;
-  padding:40px;
-  overflow-y:auto;
-}
+.main-content{ flex:1; padding:40px; overflow-y:auto; }
 
-/* Topbar */
 .topbar{
   display:flex;
   justify-content:space-between;
   align-items:center;
   margin-bottom:30px;
-}
-
-.user-box{
-  display:flex;
-  align-items:center;
-  gap:15px;
 }
 
 .logout-btn{
@@ -100,14 +76,12 @@ body{
   font-size:14px;
   transition:.3s;
 }
-
 .logout-btn:hover{
   background:rgba(239,68,68,.1);
   border-color:#ef4444;
   color:#ef4444;
 }
 
-/* Content Area */
 #contentArea{
   background:rgba(15,23,42,.75);
   border:1px solid rgba(255,255,255,.05);
@@ -115,22 +89,10 @@ body{
   border-radius:24px;
   padding:30px;
   min-height:600px;
-  animation:fadeIn .6s ease-in-out;
 }
 
-@keyframes fadeIn{
-  from{opacity:0; transform:translateY(10px);}
-  to{opacity:1; transform:translateY(0);}
-}
-
-/* Scroll */
-::-webkit-scrollbar{
-  width:6px;
-}
-::-webkit-scrollbar-thumb{
-  background:#1e293b;
-  border-radius:10px;
-}
+::-webkit-scrollbar{ width:6px; }
+::-webkit-scrollbar-thumb{ background:#1e293b; border-radius:10px; }
 </style>
 </head>
 
@@ -138,173 +100,146 @@ body{
 
 <div class="erp-wrapper">
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <div class="logo">
-      Taller<span>PRO360</span>
-    </div>
+<aside class="sidebar">
+  <div class="logo">Taller<span>PRO360</span></div>
 
-    <nav>
-      <button class="nav-btn active" data-section="dashboard">
-        <i class="fa-solid fa-chart-line mr-2"></i> Dashboard
-      </button>
+  <button class="nav-btn active" data-section="dashboard">
+    <i class="fa-solid fa-chart-line mr-2"></i> Dashboard
+  </button>
 
-      <button class="nav-btn" data-section="ordenes">
-        <i class="fa-solid fa-car mr-2"></i> Órdenes
-      </button>
+  <button class="nav-btn" data-section="ordenes">
+    <i class="fa-solid fa-car mr-2"></i> Órdenes
+  </button>
 
-      <button class="nav-btn" data-section="inventario">
-        <i class="fa-solid fa-boxes-stacked mr-2"></i> Inventario
-      </button>
+  <button class="nav-btn" data-section="inventario">
+    <i class="fa-solid fa-boxes-stacked mr-2"></i> Inventario
+  </button>
 
-      <button class="nav-btn" data-section="finanzas">
-        <i class="fa-solid fa-coins mr-2"></i> Finanzas
-      </button>
+  <button class="nav-btn" data-section="finanzas">
+    <i class="fa-solid fa-coins mr-2"></i> Finanzas
+  </button>
 
-      <button class="nav-btn" data-section="nomina">
-        <i class="fa-solid fa-users mr-2"></i> Nómina
-      </button>
+  <button class="nav-btn" data-section="nomina">
+    <i class="fa-solid fa-users mr-2"></i> Nómina
+  </button>
 
-      <button class="nav-btn" data-section="mapa">
-        <i class="fa-solid fa-map-location-dot mr-2"></i> Mapa
-      </button>
-    </nav>
-  </aside>
+  <button class="nav-btn" data-section="mapa">
+    <i class="fa-solid fa-map-location-dot mr-2"></i> Mapa
+  </button>
+</aside>
 
-  <!-- CONTENIDO -->
-  <main class="main-content">
+<main class="main-content">
 
-    <header class="topbar">
-      <div>
-        <h2 id="sectionTitle" class="text-2xl font-bold">Dashboard</h2>
-        <p class="text-slate-400 text-sm">Centro de control operativo</p>
-      </div>
+<header class="topbar">
+  <div>
+    <h2 id="sectionTitle" class="text-2xl font-bold">Dashboard</h2>
+    <p class="text-slate-400 text-sm">Centro de control operativo</p>
+  </div>
+  <button id="logoutBtn" class="logout-btn">Salir</button>
+</header>
 
-      <div class="user-box">
-        <span id="userRole" class="text-sm text-slate-400">Cargando...</span>
-        <button id="logoutBtn" class="logout-btn">Salir</button>
-      </div>
-    </header>
+<section id="contentArea"></section>
 
-    <section id="contentArea">
-      <!-- Aquí cargaremos los módulos -->
-    </section>
-
-  </main>
-
+</main>
 </div>
 
-<script>
-document.querySelectorAll(".nav-btn").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    document.getElementById("sectionTitle").innerText = btn.innerText.trim();
-  });
-});
-</script>
+<!-- ================= FIREBASE DASHBOARD REAL ================= -->
+<script type="module">
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+import { db } from "./firebase-config.js";
+import {
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-<script>
+let chartInstance = null;
 
-// ============================
-// DASHBOARD MODULE
-// ============================
-
-function renderDashboard(){
+// ================= DASHBOARD =================
+async function renderDashboard(){
 
   document.getElementById("contentArea").innerHTML = `
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    ${kpiCard("Órdenes Activas","ordenesActivas","fa-car")}
+    ${kpiCard("En Proceso","ordenesProceso","fa-gears")}
+    ${kpiCard("Ingresos Hoy","ingresosHoy","fa-coins")}
+    ${kpiCard("Inventario Crítico","inventarioCritico","fa-triangle-exclamation")}
+  </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-
-      ${kpiCard("Órdenes Activas","ordenesActivas","fa-car")}
-      ${kpiCard("En Proceso","ordenesProceso","fa-gears")}
-      ${kpiCard("Ingresos Hoy","ingresosHoy","fa-coins")}
-      ${kpiCard("Inventario Crítico","inventarioCritico","fa-triangle-exclamation")}
-
-    </div>
-
-    <div class="bg-slate-900/60 p-6 rounded-2xl border border-white/5">
-      <h3 class="mb-4 text-lg font-semibold text-slate-300">
-        Actividad semanal
-      </h3>
-      <canvas id="dashboardChart"></canvas>
-    </div>
+  <div class="bg-slate-900/60 p-6 rounded-2xl border border-white/5">
+    <h3 class="mb-4 text-lg font-semibold text-slate-300">Actividad semanal</h3>
+    <canvas id="dashboardChart"></canvas>
+  </div>
   `;
 
-  initCounters();
+  await loadKPIs();
   initChart();
 }
 
-// ============================
-// KPI CARD TEMPLATE
-// ============================
-
 function kpiCard(title,id,icon){
   return `
-  <div class="bg-slate-900/70 p-6 rounded-2xl border border-white/5 hover:scale-105 transition duration-300">
-    <div class="flex justify-between items-center mb-3">
+  <div class="bg-slate-900/70 p-6 rounded-2xl border border-white/5">
+    <div class="flex justify-between mb-3">
       <span class="text-slate-400 text-sm">${title}</span>
       <i class="fa-solid ${icon} text-slate-500"></i>
     </div>
     <h2 id="${id}" class="text-3xl font-bold">0</h2>
-  </div>
-  `;
+  </div>`;
 }
 
-// ============================
-// COUNTER ANIMATION
-// ============================
+// ================= FIRESTORE DATA =================
+async function loadKPIs(){
 
-function animateValue(id, start, end, duration){
-  let range = end - start;
-  let current = start;
-  let increment = end > start ? 1 : -1;
-  let stepTime = Math.abs(Math.floor(duration / range));
-  let obj = document.getElementById(id);
+  const ordenesSnap = await getDocs(collection(db,"ordenes"));
+  const inventarioSnap = await getDocs(collection(db,"inventario"));
 
-  let timer = setInterval(function() {
-    current += increment;
-    obj.innerText = current.toLocaleString();
-    if (current == end) {
-      clearInterval(timer);
+  let activas=0, proceso=0, ingresosHoy=0, critico=0;
+
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
+
+  ordenesSnap.forEach(doc=>{
+    const d = doc.data();
+    if(d.estado !== "FINALIZADO") activas++;
+    if(d.estado === "EN PROCESO") proceso++;
+    if(d.creadoEn){
+      const fecha = d.creadoEn.toDate();
+      if(fecha >= hoy) ingresosHoy += d.total || 0;
     }
-  }, stepTime);
+  });
+
+  inventarioSnap.forEach(doc=>{
+    const d = doc.data();
+    if(d.stock <= d.stockMinimo) critico++;
+  });
+
+  animate("ordenesActivas",activas);
+  animate("ordenesProceso",proceso);
+  animate("ingresosHoy",ingresosHoy);
+  animate("inventarioCritico",critico);
 }
 
-// ============================
-// INIT COUNTERS (MOCK DATA)
-// ============================
-
-function initCounters(){
-
-  // ⚠️ Luego esto se conecta a Firestore
-  animateValue("ordenesActivas",0,14,800);
-  animateValue("ordenesProceso",0,6,800);
-  animateValue("ingresosHoy",0,1230986,800);
-  animateValue("inventarioCritico",0,3,800);
-
+// ================= COUNTER =================
+function animate(id,value){
+  const el = document.getElementById(id);
+  el.innerText = value.toLocaleString();
 }
 
-// ============================
-// CHART
-// ============================
-
+// ================= CHART =================
 function initChart(){
 
-  const ctx = document.getElementById('dashboardChart');
+  if(chartInstance) chartInstance.destroy();
 
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
-      datasets: [{
-        label: 'Órdenes',
-        data: [5,7,4,9,6,3,8],
-        borderColor: '#22c55e',
-        backgroundColor: 'rgba(34,197,94,.2)',
-        tension: 0.4,
+  const ctx = document.getElementById("dashboardChart");
+
+  chartInstance = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
+      datasets:[{
+        data:[5,7,4,9,6,3,8],
+        borderColor:'#22c55e',
+        backgroundColor:'rgba(34,197,94,.2)',
+        tension:.4,
         fill:true
       }]
     },
@@ -318,26 +253,23 @@ function initChart(){
   });
 }
 
-// ============================
-// NAVIGATION HANDLER
-// ============================
-
+// ================= NAVIGATION =================
 document.querySelectorAll(".nav-btn").forEach(btn=>{
-  btn.addEventListener("click",()=>{
+  btn.addEventListener("click", async ()=>{
+    document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("sectionTitle").innerText = btn.innerText.trim();
 
-    const section = btn.dataset.section;
-
-    if(section === "dashboard"){
-      renderDashboard();
-    } else {
+    if(btn.dataset.section==="dashboard"){
+      await renderDashboard();
+    }else{
       document.getElementById("contentArea").innerHTML =
       "<div class='text-slate-400'>Módulo en construcción...</div>";
     }
-
   });
 });
 
-// Cargar Dashboard al iniciar
+// INIT
 renderDashboard();
 
 </script>
