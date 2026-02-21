@@ -204,5 +204,143 @@ document.querySelectorAll(".nav-btn").forEach(btn=>{
 });
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+// ============================
+// DASHBOARD MODULE
+// ============================
+
+function renderDashboard(){
+
+  document.getElementById("contentArea").innerHTML = `
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+
+      ${kpiCard("Órdenes Activas","ordenesActivas","fa-car")}
+      ${kpiCard("En Proceso","ordenesProceso","fa-gears")}
+      ${kpiCard("Ingresos Hoy","ingresosHoy","fa-coins")}
+      ${kpiCard("Inventario Crítico","inventarioCritico","fa-triangle-exclamation")}
+
+    </div>
+
+    <div class="bg-slate-900/60 p-6 rounded-2xl border border-white/5">
+      <h3 class="mb-4 text-lg font-semibold text-slate-300">
+        Actividad semanal
+      </h3>
+      <canvas id="dashboardChart"></canvas>
+    </div>
+  `;
+
+  initCounters();
+  initChart();
+}
+
+// ============================
+// KPI CARD TEMPLATE
+// ============================
+
+function kpiCard(title,id,icon){
+  return `
+  <div class="bg-slate-900/70 p-6 rounded-2xl border border-white/5 hover:scale-105 transition duration-300">
+    <div class="flex justify-between items-center mb-3">
+      <span class="text-slate-400 text-sm">${title}</span>
+      <i class="fa-solid ${icon} text-slate-500"></i>
+    </div>
+    <h2 id="${id}" class="text-3xl font-bold">0</h2>
+  </div>
+  `;
+}
+
+// ============================
+// COUNTER ANIMATION
+// ============================
+
+function animateValue(id, start, end, duration){
+  let range = end - start;
+  let current = start;
+  let increment = end > start ? 1 : -1;
+  let stepTime = Math.abs(Math.floor(duration / range));
+  let obj = document.getElementById(id);
+
+  let timer = setInterval(function() {
+    current += increment;
+    obj.innerText = current.toLocaleString();
+    if (current == end) {
+      clearInterval(timer);
+    }
+  }, stepTime);
+}
+
+// ============================
+// INIT COUNTERS (MOCK DATA)
+// ============================
+
+function initCounters(){
+
+  // ⚠️ Luego esto se conecta a Firestore
+  animateValue("ordenesActivas",0,14,800);
+  animateValue("ordenesProceso",0,6,800);
+  animateValue("ingresosHoy",0,1230986,800);
+  animateValue("inventarioCritico",0,3,800);
+
+}
+
+// ============================
+// CHART
+// ============================
+
+function initChart(){
+
+  const ctx = document.getElementById('dashboardChart');
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
+      datasets: [{
+        label: 'Órdenes',
+        data: [5,7,4,9,6,3,8],
+        borderColor: '#22c55e',
+        backgroundColor: 'rgba(34,197,94,.2)',
+        tension: 0.4,
+        fill:true
+      }]
+    },
+    options:{
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#94a3b8'}},
+        y:{ticks:{color:'#94a3b8'}}
+      }
+    }
+  });
+}
+
+// ============================
+// NAVIGATION HANDLER
+// ============================
+
+document.querySelectorAll(".nav-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+
+    const section = btn.dataset.section;
+
+    if(section === "dashboard"){
+      renderDashboard();
+    } else {
+      document.getElementById("contentArea").innerHTML =
+      "<div class='text-slate-400'>Módulo en construcción...</div>";
+    }
+
+  });
+});
+
+// Cargar Dashboard al iniciar
+renderDashboard();
+
+</script>
+
 </body>
 </html>
