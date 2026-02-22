@@ -228,27 +228,6 @@ logoutBtn.addEventListener("click", async ()=>{
 await signOut(auth);
 });
 
-/* ==========================
-   AUTH STATE
-========================== */
-
-onAuthStateChanged(auth,user=>{
-if(user){
-registroDiv.classList.add("d-none");
-loginDiv.classList.add("d-none");
-crearOrdenDiv.classList.remove("d-none");
-ordenesListDiv.classList.remove("d-none");
-logoutBtn.classList.remove("d-none");
-escucharOrdenes(user.uid);
-}else{
-registroDiv.classList.remove("d-none");
-loginDiv.classList.remove("d-none");
-crearOrdenDiv.classList.add("d-none");
-ordenesListDiv.classList.add("d-none");
-logoutBtn.classList.add("d-none");
-ordenesUl.innerHTML="";
-}
-});
 
 /* ==========================
    CREAR ORDEN
