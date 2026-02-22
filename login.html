@@ -77,12 +77,17 @@
 
 <!-- FIREBASE AUTH -->
 <script type="module">
-  import { auth, db } from "./firebase-config.js";
+import { auth, db } from "./firebase-config.js";
 import { signInWithEmailAndPassword } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
 import { 
-  collection, 
-  getDocs 
+  collectionGroup,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const form = document.getElementById("loginForm");
@@ -101,54 +106,59 @@ form.addEventListener("submit", async (e) => {
 
   try {
 
-    // 🔐 1. Login Firebase
+    // 🔐 1. Login Firebase Auth
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
 
-    // 🔎 2. Buscar usuario dentro de empresas
-    const empresasRef = collection(db, "empresas");
-    const empresasSnap = await getDocs(empresasRef);
+    // 🔎 2. Buscar usuario dentro de TODAS las empresas (más eficiente)
+    const q = query(
+      collectionGroup(db, "usuarios"),
+      where("__name__", "==", uid)
+    );
 
-    let empresaIdEncontrada = null;
-    let datosUsuario = null;
+    const snap = await getDocs(q);
 
-    for (const empresaDoc of empresasSnap.docs) {
-
-      const usuariosRef = collection(
-        db,
-        "empresas",
-        empresaDoc.id,
-        "usuarios"
-      );
-
-      const usuariosSnap = await getDocs(usuariosRef);
-
-      const usuarioDoc = usuariosSnap.docs.find(
-        doc => doc.id === uid
-      );
-
-      if (usuarioDoc) {
-        empresaIdEncontrada = empresaDoc.id;
-        datosUsuario = usuarioDoc.data();
-        break;
-      }
-    }
-
-    if (!empresaIdEncontrada) {
+    if (snap.empty) {
       throw new Error("Usuario no pertenece a ninguna empresa");
     }
+
+    const userDoc = snap.docs[0];
+    const datosUsuario = userDoc.data();
 
     if (!datosUsuario.activo) {
       throw new Error("Usuario inactivo");
     }
 
-    // 💾 3. Guardar sesión limpia
-    localStorage.setItem("empresaId", empresaIdEncontrada);
+    // 📌 Obtener empresaId desde la ruta
+    const empresaId = userDoc.ref.parent.parent.id;
+
+    // 📌 Validar empresa activa (preparado para SaaS)
+    const empresaRef = doc(db, "empresas", empresaId);
+    const empresaSnap = await getDoc(empresaRef);
+
+    if (!empresaSnap.exists()) {
+      throw new Error("Empresa no válida");
+    }
+
+    const empresaData = empresaSnap.data();
+
+    if (empresaData.activa === false) {
+      throw new Error("Empresa suspendida");
+    }
+
+    // 📌 Obtener sucursal asignada
+    const sucursalId = datosUsuario.sucursalAsignada || "principal";
+
+    // 🧹 3. Limpiar sesión anterior
+    localStorage.clear();
+
+    // 💾 4. Guardar sesión limpia
+    localStorage.setItem("empresaId", empresaId);
     localStorage.setItem("uid", uid);
     localStorage.setItem("rol", datosUsuario.rol);
-    localStorage.setItem("sucursalId", datosUsuario.sucursalAsignada || "");
+    localStorage.setItem("sucursalId", sucursalId);
 
-    // 🚀 4. Redirección según rol
+    // 🚀 5. Redirección limpia (no se vuelve a validar en módulos)
 
     switch (datosUsuario.rol) {
 
@@ -179,6 +189,7 @@ function showError(message) {
   errorMsg.textContent = message;
   errorMsg.classList.remove("hidden");
 }
+</script>
 
 </body>
 </html>
