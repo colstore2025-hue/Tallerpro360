@@ -78,96 +78,107 @@
 <!-- FIREBASE AUTH -->
 <script type="module">
   import { auth, db } from "./firebase-config.js";
-  import { signInWithEmailAndPassword } 
-  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { doc, getDoc } 
-  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { signInWithEmailAndPassword } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { 
+  collection, 
+  getDocs 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  const form = document.getElementById("loginForm");
-  const errorMsg = document.getElementById("errorMsg");
+const form = document.getElementById("loginForm");
+const errorMsg = document.getElementById("errorMsg");
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    errorMsg.classList.add("hidden");
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errorMsg.classList.add("hidden");
 
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
 
-    if (!email || !password) {
-      return showError("Correo y contraseña requeridos");
-    }
-
-    try {
-      // 🔐 Login Firebase
-      const cred = await signInWithEmailAndPassword(auth, email, password);
-
-      // 📂 Obtener perfil
-      const userRef = doc(db, "usuarios", cred.user.uid);
-      const userSnap = await getDoc(userRef);
-
-      if (!userSnap.exists()) {
-        throw new Error("Usuario no autorizado");
-      }
-
-      const user = userSnap.data();
-
-      // 🚫 Verificar estado
-      if (user.activo === false) {
-        throw new Error("Usuario suspendido");
-      }
-
-      // ================================
-      // 🎯 REDIRECCIÓN INTELIGENTE
-      // ================================
-
-      // 1️⃣ Superadmin global
-      if (user.rolGlobal === "superadmin") {
-        window.location.href = "/ceo-dashboard.html";
-        return;
-      }
-
-      // 2️⃣ Usuarios con empresa
-      if (!user.empresaId) {
-        throw new Error("Usuario sin empresa asignada");
-      }
-
-      // Verificar empresa activa
-      const empresaRef = doc(db, "empresas", user.empresaId);
-      const empresaSnap = await getDoc(empresaRef);
-
-      if (!empresaSnap.exists()) {
-        throw new Error("Empresa no encontrada");
-      }
-
-      const empresa = empresaSnap.data();
-
-      if (empresa.estado !== "activa") {
-        throw new Error("Empresa suspendida");
-      }
-
-      // 3️⃣ Validar talleres asignados
-      if (!user.talleresAsignados || user.talleresAsignados.length === 0) {
-        throw new Error("Sin talleres asignados");
-      }
-
-      // Guardamos el primer taller como activo
-      localStorage.setItem("tallerActivoId", user.talleresAsignados[0]);
-      localStorage.setItem("empresaActivaId", user.empresaId);
-
-      // 4️⃣ Redirigir a módulo taller
-      window.location.href = "/panel-taller.html";
-
-    } catch (err) {
-      console.error("ERROR LOGIN:", err);
-      showError(err.message);
-    }
-  });
-
-  function showError(message) {
-    errorMsg.textContent = message;
-    errorMsg.classList.remove("hidden");
+  if (!email || !password) {
+    return showError("Correo y contraseña requeridos");
   }
-</script>
+
+  try {
+
+    // 🔐 1. Login Firebase
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    const uid = cred.user.uid;
+
+    // 🔎 2. Buscar usuario dentro de empresas
+    const empresasRef = collection(db, "empresas");
+    const empresasSnap = await getDocs(empresasRef);
+
+    let empresaIdEncontrada = null;
+    let datosUsuario = null;
+
+    for (const empresaDoc of empresasSnap.docs) {
+
+      const usuariosRef = collection(
+        db,
+        "empresas",
+        empresaDoc.id,
+        "usuarios"
+      );
+
+      const usuariosSnap = await getDocs(usuariosRef);
+
+      const usuarioDoc = usuariosSnap.docs.find(
+        doc => doc.id === uid
+      );
+
+      if (usuarioDoc) {
+        empresaIdEncontrada = empresaDoc.id;
+        datosUsuario = usuarioDoc.data();
+        break;
+      }
+    }
+
+    if (!empresaIdEncontrada) {
+      throw new Error("Usuario no pertenece a ninguna empresa");
+    }
+
+    if (!datosUsuario.activo) {
+      throw new Error("Usuario inactivo");
+    }
+
+    // 💾 3. Guardar sesión limpia
+    localStorage.setItem("empresaId", empresaIdEncontrada);
+    localStorage.setItem("uid", uid);
+    localStorage.setItem("rol", datosUsuario.rol);
+    localStorage.setItem("sucursalId", datosUsuario.sucursalAsignada || "");
+
+    // 🚀 4. Redirección según rol
+
+    switch (datosUsuario.rol) {
+
+      case "dueno":
+        window.location.href = "/taller-erp.html";
+        break;
+
+      case "jefe":
+      case "mecanico":
+        window.location.href = "/taller.html";
+        break;
+
+      case "cliente":
+        window.location.href = "/cliente.html";
+        break;
+
+      default:
+        throw new Error("Rol no válido");
+    }
+
+  } catch (err) {
+    console.error("ERROR LOGIN:", err);
+    showError(err.message);
+  }
+});
+
+function showError(message) {
+  errorMsg.textContent = message;
+  errorMsg.classList.remove("hidden");
+}
 
 </body>
 </html>
