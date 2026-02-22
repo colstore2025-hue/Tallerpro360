@@ -66,11 +66,24 @@ input{
 </div>
 
 <div id="loginCliente" class="glass mb-4">
-<h5 class="mb-3">Ingresar</h5>
+<h5 class="mb-4 text-info">Iniciar Sesión</h5>
+
 <form id="formLogin">
-<input type="email" id="clienteEmailLogin" class="form-control mb-2" placeholder="Correo electrónico" required>
-<input type="password" id="clientePasswordLogin" class="form-control mb-2" placeholder="Contraseña" required>
-<button type="submit" class="btn btn-primary w-100 mt-2">Ingresar</button>
+
+<div class="form-floating mb-3">
+  <input type="email" class="form-control" id="clienteEmailLogin" placeholder="Correo electrónico" required>
+  <label for="clienteEmailLogin">Correo electrónico</label>
+</div>
+
+<div class="form-floating mb-3">
+  <input type="password" class="form-control" id="clientePasswordLogin" placeholder="Contraseña" required>
+  <label for="clientePasswordLogin">Contraseña</label>
+</div>
+
+<button type="submit" class="btn btn-primary w-100 py-2">
+Ingresar
+</button>
+
 </form>
 </div>
 
