@@ -111,32 +111,6 @@ alert(e.message);
 }
 });
 
-/* ================= AUTH ================= */
-
-onAuthStateChanged(auth, async user=>{
-if(user){
-
-const token = await user.getIdTokenResult();
-empresaId = token.claims.empresaId;
-
-if(!empresaId){
-alert("Usuario sin empresa asignada");
-return;
-}
-
-loginBox.classList.add("d-none");
-logoutBtn.classList.remove("d-none");
-ordenesContainer.classList.remove("d-none");
-
-escucharOrdenes(user.uid);
-
-}else{
-loginBox.classList.remove("d-none");
-logoutBtn.classList.add("d-none");
-ordenesContainer.classList.add("d-none");
-ordenesContainer.innerHTML="";
-}
-});
 
 /* ================= LOGOUT ================= */
 
