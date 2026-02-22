@@ -125,48 +125,32 @@ Ingresar
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { db } from "./firebase-config.js";
 import {
-getAuth,
-createUserWithEmailAndPassword,
-signInWithEmailAndPassword,
-onAuthStateChanged,
-signOut
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-import {
-getFirestore,
-doc,
-setDoc,
-getFirestore,
-collection,
-addDoc,
-query,
-where,
-onSnapshot,
-serverTimestamp
+  collection,
+  addDoc,
+  query,
+  where,
+  onSnapshot,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-  authDomain: "tallerpro360.firebaseapp.com",
-  projectId: "tallerpro360",
-  storageBucket: "tallerpro360.appspot.com",
-  messagingSenderId: "636224778184",
-  appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-};
+/* ================= VALIDACIÓN DE SESIÓN ================= */
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const empresaId = localStorage.getItem("empresaId");
+const rol = localStorage.getItem("rol");
+const uid = localStorage.getItem("uid");
+const sucursalId = localStorage.getItem("sucursalId");
 
-const empresaId = "empresa_001";
-const sucursalId = "sucursal_001";
+if (!empresaId || !rol || !uid) {
+  window.location.href = "login.html";
+}
 
-/* ELEMENTOS */
-const formCliente = document.getElementById("formCliente");
-const formLogin = document.getElementById("formLogin");
-const formOrden = document.getElementById("formOrden");
+if (rol !== "cliente") {
+  window.location.href = "login.html";
+}
+
+/* ================= ELEMENTOS UI ================= */
 
 const registroDiv = document.getElementById("registroCliente");
 const loginDiv = document.getElementById("loginCliente");
@@ -174,133 +158,118 @@ const crearOrdenDiv = document.getElementById("crearOrden");
 const ordenesListDiv = document.getElementById("ordenesList");
 const ordenesUl = document.getElementById("ordenesUl");
 const logoutBtn = document.getElementById("logoutBtn");
+const formOrden = document.getElementById("formOrden");
 
-/* ==========================
-   REGISTRO
-========================== */
+/* ================= LIMPIAR INTERFAZ ================= */
 
-formCliente.addEventListener("submit", async e=>{
-e.preventDefault();
+registroDiv.remove();
+loginDiv.remove();
 
-try{
-const cred = await createUserWithEmailAndPassword(
-auth,
-clienteEmailReg.value,
-clientePasswordReg.value
-);
+crearOrdenDiv.classList.remove("d-none");
+ordenesListDiv.classList.remove("d-none");
+logoutBtn.classList.remove("d-none");
 
-await setDoc(doc(db,"empresas",empresaId,"clientes",cred.user.uid),{
-nombre: clienteNombreReg.value,
-email: clienteEmailReg.value,
-telefono: clienteTelefonoReg.value,
-rol: "cliente",
-empresaId,
-sucursalId,
-fechaRegistro: serverTimestamp()
+/* ================= LOGOUT LIMPIO ================= */
+
+logoutBtn.addEventListener("click", ()=>{
+  localStorage.clear();
+  window.location.href = "login.html";
 });
 
-alert("Cuenta creada correctamente");
-formCliente.reset();
-
-}catch(error){
-alert(error.message);
-}
-});
-
-/* ==========================
-   LOGIN
-========================== */
-
-formLogin.addEventListener("submit", async e=>{
-e.preventDefault();
-try{
-await signInWithEmailAndPassword(auth,clienteEmailLogin.value,clientePasswordLogin.value);
-}catch(error){
-alert(error.message);
-}
-});
-
-/* ==========================
-   LOGOUT
-========================== */
-
-logoutBtn.addEventListener("click", async ()=>{
-await signOut(auth);
-});
-
-
-/* ==========================
-   CREAR ORDEN
-========================== */
+/* ================= CREAR ORDEN ================= */
 
 formOrden.addEventListener("submit", async e=>{
-e.preventDefault();
+  e.preventDefault();
 
-const user = auth.currentUser;
+  await addDoc(
+    collection(
+      db,
+      "empresas",
+      empresaId,
+      "sucursales",
+      sucursalId,
+      "ordenes"
+    ),
+    {
+      clienteId: uid,
+      placa: placa.value,
+      vehiculo: vehiculo.value,
+      estado: "ingreso",
+      fechaIngreso: serverTimestamp(),
+      origen: "cliente",          // 🔥 Preparado para CRM
+      visibleCliente: true        // 🔥 Preparado para filtros ERP
+    }
+  );
 
-await addDoc(collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),{
-uid:user.uid,
-placa:placa.value,
-vehiculo:vehiculo.value,
-estado:"ingreso",
-fecha:serverTimestamp()
+  formOrden.reset();
 });
 
-formOrden.reset();
-});
+/* ================= TIEMPO REAL ================= */
 
-/* ==========================
-   TIEMPO REAL
-========================== */
+function escucharOrdenes(){
 
-function escucharOrdenes(uid){
-const q = query(
-collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
-where("uid","==",uid)
-);
+  const q = query(
+    collection(
+      db,
+      "empresas",
+      empresaId,
+      "sucursales",
+      sucursalId,
+      "ordenes"
+    ),
+    where("clienteId","==",uid)
+  );
 
-onSnapshot(q,(snapshot)=>{
-ordenesUl.innerHTML="";
-snapshot.forEach(docSnap=>{
-const data = docSnap.data();
-const li = document.createElement("li");
-li.className="list-group-item bg-transparent text-white d-flex justify-content-between";
+  onSnapshot(q,(snapshot)=>{
 
-let badgeClass="badge-ingreso";
-if(data.estado==="proceso") badgeClass="badge-proceso";
-if(data.estado==="entregado") badgeClass="badge-entregado";
+    ordenesUl.innerHTML="";
 
-li.innerHTML=`
-<span>${data.placa} - ${data.vehiculo}</span>
-<span class="badge-status ${badgeClass}">${data.estado}</span>
-`;
-ordenesUl.appendChild(li);
-});
-});
+    if(snapshot.empty){
+      ordenesUl.innerHTML = `
+        <li class="list-group-item bg-transparent text-white">
+          No tienes órdenes activas
+        </li>
+      `;
+      return;
+    }
+
+    snapshot.forEach(docSnap=>{
+
+      const data = docSnap.data();
+
+      const li = document.createElement("li");
+      li.className="list-group-item bg-transparent text-white d-flex justify-content-between";
+
+      let badgeClass="badge-ingreso";
+      if(data.estado==="proceso") badgeClass="badge-proceso";
+      if(data.estado==="entregado") badgeClass="badge-entregado";
+
+      li.innerHTML=`
+        <span>${data.placa} - ${data.vehiculo}</span>
+        <span class="badge-status ${badgeClass}">
+          ${data.estado}
+        </span>
+      `;
+
+      ordenesUl.appendChild(li);
+    });
+
+  });
+
 }
 
-/* ==========================
-   SISTEMA DE VOZ
-========================== */
+/* ================= INICIAR ================= */
+
+escucharOrdenes();
+
+/* ================= VOZ (Opcional CRM futuro) ================= */
 
 function hablar(texto){
-const voz = new SpeechSynthesisUtterance(texto);
-voz.lang="es-ES";
-speechSynthesis.speak(voz);
-}
-
-if('webkitSpeechRecognition' in window){
-const recognition = new webkitSpeechRecognition();
-recognition.lang="es-ES";
-
-recognition.onresult = function(event){
-const texto = event.results[0][0].transcript;
-placa.value = texto;
-hablar("Placa registrada");
-};
+  const voz = new SpeechSynthesisUtterance(texto);
+  voz.lang="es-ES";
+  speechSynthesis.speak(voz);
 }
 
 </script>
-
 </body>
 </html>
