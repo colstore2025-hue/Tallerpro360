@@ -1,6 +1,6 @@
 /************************************************
  * TallerPRO360 · Firebase Functions (Index)
- * Núcleo SaaS Enterprise
+ * Arquitectura SaaS Enterprise · ERP + CRM
  ************************************************/
 
 const admin = require("firebase-admin");
@@ -19,7 +19,7 @@ mercadopago.configure({
 });
 
 /* =================================
-   📦 IMPORTAR MÓDULOS
+   📦 IMPORTAR MÓDULOS EXISTENTES
 ================================= */
 
 const { trialOnCreate } = require("./trial-on-create");
@@ -27,7 +27,7 @@ const { billingCron } = require("./billing-cron");
 const { crearPago, webhookMP } = require("./pagos-mercadopago");
 
 /* =================================
-   🚀 EXPORTAR EXISTENTES
+   🚀 EXPORTAR MÓDULOS EXISTENTES
 ================================= */
 
 exports.trialOnCreate = trialOnCreate;
@@ -36,7 +36,7 @@ exports.crearPago = crearPago;
 exports.webhookMP = webhookMP;
 
 /* =================================
-   🔰 ACTIVAR PLAN TRIAL + CLAIMS
+   🏢 CREAR EMPRESA + TRIAL + CLAIMS
 ================================= */
 
 exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
@@ -44,41 +44,77 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
   const uid = user.uid;
   const ahora = admin.firestore.Timestamp.now();
 
-  const vence = admin.firestore.Timestamp.fromDate(
-    new Date(Date.now() + 7 * 86400000)
-  );
+  try {
 
-  // Crear documento del taller
-  await db.collection("talleres").doc(uid).set({
-    planId: "trial",
-    planNombre: "Trial",
-    tipoPlan: "trial",
-    estadoPlan: "ACTIVO",
-    inicioPlan: ahora,
-    venceEn: vence,
-    ordenesCreadas: 0,
-    limites: {
-      ordenes_max: 10,
-      usuarios: 1
-    },
-    features: {
-      inventario: true,
-      reportes: true,
-      excel: false,
-      multiusuario: false,
-      facturacion: false
-    },
-    metodoPago: "trial",
-    creadoEn: ahora
-  });
+    // 1️⃣ Crear empresa nueva
+    const empresaRef = db.collection("empresas").doc();
+    const empresaId = empresaRef.id;
 
-  // 🔥 ASIGNAR CUSTOM CLAIMS ENTERPRISE
-  await admin.auth().setCustomUserClaims(uid, {
-    tallerId: uid,
-    rol: "dueno",
-    activo: true,
-    planActivo: true
-  });
+    const vence = admin.firestore.Timestamp.fromDate(
+      new Date(Date.now() + 7 * 86400000) // 7 días trial
+    );
 
-  console.log(`✅ Trial y Claims activados para ${uid}`);
+    await empresaRef.set({
+      nombre: "Mi Taller",
+      creadoEn: ahora,
+      plan: {
+        tipo: "trial",
+        estado: "activo",
+        fechaInicio: ahora,
+        fechaVencimiento: vence
+      }
+    });
+
+    // 2️⃣ Crear usuario dueño dentro de empresa
+    await empresaRef.collection("usuarios").doc(uid).set({
+      rol: "dueno",
+      activo: true,
+      creadoEn: ahora
+    });
+
+    // 3️⃣ Crear sucursal principal
+    await empresaRef.collection("sucursales").doc("principal").set({
+      nombre: "Sucursal Principal",
+      creadoEn: ahora
+    });
+
+    // 4️⃣ Crear configuración base del CRM (Pipeline)
+    const stages = [
+      { nombre: "Ingreso", orden: 1, color: "#3b82f6" },
+      { nombre: "Diagnóstico", orden: 2, color: "#f59e0b" },
+      { nombre: "Reparación", orden: 3, color: "#06b6d4" },
+      { nombre: "Listo", orden: 4, color: "#22c55e" },
+      { nombre: "Entregado", orden: 5, color: "#16a34a" }
+    ];
+
+    const batch = db.batch();
+
+    stages.forEach(stage => {
+      const stageRef = empresaRef
+        .collection("sucursales")
+        .doc("principal")
+        .collection("stagesConfig")
+        .doc();
+
+      batch.set(stageRef, {
+        ...stage,
+        creadoEn: ahora
+      });
+    });
+
+    await batch.commit();
+
+    // 5️⃣ Asignar Custom Claims Enterprise
+    await admin.auth().setCustomUserClaims(uid, {
+      empresaId: empresaId,
+      rol: "dueno",
+      activo: true,
+      planActivo: true
+    });
+
+    console.log(`✅ Empresa ${empresaId} creada correctamente para ${uid}`);
+
+  } catch (error) {
+    console.error("❌ Error creando empresa:", error);
+  }
 });
