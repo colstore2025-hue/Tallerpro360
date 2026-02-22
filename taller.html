@@ -122,7 +122,6 @@ Ingresar
 </div>
 
 </div>
-
 <script type="module">
 
 import { db } from "./firebase-config.js";
@@ -132,7 +131,9 @@ import {
   query,
   where,
   onSnapshot,
-  serverTimestamp
+  serverTimestamp,
+  doc,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /* ================= VALIDACIÓN DE SESIÓN ================= */
@@ -146,24 +147,22 @@ if (!empresaId || !rol || !uid) {
   window.location.href = "login.html";
 }
 
-if (rol !== "cliente") {
+/* Solo staff interno */
+if (rol === "cliente") {
   window.location.href = "login.html";
 }
 
-/* ================= ELEMENTOS UI ================= */
+/* ================= ELEMENTOS ================= */
 
-const registroDiv = document.getElementById("registroCliente");
-const loginDiv = document.getElementById("loginCliente");
 const crearOrdenDiv = document.getElementById("crearOrden");
 const ordenesListDiv = document.getElementById("ordenesList");
 const ordenesUl = document.getElementById("ordenesUl");
 const logoutBtn = document.getElementById("logoutBtn");
 const formOrden = document.getElementById("formOrden");
 
-/* ================= LIMPIAR INTERFAZ ================= */
-
-registroDiv.remove();
-loginDiv.remove();
+/* Limpiar interfaz heredada */
+document.getElementById("registroCliente")?.remove();
+document.getElementById("loginCliente")?.remove();
 
 crearOrdenDiv.classList.remove("d-none");
 ordenesListDiv.classList.remove("d-none");
@@ -176,7 +175,7 @@ logoutBtn.addEventListener("click", ()=>{
   window.location.href = "login.html";
 });
 
-/* ================= CREAR ORDEN ================= */
+/* ================= CREAR ORDEN (INGRESO MANUAL) ================= */
 
 formOrden.addEventListener("submit", async e=>{
   e.preventDefault();
@@ -191,20 +190,21 @@ formOrden.addEventListener("submit", async e=>{
       "ordenes"
     ),
     {
-      clienteId: uid,
+      clienteId: null,                 // puede vincularse luego
       placa: placa.value,
       vehiculo: vehiculo.value,
       estado: "ingreso",
       fechaIngreso: serverTimestamp(),
-      origen: "cliente",          // 🔥 Preparado para CRM
-      visibleCliente: true        // 🔥 Preparado para filtros ERP
+      creadoPor: uid,
+      origen: "taller",                // 🔥 importante CRM
+      visibleCliente: false
     }
   );
 
   formOrden.reset();
 });
 
-/* ================= TIEMPO REAL ================= */
+/* ================= ESCUCHAR ÓRDENES ================= */
 
 function escucharOrdenes(){
 
@@ -216,8 +216,7 @@ function escucharOrdenes(){
       "sucursales",
       sucursalId,
       "ordenes"
-    ),
-    where("clienteId","==",uid)
+    )
   );
 
   onSnapshot(q,(snapshot)=>{
@@ -227,7 +226,7 @@ function escucharOrdenes(){
     if(snapshot.empty){
       ordenesUl.innerHTML = `
         <li class="list-group-item bg-transparent text-white">
-          No tienes órdenes activas
+          No hay órdenes registradas
         </li>
       `;
       return;
@@ -236,22 +235,54 @@ function escucharOrdenes(){
     snapshot.forEach(docSnap=>{
 
       const data = docSnap.data();
+      const ordenId = docSnap.id;
 
       const li = document.createElement("li");
-      li.className="list-group-item bg-transparent text-white d-flex justify-content-between";
+      li.className="list-group-item bg-transparent text-white d-flex justify-content-between align-items-center";
 
       let badgeClass="badge-ingreso";
       if(data.estado==="proceso") badgeClass="badge-proceso";
       if(data.estado==="entregado") badgeClass="badge-entregado";
 
       li.innerHTML=`
-        <span>${data.placa} - ${data.vehiculo}</span>
-        <span class="badge-status ${badgeClass}">
-          ${data.estado}
+        <span>
+          ${data.placa} - ${data.vehiculo}
         </span>
+        <div>
+          <span class="badge-status ${badgeClass}">
+            ${data.estado}
+          </span>
+          <button class="btn btn-sm btn-outline-light ms-2" data-id="${ordenId}">
+            Cambiar
+          </button>
+        </div>
       `;
 
+      li.querySelector("button").addEventListener("click", async ()=>{
+
+        let nuevoEstado="proceso";
+        if(data.estado==="proceso") nuevoEstado="entregado";
+        if(data.estado==="entregado") nuevoEstado="ingreso";
+
+        await updateDoc(
+          doc(
+            db,
+            "empresas",
+            empresaId,
+            "sucursales",
+            sucursalId,
+            "ordenes",
+            ordenId
+          ),
+          {
+            estado: nuevoEstado
+          }
+        );
+
+      });
+
       ordenesUl.appendChild(li);
+
     });
 
   });
@@ -262,7 +293,7 @@ function escucharOrdenes(){
 
 escucharOrdenes();
 
-/* ================= VOZ (Opcional CRM futuro) ================= */
+/* ================= VOZ OPCIONAL ================= */
 
 function hablar(texto){
   const voz = new SpeechSynthesisUtterance(texto);
