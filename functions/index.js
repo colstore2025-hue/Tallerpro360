@@ -7,8 +7,25 @@ const admin = require("firebase-admin");
 const functions = require("firebase-functions");
 const mercadopago = require("mercadopago");
 
+// 🔹 Inicializar Firebase una sola vez
 admin.initializeApp();
+
+// 🔹 Exportar base de datos si otros módulos la necesitan
 const db = admin.firestore();
+exports.db = db;
+
+// 🔹 Configuración de MercadoPago (usa variables seguras)
+mercadopago.configure({
+  access_token: functions.config().mercadopago.access_token
+});
+
+// 🔹 Exportar módulos del sistema ERP
+exports.ordenes = require("./modules/ordenes");
+exports.inventario = require("./modules/inventario");
+exports.finanzas = require("./modules/finanzas");
+exports.planes = require("./modules/planes");
+exports.suscripciones = require("./modules/suscripciones");
+exports.permisos = require("./modules/permisos");
 
 /* =================================
    🔐 MERCADO PAGO
