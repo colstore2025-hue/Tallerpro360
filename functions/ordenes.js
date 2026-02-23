@@ -1,55 +1,44 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const {
+  validarUsuario,
+  obtenerUsuarioEmpresa,
+  validarPermiso,
+  validarLimitePlan
+} = require("./utils/seguridad");
 
-exports.onCreateOrden = functions.firestore
-  .document("empresas/{empresaId}/sucursales/{sucursalId}/ordenes/{ordenId}")
-  .onCreate(async (snap, context) => {
+const db = admin.firestore();
 
-    const { empresaId, sucursalId, ordenId } = context.params;
-    const orden = snap.data();
-    const db = admin.firestore();
+exports.crearOrden = functions.https.onCall(async (data, context) => {
 
-    const empresaRef = db.doc(`empresas/${empresaId}`);
-    const empresa = (await empresaRef.get()).data();
+  const uid = await validarUsuario(context);
+  const { empresaId, sucursalId, orden } = data;
 
-    // 🔒 1. Verificar límite del plan
-    if (empresa.metricas.ordenesMes >= empresa.plan.limiteOrdenes) {
-      throw new Error("Límite de órdenes alcanzado");
-    }
+  const usuario = await obtenerUsuarioEmpresa(empresaId, uid);
 
-    // 📦 2. Descontar inventario
-    for (const item of orden.items) {
-      const inventarioRef = db.doc(
-        `empresas/${empresaId}/sucursales/${sucursalId}/inventario/${item.productoId}`
-      );
+  await validarPermiso(empresaId, usuario.rol, "crearOrden");
+  await validarLimitePlan(empresaId, "ordenes");
 
-      await db.runTransaction(async (tx) => {
-        const invDoc = await tx.get(inventarioRef);
-        const stockActual = invDoc.data().stockActual;
+  const ordenRef = db
+    .collection("empresas")
+    .doc(empresaId)
+    .collection("sucursales")
+    .doc(sucursalId)
+    .collection("ordenes")
+    .doc();
 
-        if (stockActual < item.cantidad) {
-          throw new Error("Stock insuficiente");
-        }
-
-        tx.update(inventarioRef, {
-          stockActual: stockActual - item.cantidad
-        });
-      });
-    }
-
-    // 💰 3. Crear ingreso contable
-    await db.collection(`empresas/${empresaId}/sucursales/${sucursalId}/gastos`)
-      .add({
-        tipo: "ingreso",
-        monto: orden.total,
-        fecha: admin.firestore.FieldValue.serverTimestamp(),
-        referencia: ordenId
-      });
-
-    // 📊 4. Actualizar métricas
-    await empresaRef.update({
-      "metricas.ordenesMes": admin.firestore.FieldValue.increment(1),
-      "metricas.ingresosMes": admin.firestore.FieldValue.increment(orden.total)
-    });
-
+  await ordenRef.set({
+    ...orden,
+    creadoPor: uid,
+    creadoEn: admin.firestore.FieldValue.serverTimestamp(),
+    estado: "Ingreso"
   });
+
+  // 📊 Incrementar métricas
+  await db.collection("empresas").doc(empresaId).update({
+    "metricas.ordenesMes": admin.firestore.FieldValue.increment(1),
+    "metricas.ingresosMes": admin.firestore.FieldValue.increment(orden.total || 0)
+  });
+
+  return { ok: true };
+});
