@@ -7,54 +7,55 @@ const admin = require("firebase-admin");
 const functions = require("firebase-functions");
 const mercadopago = require("mercadopago");
 
-// 🔹 Inicializar Firebase una sola vez
+// =============================================
+// 🔥 INICIALIZACIÓN GLOBAL (UNA SOLA VEZ)
+// =============================================
+
 admin.initializeApp();
-
-// 🔹 Exportar base de datos si otros módulos la necesitan
 const db = admin.firestore();
-exports.db = db;
 
-// 🔹 Configuración de MercadoPago (usa variables seguras)
+// =============================================
+// 🔐 CONFIGURACIÓN MERCADO PAGO (SEGURA)
+// =============================================
+
 mercadopago.configure({
   access_token: functions.config().mercadopago.access_token
 });
 
-// 🔹 Exportar módulos del sistema ERP
-exports.ordenes = require("./modules/ordenes");
-exports.inventario = require("./modules/inventario");
-exports.finanzas = require("./modules/finanzas");
-exports.planes = require("./modules/planes");
-exports.suscripciones = require("./modules/suscripciones");
-exports.permisos = require("./modules/permisos");
+// =============================================
+// 📦 IMPORTAR MÓDULOS DEL SISTEMA (MISMA CARPETA)
+// =============================================
 
-/* =================================
-   🔐 MERCADO PAGO
-================================= */
-
-mercadopago.configure({
-  access_token: functions.config().mp.token
-});
-
-/* =================================
-   📦 IMPORTAR MÓDULOS EXISTENTES
-================================= */
+const ordenes = require("./ordenes");
+const inventario = require("./inventario");
+const finanzas = require("./finanzas");            // si lo creas después
+const planes = require("./planes");                // futuro módulo
+const suscripciones = require("./suscripciones");  // futuro módulo
+const permisos = require("./permisos");            // sistema dinámico
 
 const { trialOnCreate } = require("./trial-on-create");
 const { billingCron } = require("./billing-cron");
 const { crearPago, webhookMP } = require("./pagos-mercadopago");
 
-/* =================================
-   🚀 EXPORTAR MÓDULOS EXISTENTES
-================================= */
+// =============================================
+// 🚀 EXPORTAR MÓDULOS ERP
+// =============================================
+
+exports.ordenes = ordenes;
+exports.inventario = inventario;
+exports.finanzas = finanzas;
+exports.planes = planes;
+exports.suscripciones = suscripciones;
+exports.permisos = permisos;
 
 exports.trialOnCreate = trialOnCreate;
 exports.billingCron = billingCron;
 exports.crearPago = crearPago;
 exports.webhookMP = webhookMP;
 
-/* =================================
-   🏢 CREAR EMPRESA + TRIAL + CLAIMS
-================================= */
+// =============================================
+// 🏢 CREAR EMPRESA + TRIAL + CLAIMS AUTOMÁTICO
+// =============================================
 
 exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
 
@@ -63,12 +64,12 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
 
   try {
 
-    // 1️⃣ Crear empresa nueva
+    // 1️⃣ Crear empresa
     const empresaRef = db.collection("empresas").doc();
     const empresaId = empresaRef.id;
 
     const vence = admin.firestore.Timestamp.fromDate(
-      new Date(Date.now() + 7 * 86400000) // 7 días trial
+      new Date(Date.now() + 7 * 86400000)
     );
 
     await empresaRef.set({
@@ -79,10 +80,14 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
         estado: "activo",
         fechaInicio: ahora,
         fechaVencimiento: vence
+      },
+      metricas: {
+        ordenesMes: 0,
+        ingresosMes: 0
       }
     });
 
-    // 2️⃣ Crear usuario dueño dentro de empresa
+    // 2️⃣ Crear usuario dueño
     await empresaRef.collection("usuarios").doc(uid).set({
       rol: "dueno",
       activo: true,
@@ -95,7 +100,7 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
       creadoEn: ahora
     });
 
-    // 4️⃣ Crear configuración base del CRM (Pipeline)
+    // 4️⃣ Crear Pipeline CRM Base
     const stages = [
       { nombre: "Ingreso", orden: 1, color: "#3b82f6" },
       { nombre: "Diagnóstico", orden: 2, color: "#f59e0b" },
@@ -134,4 +139,5 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
   } catch (error) {
     console.error("❌ Error creando empresa:", error);
   }
+
 });
