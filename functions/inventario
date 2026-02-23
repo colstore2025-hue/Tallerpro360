@@ -1,0 +1,29 @@
+export const actualizarInventario = functions.firestore
+  .document('empresas/{empresaId}/movimientosInventario/{movimientoId}')
+  .onCreate(async (snap, context) => {
+    const data = snap.data();
+    const { empresaId } = context.params;
+
+    const productoRef = admin.firestore()
+      .doc(`empresas/${empresaId}/inventario/${data.productoId}`);
+
+    const productoSnap = await productoRef.get();
+    const producto = productoSnap.data();
+
+    if (!producto) return;
+
+    let nuevoStock = producto.stockActual;
+
+    if (data.tipoMovimiento === "compra") {
+      nuevoStock += data.cantidad;
+    }
+
+    if (data.tipoMovimiento === "venta") {
+      nuevoStock -= data.cantidad;
+    }
+
+    await productoRef.update({
+      stockActual: nuevoStock,
+      valorInventario: nuevoStock * producto.costoPromedio
+    });
+  });
