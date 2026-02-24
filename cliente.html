@@ -58,7 +58,7 @@ button{border-radius:8px;}
 <!-- Firebase Modular -->
 <script type="module">
 
-import { auth, db } from "./firebase-config.js";
+import { db } from "./firebase-config.js";
 import {
   collection,
   query,
@@ -68,19 +68,14 @@ import {
   getDocs
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* ================= VALIDACIÓN DE SESIÓN ================= */
+/* ================= VALIDACIÓN REAL ================= */
 
 const empresaId = localStorage.getItem("empresaId");
 const rol = localStorage.getItem("rol");
 const uid = localStorage.getItem("uid");
 const sucursalId = localStorage.getItem("sucursalId");
 
-if (!empresaId || !rol || !uid) {
-  window.location.href = "login.html";
-}
-
-/* Opcional: proteger que solo cliente entre */
-if (rol !== "cliente") {
+if (!empresaId || !uid || rol !== "cliente") {
   window.location.href = "login.html";
 }
 
@@ -90,16 +85,32 @@ const logoutBtn = document.getElementById("logoutBtn");
 const ordenesContainer = document.getElementById("ordenesContainer");
 const loginBox = document.getElementById("loginBox");
 
-loginBox.classList.add("d-none");
+loginBox?.remove();
 ordenesContainer.classList.remove("d-none");
 logoutBtn.classList.remove("d-none");
 
-/* ================= LOGOUT LIMPIO ================= */
+/* ================= LOGOUT ================= */
 
 logoutBtn.addEventListener("click", () => {
   localStorage.clear();
   window.location.href = "login.html";
 });
+
+/* ================= RENDER TIMELINE ================= */
+
+function renderTimeline(stages) {
+
+  if (!stages.length) return "<li>Sin actualizaciones</li>";
+
+  return stages
+    .sort((a,b)=> a.at?.seconds - b.at?.seconds)
+    .map(s=>{
+      const fecha = s.at?.toDate()?.toLocaleString() || "";
+      return `<li>${s.stage} - ${fecha}</li>`;
+    })
+    .join("");
+
+}
 
 /* ================= ESCUCHAR ÓRDENES ================= */
 
@@ -115,6 +126,7 @@ function escucharOrdenes() {
       "ordenes"
     ),
     where("clienteId", "==", uid),
+    where("visibleCliente", "==", true),
     orderBy("fechaIngreso", "desc")
   );
 
@@ -136,46 +148,64 @@ function escucharOrdenes() {
       const o = docSnap.data();
       const ordenId = docSnap.id;
 
-      /* ================= STAGES (Timeline CRM) ================= */
+      /* ========= Cargar stages ordenados ========= */
 
       const stagesSnap = await getDocs(
-        collection(
-          db,
-          "empresas",
-          empresaId,
-          "sucursales",
-          sucursalId,
-          "ordenes",
-          ordenId,
-          "stages"
+        query(
+          collection(
+            db,
+            "empresas",
+            empresaId,
+            "sucursales",
+            sucursalId,
+            "ordenes",
+            ordenId,
+            "stages"
+          ),
+          orderBy("at","asc")
         )
       );
 
-      const timelineHTML = stagesSnap.docs.map(s => {
-        const data = s.data();
-        const fecha = data.at?.toDate()?.toLocaleString() || "";
-        return `<li>${data.stage} - ${fecha}</li>`;
-      }).join("");
+      const stages = stagesSnap.docs.map(d=>d.data());
+
+      /* ========= Badge dinámico ========= */
+
+      const estado = o.estado || "ingreso";
 
       const div = document.createElement("div");
       div.className = "card-dark";
 
       div.innerHTML = `
-        <strong>${o.placa || "-"}</strong><br>
-        Vehículo: ${o.vehiculo || "-"}<br>
-        Estado:
-        <span class="badge-estado estado-${o.estado}">
-          ${o.estado}
-        </span>
+        <div class="d-flex justify-content-between">
+          <div>
+            <strong>${o.consecutivo || ""}</strong><br>
+            Placa: ${o.placa || "-"}<br>
+            Vehículo: ${o.vehiculo || "-"}
+          </div>
+          <div class="text-end">
+            <span class="badge-estado estado-${estado}">
+              ${estado}
+            </span><br>
+            <small>Total: $${o.total?.toLocaleString() || 0}</small>
+          </div>
+        </div>
 
-        <ul class="timeline">
-          ${timelineHTML}
+        <ul class="timeline mt-2">
+          ${renderTimeline(stages)}
         </ul>
       `;
 
       ordenesContainer.appendChild(div);
+
     }
 
+  }, error=>{
+    console.error(error);
+    ordenesContainer.innerHTML = `
+      <div class="card-dark text-center text-danger">
+        Error cargando órdenes.
+      </div>
+    `;
   });
 
 }
