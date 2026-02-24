@@ -1,37 +1,25 @@
+// modules/finanzas.js
+
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 
-const db = admin.firestore();
+exports.registrarIngreso = functions.https.onCall(async (data) => {
 
-/**
- * Registrar movimiento financiero
- * Tipo: ingreso | egreso
- */
-exports.crearMovimientoFinanciero = functions.https.onCall(async (data, context) => {
+  const { empresaId, sucursalId, monto, referencia } = data;
+  const db = admin.firestore();
 
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "No autenticado");
-  }
-
-  const { empresaId, tipo, monto, descripcion } = data;
-
-  if (!empresaId || !tipo || !monto) {
-    throw new functions.https.HttpsError("invalid-argument", "Datos incompletos");
-  }
-
-  const movimientoRef = db
+  await db
     .collection("empresas")
     .doc(empresaId)
-    .collection("finanzas")
-    .doc();
+    .collection("sucursales")
+    .doc(sucursalId)
+    .collection("movimientosFinancieros")
+    .add({
+      tipo: "ingreso",
+      monto,
+      referencia,
+      fecha: admin.firestore.FieldValue.serverTimestamp()
+    });
 
-  await movimientoRef.set({
-    tipo,
-    monto,
-    descripcion: descripcion || "",
-    creadoPor: context.auth.uid,
-    creadoEn: admin.firestore.FieldValue.serverTimestamp()
-  });
-
-  return { ok: true };
+  return { success: true };
 });
