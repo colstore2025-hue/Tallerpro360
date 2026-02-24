@@ -124,19 +124,25 @@ Ingresar
 </div>
 <script type="module">
 
-import { db } from "./firebase-config.js";
+import { db, app } from "./firebase-config.js";
 import {
   collection,
-  addDoc,
   query,
-  where,
   onSnapshot,
-  serverTimestamp,
   doc,
   updateDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* ================= VALIDACIÓN DE SESIÓN ================= */
+import {
+  getFunctions,
+  httpsCallable
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
+
+/* ================= CONFIG ================= */
+
+const functions = getFunctions(app);
+
+const crearOrdenFn = httpsCallable(functions, "crearOrden");
 
 const empresaId = localStorage.getItem("empresaId");
 const rol = localStorage.getItem("rol");
@@ -147,12 +153,11 @@ if (!empresaId || !rol || !uid) {
   window.location.href = "login.html";
 }
 
-/* Solo staff interno */
 if (rol === "cliente") {
   window.location.href = "login.html";
 }
 
-/* ================= ELEMENTOS ================= */
+/* ================= UI ================= */
 
 const crearOrdenDiv = document.getElementById("crearOrden");
 const ordenesListDiv = document.getElementById("ordenesList");
@@ -160,7 +165,6 @@ const ordenesUl = document.getElementById("ordenesUl");
 const logoutBtn = document.getElementById("logoutBtn");
 const formOrden = document.getElementById("formOrden");
 
-/* Limpiar interfaz heredada */
 document.getElementById("registroCliente")?.remove();
 document.getElementById("loginCliente")?.remove();
 
@@ -168,40 +172,52 @@ crearOrdenDiv.classList.remove("d-none");
 ordenesListDiv.classList.remove("d-none");
 logoutBtn.classList.remove("d-none");
 
-/* ================= LOGOUT LIMPIO ================= */
+/* ================= LOGOUT ================= */
 
 logoutBtn.addEventListener("click", ()=>{
   localStorage.clear();
   window.location.href = "login.html";
 });
 
-/* ================= CREAR ORDEN (INGRESO MANUAL) ================= */
+/* ================= CREAR ORDEN REAL ================= */
 
 formOrden.addEventListener("submit", async e=>{
   e.preventDefault();
 
-  await addDoc(
-    collection(
-      db,
-      "empresas",
-      empresaId,
-      "sucursales",
-      sucursalId,
-      "ordenes"
-    ),
-    {
-      clienteId: null,                 // puede vincularse luego
-      placa: placa.value,
-      vehiculo: vehiculo.value,
-      estado: "ingreso",
-      fechaIngreso: serverTimestamp(),
-      creadoPor: uid,
-      origen: "taller",                // 🔥 importante CRM
-      visibleCliente: false
-    }
-  );
+  try {
 
-  formOrden.reset();
+    const placa = document.getElementById("placa").value.trim();
+    const vehiculo = document.getElementById("vehiculo").value.trim();
+
+    if(!placa || !vehiculo){
+      alert("Completa todos los campos");
+      return;
+    }
+
+    await crearOrdenFn({
+      empresaId,
+      sucursalId,
+      orden: {
+        placa,
+        vehiculo,
+        items: [
+          {
+            descripcion: "Servicio general",
+            cantidad: 1,
+            precio: 0
+          }
+        ]
+      }
+    });
+
+    hablar("Orden creada correctamente");
+    formOrden.reset();
+
+  } catch(error){
+    console.error(error);
+    alert(error.message);
+  }
+
 });
 
 /* ================= ESCUCHAR ÓRDENES ================= */
@@ -246,7 +262,7 @@ function escucharOrdenes(){
 
       li.innerHTML=`
         <span>
-          ${data.placa} - ${data.vehiculo}
+          ${data.consecutivo || ""} · ${data.placa} - ${data.vehiculo}
         </span>
         <div>
           <span class="badge-status ${badgeClass}">
@@ -279,6 +295,8 @@ function escucharOrdenes(){
           }
         );
 
+        hablar("Estado actualizado");
+
       });
 
       ordenesUl.appendChild(li);
@@ -289,17 +307,17 @@ function escucharOrdenes(){
 
 }
 
-/* ================= INICIAR ================= */
-
-escucharOrdenes();
-
-/* ================= VOZ OPCIONAL ================= */
+/* ================= VOZ ================= */
 
 function hablar(texto){
   const voz = new SpeechSynthesisUtterance(texto);
   voz.lang="es-ES";
   speechSynthesis.speak(voz);
 }
+
+/* ================= INICIAR ================= */
+
+escucharOrdenes();
 
 </script>
 </body>
