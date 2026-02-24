@@ -1,0 +1,19 @@
+{
+  "name": "tallerpro360-functions",
+  "description": "Backend SaaS TallerPRO360",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": "18"
+  },
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-admin": "^11.10.1",
+    "firebase-functions": "^4.4.1",
+    "mercadopago": "^1.5.14"
+  }
+}
