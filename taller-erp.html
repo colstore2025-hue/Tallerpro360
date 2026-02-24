@@ -3,276 +3,243 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TallerPRO360 | ERP</title>
-<link rel="icon" href="logo-tallerpro360.png">
+<title>TallerPRO360 | ERP Taller</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
 body{
-  margin:0;
-  font-family:'Inter',sans-serif;
-  background:linear-gradient(135deg,#0f172a,#111827);
+  background: linear-gradient(135deg,#0f172a,#111827);
   color:#f1f5f9;
+  font-family:'Inter',sans-serif;
 }
 
-.erp-wrapper{ display:flex; height:100vh; overflow:hidden; }
-
-.sidebar{
-  width:260px;
-  background:rgba(15,23,42,.95);
-  backdrop-filter:blur(20px);
-  border-right:1px solid rgba(255,255,255,.05);
-  padding:30px 20px;
-  display:flex;
-  flex-direction:column;
+.glass{
+  background: rgba(15,23,42,.7);
+  backdrop-filter: blur(20px);
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255,255,255,.05);
+  padding: 1.5rem;
 }
 
-.logo{
-  font-family:'Orbitron',sans-serif;
-  font-size:22px;
+.title-gradient{
+  background: linear-gradient(90deg,#22c55e,#38bdf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   font-weight:900;
-  margin-bottom:50px;
-}
-.logo span{
-  background:linear-gradient(90deg,#22c55e,#38bdf8);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
 }
 
-.nav-btn{
-  background:none;
-  border:none;
-  color:#94a3b8;
-  padding:14px;
-  text-align:left;
-  border-radius:12px;
-  margin-bottom:8px;
-  transition:.3s;
-  font-weight:600;
-}
-.nav-btn:hover,
-.nav-btn.active{
-  background:rgba(34,197,94,.1);
-  color:#22c55e;
+.badge-status{
+  padding:6px 12px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:700;
 }
 
-.main-content{ flex:1; padding:40px; overflow-y:auto; }
+.badge-ingreso{ background:rgba(59,130,246,.2); color:#38bdf8;}
+.badge-proceso{ background:rgba(34,197,94,.2); color:#22c55e;}
+.badge-entregado{ background:rgba(250,204,21,.2); color:#facc15;}
 
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:30px;
+input{
+  background:#0f172a !important;
+  border:1px solid rgba(255,255,255,.2) !important;
+  color:#ffffff !important;
 }
 
-.logout-btn{
-  border:1px solid rgba(255,255,255,.2);
-  padding:6px 14px;
-  border-radius:8px;
-  font-size:14px;
-  transition:.3s;
-}
-.logout-btn:hover{
-  background:rgba(239,68,68,.1);
-  border-color:#ef4444;
-  color:#ef4444;
+.form-control:focus{
+  border-color:#22c55e !important;
+  box-shadow:0 0 0 .25rem rgba(34,197,94,.3) !important;
 }
 
-#contentArea{
-  background:rgba(15,23,42,.75);
-  border:1px solid rgba(255,255,255,.05);
-  backdrop-filter:blur(20px);
-  border-radius:24px;
-  padding:30px;
-  min-height:600px;
+.card-metric{
+  text-align:center;
+  padding:1rem;
+  border-radius:1rem;
+  background:rgba(255,255,255,.03);
 }
-
-::-webkit-scrollbar{ width:6px; }
-::-webkit-scrollbar-thumb{ background:#1e293b; border-radius:10px; }
 </style>
 </head>
 
-<body>
+<body class="p-4">
 
-<div class="erp-wrapper">
+<div class="container">
 
-<aside class="sidebar">
-  <div class="logo">Taller<span>PRO360</span></div>
-
-  <button class="nav-btn active" data-section="dashboard">
-    <i class="fa-solid fa-chart-line mr-2"></i> Dashboard
-  </button>
-
-  <button class="nav-btn" data-section="ordenes">
-    <i class="fa-solid fa-car mr-2"></i> Órdenes
-  </button>
-
-  <button class="nav-btn" data-section="inventario">
-    <i class="fa-solid fa-boxes-stacked mr-2"></i> Inventario
-  </button>
-
-  <button class="nav-btn" data-section="finanzas">
-    <i class="fa-solid fa-coins mr-2"></i> Finanzas
-  </button>
-
-  <button class="nav-btn" data-section="nomina">
-    <i class="fa-solid fa-users mr-2"></i> Nómina
-  </button>
-
-  <button class="nav-btn" data-section="mapa">
-    <i class="fa-solid fa-map-location-dot mr-2"></i> Mapa
-  </button>
-</aside>
-
-<main class="main-content">
-
-<header class="topbar">
-  <div>
-    <h2 id="sectionTitle" class="text-2xl font-bold">Dashboard</h2>
-    <p class="text-slate-400 text-sm">Centro de control operativo</p>
-  </div>
-  <button id="logoutBtn" class="logout-btn">Salir</button>
-</header>
-
-<section id="contentArea"></section>
-
-</main>
+<div class="text-center mb-5">
+<h1 class="title-gradient">ERP Taller</h1>
+<p class="text-secondary">Gestión inteligente del taller</p>
+<button id="logoutBtn" class="btn btn-sm btn-outline-light mt-2">Cerrar sesión</button>
 </div>
 
-<!-- ================= FIREBASE DASHBOARD REAL ================= -->
+<!-- MÉTRICAS -->
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card-metric glass">
+      <h6>Órdenes Activas</h6>
+      <h2 id="metricOrdenes">0</h2>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card-metric glass">
+      <h6>Ingresos Totales</h6>
+      <h2>$<span id="metricIngresos">0</span></h2>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card-metric glass">
+      <h6>Saldo Pendiente</h6>
+      <h2>$<span id="metricPendiente">0</span></h2>
+    </div>
+  </div>
+</div>
+
+<!-- CREAR ORDEN -->
+<div class="glass mb-4">
+<h5>Nueva Orden</h5>
+<form id="formOrden">
+<input type="text" id="placa" class="form-control mb-2" placeholder="Placa" required>
+<input type="text" id="vehiculo" class="form-control mb-2" placeholder="Vehículo" required>
+<input type="number" id="total" class="form-control mb-2" placeholder="Total estimado" required>
+<button type="submit" class="btn btn-success w-100">Crear Orden</button>
+</form>
+</div>
+
+<!-- LISTADO -->
+<div class="glass">
+<h5>Órdenes</h5>
+<ul class="list-group bg-transparent" id="ordenesUl"></ul>
+</div>
+
+</div>
+
 <script type="module">
 
-import { db } from "./firebase-config.js";
+import { db, app } from "./firebase-config.js";
 import {
   collection,
-  getDocs
+  query,
+  onSnapshot,
+  doc,
+  updateDoc,
+  addDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-let chartInstance = null;
+const empresaId = localStorage.getItem("empresaId");
+const sucursalId = localStorage.getItem("sucursalId");
 
-// ================= DASHBOARD =================
-async function renderDashboard(){
-
-  document.getElementById("contentArea").innerHTML = `
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-    ${kpiCard("Órdenes Activas","ordenesActivas","fa-car")}
-    ${kpiCard("En Proceso","ordenesProceso","fa-gears")}
-    ${kpiCard("Ingresos Hoy","ingresosHoy","fa-coins")}
-    ${kpiCard("Inventario Crítico","inventarioCritico","fa-triangle-exclamation")}
-  </div>
-
-  <div class="bg-slate-900/60 p-6 rounded-2xl border border-white/5">
-    <h3 class="mb-4 text-lg font-semibold text-slate-300">Actividad semanal</h3>
-    <canvas id="dashboardChart"></canvas>
-  </div>
-  `;
-
-  await loadKPIs();
-  initChart();
+if(!empresaId || !sucursalId){
+  window.location.href="login.html";
 }
 
-function kpiCard(title,id,icon){
-  return `
-  <div class="bg-slate-900/70 p-6 rounded-2xl border border-white/5">
-    <div class="flex justify-between mb-3">
-      <span class="text-slate-400 text-sm">${title}</span>
-      <i class="fa-solid ${icon} text-slate-500"></i>
-    </div>
-    <h2 id="${id}" class="text-3xl font-bold">0</h2>
-  </div>`;
-}
+const ordenesUl = document.getElementById("ordenesUl");
+const metricOrdenes = document.getElementById("metricOrdenes");
+const metricIngresos = document.getElementById("metricIngresos");
+const metricPendiente = document.getElementById("metricPendiente");
 
-// ================= FIRESTORE DATA =================
-async function loadKPIs(){
+/* CREAR ORDEN */
 
-  const ordenesSnap = await getDocs(collection(db,"ordenes"));
-  const inventarioSnap = await getDocs(collection(db,"inventario"));
+document.getElementById("formOrden").addEventListener("submit", async e=>{
+  e.preventDefault();
 
-  let activas=0, proceso=0, ingresosHoy=0, critico=0;
+  const placa = document.getElementById("placa").value.trim();
+  const vehiculo = document.getElementById("vehiculo").value.trim();
+  const total = parseFloat(document.getElementById("total").value);
 
-  const hoy = new Date();
-  hoy.setHours(0,0,0,0);
-
-  ordenesSnap.forEach(doc=>{
-    const d = doc.data();
-    if(d.estado !== "FINALIZADO") activas++;
-    if(d.estado === "EN PROCESO") proceso++;
-    if(d.creadoEn){
-      const fecha = d.creadoEn.toDate();
-      if(fecha >= hoy) ingresosHoy += d.total || 0;
+  await addDoc(
+    collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
+    {
+      placa,
+      vehiculo,
+      estado:"ingreso",
+      total,
+      pagado:0,
+      saldo:total,
+      fechaIngreso:new Date()
     }
-  });
+  );
 
-  inventarioSnap.forEach(doc=>{
-    const d = doc.data();
-    if(d.stock <= d.stockMinimo) critico++;
-  });
-
-  animate("ordenesActivas",activas);
-  animate("ordenesProceso",proceso);
-  animate("ingresosHoy",ingresosHoy);
-  animate("inventarioCritico",critico);
-}
-
-// ================= COUNTER =================
-function animate(id,value){
-  const el = document.getElementById(id);
-  el.innerText = value.toLocaleString();
-}
-
-// ================= CHART =================
-function initChart(){
-
-  if(chartInstance) chartInstance.destroy();
-
-  const ctx = document.getElementById("dashboardChart");
-
-  chartInstance = new Chart(ctx,{
-    type:'line',
-    data:{
-      labels:['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
-      datasets:[{
-        data:[5,7,4,9,6,3,8],
-        borderColor:'#22c55e',
-        backgroundColor:'rgba(34,197,94,.2)',
-        tension:.4,
-        fill:true
-      }]
-    },
-    options:{
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{ticks:{color:'#94a3b8'}},
-        y:{ticks:{color:'#94a3b8'}}
-      }
-    }
-  });
-}
-
-// ================= NAVIGATION =================
-document.querySelectorAll(".nav-btn").forEach(btn=>{
-  btn.addEventListener("click", async ()=>{
-    document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    document.getElementById("sectionTitle").innerText = btn.innerText.trim();
-
-    if(btn.dataset.section==="dashboard"){
-      await renderDashboard();
-    }else{
-      document.getElementById("contentArea").innerHTML =
-      "<div class='text-slate-400'>Módulo en construcción...</div>";
-    }
-  });
+  hablar("Orden creada correctamente");
+  e.target.reset();
 });
 
-// INIT
-renderDashboard();
+/* ESCUCHAR ORDENES */
+
+function escucharOrdenes(){
+
+  const q = query(
+    collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes")
+  );
+
+  onSnapshot(q,(snapshot)=>{
+
+    ordenesUl.innerHTML="";
+
+    let totalIngresos=0;
+    let totalPendiente=0;
+
+    metricOrdenes.textContent = snapshot.size;
+
+    snapshot.forEach(docSnap=>{
+
+      const data = docSnap.data();
+      const ordenId = docSnap.id;
+
+      totalIngresos += data.pagado || 0;
+      totalPendiente += data.saldo || 0;
+
+      let badgeClass="badge-ingreso";
+      if(data.estado==="proceso") badgeClass="badge-proceso";
+      if(data.estado==="entregado") badgeClass="badge-entregado";
+
+      const li = document.createElement("li");
+      li.className="list-group-item bg-transparent text-white d-flex justify-content-between align-items-center";
+
+      li.innerHTML=`
+        <div>
+          <strong>${data.placa}</strong> - ${data.vehiculo}
+          <br>
+          Total: $${data.total} | Saldo: $${data.saldo}
+        </div>
+        <div>
+          <span class="badge-status ${badgeClass}">${data.estado}</span>
+          <button class="btn btn-sm btn-outline-light ms-2">Estado</button>
+        </div>
+      `;
+
+      li.querySelector("button").addEventListener("click", async ()=>{
+
+        let nuevoEstado="proceso";
+        if(data.estado==="proceso") nuevoEstado="entregado";
+        if(data.estado==="entregado") nuevoEstado="ingreso";
+
+        await updateDoc(
+          doc(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes",ordenId),
+          { estado:nuevoEstado }
+        );
+
+        hablar("Estado actualizado");
+
+      });
+
+      ordenesUl.appendChild(li);
+
+    });
+
+    metricIngresos.textContent = totalIngresos.toLocaleString();
+    metricPendiente.textContent = totalPendiente.toLocaleString();
+
+  });
+}
+
+/* VOZ INTELIGENTE */
+
+function hablar(texto){
+  const voz = new SpeechSynthesisUtterance(texto);
+  voz.lang="es-ES";
+  speechSynthesis.speak(voz);
+}
+
+escucharOrdenes();
 
 </script>
-
 </body>
 </html>
