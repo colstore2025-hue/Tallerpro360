@@ -1,24 +1,35 @@
+// modules/planes.js
+
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const { PLANES } = require("../utils/constants");
 
-const db = admin.firestore();
+exports.actualizarPlan = functions.https.onCall(async (data, context) => {
 
-/**
- * Obtener plan activo de empresa
- */
-exports.obtenerPlan = functions.https.onCall(async (data, context) => {
+  const { empresaId, nuevoPlan } = data;
+  const db = admin.firestore();
 
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "No autenticado");
+  if (!PLANES[nuevoPlan]) {
+    throw new Error("Plan no válido");
   }
 
-  const { empresaId } = data;
+  const empresaRef = db.collection("empresas").doc(empresaId);
 
-  const empresaSnap = await db.collection("empresas").doc(empresaId).get();
+  await empresaRef.update({
+    plan: {
+      tipo: nuevoPlan,
+      estado: "activo",
+      fechaInicio: admin.firestore.Timestamp.now()
+    },
+    limites: {
+      sucursales: PLANES[nuevoPlan].sucursales,
+      ordenesMes: PLANES[nuevoPlan].ordenesMes
+    },
+    configuracion: {
+      facturacionElectronica: PLANES[nuevoPlan].facturacionElectronica,
+      contabilidadAvanzada: PLANES[nuevoPlan].contabilidadAvanzada
+    }
+  });
 
-  if (!empresaSnap.exists) {
-    throw new functions.https.HttpsError("not-found", "Empresa no encontrada");
-  }
-
-  return empresaSnap.data().plan;
+  return { success: true };
 });
