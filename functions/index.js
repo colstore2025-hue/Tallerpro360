@@ -17,6 +17,8 @@ const db = admin.firestore();
 // =============================================
 // 🔐 CONFIGURACIÓN MERCADO PAGO (SEGURA)
 // =============================================
+// Asegúrate de configurar:
+// firebase functions:config:set mercadopago.access_token="TU_TOKEN"
 
 mercadopago.configure({
   access_token: functions.config().mercadopago.access_token
@@ -28,10 +30,11 @@ mercadopago.configure({
 
 const ordenes = require("./ordenes");
 const inventario = require("./inventario");
-const finanzas = require("./finanzas");            // si lo creas después
-const planes = require("./planes");                // futuro módulo
-const suscripciones = require("./suscripciones");  // futuro módulo
-const permisos = require("./permisos");            // sistema dinámico
+const finanzas = require("./finanzas");
+const planes = require("./planes");
+const suscripciones = require("./suscripciones");
+const permisos = require("./permisos");
+const contabilidad = require("./contabilidad");
 
 const { trialOnCreate } = require("./trial-on-create");
 const { billingCron } = require("./billing-cron");
@@ -47,6 +50,7 @@ exports.finanzas = finanzas;
 exports.planes = planes;
 exports.suscripciones = suscripciones;
 exports.permisos = permisos;
+exports.contabilidad = contabilidad;
 
 exports.trialOnCreate = trialOnCreate;
 exports.billingCron = billingCron;
@@ -69,22 +73,35 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
     const empresaId = empresaRef.id;
 
     const vence = admin.firestore.Timestamp.fromDate(
-      new Date(Date.now() + 7 * 86400000)
+      new Date(Date.now() + 7 * 86400000) // 7 días trial
     );
 
     await empresaRef.set({
       nombre: "Mi Taller",
       creadoEn: ahora,
+
       plan: {
-        tipo: "trial",
+        tipo: "trial",            // trial | pro_mensual | pro_anual
         estado: "activo",
         fechaInicio: ahora,
         fechaVencimiento: vence
       },
+
+      limites: {
+        sucursales: 1,
+        ordenesMes: 50
+      },
+
       metricas: {
         ordenesMes: 0,
         ingresosMes: 0
+      },
+
+      configuracion: {
+        facturacionElectronica: false,
+        contabilidadAvanzada: false
       }
+
     });
 
     // 2️⃣ Crear usuario dueño
@@ -97,7 +114,8 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
     // 3️⃣ Crear sucursal principal
     await empresaRef.collection("sucursales").doc("principal").set({
       nombre: "Sucursal Principal",
-      creadoEn: ahora
+      creadoEn: ahora,
+      activa: true
     });
 
     // 4️⃣ Crear Pipeline CRM Base
