@@ -1,46 +1,30 @@
+// modules/permisos.js
+
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 
-const db = admin.firestore();
-
-/**
- * Verificar permiso dinámico
- */
 exports.verificarPermiso = functions.https.onCall(async (data, context) => {
 
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "No autenticado");
-  }
-
   const { empresaId, permiso } = data;
+  const uid = context.auth.uid;
+  const db = admin.firestore();
 
-  const userSnap = await db
+  const userDoc = await db
     .collection("empresas")
     .doc(empresaId)
     .collection("usuarios")
-    .doc(context.auth.uid)
+    .doc(uid)
     .get();
 
-  if (!userSnap.exists) {
-    throw new functions.https.HttpsError("permission-denied", "Usuario no pertenece a empresa");
+  if (!userDoc.exists) {
+    throw new Error("Usuario no pertenece a la empresa");
   }
 
-  const rol = userSnap.data().rol;
+  const rol = userDoc.data().rol;
 
-  const rolSnap = await db
-    .collection("empresas")
-    .doc(empresaId)
-    .collection("roles")
-    .doc(rol)
-    .get();
-
-  if (!rolSnap.exists) {
-    throw new functions.https.HttpsError("permission-denied", "Rol no configurado");
+  if (rol === "dueno" || rol === "admin") {
+    return { permitido: true };
   }
 
-  const permisos = rolSnap.data().permisos || {};
-
-  return {
-    permitido: permisos[permiso] === true
-  };
+  return { permitido: false };
 });
