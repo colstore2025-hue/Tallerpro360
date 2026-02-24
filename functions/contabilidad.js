@@ -1,3 +1,8 @@
+/************************************************
+ * TallerPRO360 · Módulo Contabilidad
+ * Plan de Cuentas + Libro Diario
+ ************************************************/
+
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 
@@ -8,6 +13,23 @@ const db = admin.firestore();
 ========================================== */
 
 exports.crearPlanCuentas = async (empresaId) => {
+
+  if (!empresaId) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "empresaId es obligatorio"
+    );
+  }
+
+  const empresaRef = db.collection("empresas").doc(empresaId);
+  const empresaDoc = await empresaRef.get();
+
+  if (!empresaDoc.exists) {
+    throw new functions.https.HttpsError(
+      "not-found",
+      "La empresa no existe"
+    );
+  }
 
   const cuentasBase = [
     { codigo: "1105", nombre: "Caja", tipo: "activo" },
@@ -28,18 +50,33 @@ exports.crearPlanCuentas = async (empresaId) => {
     { codigo: "5105", nombre: "Gastos administrativos", tipo: "gasto" }
   ];
 
+  const cuentasRef = empresaRef
+    .collection("contabilidad")
+    .doc("cuentas")
+    .collection("lista");
+
+  const snapshot = await cuentasRef.limit(1).get();
+
+  if (!snapshot.empty) {
+    // Ya existe plan de cuentas
+    return true;
+  }
+
   const batch = db.batch();
-  const cuentasRef = db.collection("empresas").doc(empresaId).collection("contabilidad").doc("cuentas");
 
   cuentasBase.forEach(cuenta => {
-    const ref = cuentasRef.collection("lista").doc(cuenta.codigo);
+    const ref = cuentasRef.doc(cuenta.codigo);
+
     batch.set(ref, {
       ...cuenta,
-      creadoEn: admin.firestore.FieldValue.serverTimestamp()
+      creadoEn: admin.firestore.FieldValue.serverTimestamp(),
+      activo: true
     });
   });
 
   await batch.commit();
+
+  return true;
 };
 
 
@@ -55,6 +92,20 @@ exports.registrarAsiento = async ({
   creadoPor
 }) => {
 
+  if (!empresaId || !movimientos || !Array.isArray(movimientos)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Datos incompletos para registrar asiento"
+    );
+  }
+
+  if (movimientos.length < 2) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Un asiento debe tener mínimo dos movimientos"
+    );
+  }
+
   const libroRef = db
     .collection("empresas")
     .doc(empresaId)
@@ -67,9 +118,31 @@ exports.registrarAsiento = async ({
   let totalHaber = 0;
 
   movimientos.forEach(m => {
-    totalDebe += m.debe || 0;
-    totalHaber += m.haber || 0;
+
+    if (!m.cuenta) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Cada movimiento debe tener cuenta"
+      );
+    }
+
+    const debe = Number(m.debe || 0);
+    const haber = Number(m.haber || 0);
+
+    if (debe < 0 || haber < 0) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Los valores no pueden ser negativos"
+      );
+    }
+
+    totalDebe += debe;
+    totalHaber += haber;
   });
+
+  // 🔥 Redondeo para evitar errores decimales
+  totalDebe = Number(totalDebe.toFixed(2));
+  totalHaber = Number(totalHaber.toFixed(2));
 
   if (totalDebe !== totalHaber) {
     throw new functions.https.HttpsError(
@@ -79,13 +152,14 @@ exports.registrarAsiento = async ({
   }
 
   await libroRef.set({
-    tipo,
-    referenciaId,
+    tipo,                 // ejemplo: "orden", "pago", "compra"
+    referenciaId,         // ID de orden o documento
     movimientos,
     totalDebe,
     totalHaber,
     fecha: admin.firestore.FieldValue.serverTimestamp(),
-    creadoPor
+    creadoPor,
+    estado: "confirmado"
   });
 
   return true;
