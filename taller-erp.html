@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TallerPRO360 | ERP Taller</title>
+<title>TallerPRO360 | ERP Operativo PRO</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -15,7 +15,7 @@ body{
 }
 
 .glass{
-  background: rgba(15,23,42,.7);
+  background: rgba(15,23,42,.75);
   backdrop-filter: blur(20px);
   border-radius: 1.5rem;
   border: 1px solid rgba(255,255,255,.05);
@@ -29,6 +29,13 @@ body{
   font-weight:900;
 }
 
+.metric-card{
+  text-align:center;
+  padding:1rem;
+  border-radius:1rem;
+  background:rgba(255,255,255,.03);
+}
+
 .badge-status{
   padding:6px 12px;
   border-radius:20px;
@@ -37,25 +44,21 @@ body{
 }
 
 .badge-ingreso{ background:rgba(59,130,246,.2); color:#38bdf8;}
+.badge-diagnostico{ background:rgba(168,85,247,.2); color:#a855f7;}
 .badge-proceso{ background:rgba(34,197,94,.2); color:#22c55e;}
-.badge-entregado{ background:rgba(250,204,21,.2); color:#facc15;}
+.badge-listo{ background:rgba(234,179,8,.2); color:#facc15;}
+.badge-entregado{ background:rgba(250,204,21,.2); color:#fde047;}
+.badge-facturado{ background:rgba(244,63,94,.2); color:#f43f5e;}
 
-input{
+input, select{
   background:#0f172a !important;
   border:1px solid rgba(255,255,255,.2) !important;
-  color:#ffffff !important;
+  color:#fff !important;
 }
 
 .form-control:focus{
   border-color:#22c55e !important;
   box-shadow:0 0 0 .25rem rgba(34,197,94,.3) !important;
-}
-
-.card-metric{
-  text-align:center;
-  padding:1rem;
-  border-radius:1rem;
-  background:rgba(255,255,255,.03);
 }
 </style>
 </head>
@@ -65,31 +68,42 @@ input{
 <div class="container">
 
 <div class="text-center mb-5">
-<h1 class="title-gradient">ERP Taller</h1>
-<p class="text-secondary">Gestión inteligente del taller</p>
+<h1 class="title-gradient">ERP Operativo PRO</h1>
+<p class="text-secondary">Centro de control del taller</p>
 <button id="logoutBtn" class="btn btn-sm btn-outline-light mt-2">Cerrar sesión</button>
 </div>
 
 <!-- MÉTRICAS -->
 <div class="row mb-4">
-  <div class="col-md-4">
-    <div class="card-metric glass">
+  <div class="col-md-3">
+    <div class="metric-card glass">
       <h6>Órdenes Activas</h6>
       <h2 id="metricOrdenes">0</h2>
     </div>
   </div>
-  <div class="col-md-4">
-    <div class="card-metric glass">
-      <h6>Ingresos Totales</h6>
+  <div class="col-md-3">
+    <div class="metric-card glass">
+      <h6>Ingresos</h6>
       <h2>$<span id="metricIngresos">0</span></h2>
     </div>
   </div>
-  <div class="col-md-4">
-    <div class="card-metric glass">
-      <h6>Saldo Pendiente</h6>
+  <div class="col-md-3">
+    <div class="metric-card glass">
+      <h6>Pendiente</h6>
       <h2>$<span id="metricPendiente">0</span></h2>
     </div>
   </div>
+  <div class="col-md-3">
+    <div class="metric-card glass">
+      <h6>Ticket Promedio</h6>
+      <h2>$<span id="metricPromedio">0</span></h2>
+    </div>
+  </div>
+</div>
+
+<!-- BUSCADOR -->
+<div class="glass mb-4">
+<input type="text" id="buscador" class="form-control" placeholder="Buscar por placa, consecutivo o estado...">
 </div>
 
 <!-- CREAR ORDEN -->
@@ -113,14 +127,15 @@ input{
 
 <script type="module">
 
-import { db, app } from "./firebase-config.js";
+import { db } from "./firebase-config.js";
 import {
   collection,
   query,
   onSnapshot,
   doc,
   updateDoc,
-  addDoc
+  addDoc,
+  orderBy
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const empresaId = localStorage.getItem("empresaId");
@@ -130,23 +145,26 @@ if(!empresaId || !sucursalId){
   window.location.href="login.html";
 }
 
+const estados = ["ingreso","diagnostico","proceso","listo","entregado","facturado"];
+
 const ordenesUl = document.getElementById("ordenesUl");
-const metricOrdenes = document.getElementById("metricOrdenes");
-const metricIngresos = document.getElementById("metricIngresos");
-const metricPendiente = document.getElementById("metricPendiente");
+const buscador = document.getElementById("buscador");
+
+let ordenesCache = [];
 
 /* CREAR ORDEN */
 
 document.getElementById("formOrden").addEventListener("submit", async e=>{
   e.preventDefault();
 
-  const placa = document.getElementById("placa").value.trim();
-  const vehiculo = document.getElementById("vehiculo").value.trim();
-  const total = parseFloat(document.getElementById("total").value);
+  const placa = placaInput.value.trim();
+  const vehiculo = vehiculoInput.value.trim();
+  const total = parseFloat(totalInput.value);
 
   await addDoc(
     collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
     {
+      consecutivo: Date.now(),
       placa,
       vehiculo,
       estado:"ingreso",
@@ -157,7 +175,7 @@ document.getElementById("formOrden").addEventListener("submit", async e=>{
     }
   );
 
-  hablar("Orden creada correctamente");
+  hablar("Orden creada");
   e.target.reset();
 });
 
@@ -166,71 +184,117 @@ document.getElementById("formOrden").addEventListener("submit", async e=>{
 function escucharOrdenes(){
 
   const q = query(
-    collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes")
+    collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
+    orderBy("fechaIngreso","desc")
   );
 
   onSnapshot(q,(snapshot)=>{
 
-    ordenesUl.innerHTML="";
+    ordenesCache = [];
 
     let totalIngresos=0;
     let totalPendiente=0;
 
-    metricOrdenes.textContent = snapshot.size;
-
     snapshot.forEach(docSnap=>{
-
       const data = docSnap.data();
-      const ordenId = docSnap.id;
-
+      data.id = docSnap.id;
+      ordenesCache.push(data);
       totalIngresos += data.pagado || 0;
       totalPendiente += data.saldo || 0;
-
-      let badgeClass="badge-ingreso";
-      if(data.estado==="proceso") badgeClass="badge-proceso";
-      if(data.estado==="entregado") badgeClass="badge-entregado";
-
-      const li = document.createElement("li");
-      li.className="list-group-item bg-transparent text-white d-flex justify-content-between align-items-center";
-
-      li.innerHTML=`
-        <div>
-          <strong>${data.placa}</strong> - ${data.vehiculo}
-          <br>
-          Total: $${data.total} | Saldo: $${data.saldo}
-        </div>
-        <div>
-          <span class="badge-status ${badgeClass}">${data.estado}</span>
-          <button class="btn btn-sm btn-outline-light ms-2">Estado</button>
-        </div>
-      `;
-
-      li.querySelector("button").addEventListener("click", async ()=>{
-
-        let nuevoEstado="proceso";
-        if(data.estado==="proceso") nuevoEstado="entregado";
-        if(data.estado==="entregado") nuevoEstado="ingreso";
-
-        await updateDoc(
-          doc(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes",ordenId),
-          { estado:nuevoEstado }
-        );
-
-        hablar("Estado actualizado");
-
-      });
-
-      ordenesUl.appendChild(li);
-
     });
 
-    metricIngresos.textContent = totalIngresos.toLocaleString();
-    metricPendiente.textContent = totalPendiente.toLocaleString();
+    renderOrdenes(ordenesCache);
+
+    document.getElementById("metricOrdenes").textContent = ordenesCache.length;
+    document.getElementById("metricIngresos").textContent = totalIngresos.toLocaleString();
+    document.getElementById("metricPendiente").textContent = totalPendiente.toLocaleString();
+    document.getElementById("metricPromedio").textContent =
+      ordenesCache.length ? (totalIngresos/ordenesCache.length).toFixed(0) : 0;
 
   });
 }
 
-/* VOZ INTELIGENTE */
+/* RENDER */
+
+function renderOrdenes(lista){
+
+  ordenesUl.innerHTML="";
+
+  lista.forEach(data=>{
+
+    let badgeClass = "badge-"+data.estado;
+
+    const li = document.createElement("li");
+    li.className="list-group-item bg-transparent text-white d-flex justify-content-between align-items-center";
+
+    li.innerHTML=`
+      <div>
+        <strong>#${data.consecutivo}</strong> · ${data.placa} - ${data.vehiculo}
+        <br>
+        Total: $${data.total} | Pagado: $${data.pagado} | Saldo: $${data.saldo}
+      </div>
+      <div>
+        <span class="badge-status ${badgeClass}">${data.estado}</span>
+        <button class="btn btn-sm btn-outline-light ms-2">Estado</button>
+        <button class="btn btn-sm btn-success ms-2">Pago</button>
+      </div>
+    `;
+
+    /* CAMBIAR ESTADO */
+    li.querySelector(".btn-outline-light").addEventListener("click", async ()=>{
+
+      let index = estados.indexOf(data.estado);
+      let nuevoEstado = estados[(index+1) % estados.length];
+
+      await updateDoc(
+        doc(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes",data.id),
+        { estado:nuevoEstado }
+      );
+
+      hablar("Estado actualizado");
+
+    });
+
+    /* REGISTRAR PAGO */
+    li.querySelector(".btn-success").addEventListener("click", async ()=>{
+
+      const monto = prompt("Ingrese valor recibido:");
+      if(!monto) return;
+
+      const nuevoPagado = (data.pagado||0) + parseFloat(monto);
+      const nuevoSaldo = data.total - nuevoPagado;
+
+      await updateDoc(
+        doc(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes",data.id),
+        {
+          pagado:nuevoPagado,
+          saldo:nuevoSaldo
+        }
+      );
+
+      hablar("Pago registrado");
+
+    });
+
+    ordenesUl.appendChild(li);
+
+  });
+
+}
+
+/* BUSCADOR */
+
+buscador.addEventListener("input", e=>{
+  const texto = e.target.value.toLowerCase();
+  const filtradas = ordenesCache.filter(o=>
+    o.placa.toLowerCase().includes(texto) ||
+    String(o.consecutivo).includes(texto) ||
+    o.estado.toLowerCase().includes(texto)
+  );
+  renderOrdenes(filtradas);
+});
+
+/* VOZ */
 
 function hablar(texto){
   const voz = new SpeechSynthesisUtterance(texto);
