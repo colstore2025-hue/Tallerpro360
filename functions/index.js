@@ -8,57 +8,72 @@ const functions = require("firebase-functions");
 const mercadopago = require("mercadopago");
 
 // =============================================
-// 🔥 INICIALIZACIÓN GLOBAL (UNA SOLA VEZ)
+// 🔥 INICIALIZACIÓN GLOBAL
 // =============================================
 
 admin.initializeApp();
 const db = admin.firestore();
 
 // =============================================
-// 🔐 CONFIGURACIÓN MERCADO PAGO (SEGURA)
+// 🔐 CONFIGURACIÓN MERCADO PAGO
 // =============================================
-// Asegúrate de configurar:
-// firebase functions:config:set mercadopago.access_token="TU_TOKEN"
 
 mercadopago.configure({
   access_token: functions.config().mercadopago.access_token
 });
 
 // =============================================
-// 📦 IMPORTAR MÓDULOS DEL SISTEMA (MISMA CARPETA)
+// 📦 IMPORTAR MÓDULOS (DESDE /modules)
 // =============================================
 
-const ordenes = require("./ordenes");
-const inventario = require("./inventario");
-const finanzas = require("./finanzas");
-const planes = require("./planes");
-const suscripciones = require("./suscripciones");
-const permisos = require("./permisos");
-const contabilidad = require("./contabilidad");
+const ordenes = require("./modules/ordenes");
+const inventario = require("./modules/inventario");
+const movimientos = require("./modules/movimientos");
+const planes = require("./modules/planes");
+const suscripciones = require("./modules/suscripciones");
+const clientes = require("./modules/clientes");
+const vehiculos = require("./modules/vehiculos");
+
+// =============================================
+// 📦 IMPORTAR UTILS ESPECIALES (SI EXISTEN)
+// =============================================
 
 const { trialOnCreate } = require("./trial-on-create");
 const { billingCron } = require("./billing-cron");
 const { crearPago, webhookMP } = require("./pagos-mercadopago");
 
 // =============================================
-// 🚀 EXPORTAR MÓDULOS ERP
+// 🚀 EXPORTAR FUNCIONES (INDIVIDUALES)
 // =============================================
 
-exports.ordenes = ordenes;
-exports.inventario = inventario;
-exports.finanzas = finanzas;
-exports.planes = planes;
-exports.suscripciones = suscripciones;
-exports.permisos = permisos;
-exports.contabilidad = contabilidad;
+// Órdenes
+exports.crearOrden = ordenes.crearOrden;
+exports.actualizarEstadoOrden = ordenes.actualizarEstadoOrden;
 
+// Inventario
+exports.ajustarStock = inventario.ajustarStock;
+
+// Finanzas
+exports.registrarMovimiento = movimientos.registrarMovimiento;
+
+// Clientes
+exports.crearCliente = clientes.crearCliente;
+
+// Vehículos
+exports.crearVehiculo = vehiculos.crearVehiculo;
+
+// Planes y Suscripciones
+exports.crearPlan = planes.crearPlan;
+exports.activarSuscripcion = suscripciones.activarSuscripcion;
+
+// SaaS System
 exports.trialOnCreate = trialOnCreate;
 exports.billingCron = billingCron;
 exports.crearPago = crearPago;
 exports.webhookMP = webhookMP;
 
 // =============================================
-// 🏢 CREAR EMPRESA + TRIAL + CLAIMS AUTOMÁTICO
+// 🏢 CREACIÓN AUTOMÁTICA DE EMPRESA (TRIAL)
 // =============================================
 
 exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
@@ -68,12 +83,11 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
 
   try {
 
-    // 1️⃣ Crear empresa
     const empresaRef = db.collection("empresas").doc();
     const empresaId = empresaRef.id;
 
     const vence = admin.firestore.Timestamp.fromDate(
-      new Date(Date.now() + 7 * 86400000) // 7 días trial
+      new Date(Date.now() + 7 * 86400000)
     );
 
     await empresaRef.set({
@@ -81,7 +95,7 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
       creadoEn: ahora,
 
       plan: {
-        tipo: "trial",            // trial | pro_mensual | pro_anual
+        tipo: "trial",
         estado: "activo",
         fechaInicio: ahora,
         fechaVencimiento: vence
@@ -94,7 +108,8 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
 
       metricas: {
         ordenesMes: 0,
-        ingresosMes: 0
+        ingresosMes: 0,
+        egresosMes: 0
       },
 
       configuracion: {
@@ -104,21 +119,21 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
 
     });
 
-    // 2️⃣ Crear usuario dueño
+    // Usuario dueño
     await empresaRef.collection("usuarios").doc(uid).set({
       rol: "dueno",
       activo: true,
       creadoEn: ahora
     });
 
-    // 3️⃣ Crear sucursal principal
+    // Sucursal principal
     await empresaRef.collection("sucursales").doc("principal").set({
       nombre: "Sucursal Principal",
       creadoEn: ahora,
       activa: true
     });
 
-    // 4️⃣ Crear Pipeline CRM Base
+    // CRM Base
     const stages = [
       { nombre: "Ingreso", orden: 1, color: "#3b82f6" },
       { nombre: "Diagnóstico", orden: 2, color: "#f59e0b" },
@@ -144,15 +159,15 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
 
     await batch.commit();
 
-    // 5️⃣ Asignar Custom Claims Enterprise
+    // Claims
     await admin.auth().setCustomUserClaims(uid, {
-      empresaId: empresaId,
+      empresaId,
       rol: "dueno",
       activo: true,
       planActivo: true
     });
 
-    console.log(`✅ Empresa ${empresaId} creada correctamente para ${uid}`);
+    console.log(`✅ Empresa ${empresaId} creada para ${uid}`);
 
   } catch (error) {
     console.error("❌ Error creando empresa:", error);
