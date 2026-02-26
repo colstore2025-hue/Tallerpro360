@@ -3,97 +3,107 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TallerPRO360 | ERP Mock Completo</title>
+<title>TallerPRO360 | ERP Operativo Completo</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
-body{background:linear-gradient(135deg,#0f172a,#111827); color:#f1f5f9; font-family:'Inter',sans-serif;}
-.glass{background: rgba(15,23,42,.75);backdrop-filter: blur(20px);border-radius:1.5rem;border:1px solid rgba(255,255,255,.05);padding:1.5rem;margin-bottom:1rem;}
-.metric-card{text-align:center;padding:1rem;border-radius:1rem;background:rgba(255,255,255,.03);}
-.badge-status{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;}
-.badge-ingreso{background:rgba(59,130,246,.2);color:#38bdf8;}
-.badge-diagnostico{background:rgba(168,85,247,.2);color:#a855f7;}
-.badge-proceso{background:rgba(34,197,94,.2);color:#22c55e;}
-.badge-listo{background:rgba(234,179,8,.2);color:#facc15;}
-.badge-entregado{background:rgba(250,204,21,.2);color:#fde047;}
-.badge-facturado{background:rgba(244,63,94,.2);color:#f43f5e;}
-input,select{background:#0f172a !important;border:1px solid rgba(255,255,255,.2) !important;color:#fff !important;}
-.form-control:focus{border-color:#22c55e !important;box-shadow:0 0 0 .25rem rgba(34,197,94,.3) !important;}
+body{
+  background: linear-gradient(135deg,#0f172a,#111827);
+  color:#f1f5f9;
+  font-family:'Inter',sans-serif;
+}
+.glass{
+  background: rgba(15,23,42,.75);
+  backdrop-filter: blur(20px);
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255,255,255,.05);
+  padding: 1.5rem;
+  margin-bottom:1rem;
+}
+.metric-card{
+  text-align:center;
+  padding:1rem;
+  border-radius:1rem;
+  background:rgba(255,255,255,.03);
+}
+.badge-status{
+  padding:6px 12px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:700;
+}
+.badge-ingreso{ background:rgba(59,130,246,.2); color:#38bdf8;}
+.badge-diagnostico{ background:rgba(168,85,247,.2); color:#a855f7;}
+.badge-proceso{ background:rgba(34,197,94,.2); color:#22c55e;}
+.badge-listo{ background:rgba(234,179,8,.2); color:#facc15;}
+.badge-entregado{ background:rgba(250,204,21,.2); color:#fde047;}
+.badge-facturado{ background:rgba(244,63,94,.2); color:#f43f5e;}
+input, select{
+  background:#0f172a !important;
+  border:1px solid rgba(255,255,255,.2) !important;
+  color:#fff !important;
+}
+.form-control:focus{
+  border-color:#22c55e !important;
+  box-shadow:0 0 0 .25rem rgba(34,197,94,.3) !important;
+}
 </style>
 </head>
 <body class="p-4">
 
 <div class="container">
+<h1 class="text-center mb-4">ERP Operativo PRO - Mock Completo</h1>
 
-<div class="text-center mb-4">
-<h1 class="text-success">ERP Operativo PRO (Mock)</h1>
-<p class="text-secondary">Centro de control operativo</p>
+<!-- DASHBOARD -->
+<div class="row mb-4" id="dashboard">
+  <div class="col-md-3">
+    <div class="metric-card glass">
+      <h6>Órdenes Activas</h6>
+      <h2 id="metricOrdenes">0</h2>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card glass">
+      <h6>Ingresos Totales</h6>
+      <h2>$<span id="metricIngresos">0</span></h2>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card glass">
+      <h6>Pendiente</h6>
+      <h2>$<span id="metricPendiente">0</span></h2>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card glass">
+      <h6>Ticket Promedio</h6>
+      <h2>$<span id="metricPromedio">0</span></h2>
+    </div>
+  </div>
 </div>
 
-<!-- MÉTRICAS -->
-<div class="row mb-4">
-  <div class="col-md-3"><div class="metric-card glass"><h6>Órdenes Activas</h6><h2 id="metricOrdenes">0</h2></div></div>
-  <div class="col-md-3"><div class="metric-card glass"><h6>Ingresos</h6><h2>$<span id="metricIngresos">0</span></h2></div></div>
-  <div class="col-md-3"><div class="metric-card glass"><h6>Pendiente</h6><h2>$<span id="metricPendiente">0</span></h2></div></div>
-  <div class="col-md-3"><div class="metric-card glass"><h6>Ticket Promedio</h6><h2>$<span id="metricPromedio">0</span></h2></div></div>
+<!-- FORMULARIO ORDEN -->
+<div class="glass">
+<h5>Nueva Orden</h5>
+<form id="formOrden">
+<input type="text" id="clienteNombre" class="form-control mb-2" placeholder="Nombre del cliente" required>
+<input type="text" id="clienteTelefono" class="form-control mb-2" placeholder="Teléfono" required>
+<input type="text" id="placa" class="form-control mb-2" placeholder="Placa del vehículo" required>
+<input type="text" id="vehiculoModelo" class="form-control mb-2" placeholder="Modelo del vehículo" required>
+<input type="text" id="vehiculoColor" class="form-control mb-2" placeholder="Color del vehículo">
+<input type="number" id="vehiculoAno" class="form-control mb-2" placeholder="Año del vehículo">
+<input type="text" id="tecnicoAsignado" class="form-control mb-2" placeholder="Técnico asignado">
+<input type="text" id="repuestos" class="form-control mb-2" placeholder="Repuestos separados (coma ,)">
+<input type="number" id="total" class="form-control mb-2" placeholder="Total estimado" required>
+<button type="submit" class="btn btn-success w-100">Crear Orden</button>
+</form>
 </div>
 
-<!-- FORMULARIO ORDEN MEJORADO -->
-<div class="glass p-4">
-  <h5 class="mb-3">Nueva Orden</h5>
-  <form id="formOrden">
-
-    <div class="mb-2">
-      <label for="clienteNombre" class="form-label text-white fw-bold">Nombre Completo</label>
-      <input type="text" id="clienteNombre" class="form-control" placeholder="Ej: Juan Pérez" required>
-    </div>
-
-    <div class="mb-2">
-      <label for="clienteTelefono" class="form-label text-white fw-bold">Teléfono</label>
-      <input type="text" id="clienteTelefono" class="form-control" placeholder="Ej: 3101234567" required>
-    </div>
-
-    <div class="mb-2">
-      <label for="placa" class="form-label text-white fw-bold">Placa del Vehículo</label>
-      <input type="text" id="placa" class="form-control" placeholder="Ej: ABC123" required>
-    </div>
-
-    <div class="mb-2">
-      <label for="vehiculoModelo" class="form-label text-white fw-bold">Modelo del Vehículo</label>
-      <input type="text" id="vehiculoModelo" class="form-control" placeholder="Ej: Chevrolet Spark" required>
-    </div>
-
-    <div class="mb-2">
-      <label for="vehiculoColor" class="form-label text-white fw-bold">Color del Vehículo</label>
-      <input type="text" id="vehiculoColor" class="form-control" placeholder="Ej: Rojo">
-    </div>
-
-    <div class="mb-2">
-      <label for="vehiculoAno" class="form-label text-white fw-bold">Año del Vehículo</label>
-      <input type="number" id="vehiculoAno" class="form-control" placeholder="Ej: 2022">
-    </div>
-
-    <div class="mb-3">
-      <label for="total" class="form-label text-white fw-bold">Total Estimado</label>
-      <input type="number" id="total" class="form-control" placeholder="Ej: 500000" required>
-    </div>
-
-    <button type="submit" class="btn btn-success w-100 fw-bold">Crear Orden</button>
-  </form>
+<!-- BUSCADOR -->
+<div class="glass mb-3">
+<input type="text" id="buscador" class="form-control" placeholder="Buscar por placa, consecutivo o estado...">
 </div>
-
-<!-- MEJORAS DE ESTILO PARA PLACEHOLDERS -->
-<style>
-  input::placeholder {
-    color: #cbd5e1; /* Gris claro para fondo negro */
-    opacity:1;
-  }
-  .form-label {
-    font-size: 0.9rem;
-  }
-  .btn-success {
-    font-size: 1rem;
-  }
-</style>
 
 <!-- LISTADO DE ÓRDENES -->
 <div class="glass">
@@ -104,131 +114,170 @@ input,select{background:#0f172a !important;border:1px solid rgba(255,255,255,.2)
 </div>
 
 <script type="module">
-
+// =============================================
+// 🟢 MOCK DATA COMPLETO
+// =============================================
 const estados = ["ingreso","diagnostico","proceso","listo","entregado","facturado"];
-let ordenesCache = [];
+let ordenesCache = [
+  { 
+    id:1, consecutivo:101, cliente:"Juan Perez", telefono:"3111111111",
+    placa:"ABC123", modelo:"Chevrolet Spark", color:"Blanco", ano:2020,
+    estado:"ingreso", total:500000, pagado:200000, saldo:300000,
+    tecnico:"Carlos", repuestos:["Filtro aceite","Aceite motor"],
+    historial:[{estado:"ingreso", fecha:new Date(), notas:"Orden creada"}]
+  },
+  { 
+    id:2, consecutivo:102, cliente:"Ana Gomez", telefono:"3222222222",
+    placa:"XYZ789", modelo:"Renault Logan", color:"Rojo", ano:2018,
+    estado:"proceso", total:750000, pagado:750000, saldo:0,
+    tecnico:"Luis", repuestos:["Pastillas freno"],
+    historial:[{estado:"ingreso", fecha:new Date(), notas:"Orden creada"},
+              {estado:"diagnostico", fecha:new Date(), notas:"Diagnóstico realizado"},
+              {estado:"proceso", fecha:new Date(), notas:"Reparación en curso"}]
+  }
+];
 
-// CONTADOR SIMULADO
-let consecutivoCounter = 101;
-
-// CREAR ORDEN
+// =============================================
+// ✨ CREAR NUEVA ORDEN
+// =============================================
 document.getElementById("formOrden").addEventListener("submit", e=>{
   e.preventDefault();
-
   const nuevaOrden = {
-    id: ordenesCache.length+1,
-    consecutivo: consecutivoCounter++,
-    cliente: {
-      nombre: document.getElementById("clienteNombre").value,
-      telefono: document.getElementById("clienteTelefono").value
-    },
-    vehiculo: {
-      placa: document.getElementById("placa").value,
-      modelo: document.getElementById("vehiculoModelo").value,
-      color: document.getElementById("vehiculoColor").value,
-      ano: document.getElementById("vehiculoAno").value
-    },
+    id: ordenesCache.length + 1,
+    consecutivo: Date.now(),
+    cliente: document.getElementById("clienteNombre").value.trim(),
+    telefono: document.getElementById("clienteTelefono").value.trim(),
+    placa: document.getElementById("placa").value.trim(),
+    modelo: document.getElementById("vehiculoModelo").value.trim(),
+    color: document.getElementById("vehiculoColor").value.trim(),
+    ano: parseInt(document.getElementById("vehiculoAno").value),
+    tecnico: document.getElementById("tecnicoAsignado").value.trim(),
+    repuestos: document.getElementById("repuestos").value.split(",").map(r=>r.trim()).filter(r=>r),
     estado: "ingreso",
     total: parseFloat(document.getElementById("total").value),
-    pagado: 0,
+    pagado:0,
     saldo: parseFloat(document.getElementById("total").value),
-    historial: [
-      {estado:"ingreso", fecha:new Date(), comentario:"Orden creada"}
-    ],
-    historialPagos:[]
+    historial:[{estado:"ingreso", fecha:new Date(), notas:"Orden creada"}]
   };
-
   ordenesCache.unshift(nuevaOrden);
-  renderOrdenes();
+  renderOrdenes(ordenesCache);
   e.target.reset();
-  hablar("Orden creada correctamente");
+  hablar("Orden creada");
 });
 
-// RENDER ORDENES
+// =============================================
+// ✨ RENDER ÓRDENES
+// =============================================
 const ordenesUl = document.getElementById("ordenesUl");
+function renderOrdenes(lista){
+  ordenesUl.innerHTML = "";
+  let totalIngresos=0, totalPendiente=0;
 
-function renderOrdenes(){
-  ordenesUl.innerHTML="";
-  let totalIngresos=0,totalPendiente=0;
+  lista.forEach(data=>{
+    totalIngresos += data.pagado;
+    totalPendiente += data.saldo;
 
-  ordenesCache.forEach((orden,index)=>{
-    totalIngresos += orden.pagado;
-    totalPendiente += orden.saldo;
-
-    let badgeClass = "badge-"+orden.estado;
-
+    let badgeClass = "badge-"+data.estado;
     const li = document.createElement("li");
-    li.className="list-group-item bg-transparent text-white mb-2";
-
+    li.className="list-group-item bg-transparent text-white d-flex flex-column mb-2";
     li.innerHTML=`
-      <div>
-        <strong>#${orden.consecutivo}</strong> · ${orden.cliente.nombre} (${orden.cliente.telefono})
-        <br>Vehículo: ${orden.vehiculo.placa} - ${orden.vehiculo.modelo} (${orden.vehiculo.color}, ${orden.vehiculo.ano})
-        <br>Total: $${orden.total} | Pagado: $${orden.pagado} | Saldo: $${orden.saldo}
+      <div class="d-flex justify-content-between align-items-center">
+        <div><strong>#${data.consecutivo}</strong> · ${data.cliente} (${data.telefono})<br>
+        ${data.placa} - ${data.modelo} ${data.color} (${data.ano})</div>
+        <div><span class="badge-status ${badgeClass}">${data.estado}</span></div>
       </div>
       <div class="mt-2">
-        <span class="badge-status ${badgeClass}">${orden.estado}</span>
-        <button class="btn btn-sm btn-outline-light ms-2">Cambiar Estado</button>
-        <button class="btn btn-sm btn-success ms-2">Registrar Pago</button>
-        <button class="btn btn-sm btn-info ms-2">Historial</button>
+        <strong>Técnico:</strong> ${data.tecnico || "-"} <br>
+        <strong>Repuestos:</strong> ${data.repuestos.join(", ") || "-"} <br>
+        <strong>Total:</strong> $${data.total} | <strong>Pagado:</strong> $${data.pagado} | <strong>Saldo:</strong> $${data.saldo}
       </div>
-      <div class="historial mt-2 text-slate-300" style="display:none;"></div>
+      <div class="mt-2">
+        <button class="btn btn-sm btn-outline-light me-2">Cambiar Estado</button>
+        <button class="btn btn-sm btn-success me-2">Registrar Pago</button>
+        <button class="btn btn-sm btn-warning">Agregar Repuesto</button>
+      </div>
+      <details class="mt-2 text-slate-400">
+        <summary>Historial</summary>
+        <ul id="historial-${data.id}"></ul>
+      </details>
     `;
 
-    // Cambiar Estado
+    // Render historial
+    const histUl = li.querySelector(`#historial-${data.id}`);
+    data.historial.forEach(h=>{
+      const lih = document.createElement("li");
+      lih.textContent = `${h.estado} - ${h.fecha.toLocaleString()} : ${h.notas}`;
+      histUl.appendChild(lih);
+    });
+
+    // Cambiar estado
     li.querySelector(".btn-outline-light").addEventListener("click", ()=>{
-      let idx = estados.indexOf(orden.estado);
-      orden.estado = estados[(idx+1)%estados.length];
-      orden.historial.push({estado:orden.estado, fecha:new Date(), comentario:"Estado actualizado"});
-      renderOrdenes();
+      let index = estados.indexOf(data.estado);
+      data.estado = estados[(index+1)%estados.length];
+      data.historial.push({estado:data.estado, fecha:new Date(), notas:"Estado actualizado"});
+      renderOrdenes(ordenesCache);
       hablar("Estado actualizado");
     });
 
-    // Registrar Pago
+    // Registrar pago
     li.querySelector(".btn-success").addEventListener("click", ()=>{
-      const monto = parseFloat(prompt(`Monto recibido (saldo: $${orden.saldo})`));
-      if(!monto || monto <=0) return;
-      orden.pagado += monto;
-      orden.saldo = orden.total - orden.pagado;
-      orden.historialPagos.push({monto, fecha:new Date()});
-      renderOrdenes();
+      const monto = parseFloat(prompt("Ingrese valor recibido:"));
+      if(!monto) return;
+      data.pagado += monto;
+      data.saldo = data.total - data.pagado;
+      data.historial.push({estado:data.estado, fecha:new Date(), notas:`Pago registrado: $${monto}`});
+      renderOrdenes(ordenesCache);
       hablar("Pago registrado");
     });
 
-    // Mostrar Historial
-    li.querySelector(".btn-info").addEventListener("click", ()=>{
-      const div = li.querySelector(".historial");
-      let html = "<strong>Historial de Estados:</strong><br>";
-      orden.historial.forEach(h=>{
-        html += `${h.estado} - ${h.fecha.toLocaleString()} - ${h.comentario}<br>`;
-      });
-      html += "<strong>Historial de Pagos:</strong><br>";
-      orden.historialPagos.forEach(p=>{
-        html += `$${p.monto} - ${p.fecha.toLocaleString()}<br>`;
-      });
-      div.innerHTML = html;
-      div.style.display = div.style.display==="none"?"block":"none";
+    // Agregar repuesto
+    li.querySelector(".btn-warning").addEventListener("click", ()=>{
+      const rep = prompt("Ingrese repuesto a agregar:");
+      if(!rep) return;
+      data.repuestos.push(rep);
+      data.historial.push({estado:data.estado, fecha:new Date(), notas:`Repuesto agregado: ${rep}`});
+      renderOrdenes(ordenesCache);
+      hablar("Repuesto agregado");
     });
 
     ordenesUl.appendChild(li);
   });
 
   // Actualizar métricas
-  document.getElementById("metricOrdenes").textContent = ordenesCache.length;
+  document.getElementById("metricOrdenes").textContent = lista.length;
   document.getElementById("metricIngresos").textContent = totalIngresos.toLocaleString();
   document.getElementById("metricPendiente").textContent = totalPendiente.toLocaleString();
-  document.getElementById("metricPromedio").textContent = ordenesCache.length ? (totalIngresos/ordenesCache.length).toFixed(0) : 0;
+  document.getElementById("metricPromedio").textContent =
+    lista.length ? (totalIngresos/lista.length).toFixed(0) : 0;
 }
 
-// VOZ
+// =============================================
+// ✨ BUSCADOR
+// =============================================
+document.getElementById("buscador").addEventListener("input", e=>{
+  const texto = e.target.value.toLowerCase();
+  const filtradas = ordenesCache.filter(o=>
+    o.placa.toLowerCase().includes(texto) ||
+    o.cliente.toLowerCase().includes(texto) ||
+    String(o.consecutivo).includes(texto) ||
+    o.estado.toLowerCase().includes(texto)
+  );
+  renderOrdenes(filtradas);
+});
+
+// =============================================
+// ✨ VOZ
+// =============================================
 function hablar(texto){
   const voz = new SpeechSynthesisUtterance(texto);
   voz.lang = "es-ES";
   speechSynthesis.speak(voz);
 }
 
-// INIT MOCK
-renderOrdenes();
+// =============================================
+// 🟢 INIT
+// =============================================
+renderOrdenes(ordenesCache);
 
 </script>
 
