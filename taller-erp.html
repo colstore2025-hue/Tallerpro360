@@ -127,106 +127,65 @@ input, select{
 
 <script type="module">
 
-import { db } from "./firebase-config.js";
-import {
-  collection,
-  query,
-  onSnapshot,
-  doc,
-  updateDoc,
-  addDoc,
-  orderBy
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// =============================================
+// 🟢 MOCK DATA PARA PRUEBAS
+// =============================================
 
-const empresaId = localStorage.getItem("empresaId");
-const sucursalId = localStorage.getItem("sucursalId");
-
-if(!empresaId || !sucursalId){
-  window.location.href="login.html";
-}
+const empresaId = "mockEmpresa";
+const sucursalId = "mockSucursal";
 
 const estados = ["ingreso","diagnostico","proceso","listo","entregado","facturado"];
+let ordenesCache = [
+  { id:1, consecutivo:101, placa:"ABC123", vehiculo:"Chevrolet Spark", estado:"ingreso", total:500000, pagado:200000, saldo:300000 },
+  { id:2, consecutivo:102, placa:"XYZ789", vehiculo:"Renault Logan", estado:"proceso", total:750000, pagado:750000, saldo:0 }
+];
 
-const ordenesUl = document.getElementById("ordenesUl");
-const buscador = document.getElementById("buscador");
+// =============================================
+// ✨ CREAR ORDEN SIMULADA
+// =============================================
 
-let ordenesCache = [];
-
-/* CREAR ORDEN */
-
-document.getElementById("formOrden").addEventListener("submit", async e=>{
+document.getElementById("formOrden").addEventListener("submit", e=>{
   e.preventDefault();
+  const placa = document.getElementById("placa").value.trim();
+  const vehiculo = document.getElementById("vehiculo").value.trim();
+  const total = parseFloat(document.getElementById("total").value);
 
-  const placa = placaInput.value.trim();
-  const vehiculo = vehiculoInput.value.trim();
-  const total = parseFloat(totalInput.value);
+  const nuevaOrden = {
+    id: ordenesCache.length + 1,
+    consecutivo: Date.now(),
+    placa,
+    vehiculo,
+    estado: "ingreso",
+    total,
+    pagado: 0,
+    saldo: total
+  };
 
-  await addDoc(
-    collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
-    {
-      consecutivo: Date.now(),
-      placa,
-      vehiculo,
-      estado:"ingreso",
-      total,
-      pagado:0,
-      saldo:total,
-      fechaIngreso:new Date()
-    }
-  );
-
-  hablar("Orden creada");
+  ordenesCache.unshift(nuevaOrden);
+  renderOrdenes(ordenesCache);
   e.target.reset();
+  hablar("Orden creada");
 });
 
-/* ESCUCHAR ORDENES */
+// =============================================
+// ✨ RENDER ORDENES
+// =============================================
 
-function escucharOrdenes(){
-
-  const q = query(
-    collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
-    orderBy("fechaIngreso","desc")
-  );
-
-  onSnapshot(q,(snapshot)=>{
-
-    ordenesCache = [];
-
-    let totalIngresos=0;
-    let totalPendiente=0;
-
-    snapshot.forEach(docSnap=>{
-      const data = docSnap.data();
-      data.id = docSnap.id;
-      ordenesCache.push(data);
-      totalIngresos += data.pagado || 0;
-      totalPendiente += data.saldo || 0;
-    });
-
-    renderOrdenes(ordenesCache);
-
-    document.getElementById("metricOrdenes").textContent = ordenesCache.length;
-    document.getElementById("metricIngresos").textContent = totalIngresos.toLocaleString();
-    document.getElementById("metricPendiente").textContent = totalPendiente.toLocaleString();
-    document.getElementById("metricPromedio").textContent =
-      ordenesCache.length ? (totalIngresos/ordenesCache.length).toFixed(0) : 0;
-
-  });
-}
-
-/* RENDER */
+const ordenesUl = document.getElementById("ordenesUl");
 
 function renderOrdenes(lista){
-
-  ordenesUl.innerHTML="";
+  ordenesUl.innerHTML = "";
+  let totalIngresos=0;
+  let totalPendiente=0;
 
   lista.forEach(data=>{
+    totalIngresos += data.pagado;
+    totalPendiente += data.saldo;
 
     let badgeClass = "badge-"+data.estado;
 
     const li = document.createElement("li");
     li.className="list-group-item bg-transparent text-white d-flex justify-content-between align-items-center";
-
     li.innerHTML=`
       <div>
         <strong>#${data.consecutivo}</strong> · ${data.placa} - ${data.vehiculo}
@@ -240,51 +199,37 @@ function renderOrdenes(lista){
       </div>
     `;
 
-    /* CAMBIAR ESTADO */
-    li.querySelector(".btn-outline-light").addEventListener("click", async ()=>{
-
+    li.querySelector(".btn-outline-light").addEventListener("click", ()=>{
       let index = estados.indexOf(data.estado);
-      let nuevoEstado = estados[(index+1) % estados.length];
-
-      await updateDoc(
-        doc(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes",data.id),
-        { estado:nuevoEstado }
-      );
-
+      data.estado = estados[(index+1)%estados.length];
+      renderOrdenes(ordenesCache);
       hablar("Estado actualizado");
-
     });
 
-    /* REGISTRAR PAGO */
-    li.querySelector(".btn-success").addEventListener("click", async ()=>{
-
-      const monto = prompt("Ingrese valor recibido:");
+    li.querySelector(".btn-success").addEventListener("click", ()=>{
+      const monto = parseFloat(prompt("Ingrese valor recibido:"));
       if(!monto) return;
-
-      const nuevoPagado = (data.pagado||0) + parseFloat(monto);
-      const nuevoSaldo = data.total - nuevoPagado;
-
-      await updateDoc(
-        doc(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes",data.id),
-        {
-          pagado:nuevoPagado,
-          saldo:nuevoSaldo
-        }
-      );
-
+      data.pagado += monto;
+      data.saldo = data.total - data.pagado;
+      renderOrdenes(ordenesCache);
       hablar("Pago registrado");
-
     });
 
     ordenesUl.appendChild(li);
-
   });
 
+  // Actualizar métricas
+  document.getElementById("metricOrdenes").textContent = lista.length;
+  document.getElementById("metricIngresos").textContent = totalIngresos.toLocaleString();
+  document.getElementById("metricPendiente").textContent = totalPendiente.toLocaleString();
+  document.getElementById("metricPromedio").textContent =
+    lista.length ? (totalIngresos/lista.length).toFixed(0) : 0;
 }
 
-/* BUSCADOR */
-
-buscador.addEventListener("input", e=>{
+// =============================================
+// ✨ BUSCADOR
+// =============================================
+document.getElementById("buscador").addEventListener("input", e=>{
   const texto = e.target.value.toLowerCase();
   const filtradas = ordenesCache.filter(o=>
     o.placa.toLowerCase().includes(texto) ||
@@ -294,15 +239,19 @@ buscador.addEventListener("input", e=>{
   renderOrdenes(filtradas);
 });
 
-/* VOZ */
-
+// =============================================
+// ✨ VOZ
+// =============================================
 function hablar(texto){
   const voz = new SpeechSynthesisUtterance(texto);
-  voz.lang="es-ES";
+  voz.lang = "es-ES";
   speechSynthesis.speak(voz);
 }
 
-escucharOrdenes();
+// =============================================
+// 🟢 INICIAR MOCK
+// =============================================
+renderOrdenes(ordenesCache);
 
 </script>
 </body>
