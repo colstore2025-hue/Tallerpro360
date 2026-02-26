@@ -37,20 +37,63 @@ input,select{background:#0f172a !important;border:1px solid rgba(255,255,255,.2)
   <div class="col-md-3"><div class="metric-card glass"><h6>Ticket Promedio</h6><h2>$<span id="metricPromedio">0</span></h2></div></div>
 </div>
 
-<!-- FORMULARIO ORDEN -->
-<div class="glass">
-<h5>Nueva Orden</h5>
-<form id="formOrden">
-<input type="text" id="clienteNombre" class="form-control mb-2" placeholder="Nombre del cliente" required>
-<input type="text" id="clienteTelefono" class="form-control mb-2" placeholder="Teléfono" required>
-<input type="text" id="placa" class="form-control mb-2" placeholder="Placa del vehículo" required>
-<input type="text" id="vehiculoModelo" class="form-control mb-2" placeholder="Modelo del vehículo" required>
-<input type="text" id="vehiculoColor" class="form-control mb-2" placeholder="Color del vehículo">
-<input type="number" id="vehiculoAno" class="form-control mb-2" placeholder="Año del vehículo">
-<input type="number" id="total" class="form-control mb-2" placeholder="Total estimado" required>
-<button type="submit" class="btn btn-success w-100">Crear Orden</button>
-</form>
+<!-- FORMULARIO ORDEN MEJORADO -->
+<div class="glass p-4">
+  <h5 class="mb-3">Nueva Orden</h5>
+  <form id="formOrden">
+
+    <div class="mb-2">
+      <label for="clienteNombre" class="form-label text-white fw-bold">Nombre Completo</label>
+      <input type="text" id="clienteNombre" class="form-control" placeholder="Ej: Juan Pérez" required>
+    </div>
+
+    <div class="mb-2">
+      <label for="clienteTelefono" class="form-label text-white fw-bold">Teléfono</label>
+      <input type="text" id="clienteTelefono" class="form-control" placeholder="Ej: 3101234567" required>
+    </div>
+
+    <div class="mb-2">
+      <label for="placa" class="form-label text-white fw-bold">Placa del Vehículo</label>
+      <input type="text" id="placa" class="form-control" placeholder="Ej: ABC123" required>
+    </div>
+
+    <div class="mb-2">
+      <label for="vehiculoModelo" class="form-label text-white fw-bold">Modelo del Vehículo</label>
+      <input type="text" id="vehiculoModelo" class="form-control" placeholder="Ej: Chevrolet Spark" required>
+    </div>
+
+    <div class="mb-2">
+      <label for="vehiculoColor" class="form-label text-white fw-bold">Color del Vehículo</label>
+      <input type="text" id="vehiculoColor" class="form-control" placeholder="Ej: Rojo">
+    </div>
+
+    <div class="mb-2">
+      <label for="vehiculoAno" class="form-label text-white fw-bold">Año del Vehículo</label>
+      <input type="number" id="vehiculoAno" class="form-control" placeholder="Ej: 2022">
+    </div>
+
+    <div class="mb-3">
+      <label for="total" class="form-label text-white fw-bold">Total Estimado</label>
+      <input type="number" id="total" class="form-control" placeholder="Ej: 500000" required>
+    </div>
+
+    <button type="submit" class="btn btn-success w-100 fw-bold">Crear Orden</button>
+  </form>
 </div>
+
+<!-- MEJORAS DE ESTILO PARA PLACEHOLDERS -->
+<style>
+  input::placeholder {
+    color: #cbd5e1; /* Gris claro para fondo negro */
+    opacity:1;
+  }
+  .form-label {
+    font-size: 0.9rem;
+  }
+  .btn-success {
+    font-size: 1rem;
+  }
+</style>
 
 <!-- LISTADO DE ÓRDENES -->
 <div class="glass">
