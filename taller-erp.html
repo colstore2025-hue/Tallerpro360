@@ -3,259 +3,191 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TallerPRO360 | ERP Completo Mock</title>
+<title>TallerPRO360 | ERP Mock Completo</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
-body{background: linear-gradient(135deg,#0f172a,#111827);color:#f1f5f9;font-family:'Inter',sans-serif;}
-.glass{background: rgba(15,23,42,.75);backdrop-filter: blur(20px);border-radius: 1.5rem;border: 1px solid rgba(255,255,255,.05);padding: 1rem;}
-.title-gradient{background: linear-gradient(90deg,#22c55e,#38bdf8);-webkit-background-clip: text;-webkit-text-fill-color: transparent;font-weight:900;}
+body{background:linear-gradient(135deg,#0f172a,#111827); color:#f1f5f9; font-family:'Inter',sans-serif;}
+.glass{background: rgba(15,23,42,.75);backdrop-filter: blur(20px);border-radius:1.5rem;border:1px solid rgba(255,255,255,.05);padding:1.5rem;margin-bottom:1rem;}
 .metric-card{text-align:center;padding:1rem;border-radius:1rem;background:rgba(255,255,255,.03);}
 .badge-status{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;}
-.badge-ingreso{background:rgba(59,130,246,.2); color:#38bdf8;}
-.badge-diagnostico{background:rgba(168,85,247,.2); color:#a855f7;}
-.badge-proceso{background:rgba(34,197,94,.2); color:#22c55e;}
-.badge-listo{background:rgba(234,179,8,.2); color:#facc15;}
-.badge-entregado{background:rgba(250,204,21,.2); color:#fde047;}
-.badge-facturado{background:rgba(244,63,94,.2); color:#f43f5e;}
-input, select, textarea{background:#0f172a !important;border:1px solid rgba(255,255,255,.2) !important;color:#fff !important;}
+.badge-ingreso{background:rgba(59,130,246,.2);color:#38bdf8;}
+.badge-diagnostico{background:rgba(168,85,247,.2);color:#a855f7;}
+.badge-proceso{background:rgba(34,197,94,.2);color:#22c55e;}
+.badge-listo{background:rgba(234,179,8,.2);color:#facc15;}
+.badge-entregado{background:rgba(250,204,21,.2);color:#fde047;}
+.badge-facturado{background:rgba(244,63,94,.2);color:#f43f5e;}
+input,select{background:#0f172a !important;border:1px solid rgba(255,255,255,.2) !important;color:#fff !important;}
 .form-control:focus{border-color:#22c55e !important;box-shadow:0 0 0 .25rem rgba(34,197,94,.3) !important;}
-.nav-tabs .nav-link.active{background:rgba(34,197,94,.2);color:#22c55e;}
 </style>
 </head>
-<body class="p-3">
+<body class="p-4">
+
 <div class="container">
-<div class="text-center mb-3">
-<h1 class="title-gradient">TallerPRO360</h1>
-<p class="text-secondary">ERP Completo Mock</p>
+
+<div class="text-center mb-4">
+<h1 class="text-success">ERP Operativo PRO (Mock)</h1>
+<p class="text-secondary">Centro de control operativo</p>
 </div>
 
 <!-- MÉTRICAS -->
-<div class="row mb-3" id="metricsRow"></div>
-
-<!-- NAVEGACIÓN DE MÓDULOS -->
-<ul class="nav nav-tabs mb-3" id="tabMenu">
-  <li class="nav-item"><a class="nav-link active" href="#clientes">Clientes</a></li>
-  <li class="nav-item"><a class="nav-link" href="#vehiculos">Vehículos</a></li>
-  <li class="nav-item"><a class="nav-link" href="#ordenes">Órdenes</a></li>
-</ul>
-
-<!-- CONTENIDO -->
-<div id="tabContent">
-  <div id="clientes" class="tab-pane active glass p-3 mb-3">
-    <h5>Clientes</h5>
-    <form id="formCliente" class="mb-2">
-      <input type="text" id="nombreCliente" class="form-control mb-1" placeholder="Nombre cliente" required>
-      <input type="text" id="telCliente" class="form-control mb-1" placeholder="Teléfono" required>
-      <button type="submit" class="btn btn-success w-100">Agregar Cliente</button>
-    </form>
-    <ul class="list-group" id="clientesUl"></ul>
-  </div>
-
-  <div id="vehiculos" class="tab-pane glass p-3 mb-3">
-    <h5>Vehículos</h5>
-    <form id="formVehiculo" class="mb-2">
-      <select id="clienteVehiculo" class="form-control mb-1"></select>
-      <input type="text" id="placaVehiculo" class="form-control mb-1" placeholder="Placa" required>
-      <input type="text" id="modeloVehiculo" class="form-control mb-1" placeholder="Modelo" required>
-      <input type="number" id="anioVehiculo" class="form-control mb-1" placeholder="Año" required>
-      <button type="submit" class="btn btn-success w-100">Agregar Vehículo</button>
-    </form>
-    <ul class="list-group" id="vehiculosUl"></ul>
-  </div>
-
-  <div id="ordenes" class="tab-pane glass p-3 mb-3">
-    <h5>Órdenes</h5>
-    <form id="formOrden" class="mb-2">
-      <select id="clienteOrden" class="form-control mb-1"></select>
-      <select id="vehiculoOrden" class="form-control mb-1"></select>
-      <input type="number" id="totalOrden" class="form-control mb-1" placeholder="Total estimado" required>
-      <textarea id="observacionOrden" class="form-control mb-1" placeholder="Observación inicial"></textarea>
-      <button type="submit" class="btn btn-success w-100">Crear Orden</button>
-    </form>
-    <input type="text" id="buscadorOrdenes" class="form-control mb-2" placeholder="Buscar por cliente, placa o estado">
-    <ul class="list-group" id="ordenesUl"></ul>
-  </div>
+<div class="row mb-4">
+  <div class="col-md-3"><div class="metric-card glass"><h6>Órdenes Activas</h6><h2 id="metricOrdenes">0</h2></div></div>
+  <div class="col-md-3"><div class="metric-card glass"><h6>Ingresos</h6><h2>$<span id="metricIngresos">0</span></h2></div></div>
+  <div class="col-md-3"><div class="metric-card glass"><h6>Pendiente</h6><h2>$<span id="metricPendiente">0</span></h2></div></div>
+  <div class="col-md-3"><div class="metric-card glass"><h6>Ticket Promedio</h6><h2>$<span id="metricPromedio">0</span></h2></div></div>
 </div>
+
+<!-- FORMULARIO ORDEN -->
+<div class="glass">
+<h5>Nueva Orden</h5>
+<form id="formOrden">
+<input type="text" id="clienteNombre" class="form-control mb-2" placeholder="Nombre del cliente" required>
+<input type="text" id="clienteTelefono" class="form-control mb-2" placeholder="Teléfono" required>
+<input type="text" id="placa" class="form-control mb-2" placeholder="Placa del vehículo" required>
+<input type="text" id="vehiculoModelo" class="form-control mb-2" placeholder="Modelo del vehículo" required>
+<input type="text" id="vehiculoColor" class="form-control mb-2" placeholder="Color del vehículo">
+<input type="number" id="vehiculoAno" class="form-control mb-2" placeholder="Año del vehículo">
+<input type="number" id="total" class="form-control mb-2" placeholder="Total estimado" required>
+<button type="submit" class="btn btn-success w-100">Crear Orden</button>
+</form>
+</div>
+
+<!-- LISTADO DE ÓRDENES -->
+<div class="glass">
+<h5>Órdenes</h5>
+<ul class="list-group bg-transparent" id="ordenesUl"></ul>
+</div>
+
 </div>
 
 <script type="module">
-// =============================================
-// 🟢 MOCK COMPLETO ERP
-// =============================================
-let clientes = [];
-let vehiculos = [];
-let ordenes = [];
+
 const estados = ["ingreso","diagnostico","proceso","listo","entregado","facturado"];
+let ordenesCache = [];
 
-// ============================
-// 🔹 NAVEGACIÓN DE PESTAÑAS
-// ============================
-const tabs = document.querySelectorAll("#tabMenu .nav-link");
-const panes = document.querySelectorAll(".tab-pane");
-tabs.forEach(tab=>{
-  tab.addEventListener("click",e=>{
-    e.preventDefault();
-    tabs.forEach(t=>t.classList.remove("active"));
-    tab.classList.add("active");
-    panes.forEach(p=>p.classList.remove("active"));
-    document.querySelector(tab.getAttribute("href")).classList.add("active");
-  });
-});
+// CONTADOR SIMULADO
+let consecutivoCounter = 101;
 
-// ============================
-// 🔹 CLIENTES
-// ============================
-const clientesUl = document.getElementById("clientesUl");
-const formCliente = document.getElementById("formCliente");
-formCliente.addEventListener("submit", e=>{
+// CREAR ORDEN
+document.getElementById("formOrden").addEventListener("submit", e=>{
   e.preventDefault();
-  const nombre = document.getElementById("nombreCliente").value.trim();
-  const tel = document.getElementById("telCliente").value.trim();
-  const id = Date.now();
-  clientes.push({id,nombre,tel});
-  renderClientes();
-  formCliente.reset();
-  hablar("Cliente agregado");
-});
-function renderClientes(){
-  clientesUl.innerHTML="";
-  const selectClienteVehiculo = document.getElementById("clienteVehiculo");
-  const selectClienteOrden = document.getElementById("clienteOrden");
-  selectClienteVehiculo.innerHTML="";
-  selectClienteOrden.innerHTML="";
-  clientes.forEach(c=>{
-    const li = document.createElement("li");
-    li.className="list-group-item bg-transparent text-white";
-    li.textContent=`${c.nombre} (${c.tel})`;
-    clientesUl.appendChild(li);
-    selectClienteVehiculo.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
-    selectClienteOrden.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
-  });
-}
 
-// ============================
-// 🔹 VEHÍCULOS
-// ============================
-const vehiculosUl = document.getElementById("vehiculosUl");
-const formVehiculo = document.getElementById("formVehiculo");
-formVehiculo.addEventListener("submit", e=>{
-  e.preventDefault();
-  const clienteId = parseInt(document.getElementById("clienteVehiculo").value);
-  const placa = document.getElementById("placaVehiculo").value.trim();
-  const modelo = document.getElementById("modeloVehiculo").value.trim();
-  const anio = parseInt(document.getElementById("anioVehiculo").value);
-  const id = Date.now();
-  vehiculos.push({id,clienteId,placa,modelo,anio});
-  renderVehiculos();
-  formVehiculo.reset();
-  hablar("Vehículo agregado");
-});
-function renderVehiculos(){
-  vehiculosUl.innerHTML="";
-  const selectVehiculoOrden = document.getElementById("vehiculoOrden");
-  selectVehiculoOrden.innerHTML="";
-  vehiculos.forEach(v=>{
-    const cliente = clientes.find(c=>c.id===v.clienteId);
-    const li = document.createElement("li");
-    li.className="list-group-item bg-transparent text-white";
-    li.textContent=`${v.placa} - ${v.modelo} (${cliente?cliente.nombre:""})`;
-    vehiculosUl.appendChild(li);
-    selectVehiculoOrden.innerHTML += `<option value="${v.id}">${v.placa} - ${v.modelo}</option>`;
-  });
-}
+  const nuevaOrden = {
+    id: ordenesCache.length+1,
+    consecutivo: consecutivoCounter++,
+    cliente: {
+      nombre: document.getElementById("clienteNombre").value,
+      telefono: document.getElementById("clienteTelefono").value
+    },
+    vehiculo: {
+      placa: document.getElementById("placa").value,
+      modelo: document.getElementById("vehiculoModelo").value,
+      color: document.getElementById("vehiculoColor").value,
+      ano: document.getElementById("vehiculoAno").value
+    },
+    estado: "ingreso",
+    total: parseFloat(document.getElementById("total").value),
+    pagado: 0,
+    saldo: parseFloat(document.getElementById("total").value),
+    historial: [
+      {estado:"ingreso", fecha:new Date(), comentario:"Orden creada"}
+    ],
+    historialPagos:[]
+  };
 
-// ============================
-// 🔹 ÓRDENES
-// ============================
-const ordenesUl = document.getElementById("ordenesUl");
-const formOrden = document.getElementById("formOrden");
-formOrden.addEventListener("submit", e=>{
-  e.preventDefault();
-  const clienteId = parseInt(document.getElementById("clienteOrden").value);
-  const vehiculoId = parseInt(document.getElementById("vehiculoOrden").value);
-  const total = parseFloat(document.getElementById("totalOrden").value);
-  const observacion = document.getElementById("observacionOrden").value.trim();
-  const id = Date.now();
-  const orden = {id,clienteId,vehiculoId,total,pagado:0,saldo:total,estado:"ingreso",observaciones:{ingreso:observacion?[observacion]:[]},historial:[{estado:"ingreso",fecha:new Date().toLocaleString(),user:"Mock"}],servicios:[],repuestos:[]};
-  ordenes.unshift(orden);
+  ordenesCache.unshift(nuevaOrden);
   renderOrdenes();
-  formOrden.reset();
-  hablar("Orden creada");
+  e.target.reset();
+  hablar("Orden creada correctamente");
 });
 
-document.getElementById("buscadorOrdenes").addEventListener("input", e=>{
-  const text = e.target.value.toLowerCase();
-  renderOrdenes(text);
-});
+// RENDER ORDENES
+const ordenesUl = document.getElementById("ordenesUl");
 
-function renderOrdenes(filter=""){
+function renderOrdenes(){
   ordenesUl.innerHTML="";
   let totalIngresos=0,totalPendiente=0;
-  ordenes.forEach(o=>{
-    const cliente = clientes.find(c=>c.id===o.clienteId);
-    const vehiculo = vehiculos.find(v=>v.id===o.vehiculoId);
-    if(filter && !(cliente.nombre.toLowerCase().includes(filter) || vehiculo.placa.toLowerCase().includes(filter) || o.estado.includes(filter))) return;
-    totalIngresos += o.pagado;
-    totalPendiente += o.saldo;
+
+  ordenesCache.forEach((orden,index)=>{
+    totalIngresos += orden.pagado;
+    totalPendiente += orden.saldo;
+
+    let badgeClass = "badge-"+orden.estado;
+
     const li = document.createElement("li");
-    li.className="list-group-item bg-transparent text-white d-flex flex-column mb-2";
+    li.className="list-group-item bg-transparent text-white mb-2";
+
     li.innerHTML=`
-      <div class="d-flex justify-content-between align-items-center mb-1">
-        <div><strong>#${o.id}</strong> · ${cliente?cliente.nombre:""} · ${vehiculo?vehiculo.placa:""} - ${vehiculo?vehiculo.modelo:""}<br>Total: $${o.total} | Pagado: $${o.pagado} | Saldo: $${o.saldo}</div>
-        <div>
-          <span class="badge-status badge-${o.estado}">${o.estado}</span>
-          <button class="btn btn-sm btn-outline-light ms-1">Estado</button>
-          <button class="btn btn-sm btn-success ms-1">Pago</button>
-          <button class="btn btn-sm btn-info ms-1">Historial</button>
-          <button class="btn btn-sm btn-warning ms-1">Observaciones</button>
-        </div>
+      <div>
+        <strong>#${orden.consecutivo}</strong> · ${orden.cliente.nombre} (${orden.cliente.telefono})
+        <br>Vehículo: ${orden.vehiculo.placa} - ${orden.vehiculo.modelo} (${orden.vehiculo.color}, ${orden.vehiculo.ano})
+        <br>Total: $${orden.total} | Pagado: $${orden.pagado} | Saldo: $${orden.saldo}
       </div>
+      <div class="mt-2">
+        <span class="badge-status ${badgeClass}">${orden.estado}</span>
+        <button class="btn btn-sm btn-outline-light ms-2">Cambiar Estado</button>
+        <button class="btn btn-sm btn-success ms-2">Registrar Pago</button>
+        <button class="btn btn-sm btn-info ms-2">Historial</button>
+      </div>
+      <div class="historial mt-2 text-slate-300" style="display:none;"></div>
     `;
+
+    // Cambiar Estado
     li.querySelector(".btn-outline-light").addEventListener("click", ()=>{
-      let idx = estados.indexOf(o.estado);
-      o.estado = estados[(idx+1)%estados.length];
-      o.historial.push({estado:o.estado,fecha:new Date().toLocaleString(),user:"Mock"});
+      let idx = estados.indexOf(orden.estado);
+      orden.estado = estados[(idx+1)%estados.length];
+      orden.historial.push({estado:orden.estado, fecha:new Date(), comentario:"Estado actualizado"});
       renderOrdenes();
       hablar("Estado actualizado");
     });
+
+    // Registrar Pago
     li.querySelector(".btn-success").addEventListener("click", ()=>{
-      const monto=parseFloat(prompt("Monto recibido:"));if(!monto) return;
-      o.pagado+=monto;o.saldo=o.total-o.pagado;
-      renderOrdenes();hablar("Pago registrado");
+      const monto = parseFloat(prompt(`Monto recibido (saldo: $${orden.saldo})`));
+      if(!monto || monto <=0) return;
+      orden.pagado += monto;
+      orden.saldo = orden.total - orden.pagado;
+      orden.historialPagos.push({monto, fecha:new Date()});
+      renderOrdenes();
+      hablar("Pago registrado");
     });
-    li.querySelector(".btn-info").addEventListener("click", ()=>alert(JSON.stringify(o.historial,null,2)));
-    li.querySelector(".btn-warning").addEventListener("click", ()=>{
-      let txt="";for(const key in o.observaciones)txt+=key.toUpperCase()+":\n"+o.observaciones[key].join("\n")+"\n\n";
-      alert(txt||"Sin observaciones");
+
+    // Mostrar Historial
+    li.querySelector(".btn-info").addEventListener("click", ()=>{
+      const div = li.querySelector(".historial");
+      let html = "<strong>Historial de Estados:</strong><br>";
+      orden.historial.forEach(h=>{
+        html += `${h.estado} - ${h.fecha.toLocaleString()} - ${h.comentario}<br>`;
+      });
+      html += "<strong>Historial de Pagos:</strong><br>";
+      orden.historialPagos.forEach(p=>{
+        html += `$${p.monto} - ${p.fecha.toLocaleString()}<br>`;
+      });
+      div.innerHTML = html;
+      div.style.display = div.style.display==="none"?"block":"none";
     });
+
     ordenesUl.appendChild(li);
   });
-  renderMetrics(totalIngresos,totalPendiente);
+
+  // Actualizar métricas
+  document.getElementById("metricOrdenes").textContent = ordenesCache.length;
+  document.getElementById("metricIngresos").textContent = totalIngresos.toLocaleString();
+  document.getElementById("metricPendiente").textContent = totalPendiente.toLocaleString();
+  document.getElementById("metricPromedio").textContent = ordenesCache.length ? (totalIngresos/ordenesCache.length).toFixed(0) : 0;
 }
 
-// ============================
-// 🔹 MÉTRICAS
-// ============================
-function renderMetrics(ingresos,pendiente){
-  const totalOrdenes=ordenes.length;
-  document.getElementById("metricsRow").innerHTML=`
-    <div class="col-md-3"><div class="metric-card glass"><h6>Órdenes Activas</h6><h2>${totalOrdenes}</h2></div></div>
-    <div class="col-md-3"><div class="metric-card glass"><h6>Ingresos</h6><h2>$${ingresos.toLocaleString()}</h2></div></div>
-    <div class="col-md-3"><div class="metric-card glass"><h6>Pendiente</h6><h2>$${pendiente.toLocaleString()}</h2></div></div>
-    <div class="col-md-3"><div class="metric-card glass"><h6>Ticket Promedio</h6><h2>$${totalOrdenes?Math.floor(ingresos/totalOrdenes):0}</h2></div></div>
-  `;
+// VOZ
+function hablar(texto){
+  const voz = new SpeechSynthesisUtterance(texto);
+  voz.lang = "es-ES";
+  speechSynthesis.speak(voz);
 }
 
-// ============================
-// 🔹 VOZ
-// ============================
-function hablar(texto){const voz=new SpeechSynthesisUtterance(texto);voz.lang="es-ES";speechSynthesis.speak(voz);}
-
-// ============================
-// 🔹 INIT MOCK
-// ============================
-renderClientes();renderVehiculos();renderOrdenes();
+// INIT MOCK
+renderOrdenes();
 
 </script>
+
 </body>
 </html>
