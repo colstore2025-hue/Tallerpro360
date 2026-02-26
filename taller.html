@@ -3,322 +3,276 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TallerPRO360 | Panel Cliente</title>
+<title>TallerPRO360 | ERP</title>
+<link rel="icon" href="logo-tallerpro360.png">
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body{
-  background: linear-gradient(135deg,#0f172a,#111827);
-  color:#f1f5f9;
+  margin:0;
   font-family:'Inter',sans-serif;
+  background:linear-gradient(135deg,#0f172a,#111827);
+  color:#f1f5f9;
 }
-.glass{
-  background: rgba(15,23,42,.7);
-  backdrop-filter: blur(20px);
-  border-radius: 1.5rem;
-  border: 1px solid rgba(255,255,255,.05);
-  padding: 1.5rem;
+
+.erp-wrapper{ display:flex; height:100vh; overflow:hidden; }
+
+.sidebar{
+  width:260px;
+  background:rgba(15,23,42,.95);
+  backdrop-filter:blur(20px);
+  border-right:1px solid rgba(255,255,255,.05);
+  padding:30px 20px;
+  display:flex;
+  flex-direction:column;
 }
-.title-gradient{
-  background: linear-gradient(90deg,#22c55e,#38bdf8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+
+.logo{
+  font-family:'Orbitron',sans-serif;
+  font-size:22px;
   font-weight:900;
+  margin-bottom:50px;
 }
-.badge-status{
-  padding:6px 12px;
-  border-radius:20px;
-  font-size:12px;
-  font-weight:700;
+.logo span{
+  background:linear-gradient(90deg,#22c55e,#38bdf8);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
 }
-.badge-ingreso{ background:rgba(59,130,246,.2); color:#38bdf8;}
-.badge-proceso{ background:rgba(34,197,94,.2); color:#22c55e;}
-.badge-entregado{ background:rgba(250,204,21,.2); color:#facc15;}
-button{ border-radius:12px !important; }
-input{
-  background:#1e293b !important;
-  border:1px solid rgba(255,255,255,.1) !important;
-  color:#fff !important;
-}
-.form-floating label{
-  color:#ffffff !important;
+
+.nav-btn{
+  background:none;
+  border:none;
+  color:#94a3b8;
+  padding:14px;
+  text-align:left;
+  border-radius:12px;
+  margin-bottom:8px;
+  transition:.3s;
   font-weight:600;
 }
-
-.form-control{
-  background:#0f172a !important;
-  border:1px solid rgba(255,255,255,.2) !important;
-  color:#ffffff !important;
+.nav-btn:hover,
+.nav-btn.active{
+  background:rgba(34,197,94,.1);
+  color:#22c55e;
 }
 
-.form-control::placeholder{
-  color:#cbd5e1 !important;
+.main-content{ flex:1; padding:40px; overflow-y:auto; }
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:30px;
 }
 
-.form-control:focus{
-  border-color:#22c55e !important;
-  box-shadow:0 0 0 .25rem rgba(34,197,94,.3) !important;
+.logout-btn{
+  border:1px solid rgba(255,255,255,.2);
+  padding:6px 14px;
+  border-radius:8px;
+  font-size:14px;
+  transition:.3s;
+}
+.logout-btn:hover{
+  background:rgba(239,68,68,.1);
+  border-color:#ef4444;
+  color:#ef4444;
 }
 
+#contentArea{
+  background:rgba(15,23,42,.75);
+  border:1px solid rgba(255,255,255,.05);
+  backdrop-filter:blur(20px);
+  border-radius:24px;
+  padding:30px;
+  min-height:600px;
+}
+
+::-webkit-scrollbar{ width:6px; }
+::-webkit-scrollbar-thumb{ background:#1e293b; border-radius:10px; }
 </style>
 </head>
 
-<body class="p-4">
+<body>
 
-<div class="container">
+<div class="erp-wrapper">
 
-<div class="text-center mb-5">
-<h1 class="title-gradient">Panel Cliente</h1>
-<p class="text-secondary">Gestiona tus órdenes en tiempo real</p>
-<button id="logoutBtn" class="btn btn-sm btn-outline-light mt-2 d-none">Cerrar sesión</button>
+<aside class="sidebar">
+  <div class="logo">Taller<span>PRO360</span></div>
+
+  <button class="nav-btn active" data-section="dashboard">
+    <i class="fa-solid fa-chart-line mr-2"></i> Dashboard
+  </button>
+
+  <button class="nav-btn" data-section="ordenes">
+    <i class="fa-solid fa-car mr-2"></i> Órdenes
+  </button>
+
+  <button class="nav-btn" data-section="inventario">
+    <i class="fa-solid fa-boxes-stacked mr-2"></i> Inventario
+  </button>
+
+  <button class="nav-btn" data-section="finanzas">
+    <i class="fa-solid fa-coins mr-2"></i> Finanzas
+  </button>
+
+  <button class="nav-btn" data-section="nomina">
+    <i class="fa-solid fa-users mr-2"></i> Nómina
+  </button>
+
+  <button class="nav-btn" data-section="mapa">
+    <i class="fa-solid fa-map-location-dot mr-2"></i> Mapa
+  </button>
+</aside>
+
+<main class="main-content">
+
+<header class="topbar">
+  <div>
+    <h2 id="sectionTitle" class="text-2xl font-bold">Dashboard</h2>
+    <p class="text-slate-400 text-sm">Centro de control operativo</p>
+  </div>
+  <button id="logoutBtn" class="logout-btn">Salir</button>
+</header>
+
+<section id="contentArea"></section>
+
+</main>
 </div>
 
-<div id="registroCliente" class="glass mb-4">
-<h5 class="mb-3">Registrar Cliente</h5>
-<form id="formCliente">
-<input type="text" id="clienteNombreReg" class="form-control mb-2" placeholder="Nombre completo" required>
-<input type="email" id="clienteEmailReg" class="form-control mb-2" placeholder="Correo electrónico" required>
-<input type="tel" id="clienteTelefonoReg" class="form-control mb-2" placeholder="Teléfono" required>
-<input type="password" id="clientePasswordReg" class="form-control mb-2" placeholder="Contraseña" required>
-<button type="submit" class="btn btn-success w-100 mt-2">Registrar</button>
-</form>
-</div>
-
-<div id="loginCliente" class="glass mb-4">
-<h5 class="mb-4 text-info">Iniciar Sesión</h5>
-
-<form id="formLogin">
-
-<div class="form-floating mb-3">
-  <input type="email" class="form-control" id="clienteEmailLogin" placeholder="Correo electrónico" required>
-  <label for="clienteEmailLogin">Correo electrónico</label>
-</div>
-
-<div class="form-floating mb-3">
-  <input type="password" class="form-control" id="clientePasswordLogin" placeholder="Contraseña" required>
-  <label for="clientePasswordLogin">Contraseña</label>
-</div>
-
-<button type="submit" class="btn btn-primary w-100 py-2">
-Ingresar
-</button>
-
-</form>
-</div>
-
-<div id="crearOrden" class="glass mb-4 d-none">
-<h5 class="mb-3">Nueva Orden</h5>
-<form id="formOrden">
-<input type="text" id="placa" class="form-control mb-2" placeholder="Placa del vehículo" required>
-<input type="text" id="vehiculo" class="form-control mb-2" placeholder="Marca / Modelo" required>
-<button type="submit" class="btn btn-success w-100 mt-2">Crear Orden</button>
-</form>
-</div>
-
-<div id="ordenesList" class="glass d-none">
-<h5 class="mb-3">Órdenes Activas</h5>
-<ul class="list-group bg-transparent" id="ordenesUl"></ul>
-</div>
-
-</div>
+<!-- ================= FIREBASE DASHBOARD REAL ================= -->
 <script type="module">
 
-import { db, app } from "./firebase-config.js";
+import { db } from "./firebase-config.js";
 import {
   collection,
-  query,
-  onSnapshot,
-  doc,
-  updateDoc
+  getDocs
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-import {
-  getFunctions,
-  httpsCallable
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
+let chartInstance = null;
 
-/* ================= CONFIG ================= */
+// ================= DASHBOARD =================
+async function renderDashboard(){
 
-const functions = getFunctions(app);
+  document.getElementById("contentArea").innerHTML = `
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    ${kpiCard("Órdenes Activas","ordenesActivas","fa-car")}
+    ${kpiCard("En Proceso","ordenesProceso","fa-gears")}
+    ${kpiCard("Ingresos Hoy","ingresosHoy","fa-coins")}
+    ${kpiCard("Inventario Crítico","inventarioCritico","fa-triangle-exclamation")}
+  </div>
 
-const crearOrdenFn = httpsCallable(functions, "crearOrden");
+  <div class="bg-slate-900/60 p-6 rounded-2xl border border-white/5">
+    <h3 class="mb-4 text-lg font-semibold text-slate-300">Actividad semanal</h3>
+    <canvas id="dashboardChart"></canvas>
+  </div>
+  `;
 
-const empresaId = localStorage.getItem("empresaId");
-const rol = localStorage.getItem("rol");
-const uid = localStorage.getItem("uid");
-const sucursalId = localStorage.getItem("sucursalId");
-
-if (!empresaId || !rol || !uid) {
-  window.location.href = "login.html";
+  await loadKPIs();
+  initChart();
 }
 
-if (rol === "cliente") {
-  window.location.href = "login.html";
+function kpiCard(title,id,icon){
+  return `
+  <div class="bg-slate-900/70 p-6 rounded-2xl border border-white/5">
+    <div class="flex justify-between mb-3">
+      <span class="text-slate-400 text-sm">${title}</span>
+      <i class="fa-solid ${icon} text-slate-500"></i>
+    </div>
+    <h2 id="${id}" class="text-3xl font-bold">0</h2>
+  </div>`;
 }
 
-/* ================= UI ================= */
+// ================= FIRESTORE DATA =================
+async function loadKPIs(){
 
-const crearOrdenDiv = document.getElementById("crearOrden");
-const ordenesListDiv = document.getElementById("ordenesList");
-const ordenesUl = document.getElementById("ordenesUl");
-const logoutBtn = document.getElementById("logoutBtn");
-const formOrden = document.getElementById("formOrden");
+  const ordenesSnap = await getDocs(collection(db,"ordenes"));
+  const inventarioSnap = await getDocs(collection(db,"inventario"));
 
-document.getElementById("registroCliente")?.remove();
-document.getElementById("loginCliente")?.remove();
+  let activas=0, proceso=0, ingresosHoy=0, critico=0;
 
-crearOrdenDiv.classList.remove("d-none");
-ordenesListDiv.classList.remove("d-none");
-logoutBtn.classList.remove("d-none");
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
 
-/* ================= LOGOUT ================= */
-
-logoutBtn.addEventListener("click", ()=>{
-  localStorage.clear();
-  window.location.href = "login.html";
-});
-
-/* ================= CREAR ORDEN REAL ================= */
-
-formOrden.addEventListener("submit", async e=>{
-  e.preventDefault();
-
-  try {
-
-    const placa = document.getElementById("placa").value.trim();
-    const vehiculo = document.getElementById("vehiculo").value.trim();
-
-    if(!placa || !vehiculo){
-      alert("Completa todos los campos");
-      return;
+  ordenesSnap.forEach(doc=>{
+    const d = doc.data();
+    if(d.estado !== "FINALIZADO") activas++;
+    if(d.estado === "EN PROCESO") proceso++;
+    if(d.creadoEn){
+      const fecha = d.creadoEn.toDate();
+      if(fecha >= hoy) ingresosHoy += d.total || 0;
     }
-
-    await crearOrdenFn({
-      empresaId,
-      sucursalId,
-      orden: {
-        placa,
-        vehiculo,
-        items: [
-          {
-            descripcion: "Servicio general",
-            cantidad: 1,
-            precio: 0
-          }
-        ]
-      }
-    });
-
-    hablar("Orden creada correctamente");
-    formOrden.reset();
-
-  } catch(error){
-    console.error(error);
-    alert(error.message);
-  }
-
-});
-
-/* ================= ESCUCHAR ÓRDENES ================= */
-
-function escucharOrdenes(){
-
-  const q = query(
-    collection(
-      db,
-      "empresas",
-      empresaId,
-      "sucursales",
-      sucursalId,
-      "ordenes"
-    )
-  );
-
-  onSnapshot(q,(snapshot)=>{
-
-    ordenesUl.innerHTML="";
-
-    if(snapshot.empty){
-      ordenesUl.innerHTML = `
-        <li class="list-group-item bg-transparent text-white">
-          No hay órdenes registradas
-        </li>
-      `;
-      return;
-    }
-
-    snapshot.forEach(docSnap=>{
-
-      const data = docSnap.data();
-      const ordenId = docSnap.id;
-
-      const li = document.createElement("li");
-      li.className="list-group-item bg-transparent text-white d-flex justify-content-between align-items-center";
-
-      let badgeClass="badge-ingreso";
-      if(data.estado==="proceso") badgeClass="badge-proceso";
-      if(data.estado==="entregado") badgeClass="badge-entregado";
-
-      li.innerHTML=`
-        <span>
-          ${data.consecutivo || ""} · ${data.placa} - ${data.vehiculo}
-        </span>
-        <div>
-          <span class="badge-status ${badgeClass}">
-            ${data.estado}
-          </span>
-          <button class="btn btn-sm btn-outline-light ms-2" data-id="${ordenId}">
-            Cambiar
-          </button>
-        </div>
-      `;
-
-      li.querySelector("button").addEventListener("click", async ()=>{
-
-        let nuevoEstado="proceso";
-        if(data.estado==="proceso") nuevoEstado="entregado";
-        if(data.estado==="entregado") nuevoEstado="ingreso";
-
-        await updateDoc(
-          doc(
-            db,
-            "empresas",
-            empresaId,
-            "sucursales",
-            sucursalId,
-            "ordenes",
-            ordenId
-          ),
-          {
-            estado: nuevoEstado
-          }
-        );
-
-        hablar("Estado actualizado");
-
-      });
-
-      ordenesUl.appendChild(li);
-
-    });
-
   });
 
+  inventarioSnap.forEach(doc=>{
+    const d = doc.data();
+    if(d.stock <= d.stockMinimo) critico++;
+  });
+
+  animate("ordenesActivas",activas);
+  animate("ordenesProceso",proceso);
+  animate("ingresosHoy",ingresosHoy);
+  animate("inventarioCritico",critico);
 }
 
-/* ================= VOZ ================= */
-
-function hablar(texto){
-  const voz = new SpeechSynthesisUtterance(texto);
-  voz.lang="es-ES";
-  speechSynthesis.speak(voz);
+// ================= COUNTER =================
+function animate(id,value){
+  const el = document.getElementById(id);
+  el.innerText = value.toLocaleString();
 }
 
-/* ================= INICIAR ================= */
+// ================= CHART =================
+function initChart(){
 
-escucharOrdenes();
+  if(chartInstance) chartInstance.destroy();
+
+  const ctx = document.getElementById("dashboardChart");
+
+  chartInstance = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
+      datasets:[{
+        data:[5,7,4,9,6,3,8],
+        borderColor:'#22c55e',
+        backgroundColor:'rgba(34,197,94,.2)',
+        tension:.4,
+        fill:true
+      }]
+    },
+    options:{
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#94a3b8'}},
+        y:{ticks:{color:'#94a3b8'}}
+      }
+    }
+  });
+}
+
+// ================= NAVIGATION =================
+document.querySelectorAll(".nav-btn").forEach(btn=>{
+  btn.addEventListener("click", async ()=>{
+    document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("sectionTitle").innerText = btn.innerText.trim();
+
+    if(btn.dataset.section==="dashboard"){
+      await renderDashboard();
+    }else{
+      document.getElementById("contentArea").innerHTML =
+      "<div class='text-slate-400'>Módulo en construcción...</div>";
+    }
+  });
+});
+
+// INIT
+renderDashboard();
 
 </script>
+
 </body>
 </html>
