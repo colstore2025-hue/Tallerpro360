@@ -106,14 +106,14 @@ form.addEventListener("submit", async (e) => {
 
   try {
 
-    // 🔐 1. Login Firebase Auth
+    // 🔐 1. Login con Firebase Auth
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
 
-    // 🔎 2. Buscar usuario dentro de TODAS las empresas (más eficiente)
+    // 🔎 2. Buscar usuario dentro de todas las empresas (CORRECTO)
     const q = query(
       collectionGroup(db, "usuarios"),
-      where("__name__", "==", uid)
+      where("uid", "==", uid)
     );
 
     const snap = await getDocs(q);
@@ -132,7 +132,7 @@ form.addEventListener("submit", async (e) => {
     // 📌 Obtener empresaId desde la ruta
     const empresaId = userDoc.ref.parent.parent.id;
 
-    // 📌 Validar empresa activa (preparado para SaaS)
+    // 📌 Validar empresa activa
     const empresaRef = doc(db, "empresas", empresaId);
     const empresaSnap = await getDoc(empresaRef);
 
@@ -142,32 +142,31 @@ form.addEventListener("submit", async (e) => {
 
     const empresaData = empresaSnap.data();
 
-    if (empresaData.activa === false) {
+    if (empresaData.estado !== "activa") {
       throw new Error("Empresa suspendida");
     }
 
-    // 📌 Obtener sucursal asignada
+    // 📌 Sucursal (opcional)
     const sucursalId = datosUsuario.sucursalAsignada || "principal";
 
     // 🧹 3. Limpiar sesión anterior
     localStorage.clear();
 
-    // 💾 4. Guardar sesión limpia
+    // 💾 4. Guardar sesión
     localStorage.setItem("empresaId", empresaId);
     localStorage.setItem("uid", uid);
     localStorage.setItem("rol", datosUsuario.rol);
     localStorage.setItem("sucursalId", sucursalId);
 
-    // 🚀 5. Redirección limpia (no se vuelve a validar en módulos)
-
+    // 🚀 5. Redirección por rol
     switch (datosUsuario.rol) {
 
       case "dueno":
         window.location.href = "/taller-erp.html";
         break;
 
-      case "jefe":
       case "mecanico":
+      case "recepcion":
         window.location.href = "/taller.html";
         break;
 
@@ -181,7 +180,7 @@ form.addEventListener("submit", async (e) => {
 
   } catch (err) {
     console.error("ERROR LOGIN:", err);
-    showError(err.message);
+    showError("Error de acceso: " + err.message);
   }
 });
 
