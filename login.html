@@ -82,9 +82,7 @@ import { signInWithEmailAndPassword }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 import { 
-  collectionGroup,
-  query,
-  where,
+  collection,
   getDocs,
   doc,
   getDoc
@@ -106,31 +104,35 @@ form.addEventListener("submit", async (e) => {
 
   try {
 
-    // 🔐 1. Login con Firebase Auth
+    // 🔐 1. Login Firebase Auth
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
 
-    // 🔎 2. Buscar usuario dentro de todas las empresas (CORRECTO)
-    const q = query(
-      collectionGroup(db, "usuarios"),
-      where("uid", "==", uid)
-    );
+    // 🔎 2. Buscar empresa donde exista el usuario
+    const empresasSnap = await getDocs(collection(db, "empresas"));
 
-    const snap = await getDocs(q);
+    let empresaId = null;
+    let datosUsuario = null;
 
-    if (snap.empty) {
-      throw new Error("Usuario no pertenece a ninguna empresa");
+    for (const empresa of empresasSnap.docs) {
+
+      const userRef = doc(db, "empresas", empresa.id, "usuarios", uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        empresaId = empresa.id;
+        datosUsuario = userSnap.data();
+        break;
+      }
     }
 
-    const userDoc = snap.docs[0];
-    const datosUsuario = userDoc.data();
+    if (!empresaId) {
+      throw new Error("Usuario no pertenece a ninguna empresa");
+    }
 
     if (!datosUsuario.activo) {
       throw new Error("Usuario inactivo");
     }
-
-    // 📌 Obtener empresaId desde la ruta
-    const empresaId = userDoc.ref.parent.parent.id;
 
     // 📌 Validar empresa activa
     const empresaRef = doc(db, "empresas", empresaId);
@@ -140,25 +142,19 @@ form.addEventListener("submit", async (e) => {
       throw new Error("Empresa no válida");
     }
 
-    const empresaData = empresaSnap.data();
-
-    if (empresaData.estado !== "activa") {
+    if (empresaSnap.data().estado !== "activa") {
       throw new Error("Empresa suspendida");
     }
 
-    // 📌 Sucursal (opcional)
-    const sucursalId = datosUsuario.sucursalAsignada || "principal";
-
-    // 🧹 3. Limpiar sesión anterior
+    // 🧹 Limpiar sesión previa
     localStorage.clear();
 
-    // 💾 4. Guardar sesión
+    // 💾 Guardar sesión
     localStorage.setItem("empresaId", empresaId);
     localStorage.setItem("uid", uid);
     localStorage.setItem("rol", datosUsuario.rol);
-    localStorage.setItem("sucursalId", sucursalId);
 
-    // 🚀 5. Redirección por rol
+    // 🚀 Redirección por rol
     switch (datosUsuario.rol) {
 
       case "dueno":
