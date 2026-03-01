@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TallerPRO360 | ERP Operativo</title>
+<title>TallerPRO360 | ERP Master</title>
 <link rel="icon" href="logo-tallerpro360.png">
 
 <script src="https://cdn.tailwindcss.com"></script>
@@ -21,32 +21,35 @@ body{margin:0;font-family:'Inter',sans-serif;background:linear-gradient(135deg,#
 .nav-btn:hover,.nav-btn.active{background:rgba(34,197,94,.1);color:#22c55e;}
 .main-content{flex:1;padding:40px;overflow-y:auto;}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;}
-.logout-btn{border:1px solid rgba(255,255,255,.2);padding:6px 14px;border-radius:8px;font-size:14px;transition:.3s;}
-.logout-btn:hover{background:rgba(239,68,68,.1);border-color:#ef4444;color:#ef4444;}
-.metric-card{padding:1.5rem;border-radius:1rem;background:rgba(15,23,42,.7);text-align:center;border:1px solid rgba(255,255,255,.05);}
+.metric-card{padding:1.5rem;border-radius:1rem;background:rgba(15,23,42,.7);border:1px solid rgba(255,255,255,.05);}
 table th, table td{padding:10px;text-align:left;}
+input[type="date"]{background:#0f172a;border:1px solid #1e293b;padding:6px 10px;border-radius:8px;color:#fff;}
 </style>
 </head>
 <body>
 
 <div class="erp-wrapper">
-  <aside class="sidebar">
-    <div class="logo">Taller<span>PRO360</span></div>
-    <button class="nav-btn active" data-section="dashboard"><i class="fa-solid fa-chart-line mr-2"></i> Dashboard</button>
-    <button class="nav-btn" data-section="ordenes"><i class="fa-solid fa-car mr-2"></i> Órdenes</button>
-  </aside>
+<aside class="sidebar">
+  <div class="logo">Taller<span>PRO360</span></div>
 
-  <main class="main-content">
-    <header class="topbar">
-      <div>
-        <h2 id="sectionTitle" class="text-2xl font-bold">Dashboard</h2>
-        <p class="text-slate-400 text-sm">Centro de control operativo en tiempo real</p>
-      </div>
-      <button id="logoutBtn" class="logout-btn">Salir</button>
-    </header>
+  <button class="nav-btn active" data-section="dashboard"><i class="fa-solid fa-chart-line mr-2"></i> Dashboard</button>
+  <button class="nav-btn" data-section="ordenes"><i class="fa-solid fa-car mr-2"></i> Órdenes</button>
+  <button class="nav-btn" data-section="inventario"><i class="fa-solid fa-boxes-stacked mr-2"></i> Inventario</button>
+  <button class="nav-btn" data-section="finanzas"><i class="fa-solid fa-coins mr-2"></i> Finanzas</button>
+  <button class="nav-btn" data-section="nomina"><i class="fa-solid fa-users mr-2"></i> Nómina</button>
+</aside>
 
-    <section id="contentArea"></section>
-  </main>
+<main class="main-content">
+<header class="topbar">
+  <div>
+    <h2 id="sectionTitle" class="text-2xl font-bold">Dashboard</h2>
+    <p class="text-slate-400 text-sm">Centro de control operativo en tiempo real</p>
+  </div>
+  <button id="logoutBtn" class="border px-3 py-1 rounded">Salir</button>
+</header>
+
+<section id="contentArea"></section>
+</main>
 </div>
 
 <script type="module">
@@ -63,32 +66,21 @@ const auth = getAuth();
 const empresaId = localStorage.getItem("empresaId");
 const rol = localStorage.getItem("rol");
 
-let ordenes = [];
-let chartInstance = null;
+if(!empresaId && rol!=="superadmin") window.location.href="index.html";
 
-// Loader inicial
-document.getElementById("contentArea").innerHTML = `
-  <div class="text-center py-20 text-slate-400">
-    <i class="fa-solid fa-spinner fa-spin text-3xl mb-4"></i>
-    <p>Cargando datos en tiempo real...</p>
-  </div>
-`;
+let ordenes=[];
+let chartFinanzas=null;
 
-// Auth check
+// ================= AUTH =================
 onAuthStateChanged(auth,user=>{
   if(!user) window.location.href="index.html";
 });
 
-// Realtime
+// ================= REALTIME =================
 function iniciarRealtime(){
-
-  let ref;
-
-  if(rol==="superadmin"){
-    ref = collection(db,"ordenesGlobal");
-  }else{
-    ref = collection(db,"empresas",empresaId,"ordenes");
-  }
+  let ref = rol==="superadmin"
+    ? collection(db,"ordenesGlobal")
+    : collection(db,"empresas",empresaId,"ordenes");
 
   onSnapshot(ref,(snapshot)=>{
     ordenes=[];
@@ -97,101 +89,119 @@ function iniciarRealtime(){
   });
 }
 
-// Dashboard
+// ================= DASHBOARD =================
 function renderDashboard(data){
 
-  const ingresos = data.reduce((s,o)=>s+(o.pagado||0),0);
-  const activas = data.filter(o=>o.estado!=="entregado").length;
+  const ingresos=data.reduce((s,o)=>s+(o.pagado||0),0);
+  const activas=data.filter(o=>o.estado!=="entregado").length;
+  const crm=data.length?Math.round(data.reduce((s,o)=>s+(o.crmScore||0),0)/data.length):0;
+  const proyeccion=Math.round((ingresos/data.length||0)*30);
 
   document.getElementById("contentArea").innerHTML=`
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <div class="metric-card">
-        <div class="text-slate-400">Ingresos</div>
-        <h2 class="text-3xl font-bold">$${ingresos.toLocaleString()}</h2>
-      </div>
-      <div class="metric-card">
-        <div class="text-slate-400">Órdenes Activas</div>
-        <h2 class="text-3xl font-bold">${activas}</h2>
-      </div>
-      <div class="metric-card">
-        <div class="text-slate-400">Total Órdenes</div>
-        <h2 class="text-3xl font-bold">${data.length}</h2>
-      </div>
-    </div>
+  <div class="flex gap-4 mb-6">
+    <input type="date" id="fDesde">
+    <input type="date" id="fHasta">
+    <button onclick="aplicarFiltros()" class="bg-green-600 px-4 py-1 rounded">Filtrar</button>
+  </div>
 
-    <div class="bg-slate-900/60 p-6 rounded-2xl border border-white/5 mb-8">
-      <h3 class="mb-4 text-lg font-semibold text-slate-300">Panel Financiero Mensual</h3>
-      <canvas id="chartFinanzas"></canvas>
-    </div>
+  <div class="grid md:grid-cols-4 gap-6 mb-8">
+    ${kpi("Ingresos", "$"+ingresos.toLocaleString())}
+    ${kpi("Órdenes Activas", activas)}
+    ${kpi("CRM Promedio", crm)}
+    ${kpi("Proyección IA", "$"+proyeccion.toLocaleString())}
+  </div>
 
+  <div class="bg-slate-900/60 p-6 rounded-2xl mb-8">
+    <h3 class="mb-4 font-semibold">Panel Financiero Mensual</h3>
+    <canvas id="chartFinanzas"></canvas>
+  </div>
+
+  <div class="bg-slate-900/60 p-6 rounded-2xl">
+    <h3 class="mb-4 font-semibold">Órdenes</h3>
     ${renderTabla(data)}
+  </div>
   `;
 
   renderGrafico(data);
 }
 
-function renderTabla(data){
-  if(!data.length) return "<div class='text-slate-400'>No hay órdenes registradas</div>";
-
-  return `
-  <div class="bg-slate-900/60 p-6 rounded-2xl border border-white/5">
-    <h3 class="mb-4 text-lg font-semibold text-slate-300">Órdenes</h3>
-    <table class="w-full text-sm">
-      <thead>
-        <tr class="text-slate-400 border-b border-slate-700">
-          <th>Cliente</th><th>Placa</th><th>Estado</th><th>Total</th><th>PDF</th>
-        </tr>
-      </thead>
-      <tbody>
-      ${data.map(o=>`
-        <tr class="border-b border-slate-800">
-          <td>${o.clienteNombre||"-"}</td>
-          <td>${o.placa||"-"}</td>
-          <td>${o.estado||"-"}</td>
-          <td>$${(o.totalOrden||0).toLocaleString()}</td>
-          <td>
-            <button onclick="generarPDF('${o.id}')" 
-            class="bg-green-600 px-3 py-1 rounded text-xs">PDF</button>
-          </td>
-        </tr>
-      `).join("")}
-      </tbody>
-    </table>
-  </div>`;
+function kpi(t,v){
+  return `<div class="metric-card"><div class="text-slate-400">${t}</div><h2 class="text-3xl font-bold">${v}</h2></div>`;
 }
 
+// ================= FILTROS =================
+window.aplicarFiltros=function(){
+  const d=document.getElementById("fDesde").value;
+  const h=document.getElementById("fHasta").value;
+
+  let filtradas=[...ordenes];
+
+  if(d){
+    const fd=new Date(d);
+    filtradas=filtradas.filter(o=>o.creadoEn?.seconds && new Date(o.creadoEn.seconds*1000)>=fd);
+  }
+
+  if(h){
+    const fh=new Date(h);
+    filtradas=filtradas.filter(o=>o.creadoEn?.seconds && new Date(o.creadoEn.seconds*1000)<=fh);
+  }
+
+  renderDashboard(filtradas);
+}
+
+// ================= TABLA =================
+function renderTabla(data){
+  if(!data.length) return "<div>No hay órdenes</div>";
+
+  return `<table class="w-full text-sm">
+  <thead><tr class="text-slate-400 border-b border-slate-700">
+  <th>Cliente</th><th>Placa</th><th>Estado</th><th>Total</th><th>CRM</th><th>PDF</th>
+  </tr></thead>
+  <tbody>
+  ${data.map(o=>`
+  <tr class="border-b border-slate-800">
+    <td>${o.clienteNombre||"-"}</td>
+    <td>${o.placa||"-"}</td>
+    <td>${o.estado||"-"}</td>
+    <td>$${(o.totalOrden||0).toLocaleString()}</td>
+    <td>${o.crmScore||0}</td>
+    <td><button onclick="generarPDF('${o.id}')" class="bg-green-600 px-2 py-1 rounded text-xs">PDF</button></td>
+  </tr>`).join("")}
+  </tbody></table>`;
+}
+
+// ================= GRAFICO =================
 function renderGrafico(data){
   const meses=Array(12).fill(0);
   data.forEach(o=>{
-    if(!o.creadoEn?.seconds) return;
-    const fecha=new Date(o.creadoEn.seconds*1000);
-    meses[fecha.getMonth()]+=o.pagado||0;
+    if(o.creadoEn?.seconds){
+      const f=new Date(o.creadoEn.seconds*1000);
+      meses[f.getMonth()]+=o.pagado||0;
+    }
   });
 
-  if(chartInstance) chartInstance.destroy();
+  if(chartFinanzas) chartFinanzas.destroy();
 
-  chartInstance=new Chart(document.getElementById("chartFinanzas"),{
+  chartFinanzas=new Chart(document.getElementById("chartFinanzas"),{
     type:"bar",
-    data:{
-      labels:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
-      datasets:[{data:meses,backgroundColor:"#22c55e"}]
-    },
+    data:{labels:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
+    datasets:[{data:meses,backgroundColor:"#22c55e"}]},
     options:{plugins:{legend:{display:false}}}
   });
 }
 
-// PDF
+// ================= PDF =================
 window.generarPDF=function(id){
-  const orden=ordenes.find(o=>o.id===id);
-  if(!orden) return;
-  const blob=new Blob([`Orden ${orden.id}\nCliente: ${orden.clienteNombre}\nTotal: ${orden.totalOrden}`],{type:"application/pdf"});
+  const o=ordenes.find(x=>x.id===id);
+  if(!o) return;
+  const blob=new Blob([`Orden ${o.id}\nCliente:${o.clienteNombre}\nTotal:${o.totalOrden}`],{type:"application/pdf"});
   const link=document.createElement("a");
   link.href=URL.createObjectURL(blob);
-  link.download="orden-"+orden.id+".pdf";
+  link.download="orden-"+o.id+".pdf";
   link.click();
 };
 
-// Navegación
+// ================= NAV =================
 document.querySelectorAll(".nav-btn").forEach(btn=>{
   btn.addEventListener("click",()=>{
     document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
@@ -201,7 +211,7 @@ document.querySelectorAll(".nav-btn").forEach(btn=>{
   });
 });
 
-// Logout
+// ================= LOGOUT =================
 document.getElementById("logoutBtn").addEventListener("click",async()=>{
   await signOut(auth);
   localStorage.clear();
@@ -211,6 +221,5 @@ document.getElementById("logoutBtn").addEventListener("click",async()=>{
 iniciarRealtime();
 
 </script>
-
 </body>
 </html>
