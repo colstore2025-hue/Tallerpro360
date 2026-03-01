@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TallerPRO360 | Dashboard Mock</title>
+<title>TallerPRO360 | ERP Operativo</title>
 <link rel="icon" href="logo-tallerpro360.png">
 
 <script src="https://cdn.tailwindcss.com"></script>
@@ -12,75 +12,19 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body{
-  margin:0;
-  font-family:'Inter',sans-serif;
-  background:linear-gradient(135deg,#0f172a,#111827);
-  color:#f1f5f9;
-}
-.erp-wrapper{ display:flex; height:100vh; overflow:hidden; }
-.sidebar{
-  width:260px;
-  background:rgba(15,23,42,.95);
-  backdrop-filter:blur(20px);
-  border-right:1px solid rgba(255,255,255,.05);
-  padding:30px 20px;
-  display:flex;
-  flex-direction:column;
-}
-.logo{
-  font-family:'Orbitron',sans-serif;
-  font-size:22px;
-  font-weight:900;
-  margin-bottom:50px;
-}
-.logo span{
-  background:linear-gradient(90deg,#22c55e,#38bdf8);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-}
-.nav-btn{
-  background:none;
-  border:none;
-  color:#94a3b8;
-  padding:14px;
-  text-align:left;
-  border-radius:12px;
-  margin-bottom:8px;
-  transition:.3s;
-  font-weight:600;
-}
-.nav-btn:hover,
-.nav-btn.active{
-  background:rgba(34,197,94,.1);
-  color:#22c55e;
-}
-.main-content{ flex:1; padding:40px; overflow-y:auto; }
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:30px;
-}
-.logout-btn{
-  border:1px solid rgba(255,255,255,.2);
-  padding:6px 14px;
-  border-radius:8px;
-  font-size:14px;
-  transition:.3s;
-}
-.logout-btn:hover{
-  background:rgba(239,68,68,.1);
-  border-color:#ef4444;
-  color:#ef4444;
-}
-.metric-card{
-  padding:1.5rem;
-  border-radius:1rem;
-  background:rgba(15,23,42,.7);
-  text-align:center;
-  border:1px solid rgba(255,255,255,.05);
-}
+body{margin:0;font-family:'Inter',sans-serif;background:linear-gradient(135deg,#0f172a,#111827);color:#f1f5f9;}
+.erp-wrapper{display:flex;height:100vh;overflow:hidden;}
+.sidebar{width:260px;background:rgba(15,23,42,.95);backdrop-filter:blur(20px);border-right:1px solid rgba(255,255,255,.05);padding:30px 20px;display:flex;flex-direction:column;}
+.logo{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;margin-bottom:50px;}
+.logo span{background:linear-gradient(90deg,#22c55e,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.nav-btn{background:none;border:none;color:#94a3b8;padding:14px;text-align:left;border-radius:12px;margin-bottom:8px;transition:.3s;font-weight:600;}
+.nav-btn:hover,.nav-btn.active{background:rgba(34,197,94,.1);color:#22c55e;}
+.main-content{flex:1;padding:40px;overflow-y:auto;}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;}
+.logout-btn{border:1px solid rgba(255,255,255,.2);padding:6px 14px;border-radius:8px;font-size:14px;transition:.3s;}
+.logout-btn:hover{background:rgba(239,68,68,.1);border-color:#ef4444;color:#ef4444;}
+.metric-card{padding:1.5rem;border-radius:1rem;background:rgba(15,23,42,.7);text-align:center;border:1px solid rgba(255,255,255,.05);}
+table th, table td{padding:10px;text-align:left;}
 </style>
 </head>
 <body>
@@ -88,28 +32,15 @@ body{
 <div class="erp-wrapper">
   <aside class="sidebar">
     <div class="logo">Taller<span>PRO360</span></div>
-    <button class="nav-btn active" data-section="dashboard">
-      <i class="fa-solid fa-chart-line mr-2"></i> Dashboard
-    </button>
-    <button class="nav-btn" data-section="ordenes">
-      <i class="fa-solid fa-car mr-2"></i> Órdenes
-    </button>
-    <button class="nav-btn" data-section="inventario">
-      <i class="fa-solid fa-boxes-stacked mr-2"></i> Inventario
-    </button>
-    <button class="nav-btn" data-section="finanzas">
-      <i class="fa-solid fa-coins mr-2"></i> Finanzas
-    </button>
-    <button class="nav-btn" data-section="nomina">
-      <i class="fa-solid fa-users mr-2"></i> Nómina
-    </button>
+    <button class="nav-btn active" data-section="dashboard"><i class="fa-solid fa-chart-line mr-2"></i> Dashboard</button>
+    <button class="nav-btn" data-section="ordenes"><i class="fa-solid fa-car mr-2"></i> Órdenes</button>
   </aside>
 
   <main class="main-content">
     <header class="topbar">
       <div>
         <h2 id="sectionTitle" class="text-2xl font-bold">Dashboard</h2>
-        <p class="text-slate-400 text-sm">Centro de control operativo - MOCK</p>
+        <p class="text-slate-400 text-sm">Centro de control operativo en tiempo real</p>
       </div>
       <button id="logoutBtn" class="logout-btn">Salir</button>
     </header>
@@ -120,112 +51,72 @@ body{
 
 <script type="module">
 
-import { 
-  getFirestore, collection, onSnapshot, query, where, getDocs 
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot } 
+from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-import { 
-  getAuth, onAuthStateChanged, signOut 
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut } 
+from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const db = getFirestore();
 const auth = getAuth();
 
 const empresaId = localStorage.getItem("empresaId");
-const rol = localStorage.getItem("rol"); // superadmin | admin | staff
-
-if (!empresaId && rol !== "superadmin") {
-  window.location.href = "index.html";
-}
+const rol = localStorage.getItem("rol");
 
 let ordenes = [];
-let chartFinanzas = null;
+let chartInstance = null;
 
-// ================= AUTH =================
+// Loader inicial
+document.getElementById("contentArea").innerHTML = `
+  <div class="text-center py-20 text-slate-400">
+    <i class="fa-solid fa-spinner fa-spin text-3xl mb-4"></i>
+    <p>Cargando datos en tiempo real...</p>
+  </div>
+`;
+
+// Auth check
 onAuthStateChanged(auth,user=>{
   if(!user) window.location.href="index.html";
 });
 
-// ================= REALTIME =================
+// Realtime
 function iniciarRealtime(){
 
   let ref;
 
-  if(rol === "superadmin"){
+  if(rol==="superadmin"){
     ref = collection(db,"ordenesGlobal");
   }else{
     ref = collection(db,"empresas",empresaId,"ordenes");
   }
 
   onSnapshot(ref,(snapshot)=>{
-    ordenes = [];
-    snapshot.forEach(doc=>{
-      ordenes.push({id:doc.id,...doc.data()});
-    });
-
-    aplicarFiltros();
+    ordenes=[];
+    snapshot.forEach(doc=>ordenes.push({id:doc.id,...doc.data()}));
+    renderDashboard(ordenes);
   });
 }
 
-// ================= FILTROS =================
-function aplicarFiltros(){
-
-  const desde = document.getElementById("filtroDesde")?.value;
-  const hasta = document.getElementById("filtroHasta")?.value;
-
-  let filtradas = [...ordenes];
-
-  if(desde){
-    const fDesde = new Date(desde);
-    filtradas = filtradas.filter(o=>{
-      if(!o.creadoEn?.seconds) return false;
-      return new Date(o.creadoEn.seconds*1000) >= fDesde;
-    });
-  }
-
-  if(hasta){
-    const fHasta = new Date(hasta);
-    filtradas = filtradas.filter(o=>{
-      if(!o.creadoEn?.seconds) return false;
-      return new Date(o.creadoEn.seconds*1000) <= fHasta;
-    });
-  }
-
-  renderDashboard(filtradas);
-}
-
-// ================= DASHBOARD =================
+// Dashboard
 function renderDashboard(data){
 
   const ingresos = data.reduce((s,o)=>s+(o.pagado||0),0);
   const activas = data.filter(o=>o.estado!=="entregado").length;
-  const crmPromedio = data.length
-    ? Math.round(data.reduce((s,o)=>s+(o.crmScore||0),0)/data.length)
-    : 0;
 
-  document.getElementById("contentArea").innerHTML = `
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-
+  document.getElementById("contentArea").innerHTML=`
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <div class="metric-card">
         <div class="text-slate-400">Ingresos</div>
         <h2 class="text-3xl font-bold">$${ingresos.toLocaleString()}</h2>
       </div>
-
       <div class="metric-card">
         <div class="text-slate-400">Órdenes Activas</div>
         <h2 class="text-3xl font-bold">${activas}</h2>
       </div>
-
-      <div class="metric-card">
-        <div class="text-slate-400">CRM Score Promedio</div>
-        <h2 class="text-3xl font-bold">${crmPromedio}</h2>
-      </div>
-
       <div class="metric-card">
         <div class="text-slate-400">Total Órdenes</div>
         <h2 class="text-3xl font-bold">${data.length}</h2>
       </div>
-
     </div>
 
     <div class="bg-slate-900/60 p-6 rounded-2xl border border-white/5 mb-8">
@@ -233,128 +124,90 @@ function renderDashboard(data){
       <canvas id="chartFinanzas"></canvas>
     </div>
 
-    <div class="bg-slate-900/60 p-6 rounded-2xl border border-white/5">
-      <h3 class="mb-4 text-lg font-semibold text-slate-300">Órdenes</h3>
-      ${renderTabla(data)}
-    </div>
+    ${renderTabla(data)}
   `;
 
-  renderGraficoFinanzas(data);
-  predecirIngresos(data);
+  renderGrafico(data);
 }
 
-// ================= TABLA =================
 function renderTabla(data){
-
-  if(!data.length){
-    return "<div class='text-slate-400'>No hay órdenes en el rango seleccionado</div>";
-  }
+  if(!data.length) return "<div class='text-slate-400'>No hay órdenes registradas</div>";
 
   return `
+  <div class="bg-slate-900/60 p-6 rounded-2xl border border-white/5">
+    <h3 class="mb-4 text-lg font-semibold text-slate-300">Órdenes</h3>
     <table class="w-full text-sm">
       <thead>
         <tr class="text-slate-400 border-b border-slate-700">
-          <th>Cliente</th>
-          <th>Placa</th>
-          <th>Estado</th>
-          <th>Total</th>
-          <th>CRM</th>
-          <th>PDF</th>
+          <th>Cliente</th><th>Placa</th><th>Estado</th><th>Total</th><th>PDF</th>
         </tr>
       </thead>
       <tbody>
-        ${data.map(o=>`
-          <tr class="border-b border-slate-800">
-            <td>${o.clienteNombre || "-"}</td>
-            <td>${o.placa || "-"}</td>
-            <td>${o.estado || "-"}</td>
-            <td>$${(o.totalOrden||0).toLocaleString()}</td>
-            <td>${o.crmScore||0}</td>
-            <td>
-              <button onclick="generarPDF('${o.id}')" 
-              class="bg-green-600 px-3 py-1 rounded text-xs">
-                PDF
-              </button>
-            </td>
-          </tr>
-        `).join("")}
+      ${data.map(o=>`
+        <tr class="border-b border-slate-800">
+          <td>${o.clienteNombre||"-"}</td>
+          <td>${o.placa||"-"}</td>
+          <td>${o.estado||"-"}</td>
+          <td>$${(o.totalOrden||0).toLocaleString()}</td>
+          <td>
+            <button onclick="generarPDF('${o.id}')" 
+            class="bg-green-600 px-3 py-1 rounded text-xs">PDF</button>
+          </td>
+        </tr>
+      `).join("")}
       </tbody>
     </table>
-  `;
+  </div>`;
 }
 
-// ================= FINANZAS =================
-function renderGraficoFinanzas(data){
-
-  const meses = Array(12).fill(0);
-
+function renderGrafico(data){
+  const meses=Array(12).fill(0);
   data.forEach(o=>{
     if(!o.creadoEn?.seconds) return;
-    const fecha = new Date(o.creadoEn.seconds*1000);
-    meses[fecha.getMonth()] += o.pagado || 0;
+    const fecha=new Date(o.creadoEn.seconds*1000);
+    meses[fecha.getMonth()]+=o.pagado||0;
   });
 
-  if(chartFinanzas) chartFinanzas.destroy();
+  if(chartInstance) chartInstance.destroy();
 
-  chartFinanzas = new Chart(
-    document.getElementById("chartFinanzas"),
-    {
-      type:"bar",
-      data:{
-        labels:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
-        datasets:[{
-          label:"Ingresos",
-          data:meses,
-          backgroundColor:"#22c55e"
-        }]
-      },
-      options:{
-        plugins:{legend:{display:false}}
-      }
-    }
-  );
+  chartInstance=new Chart(document.getElementById("chartFinanzas"),{
+    type:"bar",
+    data:{
+      labels:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
+      datasets:[{data:meses,backgroundColor:"#22c55e"}]
+    },
+    options:{plugins:{legend:{display:false}}}
+  });
 }
 
-// ================= IA PREDICTIVA =================
-function predecirIngresos(data){
-
-  if(data.length < 3) return;
-
-  const promedio = data.reduce((s,o)=>s+(o.pagado||0),0)/data.length;
-  const proyeccion = promedio * 30;
-
-  console.log("📈 Proyección IA:", Math.round(proyeccion));
-}
-
-// ================= PDF =================
-window.generarPDF = function(id){
-
-  const orden = ordenes.find(o=>o.id===id);
+// PDF
+window.generarPDF=function(id){
+  const orden=ordenes.find(o=>o.id===id);
   if(!orden) return;
-
-  const contenido = `
-    Orden ID: ${orden.id}
-    Cliente: ${orden.clienteNombre}
-    Placa: ${orden.placa}
-    Total: $${orden.totalOrden}
-    Estado: ${orden.estado}
-  `;
-
-  const blob = new Blob([contenido],{type:"application/pdf"});
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "orden-"+orden.id+".pdf";
+  const blob=new Blob([`Orden ${orden.id}\nCliente: ${orden.clienteNombre}\nTotal: ${orden.totalOrden}`],{type:"application/pdf"});
+  const link=document.createElement("a");
+  link.href=URL.createObjectURL(blob);
+  link.download="orden-"+orden.id+".pdf";
   link.click();
 };
 
-// ================= LOGOUT =================
-document.getElementById("logoutBtn")?.addEventListener("click",async()=>{
+// Navegación
+document.querySelectorAll(".nav-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("sectionTitle").innerText=btn.innerText.trim();
+    renderDashboard(ordenes);
+  });
+});
+
+// Logout
+document.getElementById("logoutBtn").addEventListener("click",async()=>{
   await signOut(auth);
   localStorage.clear();
   window.location.href="index.html";
 });
 
-// ================= INIT =================
 iniciarRealtime();
 
 </script>
