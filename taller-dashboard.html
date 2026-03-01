@@ -118,18 +118,42 @@ body{
   </main>
 </div>
 
-<script>
-// ================= MOCK DASHBOARD =================
+<script type="module">
+
+import { 
+  getFirestore, collection, getDocs 
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const db = getFirestore();
+const auth = getAuth();
+const empresaId = localStorage.getItem("empresaId");
+
 let chartInstance = null;
+let ordenes = [];
 
-// Datos simulados
-const ordenesMock = [
-  {estado:'Activa', total:500000, ingresosHoy:200000},
-  {estado:'En Proceso', total:750000, ingresosHoy:750000},
-  {estado:'Cerrada', total:600000, ingresosHoy:600000},
-  {estado:'Activa', total:450000, ingresosHoy:0},
-];
+// =========================
+// CARGAR DATOS REALES
+// =========================
+async function cargarDashboard(){
 
+  ordenes = [];
+
+  const snapshot = await getDocs(
+    collection(db, "empresas", empresaId, "ordenes")
+  );
+
+  snapshot.forEach(docSnap=>{
+    ordenes.push(docSnap.data());
+  });
+
+  renderDashboard();
+}
+
+// =========================
+// KPI CARD
+// =========================
 function kpiCard(title,value,icon){
   return `
     <div class="metric-card">
@@ -142,22 +166,25 @@ function kpiCard(title,value,icon){
   `;
 }
 
+// =========================
+// RENDER DASHBOARD REAL
+// =========================
 function renderDashboard(){
-  const totalActivas = ordenesMock.filter(o=>o.estado==='Activa').length;
-  const enProceso = ordenesMock.filter(o=>o.estado==='En Proceso').length;
-  const ingresosHoy = ordenesMock.reduce((sum,o)=>sum+o.ingresosHoy,0);
-  const inventarioCritico = 5; // ejemplo
+
+  const activas = ordenes.filter(o=>o.estado !== "entregado" && o.estado !== "facturado").length;
+  const enProceso = ordenes.filter(o=>o.estado === "en_proceso").length;
+  const ingresosHoy = ordenes.reduce((sum,o)=>sum+(o.pagado || 0),0);
 
   document.getElementById("contentArea").innerHTML = `
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-      ${kpiCard("Órdenes Activas",totalActivas,"fa-car")}
+      ${kpiCard("Órdenes Activas",activas,"fa-car")}
       ${kpiCard("En Proceso",enProceso,"fa-gears")}
-      ${kpiCard("Ingresos Hoy","$"+ingresosHoy.toLocaleString(),"fa-coins")}
-      ${kpiCard("Inventario Crítico",inventarioCritico,"fa-triangle-exclamation")}
+      ${kpiCard("Ingresos Totales","$"+ingresosHoy.toLocaleString(),"fa-coins")}
+      ${kpiCard("Total Órdenes",ordenes.length,"fa-chart-line")}
     </div>
 
     <div class="bg-slate-900/60 p-6 rounded-2xl border border-white/5">
-      <h3 class="mb-4 text-lg font-semibold text-slate-300">Actividad semanal</h3>
+      <h3 class="mb-4 text-lg font-semibold text-slate-300">Órdenes últimos 7 días</h3>
       <canvas id="dashboardChart"></canvas>
     </div>
   `;
@@ -165,16 +192,33 @@ function renderDashboard(){
   initChart();
 }
 
+// =========================
+// GRÁFICO REAL
+// =========================
 function initChart(){
+
+  const dias = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+  const conteo = [0,0,0,0,0,0,0];
+
+  ordenes.forEach(o=>{
+    if(o.creadoEn?.seconds){
+      const fecha = new Date(o.creadoEn.seconds * 1000);
+      const dia = fecha.getDay();
+      conteo[dia]++;
+    }
+  });
+
   const ctx = document.getElementById("dashboardChart");
+
   if(chartInstance) chartInstance.destroy();
+
   chartInstance = new Chart(ctx,{
     type:'line',
     data:{
-      labels:['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
+      labels:dias,
       datasets:[{
-        label:'Órdenes por día',
-        data:[5,7,4,9,6,3,8],
+        label:'Órdenes',
+        data:conteo,
         borderColor:'#22c55e',
         backgroundColor:'rgba(34,197,94,.2)',
         tension:0.4,
@@ -193,13 +237,13 @@ function initChart(){
 
 // ================= NAV =================
 document.querySelectorAll(".nav-btn").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
+  btn.addEventListener("click", async ()=>{
     document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
     btn.classList.add("active");
     document.getElementById("sectionTitle").innerText = btn.innerText.trim();
 
     if(btn.dataset.section==="dashboard"){
-      renderDashboard();
+      await cargarDashboard();
     }else{
       document.getElementById("contentArea").innerHTML =
       "<div class='text-slate-400'>Módulo en construcción...</div>";
@@ -208,7 +252,8 @@ document.querySelectorAll(".nav-btn").forEach(btn=>{
 });
 
 // INIT
-renderDashboard();
+cargarDashboard();
+
 </script>
 
 </body>
