@@ -128,31 +128,51 @@ input::placeholder, textarea::placeholder{
 
 </div>
 
-<script>
-// ================= MOCK DATA + ESTRUCTURA =================
-const estados = ["ingreso","diagnostico","proceso","listo","entregado","facturado"];
-let ordenes = [
-  {
-    id:1, consecutivo:101,
-    cliente:{nombre:"Juan Pérez",telefono:"3110000001"},
-    vehiculo:{placa:"ABC123",modelo:"Chevrolet Spark",color:"Blanco",ano:2019},
-    tecnico:["Carlos"],
-    repuestos: ["Filtro aceite"],
-    estado:"ingreso",
-    total:500000, pagado:200000, saldo:300000,
-    historialEstados:[{estado:"ingreso",fecha:new Date(),notas:"Ingreso inicial"}],
-    historialPagos:[{monto:200000,fecha:new Date()}],
-    historialRepuestos:[{repuesto:"Filtro aceite",fecha:new Date()}]
-  }
-];
+<script type="module">
 
-let consecutivoCounter = 102;
+import { 
+  getFirestore, collection, addDoc, getDocs, 
+  doc, updateDoc, serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ================= MÉTRICAS =================
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const db = getFirestore();
+const auth = getAuth();
+
+const empresaId = localStorage.getItem("empresaId");
+
+let ordenes = [];
+
+// =========================
+// CARGAR ÓRDENES REALES
+// =========================
+async function cargarOrdenes() {
+  ordenes = [];
+
+  const snapshot = await getDocs(
+    collection(db, "empresas", empresaId, "ordenes")
+  );
+
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    ordenes.push({
+      id: docSnap.id,
+      ...data
+    });
+  });
+
+  renderOrdenes(ordenes);
+  renderMetrics();
+}
+
+// =========================
+// MÉTRICAS
+// =========================
 function renderMetrics(){
-  const activas = ordenes.filter(o=>o.estado!=="entregado" && o.estado!=="facturado").length;
-  const ingresos = ordenes.reduce((acc,o)=>acc+o.pagado,0);
-  const pendientes = ordenes.reduce((acc,o)=>acc+o.saldo,0);
+  const activas = ordenes.filter(o=>o.estado !== "entregado" && o.estado !== "facturado").length;
+  const ingresos = ordenes.reduce((acc,o)=>acc+(o.pagado || 0),0);
+  const pendientes = ordenes.reduce((acc,o)=>acc+((o.totalOrden || 0)-(o.pagado || 0)),0);
   const promedio = ordenes.length ? Math.floor(ingresos/ordenes.length) : 0;
 
   document.getElementById("dashboard-metrics").innerHTML = `
@@ -163,153 +183,66 @@ function renderMetrics(){
   `;
 }
 
-// ================= CREAR ORDEN =================
-document.getElementById("formOrden").addEventListener("submit",e=>{
+// =========================
+// CREAR ORDEN REAL
+// =========================
+document.getElementById("formOrden").addEventListener("submit", async e=>{
   e.preventDefault();
 
   const clienteNombre = document.getElementById("clienteNombre").value.trim();
   const clienteTelefono = document.getElementById("clienteTelefono").value.trim();
   const placa = document.getElementById("placa").value.trim();
   const modelo = document.getElementById("vehiculoModelo").value.trim();
-  const color = document.getElementById("vehiculoColor").value.trim();
-  const ano = parseInt(document.getElementById("vehiculoAno").value);
-  const tecnico = document.getElementById("tecnicoAsignado").value.trim().split(",").map(t=>t.trim());
-  const repuestos = document.getElementById("repuestos").value.trim().split(",").map(r=>r.trim());
   const total = parseFloat(document.getElementById("total").value);
 
-  const nueva = {
-    id: ordenes.length+1,
-    consecutivo: consecutivoCounter++,
-    cliente:{nombre:clienteNombre,telefono:clienteTelefono},
-    vehiculo:{placa,modelo,color,ano},
-    tecnico, repuestos,
-    estado:"ingreso",
-    total, pagado:0, saldo:total,
-    historialEstados:[{estado:"ingreso",fecha:new Date(),notas:"Orden creada"}],
-    historialPagos:[],
-    historialRepuestos: repuestos.map(r=>({repuesto:r,fecha:new Date()}))
+  const nuevaOrden = {
+    clienteNombre,
+    clienteTelefono,
+    placa,
+    vehiculo: modelo,
+    totalOrden: total,
+    pagado: 0,
+    estado: "en_proceso",
+    usuarioId: auth.currentUser.uid,
+    creadoEn: serverTimestamp()
   };
 
-  ordenes.unshift(nueva);
-  renderOrdenes(ordenes);
-  renderMetrics();
+  await addDoc(
+    collection(db, "empresas", empresaId, "ordenes"),
+    nuevaOrden
+  );
+
   e.target.reset();
-  hablar("Orden registrada correctamente");
+  await cargarOrdenes();
 });
 
-// ================= RENDER ÓRDENES =================
+// =========================
+// RENDER ÓRDENES
+// =========================
 function renderOrdenes(list){
   const ul = document.getElementById("ordenesUl");
   ul.innerHTML="";
 
   list.forEach(o=>{
-    const badgeClass = "badge-"+o.estado;
     const li = document.createElement("li");
     li.className="list-group-item bg-transparent text-white mb-2 p-3";
 
     li.innerHTML = `
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <strong>#${o.consecutivo}</strong> · ${o.cliente.nombre} (${o.cliente.telefono})<br>
-          ${o.vehiculo.placa} - ${o.vehiculo.modelo} (${o.vehiculo.color}, ${o.vehiculo.ano})
-        </div>
-        <div><span class="badge-status ${badgeClass}">${o.estado.toUpperCase()}</span></div>
-      </div>
-
-      <div class="mt-2">
-        <strong>Técnico(s):</strong> ${o.tecnico.join(", ")}<br>
-        <strong>Repuestos:</strong> ${o.repuestos.join(", ")}<br>
-        <strong>Total:</strong> $${o.total.toLocaleString()} | <strong>Pagado:</strong> $${o.pagado.toLocaleString()} | <strong>Saldo:</strong> $${o.saldo.toLocaleString()}
-      </div>
-
-      <div class="mt-3">
-        <button class="btn btn-sm btn-outline-light me-2 btn-cambiar-estado">Cambiar Estado</button>
-        <button class="btn btn-sm btn-success me-2 btn-registrar-pago">Registrar Pago</button>
-        <button class="btn btn-sm btn-warning me-2 btn-agregar-repuesto">Agregar Repuesto</button>
-      </div>
-
-      <details class="mt-3 text-light bg-dark/20 p-2 rounded">
-        <summary>Ver Historial</summary>
-        <ul class="historial-list"></ul>
-      </details>
+      <strong>${o.placa}</strong> - ${o.vehiculo}<br>
+      Cliente: ${o.clienteNombre}<br>
+      Estado: ${o.estado}<br>
+      Total: $${(o.totalOrden || 0).toLocaleString()}
     `;
-
-    // HISTORIAL
-    const histUl = li.querySelector(".historial-list");
-    o.historialEstados.forEach(h=>{
-      const hli = document.createElement("li");
-      hli.textContent = `${h.estado.toUpperCase()} - ${new Date(h.fecha).toLocaleString()}: ${h.notas}`;
-      histUl.appendChild(hli);
-    });
-
-    o.historialPagos.forEach(p=>{
-      const hli = document.createElement("li");
-      hli.textContent = `PAGO - ${new Date(p.fecha).toLocaleString()}: $${p.monto.toLocaleString()}`;
-      histUl.appendChild(hli);
-    });
-
-    o.historialRepuestos.forEach(r=>{
-      const hli = document.createElement("li");
-      hli.textContent = `REPUESTO - ${r.repuesto} agregado ${new Date(r.fecha).toLocaleString()}`;
-      histUl.appendChild(hli);
-    });
-
-    // BOTONES ACCIONES
-    li.querySelector(".btn-cambiar-estado").addEventListener("click",()=>{
-      let idx = estados.indexOf(o.estado);
-      o.estado = estados[(idx+1)%estados.length];
-      o.historialEstados.push({estado:o.estado,fecha:new Date(),notas:"Estado actualizado"});
-      renderOrdenes(ordenes);
-      renderMetrics();
-      hablar("Estado actualizado");
-    });
-
-    li.querySelector(".btn-registrar-pago").addEventListener("click",()=>{  
-      const m = parseFloat(prompt(`Saldo actual: $${o.saldo}\nIngrese valor recibido:`));
-      if(!m || m <=0) return;
-      o.pagado += m; o.saldo = o.total - o.pagado;
-      o.historialPagos.push({monto:m,fecha:new Date()});
-      renderOrdenes(ordenes);
-      renderMetrics();
-      hablar("Pago registrado");
-    });
-
-    li.querySelector(".btn-agregar-repuesto").addEventListener("click",()=>{
-      const rep = prompt("Ingrese nombre del repuesto:");
-      if(!rep) return;
-      o.repuestos.push(rep);
-      o.historialRepuestos.push({repuesto:rep,fecha:new Date()});
-      renderOrdenes(ordenes);
-      renderMetrics();
-      hablar("Repuesto agregado");
-    });
 
     ul.appendChild(li);
   });
 }
 
-// ================= BUSCADOR AVANZADO =================
-document.getElementById("buscador").addEventListener("input", (e)=>{
-  const txt = e.target.value.toLowerCase();
-  const filtradas = ordenes.filter(o=>
-    o.cliente.nombre.toLowerCase().includes(txt) ||
-    o.vehiculo.placa.toLowerCase().includes(txt) ||
-    o.estado.toLowerCase().includes(txt) ||
-    o.tecnico.join(" ").toLowerCase().includes(txt)
-  );
-  renderOrdenes(filtradas);
-});
+// =========================
+// INIT
+// =========================
+cargarOrdenes();
 
-// ================= VOZ =================
-function hablar(texto){
-  const voz = new SpeechSynthesisUtterance(texto);
-  voz.lang="es-ES";
-  speechSynthesis.speak(voz);
-}
-
-// ================= INIT MOCK =================
-renderMetrics();
-renderOrdenes(ordenes);
 </script>
 
 </body>
