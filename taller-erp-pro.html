@@ -143,34 +143,56 @@ snapshot.forEach(d=>inventario.push({id:d.id,...d.data()}));
 
 /* ================= CREAR ORDEN ================= */
 
-document.getElementById("formOrden").addEventListener("submit",async e=>{
-e.preventDefault();
+document.getElementById("formOrden").addEventListener("submit", async e => {
+  e.preventDefault();
 
-try{
+  try {
 
-const repuestosArray = document.getElementById("repuestos").value
-.split(",").map(r=>r.trim()).filter(r=>r);
+    if (!auth.currentUser) {
+      alert("Usuario no autenticado");
+      return;
+    }
 
-await addDoc(collection(db,"empresas",empresaId,"ordenes"),{
-clienteNombre:cliente.value,
-clienteTelefono:telefono.value,
-placa:placa.value,
-vehiculo:vehiculo.value,
-repuestos:repuestosArray,
-totalOrden:parseFloat(total.value),
-pagado:0,
-estado:"activa",
-creadoEn:serverTimestamp()
-});
+    const sucursalId = "aLpkPg2PUwXyQ8rnCSQt"; // ID REAL DE TU SUCURSAL
 
-await descontarInventario(repuestosArray);
+    const repuestosArray = document.getElementById("repuestos").value
+      .split(",")
+      .map(r => r.trim())
+      .filter(r => r);
 
-e.target.reset();
+    await addDoc(
+      collection(
+        db,
+        "empresas",
+        empresaId,
+        "sucursales",
+        sucursalId,
+        "ordenes"
+      ),
+      {
+        clienteNombre: cliente.value,
+        clienteTelefono: telefono.value,
+        placa: placa.value,
+        vehiculo: vehiculo.value,
+        repuestos: repuestosArray,
+        totalOrden: parseFloat(total.value),
+        pagado: 0,
+        estado: "activa",
+        creadoEn: serverTimestamp(),
+        creadoPor: auth.currentUser.uid
+      }
+    );
 
-}catch(err){
-alert("Error creando orden: "+err.message);
-}
+    await descontarInventario(repuestosArray, sucursalId);
 
+    e.target.reset();
+
+    alert("Orden creada correctamente");
+
+  } catch (err) {
+    alert("Error creando orden: " + err.message);
+    console.error(err);
+  }
 });
 
 /* ================= INVENTARIO ================= */
