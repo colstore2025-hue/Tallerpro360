@@ -1,5 +1,5 @@
 /************************************************
- * TallerPRO360 · Módulo Órdenes ULTRA ENTERPRISE
+ * TallerPRO360 · Módulo Órdenes 3.0 ENTERPRISE
  ************************************************/
 
 const functions = require("firebase-functions");
@@ -13,57 +13,25 @@ const {
 } = require("../utils/seguridad");
 
 const { calcularTotales } = require("../utils/helpers");
-const { registrarAsiento } = require("../contabilidad");
+const { registrarAsiento } = require("./contabilidad");
 
 const db = admin.firestore();
-
-// ===============================================
-// 🧠 CONFIGURACIÓN PIPELINE DEFAULT
-// ===============================================
-
-const PIPELINE_DEFAULT = [
-  "Ingreso",
-  "Diagnóstico",
-  "Aprobación",
-  "Reparación",
-  "Control Calidad",
-  "Listo para Entrega",
-  "Entregado"
-];
-
-// ===============================================
-// 🚀 CREAR ORDEN ULTRA
-// ===============================================
 
 exports.crearOrden = functions.https.onCall(async (data, context) => {
 
   try {
 
     const uid = await validarUsuario(context);
+    const { empresaId, sucursalId, orden } = data;
 
-    const {
-      empresaId,
-      sucursalId,
-      orden,
-      modoVoz = false,
-      metadataVoz = null
-    } = data;
+    if (!empresaId || !sucursalId || !orden)
+      throw new functions.https.HttpsError("invalid-argument", "Datos incompletos");
 
-    if (!empresaId || !sucursalId || !orden) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "Datos incompletos"
-      );
-    }
-
-    if (!orden.items || orden.items.length === 0) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "La orden debe tener items"
-      );
-    }
+    if (!orden.items || orden.items.length === 0)
+      throw new functions.https.HttpsError("invalid-argument", "Debe tener items");
 
     const usuario = await obtenerUsuarioEmpresa(empresaId, uid);
+
     await validarPermiso(empresaId, usuario.rol, "crearOrden");
     await validarLimitePlan(empresaId, "ordenes");
 
@@ -71,102 +39,72 @@ exports.crearOrden = functions.https.onCall(async (data, context) => {
     const sucursalRef = empresaRef.collection("sucursales").doc(sucursalId);
 
     const empresaSnap = await empresaRef.get();
-    if (!empresaSnap.exists) {
-      throw new functions.https.HttpsError("not-found", "Empresa no encontrada");
-    }
-
     const empresaData = empresaSnap.data();
-
-    const pipeline = empresaData.configuracion?.pipelinePersonalizado || PIPELINE_DEFAULT;
-
-    // ===============================================
-    // 📊 CÁLCULO FINANCIERO
-    // ===============================================
 
     const { subtotal, iva, total } = calcularTotales(orden.items);
 
+    // =============================
+    // 🧮 CALCULAR UTILIDAD REAL
+    // =============================
+
+    let costoTotal = 0;
+
+    orden.items.forEach(item => {
+      costoTotal += (item.costoUnitario || 0) * item.cantidad;
+    });
+
+    const utilidadBruta = total - costoTotal;
+    const margenGlobal = total > 0 ? (utilidadBruta / total) * 100 : 0;
+
     let ordenId;
     let consecutivoFinal;
-    let costoTotal = 0;
 
     await db.runTransaction(async (transaction) => {
 
       const empresaDoc = await transaction.get(empresaRef);
-      const empresaDataTx = empresaDoc.data();
-
-      consecutivoFinal = (empresaDataTx.consecutivoOrdenes || 0) + 1;
+      const consecutivoActual = empresaDoc.data().consecutivoOrdenes || 0;
+      consecutivoFinal = consecutivoActual + 1;
 
       const ordenRef = sucursalRef.collection("ordenes").doc();
       ordenId = ordenRef.id;
 
-      // ==========================
-      // 📦 INVENTARIO AUTOMÁTICO
-      // ==========================
-
-      for (const item of orden.items) {
-
-        if (item.tipo === "repuesto" && item.inventarioId) {
-
-          const invRef = empresaRef.collection("inventario").doc(item.inventarioId);
-          const invDoc = await transaction.get(invRef);
-
-          if (!invDoc.exists) {
-            throw new Error("Repuesto no encontrado");
-          }
-
-          const invData = invDoc.data();
-
-          if (invData.stock < item.cantidad) {
-            throw new Error(`Stock insuficiente para ${invData.nombre}`);
-          }
-
-          costoTotal += invData.costoUnitario * item.cantidad;
-
-          transaction.update(invRef, {
-            stock: admin.firestore.FieldValue.increment(-item.cantidad)
-          });
-
-        }
-
-      }
-
-      const margen = total - costoTotal;
-
-      // ==========================
-      // 🧠 ESTRUCTURA ORDEN 4.0
-      // ==========================
-
       transaction.set(ordenRef, {
 
         ...orden,
+
         consecutivo: consecutivoFinal,
 
-        subtotal,
-        iva,
-        total,
+        financieros: {
+          subtotal,
+          iva,
+          total,
+          costoTotal,
+          utilidadBruta,
+          margenGlobal
+        },
 
-        costoTotal,
-        margen,
+        flujoTrabajo: {
+          etapaActual: "Ingreso",
+          historial: [
+            {
+              etapa: "Ingreso",
+              iniciadoEn: admin.firestore.FieldValue.serverTimestamp(),
+              responsable: uid
+            }
+          ]
+        },
 
+        logistica: {
+          prioridad: orden.prioridad || "media",
+          tecnicoPrincipal: orden.tecnicoPrincipal || null,
+          fechaPromesaEntrega: orden.fechaPromesaEntrega || null
+        },
+
+        estado: "Ingreso",
         pagado: 0,
         saldo: total,
-
-        estadoActual: pipeline[0],
-        pipeline,
-        historialEstados: [
-          {
-            estado: pipeline[0],
-            fecha: admin.firestore.FieldValue.serverTimestamp(),
-            usuario: uid
-          }
-        ],
-
-        asignadoA: null,
-        SLAHoras: orden.SLAHoras || 24,
-
         creadoPor: uid,
-        modoVoz,
-        metadataVoz,
+        canalCreacion: orden.canalCreacion || "manual",
 
         creadoEn: admin.firestore.FieldValue.serverTimestamp(),
         ultimaActualizacion: admin.firestore.FieldValue.serverTimestamp()
@@ -175,14 +113,48 @@ exports.crearOrden = functions.https.onCall(async (data, context) => {
       transaction.update(empresaRef, {
         consecutivoOrdenes: consecutivoFinal,
         "metricas.ordenesMes": admin.firestore.FieldValue.increment(1),
-        "metricas.ingresosMes": admin.firestore.FieldValue.increment(total)
+        "metricas.ingresosMes": admin.firestore.FieldValue.increment(total),
+        "metricas.utilidadMes": admin.firestore.FieldValue.increment(utilidadBruta)
       });
 
     });
 
-    // ===============================================
-    // 📘 CONTABILIDAD AUTOMÁTICA
-    // ===============================================
+    // =============================
+    // 📦 INVENTARIO AUTOMÁTICO
+    // =============================
+
+    for (const item of orden.items) {
+
+      if (item.tipo === "repuesto" && item.repuestoId) {
+
+        const repuestoRef = empresaRef.collection("inventario").doc(item.repuestoId);
+
+        await repuestoRef.update({
+          stock: admin.firestore.FieldValue.increment(-item.cantidad)
+        });
+
+      }
+    }
+
+    // =============================
+    // 🧠 ACTUALIZAR CRM CLIENTE
+    // =============================
+
+    if (orden.cliente?.id) {
+
+      const clienteRef = empresaRef.collection("clientes").doc(orden.cliente.id);
+
+      await clienteRef.update({
+        totalFacturado: admin.firestore.FieldValue.increment(total),
+        visitas: admin.firestore.FieldValue.increment(1),
+        ultimaVisita: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+    }
+
+    // =============================
+    // 📘 CONTABILIDAD AVANZADA
+    // =============================
 
     if (empresaData.configuracion?.contabilidadAvanzada) {
 
@@ -200,43 +172,17 @@ exports.crearOrden = functions.https.onCall(async (data, context) => {
 
     }
 
-    // ===============================================
-    // 🧠 CRM INTELIGENTE
-    // ===============================================
-
-    if (orden.clienteId) {
-
-      const clienteRef = empresaRef.collection("clientes").doc(orden.clienteId);
-
-      await clienteRef.update({
-        ultimaOrden: admin.firestore.FieldValue.serverTimestamp(),
-        totalFacturado: admin.firestore.FieldValue.increment(total),
-        numeroOrdenes: admin.firestore.FieldValue.increment(1)
-      });
-
-    }
-
-    // ===============================================
-    // 📊 MÉTRICAS PREDICTIVAS
-    // ===============================================
-
-    const mesKey = new Date().toISOString().slice(0,7);
-
-    await empresaRef.collection("metricasMensuales").doc(mesKey).set({
-      ingresos: admin.firestore.FieldValue.increment(total),
-      ordenes: admin.firestore.FieldValue.increment(1)
-    }, { merge: true });
-
     return {
       ok: true,
       ordenId,
       consecutivo: consecutivoFinal,
-      margen
+      utilidadBruta,
+      margenGlobal
     };
 
   } catch (error) {
 
-    console.error("Error creando orden ULTRA:", error);
+    console.error("Error creando orden:", error);
 
     throw new functions.https.HttpsError(
       error.code || "internal",
