@@ -1,5 +1,6 @@
 /************************************************
- * TallerPRO360 · Módulo Órdenes 3.0 ENTERPRISE
+ * TallerPRO360 · Módulo Órdenes 5.0 SUPREME
+ * ERP + CRM + Logística + IA + SaaS Metrics
  ************************************************/
 
 const functions = require("firebase-functions");
@@ -16,10 +17,19 @@ const { calcularTotales } = require("../utils/helpers");
 const { registrarAsiento } = require("./contabilidad");
 
 const db = admin.firestore();
+const FieldValue = admin.firestore.FieldValue;
+
+/* ======================================================
+   🔥 CREAR ORDEN ULTRA ENTERPRISE
+====================================================== */
 
 exports.crearOrden = functions.https.onCall(async (data, context) => {
 
   try {
+
+    /* =============================
+       🔐 VALIDACIONES BASE
+    ============================== */
 
     const uid = await validarUsuario(context);
     const { empresaId, sucursalId, orden } = data;
@@ -27,25 +37,26 @@ exports.crearOrden = functions.https.onCall(async (data, context) => {
     if (!empresaId || !sucursalId || !orden)
       throw new functions.https.HttpsError("invalid-argument", "Datos incompletos");
 
-    if (!orden.items || orden.items.length === 0)
-      throw new functions.https.HttpsError("invalid-argument", "Debe tener items");
+    if (!orden.items || !Array.isArray(orden.items) || orden.items.length === 0)
+      throw new functions.https.HttpsError("invalid-argument", "La orden debe tener items");
 
     const usuario = await obtenerUsuarioEmpresa(empresaId, uid);
-
     await validarPermiso(empresaId, usuario.rol, "crearOrden");
     await validarLimitePlan(empresaId, "ordenes");
 
     const empresaRef = db.collection("empresas").doc(empresaId);
     const sucursalRef = empresaRef.collection("sucursales").doc(sucursalId);
-
     const empresaSnap = await empresaRef.get();
     const empresaData = empresaSnap.data();
 
-    const { subtotal, iva, total } = calcularTotales(orden.items);
+    if (!empresaSnap.exists)
+      throw new functions.https.HttpsError("not-found", "Empresa no encontrada");
 
-    // =============================
-    // 🧮 CALCULAR UTILIDAD REAL
-    // =============================
+    /* =============================
+       🧮 CÁLCULOS FINANCIEROS
+    ============================== */
+
+    const { subtotal, iva, total } = calcularTotales(orden.items);
 
     let costoTotal = 0;
 
@@ -55,6 +66,35 @@ exports.crearOrden = functions.https.onCall(async (data, context) => {
 
     const utilidadBruta = total - costoTotal;
     const margenGlobal = total > 0 ? (utilidadBruta / total) * 100 : 0;
+
+    /* =============================
+       🧠 MOTOR IA BÁSICO
+    ============================== */
+
+    const probabilidadRetorno = total > 500000 ? 0.75 : 0.45;
+    const ticketProyectadoProximo = total * 0.6;
+
+    /* =============================
+       👷 ASIGNACIÓN AUTOMÁTICA TÉCNICO
+    ============================== */
+
+    let tecnicoAsignado = orden.tecnicoPrincipal || null;
+
+    if (!tecnicoAsignado && empresaData.configuracion?.asignacionAutomatica) {
+
+      const tecnicosSnap = await empresaRef
+        .collection("usuarios")
+        .where("rol", "==", "tecnico")
+        .get();
+
+      if (!tecnicosSnap.empty) {
+        tecnicoAsignado = tecnicosSnap.docs[0].id;
+      }
+    }
+
+    /* =============================
+       🔄 TRANSACCIÓN CENTRAL
+    ============================== */
 
     let ordenId;
     let consecutivoFinal;
@@ -73,6 +113,7 @@ exports.crearOrden = functions.https.onCall(async (data, context) => {
         ...orden,
 
         consecutivo: consecutivoFinal,
+        tecnicoPrincipal: tecnicoAsignado,
 
         financieros: {
           subtotal,
@@ -83,12 +124,18 @@ exports.crearOrden = functions.https.onCall(async (data, context) => {
           margenGlobal
         },
 
+        ia: {
+          probabilidadRetorno,
+          ticketProyectadoProximo,
+          mantenimientoSugerido: []
+        },
+
         flujoTrabajo: {
           etapaActual: "Ingreso",
           historial: [
             {
               etapa: "Ingreso",
-              iniciadoEn: admin.firestore.FieldValue.serverTimestamp(),
+              iniciadoEn: FieldValue.serverTimestamp(),
               responsable: uid
             }
           ]
@@ -96,8 +143,8 @@ exports.crearOrden = functions.https.onCall(async (data, context) => {
 
         logistica: {
           prioridad: orden.prioridad || "media",
-          tecnicoPrincipal: orden.tecnicoPrincipal || null,
-          fechaPromesaEntrega: orden.fechaPromesaEntrega || null
+          fechaPromesaEntrega: orden.fechaPromesaEntrega || null,
+          tiempoEstimadoMin: orden.tiempoEstimadoMin || 60
         },
 
         estado: "Ingreso",
@@ -106,55 +153,82 @@ exports.crearOrden = functions.https.onCall(async (data, context) => {
         creadoPor: uid,
         canalCreacion: orden.canalCreacion || "manual",
 
-        creadoEn: admin.firestore.FieldValue.serverTimestamp(),
-        ultimaActualizacion: admin.firestore.FieldValue.serverTimestamp()
+        creadoEn: FieldValue.serverTimestamp(),
+        ultimaActualizacion: FieldValue.serverTimestamp()
       });
 
       transaction.update(empresaRef, {
         consecutivoOrdenes: consecutivoFinal,
-        "metricas.ordenesMes": admin.firestore.FieldValue.increment(1),
-        "metricas.ingresosMes": admin.firestore.FieldValue.increment(total),
-        "metricas.utilidadMes": admin.firestore.FieldValue.increment(utilidadBruta)
+        "metricas.ordenesMes": FieldValue.increment(1),
+        "metricas.ingresosMes": FieldValue.increment(total),
+        "metricas.utilidadMes": FieldValue.increment(utilidadBruta)
       });
+
+      /* 👑 MÉTRICAS GLOBALES SaaS */
+
+      const globalRef = db.collection("plataformaStats").doc("global");
+
+      transaction.set(globalRef, {
+        ordenesTotales: FieldValue.increment(1),
+        facturacionGlobal: FieldValue.increment(total)
+      }, { merge: true });
 
     });
 
-    // =============================
-    // 📦 INVENTARIO AUTOMÁTICO
-    // =============================
+    /* =============================
+       📦 INVENTARIO AUTOMÁTICO + ALERTAS
+    ============================== */
 
     for (const item of orden.items) {
 
       if (item.tipo === "repuesto" && item.repuestoId) {
 
         const repuestoRef = empresaRef.collection("inventario").doc(item.repuestoId);
+        const repuestoSnap = await repuestoRef.get();
 
-        await repuestoRef.update({
-          stock: admin.firestore.FieldValue.increment(-item.cantidad)
-        });
+        if (repuestoSnap.exists) {
 
+          const stockActual = repuestoSnap.data().stock || 0;
+          const nuevoStock = stockActual - item.cantidad;
+
+          await repuestoRef.update({
+            stock: FieldValue.increment(-item.cantidad)
+          });
+
+          if (nuevoStock <= (repuestoSnap.data().stockMinimo || 5)) {
+
+            await empresaRef.collection("alertas").add({
+              tipo: "stock_bajo",
+              repuestoId: item.repuestoId,
+              creadoEn: FieldValue.serverTimestamp(),
+              visto: false
+            });
+
+          }
+        }
       }
     }
 
-    // =============================
-    // 🧠 ACTUALIZAR CRM CLIENTE
-    // =============================
+    /* =============================
+       🧠 ACTUALIZAR CRM CLIENTE
+    ============================== */
 
     if (orden.cliente?.id) {
 
       const clienteRef = empresaRef.collection("clientes").doc(orden.cliente.id);
 
-      await clienteRef.update({
-        totalFacturado: admin.firestore.FieldValue.increment(total),
-        visitas: admin.firestore.FieldValue.increment(1),
-        ultimaVisita: admin.firestore.FieldValue.serverTimestamp()
-      });
+      await clienteRef.set({
+        totalFacturado: FieldValue.increment(total),
+        visitas: FieldValue.increment(1),
+        ultimaVisita: FieldValue.serverTimestamp(),
+        crmScore: FieldValue.increment(utilidadBruta > 0 ? 5 : 1)
+      }, { merge: true });
 
     }
 
-    // =============================
-    // 📘 CONTABILIDAD AVANZADA
-    // =============================
+    /* =============================
+       📘 CONTABILIDAD
+    ============================== */
 
     if (empresaData.configuracion?.contabilidadAvanzada) {
 
@@ -172,12 +246,26 @@ exports.crearOrden = functions.https.onCall(async (data, context) => {
 
     }
 
+    /* =============================
+       📲 EVENTO PARA WHATSAPP
+       (Webhook externo escucha colección)
+    ============================== */
+
+    await empresaRef.collection("eventos").add({
+      tipo: "orden_creada",
+      ordenId,
+      clienteTelefono: orden.cliente?.telefono || null,
+      creadoEn: FieldValue.serverTimestamp(),
+      procesado: false
+    });
+
     return {
       ok: true,
       ordenId,
       consecutivo: consecutivoFinal,
       utilidadBruta,
-      margenGlobal
+      margenGlobal,
+      probabilidadRetorno
     };
 
   } catch (error) {
