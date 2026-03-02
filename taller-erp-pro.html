@@ -72,6 +72,10 @@ getFirestore, collection, addDoc, updateDoc, doc,
 onSnapshot, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+import { 
+getAuth, onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
 /* 🔥 TU CONFIG REAL */
 const firebaseConfig = {
   apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
@@ -84,6 +88,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 /* 🔥 EMPRESA REAL */
 const empresaId = "aBc123XYZ";
@@ -92,8 +97,25 @@ let ordenes = [];
 let inventario = [];
 let chart;
 
-/* ================= REALTIME ================= */
+/* ================= AUTH ================= */
 
+onAuthStateChanged(auth, (user)=>{
+
+if(!user){
+alert("Debes iniciar sesión primero");
+window.location.href = "login.html";
+return;
+}
+
+iniciarERP();
+
+});
+
+/* ================= INICIAR ERP ================= */
+
+function iniciarERP(){
+
+/* REALTIME ORDENES */
 onSnapshot(
 collection(db,"empresas",empresaId,"ordenes"),
 (snapshot)=>{
@@ -104,10 +126,11 @@ renderMetricas();
 renderGrafico();
 },
 (error)=>{
-alert("Error cargando órdenes: "+error.message);
+alert("Error permisos órdenes: "+error.message);
 }
 );
 
+/* REALTIME INVENTARIO */
 onSnapshot(
 collection(db,"empresas",empresaId,"inventario"),
 (snapshot)=>{
@@ -115,6 +138,8 @@ inventario=[];
 snapshot.forEach(d=>inventario.push({id:d.id,...d.data()}));
 }
 );
+
+}
 
 /* ================= CREAR ORDEN ================= */
 
@@ -256,5 +281,6 @@ datasets:[{label:"Ingresos",data:Object.values(meses)}]
 }
 
 </script>
+
 </body>
 </html>
