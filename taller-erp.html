@@ -3,48 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TallerPRO360 | ERP Operativo PRO</title>
+<title>TallerPRO360 | ERP PRO 360</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body {
-  background: linear-gradient(135deg,#0f172a,#111827);
+body{
+  background:linear-gradient(135deg,#0f172a,#111827);
   color:#f1f5f9;
   font-family:'Inter',sans-serif;
 }
 .glass{
-  background: rgba(15,23,42,.85);
-  backdrop-filter: blur(18px);
-  border-radius: 1.5rem;
+  background:rgba(15,23,42,.85);
+  backdrop-filter:blur(18px);
+  border-radius:1.2rem;
   border:1px solid rgba(255,255,255,.1);
-  padding: 1.5rem;
+  padding:1.5rem;
   margin-bottom:1.2rem;
-}
-.badge-status{
-  padding:6px 14px;
-  border-radius:20px;
-  font-size:12px;
-  font-weight:700;
-}
-input, select, textarea{
-  background:#0f172a !important;
-  border:1px solid rgba(255,255,255,.25) !important;
-  color:#fff !important;
-}
-input::placeholder, textarea::placeholder{
-  color:#cbd5e1 !important;
 }
 .btn-pro{
   background:#22c55e;
   border:none;
-  color:#111;
   font-weight:600;
 }
-.btn-pro:hover{
-  background:#16a34a;
-  color:#fff;
+.metric-card h2{
+  font-weight:700;
 }
 </style>
 </head>
@@ -52,196 +36,252 @@ input::placeholder, textarea::placeholder{
 
 <div class="container">
 
-  <h1 class="text-center mb-4">ERP Operativo PRO - TallerPRO360</h1>
+<h2 class="text-center mb-4">ERP OPERATIVO PRO 360</h2>
 
-  <!-- MÉTRICAS -->
-  <div class="row mb-4" id="dashboard-metrics"></div>
+<div class="row mb-4" id="metricas"></div>
 
-  <!-- FORMULARIO ORDEN -->
-  <div class="glass">
-    <h5 class="mb-3">Registrar Nueva Orden</h5>
-    <form id="formOrden">
+<div class="glass">
+<h5>Nueva Orden</h5>
+<form id="formOrden">
 
-      <div class="row">
-        <div class="col-md-6 mb-2">
-          <label class="text-white">Nombre del cliente</label>
-          <input type="text" id="clienteNombre" class="form-control" placeholder="Ej: Juan Pérez" required>
-        </div>
+<div class="row">
+<div class="col-md-6 mb-2">
+<input class="form-control" id="clienteNombre" placeholder="Cliente" required>
+</div>
+<div class="col-md-6 mb-2">
+<input class="form-control" id="clienteTelefono" placeholder="Teléfono" required>
+</div>
+<div class="col-md-4 mb-2">
+<input class="form-control" id="placa" placeholder="Placa" required>
+</div>
+<div class="col-md-4 mb-2">
+<input class="form-control" id="modelo" placeholder="Modelo" required>
+</div>
+<div class="col-md-4 mb-2">
+<input class="form-control" id="repuestos" placeholder="Repuestos (coma)">
+</div>
+<div class="col-md-6 mb-2">
+<input type="number" class="form-control" id="total" placeholder="Total" required>
+</div>
+</div>
 
-        <div class="col-md-6 mb-2">
-          <label class="text-white">Teléfono</label>
-          <input type="text" id="clienteTelefono" class="form-control" placeholder="Ej: 3101234567" required>
-        </div>
+<button class="btn btn-pro w-100 mt-3">Crear Orden</button>
+</form>
+</div>
 
-        <div class="col-md-4 mb-2">
-          <label class="text-white">Placa del vehículo</label>
-          <input type="text" id="placa" class="form-control" placeholder="Ej: ABC123" required>
-        </div>
+<div class="glass">
+<h5>Órdenes en Tiempo Real</h5>
+<ul class="list-group bg-transparent" id="listaOrdenes"></ul>
+</div>
 
-        <div class="col-md-4 mb-2">
-          <label class="text-white">Modelo</label>
-          <input type="text" id="vehiculoModelo" class="form-control" placeholder="Ej: Toyota Corolla" required>
-        </div>
-
-        <div class="col-md-4 mb-2">
-          <label class="text-white">Color</label>
-          <input type="text" id="vehiculoColor" class="form-control" placeholder="Ej: Rojo">
-        </div>
-
-        <div class="col-md-4 mb-2">
-          <label class="text-white">Año</label>
-          <input type="number" id="vehiculoAno" class="form-control" placeholder="Ej: 2021">
-        </div>
-
-        <div class="col-md-4 mb-2">
-          <label class="text-white">Técnico asignado</label>
-          <input type="text" id="tecnicoAsignado" class="form-control" placeholder="Ej: Carlos / Maria">
-        </div>
-
-        <div class="col-md-4 mb-2">
-          <label class="text-white">Repuestos (separados por coma)</label>
-          <input type="text" id="repuestos" class="form-control" placeholder="Ej: Filtro, Aceite">
-        </div>
-
-        <div class="col-md-6 mb-2">
-          <label class="text-white">Total estimado</label>
-          <input type="number" id="total" class="form-control" placeholder="Ej: 250000" required>
-        </div>
-
-      </div>
-
-      <button class="btn btn-pro w-100 mt-3">Registrar Orden</button>
-
-    </form>
-  </div>
-
-  <!-- BUSCADOR -->
-  <div class="glass">
-    <input type="text" id="buscador" class="form-control" placeholder="Buscar por cliente, placa, técnico o estado">
-  </div>
-
-  <!-- LISTA ORDENES -->
-  <div class="glass">
-    <h5>Órdenes Operativas</h5>
-    <ul class="list-group bg-transparent" id="ordenesUl"></ul>
-  </div>
+<div class="glass">
+<h5>Ingresos Mensuales</h5>
+<canvas id="graficoIngresos"></canvas>
+</div>
 
 </div>
 
 <script type="module">
 
 import { 
-  getFirestore, collection, addDoc, getDocs, 
-  doc, updateDoc, serverTimestamp 
+getFirestore, collection, addDoc, updateDoc, doc,
+onSnapshot, serverTimestamp, query, orderBy 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const db = getFirestore();
 const auth = getAuth();
-
 const empresaId = localStorage.getItem("empresaId");
 
 let ordenes = [];
+let inventario = [];
 
-// =========================
-// CARGAR ÓRDENES REALES
-// =========================
-async function cargarOrdenes() {
-  ordenes = [];
+/* =========================
+   INIT REALTIME
+========================= */
 
-  const snapshot = await getDocs(
-    collection(db, "empresas", empresaId, "ordenes")
+function initRealtimeOrdenes(){
+  const q = query(
+    collection(db,"empresas",empresaId,"ordenes"),
+    orderBy("creadoEn","desc")
   );
 
-  snapshot.forEach(docSnap => {
-    const data = docSnap.data();
-    ordenes.push({
-      id: docSnap.id,
-      ...data
-    });
+  onSnapshot(q,(snap)=>{
+    ordenes=[];
+    snap.forEach(d=>ordenes.push({id:d.id,...d.data()}));
+    renderOrdenes();
+    renderMetricas();
+    renderGrafico();
+    evaluarCRM();
   });
-
-  renderOrdenes(ordenes);
-  renderMetrics();
 }
 
-// =========================
-// MÉTRICAS
-// =========================
-function renderMetrics(){
-  const activas = ordenes.filter(o=>o.estado !== "entregado" && o.estado !== "facturado").length;
-  const ingresos = ordenes.reduce((acc,o)=>acc+(o.pagado || 0),0);
-  const pendientes = ordenes.reduce((acc,o)=>acc+((o.totalOrden || 0)-(o.pagado || 0)),0);
-  const promedio = ordenes.length ? Math.floor(ingresos/ordenes.length) : 0;
-
-  document.getElementById("dashboard-metrics").innerHTML = `
-    <div class="col-md-3"><div class="metric-card glass"><h6>Órdenes Activas</h6><h2>${activas}</h2></div></div>
-    <div class="col-md-3"><div class="metric-card glass"><h6>Ingresos</h6><h2>$${ingresos.toLocaleString()}</h2></div></div>
-    <div class="col-md-3"><div class="metric-card glass"><h6>Pendientes</h6><h2>$${pendientes.toLocaleString()}</h2></div></div>
-    <div class="col-md-3"><div class="metric-card glass"><h6>Ticket Promedio</h6><h2>$${promedio.toLocaleString()}</h2></div></div>
-  `;
+function initRealtimeInventario(){
+  onSnapshot(
+    collection(db,"empresas",empresaId,"inventario"),
+    (snap)=>{
+      inventario=[];
+      snap.forEach(d=>inventario.push({id:d.id,...d.data()}));
+    }
+  );
 }
 
-// =========================
-// CREAR ORDEN REAL
-// =========================
-document.getElementById("formOrden").addEventListener("submit", async e=>{
+/* =========================
+   CREAR ORDEN + INVENTARIO
+========================= */
+
+document.getElementById("formOrden").addEventListener("submit",async e=>{
   e.preventDefault();
 
-  const clienteNombre = document.getElementById("clienteNombre").value.trim();
-  const clienteTelefono = document.getElementById("clienteTelefono").value.trim();
-  const placa = document.getElementById("placa").value.trim();
-  const modelo = document.getElementById("vehiculoModelo").value.trim();
-  const total = parseFloat(document.getElementById("total").value);
+  const repuestosInput = document.getElementById("repuestos").value;
+  const repuestosArray = repuestosInput.split(",").map(r=>r.trim()).filter(r=>r);
 
   const nuevaOrden = {
-    clienteNombre,
-    clienteTelefono,
-    placa,
-    vehiculo: modelo,
-    totalOrden: total,
-    pagado: 0,
-    estado: "en_proceso",
-    usuarioId: auth.currentUser.uid,
-    creadoEn: serverTimestamp()
+    clienteNombre:clienteNombre.value,
+    clienteTelefono:clienteTelefono.value,
+    placa:placa.value,
+    vehiculo:modelo.value,
+    repuestos:repuestosArray,
+    totalOrden:parseFloat(total.value),
+    pagado:0,
+    estado:"en_proceso",
+    usuarioId:auth.currentUser.uid,
+    creadoEn:serverTimestamp()
   };
 
   await addDoc(
-    collection(db, "empresas", empresaId, "ordenes"),
+    collection(db,"empresas",empresaId,"ordenes"),
     nuevaOrden
   );
 
+  await descontarInventario(repuestosArray);
+
   e.target.reset();
-  await cargarOrdenes();
 });
 
-// =========================
-// RENDER ÓRDENES
-// =========================
-function renderOrdenes(list){
-  const ul = document.getElementById("ordenesUl");
+/* =========================
+   DESCONTAR INVENTARIO
+========================= */
+
+async function descontarInventario(repuestos){
+  for(const nombreRepuesto of repuestos){
+    const item = inventario.find(i=>i.nombre.toLowerCase()===nombreRepuesto.toLowerCase());
+    if(item){
+      const nuevoStock = item.stockActual - 1;
+
+      await updateDoc(
+        doc(db,"empresas",empresaId,"inventario",item.id),
+        { stockActual:nuevoStock }
+      );
+
+      await addDoc(
+        collection(db,"empresas",empresaId,"movimientosInventario"),
+        {
+          tipo:"salida",
+          producto:item.nombre,
+          cantidad:1,
+          fecha:serverTimestamp()
+        }
+      );
+    }
+  }
+}
+
+/* =========================
+   MÉTRICAS
+========================= */
+
+function renderMetricas(){
+  const activas = ordenes.filter(o=>o.estado==="en_proceso").length;
+  const ingresos = ordenes.reduce((acc,o)=>acc+(o.pagado||0),0);
+  const pendientes = ordenes.reduce((acc,o)=>acc+((o.totalOrden||0)-(o.pagado||0)),0);
+  const promedio = ordenes.length ? Math.floor(ingresos/ordenes.length):0;
+
+  document.getElementById("metricas").innerHTML=`
+  <div class="col-md-3"><div class="glass metric-card"><h6>Activas</h6><h2>${activas}</h2></div></div>
+  <div class="col-md-3"><div class="glass metric-card"><h6>Ingresos</h6><h2>$${ingresos.toLocaleString()}</h2></div></div>
+  <div class="col-md-3"><div class="glass metric-card"><h6>Pendientes</h6><h2>$${pendientes.toLocaleString()}</h2></div></div>
+  <div class="col-md-3"><div class="glass metric-card"><h6>Ticket Prom.</h6><h2>$${promedio.toLocaleString()}</h2></div></div>
+  `;
+}
+
+/* =========================
+   ÓRDENES
+========================= */
+
+function renderOrdenes(){
+  const ul=document.getElementById("listaOrdenes");
   ul.innerHTML="";
-
-  list.forEach(o=>{
-    const li = document.createElement("li");
-    li.className="list-group-item bg-transparent text-white mb-2 p-3";
-
-    li.innerHTML = `
+  ordenes.forEach(o=>{
+    const li=document.createElement("li");
+    li.className="list-group-item bg-transparent text-white mb-2";
+    li.innerHTML=`
       <strong>${o.placa}</strong> - ${o.vehiculo}<br>
-      Cliente: ${o.clienteNombre}<br>
+      ${o.clienteNombre}<br>
       Estado: ${o.estado}<br>
-      Total: $${(o.totalOrden || 0).toLocaleString()}
+      Total: $${(o.totalOrden||0).toLocaleString()}
     `;
-
     ul.appendChild(li);
   });
 }
 
-// =========================
-// INIT
-// =========================
-cargarOrdenes();
+/* =========================
+   DASHBOARD MENSUAL + IA
+========================= */
+
+let chart;
+
+function renderGrafico(){
+  const meses={};
+  ordenes.forEach(o=>{
+    if(!o.creadoEn?.seconds) return;
+    const d=new Date(o.creadoEn.seconds*1000);
+    const key=d.getMonth()+1;
+    meses[key]=(meses[key]||0)+(o.pagado||0);
+  });
+
+  const labels=Object.keys(meses);
+  const data=Object.values(meses);
+
+  if(chart) chart.destroy();
+
+  chart=new Chart(document.getElementById("graficoIngresos"),{
+    type:"line",
+    data:{
+      labels,
+      datasets:[{label:"Ingresos",data}]
+    }
+  });
+}
+
+/* =========================
+   CRM INTELIGENTE
+========================= */
+
+function evaluarCRM(){
+  ordenes.forEach(async o=>{
+    const deuda=(o.totalOrden||0)-(o.pagado||0);
+    if(deuda>0){
+      await addDoc(
+        collection(db,"empresas",empresaId,"finanzas"),
+        {
+          tipo:"alerta_deuda",
+          cliente:o.clienteNombre,
+          deuda,
+          fecha:serverTimestamp()
+        }
+      );
+    }
+  });
+}
+
+/* =========================
+   INIT
+========================= */
+
+initRealtimeOrdenes();
+initRealtimeInventario();
 
 </script>
 
