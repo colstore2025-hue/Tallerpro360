@@ -21,7 +21,6 @@ border-radius:1rem;
 padding:1.5rem;
 margin-bottom:1rem;
 }
-.metric h2{font-weight:700;}
 .btn-pro{
 background:#22c55e;
 border:none;
@@ -70,25 +69,24 @@ font-weight:600;
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { 
 getFirestore, collection, addDoc, updateDoc, doc,
-onSnapshot, serverTimestamp, query, orderBy 
+onSnapshot, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* 🔴 USA TU CONFIG REAL */
+/* 🔥 TU CONFIG REAL */
 const firebaseConfig = {
   apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
   authDomain: "tallerpro360.firebaseapp.com",
   projectId: "tallerpro360",
   storageBucket: "tallerpro360.firebasestorage.app",
   messagingSenderId: "636224778184",
-  appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
-  measurementId: "G-VEC2C0QX2G"
+  appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* 🔥 EMPRESA FIJA (LA TUYA REAL) */
-const empresaId = "tallerpro360_demo";
+/* 🔥 EMPRESA REAL */
+const empresaId = "aBc123XYZ";
 
 let ordenes = [];
 let inventario = [];
@@ -96,153 +94,166 @@ let chart;
 
 /* ================= REALTIME ================= */
 
-function initOrdenes(){
-  const q = query(
-    collection(db,"empresas",empresaId,"ordenes"),
-    orderBy("creadoEn","desc")
-  );
-
-  onSnapshot(q,(snap)=>{
-    ordenes=[];
-    snap.forEach(d=>ordenes.push({id:d.id,...d.data()}));
-    renderOrdenes();
-    renderMetricas();
-    renderGrafico();
-  });
+onSnapshot(
+collection(db,"empresas",empresaId,"ordenes"),
+(snapshot)=>{
+ordenes=[];
+snapshot.forEach(d=>ordenes.push({id:d.id,...d.data()}));
+renderOrdenes();
+renderMetricas();
+renderGrafico();
+},
+(error)=>{
+alert("Error cargando órdenes: "+error.message);
 }
+);
 
-function initInventario(){
-  onSnapshot(
-    collection(db,"empresas",empresaId,"inventario"),
-    (snap)=>{
-      inventario=[];
-      snap.forEach(d=>inventario.push({id:d.id,...d.data()}));
-    }
-  );
+onSnapshot(
+collection(db,"empresas",empresaId,"inventario"),
+(snapshot)=>{
+inventario=[];
+snapshot.forEach(d=>inventario.push({id:d.id,...d.data()}));
 }
+);
 
 /* ================= CREAR ORDEN ================= */
 
 document.getElementById("formOrden").addEventListener("submit",async e=>{
-  e.preventDefault();
+e.preventDefault();
 
-  const repuestosArray = repuestos.value.split(",").map(r=>r.trim()).filter(r=>r);
+try{
 
-  const nuevaOrden={
-    clienteNombre:cliente.value,
-    clienteTelefono:telefono.value,
-    placa:placa.value,
-    vehiculo:vehiculo.value,
-    repuestos:repuestosArray,
-    totalOrden:parseFloat(total.value),
-    pagado:0,
-    estado:"activa",
-    creadoEn:serverTimestamp()
-  };
+const repuestosArray = document.getElementById("repuestos").value
+.split(",").map(r=>r.trim()).filter(r=>r);
 
-  await addDoc(collection(db,"empresas",empresaId,"ordenes"),nuevaOrden);
-  await descontarInventario(repuestosArray);
+await addDoc(collection(db,"empresas",empresaId,"ordenes"),{
+clienteNombre:cliente.value,
+clienteTelefono:telefono.value,
+placa:placa.value,
+vehiculo:vehiculo.value,
+repuestos:repuestosArray,
+totalOrden:parseFloat(total.value),
+pagado:0,
+estado:"activa",
+creadoEn:serverTimestamp()
+});
 
-  e.target.reset();
+await descontarInventario(repuestosArray);
+
+e.target.reset();
+
+}catch(err){
+alert("Error creando orden: "+err.message);
+}
+
 });
 
 /* ================= INVENTARIO ================= */
 
 async function descontarInventario(lista){
-  for(const nombre of lista){
-    const item = inventario.find(i=>i.nombre.toLowerCase()===nombre.toLowerCase());
-    if(item){
-      await updateDoc(
-        doc(db,"empresas",empresaId,"inventario",item.id),
-        { stockActual:item.stockActual-1 }
-      );
 
-      await addDoc(
-        collection(db,"empresas",empresaId,"movimientosInventario"),
-        {
-          tipo:"salida",
-          producto:item.nombre,
-          cantidad:1,
-          fecha:serverTimestamp()
-        }
-      );
-    }
-  }
+for(const nombre of lista){
+
+const item = inventario.find(i=>
+i.nombre?.toLowerCase()===nombre.toLowerCase()
+);
+
+if(item){
+
+await updateDoc(
+doc(db,"empresas",empresaId,"inventario",item.id),
+{ stockActual:(item.stockActual||0)-1 }
+);
+
+await addDoc(
+collection(db,"empresas",empresaId,"movimientosInventario"),
+{
+tipo:"salida",
+producto:item.nombre,
+cantidad:1,
+fecha:serverTimestamp()
+}
+);
+
+}
+
+}
+
 }
 
 /* ================= MÉTRICAS ================= */
 
 function renderMetricas(){
-  const totalOrdenes = ordenes.length;
-  const ingresos = ordenes.reduce((a,o)=>a+(o.pagado||0),0);
-  const pendientes = ordenes.reduce((a,o)=>a+((o.totalOrden||0)-(o.pagado||0)),0);
 
-  document.getElementById("metricas").innerHTML=`
-  <div class="col-md-4">
-    <div class="glass">
-      <h6>Órdenes</h6>
-      <h2>${totalOrdenes}</h2>
-    </div>
-  </div>
-  <div class="col-md-4">
-    <div class="glass">
-      <h6>Ingresos</h6>
-      <h2>$${ingresos.toLocaleString()}</h2>
-    </div>
-  </div>
-  <div class="col-md-4">
-    <div class="glass">
-      <h6>Pendientes</h6>
-      <h2>$${pendientes.toLocaleString()}</h2>
-    </div>
-  </div>
-  `;
+const totalOrdenes = ordenes.length;
+const ingresos = ordenes.reduce((a,o)=>a+(o.pagado||0),0);
+const pendientes = ordenes.reduce((a,o)=>a+((o.totalOrden||0)-(o.pagado||0)),0);
+
+document.getElementById("metricas").innerHTML=`
+<div class="col-md-4">
+<div class="glass">
+<h6>Órdenes</h6>
+<h2>${totalOrdenes}</h2>
+</div>
+</div>
+<div class="col-md-4">
+<div class="glass">
+<h6>Ingresos</h6>
+<h2>$${ingresos.toLocaleString()}</h2>
+</div>
+</div>
+<div class="col-md-4">
+<div class="glass">
+<h6>Pendientes</h6>
+<h2>$${pendientes.toLocaleString()}</h2>
+</div>
+</div>
+`;
+
 }
 
 /* ================= LISTADO ================= */
 
 function renderOrdenes(){
-  const ul=document.getElementById("listaOrdenes");
-  ul.innerHTML="";
-  ordenes.forEach(o=>{
-    const li=document.createElement("li");
-    li.className="list-group-item bg-transparent text-white mb-2";
-    li.innerHTML=`
-      <strong>${o.placa}</strong> - ${o.vehiculo}<br>
-      ${o.clienteNombre}<br>
-      Total: $${o.totalOrden}
-    `;
-    ul.appendChild(li);
-  });
+const ul=document.getElementById("listaOrdenes");
+ul.innerHTML="";
+ordenes.forEach(o=>{
+const li=document.createElement("li");
+li.className="list-group-item bg-transparent text-white mb-2";
+li.innerHTML=`
+<strong>${o.placa}</strong> - ${o.vehiculo}<br>
+${o.clienteNombre}<br>
+Total: $${o.totalOrden}
+`;
+ul.appendChild(li);
+});
 }
 
 /* ================= GRÁFICO ================= */
 
 function renderGrafico(){
-  const meses={};
 
-  ordenes.forEach(o=>{
-    if(!o.creadoEn?.seconds) return;
-    const d=new Date(o.creadoEn.seconds*1000);
-    const mes=d.getMonth()+1;
-    meses[mes]=(meses[mes]||0)+(o.pagado||0);
-  });
+const meses={};
 
-  if(chart) chart.destroy();
+ordenes.forEach(o=>{
+if(!o.creadoEn) return;
+if(!o.creadoEn.seconds) return;
+const d=new Date(o.creadoEn.seconds*1000);
+const mes=d.getMonth()+1;
+meses[mes]=(meses[mes]||0)+(o.pagado||0);
+});
 
-  chart=new Chart(document.getElementById("grafico"),{
-    type:"line",
-    data:{
-      labels:Object.keys(meses),
-      datasets:[{label:"Ingresos",data:Object.values(meses)}]
-    }
-  });
+if(chart) chart.destroy();
+
+chart=new Chart(document.getElementById("grafico"),{
+type:"line",
+data:{
+labels:Object.keys(meses),
+datasets:[{label:"Ingresos",data:Object.values(meses)}]
 }
+});
 
-/* ================= INIT ================= */
-
-initInventario();
-initOrdenes();
+}
 
 </script>
 </body>
