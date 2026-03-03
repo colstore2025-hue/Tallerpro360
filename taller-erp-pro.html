@@ -183,15 +183,28 @@ document.getElementById("formOrden").addEventListener("submit", async e=>{
   }
 });
 
-// Descontar inventario
 async function descontarInventario(lista){
   for(const nombre of lista){
     const item = inventario.find(i=>i.nombre?.toLowerCase()===nombre.toLowerCase());
     if(item){
-      await updateDoc(doc(db,"empresas",empresaId,"sucursales",sucursalId,"inventario",item.id),
-        { stockActual:(item.stockActual||0)-1 });
-      await addDoc(collection(db,"empresas",empresaId,"sucursales",sucursalId,"movimientosInventario"),
-        { tipo:"salida", producto:item.nombre, cantidad:1, fecha:serverTimestamp() });
+      try{
+        // Solo admins altos pueden actualizar stock
+        if(isAdminAlto(empresaId)) {
+          await updateDoc(doc(db,"empresas",empresaId,"sucursales",sucursalId,"inventario",item.id),
+            { stockActual:(item.stockActual||0)-1 });
+        }
+
+        // Registrar salida de inventario
+        if(isAdminAlto(empresaId)) {
+          await addDoc(collection(db,"empresas",empresaId,"sucursales",sucursalId,"movimientosInventario"),
+            { tipo:"salida", producto:item.nombre, cantidad:1, fecha:serverTimestamp() });
+        } else {
+          console.warn("No tiene permisos para movimientosInventario");
+        }
+
+      } catch(err) {
+        console.error("Error en inventario/movimiento:", err.message);
+      }
     }
   }
 }
