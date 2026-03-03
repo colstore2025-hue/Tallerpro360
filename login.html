@@ -155,36 +155,22 @@ form.addEventListener("submit", async (e) => {
     localStorage.setItem("rol", datosUsuario.rol);
     localStorage.setItem("planTipo", empresaData.plan.tipo);
 
-    // 🚀 Redirección (solo dejamos ERP PRO)
-    switch (datosUsuario.rol) {
+    // 🚀 Redirección SaaS PRO
+switch (datosUsuario.rol) {
 
-      case "dueno":
-      case "admin":
-        window.location.href = "/erp";
-        break;
+  case "dueno":
+  case "admin":
+  case "tecnico":
+  case "asesor":
+    window.location.href = "/erp";
+    break;
 
-      case "tecnico":
-      case "asesor":
-        window.location.href = "taller-erp-pro.html";
-        break;
+  case "cliente":
+    window.location.href = "/cliente";
+    break;
 
-      case "cliente":
-        window.location.href = "cliente.html";
-        break;
-
-      default:
-        throw new Error("Rol no válido");
-    }
-
-  } catch (err) {
-    console.error("ERROR LOGIN:", err);
-    showError("Error de acceso: " + err.message);
-  }
-});
-
-function showError(message) {
-  errorMsg.textContent = message;
-  errorMsg.classList.remove("hidden");
+  default:
+    throw new Error("Rol no válido");
 }
 </script>
 
