@@ -251,12 +251,27 @@ i.nombre?.toLowerCase()===nombre.toLowerCase()
 if(item){
 
 await updateDoc(
-doc(db,"empresas",empresaId,"inventario",item.id),
+doc(
+  db,
+  "empresas",
+  empresaId,
+  "sucursales",
+  sucursalId,
+  "inventario",
+  item.id
+),
 { stockActual:(item.stockActual||0)-1 }
 );
 
 await addDoc(
-collection(db,"empresas",empresaId,"movimientosInventario"),
+collection(
+  db,
+  "empresas",
+  empresaId,
+  "sucursales",
+  sucursalId,
+  "movimientosInventario"
+),
 {
 tipo:"salida",
 producto:item.nombre,
