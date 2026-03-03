@@ -76,9 +76,20 @@ import {
 getAuth, onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-/* 🔥 TU CONFIG REAL */
+/* ================= CONFIG FIREBASE ================= */
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { 
+  getFirestore, collection, addDoc, updateDoc, doc,
+  onSnapshot, serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+import { 
+  getAuth, onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
 const firebaseConfig = {
-  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+  apiKey: "TU_API_KEY",
   authDomain: "tallerpro360.firebaseapp.com",
   projectId: "tallerpro360",
   storageBucket: "tallerpro360.firebasestorage.app",
@@ -90,8 +101,18 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-/* 🔥 EMPRESA REAL */
-const empresaId = "aBc123XYZ";
+/* ================= SESIÓN SAAS ================= */
+
+const empresaId = localStorage.getItem("empresaId");
+const sucursalId = localStorage.getItem("sucursalId"); // importante guardar en login
+const uid = localStorage.getItem("uid");
+const rol = localStorage.getItem("rol");
+
+if (!empresaId || !uid || !rol) {
+  window.location.href = "/";
+}
+
+/* ================= VARIABLES ================= */
 
 let ordenes = [];
 let inventario = [];
@@ -99,45 +120,56 @@ let chart;
 
 /* ================= AUTH ================= */
 
-onAuthStateChanged(auth, (user)=>{
+onAuthStateChanged(auth, (user) => {
 
-if(!user){
-alert("Debes iniciar sesión primero");
-window.location.href = "login.html";
-return;
-}
+  if (!user) {
+    window.location.href = "/";
+    return;
+  }
 
-iniciarERP();
+  iniciarERP();
 
 });
 
-/* ================= INICIAR ERP ================= */
-
 function iniciarERP(){
 
-/* REALTIME ORDENES */
-onSnapshot(
-collection(db,"empresas",empresaId,"ordenes"),
-(snapshot)=>{
-ordenes=[];
-snapshot.forEach(d=>ordenes.push({id:d.id,...d.data()}));
-renderOrdenes();
-renderMetricas();
-renderGrafico();
-},
-(error)=>{
-alert("Error permisos órdenes: "+error.message);
-}
-);
+  /* ORDENES POR SUCURSAL */
+  onSnapshot(
+    collection(
+      db,
+      "empresas",
+      empresaId,
+      "sucursales",
+      sucursalId,
+      "ordenes"
+    ),
+    (snapshot)=>{
+      ordenes=[];
+      snapshot.forEach(d=>ordenes.push({id:d.id,...d.data()}));
+      renderOrdenes();
+      renderMetricas();
+      renderGrafico();
+    },
+    (error)=>{
+      alert("Error permisos órdenes: "+error.message);
+    }
+  );
 
-/* REALTIME INVENTARIO */
-onSnapshot(
-collection(db,"empresas",empresaId,"inventario"),
-(snapshot)=>{
-inventario=[];
-snapshot.forEach(d=>inventario.push({id:d.id,...d.data()}));
-}
-);
+  /* INVENTARIO POR SUCURSAL */
+  onSnapshot(
+    collection(
+      db,
+      "empresas",
+      empresaId,
+      "sucursales",
+      sucursalId,
+      "inventario"
+    ),
+    (snapshot)=>{
+      inventario=[];
+      snapshot.forEach(d=>inventario.push({id:d.id,...d.data()}));
+    }
+  );
 
 }
 
