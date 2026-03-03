@@ -108,11 +108,12 @@ form.addEventListener("submit", async (e) => {
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
 
-    // 🔎 2. Buscar empresa donde exista el usuario
+    // 🔎 2. Buscar empresa del usuario
     const empresasSnap = await getDocs(collection(db, "empresas"));
 
     let empresaId = null;
     let datosUsuario = null;
+    let empresaData = null;
 
     for (const empresa of empresasSnap.docs) {
 
@@ -122,6 +123,7 @@ form.addEventListener("submit", async (e) => {
       if (userSnap.exists()) {
         empresaId = empresa.id;
         datosUsuario = userSnap.data();
+        empresaData = empresa.data();
         break;
       }
     }
@@ -135,39 +137,39 @@ form.addEventListener("submit", async (e) => {
     }
 
     // 📌 Validar empresa activa
-    const empresaRef = doc(db, "empresas", empresaId);
-    const empresaSnap = await getDoc(empresaRef);
-
-    if (!empresaSnap.exists()) {
-      throw new Error("Empresa no válida");
+    if (empresaData.estado !== "activa") {
+      throw new Error("Empresa suspendida");
     }
 
-    if (empresaSnap.data().estado !== "activa") {
-      throw new Error("Empresa suspendida");
+    // 📌 Validar plan activo (NUEVO SaaS)
+    if (!empresaData.plan || empresaData.plan.estado !== "activo") {
+      throw new Error("Plan inactivo o vencido");
     }
 
     // 🧹 Limpiar sesión previa
     localStorage.clear();
 
-    // 💾 Guardar sesión
+    // 💾 Guardar sesión SaaS
     localStorage.setItem("empresaId", empresaId);
     localStorage.setItem("uid", uid);
     localStorage.setItem("rol", datosUsuario.rol);
+    localStorage.setItem("planTipo", empresaData.plan.tipo);
 
-    // 🚀 Redirección por rol
+    // 🚀 Redirección (solo dejamos ERP PRO)
     switch (datosUsuario.rol) {
 
       case "dueno":
-        window.location.href = "/taller-erp-pro.html";
+      case "admin":
+        window.location.href = "taller-erp-pro.html";
         break;
 
-      case "mecanico":
-      case "recepcion":
-        window.location.href = "/taller.html";
+      case "tecnico":
+      case "asesor":
+        window.location.href = "taller-erp-pro.html";
         break;
 
       case "cliente":
-        window.location.href = "/cliente.html";
+        window.location.href = "cliente.html";
         break;
 
       default:
