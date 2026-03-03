@@ -39,16 +39,13 @@ font-weight:600;
 <div class="glass">
 <h5>Nueva Orden</h5>
 <form id="formOrden">
-
 <input class="form-control mb-2" id="cliente" placeholder="Cliente" required>
 <input class="form-control mb-2" id="telefono" placeholder="Teléfono" required>
 <input class="form-control mb-2" id="placa" placeholder="Placa" required>
 <input class="form-control mb-2" id="vehiculo" placeholder="Vehículo" required>
 <input class="form-control mb-2" id="repuestos" placeholder="Repuestos separados por coma">
 <input type="number" class="form-control mb-2" id="total" placeholder="Total" required>
-
 <button class="btn btn-pro w-100">Crear Orden</button>
-
 </form>
 </div>
 
@@ -66,27 +63,18 @@ font-weight:600;
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { 
-getFirestore, collection, addDoc, updateDoc, doc,
-onSnapshot, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-import { 
-getAuth, onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-/* ================= CONFIG FIREBASE ================= */
+/* ================= IMPORTS (SOLO UNA VEZ) ================= */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { 
   getFirestore, collection, addDoc, updateDoc, doc,
-  onSnapshot, serverTimestamp 
+  onSnapshot, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
 import { 
   getAuth, onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+/* ================= CONFIG FIREBASE ================= */
 
 const firebaseConfig = {
   apiKey: "TU_API_KEY",
@@ -104,11 +92,11 @@ const auth = getAuth(app);
 /* ================= SESIÓN SAAS ================= */
 
 const empresaId = localStorage.getItem("empresaId");
-const sucursalId = localStorage.getItem("sucursalId"); // importante guardar en login
+const sucursalId = localStorage.getItem("sucursalId");
 const uid = localStorage.getItem("uid");
 const rol = localStorage.getItem("rol");
 
-if (!empresaId || !uid || !rol) {
+if (!empresaId || !uid || !rol || !sucursalId) {
   window.location.href = "/";
 }
 
@@ -121,28 +109,20 @@ let chart;
 /* ================= AUTH ================= */
 
 onAuthStateChanged(auth, (user) => {
-
   if (!user) {
     window.location.href = "/";
     return;
   }
-
   iniciarERP();
-
 });
+
+/* ================= INICIALIZAR ERP ================= */
 
 function iniciarERP(){
 
-  /* ORDENES POR SUCURSAL */
+  // ORDENES
   onSnapshot(
-    collection(
-      db,
-      "empresas",
-      empresaId,
-      "sucursales",
-      sucursalId,
-      "ordenes"
-    ),
+    collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
     (snapshot)=>{
       ordenes=[];
       snapshot.forEach(d=>ordenes.push({id:d.id,...d.data()}));
@@ -155,22 +135,14 @@ function iniciarERP(){
     }
   );
 
-  /* INVENTARIO POR SUCURSAL */
+  // INVENTARIO
   onSnapshot(
-    collection(
-      db,
-      "empresas",
-      empresaId,
-      "sucursales",
-      sucursalId,
-      "inventario"
-    ),
+    collection(db,"empresas",empresaId,"sucursales",sucursalId,"inventario"),
     (snapshot)=>{
       inventario=[];
       snapshot.forEach(d=>inventario.push({id:d.id,...d.data()}));
     }
   );
-
 }
 
 /* ================= CREAR ORDEN ================= */
@@ -180,36 +152,24 @@ document.getElementById("formOrden").addEventListener("submit", async (e) => {
 
   try {
 
-    /* 🔐 Validación sesión */
-    if (!auth.currentUser || !empresaId || !sucursalId || !uid) {
-      alert("Sesión inválida. Inicia sesión nuevamente.");
-      window.location.href = "/";
+    if (!auth.currentUser) {
+      alert("Sesión inválida.");
       return;
     }
 
-    /* 📦 Obtener valores del formulario */
     const clienteNombre = document.getElementById("cliente").value.trim();
     const clienteTelefono = document.getElementById("telefono").value.trim();
     const placa = document.getElementById("placa").value.trim();
     const vehiculo = document.getElementById("vehiculo").value.trim();
     const totalOrden = parseFloat(document.getElementById("total").value) || 0;
 
-    /* 🔧 Procesar repuestos */
     const repuestosArray = document.getElementById("repuestos").value
       .split(",")
       .map(r => r.trim())
       .filter(r => r.length > 0);
 
-    /* 📝 Crear orden en sucursal correcta */
     await addDoc(
-      collection(
-        db,
-        "empresas",
-        empresaId,
-        "sucursales",
-        sucursalId,
-        "ordenes"
-      ),
+      collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
       {
         clienteNombre,
         clienteTelefono,
@@ -224,16 +184,13 @@ document.getElementById("formOrden").addEventListener("submit", async (e) => {
       }
     );
 
-    /* 📉 Descontar inventario */
     await descontarInventario(repuestosArray);
 
-    /* 🔄 Reset formulario */
     e.target.reset();
-
     alert("Orden creada correctamente");
 
   } catch (err) {
-    console.error("ERROR CREANDO ORDEN:", err);
+    console.error(err);
     alert("Error creando orden: " + err.message);
   }
 });
@@ -242,122 +199,91 @@ document.getElementById("formOrden").addEventListener("submit", async (e) => {
 
 async function descontarInventario(lista){
 
-for(const nombre of lista){
+  for(const nombre of lista){
 
-const item = inventario.find(i=>
-i.nombre?.toLowerCase()===nombre.toLowerCase()
-);
+    const item = inventario.find(i =>
+      i.nombre?.toLowerCase() === nombre.toLowerCase()
+    );
 
-if(item){
+    if(item){
 
-await updateDoc(
-doc(
-  db,
-  "empresas",
-  empresaId,
-  "sucursales",
-  sucursalId,
-  "inventario",
-  item.id
-),
-{ stockActual:(item.stockActual||0)-1 }
-);
+      await updateDoc(
+        doc(db,"empresas",empresaId,"sucursales",sucursalId,"inventario",item.id),
+        { stockActual:(item.stockActual||0)-1 }
+      );
 
-await addDoc(
-collection(
-  db,
-  "empresas",
-  empresaId,
-  "sucursales",
-  sucursalId,
-  "movimientosInventario"
-),
-{
-tipo:"salida",
-producto:item.nombre,
-cantidad:1,
-fecha:serverTimestamp()
-}
-);
-
-}
-
-}
-
+      await addDoc(
+        collection(db,"empresas",empresaId,"sucursales",sucursalId,"movimientosInventario"),
+        {
+          tipo:"salida",
+          producto:item.nombre,
+          cantidad:1,
+          fecha:serverTimestamp()
+        }
+      );
+    }
+  }
 }
 
 /* ================= MÉTRICAS ================= */
 
 function renderMetricas(){
 
-const totalOrdenes = ordenes.length;
-const ingresos = ordenes.reduce((a,o)=>a+(o.pagado||0),0);
-const pendientes = ordenes.reduce((a,o)=>a+((o.totalOrden||0)-(o.pagado||0)),0);
+  const totalOrdenes = ordenes.length;
+  const ingresos = ordenes.reduce((a,o)=>a+(o.pagado||0),0);
+  const pendientes = ordenes.reduce((a,o)=>a+((o.totalOrden||0)-(o.pagado||0)),0);
 
-document.getElementById("metricas").innerHTML=`
-<div class="col-md-4">
-<div class="glass">
-<h6>Órdenes</h6>
-<h2>${totalOrdenes}</h2>
-</div>
-</div>
-<div class="col-md-4">
-<div class="glass">
-<h6>Ingresos</h6>
-<h2>$${ingresos.toLocaleString()}</h2>
-</div>
-</div>
-<div class="col-md-4">
-<div class="glass">
-<h6>Pendientes</h6>
-<h2>$${pendientes.toLocaleString()}</h2>
-</div>
-</div>
-`;
-
+  document.getElementById("metricas").innerHTML=`
+  <div class="col-md-4">
+  <div class="glass"><h6>Órdenes</h6><h2>${totalOrdenes}</h2></div>
+  </div>
+  <div class="col-md-4">
+  <div class="glass"><h6>Ingresos</h6><h2>$${ingresos.toLocaleString()}</h2></div>
+  </div>
+  <div class="col-md-4">
+  <div class="glass"><h6>Pendientes</h6><h2>$${pendientes.toLocaleString()}</h2></div>
+  </div>`;
 }
 
 /* ================= LISTADO ================= */
 
 function renderOrdenes(){
-const ul=document.getElementById("listaOrdenes");
-ul.innerHTML="";
-ordenes.forEach(o=>{
-const li=document.createElement("li");
-li.className="list-group-item bg-transparent text-white mb-2";
-li.innerHTML=`
-<strong>${o.placa}</strong> - ${o.vehiculo}<br>
-${o.clienteNombre}<br>
-Total: $${o.totalOrden}
-`;
-ul.appendChild(li);
-});
+  const ul=document.getElementById("listaOrdenes");
+  ul.innerHTML="";
+  ordenes.forEach(o=>{
+    const li=document.createElement("li");
+    li.className="list-group-item bg-transparent text-white mb-2";
+    li.innerHTML=`
+    <strong>${o.placa}</strong> - ${o.vehiculo}<br>
+    ${o.clienteNombre}<br>
+    Total: $${o.totalOrden}
+    `;
+    ul.appendChild(li);
+  });
 }
 
 /* ================= GRÁFICO ================= */
 
 function renderGrafico(){
 
-const meses={};
+  const meses={};
 
-ordenes.forEach(o=>{
-if(!o.creadoEn) return;
-if(!o.creadoEn.seconds) return;
-const d=new Date(o.creadoEn.seconds*1000);
-const mes=d.getMonth()+1;
-meses[mes]=(meses[mes]||0)+(o.pagado||0);
-});
+  ordenes.forEach(o=>{
+    if(!o.creadoEn?.seconds) return;
+    const d=new Date(o.creadoEn.seconds*1000);
+    const mes=d.getMonth()+1;
+    meses[mes]=(meses[mes]||0)+(o.pagado||0);
+  });
 
-if(chart) chart.destroy();
+  if(chart) chart.destroy();
 
-chart=new Chart(document.getElementById("grafico"),{
-type:"line",
-data:{
-labels:Object.keys(meses),
-datasets:[{label:"Ingresos",data:Object.values(meses)}]
-}
-});
-
+  chart=new Chart(document.getElementById("grafico"),{
+    type:"line",
+    data:{
+      labels:Object.keys(meses),
+      datasets:[{label:"Ingresos",data:Object.values(meses)}]
+    }
+  });
 }
 
 </script>
