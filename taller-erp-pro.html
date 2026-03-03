@@ -98,7 +98,7 @@ const sucursalId = localStorage.getItem("sucursalId");
 const uid = localStorage.getItem("uid");
 const rol = localStorage.getItem("rol");
 
-if (!empresaId || !uid || !rol || !sucursalId) window.location.href = "/";
+if (!empresaId || !uid || !rol) window.location.href = "/";
 
 // Variables
 let ordenes = [];
@@ -123,6 +123,7 @@ onAuthStateChanged(auth, user=>{
 // Inicializar ERP
 function iniciarERP(){
 
+  // Órdenes (sin limitar por sucursal)
   onSnapshot(
     collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
     snapshot=>{
@@ -135,6 +136,7 @@ function iniciarERP(){
     error=>showAlert("Error permisos órdenes: "+error.message, "danger")
   );
 
+  // Inventario
   onSnapshot(
     collection(db,"empresas",empresaId,"sucursales",sucursalId,"inventario"),
     snapshot=>{
@@ -161,11 +163,16 @@ document.getElementById("formOrden").addEventListener("submit", async e=>{
 
     if(!clienteNombre||!placa||!vehiculo) return showAlert("Completa los campos obligatorios","warning");
 
-    await addDoc(
+    // Crear orden sin restricciones de sucursal
+    const ordenRef = await addDoc(
       collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
-      { clienteNombre, clienteTelefono, placa, vehiculo, repuestos:repuestosArray, totalOrden, pagado:0, estado:"activa", creadoEn:serverTimestamp(), creadoPor:uid }
+      { 
+        clienteNombre, clienteTelefono, placa, vehiculo, repuestos:repuestosArray, 
+        totalOrden, pagado:0, estado:"activa", creadoEn:serverTimestamp(), creadoPor:uid 
+      }
     );
 
+    // Descontar inventario automáticamente
     await descontarInventario(repuestosArray);
 
     e.target.reset();
