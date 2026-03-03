@@ -102,100 +102,7 @@ Observa cómo se organiza tu taller en segundos.
 </div>
 </section>
 
-<!-- ANTES VS AHORA -->
-<section class="section hero-bg center">
-<div class="container fade-in">
-
-<h2 style="font-size:36px;font-weight:900;">
-Del caos a la tranquilidad operativa
-</h2>
-
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:40px;margin-top:60px;">
-
-<div style="background:#fff;padding:30px;border-radius:18px;">
-<h3 style="color:#dc2626;">❌ Antes</h3>
-<ul style="text-align:left;line-height:32px;">
-<li>Órdenes en papel</li>
-<li>Clientes llamando todo el día</li>
-<li>Olvidos en diagnósticos</li>
-<li>Desorden en inventario</li>
-<li>Falta de control financiero</li>
-</ul>
-</div>
-
-<div style="background:#fff;padding:30px;border-radius:18px;">
-<h3 style="color:#16a34a;">✅ Ahora con TallerPRO360</h3>
-<ul style="text-align:left;line-height:32px;">
-<li>Órdenes digitales organizadas</li>
-<li>Actualizaciones automáticas al cliente</li>
-<li>Diagnóstico por voz</li>
-<li>Reportes en tiempo real</li>
-<li>Control total del negocio</li>
-</ul>
-</div>
-
-</div>
-</div>
-</section>
-
-<!-- BENEFICIOS -->
-<section class="section center">
-<div class="container fade-in">
-
-<h2 style="font-size:36px;font-weight:900;">Transforma tu taller en una empresa organizada</h2>
-
-<div class="feature-grid">
-
-<div class="feature">
-<div class="icon">🎙️</div>
-<h3>Operado por Voz</h3>
-<p>Dicta diagnósticos y actualiza órdenes sin tocar el celular.</p>
-</div>
-
-<div class="feature">
-<div class="icon">📋</div>
-<h3>Control Total</h3>
-<p>Seguimiento completo desde ingreso hasta entrega.</p>
-</div>
-
-<div class="feature">
-<div class="icon">📊</div>
-<h3>Reportes Inteligentes</h3>
-<p>Visualiza ingresos y rendimiento en segundos.</p>
-</div>
-
-<div class="feature">
-<div class="icon">🔐</div>
-<h3>Multiusuario Seguro</h3>
-<p>Controla accesos del equipo con seguridad avanzada.</p>
-</div>
-
-</div>
-</div>
-</section>
-
-<!-- PROCESO -->
-<section class="section hero-bg center">
-<div class="container fade-in">
-
-<h2 style="font-size:34px;font-weight:900;">Tranquilidad en tu logística de taller</h2>
-
-<div class="process">
-<div class="step">Ingreso 🚗</div>
-<div class="step">Diagnóstico 🔎</div>
-<div class="step">Aprobación ✔</div>
-<div class="step">Reparación 🔧</div>
-<div class="step">Entrega 🤝</div>
-</div>
-
-<p style="margin-top:40px;font-size:18px;color:#555;">
-Todo sincronizado en tiempo real. Tus clientes reciben actualizaciones automáticas.
-</p>
-
-</div>
-</section>
-
-<!-- PLANES (IGUALES) -->
+<!-- PLANES -->
 <section class="section" style="background:linear-gradient(135deg,#f0fdf4,#f8fafc);">
 <div class="container center">
 
@@ -209,6 +116,21 @@ Empieza pequeño. Crece sin límites.
 
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:35px;align-items:stretch;">
 
+<!-- TRIAL 7 DÍAS -->
+<div class="plan highlight">
+<h3 style="font-size:24px;font-weight:900;">Trial</h3>
+<p class="price">Gratis <span style="font-size:16px;color:#555;">/ 7 días</span></p>
+<ul style="text-align:left;line-height:30px;margin-bottom:30px;">
+<li>✔ Acceso completo a herramientas PRO</li>
+<li>✔ Hasta 6 usuarios</li>
+<li>✔ Órdenes ilimitadas</li>
+<li>❌ Facturación electrónica no disponible</li>
+</ul>
+<button class="btn-main" style="width:100%;" onclick="activarTrial(this)">Probar gratis 7 días</button>
+<div class="loader">Activando trial...</div>
+</div>
+
+<!-- BÁSICO -->
 <div class="plan">
 <h3 style="font-size:24px;font-weight:900;">Básico</h3>
 <p class="price">$29.900 <span style="font-size:16px;color:#555;">/ mes</span></p>
@@ -222,27 +144,37 @@ Empieza pequeño. Crece sin límites.
 <div class="loader">Redirigiendo a pago...</div>
 </div>
 
+<!-- PRO -->
 <div class="plan highlight">
 <h3 style="font-size:24px;font-weight:900;">PRO</h3>
-<p class="price">$59.900 <span style="font-size:16px;color:#555;">/ mes</span></p>
+<p class="price">$69.900 <span style="font-size:16px;color:#555;">/ mes</span></p>
+<p style="font-size:14px;color:#555;margin-bottom:10px;">
+Incluye Facturación Electrónica (Costo Aliado Estratega +$15.000 aprox)
+</p>
 <ul style="text-align:left;line-height:30px;margin-bottom:30px;">
 <li>✔ Hasta 150 órdenes</li>
-<li>✔ 6 usuarios</li>
+<li>✔ Hasta 6 usuarios</li>
 <li>✔ Diagnóstico por voz</li>
 <li>✔ Reportes inteligentes</li>
+<li>✔ Facturación electrónica activa</li>
 </ul>
 <button class="btn-main" style="width:100%;" onclick="iniciarPago('pro', this)">Actualizar a PRO</button>
 <div class="loader">Redirigiendo a pago...</div>
 </div>
 
+<!-- PRO ANUAL -->
 <div class="plan dark-plan">
 <h3 style="font-size:24px;font-weight:900;">PRO Anual</h3>
-<p class="price" style="color:#22c55e;">$599.000 <span style="font-size:16px;color:#9ca3af;">/ año</span></p>
+<p class="price" style="color:#22c55e;">$699.000 <span style="font-size:16px;color:#9ca3af;">/ año</span></p>
+<p style="font-size:14px;color:#9ca3af;margin-bottom:10px;">
+Incluye Facturación Electrónica (Costo Aliado Estratega +$150.000 aprox)
+</p>
 <ul style="text-align:left;line-height:30px;margin-bottom:30px;">
 <li>✔ Todo lo PRO</li>
 <li>✔ Órdenes ilimitadas</li>
-<li>✔ 20 usuarios</li>
+<li>✔ Hasta 20 usuarios</li>
 <li>✔ Soporte directo</li>
+<li>✔ Facturación electrónica activa</li>
 </ul>
 <button class="btn-main" style="width:100%;" onclick="iniciarPago('pro_anual', this)">Elegir plan anual</button>
 <div class="loader">Redirigiendo a pago...</div>
@@ -259,7 +191,7 @@ Empieza pequeño. Crece sin límites.
 Más que un software. Es tu socio estratégico.
 </h2>
 <p style="max-width:800px;margin:auto;font-size:18px;color:#555;margin-top:20px;">
-Reduce errores, mejora tu imagen profesional y aumenta tu rentabilidad.
+Reduce errores, mejora tu imagen profesional y aumenta tu rentabilidad. Integración fácil con aliados estratégicos como <strong>Siigo, Factura.com</strong> para facturación electrónica confiable y económica.
 </p>
 </div>
 </section>
@@ -315,6 +247,32 @@ alert("Error iniciando el pago: "+error.message);
 boton.disabled=false;
 loader.style.display="none";
 }
+}
+
+// ACTIVAR TRIAL 7 DÍAS
+async function activarTrial(boton){
+  boton.disabled=true;
+  const loader = boton.nextElementSibling;
+  loader.style.display = "block";
+
+  try{
+    const userId = "demo-user-123"; // reemplazar con uid real al iniciar sesión
+    const response = await fetch("/api/activar-trial", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({userId})
+    });
+    const data = await response.json();
+    if(!response.ok || !data.success){
+      throw new Error(data.error || "Error activando trial");
+    }
+    alert("Trial activado por 7 días. ¡Disfruta de todas las herramientas PRO!");
+    window.location.reload();
+  }catch(error){
+    alert("Error activando trial: "+error.message);
+    boton.disabled=false;
+    loader.style.display="none";
+  }
 }
 </script>
 
