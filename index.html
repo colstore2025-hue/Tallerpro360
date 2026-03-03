@@ -41,6 +41,7 @@ h1{font-size:46px;font-weight:900;}
 .loader{display:none;margin-top:10px;font-size:14px;color:#16a34a;}
 .fade-in{opacity:0;transform:translateY(20px);transition:all .8s ease;}
 .fade-in.visible{opacity:1;transform:translateY(0);}
+.electronica{font-size:14px;color:#555;margin-bottom:10px;}
 </style>
 
 </head>
@@ -139,6 +140,7 @@ Empieza pequeño. Crece sin límites.
 <li>✔ Hasta 3 usuarios</li>
 <li>✔ Gestión digital</li>
 <li>✔ Historial clientes</li>
+<li>❌ Facturación electrónica</li>
 </ul>
 <button class="btn-main" style="width:100%;" onclick="iniciarPago('basico', this)">Comenzar ahora</button>
 <div class="loader">Redirigiendo a pago...</div>
@@ -148,9 +150,7 @@ Empieza pequeño. Crece sin límites.
 <div class="plan highlight">
 <h3 style="font-size:24px;font-weight:900;">PRO</h3>
 <p class="price">$69.900 <span style="font-size:16px;color:#555;">/ mes</span></p>
-<p style="font-size:14px;color:#555;margin-bottom:10px;">
-Incluye Facturación Electrónica (Costo Aliado Estratega +$15.000 aprox)
-</p>
+<p class="electronica">Facturación Electrónica: +$15.000 aprox (Aliados recomendados: Siigo, Factura.com)</p>
 <ul style="text-align:left;line-height:30px;margin-bottom:30px;">
 <li>✔ Hasta 150 órdenes</li>
 <li>✔ Hasta 6 usuarios</li>
@@ -166,9 +166,7 @@ Incluye Facturación Electrónica (Costo Aliado Estratega +$15.000 aprox)
 <div class="plan dark-plan">
 <h3 style="font-size:24px;font-weight:900;">PRO Anual</h3>
 <p class="price" style="color:#22c55e;">$699.000 <span style="font-size:16px;color:#9ca3af;">/ año</span></p>
-<p style="font-size:14px;color:#9ca3af;margin-bottom:10px;">
-Incluye Facturación Electrónica (Costo Aliado Estratega +$150.000 aprox)
-</p>
+<p class="electronica">Facturación Electrónica: +$150.000 aprox (Aliados recomendados: Siigo, Factura.com)</p>
 <ul style="text-align:left;line-height:30px;margin-bottom:30px;">
 <li>✔ Todo lo PRO</li>
 <li>✔ Órdenes ilimitadas</li>
@@ -224,7 +222,7 @@ document.getElementById("demoOrdenes").innerText = ordenes;
 },2500);
 </script>
 
-<!-- PAGOS -->
+<!-- PAGOS Y TRIAL -->
 <script>
 async function iniciarPago(plan, boton){
 boton.disabled=true;
@@ -254,9 +252,8 @@ async function activarTrial(boton){
   boton.disabled=true;
   const loader = boton.nextElementSibling;
   loader.style.display = "block";
-
   try{
-    const userId = "demo-user-123"; // reemplazar con uid real al iniciar sesión
+    const userId = "demo-user-123";
     const response = await fetch("/api/activar-trial", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
@@ -266,7 +263,7 @@ async function activarTrial(boton){
     if(!response.ok || !data.success){
       throw new Error(data.error || "Error activando trial");
     }
-    alert("Trial activado por 7 días. ¡Disfruta de todas las herramientas PRO!");
+    alert("Trial activado por 7 días. Todas las funciones PRO activas, excepto Facturación Electrónica.");
     window.location.reload();
   }catch(error){
     alert("Error activando trial: "+error.message);
