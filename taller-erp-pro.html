@@ -175,23 +175,32 @@ function iniciarERP(){
 
 /* ================= CREAR ORDEN ================= */
 
-document.getElementById("formOrden").addEventListener("submit", async e => {
+document.getElementById("formOrden").addEventListener("submit", async (e) => {
   e.preventDefault();
 
   try {
 
-    if (!auth.currentUser) {
-      alert("Usuario no autenticado");
+    /* 🔐 Validación sesión */
+    if (!auth.currentUser || !empresaId || !sucursalId || !uid) {
+      alert("Sesión inválida. Inicia sesión nuevamente.");
+      window.location.href = "/";
       return;
     }
 
-    const sucursalId = "aLpkPg2PUwXyQ8rnCSQt"; // ID REAL DE TU SUCURSAL
+    /* 📦 Obtener valores del formulario */
+    const clienteNombre = document.getElementById("cliente").value.trim();
+    const clienteTelefono = document.getElementById("telefono").value.trim();
+    const placa = document.getElementById("placa").value.trim();
+    const vehiculo = document.getElementById("vehiculo").value.trim();
+    const totalOrden = parseFloat(document.getElementById("total").value) || 0;
 
+    /* 🔧 Procesar repuestos */
     const repuestosArray = document.getElementById("repuestos").value
       .split(",")
       .map(r => r.trim())
-      .filter(r => r);
+      .filter(r => r.length > 0);
 
+    /* 📝 Crear orden en sucursal correcta */
     await addDoc(
       collection(
         db,
@@ -202,28 +211,30 @@ document.getElementById("formOrden").addEventListener("submit", async e => {
         "ordenes"
       ),
       {
-        clienteNombre: cliente.value,
-        clienteTelefono: telefono.value,
-        placa: placa.value,
-        vehiculo: vehiculo.value,
+        clienteNombre,
+        clienteTelefono,
+        placa,
+        vehiculo,
         repuestos: repuestosArray,
-        totalOrden: parseFloat(total.value),
+        totalOrden,
         pagado: 0,
         estado: "activa",
         creadoEn: serverTimestamp(),
-        creadoPor: auth.currentUser.uid
+        creadoPor: uid
       }
     );
 
-    await descontarInventario(repuestosArray, sucursalId);
+    /* 📉 Descontar inventario */
+    await descontarInventario(repuestosArray);
 
+    /* 🔄 Reset formulario */
     e.target.reset();
 
     alert("Orden creada correctamente");
 
   } catch (err) {
+    console.error("ERROR CREANDO ORDEN:", err);
     alert("Error creando orden: " + err.message);
-    console.error(err);
   }
 });
 
