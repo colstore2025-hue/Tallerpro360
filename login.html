@@ -78,18 +78,49 @@
 <!-- FIREBASE AUTH -->
 <script type="module">
 import { auth, db } from "./firebase-config.js";
-import { signInWithEmailAndPassword } 
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { 
+  signInWithEmailAndPassword,
+  onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 import { 
-  collection,
-  getDocs,
   doc,
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const form = document.getElementById("loginForm");
 const errorMsg = document.getElementById("errorMsg");
+
+/* ================= AUTO LOGIN ================= */
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+
+  const globalRef = doc(db, "usuariosGlobal", user.uid);
+  const globalSnap = await getDoc(globalRef);
+
+  if (!globalSnap.exists()) {
+    await auth.signOut();
+    return;
+  }
+
+  const data = globalSnap.data();
+
+  if (!data.activo) {
+    await auth.signOut();
+    return;
+  }
+
+  localStorage.setItem("empresaId", data.empresaId);
+  localStorage.setItem("uid", user.uid);
+  localStorage.setItem("rol", data.rol);
+  localStorage.setItem("sucursalId", data.sucursalId);
+  localStorage.setItem("planTipo", data.planTipo);
+
+  redirigir(data.rol);
+});
+
+/* ================= LOGIN ================= */
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -104,73 +135,90 @@ form.addEventListener("submit", async (e) => {
 
   try {
 
-    // 🔐 1. Login Firebase Auth
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
 
-    // 🔎 2. Buscar empresa del usuario
-    const empresasSnap = await getDocs(collection(db, "empresas"));
+    /* 🔎 Buscar usuario global (ESCALABLE) */
+    const globalRef = doc(db, "usuariosGlobal", uid);
+    const globalSnap = await getDoc(globalRef);
 
-    let empresaId = null;
-    let datosUsuario = null;
-    let empresaData = null;
-
-    for (const empresa of empresasSnap.docs) {
-
-      const userRef = doc(db, "empresas", empresa.id, "usuarios", uid);
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
-        empresaId = empresa.id;
-        datosUsuario = userSnap.data();
-        empresaData = empresa.data();
-        break;
-      }
+    if (!globalSnap.exists()) {
+      throw new Error("Usuario no registrado en la plataforma");
     }
 
-    if (!empresaId) {
-      throw new Error("Usuario no pertenece a ninguna empresa");
-    }
+    const data = globalSnap.data();
 
-    if (!datosUsuario.activo) {
+    if (!data.activo) {
       throw new Error("Usuario inactivo");
     }
 
-    // 📌 Validar empresa activa
+    /* 🔒 Validar empresa */
+    const empresaRef = doc(db, "empresas", data.empresaId);
+    const empresaSnap = await getDoc(empresaRef);
+
+    if (!empresaSnap.exists()) {
+      throw new Error("Empresa no encontrada");
+    }
+
+    const empresaData = empresaSnap.data();
+
     if (empresaData.estado !== "activa") {
       throw new Error("Empresa suspendida");
     }
 
-    // 📌 Validar plan activo (NUEVO SaaS)
     if (!empresaData.plan || empresaData.plan.estado !== "activo") {
       throw new Error("Plan inactivo o vencido");
     }
 
-    // 🧹 Limpiar sesión previa
+    /* 🧹 Limpiar sesión previa */
     localStorage.clear();
 
-    // 💾 Guardar sesión SaaS
-    localStorage.setItem("empresaId", empresaId);
+    /* 💾 Guardar sesión */
+    localStorage.setItem("empresaId", data.empresaId);
     localStorage.setItem("uid", uid);
-    localStorage.setItem("rol", datosUsuario.rol);
+    localStorage.setItem("rol", data.rol);
+    localStorage.setItem("sucursalId", data.sucursalId);
     localStorage.setItem("planTipo", empresaData.plan.tipo);
 
-    // 🚀 Redirección SaaS PRO
-switch (datosUsuario.rol) {
+    redirigir(data.rol);
 
-  case "dueno":
-  case "admin":
-  case "tecnico":
-  case "asesor":
-    window.location.href = "/erp";
-    break;
+  } catch (err) {
+    console.error("ERROR LOGIN:", err);
+    showError(err.message);
+  }
+});
 
-  case "cliente":
-    window.location.href = "/cliente";
-    break;
+/* ================= REDIRECCIÓN ================= */
 
-  default:
-    throw new Error("Rol no válido");
+function redirigir(rol) {
+
+  switch (rol) {
+
+    case "dueno":
+    case "admin":
+    case "tecnico":
+    case "asesor":
+      window.location.href = "/erp";
+      break;
+
+    case "cliente":
+      window.location.href = "/cliente";
+      break;
+
+    case "superadmin":
+      window.location.href = "/admin";
+      break;
+
+    default:
+      showError("Rol no válido");
+  }
+}
+
+/* ================= ERROR UI ================= */
+
+function showError(message) {
+  errorMsg.textContent = message;
+  errorMsg.classList.remove("hidden");
 }
 </script>
 
