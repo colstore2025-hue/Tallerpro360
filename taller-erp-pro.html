@@ -9,22 +9,32 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body{
-background:linear-gradient(135deg,#0f172a,#111827);
-color:#f1f5f9;
-font-family:Arial;
+body {
+  background: linear-gradient(135deg, #0f172a, #111827);
+  color: #f1f5f9;
+  font-family: Arial, sans-serif;
 }
-.glass{
-background:rgba(15,23,42,.85);
-backdrop-filter:blur(20px);
-border-radius:1rem;
-padding:1.5rem;
-margin-bottom:1rem;
+.glass {
+  background: rgba(15,23,42,.85);
+  backdrop-filter: blur(20px);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
 }
-.btn-pro{
-background:#22c55e;
-border:none;
-font-weight:600;
+.btn-pro {
+  background: #22c55e;
+  border: none;
+  font-weight: 600;
+}
+.list-group-item {
+  border: 1px solid rgba(255,255,255,.1);
+}
+.alert-custom {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  min-width: 250px;
 }
 </style>
 </head>
@@ -59,23 +69,17 @@ font-weight:600;
 <canvas id="grafico"></canvas>
 </div>
 
+<div id="alertContainer"></div>
+
 </div>
 
 <script type="module">
 
-/* ================= IMPORTS (SOLO UNA VEZ) ================= */
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { 
-  getFirestore, collection, addDoc, updateDoc, doc,
-  onSnapshot, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { 
-  getAuth, onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-/* ================= CONFIG FIREBASE ================= */
-
+// Configuración Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
   authDomain: "tallerpro360.firebaseapp.com",
@@ -84,78 +88,67 @@ const firebaseConfig = {
   messagingSenderId: "636224778184",
   appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-/* ================= SESIÓN SAAS ================= */
-
+// Sesión
 const empresaId = localStorage.getItem("empresaId");
 const sucursalId = localStorage.getItem("sucursalId");
 const uid = localStorage.getItem("uid");
 const rol = localStorage.getItem("rol");
 
-if (!empresaId || !uid || !rol || !sucursalId) {
-  window.location.href = "/";
-}
+if (!empresaId || !uid || !rol || !sucursalId) window.location.href = "/";
 
-/* ================= VARIABLES ================= */
-
+// Variables
 let ordenes = [];
 let inventario = [];
 let chart;
 
-/* ================= AUTH ================= */
+// Alertas
+function showAlert(msg, type="success", duration=3000){
+  const alertDiv = document.createElement("div");
+  alertDiv.className = `alert alert-${type} alert-custom`;
+  alertDiv.textContent = msg;
+  document.body.appendChild(alertDiv);
+  setTimeout(()=>alertDiv.remove(), duration);
+}
 
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    window.location.href = "/";
-    return;
-  }
-  iniciarERP();
+// Autenticación
+onAuthStateChanged(auth, user=>{
+  if(!user) window.location.href = "/";
+  else iniciarERP();
 });
 
-/* ================= INICIALIZAR ERP ================= */
-
+// Inicializar ERP
 function iniciarERP(){
 
-  // ORDENES
   onSnapshot(
     collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
-    (snapshot)=>{
+    snapshot=>{
       ordenes=[];
       snapshot.forEach(d=>ordenes.push({id:d.id,...d.data()}));
       renderOrdenes();
       renderMetricas();
       renderGrafico();
     },
-    (error)=>{
-      alert("Error permisos órdenes: "+error.message);
-    }
+    error=>showAlert("Error permisos órdenes: "+error.message, "danger")
   );
 
-  // INVENTARIO
   onSnapshot(
     collection(db,"empresas",empresaId,"sucursales",sucursalId,"inventario"),
-    (snapshot)=>{
+    snapshot=>{
       inventario=[];
       snapshot.forEach(d=>inventario.push({id:d.id,...d.data()}));
     }
   );
 }
 
-/* ================= CREAR ORDEN ================= */
-
-document.getElementById("formOrden").addEventListener("submit", async (e) => {
+// Crear orden
+document.getElementById("formOrden").addEventListener("submit", async e=>{
   e.preventDefault();
-
-  try {
-
-    if (!auth.currentUser) {
-      alert("Sesión inválida.");
-      return;
-    }
+  try{
+    if(!auth.currentUser) return showAlert("Sesión inválida","danger");
 
     const clienteNombre = document.getElementById("cliente").value.trim();
     const clienteTelefono = document.getElementById("telefono").value.trim();
@@ -164,89 +157,52 @@ document.getElementById("formOrden").addEventListener("submit", async (e) => {
     const totalOrden = parseFloat(document.getElementById("total").value) || 0;
 
     const repuestosArray = document.getElementById("repuestos").value
-      .split(",")
-      .map(r => r.trim())
-      .filter(r => r.length > 0);
+      .split(",").map(r=>r.trim()).filter(r=>r.length>0);
+
+    if(!clienteNombre||!placa||!vehiculo) return showAlert("Completa los campos obligatorios","warning");
 
     await addDoc(
       collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
-      {
-        clienteNombre,
-        clienteTelefono,
-        placa,
-        vehiculo,
-        repuestos: repuestosArray,
-        totalOrden,
-        pagado: 0,
-        estado: "activa",
-        creadoEn: serverTimestamp(),
-        creadoPor: uid
-      }
+      { clienteNombre, clienteTelefono, placa, vehiculo, repuestos:repuestosArray, totalOrden, pagado:0, estado:"activa", creadoEn:serverTimestamp(), creadoPor:uid }
     );
 
     await descontarInventario(repuestosArray);
 
     e.target.reset();
-    alert("Orden creada correctamente");
-
-  } catch (err) {
+    showAlert("Orden creada correctamente");
+  }catch(err){
     console.error(err);
-    alert("Error creando orden: " + err.message);
+    showAlert("Error creando orden: "+err.message, "danger");
   }
 });
 
-/* ================= INVENTARIO ================= */
-
+// Descontar inventario
 async function descontarInventario(lista){
-
   for(const nombre of lista){
-
-    const item = inventario.find(i =>
-      i.nombre?.toLowerCase() === nombre.toLowerCase()
-    );
-
+    const item = inventario.find(i=>i.nombre?.toLowerCase()===nombre.toLowerCase());
     if(item){
-
-      await updateDoc(
-        doc(db,"empresas",empresaId,"sucursales",sucursalId,"inventario",item.id),
-        { stockActual:(item.stockActual||0)-1 }
-      );
-
-      await addDoc(
-        collection(db,"empresas",empresaId,"sucursales",sucursalId,"movimientosInventario"),
-        {
-          tipo:"salida",
-          producto:item.nombre,
-          cantidad:1,
-          fecha:serverTimestamp()
-        }
-      );
+      await updateDoc(doc(db,"empresas",empresaId,"sucursales",sucursalId,"inventario",item.id),
+        { stockActual:(item.stockActual||0)-1 });
+      await addDoc(collection(db,"empresas",empresaId,"sucursales",sucursalId,"movimientosInventario"),
+        { tipo:"salida", producto:item.nombre, cantidad:1, fecha:serverTimestamp() });
     }
   }
 }
 
-/* ================= MÉTRICAS ================= */
-
+// Métricas
 function renderMetricas(){
-
   const totalOrdenes = ordenes.length;
   const ingresos = ordenes.reduce((a,o)=>a+(o.pagado||0),0);
   const pendientes = ordenes.reduce((a,o)=>a+((o.totalOrden||0)-(o.pagado||0)),0);
 
   document.getElementById("metricas").innerHTML=`
-  <div class="col-md-4">
-  <div class="glass"><h6>Órdenes</h6><h2>${totalOrdenes}</h2></div>
-  </div>
-  <div class="col-md-4">
-  <div class="glass"><h6>Ingresos</h6><h2>$${ingresos.toLocaleString()}</h2></div>
-  </div>
-  <div class="col-md-4">
-  <div class="glass"><h6>Pendientes</h6><h2>$${pendientes.toLocaleString()}</h2></div>
-  </div>`;
+    <div class="col-md-4"><div class="glass"><h6>Órdenes</h6><h2>${totalOrdenes}</h2></div></div>
+    <div class="col-md-4"><div class="glass"><h6>Ingresos</h6><h2>$${ingresos.toLocaleString()}</h2></div></div>
+    <div class="col-md-4"><div class="glass"><h6>Pendientes</h6><h2>$${pendientes.toLocaleString()}</h2></div></div>
+  `;
 }
 
-/* ================= LISTADO ================= */
-
+// Lista de órdenes
 function renderOrdenes(){
   const ul=document.getElementById("listaOrdenes");
   ul.innerHTML="";
@@ -254,39 +210,31 @@ function renderOrdenes(){
     const li=document.createElement("li");
     li.className="list-group-item bg-transparent text-white mb-2";
     li.innerHTML=`
-    <strong>${o.placa}</strong> - ${o.vehiculo}<br>
-    ${o.clienteNombre}<br>
-    Total: $${o.totalOrden}
+      <strong>${o.placa}</strong> - ${o.vehiculo}<br>
+      ${o.clienteNombre}<br>
+      Total: $${o.totalOrden}
     `;
     ul.appendChild(li);
   });
 }
 
-/* ================= GRÁFICO ================= */
-
+// Gráfico de ingresos
 function renderGrafico(){
-
   const meses={};
-
   ordenes.forEach(o=>{
     if(!o.creadoEn?.seconds) return;
     const d=new Date(o.creadoEn.seconds*1000);
     const mes=d.getMonth()+1;
     meses[mes]=(meses[mes]||0)+(o.pagado||0);
   });
-
   if(chart) chart.destroy();
-
   chart=new Chart(document.getElementById("grafico"),{
     type:"line",
-    data:{
-      labels:Object.keys(meses),
-      datasets:[{label:"Ingresos",data:Object.values(meses)}]
-    }
+    data:{ labels:Object.keys(meses), datasets:[{label:"Ingresos", data:Object.values(meses), borderColor:"#22c55e", backgroundColor:"rgba(34,197,94,0.2)"}] },
+    options:{ responsive:true, plugins:{ legend:{labels:{color:"#f1f5f9"}} }, scales:{ x:{ ticks:{color:"#f1f5f9"} }, y:{ ticks:{color:"#f1f5f9"} } } }
   });
 }
 
 </script>
-
 </body>
 </html>
