@@ -98,7 +98,7 @@ const sucursalId = localStorage.getItem("sucursalId");
 const uid = localStorage.getItem("uid");
 const rol = localStorage.getItem("rol");
 
-if (!empresaId || !uid || !rol) window.location.href = "/";
+if (!empresaId || !uid || !rol || !sucursalId) window.location.href = "/";
 
 // Variables
 let ordenes = [];
@@ -123,7 +123,6 @@ onAuthStateChanged(auth, user=>{
 // Inicializar ERP
 function iniciarERP(){
 
-  // Órdenes (sin limitar por sucursal)
   onSnapshot(
     collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
     snapshot=>{
@@ -136,7 +135,6 @@ function iniciarERP(){
     error=>showAlert("Error permisos órdenes: "+error.message, "danger")
   );
 
-  // Inventario
   onSnapshot(
     collection(db,"empresas",empresaId,"sucursales",sucursalId,"inventario"),
     snapshot=>{
@@ -163,17 +161,30 @@ document.getElementById("formOrden").addEventListener("submit", async e=>{
 
     if(!clienteNombre||!placa||!vehiculo) return showAlert("Completa los campos obligatorios","warning");
 
-    // Crear orden sin restricciones de sucursal
-    const ordenRef = await addDoc(
+    // Crear orden siempre
+    await addDoc(
       collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
-      { 
-        clienteNombre, clienteTelefono, placa, vehiculo, repuestos:repuestosArray, 
-        totalOrden, pagado:0, estado:"activa", creadoEn:serverTimestamp(), creadoPor:uid 
-      }
+      { clienteNombre, clienteTelefono, placa, vehiculo, repuestos:repuestosArray, totalOrden, pagado:0, estado:"activa", creadoEn:serverTimestamp(), creadoPor:uid }
     );
 
-    // Descontar inventario automáticamente
-    await descontarInventario(repuestosArray);
+    // Descontar inventario solo si usuario tiene permisos
+    for(const nombre of repuestosArray){
+      const item = inventario.find(i=>i.nombre?.toLowerCase()===nombre.toLowerCase());
+      if(item){
+        try{
+          // Solo admins altos pueden modificar stock y registrar movimientos
+          if(["dueno","jefe","contador"].includes(rol)){
+            await updateDoc(doc(db,"empresas",empresaId,"sucursales",sucursalId,"inventario",item.id),
+              { stockActual:(item.stockActual||0)-1 });
+
+            await addDoc(collection(db,"empresas",empresaId,"sucursales",sucursalId,"movimientosInventario"),
+              { tipo:"salida", producto:item.nombre, cantidad:1, fecha:serverTimestamp() });
+          }
+        } catch(err) {
+          console.warn("No tiene permisos para inventario/movimientos:", err.message);
+        }
+      }
+    }
 
     e.target.reset();
     showAlert("Orden creada correctamente");
@@ -182,32 +193,6 @@ document.getElementById("formOrden").addEventListener("submit", async e=>{
     showAlert("Error creando orden: "+err.message, "danger");
   }
 });
-
-async function descontarInventario(lista){
-  for(const nombre of lista){
-    const item = inventario.find(i=>i.nombre?.toLowerCase()===nombre.toLowerCase());
-    if(item){
-      try{
-        // Solo admins altos pueden actualizar stock
-        if(isAdminAlto(empresaId)) {
-          await updateDoc(doc(db,"empresas",empresaId,"sucursales",sucursalId,"inventario",item.id),
-            { stockActual:(item.stockActual||0)-1 });
-        }
-
-        // Registrar salida de inventario
-        if(isAdminAlto(empresaId)) {
-          await addDoc(collection(db,"empresas",empresaId,"sucursales",sucursalId,"movimientosInventario"),
-            { tipo:"salida", producto:item.nombre, cantidad:1, fecha:serverTimestamp() });
-        } else {
-          console.warn("No tiene permisos para movimientosInventario");
-        }
-
-      } catch(err) {
-        console.error("Error en inventario/movimiento:", err.message);
-      }
-    }
-  }
-}
 
 // Métricas
 function renderMetricas(){
