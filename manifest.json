@@ -1,16 +1,17 @@
 {
   "name": "TallerPRO360 - Gestión inteligente para talleres automotrices",
   "short_name": "TallerPRO360",
-  "description": "Sistema inteligente para la gestión total de talleres automotrices en Colombia. Control de órdenes, vehículos, clientes y procesos con trazabilidad completa.",
+  "description": "Sistema inteligente para la gestión total de talleres automotrices en Colombia. Control de órdenes, vehículos, clientes, inventario y procesos con trazabilidad completa.",
 
   "id": "/",
-  "start_url": "/?source=pwa",
+  "start_url": "/index.html?source=pwa",
   "scope": "/",
 
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "lang": "es-CO",
+  "dir": "ltr",
 
   "background_color": "#ffffff",
   "theme_color": "#16a34a",
@@ -42,6 +43,15 @@
     }
   ],
 
-  "categories": ["business", "productivity"],
+  "categories": ["business", "productivity", "utilities"],
+  "screenshots": [
+    {
+      "src": "/assets/screen-dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+
   "prefer_related_applications": false
 }
