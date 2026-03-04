@@ -1,17 +1,17 @@
+
+
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
-
 <meta charset="UTF-8">
 <title>TallerPRO360 | ERP Inteligente para Talleres en Colombia</title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="TallerPRO360 es el ERP inteligente operado por voz que transforma la gestión de talleres automotrices en Colombia.">
 <meta name="robots" content="index, follow">
 
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#16a34a">
-
 <link rel="icon" href="/assets/logo-192.png" type="image/png">
 <link rel="stylesheet" href="/assets/css/styles.css">
 
@@ -23,7 +23,7 @@ body{font-family:Arial,sans-serif;margin:0;background:#f9fafb;}
 .hero-bg{background:linear-gradient(135deg,#ecfdf5,#eff6ff);}
 h1{font-size:46px;font-weight:900;}
 .subtitle{font-size:20px;color:#555;margin-top:20px;}
-.btn-main{background:#16a34a;color:#fff;padding:14px 24px;border:none;border-radius:14px;font-weight:700;cursor:pointer;}
+.btn-main{background:#16a34a;color:#fff;padding:14px 24px;border:none;border-radius:14px;font-weight:700;cursor:pointer;transition:.3s;}
 .btn-main:hover{opacity:.9;}
 .badge{background:#16a34a;color:#fff;padding:6px 14px;border-radius:30px;font-size:13px;font-weight:700;margin-top:20px;display:inline-block;}
 .feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:40px;margin-top:60px;}
@@ -34,7 +34,7 @@ h1{font-size:46px;font-weight:900;}
 .step{background:#fff;padding:20px 30px;border-radius:30px;box-shadow:0 5px 15px rgba(0,0,0,.05);font-weight:700;}
 .footer{background:#f1f5f9;padding:40px;text-align:center;margin-top:60px;}
 .price{font-size:36px;font-weight:800;color:#16a34a;}
-.plan{background:#fff;padding:30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.06);transition:.3s;}
+.plan{background:#fff;padding:30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.06);transition:.3s;display:flex;flex-direction:column;justify-content:space-between;}
 .plan:hover{transform:translateY(-6px);}
 .highlight{border:3px solid #16a34a;transform:scale(1.05);}
 .dark-plan{background:#111827;color:#fff;}
@@ -42,63 +42,53 @@ h1{font-size:46px;font-weight:900;}
 .fade-in{opacity:0;transform:translateY(20px);transition:all .8s ease;}
 .fade-in.visible{opacity:1;transform:translateY(0);}
 .electronica{font-size:14px;color:#555;margin-bottom:10px;}
+.tooltip{position:relative;display:inline-block;cursor:pointer;}
+.tooltip .tooltiptext{visibility:hidden;width:200px;background-color:#111827;color:#fff;text-align:center;padding:8px;border-radius:6px;position:absolute;z-index:1;bottom:125%;left:50%;margin-left:-100px;opacity:0;transition:opacity 0.3s;}
+.tooltip:hover .tooltiptext{visibility:visible;opacity:1;}
 </style>
-
 </head>
 <body>
 
 <!-- HERO -->
 <section class="section hero-bg center">
 <div class="container fade-in">
-
 <img src="/assets/logo-192.png" width="100" alt="Logo">
-
 <h1>Tu ayudante inteligente en el taller</h1>
-
 <p class="subtitle">
 TallerPRO360 es un ERP operado por voz que organiza, controla y profesionaliza tu taller automotriz.
 <br><strong>Más control. Más orden. Más tranquilidad.</strong>
 </p>
-
 <div style="margin-top:30px;">
 <a href="login.html">
 <button class="btn-main">Iniciar sesión</button>
 </a>
 </div>
-
 <div class="badge">
 Sistema operado por voz · ERP Colombiano 🇨🇴
 </div>
-
 </div>
 </section>
 
 <!-- DEMO DASHBOARD -->
 <section class="section center" style="background:#ffffff;">
 <div class="container fade-in">
-
 <h2 style="font-size:36px;font-weight:900;">
 Así funciona tu nuevo ayudante digital
 </h2>
-
 <p style="color:#555;margin-bottom:50px;">
 Observa cómo se organiza tu taller en segundos.
 </p>
-
 <div style="background:#0f172a;border-radius:20px;padding:30px;color:#fff;max-width:900px;margin:auto;box-shadow:0 20px 50px rgba(0,0,0,.2);">
-
 <div style="display:flex;justify-content:space-between;margin-bottom:20px;font-weight:700;flex-wrap:wrap;gap:10px;">
 <span>Órdenes Activas: <span id="demoOrdenes">12</span></span>
 <span>Ingresos Hoy: $ <span id="demoIngresos">850.000</span></span>
 <span>Estado: EN PROCESO</span>
 </div>
-
 <div style="background:#1e293b;padding:20px;border-radius:12px;text-align:left;">
 <p>🎙️ Técnico: "Se detecta fuga en reten principal"</p>
 <p style="color:#22c55e;">✔ Nota técnica guardada automáticamente</p>
 <p style="color:#38bdf8;">📲 Cliente notificado</p>
 </div>
-
 </div>
 </div>
 </section>
@@ -106,15 +96,12 @@ Observa cómo se organiza tu taller en segundos.
 <!-- PLANES -->
 <section class="section" style="background:linear-gradient(135deg,#f0fdf4,#f8fafc);">
 <div class="container center">
-
 <h2 style="font-size:34px;font-weight:900;margin-bottom:15px;">
 Planes diseñados para hacer crecer tu taller
 </h2>
-
 <p style="color:#555;margin-bottom:60px;">
 Empieza pequeño. Crece sin límites.
 </p>
-
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:35px;align-items:stretch;">
 
 <!-- TRIAL 7 DÍAS -->
@@ -150,7 +137,10 @@ Empieza pequeño. Crece sin límites.
 <div class="plan highlight">
 <h3 style="font-size:24px;font-weight:900;">PRO</h3>
 <p class="price">$69.900 <span style="font-size:16px;color:#555;">/ mes</span></p>
-<p class="electronica">Facturación Electrónica: +$15.000 aprox (Aliados recomendados: Siigo, Factura.com)</p>
+<p class="electronica tooltip">
+Facturación Electrónica: +$15.000 aprox
+<span class="tooltiptext">Integración con Siigo o Factura.com vía API.</span>
+</p>
 <ul style="text-align:left;line-height:30px;margin-bottom:30px;">
 <li>✔ Hasta 150 órdenes</li>
 <li>✔ Hasta 6 usuarios</li>
@@ -166,7 +156,10 @@ Empieza pequeño. Crece sin límites.
 <div class="plan dark-plan">
 <h3 style="font-size:24px;font-weight:900;">PRO Anual</h3>
 <p class="price" style="color:#22c55e;">$699.000 <span style="font-size:16px;color:#9ca3af;">/ año</span></p>
-<p class="electronica">Facturación Electrónica: +$150.000 aprox (Aliados recomendados: Siigo, Factura.com)</p>
+<p class="electronica tooltip">
+Facturación Electrónica: +$150.000 aprox
+<span class="tooltiptext">Integración con Siigo o Factura.com vía API.</span>
+</p>
 <ul style="text-align:left;line-height:30px;margin-bottom:30px;">
 <li>✔ Todo lo PRO</li>
 <li>✔ Órdenes ilimitadas</li>
@@ -205,9 +198,7 @@ TallerPRO360 © 2026 · Tu ayudante inteligente en el taller
 <script>
 const observer = new IntersectionObserver(entries=>{
 entries.forEach(entry=>{
-if(entry.isIntersecting){
-entry.target.classList.add("visible");
-}
+if(entry.isIntersecting){entry.target.classList.add("visible");}
 });
 },{threshold:0.2});
 document.querySelectorAll('.fade-in').forEach(el=>observer.observe(el));
@@ -222,54 +213,68 @@ document.getElementById("demoOrdenes").innerText = ordenes;
 },2500);
 </script>
 
+<!-- FIREBASE SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-functions-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+  authDomain: "tallerpro360.firebaseapp.com",
+  projectId: "tallerpro360",
+  storageBucket: "tallerpro360.firebasestorage.app",
+  messagingSenderId: "636224778184",
+  appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
+  measurementId: "G-VEC2C0QX2G"
+};
+firebase.initializeApp(firebaseConfig);
+</script>
+
 <!-- PAGOS Y TRIAL -->
 <script>
 async function iniciarPago(plan, boton){
-boton.disabled=true;
-const loader=boton.nextElementSibling;
-loader.style.display="block";
-try{
-const userId="demo-user-123";
-const response=await fetch("/api/create-preference",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({plan,userId})
-});
-const data=await response.json();
-if(!response.ok||!data.init_point){
-throw new Error(data.error||"Error creando pago");
-}
-window.location.href=data.init_point;
-}catch(error){
-alert("Error iniciando el pago: "+error.message);
-boton.disabled=false;
-loader.style.display="none";
-}
+  boton.disabled=true;
+  const loader=boton.nextElementSibling;
+  loader.style.display="block";
+  try{
+    const userId="demo-user-123";
+    const response=await fetch("/api/create-preference",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({plan,userId})
+    });
+    const data=await response.json();
+    if(!response.ok||!data.init_point){
+      throw new Error(data.error||"Error creando pago");
+    }
+    window.location.href=data.init_point;
+  }catch(error){
+    alert("Error iniciando el pago: "+error.message);
+    boton.disabled=false;
+    loader.style.display="none";
+  }
 }
 
-// ==============================================
 // ACTIVAR TRIAL 7 DÍAS - Funciona con Firebase Functions
-// ==============================================
 async function activarTrial(boton) {
   boton.disabled = true;
   const loader = boton.nextElementSibling;
   loader.style.display = "block";
 
   try {
-    // Llamada a Firebase Function HTTPS Callable
     const response = await firebase.functions().httpsCallable('activarTrial')();
-    const data = response.data; // ← JSON parseado automáticamente
+    const data = response.data;
 
-    if (!data.success) {
-      throw new Error(data.mensaje || "Error activando trial");
-    }
+    if (!data.success) throw new Error(data.mensaje || "Error activando trial");
 
     alert(
       "✅ Trial activado por 7 días.\n" +
       "Todas las funciones PRO activas, excepto Facturación Electrónica."
     );
 
-    // Opcional: recargar para reflejar cambios de plan
+    // Recargar token para reflejar permisos y plan
+    await firebase.auth().currentUser.getIdToken(true);
     window.location.reload();
 
   } catch (error) {
