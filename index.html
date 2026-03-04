@@ -247,28 +247,35 @@ loader.style.display="none";
 }
 }
 
-// ACTIVAR TRIAL 7 DÍAS
-async function activarTrial(boton){
-  boton.disabled=true;
+// ==============================================
+// ACTIVAR TRIAL 7 DÍAS - Funciona con Firebase Functions
+// ==============================================
+async function activarTrial(boton) {
+  boton.disabled = true;
   const loader = boton.nextElementSibling;
   loader.style.display = "block";
-  try{
-    const userId = "demo-user-123";
-    const response = await fetch("/api/activar-trial", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({userId})
-    });
-    const data = await response.json();
-    if(!response.ok || !data.success){
-      throw new Error(data.error || "Error activando trial");
+
+  try {
+    // Llamada a Firebase Function HTTPS Callable
+    const response = await firebase.functions().httpsCallable('activarTrial')();
+    const data = response.data; // ← JSON parseado automáticamente
+
+    if (!data.success) {
+      throw new Error(data.mensaje || "Error activando trial");
     }
-    alert("Trial activado por 7 días. Todas las funciones PRO activas, excepto Facturación Electrónica.");
+
+    alert(
+      "✅ Trial activado por 7 días.\n" +
+      "Todas las funciones PRO activas, excepto Facturación Electrónica."
+    );
+
+    // Opcional: recargar para reflejar cambios de plan
     window.location.reload();
-  }catch(error){
-    alert("Error activando trial: "+error.message);
-    boton.disabled=false;
-    loader.style.display="none";
+
+  } catch (error) {
+    alert("❌ Error activando trial: " + error.message);
+    boton.disabled = false;
+    loader.style.display = "none";
   }
 }
 </script>
