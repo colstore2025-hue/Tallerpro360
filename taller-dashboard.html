@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TallerPRO360 | ERP Master</title>
+<title>TallerPRO360 | ERP Master Premium</title>
 <link rel="icon" href="logo-tallerpro360.png">
 
 <script src="https://cdn.tailwindcss.com"></script>
@@ -14,75 +14,89 @@
 <style>
 body{margin:0;font-family:'Inter',sans-serif;background:linear-gradient(135deg,#0f172a,#111827);color:#f1f5f9;}
 .erp-wrapper{display:flex;height:100vh;overflow:hidden;}
-.sidebar{width:260px;background:rgba(15,23,42,.95);backdrop-filter:blur(20px);border-right:1px solid rgba(255,255,255,.05);padding:30px 20px;display:flex;flex-direction:column;}
-.logo{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;margin-bottom:50px;}
+.sidebar{width:280px;background:rgba(15,23,42,.95);backdrop-filter:blur(20px);border-right:1px solid rgba(255,255,255,.05);padding:30px 20px;display:flex;flex-direction:column;transition:width .3s;}
+.sidebar.collapsed{width:80px;}
+.logo{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;margin-bottom:50px;display:flex;align-items:center;}
 .logo span{background:linear-gradient(90deg,#22c55e,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.nav-btn{background:none;border:none;color:#94a3b8;padding:14px;text-align:left;border-radius:12px;margin-bottom:8px;transition:.3s;font-weight:600;}
+.nav-btn{background:none;border:none;color:#94a3b8;padding:14px;text-align:left;border-radius:12px;margin-bottom:8px;transition:.3s;font-weight:600;display:flex;align-items:center;gap:10px;}
 .nav-btn:hover,.nav-btn.active{background:rgba(34,197,94,.1);color:#22c55e;}
-.main-content{flex:1;padding:40px;overflow-y:auto;}
+.nav-btn i{width:20px;text-align:center;}
+.main-content{flex:1;padding:30px;overflow-y:auto;}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;}
-.metric-card{padding:1.5rem;border-radius:1rem;background:rgba(15,23,42,.7);border:1px solid rgba(255,255,255,.05);}
+.metric-card{padding:1.5rem;border-radius:1rem;background:rgba(15,23,42,.7);border:1px solid rgba(255,255,255,.05);transition:.3s;}
+.metric-card:hover{background:rgba(34,197,94,.1);}
 table th, table td{padding:10px;text-align:left;}
 input[type="date"]{background:#0f172a;border:1px solid #1e293b;padding:6px 10px;border-radius:8px;color:#fff;}
+button:disabled{opacity:.6;cursor:not-allowed;}
 </style>
 </head>
 <body>
 
 <div class="erp-wrapper">
-<aside class="sidebar">
-  <div class="logo">Taller<span>PRO360</span></div>
 
-  <button class="nav-btn active" data-section="dashboard"><i class="fa-solid fa-chart-line mr-2"></i> Dashboard</button>
-  <button class="nav-btn" data-section="ordenes"><i class="fa-solid fa-car mr-2"></i> Órdenes</button>
-  <button class="nav-btn" data-section="inventario"><i class="fa-solid fa-boxes-stacked mr-2"></i> Inventario</button>
-  <button class="nav-btn" data-section="finanzas"><i class="fa-solid fa-coins mr-2"></i> Finanzas</button>
-  <button class="nav-btn" data-section="nomina"><i class="fa-solid fa-users mr-2"></i> Nómina</button>
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo"><i class="fa-solid fa-car-side mr-2 text-green-500"></i> Taller<span>PRO360</span></div>
+  <button class="nav-btn active" data-section="dashboard"><i class="fa-solid fa-chart-line"></i> Dashboard</button>
+  <button class="nav-btn" data-section="ordenes"><i class="fa-solid fa-car"></i> Órdenes</button>
+  <button class="nav-btn" data-section="inventario"><i class="fa-solid fa-boxes-stacked"></i> Inventario</button>
+  <button class="nav-btn" data-section="finanzas"><i class="fa-solid fa-coins"></i> Finanzas</button>
+  <button class="nav-btn" data-section="nomina"><i class="fa-solid fa-users"></i> Nómina</button>
 </aside>
 
+<!-- MAIN CONTENT -->
 <main class="main-content">
 <header class="topbar">
   <div>
     <h2 id="sectionTitle" class="text-2xl font-bold">Dashboard</h2>
     <p class="text-slate-400 text-sm">Centro de control operativo en tiempo real</p>
   </div>
-  <button id="logoutBtn" class="border px-3 py-1 rounded">Salir</button>
+  <div class="flex gap-2">
+    <button id="toggleSidebar" class="border px-3 py-1 rounded"><i class="fa-solid fa-bars"></i></button>
+    <button id="logoutBtn" class="border px-3 py-1 rounded">Salir</button>
+  </div>
 </header>
 
 <section id="contentArea"></section>
 </main>
 </div>
 
-<script type="module">
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-firestore-compat.js"></script>
 
-import { getFirestore, collection, onSnapshot } 
-from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+  authDomain: "tallerpro360.firebaseapp.com",
+  projectId: "tallerpro360",
+  storageBucket: "tallerpro360.firebasestorage.app",
+  messagingSenderId: "636224778184",
+  appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
+  measurementId: "G-VEC2C0QX2G"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.firestore();
+const auth=firebase.auth();
 
-import { getAuth, onAuthStateChanged, signOut } 
-from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-const db = getFirestore();
-const auth = getAuth();
-
-const empresaId = localStorage.getItem("empresaId");
-const rol = localStorage.getItem("rol");
-
-if(!empresaId && rol!=="superadmin") window.location.href="index.html";
-
-let ordenes=[];
-let chartFinanzas=null;
+let ordenes=[], chartFinanzas=null;
+const empresaId=localStorage.getItem("empresaId");
+const rol=localStorage.getItem("rol");
 
 // ================= AUTH =================
-onAuthStateChanged(auth,user=>{
+auth.onAuthStateChanged(user=>{
   if(!user) window.location.href="index.html";
+  iniciarRealtime();
 });
 
 // ================= REALTIME =================
 function iniciarRealtime(){
-  let ref = rol==="superadmin"
-    ? collection(db,"ordenesGlobal")
-    : collection(db,"empresas",empresaId,"ordenes");
+  const ref = rol==="superadmin"
+    ? db.collection("ordenesGlobal")
+    : db.collection("empresas").doc(empresaId).collection("ordenes");
 
-  onSnapshot(ref,(snapshot)=>{
+  ref.onSnapshot(snapshot=>{
     ordenes=[];
     snapshot.forEach(doc=>ordenes.push({id:doc.id,...doc.data()}));
     renderDashboard(ordenes);
@@ -91,7 +105,6 @@ function iniciarRealtime(){
 
 // ================= DASHBOARD =================
 function renderDashboard(data){
-
   const ingresos=data.reduce((s,o)=>s+(o.pagado||0),0);
   const activas=data.filter(o=>o.estado!=="entregado").length;
   const crm=data.length?Math.round(data.reduce((s,o)=>s+(o.crmScore||0),0)/data.length):0;
@@ -99,8 +112,8 @@ function renderDashboard(data){
 
   document.getElementById("contentArea").innerHTML=`
   <div class="flex gap-4 mb-6">
-    <input type="date" id="fDesde">
-    <input type="date" id="fHasta">
+    <input type="date" id="fDesde" class="text-slate-800 px-3 py-1 rounded">
+    <input type="date" id="fHasta" class="text-slate-800 px-3 py-1 rounded">
     <button onclick="aplicarFiltros()" class="bg-green-600 px-4 py-1 rounded">Filtrar</button>
   </div>
 
@@ -117,7 +130,7 @@ function renderDashboard(data){
   </div>
 
   <div class="bg-slate-900/60 p-6 rounded-2xl">
-    <h3 class="mb-4 font-semibold">Órdenes</h3>
+    <h3 class="mb-4 font-semibold">Órdenes Recientes</h3>
     ${renderTabla(data)}
   </div>
   `;
@@ -125,9 +138,7 @@ function renderDashboard(data){
   renderGrafico(data);
 }
 
-function kpi(t,v){
-  return `<div class="metric-card"><div class="text-slate-400">${t}</div><h2 class="text-3xl font-bold">${v}</h2></div>`;
-}
+function kpi(t,v){return `<div class="metric-card"><div class="text-slate-400">${t}</div><h2 class="text-3xl font-bold">${v}</h2></div>`;}
 
 // ================= FILTROS =================
 window.aplicarFiltros=function(){
@@ -135,25 +146,15 @@ window.aplicarFiltros=function(){
   const h=document.getElementById("fHasta").value;
 
   let filtradas=[...ordenes];
-
-  if(d){
-    const fd=new Date(d);
-    filtradas=filtradas.filter(o=>o.creadoEn?.seconds && new Date(o.creadoEn.seconds*1000)>=fd);
-  }
-
-  if(h){
-    const fh=new Date(h);
-    filtradas=filtradas.filter(o=>o.creadoEn?.seconds && new Date(o.creadoEn.seconds*1000)<=fh);
-  }
-
+  if(d){ const fd=new Date(d); filtradas=filtradas.filter(o=>o.creadoEn?.seconds && new Date(o.creadoEn.seconds*1000)>=fd); }
+  if(h){ const fh=new Date(h); filtradas=filtradas.filter(o=>o.creadoEn?.seconds && new Date(o.creadoEn.seconds*1000)<=fh); }
   renderDashboard(filtradas);
 }
 
 // ================= TABLA =================
 function renderTabla(data){
   if(!data.length) return "<div>No hay órdenes</div>";
-
-  return `<table class="w-full text-sm">
+  return `<table class="w-full text-sm table-auto">
   <thead><tr class="text-slate-400 border-b border-slate-700">
   <th>Cliente</th><th>Placa</th><th>Estado</th><th>Total</th><th>CRM</th><th>PDF</th>
   </tr></thead>
@@ -179,9 +180,7 @@ function renderGrafico(data){
       meses[f.getMonth()]+=o.pagado||0;
     }
   });
-
   if(chartFinanzas) chartFinanzas.destroy();
-
   chartFinanzas=new Chart(document.getElementById("chartFinanzas"),{
     type:"bar",
     data:{labels:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
@@ -213,13 +212,15 @@ document.querySelectorAll(".nav-btn").forEach(btn=>{
 
 // ================= LOGOUT =================
 document.getElementById("logoutBtn").addEventListener("click",async()=>{
-  await signOut(auth);
+  await auth.signOut();
   localStorage.clear();
   window.location.href="index.html";
 });
 
-iniciarRealtime();
-
+// ================= SIDEBAR TOGGLE =================
+document.getElementById("toggleSidebar").addEventListener("click",()=>{
+  document.querySelector(".sidebar").classList.toggle("collapsed");
+});
 </script>
 </body>
 </html>
