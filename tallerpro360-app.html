@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TallerPRO360 Mobile + Web</title>
+<link rel="icon" href="/assets/logo-192.png">
+
+<!-- TailwindCSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- FontAwesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{margin:0;font-family:'Inter',sans-serif;background:linear-gradient(135deg,#0f172a,#111827);color:#f1f5f9;}
+.erp-wrapper{display:flex;height:100vh;overflow:hidden;}
+.sidebar{width:280px;background:rgba(15,23,42,.95);backdrop-filter:blur(20px);border-right:1px solid rgba(255,255,255,.05);padding:30px 20px;display:flex;flex-direction:column;transition:width .3s;}
+.sidebar.collapsed{width:80px;}
+.logo{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;margin-bottom:50px;display:flex;align-items:center;gap:8px;}
+.logo span{background:linear-gradient(90deg,#22c55e,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.nav-btn{background:none;border:none;color:#94a3b8;padding:14px;text-align:left;border-radius:12px;margin-bottom:8px;transition:.3s;font-weight:600;display:flex;align-items:center;gap:12px;}
+.nav-btn:hover,.nav-btn.active{background:rgba(34,197,94,.1);color:#22c55e;}
+.nav-btn i{width:20px;text-align:center;}
+.main-content{flex:1;padding:30px;overflow-y:auto;}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;}
+.metric-card{padding:1.5rem;border-radius:1rem;background:rgba(15,23,42,.7);border:1px solid rgba(255,255,255,.05);transition:.3s;}
+.metric-card:hover{background:rgba(34,197,94,.1);}
+table th, table td{padding:10px;text-align:left;}
+table th{color:#94a3b8;}
+input[type="date"]{background:#0f172a;border:1px solid #1e293b;padding:6px 10px;border-radius:8px;color:#fff;}
+button:disabled{opacity:.6;cursor:not-allowed;}
+.alert-custom{position:fixed;top:20px;right:20px;z-index:9999;min-width:250px;}
+</style>
+</head>
+<body>
+
+<div class="erp-wrapper">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo"><i class="fa-solid fa-car-side text-green-500"></i> Taller<span>PRO360</span></div>
+  <button class="nav-btn active" data-section="dashboard"><i class="fa-solid fa-chart-line"></i> Dashboard</button>
+  <button class="nav-btn" data-section="ordenes"><i class="fa-solid fa-car"></i> Órdenes</button>
+  <button class="nav-btn" data-section="inventario"><i class="fa-solid fa-boxes-stacked"></i> Inventario</button>
+  <button class="nav-btn" data-section="clientes"><i class="fa-solid fa-user"></i> Clientes</button>
+  <button class="nav-btn" data-section="fidelizacion"><i class="fa-solid fa-gift"></i> Fidelización</button>
+  <button class="nav-btn" data-section="alertas"><i class="fa-solid fa-bell"></i> Alertas Push</button>
+  <button class="nav-btn" data-section="perfil"><i class="fa-solid fa-user-cog"></i> Perfil</button>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main-content">
+<header class="topbar">
+  <div>
+    <h2 id="sectionTitle" class="text-2xl font-bold">Dashboard</h2>
+    <p class="text-slate-400 text-sm">Centro de control operativo en tiempo real</p>
+  </div>
+  <div class="flex gap-2">
+    <button id="toggleSidebar" class="border px-3 py-1 rounded"><i class="fa-solid fa-bars"></i></button>
+    <button id="logoutBtn" class="border px-3 py-1 rounded">Salir</button>
+  </div>
+</header>
+
+<section id="contentArea"></section>
+</main>
+</div>
+
+<div id="alertContainer"></div>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.16.0/firebase-app.js";
+import { getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.16.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.16.0/firebase-auth.js";
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.16.0/firebase-messaging.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+  authDomain: "tallerpro360.firebaseapp.com",
+  projectId: "tallerpro360",
+  storageBucket: "tallerpro360.firebasestorage.app",
+  messagingSenderId: "636224778184",
+  appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const messaging = getMessaging(app);
+
+// Variables globales
+let ordenes=[], clientes=[], inventario=[], fidelizacion=[];
+const empresaId=localStorage.getItem("empresaId");
+const sucursalId=localStorage.getItem("sucursalId");
+const uid=localStorage.getItem("uid");
+const rol=localStorage.getItem("rol");
+let chart=null;
+
+// ALERTAS
+function showAlert(msg, type="success", duration=3000){
+  const alertDiv=document.createElement("div");
+  alertDiv.className=`alert alert-${type} alert-custom`;
+  alertDiv.textContent=msg;
+  document.body.appendChild(alertDiv);
+  setTimeout(()=>alertDiv.remove(), duration);
+}
+
+// AUTH
+onAuthStateChanged(auth,user=>{
+  if(!user) window.location.href="/";
+  else initApp();
+});
+
+// INICIALIZAR APP
+function initApp(){
+
+  // Órdenes
+  onSnapshot(collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
+    snapshot=>{
+      ordenes=[];
+      snapshot.forEach(d=>ordenes.push({id:d.id,...d.data()}));
+      renderDashboard();
+      renderOrdenes();
+      renderMetricas();
+    });
+
+  // Clientes
+  onSnapshot(collection(db,"empresas",empresaId,"sucursales",sucursalId,"clientes"),
+    snapshot=>{
+      clientes=[];
+      snapshot.forEach(d=>clientes.push({id:d.id,...d.data()}));
+    });
+
+  // Inventario
+  onSnapshot(collection(db,"empresas",empresaId,"sucursales",sucursalId,"inventario"),
+    snapshot=>{
+      inventario=[];
+      snapshot.forEach(d=>inventario.push({id:d.id,...d.data()}));
+    });
+
+  // Fidelización
+  onSnapshot(collection(db,"empresas",empresaId,"sucursales",sucursalId,"fidelizacion"),
+    snapshot=>{
+      fidelizacion=[];
+      snapshot.forEach(d=>fidelizacion.push({id:d.id,...d.data()}));
+    });
+
+  // Push notifications
+  getToken(messaging,{vapidKey:"YOUR_VAPID_KEY"}).then(token=>console.log("Push token:",token));
+  onMessage(messaging,payload=>showAlert("🔔 "+payload.notification.title,"info"));
+}
+
+// RENDER DASHBOARD
+function renderDashboard(){
+  const content=document.getElementById("contentArea");
+  if(document.querySelector(".nav-btn.active").dataset.section!=="dashboard") return;
+  const ingresos=ordenes.reduce((s,o)=>s+(o.pagado||0),0);
+  const activas=ordenes.filter(o=>o.estado!=="entregado").length;
+  content.innerHTML=`
+    <div class="grid md:grid-cols-4 gap-6 mb-8">
+      ${kpi("Ingresos","$"+ingresos.toLocaleString())}
+      ${kpi("Órdenes Activas",activas)}
+      ${kpi("Clientes",clientes.length)}
+      ${kpi("Fidelización",fidelizacion.length)}
+    </div>
+    <canvas id="chartFinanzas" class="mb-8"></canvas>
+  `;
+  renderGrafico();
+}
+function kpi(title,value){return `<div class="metric-card"><div class="text-slate-400">${title}</div><h2 class="text-3xl font-bold">${value}</h2></div>`;}
+
+// RENDER GRAFICO
+function renderGrafico(){
+  const meses=Array(12).fill(0);
+  ordenes.forEach(o=>{
+    if(o.creadoEn?.seconds){ const f=new Date(o.creadoEn.seconds*1000); meses[f.getMonth()]+=(o.pagado||0);}
+  });
+  if(chart) chart.destroy();
+  chart=new Chart(document.getElementById("chartFinanzas"),{
+    type:"bar",
+    data:{labels:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],datasets:[{data:meses,backgroundColor:"#22c55e"}]},
+    options:{plugins:{legend:{display:false}},responsive:true,maintainAspectRatio:false}
+  });
+}
+
+// RENDER ORDENES
+function renderOrdenes(){
+  const content=document.getElementById("contentArea");
+  if(document.querySelector(".nav-btn.active").dataset.section!=="ordenes") return;
+  content.innerHTML=`<h3>Órdenes en tiempo real</h3><ul class="list-group bg-transparent">${ordenes.map(o=>`<li class="list-group-item bg-transparent text-white mb-2">${o.clienteNombre} - ${o.placa} - $${o.totalOrden}</li>`).join("")}</ul>`;
+}
+
+// NAV
+document.querySelectorAll(".nav-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("sectionTitle").innerText=btn.innerText.trim();
+    renderDashboard(); renderOrdenes();
+  });
+});
+
+// LOGOUT
+document.getElementById("logoutBtn").addEventListener("click",async()=>{
+  await auth.signOut(); localStorage.clear(); window.location.href="/";
+});
+
+// SIDEBAR TOGGLE
+document.getElementById("toggleSidebar").addEventListener("click",()=>document.querySelector(".sidebar").classList.toggle("collapsed"));
+</script>
+</body>
+</html>
