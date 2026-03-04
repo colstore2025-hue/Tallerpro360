@@ -9,7 +9,6 @@
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#16a34a">
 <link rel="icon" href="/assets/logo-192.png" type="image/png">
-<link rel="stylesheet" href="/assets/css/styles.css">
 
 <style>
 body{font-family:Arial,sans-serif;margin:0;background:#f9fafb;}
@@ -17,7 +16,7 @@ body{font-family:Arial,sans-serif;margin:0;background:#f9fafb;}
 .container{max-width:1200px;margin:auto;}
 .center{text-align:center;}
 .hero-bg{background:linear-gradient(135deg,#ecfdf5,#eff6ff);}
-h1,h2,h3{font-weight:900;}
+h1,h2,h3{font-weight:900;margin:0;}
 h1{font-size:46px;}
 h2{font-size:36px;}
 h3{font-size:24px;}
@@ -44,6 +43,7 @@ h3{font-size:24px;}
 .user-list{margin-top:20px;}
 .user-item{padding:10px;background:#f1f5f9;margin-bottom:10px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;}
 .user-item span{font-weight:700;}
+footer{padding:40px 20px;text-align:center;background:#f1f5f9;}
 </style>
 </head>
 <body>
@@ -90,7 +90,6 @@ TallerPRO360 organiza, controla y profesionaliza tu taller automotriz.
 <p style="color:#555;margin-bottom:60px;">Empieza pequeño. Crece sin límites.</p>
 <div class="plan-grid">
 
-<!-- TRIAL -->
 <div class="plan highlight">
 <h3>Trial</h3>
 <p class="price">Gratis / 7 días</p>
@@ -104,7 +103,6 @@ TallerPRO360 organiza, controla y profesionaliza tu taller automotriz.
 <div class="loader">Activando trial...</div>
 </div>
 
-<!-- BÁSICO -->
 <div class="plan">
 <h3>Básico</h3>
 <p class="price">$29.900 / mes</p>
@@ -118,7 +116,6 @@ TallerPRO360 organiza, controla y profesionaliza tu taller automotriz.
 <div class="loader">Redirigiendo a pago...</div>
 </div>
 
-<!-- PRO -->
 <div class="plan highlight">
 <h3>PRO</h3>
 <p class="price">$69.900 / mes</p>
@@ -137,7 +134,6 @@ Facturación Electrónica: +$15.000
 <div class="loader">Redirigiendo a pago...</div>
 </div>
 
-<!-- PRO ANUAL -->
 <div class="plan dark-plan">
 <h3>PRO Anual</h3>
 <p class="price" style="color:#22c55e;">$699.000 / año</p>
@@ -190,7 +186,6 @@ TallerPRO360 © 2026 · Tu ayudante inteligente en el taller
 </p>
 </footer>
 
-<!-- ANIMACIONES -->
 <script>
 const observer = new IntersectionObserver(entries=>{
 entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add("visible");}});
@@ -204,14 +199,8 @@ ordenes=10+Math.floor(Math.random()*5);
 document.getElementById("demoIngresos").innerText=ingresos.toLocaleString("es-CO");
 document.getElementById("demoOrdenes").innerText=ordenes;
 },2500);
-</script>
 
-<!-- FIREBASE SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-functions-compat.js"></script>
-<script>
+// FIREBASE SDK
 const firebaseConfig = {
   apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
   authDomain: "tallerpro360.firebaseapp.com",
@@ -222,10 +211,8 @@ const firebaseConfig = {
   measurementId: "G-VEC2C0QX2G"
 };
 firebase.initializeApp(firebaseConfig);
-</script>
 
-<!-- PAGOS, TRIAL Y FACTURACIÓN -->
-<script>
+// PAGOS, TRIAL Y FACTURACIÓN
 async function iniciarPago(plan, boton){
   boton.disabled=true;
   const loader=boton.nextElementSibling;
@@ -265,6 +252,12 @@ function agregarUsuarioDemo(){
   list.appendChild(item);
 }
 </script>
+
+<!-- FIREBASE SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-functions-compat.js"></script>
 
 </body>
 </html>
