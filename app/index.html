@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MultiServicios PRO</title>
+
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f172a">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+
+<div class="flex h-screen">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-gray-900 text-white p-4 flex flex-col">
+    <h2 class="text-xl font-bold mb-6">MultiPRO</h2>
+    <nav id="menu" class="flex flex-col gap-2"></nav>
+    <button onclick="logout()" class="mt-auto bg-red-600 p-2 rounded">
+      Cerrar sesión
+    </button>
+  </aside>
+
+  <!-- Contenido -->
+  <main class="flex-1 p-6 overflow-auto">
+    <div id="appContent"></div>
+  </main>
+
+</div>
+
+<script type="module" src="./app.js"></script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/service-worker.js");
+}
+</script>
+
+</body>
+</html>
