@@ -6,9 +6,16 @@
 <title>TallerPRO360 | ERP Master Premium</title>
 <link rel="icon" href="logo-tallerpro360.png">
 
+<!-- TailwindCSS -->
 <script src="https://cdn.tailwindcss.com"></script>
+
+<!-- FontAwesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -16,9 +23,9 @@ body{margin:0;font-family:'Inter',sans-serif;background:linear-gradient(135deg,#
 .erp-wrapper{display:flex;height:100vh;overflow:hidden;}
 .sidebar{width:280px;background:rgba(15,23,42,.95);backdrop-filter:blur(20px);border-right:1px solid rgba(255,255,255,.05);padding:30px 20px;display:flex;flex-direction:column;transition:width .3s;}
 .sidebar.collapsed{width:80px;}
-.logo{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;margin-bottom:50px;display:flex;align-items:center;}
+.logo{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;margin-bottom:50px;display:flex;align-items:center;gap:8px;}
 .logo span{background:linear-gradient(90deg,#22c55e,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.nav-btn{background:none;border:none;color:#94a3b8;padding:14px;text-align:left;border-radius:12px;margin-bottom:8px;transition:.3s;font-weight:600;display:flex;align-items:center;gap:10px;}
+.nav-btn{background:none;border:none;color:#94a3b8;padding:14px;text-align:left;border-radius:12px;margin-bottom:8px;transition:.3s;font-weight:600;display:flex;align-items:center;gap:12px;}
 .nav-btn:hover,.nav-btn.active{background:rgba(34,197,94,.1);color:#22c55e;}
 .nav-btn i{width:20px;text-align:center;}
 .main-content{flex:1;padding:30px;overflow-y:auto;}
@@ -26,6 +33,7 @@ body{margin:0;font-family:'Inter',sans-serif;background:linear-gradient(135deg,#
 .metric-card{padding:1.5rem;border-radius:1rem;background:rgba(15,23,42,.7);border:1px solid rgba(255,255,255,.05);transition:.3s;}
 .metric-card:hover{background:rgba(34,197,94,.1);}
 table th, table td{padding:10px;text-align:left;}
+table th{color:#94a3b8;}
 input[type="date"]{background:#0f172a;border:1px solid #1e293b;padding:6px 10px;border-radius:8px;color:#fff;}
 button:disabled{opacity:.6;cursor:not-allowed;}
 </style>
@@ -36,7 +44,7 @@ button:disabled{opacity:.6;cursor:not-allowed;}
 
 <!-- SIDEBAR -->
 <aside class="sidebar">
-  <div class="logo"><i class="fa-solid fa-car-side mr-2 text-green-500"></i> Taller<span>PRO360</span></div>
+  <div class="logo"><i class="fa-solid fa-car-side text-green-500"></i> Taller<span>PRO360</span></div>
   <button class="nav-btn active" data-section="dashboard"><i class="fa-solid fa-chart-line"></i> Dashboard</button>
   <button class="nav-btn" data-section="ordenes"><i class="fa-solid fa-car"></i> Órdenes</button>
   <button class="nav-btn" data-section="inventario"><i class="fa-solid fa-boxes-stacked"></i> Inventario</button>
@@ -87,7 +95,7 @@ const rol=localStorage.getItem("rol");
 // ================= AUTH =================
 auth.onAuthStateChanged(user=>{
   if(!user) window.location.href="index.html";
-  iniciarRealtime();
+  else iniciarRealtime();
 });
 
 // ================= REALTIME =================
@@ -111,7 +119,7 @@ function renderDashboard(data){
   const proyeccion=Math.round((ingresos/data.length||0)*30);
 
   document.getElementById("contentArea").innerHTML=`
-  <div class="flex gap-4 mb-6">
+  <div class="flex flex-wrap gap-4 mb-6">
     <input type="date" id="fDesde" class="text-slate-800 px-3 py-1 rounded">
     <input type="date" id="fHasta" class="text-slate-800 px-3 py-1 rounded">
     <button onclick="aplicarFiltros()" class="bg-green-600 px-4 py-1 rounded">Filtrar</button>
@@ -144,7 +152,6 @@ function kpi(t,v){return `<div class="metric-card"><div class="text-slate-400">$
 window.aplicarFiltros=function(){
   const d=document.getElementById("fDesde").value;
   const h=document.getElementById("fHasta").value;
-
   let filtradas=[...ordenes];
   if(d){ const fd=new Date(d); filtradas=filtradas.filter(o=>o.creadoEn?.seconds && new Date(o.creadoEn.seconds*1000)>=fd); }
   if(h){ const fh=new Date(h); filtradas=filtradas.filter(o=>o.creadoEn?.seconds && new Date(o.creadoEn.seconds*1000)<=fh); }
@@ -160,7 +167,7 @@ function renderTabla(data){
   </tr></thead>
   <tbody>
   ${data.map(o=>`
-  <tr class="border-b border-slate-800">
+  <tr class="border-b border-slate-800 hover:bg-slate-800/50">
     <td>${o.clienteNombre||"-"}</td>
     <td>${o.placa||"-"}</td>
     <td>${o.estado||"-"}</td>
@@ -185,7 +192,7 @@ function renderGrafico(data){
     type:"bar",
     data:{labels:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
     datasets:[{data:meses,backgroundColor:"#22c55e"}]},
-    options:{plugins:{legend:{display:false}}}
+    options:{plugins:{legend:{display:false}},responsive:true,maintainAspectRatio:false}
   });
 }
 
