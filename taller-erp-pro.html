@@ -3,51 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TallerPRO360 ERP PRO 360</title>
+<title>TallerPRO360 | App Mecánicos</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body {
-  background: linear-gradient(135deg, #0f172a, #111827);
-  color: #f1f5f9;
-  font-family: Arial, sans-serif;
-}
-.glass {
-  background: rgba(15,23,42,.85);
-  backdrop-filter: blur(20px);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  margin-bottom: 1rem;
-}
-.btn-pro {
-  background: #22c55e;
-  border: none;
-  font-weight: 600;
-}
-.list-group-item {
-  border: 1px solid rgba(255,255,255,.1);
-}
-.alert-custom {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999;
-  min-width: 250px;
-}
+body{background:linear-gradient(135deg,#0f172a,#111827);color:#f1f5f9;font-family:Arial,sans-serif;}
+.glass{background:rgba(15,23,42,.85);backdrop-filter:blur(20px);border-radius:1rem;padding:1.5rem;margin-bottom:1rem;}
+.btn-pro{background:#22c55e;border:none;font-weight:600;}
+.list-group-item{border:1px solid rgba(255,255,255,.1);}
+.alert-custom{position:fixed;top:20px;right:20px;z-index:9999;min-width:250px;}
 </style>
 </head>
 <body class="p-3">
 
 <div class="container">
 
-<h3 class="text-center mb-4">ERP OPERATIVO PRO 360</h3>
+<h3 class="text-center mb-4">TallerPRO360 | App Mecánicos</h3>
 
 <div id="metricas" class="row mb-4"></div>
 
 <div class="glass">
-<h5>Nueva Orden</h5>
+<h5>Registrar Nueva Orden</h5>
 <form id="formOrden">
 <input class="form-control mb-2" id="cliente" placeholder="Cliente" required>
 <input class="form-control mb-2" id="telefono" placeholder="Teléfono" required>
@@ -74,12 +52,11 @@ body {
 </div>
 
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-// Configuración Firebase
+// Config Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
   authDomain: "tallerpro360.firebaseapp.com",
@@ -101,104 +78,103 @@ const rol = localStorage.getItem("rol");
 if (!empresaId || !uid || !rol || !sucursalId) window.location.href = "/";
 
 // Variables
-let ordenes = [];
-let inventario = [];
-let chart;
+let ordenes=[], inventario=[], chart;
 
 // Alertas
-function showAlert(msg, type="success", duration=3000){
-  const alertDiv = document.createElement("div");
-  alertDiv.className = `alert alert-${type} alert-custom`;
-  alertDiv.textContent = msg;
+function showAlert(msg,type="success",duration=3000){
+  const alertDiv=document.createElement("div");
+  alertDiv.className=`alert alert-${type} alert-custom`;
+  alertDiv.textContent=msg;
   document.body.appendChild(alertDiv);
-  setTimeout(()=>alertDiv.remove(), duration);
+  setTimeout(()=>alertDiv.remove(),duration);
 }
 
 // Autenticación
-onAuthStateChanged(auth, user=>{
-  if(!user) window.location.href = "/";
+onAuthStateChanged(auth,user=>{
+  if(!user) window.location.href="/";
   else iniciarERP();
 });
 
 // Inicializar ERP
 function iniciarERP(){
+  const ordenesRef = collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes");
+  onSnapshot(ordenesRef,snapshot=>{
+    ordenes=[];
+    snapshot.forEach(d=>ordenes.push({id:d.id,...d.data()}));
+    renderOrdenes();
+    renderMetricas();
+    renderGrafico();
+  });
 
-  onSnapshot(
-    collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
-    snapshot=>{
-      ordenes=[];
-      snapshot.forEach(d=>ordenes.push({id:d.id,...d.data()}));
-      renderOrdenes();
-      renderMetricas();
-      renderGrafico();
-    },
-    error=>showAlert("Error permisos órdenes: "+error.message, "danger")
-  );
-
-  onSnapshot(
-    collection(db,"empresas",empresaId,"sucursales",sucursalId,"inventario"),
-    snapshot=>{
-      inventario=[];
-      snapshot.forEach(d=>inventario.push({id:d.id,...d.data()}));
-    }
-  );
+  const inventarioRef = collection(db,"empresas",empresaId,"sucursales",sucursalId,"inventario");
+  onSnapshot(inventarioRef,snapshot=>{
+    inventario=[];
+    snapshot.forEach(d=>inventario.push({id:d.id,...d.data()}));
+  });
 }
 
-// Crear orden
-document.getElementById("formOrden").addEventListener("submit", async e=>{
+// Crear orden y usuario cliente
+document.getElementById("formOrden").addEventListener("submit",async e=>{
   e.preventDefault();
   try{
-    if(!auth.currentUser) return showAlert("Sesión inválida","danger");
-
-    const clienteNombre = document.getElementById("cliente").value.trim();
-    const clienteTelefono = document.getElementById("telefono").value.trim();
-    const placa = document.getElementById("placa").value.trim();
-    const vehiculo = document.getElementById("vehiculo").value.trim();
-    const totalOrden = parseFloat(document.getElementById("total").value) || 0;
-
-    const repuestosArray = document.getElementById("repuestos").value
-      .split(",").map(r=>r.trim()).filter(r=>r.length>0);
+    const clienteNombre=document.getElementById("cliente").value.trim();
+    const clienteTelefono=document.getElementById("telefono").value.trim();
+    const placa=document.getElementById("placa").value.trim();
+    const vehiculo=document.getElementById("vehiculo").value.trim();
+    const totalOrden=parseFloat(document.getElementById("total").value)||0;
+    const repuestosArray=document.getElementById("repuestos").value.split(",").map(r=>r.trim()).filter(r=>r.length>0);
 
     if(!clienteNombre||!placa||!vehiculo) return showAlert("Completa los campos obligatorios","warning");
 
-    // Crear orden siempre
-    await addDoc(
-      collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
+    // Registrar cliente como usuario permanente
+    const clienteEmail=clienteTelefono.replace(/\D/g,"")+"@tallerpro360.com";
+    const clientePass=Math.random().toString(36).slice(-8);
+    
+    // Verificar si ya existe
+    const usuariosRef = collection(db,"clientes");
+    const q = query(usuariosRef, where("telefono","==",clienteTelefono));
+    const snap = await getDocs(q);
+    if(snap.empty){
+      await addDoc(usuariosRef,{nombre:clienteNombre,telefono:clienteTelefono,email:clienteEmail,uid:"",registradoEn:serverTimestamp()});
+      try{
+        const userCred = await createUserWithEmailAndPassword(auth,clienteEmail,clientePass);
+        const userDoc = doc(db,"clientes",userCred.user.uid);
+        await updateDoc(userDoc,{uid:userCred.user.uid});
+        showAlert(`Cliente registrado: ${clienteNombre}, contraseña temporal: ${clientePass}`);
+      } catch(err){
+        console.warn("Error creando usuario firebase:",err.message);
+      }
+    }
+
+    // Crear orden
+    await addDoc(collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),
       { clienteNombre, clienteTelefono, placa, vehiculo, repuestos:repuestosArray, totalOrden, pagado:0, estado:"activa", creadoEn:serverTimestamp(), creadoPor:uid }
     );
 
-    // Descontar inventario solo si usuario tiene permisos
+    // Descontar inventario
     for(const nombre of repuestosArray){
       const item = inventario.find(i=>i.nombre?.toLowerCase()===nombre.toLowerCase());
-      if(item){
-        try{
-          // Solo admins altos pueden modificar stock y registrar movimientos
-          if(["dueno","jefe","contador"].includes(rol)){
-            await updateDoc(doc(db,"empresas",empresaId,"sucursales",sucursalId,"inventario",item.id),
-              { stockActual:(item.stockActual||0)-1 });
-
-            await addDoc(collection(db,"empresas",empresaId,"sucursales",sucursalId,"movimientosInventario"),
-              { tipo:"salida", producto:item.nombre, cantidad:1, fecha:serverTimestamp() });
-          }
-        } catch(err) {
-          console.warn("No tiene permisos para inventario/movimientos:", err.message);
-        }
+      if(item && ["dueno","jefe","contador"].includes(rol)){
+        await updateDoc(doc(db,"empresas",empresaId,"sucursales",sucursalId,"inventario",item.id),
+          { stockActual:(item.stockActual||0)-1 });
+        await addDoc(collection(db,"empresas",empresaId,"sucursales",sucursalId,"movimientosInventario"),
+          { tipo:"salida", producto:item.nombre, cantidad:1, fecha:serverTimestamp() });
       }
     }
 
     e.target.reset();
     showAlert("Orden creada correctamente");
-  }catch(err){
+  } catch(err){
     console.error(err);
-    showAlert("Error creando orden: "+err.message, "danger");
+    showAlert("Error creando orden: "+err.message,"danger");
   }
 });
 
 // Métricas
 function renderMetricas(){
-  const totalOrdenes = ordenes.length;
-  const ingresos = ordenes.reduce((a,o)=>a+(o.pagado||0),0);
-  const pendientes = ordenes.reduce((a,o)=>a+((o.totalOrden||0)-(o.pagado||0)),0);
+  const totalOrdenes=ordenes.length;
+  const ingresos=ordenes.reduce((a,o)=>a+(o.pagado||0),0);
+  const pendientes=ordenes.reduce((a,o)=>a+((o.totalOrden||0)-(o.pagado||0)),0);
 
   document.getElementById("metricas").innerHTML=`
     <div class="col-md-4"><div class="glass"><h6>Órdenes</h6><h2>${totalOrdenes}</h2></div></div>
@@ -214,11 +190,7 @@ function renderOrdenes(){
   ordenes.forEach(o=>{
     const li=document.createElement("li");
     li.className="list-group-item bg-transparent text-white mb-2";
-    li.innerHTML=`
-      <strong>${o.placa}</strong> - ${o.vehiculo}<br>
-      ${o.clienteNombre}<br>
-      Total: $${o.totalOrden}
-    `;
+    li.innerHTML=`<strong>${o.placa}</strong> - ${o.vehiculo}<br>${o.clienteNombre}<br>Total: $${o.totalOrden}`;
     ul.appendChild(li);
   });
 }
@@ -239,7 +211,7 @@ function renderGrafico(){
     options:{ responsive:true, plugins:{ legend:{labels:{color:"#f1f5f9"}} }, scales:{ x:{ ticks:{color:"#f1f5f9"} }, y:{ ticks:{color:"#f1f5f9"} } } }
   });
 }
-
 </script>
+
 </body>
 </html>
