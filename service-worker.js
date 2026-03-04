@@ -1,4 +1,5 @@
-const CACHE_NAME = "tallerpro360-v5";
+const CACHE_NAME = "tallerpro360-v6";
+const OFFLINE_URL = "/index.html";
 
 const ASSETS_TO_CACHE = [
   "/",
@@ -14,7 +15,9 @@ const ASSETS_TO_CACHE = [
   "/assets/favicon.png"
 ];
 
-// INSTALACIÓN
+// ===============================
+// 🚀 INSTALACIÓN
+// ===============================
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
@@ -25,12 +28,15 @@ self.addEventListener("install", event => {
   self.skipWaiting();
 });
 
-// ACTIVACIÓN
+// ===============================
+// 🛰️ ACTIVACIÓN
+// ===============================
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys => {
       return Promise.all(
-        keys.filter(key => key !== CACHE_NAME)
+        keys
+          .filter(key => key !== CACHE_NAME)
           .map(key => caches.delete(key))
       );
     })
@@ -39,27 +45,38 @@ self.addEventListener("activate", event => {
   console.log("🛰️ TallerPRO360 activo");
 });
 
-// FETCH - Stale While Revalidate
+// ===============================
+// 🌐 FETCH - Estrategia Inteligente
+// ===============================
 self.addEventListener("fetch", event => {
-  if (event.request.method !== "GET" || !event.request.url.startsWith("http")) return;
+
+  if (event.request.method !== "GET") return;
+  if (!event.request.url.startsWith("http")) return;
 
   event.respondWith(
     caches.match(event.request).then(cachedResponse => {
 
-      const fetchPromise = fetch(event.request)
+      const networkFetch = fetch(event.request)
         .then(networkResponse => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME)
-              .then(cache => cache.put(event.request, responseClone));
+
+          if (!networkResponse || networkResponse.status !== 200) {
+            return networkResponse;
           }
+
+          const responseClone = networkResponse.clone();
+
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseClone);
+          });
+
           return networkResponse;
         })
         .catch(() => {
           console.log("⚠️ Modo offline activo");
+          return cachedResponse || caches.match(OFFLINE_URL);
         });
 
-      return cachedResponse || fetchPromise;
+      return cachedResponse || networkFetch;
     })
   );
 });
