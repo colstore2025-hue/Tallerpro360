@@ -3,181 +3,118 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TallerPRO360 Mobile + Web</title>
+<title>TallerPRO360 - Dashboard PRO</title>
 
-<!-- TailwindCSS -->
 <script src="https://cdn.tailwindcss.com"></script>
-
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 
-// =================== CONFIG FIREBASE ===================
 const firebaseConfig = {
-  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-  authDomain: "tallerpro360.firebaseapp.com",
-  projectId: "tallerpro360",
-  storageBucket: "tallerpro360.firebasestorage.app",
-  messagingSenderId: "636224778184",
-  appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_DOMINIO",
+  projectId: "TU_PROJECT_ID",
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const messaging = getMessaging(app);
 
-// =================== VARIABLES GLOBALES ===================
-let ordenes = [], clientes = [], inventario = [], chartIngresos = null;
+let ordenes=[], clientes=[];
+let chart;
+
 const empresaId = localStorage.getItem("empresaId");
 const sucursalId = localStorage.getItem("sucursalId");
 const uid = localStorage.getItem("uid");
 const rol = localStorage.getItem("rol");
 
-// =================== ALERTAS ===================
-function showAlert(msg,type="success",duracion=3000){
-  const div=document.createElement("div");
-  div.className=`fixed top-5 right-5 z-50 p-4 rounded shadow text-white font-semibold ${type==="success"?"bg-green-600":"bg-red-600"}`;
-  div.innerText=msg;
-  document.body.appendChild(div);
-  setTimeout(()=>div.remove(),duracion);
-}
-
-// =================== AUTENTICACION ===================
+// ================= AUTH =================
 onAuthStateChanged(auth,user=>{
   if(!user) window.location.href="./index.html";
-  else initERP();
+  else iniciarDashboard();
 });
 
-// =================== INICIALIZAR ERP ===================
-function initERP(){
+// ================= INICIO =================
+function iniciarDashboard(){
 
-  // ======== ÓRDENES EN TIEMPO REAL ========
-  const ordenesRef = collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes");
-  const q = query(ordenesRef, orderBy("creadoEn","desc"));
-  onSnapshot(q, snapshot=>{
+  const ref = collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes");
+  const q = query(ref, orderBy("creadoEn","desc"));
+
+  onSnapshot(q,snap=>{
     ordenes=[];
-    snapshot.forEach(d=>ordenes.push({id:d.id,...d.data()}));
+    snap.forEach(d=>{
+      let data={id:d.id,...d.data()};
+      if(rol==="mecanico" && data.mecanicoId!==uid) return;
+      ordenes.push(data);
+    });
     renderOrdenes();
     renderMetricas();
     renderGrafico();
   });
 
-  // ======== CLIENTES ========
   const clientesRef = collection(db,"empresas",empresaId,"clientes");
-  onSnapshot(clientesRef, snapshot=>{
+  onSnapshot(clientesRef,snap=>{
     clientes=[];
-    snapshot.forEach(d=>clientes.push({id:d.id,...d.data()}));
-  });
-
-  // ======== INVENTARIO ========
-  const inventarioRef = collection(db,"empresas",empresaId,"sucursales",sucursalId,"inventario");
-  onSnapshot(inventarioRef, snapshot=>{
-    inventario=[];
-    snapshot.forEach(d=>inventario.push({id:d.id,...d.data()}));
-  });
-
-  // ======== NOTIFICACIONES PUSH (PWA READY) ========
-  getToken(messaging,{vapidKey:"TU_VAPID_KEY_AQUI"}).then(token=>{
-    console.log("Token push:",token);
-  }).catch(err=>console.warn("Push no activado:",err));
-
-  onMessage(messaging,payload=>{
-    showAlert(`Nueva notificación: ${payload.notification?.title || "Orden"}`,"success",5000);
+    snap.forEach(d=>clientes.push({id:d.id,...d.data()}));
   });
 }
 
-// =================== CREAR NUEVA ORDEN ===================
-document.addEventListener("submit", async(e)=>{
-  if(e.target.id!=="formOrden") return;
-  e.preventDefault();
-  try{
-    const cNombre = document.getElementById("cliente").value.trim();
-    const cTelefono = document.getElementById("telefono").value.trim();
-    const placa = document.getElementById("placa").value.trim();
-    const vehiculo = document.getElementById("vehiculo").value.trim();
-    const repuestos = document.getElementById("repuestos").value.split(",").map(r=>r.trim()).filter(r=>r.length>0);
-    const total = parseFloat(document.getElementById("total").value)||0;
+// ================= CREAR ORDEN =================
+window.crearOrden = async function(){
+  const cliente=document.getElementById("cliente").value;
+  const placa=document.getElementById("placa").value;
+  const vehiculo=document.getElementById("vehiculo").value;
+  const total=parseFloat(document.getElementById("total").value)||0;
 
-    if(!cNombre||!placa||!vehiculo) return showAlert("Completa los campos obligatorios","danger");
+  if(!cliente||!placa) return alert("Campos obligatorios");
 
-    // Crear o actualizar cliente
-    let clienteDoc = clientes.find(c=>c.telefono===cTelefono);
-    if(!clienteDoc){
-      const docRef = await addDoc(collection(db,"empresas",empresaId,"clientes"),{
-        nombre:cNombre,telefono:cTelefono,puntos:0,ordenes:1
-      });
-      clienteDoc={id:docRef.id,nombre:cNombre,telefono:cTelefono,puntos:0,ordenes:1};
-      clientes.push(clienteDoc);
-    }else{
-      await updateDoc(doc(db,"empresas",empresaId,"clientes",clienteDoc.id),{
-        ordenes:(clienteDoc.ordenes||0)+1
-      });
-    }
+  await addDoc(collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),{
+    cliente,
+    placa,
+    vehiculo,
+    totalOrden:total,
+    pagado:0,
+    estado:"activa",
+    mecanicoId: rol==="mecanico"?uid:null,
+    creadoPor:uid,
+    creadoEn:serverTimestamp()
+  });
 
-    // Crear orden
-    await addDoc(collection(db,"empresas",empresaId,"sucursales",sucursalId,"ordenes"),{
-      clienteNombre:cNombre,
-      clienteTelefono:cTelefono,
-      placa,
-      vehiculo,
-      repuestos,
-      totalOrden:total,
-      pagado:0,
-      estado:"activa",
-      creadoEn:serverTimestamp(),
-      creadoPor:uid
-    });
+  document.getElementById("formOrden").reset();
+};
 
-    // Ajuste de inventario
-    if(["dueno","jefe","contador"].includes(rol)){
-      for(const r of repuestos){
-        const item=inventario.find(i=>i.nombre?.toLowerCase()===r.toLowerCase());
-        if(item){
-          await updateDoc(doc(db,"empresas",empresaId,"sucursales",sucursalId,"inventario",item.id),{stockActual:(item.stockActual||0)-1});
-        }
-      }
-    }
-
-    e.target.reset();
-    showAlert("Orden creada y cliente registrado correctamente!");
-  }catch(err){
-    console.error(err);
-    showAlert("Error: "+err.message,"danger");
-  }
-});
-
-// =================== RENDER METRICAS ===================
+// ================= METRICAS =================
 function renderMetricas(){
-  const total = ordenes.length;
-  const ingresos = ordenes.reduce((a,o)=>a+(o.pagado||0),0);
-  const pendientes = ordenes.reduce((a,o)=>a+((o.totalOrden||0)-(o.pagado||0)),0);
+  const total=ordenes.length;
+  const ingresos=ordenes.reduce((a,o)=>a+(o.pagado||0),0);
+  const pendientes=ordenes.reduce((a,o)=>a+((o.totalOrden||0)-(o.pagado||0)),0);
+
   document.getElementById("metricas").innerHTML=`
-    <div class="col-md-4"><div class="p-4 mb-4 bg-green-600 rounded shadow"><h6>Órdenes</h6><h2>${total}</h2></div></div>
-    <div class="col-md-4"><div class="p-4 mb-4 bg-blue-600 rounded shadow"><h6>Ingresos</h6><h2>$${ingresos.toLocaleString()}</h2></div></div>
-    <div class="col-md-4"><div class="p-4 mb-4 bg-yellow-500 rounded shadow"><h6>Pendientes</h6><h2>$${pendientes.toLocaleString()}</h2></div></div>
+    <div class="bg-green-600 p-4 rounded">Órdenes<br><b>${total}</b></div>
+    <div class="bg-blue-600 p-4 rounded">Ingresos<br><b>$${ingresos}</b></div>
+    <div class="bg-yellow-500 p-4 rounded">Pendientes<br><b>$${pendientes}</b></div>
   `;
 }
 
-// =================== RENDER ORDENES ===================
+// ================= ORDENES =================
 function renderOrdenes(){
-  const ul=document.getElementById("listaOrdenes");
-  if(!ul) return;
-  ul.innerHTML="";
+  const cont=document.getElementById("ordenesLista");
+  cont.innerHTML="";
   ordenes.forEach(o=>{
-    const li=document.createElement("li");
-    li.className="bg-gray-800 p-3 rounded mb-2 text-white";
-    li.innerHTML=`<strong>${o.placa}</strong> - ${o.vehiculo}<br>${o.clienteNombre}<br>Total: $${o.totalOrden}`;
-    ul.appendChild(li);
+    cont.innerHTML+=`
+    <div class="bg-gray-800 p-3 rounded mb-2">
+      <b>${o.placa}</b> - ${o.vehiculo}<br>
+      Cliente: ${o.cliente}<br>
+      Total: $${o.totalOrden}<br>
+      Estado: ${o.estado}
+    </div>`;
   });
 }
 
-// =================== GRAFICO INGRESOS ===================
+// ================= GRAFICO =================
 function renderGrafico(){
   const meses={};
   ordenes.forEach(o=>{
@@ -186,59 +123,55 @@ function renderGrafico(){
     const mes=d.getMonth()+1;
     meses[mes]=(meses[mes]||0)+(o.pagado||0);
   });
-  const labels=Object.keys(meses).map(m=>`Mes ${m}`);
+
+  const labels=Object.keys(meses);
   const data=Object.values(meses);
-  if(chartIngresos) chartIngresos.destroy();
-  const ctx=document.getElementById("grafico").getContext("2d");
-  chartIngresos=new Chart(ctx,{
-    type:"line",
-    data:{labels, datasets:[{label:"Ingresos",data, borderColor:"#22c55e",backgroundColor:"rgba(34,197,94,0.3)"}]},
-    options:{responsive:true,plugins:{legend:{labels:{color:"#f1f5f9"}}},scales:{x:{ticks:{color:"#f1f5f9"}},y:{ticks:{color:"#f1f5f9"}}}}
+
+  if(chart) chart.destroy();
+
+  chart=new Chart(document.getElementById("grafico"),{
+    type:"bar",
+    data:{labels,datasets:[{label:"Ingresos",data}]}
   });
 }
 
-// =================== LOGOUT ===================
-document.getElementById("logoutBtn")?.addEventListener("click",async()=>{
+// ================= LOGOUT =================
+window.logout=async function(){
   await signOut(auth);
   localStorage.clear();
   window.location.href="./index.html";
-});
+}
 </script>
+</head>
 
-<body class="bg-gray-900 text-white">
-<div class="container mx-auto p-4">
+<body class="bg-gray-900 text-white p-4">
 
-<h2 class="text-center text-3xl font-bold mb-6">TallerPRO360 Mobile + Web</h2>
+<h1 class="text-3xl font-bold mb-6">TallerPRO360 Dashboard</h1>
 
-<div id="metricas" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"></div>
+<div id="metricas" class="grid grid-cols-3 gap-4 mb-6"></div>
 
 <div class="bg-gray-800 p-4 rounded mb-6">
-<h4 class="font-semibold mb-2">Nueva Orden</h4>
-<form id="formOrden" class="grid grid-cols-1 md:grid-cols-2 gap-2">
-<input id="cliente" placeholder="Cliente" class="p-2 rounded bg-gray-700 border border-gray-600" required>
-<input id="telefono" placeholder="Teléfono" class="p-2 rounded bg-gray-700 border border-gray-600" required>
-<input id="placa" placeholder="Placa" class="p-2 rounded bg-gray-700 border border-gray-600" required>
-<input id="vehiculo" placeholder="Vehículo" class="p-2 rounded bg-gray-700 border border-gray-600" required>
-<input id="repuestos" placeholder="Repuestos (coma)" class="p-2 rounded bg-gray-700 border border-gray-600">
-<input id="total" placeholder="Total" type="number" class="p-2 rounded bg-gray-700 border border-gray-600" required>
-<button class="col-span-1 md:col-span-2 bg-green-600 p-2 rounded font-semibold hover:bg-green-500">Crear Orden</button>
+<h3>Nueva Orden</h3>
+<form id="formOrden" onsubmit="event.preventDefault(); crearOrden();">
+<input id="cliente" placeholder="Cliente" class="p-2 m-1 text-black">
+<input id="placa" placeholder="Placa" class="p-2 m-1 text-black">
+<input id="vehiculo" placeholder="Vehículo" class="p-2 m-1 text-black">
+<input id="total" type="number" placeholder="Total" class="p-2 m-1 text-black">
+<button class="bg-green-600 p-2 rounded">Crear</button>
 </form>
 </div>
 
 <div class="bg-gray-800 p-4 rounded mb-6">
-<h4 class="font-semibold mb-2">Órdenes en tiempo real</h4>
-<ul id="listaOrdenes" class="list-disc list-inside"></ul>
+<h3>Órdenes</h3>
+<div id="ordenesLista"></div>
 </div>
 
 <div class="bg-gray-800 p-4 rounded">
-<h4 class="font-semibold mb-2">Ingresos Mensuales</h4>
-<canvas id="grafico" height="150"></canvas>
+<h3>Ingresos Mensuales</h3>
+<canvas id="grafico"></canvas>
 </div>
 
-<div class="mt-4 text-center">
-<button id="logoutBtn" class="bg-red-600 p-2 rounded font-semibold hover:bg-red-500">Cerrar Sesión</button>
-</div>
+<button onclick="logout()" class="mt-6 bg-red-600 p-2 rounded">Cerrar sesión</button>
 
-</div>
 </body>
 </html>
