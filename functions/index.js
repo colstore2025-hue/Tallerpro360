@@ -23,7 +23,7 @@ mercadopago.configure({
 });
 
 // =============================================
-// 📦 IMPORTAR MÓDULOS (DESDE /modules)
+// 📦 IMPORTAR MÓDULOS
 // =============================================
 
 const ordenes = require("./modules/ordenes");
@@ -35,7 +35,7 @@ const clientes = require("./modules/clientes");
 const vehiculos = require("./modules/vehiculos");
 
 // =============================================
-// 📦 IMPORTAR UTILS ESPECIALES (SI EXISTEN)
+// 📦 UTILS
 // =============================================
 
 const { trialOnCreate } = require("./trial-on-create");
@@ -173,4 +173,108 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
     console.error("❌ Error creando empresa:", error);
   }
 
+});
+
+// =============================================
+// 💎 ACTIVAR TRIAL MANUAL (HTTPS Callable)
+// =============================================
+
+exports.activarTrial = functions.https.onCall(async (data, context) => {
+  if (!context.auth) return { success: false, error: "Usuario no autenticado" };
+
+  try {
+    const uid = context.auth.uid;
+
+    // Buscar empresa del usuario
+    const userClaims = context.auth.token;
+    const empresaId = userClaims.empresaId;
+    if (!empresaId) return { success: false, error: "No se encuentra empresa asociada" };
+
+    const empresaRef = db.collection("empresas").doc(empresaId);
+
+    // Activar trial 7 días
+    const ahora = admin.firestore.Timestamp.now();
+    const vence = admin.firestore.Timestamp.fromDate(
+      new Date(Date.now() + 7 * 86400000)
+    );
+
+    await empresaRef.update({
+      "plan.tipo": "trial",
+      "plan.estado": "activo",
+      "plan.fechaInicio": ahora,
+      "plan.fechaVencimiento": vence
+    });
+
+    return { success: true, mensaje: "Trial activado por 7 días", plan: "trial" };
+
+  } catch (error) {
+    return { success: false, mensaje: error.message };
+  }
+});
+
+// =============================================
+// 💳 CREAR PAGO (BÁSICO, PRO, PRO ANUAL)
+// =============================================
+
+exports.iniciarPagoPlan = functions.https.onCall(async (data, context) => {
+  if (!context.auth) return { success: false, error: "Usuario no autenticado" };
+
+  try {
+    const { plan, facturaElectronica } = data;
+    const uid = context.auth.uid;
+    const userClaims = context.auth.token;
+    const empresaId = userClaims.empresaId;
+
+    if (!empresaId) return { success: false, error: "Usuario no tiene empresa asignada" };
+
+    let precioBase;
+    let descripcion = "";
+
+    switch (plan) {
+      case "basico":
+        precioBase = 29900;
+        descripcion = "Plan Básico";
+        break;
+      case "pro":
+        precioBase = 59900;
+        descripcion = "Plan PRO";
+        break;
+      case "pro_anual":
+        precioBase = 599000;
+        descripcion = "Plan PRO Anual";
+        break;
+      default:
+        return { success: false, error: "Plan no válido" };
+    }
+
+    // Ajuste factura electrónica
+    const costoFactura = facturaElectronica ? 5000 : 0; // ejemplo, ajustar según aliado estratégico
+    const total = precioBase + costoFactura;
+
+    // Crear preferencia Mercado Pago
+    const preference = {
+      items: [
+        {
+          title: facturaElectronica ? `${descripcion} + Factura` : descripcion,
+          unit_price: total,
+          quantity: 1,
+          currency_id: "COP"
+        }
+      ],
+      back_urls: {
+        success: "/erp",
+        failure: "/erp",
+        pending: "/erp"
+      },
+      auto_return: "approved",
+      payer: { id: uid }
+    };
+
+    const mp = await mercadopago.preferences.create(preference);
+
+    return { success: true, init_point: mp.body.init_point };
+
+  } catch (error) {
+    return { success: false, mensaje: error.message };
+  }
 });
