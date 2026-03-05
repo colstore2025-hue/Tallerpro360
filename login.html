@@ -46,18 +46,26 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-
 const form = document.getElementById("loginForm");
 const errorMsg = document.getElementById("errorMsg");
 
+// Agregar demo al switch
 async function redirigir(rol){
   switch(rol){
     case "dueno":
     case "admin":
     case "tecnico":
-    case "asesor": window.location.href="/app/index.html"; break;
-    case "cliente": window.location.href="/cliente.html"; break;
-    case "superadmin": window.location.href="/admin/ceo-dashboard.html"; break;
-case "demo": 
-  window.location.href="/app/index.html"; 
-  break;
-    default: showError("Rol no válido");
+    case "asesor":
+      window.location.href="/app/index.html";
+      break;
+    case "cliente":
+      window.location.href="/cliente.html";
+      break;
+    case "superadmin":
+      window.location.href="/admin/ceo-dashboard.html";
+      break;
+    case "demo": // <-- Agregado
+      window.location.href="/app/index.html";
+      break;
+    default:
+      showError("Rol no válido");
   }
 }
 
