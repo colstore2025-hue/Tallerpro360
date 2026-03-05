@@ -1,27 +1,34 @@
-export function notificarCliente(
-  telefono,
-  cliente,
-  estado,
-  vehiculo
-){
+// ======================================
+// NOTIFICACIÓN AUTOMÁTICA WHATSAPP
+// ======================================
 
-  try{
+export function notificarCliente(telefono, cliente, estado, vehiculo) {
+  try {
 
-    if(!telefono){
+    // ==============================
+    // VALIDAR TELÉFONO
+    // ==============================
+    if (!telefono) {
       alert("Número de teléfono no válido");
       return;
     }
 
-    // limpiar teléfono
-    telefono = telefono.replace(/\D/g,"");
+    // Eliminar caracteres no numéricos
+    telefono = telefono.replace(/\D/g, "");
 
-    if(telefono.length < 8){
+    if (telefono.length < 8) {
       alert("Teléfono inválido");
       return;
     }
 
+    // ==============================
+    // ESTADO CON EMOJI
+    // ==============================
     const estadoEmoji = obtenerEmojiEstado(estado);
 
+    // ==============================
+    // MENSAJE
+    // ==============================
     const mensaje = `
 Hola ${cliente}
 
@@ -38,33 +45,31 @@ TallerPRO360
 Servicio automotriz
 `;
 
+    // Codificar mensaje para URL
     const mensajeCodificado = encodeURIComponent(mensaje.trim());
 
+    // URL WhatsApp
     const url = `https://wa.me/57${telefono}?text=${mensajeCodificado}`;
 
-    window.open(url,"_blank");
+    // Abrir WhatsApp en nueva ventana
+    window.open(url, "_blank");
 
-  }catch(error){
-
-    console.error("Error enviando WhatsApp:",error);
-
+  } catch (error) {
+    console.error("Error enviando WhatsApp:", error);
     alert("No fue posible abrir WhatsApp");
-
   }
-
 }
 
-
-
-function obtenerEmojiEstado(estado){
-
+// ======================================
+// FUNCION AUXILIAR: EMOJIS SEGÚN ESTADO
+// ======================================
+function obtenerEmojiEstado(estado) {
   const e = estado.toLowerCase();
 
-  if(e.includes("activa")) return "📋";
-  if(e.includes("proceso")) return "🔧";
-  if(e.includes("listo")) return "✅";
-  if(e.includes("entregado")) return "🚘";
+  if (e.includes("activa")) return "📋";
+  if (e.includes("proceso")) return "🔧";
+  if (e.includes("listo")) return "✅";
+  if (e.includes("entregado")) return "🚘";
 
   return "ℹ️";
-
 }
