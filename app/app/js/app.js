@@ -1,8 +1,15 @@
 // app/js/app.js
-// Validar sesión
-if(!localStorage.getItem("uid")) {
-  window.location.href="/login.html";
+
+/* ===============================
+   VALIDAR SESIÓN
+=============================== */
+if (!localStorage.getItem("uid")) {
+  window.location.href = "/login.html";
 }
+
+/* ===============================
+   IMPORTS FIREBASE Y UTILES
+=============================== */
 import { db } from "./firebase.js";
 import {
   collection,
@@ -20,7 +27,7 @@ import { notificarCliente } from "./whatsappService.js";
 import { generarFactura } from "./factura.js";
 
 /* ===============================
-   APP CENTRAL
+   INICIAR APP
 =============================== */
 export async function iniciarApp(container) {
   container.innerHTML = `
@@ -141,73 +148,4 @@ async function cargarOrdenes() {
 =============================== */
 export async function repuestos(container){
   container.innerHTML = `
-    <h2 class="text-xl font-bold mb-4">Gestión de Repuestos</h2>
-    <div class="bg-white p-4 rounded shadow mb-6">
-      <input id="repNombre" placeholder="Nombre" class="border p-2 rounded w-full mb-2">
-      <input id="repCosto" placeholder="Costo de compra COP" type="number" class="border p-2 rounded w-full mb-2">
-      <input id="repMargen" placeholder="Margen %" type="number" class="border p-2 rounded w-full mb-2">
-      <input id="repStock" placeholder="Stock inicial" type="number" class="border p-2 rounded w-full mb-2">
-      <button id="crearRepuestoBtn" class="bg-yellow-600 text-white px-4 py-2 rounded">Crear Repuesto</button>
-    </div>
-    <div id="listaRepuestos">Cargando...</div>
-  `;
-
-  document.getElementById("crearRepuestoBtn").onclick = async () => {
-    const data = {
-      nombre: document.getElementById("repNombre").value,
-      costoCompra: Number(document.getElementById("repCosto").value),
-      margen: Number(document.getElementById("repMargen").value),
-      stock: Number(document.getElementById("repStock").value)
-    };
-    await crearRepuesto(data);
-    alert("Repuesto creado correctamente");
-  };
-}
-
-/* ===============================
-   PANEL FINANCIERO
-=============================== */
-export async function panelFinanciero(container){
-  container.innerHTML = `<h2 class="text-xl font-bold mb-4">Panel Financiero</h2>
-  <div class="grid md:grid-cols-2 gap-6">
-    <canvas id="graficaUtilidad"></canvas>
-    <canvas id="graficaServicios"></canvas>
-    <canvas id="graficaRepuestos"></canvas>
-    <canvas id="graficaTecnicos"></canvas>
-  </div>`;
-  await cargarDatosFinancieros();
-}
-
-async function cargarDatosFinancieros(){
-  const snapshot = await getDocs(collection(db,"ordenes"));
-  let utilidadMes = new Array(12).fill(0);
-  let servicios = {};
-  let repuestos = {};
-  let tecnicos = {};
-
-  snapshot.forEach(doc=>{
-    const data = doc.data();
-    if(!data.fecha) return;
-    const fecha = data.fecha.toDate?.() || new Date();
-    const mes = fecha.getMonth();
-
-    let utilidadOrden = 0;
-    if(data.acciones){
-      data.acciones.forEach(a=>{
-        const precio = a.precio || 0;
-        const costo = a.costo || 0;
-        const utilidad = precio - costo;
-        utilidadOrden += utilidad;
-        servicios[a.descripcion] = (servicios[a.descripcion]||0)+utilidad;
-        if(a.repuesto) repuestos[a.repuesto] = (repuestos[a.repuesto]||0)+1;
-      });
-    }
-    if(data.tecnico) tecnicos[data.tecnico] = (tecnicos[data.tecnico]||0)+utilidadOrden;
-    utilidadMes[mes]+=utilidadOrden;
-  });
-
-  new Chart(document.getElementById("graficaUtilidad"), {type:"line", data:{labels:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"], datasets:[{label:"Utilidad COP", data:utilidadMes}] }});
-  new Chart(document.getElementById("graficaServicios"), {type:"bar", data:{labels:Object.keys(servicios), datasets:[{label:"Utilidad COP", data:Object.values(servicios)}]}});
-  new Chart(document.getElementById("graficaRepuestos"), {type:"bar", data:{labels:Object.keys(repuestos), datasets:[{label:"Cantidad vendida", data:Object.values(repuestos)}]}});
-  new Chart(document.getElementById("graficaTecnicos"), {type:"bar", data:{labels:Object.keys(tecnicos), datasets:[{label:"Utilidad COP", data:Object.values(tecnicos)}]}});
-}
+    <h2 class="text
