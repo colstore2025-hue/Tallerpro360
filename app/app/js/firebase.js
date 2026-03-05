@@ -1,8 +1,13 @@
-// Import Firebase
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeApp } from 
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-// Config
+import { getAuth } from 
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import { getFirestore } from 
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
 const firebaseConfig = {
   apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
   authDomain: "tallerpro360.firebaseapp.com",
@@ -13,8 +18,7 @@ const firebaseConfig = {
   measurementId: "G-VEC2C0QX2G"
 };
 
-// Init
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
-export { db };
+export const auth = getAuth(app);
+export const db = getFirestore(app);
