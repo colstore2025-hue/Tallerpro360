@@ -1,80 +1,210 @@
-// =============================
-// IMPORTS PRINCIPALES
-// =============================
-import { ordenes } from "./ordenes.js";
-import { crearRepuesto } from "./crearRepuesto.js";
-import { generarFactura } from "./generarFactura.js";
+// app/js/app.js
+
+import { db } from "./firebase.js";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  doc,
+  serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import Chart from "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm";
+import { diagnosticoIA } from "./iaMecanica.js";
+import { crearRepuesto } from "./repuestos.js";
 import { notificarCliente } from "./whatsappService.js";
-import { cambiarEstadoOrden } from "./cambiarEstadoOrden.js";
-import { panelFinanciero } from "./panelFinanciero.js";
-import { detectarRepuestos } from "./detectarRepuestos.js";
+import { generarFactura } from "./factura.js";
 
-// =============================
-// ELEMENTOS DEL DOM
-// =============================
-const mainContainer = document.getElementById("app");
+/* ===============================
+   APP CENTRAL
+=============================== */
+export async function iniciarApp(container) {
+  container.innerHTML = `
+    <h1 class="text-2xl font-bold mb-6">TallerPRO360 - SaaS Automotriz</h1>
+    <div id="menuPrincipal" class="grid grid-cols-3 gap-4 mb-6">
+      <button id="btnDashboard" class="bg-blue-600 text-white px-4 py-2 rounded">Dashboard</button>
+      <button id="btnOrdenes" class="bg-green-600 text-white px-4 py-2 rounded">Órdenes</button>
+      <button id="btnRepuestos" class="bg-yellow-600 text-white px-4 py-2 rounded">Repuestos</button>
+      <button id="btnFinanzas" class="bg-indigo-600 text-white px-4 py-2 rounded col-span-3">Panel Financiero</button>
+    </div>
+    <div id="appContentInner"></div>
+  `;
 
-// =============================
-// INICIALIZAR APP
-// =============================
-async function initApp() {
-  // Cargar gestión de órdenes
-  await ordenes(mainContainer);
-
-  // Cargar dashboard financiero
-  await panelFinanciero(document.getElementById("dashboardFinanciero"));
-
-  console.log("TallerPRO360 cargado correctamente");
+  document.getElementById("btnDashboard").onclick = () => dashboard(container.querySelector("#appContentInner"));
+  document.getElementById("btnOrdenes").onclick = () => ordenes(container.querySelector("#appContentInner"));
+  document.getElementById("btnRepuestos").onclick = () => repuestos(container.querySelector("#appContentInner"));
+  document.getElementById("btnFinanzas").onclick = () => panelFinanciero(container.querySelector("#appContentInner"));
 }
 
-initApp();
+/* ===============================
+   DASHBOARD
+=============================== */
+export async function dashboard(container) {
+  container.innerHTML = `
+    <h2 class="text-xl font-bold mb-4">Dashboard TallerPRO360</h2>
+    <div id="kpis" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="bg-white p-4 rounded shadow"><h3>Ingresos últimos 7 días</h3><canvas id="graficaIngresos"></canvas></div>
+      <div class="bg-white p-4 rounded shadow"><h3>Órdenes por estado</h3><canvas id="graficaEstados"></canvas></div>
+    </div>
+    <button id="btnVoz" class="mt-4 bg-green-600 text-white px-4 py-2 rounded">🎙️ Crear orden por voz</button>
+  `;
+  await cargarKPIs();
+  await cargarGraficas();
 
-// =============================
-// EJEMPLOS DE USO
-// =============================
+  document.getElementById("btnVoz").addEventListener("click", iniciarVoz);
+}
 
-// 1️⃣ Crear repuesto
-/*
-crearRepuesto({
-  nombre: "Filtro de aceite",
-  marca: "Bosch",
-  categoria: "Motor",
-  costoCompra: 15000,
-  margen: 40,
-  stock: 10,
-  proveedor: "Proveedor A"
-}).then(id=>{
-  console.log("Repuesto creado con ID:", id);
-});
-*/
+/* ===============================
+   ÓRDENES
+=============================== */
+export async function ordenes(container) {
+  container.innerHTML = `
+    <h2 class="text-xl font-bold mb-4">Gestión de Órdenes</h2>
+    <div class="bg-white p-4 rounded shadow mb-6">
+      <input id="cliente" placeholder="Cliente" class="border p-2 rounded w-full mb-2">
+      <input id="vehiculo" placeholder="Vehículo" class="border p-2 rounded w-full mb-2">
+      <input id="placa" placeholder="Placa" class="border p-2 rounded w-full mb-2">
+      <input id="tecnico" placeholder="Técnico" class="border p-2 rounded w-full mb-4">
+      <button id="crearOrden" class="bg-blue-600 text-white px-4 py-2 rounded">Crear Orden</button>
+    </div>
+    <div class="bg-white p-4 rounded shadow"><div id="listaOrdenes">Cargando órdenes...</div></div>
+  `;
 
-// 2️⃣ Generar factura
-/*
-generarFactura({
-  cliente: "Juan Pérez",
-  vehiculo: "Toyota Corolla",
-  placa: "ABC123",
-  acciones: [
-    {descripcion:"Cambio aceite", costo:50000},
-    {descripcion:"Filtro aceite", costo:15000}
-  ],
-  total: 65000
-});
-*/
+  document.getElementById("crearOrden").onclick = crearOrden;
+  await cargarOrdenes();
+}
 
-// 3️⃣ Notificar cliente por WhatsApp
-/*
-notificarCliente("3115709730","Juan Pérez","En proceso","Toyota Corolla");
-*/
+async function crearOrden() {
+  const cliente = document.getElementById("cliente").value;
+  const vehiculo = document.getElementById("vehiculo").value;
+  const placa = document.getElementById("placa").value;
+  const tecnico = document.getElementById("tecnico").value;
 
-// 4️⃣ Cambiar estado de orden y notificar
-/*
-cambiarEstadoOrden("ordenId123","Listo para entregar","3115709730");
-*/
+  if (!cliente || !vehiculo || !placa) return alert("Complete los campos obligatorios");
 
-// 5️⃣ Detectar repuestos por IA
-/*
-detectarRepuestos("El vehículo hace ruido al arrancar").then(res=>{
-  console.log(res);
-});
-*/
+  await addDoc(collection(db, "ordenes"), {
+    cliente,
+    vehiculo,
+    placa,
+    tecnico: tecnico || "Sin asignar",
+    estado: "activa",
+    total: 0,
+    acciones: [],
+    fecha: serverTimestamp(),
+  });
+
+  alert("Orden creada correctamente");
+  limpiarFormulario();
+  await cargarOrdenes();
+}
+
+function limpiarFormulario() {
+  ["cliente","vehiculo","placa","tecnico"].forEach(id => document.getElementById(id).value = "");
+}
+
+async function cargarOrdenes() {
+  const lista = document.getElementById("listaOrdenes");
+  const snapshot = await getDocs(collection(db,"ordenes"));
+  if (snapshot.empty) return lista.innerHTML = "<p>No hay órdenes registradas</p>";
+
+  lista.innerHTML = "";
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    const id = docSnap.id;
+    const div = document.createElement("div");
+    div.className = "border p-3 rounded mb-2";
+    div.innerHTML = `
+      <strong>${data.cliente}</strong><br>${data.vehiculo} - ${data.placa}<br>Técnico: ${data.tecnico || "Sin asignar"}<br>Estado: ${data.estado}
+      <input id="accion-${id}" placeholder="Nueva acción" class="border p-2 rounded w-full mt-2">
+      <button onclick="window.agregarAccion('${id}')" class="bg-blue-600 text-white px-3 py-1 rounded mt-1">Agregar acción</button>
+    `;
+    lista.appendChild(div);
+  });
+
+  window.agregarAccion = async function(ordenId){
+    const input = document.getElementById(`accion-${ordenId}`);
+    const accion = input.value;
+    if(!accion) return alert("Escriba una acción");
+    await agregarAccionOrden(ordenId, accion);
+    input.value = "";
+    alert("Acción agregada correctamente");
+  };
+}
+
+/* ===============================
+   REPUESTOS
+=============================== */
+export async function repuestos(container){
+  container.innerHTML = `
+    <h2 class="text-xl font-bold mb-4">Gestión de Repuestos</h2>
+    <div class="bg-white p-4 rounded shadow mb-6">
+      <input id="repNombre" placeholder="Nombre" class="border p-2 rounded w-full mb-2">
+      <input id="repCosto" placeholder="Costo de compra COP" type="number" class="border p-2 rounded w-full mb-2">
+      <input id="repMargen" placeholder="Margen %" type="number" class="border p-2 rounded w-full mb-2">
+      <input id="repStock" placeholder="Stock inicial" type="number" class="border p-2 rounded w-full mb-2">
+      <button id="crearRepuestoBtn" class="bg-yellow-600 text-white px-4 py-2 rounded">Crear Repuesto</button>
+    </div>
+    <div id="listaRepuestos">Cargando...</div>
+  `;
+
+  document.getElementById("crearRepuestoBtn").onclick = async () => {
+    const data = {
+      nombre: document.getElementById("repNombre").value,
+      costoCompra: Number(document.getElementById("repCosto").value),
+      margen: Number(document.getElementById("repMargen").value),
+      stock: Number(document.getElementById("repStock").value)
+    };
+    await crearRepuesto(data);
+    alert("Repuesto creado correctamente");
+  };
+}
+
+/* ===============================
+   PANEL FINANCIERO
+=============================== */
+export async function panelFinanciero(container){
+  container.innerHTML = `<h2 class="text-xl font-bold mb-4">Panel Financiero</h2>
+  <div class="grid md:grid-cols-2 gap-6">
+    <canvas id="graficaUtilidad"></canvas>
+    <canvas id="graficaServicios"></canvas>
+    <canvas id="graficaRepuestos"></canvas>
+    <canvas id="graficaTecnicos"></canvas>
+  </div>`;
+  await cargarDatosFinancieros();
+}
+
+async function cargarDatosFinancieros(){
+  const snapshot = await getDocs(collection(db,"ordenes"));
+  let utilidadMes = new Array(12).fill(0);
+  let servicios = {};
+  let repuestos = {};
+  let tecnicos = {};
+
+  snapshot.forEach(doc=>{
+    const data = doc.data();
+    if(!data.fecha) return;
+    const fecha = data.fecha.toDate?.() || new Date();
+    const mes = fecha.getMonth();
+
+    let utilidadOrden = 0;
+    if(data.acciones){
+      data.acciones.forEach(a=>{
+        const precio = a.precio || 0;
+        const costo = a.costo || 0;
+        const utilidad = precio - costo;
+        utilidadOrden += utilidad;
+        servicios[a.descripcion] = (servicios[a.descripcion]||0)+utilidad;
+        if(a.repuesto) repuestos[a.repuesto] = (repuestos[a.repuesto]||0)+1;
+      });
+    }
+    if(data.tecnico) tecnicos[data.tecnico] = (tecnicos[data.tecnico]||0)+utilidadOrden;
+    utilidadMes[mes]+=utilidadOrden;
+  });
+
+  new Chart(document.getElementById("graficaUtilidad"), {type:"line", data:{labels:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"], datasets:[{label:"Utilidad COP", data:utilidadMes}] }});
+  new Chart(document.getElementById("graficaServicios"), {type:"bar", data:{labels:Object.keys(servicios), datasets:[{label:"Utilidad COP", data:Object.values(servicios)}]}});
+  new Chart(document.getElementById("graficaRepuestos"), {type:"bar", data:{labels:Object.keys(repuestos), datasets:[{label:"Cantidad vendida", data:Object.values(repuestos)}]}});
+  new Chart(document.getElementById("graficaTecnicos"), {type:"bar", data:{labels:Object.keys(tecnicos), datasets:[{label:"Utilidad COP", data:Object.values(tecnicos)}]}});
+}
