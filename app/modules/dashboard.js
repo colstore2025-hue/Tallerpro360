@@ -103,6 +103,27 @@ mostrarDiagnostico(respuestaIA);
 
 }
 
+function mostrarDiagnostico(respuesta){
+
+const div = document.createElement("div");
+
+div.className =
+"bg-yellow-100 p-4 rounded shadow mt-6";
+
+div.innerHTML = `
+<h3 class="font-bold mb-2">
+Diagnóstico IA
+</h3>
+
+<p>${respuesta}</p>
+`;
+
+document
+.querySelector("main")
+.appendChild(div);
+
+}
+
 await cargarKPIs();
 await cargarGraficas();
 
