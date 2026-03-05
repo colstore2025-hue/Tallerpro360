@@ -11,32 +11,67 @@ export async function crearRepuesto(data){
 
 try{
 
-const precioVenta =
-data.costoCompra * (1 + data.margen/100);
+// Validaciones básicas
 
-await addDoc(
+if(!data.nombre || !data.costoCompra){
+throw new Error("Datos obligatorios faltantes");
+}
+
+
+// Cálculo de precio de venta
+
+const margen = data.margen || 30;
+
+const precioVenta =
+Number(data.costoCompra) * (1 + margen / 100);
+
+
+// Crear documento
+
+const docRef = await addDoc(
 collection(db,"repuestos"),
 {
-nombre:data.nombre,
-marca:data.marca,
-categoria:data.categoria,
 
-costoCompra:data.costoCompra,
-margen:data.margen,
+nombre: data.nombre,
+codigo: data.codigo || "",
 
-precioVenta:Math.round(precioVenta),
+marca: data.marca || "",
+categoria: data.categoria || "",
 
-stock:data.stock || 0,
-stockMinimo:data.stockMinimo || 1,
 
-proveedor:data.proveedor,
+// costos
 
-fechaCreacion:serverTimestamp()
+costoCompra: Number(data.costoCompra),
+margen: margen,
+
+precioVenta: Math.round(precioVenta),
+
+
+// inventario
+
+stock: Number(data.stock) || 0,
+stockMinimo: Number(data.stockMinimo) || 1,
+
+
+// proveedor
+
+proveedor: data.proveedor || "No definido",
+
+
+// fechas
+
+fechaCreacion: serverTimestamp(),
+fechaActualizacion: serverTimestamp()
+
 });
+
+return docRef.id;
 
 }catch(error){
 
-console.error("Error creando repuesto",error);
+console.error("Error creando repuesto:", error);
+
+throw error;
 
 }
 
