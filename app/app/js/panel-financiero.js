@@ -7,6 +7,8 @@ getDocs
 
 import Chart from "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm";
 
+import jsPDF from "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm";
+
 let charts = {};
 
 export async function panelFinanciero(container){
@@ -18,6 +20,32 @@ container.innerHTML = `
 <h1 class="text-2xl font-bold mb-6">
 Panel Financiero Gerencial
 </h1>
+
+<div class="mb-6">
+
+<label class="font-semibold">
+Año
+</label>
+
+<select id="selectorYear"
+class="border p-2 rounded ml-2">
+
+<option>2023</option>
+<option>2024</option>
+<option selected>2025</option>
+<option>2026</option>
+
+</select>
+
+<button
+id="exportarPDF"
+class="ml-4 bg-green-600 text-white px-4 py-2 rounded"
+>
+Exportar reporte PDF
+</button>
+
+</div>
+
 
 <div class="grid md:grid-cols-3 gap-4 mb-8">
 
@@ -37,6 +65,12 @@ Panel Financiero Gerencial
 </div>
 
 </div>
+
+
+<div id="alertas"
+class="mb-6 text-red-600 font-semibold">
+</div>
+
 
 <div class="grid md:grid-cols-2 gap-6">
 
@@ -61,7 +95,29 @@ Panel Financiero Gerencial
 </div>
 
 </div>
+
+<div class="bg-white p-4 rounded shadow mt-6">
+
+<h2 class="font-bold mb-4">
+Predicción financiera IA
+</h2>
+
+<div id="prediccionIA">
+Calculando predicción...
+</div>
+
+</div>
 `;
+
+document
+.getElementById("selectorYear")
+.onchange = e=>{
+cargarDatosFinancieros(e.target.value);
+};
+
+document
+.getElementById("exportarPDF")
+.onclick = exportarReportePDF;
 
 await cargarDatosFinancieros(year);
 
@@ -90,7 +146,7 @@ if(!data.fecha) return;
 
 const fecha = data.fecha.toDate?.() || new Date();
 
-if(fecha.getFullYear() !== year) return;
+if(fecha.getFullYear() != year) return;
 
 const mes = fecha.getMonth();
 
@@ -100,8 +156,8 @@ if(data.acciones){
 
 data.acciones.forEach(a=>{
 
-const precio = Number(a.precio) || 0;
-const costo = Number(a.costo) || 0;
+const precio = a.precio || 0;
+const costo = a.costo || 0;
 
 const utilidad = precio - costo;
 
@@ -150,23 +206,22 @@ utilidadMes[mes]+=utilidadOrden;
 
 });
 
+
 const utilidadTotal = ingresos - costos;
 
 actualizarKPIs(ingresos,costos,utilidadTotal);
 
 crearGraficaUtilidad(utilidadMes);
 
-crearGraficaServicios(
-ordenarTop(servicios)
-);
+crearGraficaServicios(servicios);
 
-crearGraficaRepuestos(
-ordenarTop(repuestos)
-);
+crearGraficaRepuestos(repuestos);
 
-crearGraficaTecnicos(
-ordenarTop(tecnicos)
-);
+crearGraficaTecnicos(tecnicos);
+
+generarAlertas(servicios,repuestos,tecnicos);
+
+prediccionFinancieraIA(utilidadMes);
 
 }
 
@@ -174,52 +229,25 @@ ordenarTop(tecnicos)
 
 function actualizarKPIs(ingresos,costos,utilidad){
 
-document.getElementById("kpiIngresos").innerText =
-formatoMoneda(ingresos);
+document.getElementById("kpiIngresos")
+.innerText = formato(ingresos);
 
-document.getElementById("kpiCostos").innerText =
-formatoMoneda(costos);
+document.getElementById("kpiCostos")
+.innerText = formato(costos);
 
-document.getElementById("kpiUtilidad").innerText =
-formatoMoneda(utilidad);
+document.getElementById("kpiUtilidad")
+.innerText = formato(utilidad);
 
 }
 
 
 
-function formatoMoneda(valor){
+function formato(valor){
 
 return valor.toLocaleString("es-CO",{
 style:"currency",
-currency:"COP",
-maximumFractionDigits:0
+currency:"COP"
 });
-
-}
-
-
-
-function ordenarTop(obj){
-
-const entries = Object.entries(obj);
-
-entries.sort((a,b)=>b[1]-a[1]);
-
-return Object.fromEntries(
-entries.slice(0,10)
-);
-
-}
-
-
-
-function destruirGrafica(id){
-
-if(charts[id]){
-
-charts[id].destroy();
-
-}
 
 }
 
@@ -227,22 +255,13 @@ charts[id].destroy();
 
 function crearGraficaUtilidad(data){
 
-destruirGrafica("graficaUtilidad");
-
-charts.graficaUtilidad = new Chart(
+charts.utilidad = new Chart(
 document.getElementById("graficaUtilidad"),
 {
 type:"line",
 data:{
-labels:[
-"Ene","Feb","Mar","Abr","May","Jun",
-"Jul","Ago","Sep","Oct","Nov","Dic"
-],
-datasets:[{
-label:"Utilidad mensual",
-data:data,
-tension:0.3
-}]
+labels:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
+datasets:[{label:"Utilidad",data:data}]
 }
 });
 
@@ -252,21 +271,16 @@ tension:0.3
 
 function crearGraficaServicios(servicios){
 
-destruirGrafica("graficaServicios");
-
 const labels = Object.keys(servicios);
 const data = Object.values(servicios);
 
-charts.graficaServicios = new Chart(
+charts.servicios = new Chart(
 document.getElementById("graficaServicios"),
 {
 type:"bar",
 data:{
 labels:labels,
-datasets:[{
-label:"Utilidad",
-data:data
-}]
+datasets:[{label:"Utilidad",data:data}]
 }
 });
 
@@ -276,21 +290,16 @@ data:data
 
 function crearGraficaRepuestos(repuestos){
 
-destruirGrafica("graficaRepuestos");
-
 const labels = Object.keys(repuestos);
 const data = Object.values(repuestos);
 
-charts.graficaRepuestos = new Chart(
+charts.repuestos = new Chart(
 document.getElementById("graficaRepuestos"),
 {
 type:"bar",
 data:{
 labels:labels,
-datasets:[{
-label:"Cantidad vendida",
-data:data
-}]
+datasets:[{label:"Cantidad",data:data}]
 }
 });
 
@@ -300,22 +309,105 @@ data:data
 
 function crearGraficaTecnicos(tecnicos){
 
-destruirGrafica("graficaTecnicos");
-
 const labels = Object.keys(tecnicos);
 const data = Object.values(tecnicos);
 
-charts.graficaTecnicos = new Chart(
+charts.tecnicos = new Chart(
 document.getElementById("graficaTecnicos"),
 {
 type:"bar",
 data:{
 labels:labels,
-datasets:[{
-label:"Utilidad generada",
-data:data
-}]
+datasets:[{label:"Utilidad",data:data}]
 }
 });
+
+}
+
+
+
+function generarAlertas(servicios,repuestos,tecnicos){
+
+let html = "";
+
+Object.entries(servicios).forEach(([serv,util])=>{
+
+if(util < 50000){
+
+html += `⚠ Servicio poco rentable: ${serv}<br>`;
+
+}
+
+});
+
+Object.entries(repuestos).forEach(([rep,cant])=>{
+
+if(cant < 2){
+
+html += `⚠ Repuesto con baja rotación: ${rep}<br>`;
+
+}
+
+});
+
+document.getElementById("alertas").innerHTML = html;
+
+}
+
+
+
+async function prediccionFinancieraIA(utilidadMes){
+
+const promedio =
+utilidadMes.reduce((a,b)=>a+b,0) / 12;
+
+const prediccion =
+Math.round(promedio * 1.1);
+
+document.getElementById("prediccionIA").innerHTML = `
+
+Utilidad promedio mensual:
+<strong>${formato(promedio)}</strong>
+
+<br><br>
+
+Predicción próximo mes:
+<strong>${formato(prediccion)}</strong>
+
+`;
+
+}
+
+
+
+function exportarReportePDF(){
+
+const doc = new jsPDF();
+
+doc.setFontSize(18);
+
+doc.text("Reporte Financiero Taller",20,20);
+
+doc.setFontSize(12);
+
+doc.text(
+document.getElementById("kpiIngresos").innerText,
+20,
+40
+);
+
+doc.text(
+document.getElementById("kpiCostos").innerText,
+20,
+50
+);
+
+doc.text(
+document.getElementById("kpiUtilidad").innerText,
+20,
+60
+);
+
+doc.save("reporte_financiero.pdf");
 
 }
