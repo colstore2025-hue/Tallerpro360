@@ -1,17 +1,19 @@
 import { db } from "../js/firebase.js";
+import { iniciarVoz } from "../js/voiceAssistant.js";
 
 import {
 collection,
 getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+import Chart from "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm";
 
 export async function dashboard(container){
 
 container.innerHTML = `
 
 <button id="btnVoz"
-class="bg-green-600 text-white px-4 py-2 rounded mb-6">
+class="bg-green-600 text-white px-4 py-2 rounded mb-6 hover:bg-green-700">
 🎙️ Crear orden por voz
 </button>
 
@@ -43,10 +45,10 @@ Dashboard TallerPRO360
 
 </div>
 
-
 <div class="grid md:grid-cols-2 gap-6">
 
 <div class="bg-white p-4 rounded shadow">
+
 <h2 class="font-bold mb-4">
 Ingresos últimos 7 días
 </h2>
@@ -55,8 +57,8 @@ Ingresos últimos 7 días
 
 </div>
 
-
 <div class="bg-white p-4 rounded shadow">
+
 <h2 class="font-bold mb-4">
 Órdenes por estado
 </h2>
@@ -69,8 +71,12 @@ Ingresos últimos 7 días
 
 `;
 
-cargarKPIs();
-cargarGraficas();
+document
+.getElementById("btnVoz")
+.addEventListener("click", iniciarVoz);
+
+await cargarKPIs();
+await cargarGraficas();
 
 }
 
@@ -78,43 +84,54 @@ async function cargarKPIs(){
 
 const empresaId = localStorage.getItem("empresaId");
 
+if(!empresaId){
+console.error("empresaId no encontrado");
+return;
+}
+
 const ordenesRef = collection(db,"empresas",empresaId,"ordenes");
 const snapshot = await getDocs(ordenesRef);
 
-let ordenesActivas=0;
-let ingresosHoy=0;
-let vehiculos=0;
+let ordenesActivas = 0;
+let ingresosHoy = 0;
+let vehiculos = 0;
 
 const hoy = new Date().toDateString();
 
 snapshot.forEach(doc=>{
 
-const data=doc.data();
+const data = doc.data();
 
 vehiculos++;
 
-if(data.estado!=="entregado"){
+if(data.estado !== "entregado"){
 ordenesActivas++;
 }
 
 if(data.fecha){
 
-const fecha=data.fecha.toDate?.() || new Date();
+const fecha = data.fecha.toDate?.() || new Date();
 
-if(fecha.toDateString()===hoy){
-ingresosHoy+=data.total||0;
+if(fecha.toDateString() === hoy){
+ingresosHoy += data.total || 0;
 }
 
 }
 
 });
 
-document.getElementById("kpiOrdenes").innerText=ordenesActivas;
-document.getElementById("kpiIngresos").innerText="$"+ingresosHoy.toLocaleString("es-CO");
-document.getElementById("kpiVehiculos").innerText=vehiculos;
+document.getElementById("kpiOrdenes").innerText = ordenesActivas;
 
-const clientesSnap = await getDocs(collection(db,"empresas",empresaId,"clientes"));
-document.getElementById("kpiClientes").innerText=clientesSnap.size;
+document.getElementById("kpiIngresos").innerText =
+"$"+ingresosHoy.toLocaleString("es-CO");
+
+document.getElementById("kpiVehiculos").innerText = vehiculos;
+
+const clientesSnap = await getDocs(
+collection(db,"empresas",empresaId,"clientes")
+);
+
+document.getElementById("kpiClientes").innerText = clientesSnap.size;
 
 }
 
@@ -132,12 +149,44 @@ proceso:0,
 entregado:0
 };
 
+let ingresosSemana = [0,0,0,0,0,0,0];
+let labels = [];
+
+for(let i=6;i>=0;i--){
+
+const d = new Date();
+d.setDate(d.getDate()-i);
+
+labels.push(
+d.toLocaleDateString("es-CO",{weekday:"short"})
+);
+
+}
+
 snapshot.forEach(doc=>{
 
 const data = doc.data();
 
 if(estados[data.estado] !== undefined){
 estados[data.estado]++;
+}
+
+if(data.fecha){
+
+const fecha = data.fecha.toDate?.();
+
+if(fecha){
+
+const diff = Math.floor(
+(new Date() - fecha) / (1000*60*60*24)
+);
+
+if(diff >=0 && diff <=6){
+ingresosSemana[6-diff] += data.total || 0;
+}
+
+}
+
 }
 
 });
@@ -154,6 +203,20 @@ estados.activa,
 estados.proceso,
 estados.entregado
 ]
+}]
+}
+
+});
+
+new Chart(document.getElementById("graficaIngresos"),{
+
+type:"bar",
+
+data:{
+labels:labels,
+datasets:[{
+label:"Ingresos",
+data:ingresosSemana
 }]
 }
 
