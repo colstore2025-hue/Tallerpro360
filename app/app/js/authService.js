@@ -9,12 +9,13 @@ getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./firebase.js";
-
+import { setTallerId } from "./tallerContext.js";
 
 const auth = getAuth();
 
-
 export async function login(email,password){
+
+try{
 
 const cred = await signInWithEmailAndPassword(
 auth,
@@ -30,6 +31,16 @@ doc(db,"usuarios",uid)
 
 const data = userDoc.data();
 
-localStorage.setItem("tallerId",data.tallerId);
+setTallerId(data.tallerId);
+
+return true;
+
+}catch(error){
+
+console.error("Error login",error);
+
+return false;
+
+}
 
 }
