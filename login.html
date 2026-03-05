@@ -7,7 +7,9 @@
 <link rel="manifest" href="./manifest.json">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<style>body{background:#0f172a;}</style>
+<style>
+  body { background:#0f172a; }
+</style>
 </head>
 <body class="text-slate-200 flex items-center justify-center min-h-screen px-4">
 
@@ -46,13 +48,14 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-
 const form = document.getElementById("loginForm");
 const errorMsg = document.getElementById("errorMsg");
 
-// Agregar demo al switch
+// Función para redirigir según rol
 async function redirigir(rol){
   switch(rol){
     case "dueno":
     case "admin":
     case "tecnico":
     case "asesor":
+    case "demo": // demo también va a la app
       window.location.href="/app/index.html";
       break;
     case "cliente":
@@ -61,21 +64,25 @@ async function redirigir(rol){
     case "superadmin":
       window.location.href="/admin/ceo-dashboard.html";
       break;
-    case "demo": // <-- Agregado
-      window.location.href="/app/index.html";
-      break;
     default:
       showError("Rol no válido");
   }
 }
 
-function showError(msg){errorMsg.textContent=msg; errorMsg.classList.remove("hidden");}
+// Mostrar errores
+function showError(msg){
+  errorMsg.textContent = msg;
+  errorMsg.classList.remove("hidden");
+}
 
 // Auto-login
 onAuthStateChanged(auth, async (user)=>{
   if(!user) return;
   const globalSnap = await getDoc(doc(db,"usuariosGlobal",user.uid));
-  if(!globalSnap.exists() || !globalSnap.data().activo) { await auth.signOut(); return; }
+  if(!globalSnap.exists() || !globalSnap.data().activo) { 
+    await auth.signOut(); 
+    return; 
+  }
   const data = globalSnap.data();
   localStorage.setItem("empresaId", data.empresaId);
   localStorage.setItem("uid", user.uid);
@@ -87,14 +94,19 @@ onAuthStateChanged(auth, async (user)=>{
 
 // Login manual
 form.addEventListener("submit", async (e)=>{
-  e.preventDefault(); errorMsg.classList.add("hidden");
-  const email=document.getElementById("email").value.trim();
-  const password=document.getElementById("password").value;
-  if(!email||!password) return showError("Correo y contraseña requeridos");
+  e.preventDefault();
+  errorMsg.classList.add("hidden");
+
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  if(!email || !password) return showError("Correo y contraseña requeridos");
+
   try{
-    const cred = await signInWithEmailAndPassword(auth,email,password);
+    const cred = await signInWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
     const globalSnap = await getDoc(doc(db,"usuariosGlobal",uid));
+
     if(globalSnap.exists() && globalSnap.data().activo){
       const data = globalSnap.data();
       localStorage.setItem("empresaId", data.empresaId);
@@ -104,14 +116,17 @@ form.addEventListener("submit", async (e)=>{
       localStorage.setItem("planTipo", data.planTipo);
       redirigir(data.rol);
     } else {
-      // Usuarios Freemium / Pro demo
+      // Usuarios demo / freemium si no existe en Firestore
       localStorage.setItem("empresaId","demo-empresa");
       localStorage.setItem("uid",uid);
       localStorage.setItem("rol","demo");
       localStorage.setItem("planTipo","freemium");
-      redirigir("dueno");
+      redirigir("demo");
     }
-  }catch(err){showError(err.message);}
+
+  } catch(err){
+    showError(err.message);
+  }
 });
 </script>
 
