@@ -10,6 +10,11 @@ export async function dashboard(container){
 
 container.innerHTML = `
 
+<button id="btnVoz"
+class="bg-green-600 text-white px-4 py-2 rounded mb-6">
+🎙️ Crear orden por voz
+</button>
+
 <h1 class="text-2xl font-bold mb-6">
 Dashboard TallerPRO360
 </h1>
