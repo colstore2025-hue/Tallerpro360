@@ -13,6 +13,19 @@ export async function ordenes(container) {
   container.innerHTML = `
   <div class="p-6">
 
+<input
+id="accionInput"
+placeholder="Nueva acción"
+class="border p-2 rounded w-full"
+/>
+
+<button
+id="btnAgregarAccion"
+class="bg-blue-600 text-white px-4 py-2 rounded mt-2"
+>
+Agregar acción
+</button>
+
     <h1 class="text-2xl font-bold mb-6">
       Gestión de Órdenes
     </h1>
