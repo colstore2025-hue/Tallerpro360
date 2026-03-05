@@ -1,3 +1,7 @@
+import { iniciarVoz } from "../js/voiceAssistant.js";
+
+document.getElementById("btnVoz")
+.onclick = iniciarVoz;
 export function iniciarVoz(){
 
 const recognition = new webkitSpeechRecognition();
