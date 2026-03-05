@@ -42,20 +42,20 @@
 <!-- FIREBASE AUTH -->
 <script type="module">
 import { auth, db } from "./js/firebase-config.js";
-import { signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const form = document.getElementById("loginForm");
 const errorMsg = document.getElementById("errorMsg");
 
-// Función para redirigir según rol
+// REDIRECCIÓN POR ROL
 async function redirigir(rol){
   switch(rol){
     case "dueno":
     case "admin":
     case "tecnico":
     case "asesor":
-    case "demo": // demo también va a la app
+    case "demo":
       window.location.href="/app/index.html";
       break;
     case "cliente":
@@ -69,37 +69,43 @@ async function redirigir(rol){
   }
 }
 
-// Mostrar errores
+// MOSTRAR ERRORES
 function showError(msg){
   errorMsg.textContent = msg;
   errorMsg.classList.remove("hidden");
 }
 
-// Auto-login
+// LIMPIAR ERROR
+function hideError(){
+  errorMsg.textContent = "";
+  errorMsg.classList.add("hidden");
+}
+
+// AUTO-LOGIN
 onAuthStateChanged(auth, async (user)=>{
   if(!user) return;
-  const globalSnap = await getDoc(doc(db,"usuariosGlobal",user.uid));
-  if(!globalSnap.exists() || !globalSnap.data().activo) { 
-    await auth.signOut(); 
-    return; 
+  try{
+    const globalSnap = await getDoc(doc(db,"usuariosGlobal",user.uid));
+    if(!globalSnap.exists() || !globalSnap.data().activo){
+      await signOut(auth);
+      return;
+    }
+    const data = globalSnap.data();
+    setLocalStorage(data, user.uid);
+    redirigir(data.rol);
+  } catch(e){
+    console.error("Error al iniciar sesión automáticamente:", e);
+    await signOut(auth);
   }
-  const data = globalSnap.data();
-  localStorage.setItem("empresaId", data.empresaId);
-  localStorage.setItem("uid", user.uid);
-  localStorage.setItem("rol", data.rol);
-  localStorage.setItem("sucursalId", data.sucursalId);
-  localStorage.setItem("planTipo", data.planTipo);
-  redirigir(data.rol);
 });
 
-// Login manual
+// LOGIN MANUAL
 form.addEventListener("submit", async (e)=>{
   e.preventDefault();
-  errorMsg.classList.add("hidden");
+  hideError();
 
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
-
   if(!email || !password) return showError("Correo y contraseña requeridos");
 
   try{
@@ -109,25 +115,26 @@ form.addEventListener("submit", async (e)=>{
 
     if(globalSnap.exists() && globalSnap.data().activo){
       const data = globalSnap.data();
-      localStorage.setItem("empresaId", data.empresaId);
-      localStorage.setItem("uid", uid);
-      localStorage.setItem("rol", data.rol);
-      localStorage.setItem("sucursalId", data.sucursalId);
-      localStorage.setItem("planTipo", data.planTipo);
+      setLocalStorage(data, uid);
       redirigir(data.rol);
     } else {
-      // Usuarios demo / freemium si no existe en Firestore
-      localStorage.setItem("empresaId","demo-empresa");
-      localStorage.setItem("uid",uid);
-      localStorage.setItem("rol","demo");
-      localStorage.setItem("planTipo","freemium");
+      // DEMO/FREEMIUM SI NO EXISTE O NO ACTIVO
+      setLocalStorage({empresaId:"demo-empresa", rol:"demo", planTipo:"freemium", sucursalId:null}, uid);
       redirigir("demo");
     }
-
   } catch(err){
     showError(err.message);
   }
 });
+
+// FUNCIÓN PARA GUARDAR LOCALSTORAGE
+function setLocalStorage(data, uid){
+  localStorage.setItem("empresaId", data.empresaId || "demo-empresa");
+  localStorage.setItem("uid", uid);
+  localStorage.setItem("rol", data.rol || "demo");
+  localStorage.setItem("sucursalId", data.sucursalId || "");
+  localStorage.setItem("planTipo", data.planTipo || "freemium");
+}
 </script>
 
 </body>
