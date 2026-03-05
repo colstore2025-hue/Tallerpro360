@@ -8,6 +8,8 @@ getDocs
 
 import Chart from "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm";
 
+import { diagnosticoIA } from "../js/iaMecanica.js";
+
 export async function dashboard(container){
 
 container.innerHTML = `
@@ -74,6 +76,32 @@ Ingresos últimos 7 días
 document
 .getElementById("btnVoz")
 .addEventListener("click", iniciarVoz);
+
+document
+.getElementById("btnVoz")
+.addEventListener("click", escucharProblema);
+
+async function escucharProblema(){
+
+const recognition = new webkitSpeechRecognition();
+
+recognition.lang = "es-ES";
+
+recognition.start();
+
+recognition.onresult = async function(event){
+
+const texto = event.results[0][0].transcript;
+
+alert("Problema detectado: "+texto);
+
+const respuestaIA = await diagnosticoIA(texto);
+
+mostrarDiagnostico(respuestaIA);
+
+};
+
+}
 
 await cargarKPIs();
 await cargarGraficas();
