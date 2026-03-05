@@ -200,3 +200,15 @@ async function cargarOrdenes() {
   }
 
 }
+import { agregarAccionOrden } from "../js/ordenesAcciones.js";
+
+document
+.getElementById("btnAgregarAccion")
+.onclick = () => {
+
+const accion =
+document.getElementById("accionInput").value;
+
+agregarAccionOrden(ordenId, accion);
+
+};
