@@ -1,36 +1,71 @@
-import { iniciarVoz } from "../js/voiceAssistant.js";
+// ==============================
+// TallerPRO360 Voice Assistant
+// ==============================
 
-document.getElementById("btnVoz")
-.onclick = iniciarVoz;
-export function iniciarVoz(){
+export function iniciarVoz() {
 
-const recognition = new webkitSpeechRecognition();
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
 
-recognition.lang = "es-CO";
-recognition.continuous = false;
+  if (!SpeechRecognition) {
+    alert("Tu navegador no soporta reconocimiento de voz");
+    return;
+  }
 
-recognition.onresult = function(event){
+  const recognition = new SpeechRecognition();
 
-const texto = event.results[0][0].transcript;
+  recognition.lang = "es-CO";
+  recognition.continuous = false;
+  recognition.interimResults = false;
 
-console.log("Voz:",texto);
+  recognition.start();
 
-procesarComando(texto);
+  recognition.onstart = () => {
+    console.log("🎙️ Escuchando...");
+  };
 
-};
+  recognition.onresult = (event) => {
 
-recognition.start();
+    const texto = event.results[0][0].transcript;
+
+    console.log("Voz detectada:", texto);
+
+    procesarComando(texto);
+
+  };
+
+  recognition.onerror = (event) => {
+    console.error("Error voz:", event.error);
+  };
 
 }
 
-function procesarComando(texto){
 
-texto = texto.toLowerCase();
+// ==============================
+// Procesar comandos
+// ==============================
 
-if(texto.includes("crear orden")){
+function procesarComando(texto) {
 
-alert("Comando detectado: crear orden");
+  texto = texto.toLowerCase();
 
-}
+  if (texto.includes("crear orden")) {
+
+    alert("🛠️ Comando detectado: crear orden");
+
+    // Aquí después conectaremos con Firestore
+  }
+
+  else if (texto.includes("abrir inventario")) {
+
+    alert("📦 Abrir módulo inventario");
+
+  }
+
+  else {
+
+    alert("No entendí el comando: " + texto);
+
+  }
 
 }
