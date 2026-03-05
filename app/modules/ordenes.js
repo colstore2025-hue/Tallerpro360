@@ -7,24 +7,13 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+import { agregarAccionOrden } from "../js/ordenesAcciones.js";
+
 
 export async function ordenes(container) {
 
   container.innerHTML = `
   <div class="p-6">
-
-<input
-id="accionInput"
-placeholder="Nueva acción"
-class="border p-2 rounded w-full"
-/>
-
-<button
-id="btnAgregarAccion"
-class="bg-blue-600 text-white px-4 py-2 rounded mt-2"
->
-Agregar acción
-</button>
 
     <h1 class="text-2xl font-bold mb-6">
       Gestión de Órdenes
@@ -77,8 +66,8 @@ Agregar acción
     .getElementById("crearOrden")
     .addEventListener("click", crearOrden);
 
-
   cargarOrdenes();
+
 }
 
 
@@ -101,10 +90,12 @@ async function crearOrden() {
       cliente: cliente,
       vehiculo: vehiculo,
       placa: placa,
-      tecnico: tecnico,
+      tecnico: tecnico || "Sin asignar",
 
       estado: "activa",
       total: 0,
+
+      acciones: [],
 
       fecha: serverTimestamp()
 
@@ -161,26 +152,48 @@ async function cargarOrdenes() {
 
     let html = "";
 
-    querySnapshot.forEach(doc => {
+    querySnapshot.forEach(docSnap => {
 
-      const data = doc.data();
+      const data = docSnap.data();
+      const id = docSnap.id;
 
       html += `
-      <div class="border p-3 rounded mb-2 flex justify-between">
+      <div class="border p-4 rounded mb-3">
 
-        <div>
+        <div class="flex justify-between mb-2">
 
-          <strong>${data.cliente}</strong><br>
+          <div>
 
-          ${data.vehiculo} - ${data.placa}<br>
+            <strong>${data.cliente}</strong><br>
 
-          Técnico: ${data.tecnico || "Sin asignar"}
+            ${data.vehiculo} - ${data.placa}<br>
+
+            Técnico: ${data.tecnico}
+
+          </div>
+
+          <div class="text-sm text-gray-500">
+
+            Estado: ${data.estado}
+
+          </div>
 
         </div>
 
-        <div class="text-sm text-gray-500">
+        <div class="mt-3">
 
-          Estado: ${data.estado}
+          <input
+          id="accion-${id}"
+          placeholder="Nueva acción"
+          class="border p-2 rounded w-full mb-2"
+          >
+
+          <button
+          onclick="window.agregarAccion('${id}')"
+          class="bg-blue-600 text-white px-3 py-1 rounded"
+          >
+          Agregar acción
+          </button>
 
         </div>
 
@@ -191,6 +204,24 @@ async function cargarOrdenes() {
 
     lista.innerHTML = html;
 
+    window.agregarAccion = async function(ordenId){
+
+      const input = document.getElementById(`accion-${ordenId}`);
+      const accion = input.value;
+
+      if(!accion){
+        alert("Escriba una acción");
+        return;
+      }
+
+      await agregarAccionOrden(ordenId, accion);
+
+      input.value = "";
+
+      alert("Acción agregada correctamente");
+
+    };
+
   } catch (error) {
 
     console.error("Error cargando órdenes:", error);
@@ -200,15 +231,3 @@ async function cargarOrdenes() {
   }
 
 }
-import { agregarAccionOrden } from "../js/ordenesAcciones.js";
-
-document
-.getElementById("btnAgregarAccion")
-.onclick = () => {
-
-const accion =
-document.getElementById("accionInput").value;
-
-agregarAccionOrden(ordenId, accion);
-
-};
