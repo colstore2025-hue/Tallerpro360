@@ -8,7 +8,7 @@ if (!localStorage.getItem("uid")) {
 }
 
 /* ===============================
-   IMPORTS FIREBASE Y UTILES
+   IMPORTS FIREBASE Y UTILIDADES
 =============================== */
 import { db } from "./firebase.js";
 import {
@@ -21,8 +21,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import Chart from "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm";
-import { diagnosticoIA } from "./iaMecanica.js";
-import { crearRepuesto } from "./repuestos.js";
+import { diagnosticoIA, iniciarVoz } from "./iaMecanica.js";
+import { crearRepuesto, cargarRepuestos } from "./repuestos.js";
 import { notificarCliente } from "./whatsappService.js";
 import { generarFactura } from "./factura.js";
 
@@ -103,6 +103,7 @@ async function crearOrden() {
     total: 0,
     acciones: [],
     fecha: serverTimestamp(),
+    empresaId: localStorage.getItem("empresaId"), // Multiempresa
   });
 
   alert("Orden creada correctamente");
@@ -116,11 +117,15 @@ function limpiarFormulario() {
 
 async function cargarOrdenes() {
   const lista = document.getElementById("listaOrdenes");
+  const empresaId = localStorage.getItem("empresaId");
   const snapshot = await getDocs(collection(db,"ordenes"));
-  if (snapshot.empty) return lista.innerHTML = "<p>No hay órdenes registradas</p>";
+
+  const ordenes = snapshot.docs.filter(docSnap => docSnap.data().empresaId === empresaId);
+
+  if (ordenes.length === 0) return lista.innerHTML = "<p>No hay órdenes registradas</p>";
 
   lista.innerHTML = "";
-  snapshot.forEach(docSnap => {
+  ordenes.forEach(docSnap => {
     const data = docSnap.data();
     const id = docSnap.id;
     const div = document.createElement("div");
@@ -137,7 +142,11 @@ async function cargarOrdenes() {
     const input = document.getElementById(`accion-${ordenId}`);
     const accion = input.value;
     if(!accion) return alert("Escriba una acción");
-    await agregarAccionOrden(ordenId, accion);
+
+    const ordenRef = doc(db,"ordenes",ordenId);
+    await updateDoc(ordenRef,{
+      acciones: [...(ordenes.find(o=>o.id===ordenId).data().acciones||[]), {descripcion:accion, fecha: serverTimestamp()}]
+    });
     input.value = "";
     alert("Acción agregada correctamente");
   };
@@ -148,4 +157,115 @@ async function cargarOrdenes() {
 =============================== */
 export async function repuestos(container){
   container.innerHTML = `
-    <h2 class="text
+    <h2 class="text-xl font-bold mb-4">Gestión de Repuestos</h2>
+    <div class="bg-white p-4 rounded shadow mb-6">
+      <input id="repNombre" placeholder="Nombre" class="border p-2 rounded w-full mb-2">
+      <input id="repCosto" placeholder="Costo de compra COP" type="number" class="border p-2 rounded w-full mb-2">
+      <input id="repMargen" placeholder="Margen %" type="number" class="border p-2 rounded w-full mb-2">
+      <input id="repStock" placeholder="Stock inicial" type="number" class="border p-2 rounded w-full mb-2">
+      <button id="crearRepuestoBtn" class="bg-yellow-600 text-white px-4 py-2 rounded">Crear Repuesto</button>
+    </div>
+    <div id="listaRepuestos">Cargando repuestos...</div>
+  `;
+
+  document.getElementById("crearRepuestoBtn").onclick = async () => {
+    const data = {
+      nombre: document.getElementById("repNombre").value,
+      costoCompra: Number(document.getElementById("repCosto").value),
+      margen: Number(document.getElementById("repMargen").value),
+      stock: Number(document.getElementById("repStock").value),
+      empresaId: localStorage.getItem("empresaId")
+    };
+    await crearRepuesto(data);
+    alert("Repuesto creado correctamente");
+    await cargarRepuestosLista();
+  };
+
+  await cargarRepuestosLista();
+}
+
+async function cargarRepuestosLista(){
+  const lista = document.getElementById("listaRepuestos");
+  const empresaId = localStorage.getItem("empresaId");
+  const snapshot = await getDocs(collection(db,"repuestos"));
+  const repuestosList = snapshot.docs.filter(d=>d.data().empresaId===empresaId);
+
+  if(repuestosList.length === 0) return lista.innerHTML = "<p>No hay repuestos registrados</p>";
+
+  lista.innerHTML = "";
+  repuestosList.forEach(docSnap=>{
+    const data = docSnap.data();
+    const div = document.createElement("div");
+    div.className = "border p-2 rounded mb-2";
+    div.innerHTML = `${data.nombre} - Costo: ${data.costoCompra} COP - Stock: ${data.stock}`;
+    lista.appendChild(div);
+  });
+}
+
+/* ===============================
+   PANEL FINANCIERO
+=============================== */
+export async function panelFinanciero(container){
+  container.innerHTML = `<h2 class="text-xl font-bold mb-4">Panel Financiero</h2>
+  <div class="grid md:grid-cols-2 gap-6">
+    <canvas id="graficaUtilidad"></canvas>
+    <canvas id="graficaServicios"></canvas>
+    <canvas id="graficaRepuestos"></canvas>
+    <canvas id="graficaTecnicos"></canvas>
+  </div>`;
+  await cargarDatosFinancieros();
+}
+
+async function cargarDatosFinancieros(){
+  const empresaId = localStorage.getItem("empresaId");
+  const snapshot = await getDocs(collection(db,"ordenes"));
+  const snapshotEmpresa = snapshot.docs.filter(d=>d.data().empresaId===empresaId);
+
+  let utilidadMes = new Array(12).fill(0);
+  let servicios = {};
+  let repuestos = {};
+  let tecnicos = {};
+
+  snapshotEmpresa.forEach(doc=>{
+    const data = doc.data();
+    if(!data.fecha) return;
+    const fecha = data.fecha.toDate?.() || new Date();
+    const mes = fecha.getMonth();
+
+    let utilidadOrden = 0;
+    if(data.acciones){
+      data.acciones.forEach(a=>{
+        const precio = a.precio || 0;
+        const costo = a.costo || 0;
+        utilidadOrden += precio - costo;
+        servicios[a.descripcion] = (servicios[a.descripcion]||0)+(precio-costo);
+        if(a.repuesto) repuestos[a.repuesto] = (repuestos[a.repuesto]||0)+1;
+      });
+    }
+    if(data.tecnico) tecnicos[data.tecnico] = (tecnicos[data.tecnico]||0)+utilidadOrden;
+    utilidadMes[mes]+=utilidadOrden;
+  });
+
+  new Chart(document.getElementById("graficaUtilidad"), {
+    type:"line",
+    data:{
+      labels:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
+      datasets:[{label:"Utilidad COP", data:utilidadMes}]
+    }
+  });
+
+  new Chart(document.getElementById("graficaServicios"), {
+    type:"bar",
+    data:{labels:Object.keys(servicios), datasets:[{label:"Utilidad COP", data:Object.values(servicios)}]}
+  });
+
+  new Chart(document.getElementById("graficaRepuestos"), {
+    type:"bar",
+    data:{labels:Object.keys(repuestos), datasets:[{label:"Cantidad vendida", data:Object.values(repuestos)}]}
+  });
+
+  new Chart(document.getElementById("graficaTecnicos"), {
+    type:"bar",
+    data:{labels:Object.keys(tecnicos), datasets:[{label:"Utilidad COP", data:Object.values(tecnicos)}]}
+  });
+}
