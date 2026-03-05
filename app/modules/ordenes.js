@@ -1,18 +1,21 @@
-import { db } from "../js/firebase.js";
+ import { db } from "../js/firebase.js";
 
 import {
   collection,
   addDoc,
   getDocs,
-  serverTimestamp
+  serverTimestamp,
+  query,
+  orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { agregarAccionOrden } from "../js/ordenesAcciones.js";
 
 
-export async function ordenes(container) {
+export async function ordenes(container){
 
   container.innerHTML = `
+
   <div class="p-6">
 
     <h1 class="text-2xl font-bold mb-6">
@@ -21,26 +24,38 @@ export async function ordenes(container) {
 
     <div class="bg-white p-4 rounded shadow mb-6">
 
-      <h2 class="font-semibold mb-3">Nueva Orden</h2>
+      <h2 class="font-semibold mb-3">
+        Nueva Orden
+      </h2>
 
-      <input id="cliente"
+      <input
+        id="cliente"
         class="border p-2 rounded w-full mb-2"
-        placeholder="Nombre del cliente">
+        placeholder="Nombre del cliente"
+      >
 
-      <input id="vehiculo"
+      <input
+        id="vehiculo"
         class="border p-2 rounded w-full mb-2"
-        placeholder="Vehículo">
+        placeholder="Vehículo"
+      >
 
-      <input id="placa"
+      <input
+        id="placa"
         class="border p-2 rounded w-full mb-2"
-        placeholder="Placa">
+        placeholder="Placa"
+      >
 
-      <input id="tecnico"
+      <input
+        id="tecnico"
         class="border p-2 rounded w-full mb-4"
-        placeholder="Técnico">
+        placeholder="Técnico"
+      >
 
-      <button id="crearOrden"
-        class="bg-blue-600 text-white px-4 py-2 rounded">
+      <button
+        id="crearOrden"
+        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
         Crear Orden
       </button>
 
@@ -53,7 +68,7 @@ export async function ordenes(container) {
       </h2>
 
       <div id="listaOrdenes">
-      Cargando órdenes...
+        Cargando órdenes...
       </div>
 
     </div>
@@ -61,45 +76,50 @@ export async function ordenes(container) {
   </div>
   `;
 
-
   document
     .getElementById("crearOrden")
     .addEventListener("click", crearOrden);
 
   cargarOrdenes();
-
 }
 
 
-async function crearOrden() {
 
-  const cliente = document.getElementById("cliente").value;
-  const vehiculo = document.getElementById("vehiculo").value;
-  const placa = document.getElementById("placa").value;
-  const tecnico = document.getElementById("tecnico").value;
+async function crearOrden(){
 
-  if (!cliente || !vehiculo || !placa) {
+  const empresaId = localStorage.getItem("empresaId");
+
+  const cliente  = document.getElementById("cliente").value.trim();
+  const vehiculo = document.getElementById("vehiculo").value.trim();
+  const placa    = document.getElementById("placa").value.trim();
+  const tecnico  = document.getElementById("tecnico").value.trim();
+
+  if(!cliente || !vehiculo || !placa){
     alert("Complete los campos obligatorios");
     return;
   }
 
-  try {
+  try{
 
-    await addDoc(collection(db, "ordenes"), {
+    await addDoc(
 
-      cliente: cliente,
-      vehiculo: vehiculo,
-      placa: placa,
-      tecnico: tecnico || "Sin asignar",
+      collection(db,"empresas",empresaId,"ordenes"),
 
-      estado: "activa",
-      total: 0,
+      {
+        cliente,
+        vehiculo,
+        placa,
+        tecnico: tecnico || "Sin asignar",
 
-      acciones: [],
+        estado: "activa",
+        total: 0,
 
-      fecha: serverTimestamp()
+        acciones: [],
 
-    });
+        fecha: serverTimestamp()
+      }
+
+    );
 
     alert("Orden creada correctamente");
 
@@ -107,9 +127,9 @@ async function crearOrden() {
 
     cargarOrdenes();
 
-  } catch (error) {
+  }catch(error){
 
-    console.error("Error creando orden:", error);
+    console.error("Error creando orden:",error);
 
     alert("Error creando orden");
 
@@ -118,36 +138,42 @@ async function crearOrden() {
 }
 
 
-function limpiarFormulario() {
 
-  document.getElementById("cliente").value = "";
+function limpiarFormulario(){
+
+  document.getElementById("cliente").value  = "";
   document.getElementById("vehiculo").value = "";
-  document.getElementById("placa").value = "";
-  document.getElementById("tecnico").value = "";
+  document.getElementById("placa").value    = "";
+  document.getElementById("tecnico").value  = "";
 
 }
 
 
-async function cargarOrdenes() {
+
+async function cargarOrdenes(){
+
+  const empresaId = localStorage.getItem("empresaId");
 
   const lista = document.getElementById("listaOrdenes");
 
-  try {
+  try{
 
-    const querySnapshot = await getDocs(
-      collection(db, "ordenes")
+    const q = query(
+      collection(db,"empresas",empresaId,"ordenes"),
+      orderBy("fecha","desc")
     );
 
-    if (querySnapshot.empty) {
+    const querySnapshot = await getDocs(q);
+
+    if(querySnapshot.empty){
 
       lista.innerHTML = `
       <p class="text-gray-500">
-      No hay órdenes registradas
+        No hay órdenes registradas
       </p>
       `;
 
       return;
-
     }
 
     let html = "";
@@ -155,10 +181,23 @@ async function cargarOrdenes() {
     querySnapshot.forEach(docSnap => {
 
       const data = docSnap.data();
-      const id = docSnap.id;
+      const id   = docSnap.id;
+
+      const acciones = data.acciones || [];
+
+      let accionesHTML = "";
+
+      acciones.forEach(a => {
+        accionesHTML += `
+        <li class="text-sm text-gray-700">
+          • ${a}
+        </li>
+        `;
+      });
 
       html += `
-      <div class="border p-4 rounded mb-3">
+
+      <div class="border p-4 rounded mb-4">
 
         <div class="flex justify-between mb-2">
 
@@ -168,7 +207,7 @@ async function cargarOrdenes() {
 
             ${data.vehiculo} - ${data.placa}<br>
 
-            Técnico: ${data.tecnico}
+            Técnico: ${data.tecnico || "Sin asignar"}
 
           </div>
 
@@ -180,51 +219,72 @@ async function cargarOrdenes() {
 
         </div>
 
-        <div class="mt-3">
+        <div class="mb-3">
+
+          <ul>
+            ${accionesHTML}
+          </ul>
+
+        </div>
+
+        <div class="mt-2">
 
           <input
-          id="accion-${id}"
-          placeholder="Nueva acción"
-          class="border p-2 rounded w-full mb-2"
+            id="accion-${id}"
+            placeholder="Nueva acción"
+            class="border p-2 rounded w-full mb-2"
           >
 
           <button
-          onclick="window.agregarAccion('${id}')"
-          class="bg-blue-600 text-white px-3 py-1 rounded"
+            onclick="window.agregarAccion('${id}')"
+            class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
           >
-          Agregar acción
+            Agregar acción
           </button>
 
         </div>
 
       </div>
+
       `;
 
     });
 
     lista.innerHTML = html;
 
+
+
     window.agregarAccion = async function(ordenId){
 
       const input = document.getElementById(`accion-${ordenId}`);
-      const accion = input.value;
+      const accion = input.value.trim();
 
       if(!accion){
         alert("Escriba una acción");
         return;
       }
 
-      await agregarAccionOrden(ordenId, accion);
+      try{
 
-      input.value = "";
+        await agregarAccionOrden(ordenId,accion);
 
-      alert("Acción agregada correctamente");
+        input.value = "";
+
+        cargarOrdenes();
+
+      }catch(error){
+
+        console.error("Error agregando acción:",error);
+
+        alert("Error agregando acción");
+
+      }
 
     };
 
-  } catch (error) {
+  }catch(error){
 
-    console.error("Error cargando órdenes:", error);
+    console.error("Error cargando órdenes:",error);
 
     lista.innerHTML = "Error cargando órdenes";
 
