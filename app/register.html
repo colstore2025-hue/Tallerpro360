@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Crear cuenta | TallerPRO360</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{
+font-family:Arial;
+background:#f3f4f6;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.card{
+background:white;
+padding:30px;
+border-radius:12px;
+width:350px;
+box-shadow:0 10px 30px rgba(0,0,0,.1);
+}
+
+input{
+width:100%;
+padding:10px;
+margin-top:10px;
+border-radius:8px;
+border:1px solid #ccc;
+}
+
+button{
+margin-top:20px;
+width:100%;
+padding:12px;
+background:#16a34a;
+color:white;
+border:none;
+border-radius:10px;
+font-weight:bold;
+cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>Crear cuenta</h2>
+
+<input id="empresa" placeholder="Nombre del taller">
+<input id="ciudad" placeholder="Ciudad">
+<input id="telefono" placeholder="Teléfono">
+
+<input id="email" placeholder="Correo">
+<input id="password" type="password" placeholder="Contraseña">
+
+<button onclick="registrar()">Crear cuenta</button>
+
+<p id="msg"></p>
+
+</div>
+
+<script type="module" src="./js/register.js"></script>
+
+</body>
+</html>
