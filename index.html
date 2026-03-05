@@ -12,7 +12,6 @@
 <link rel="stylesheet" href="/assets/css/styles.css">
 
 <style>
-/* CSS inline (igual que tu versión) */
 body{font-family:Arial,sans-serif;margin:0;background:#f9fafb;}
 .section{padding:80px 20px;}
 .container{max-width:1200px;margin:auto;}
@@ -91,69 +90,48 @@ TallerPRO360 organiza, controla y profesionaliza tu taller automotriz.
 <p style="color:#555;margin-bottom:60px;">Empieza pequeño. Crece sin límites.</p>
 <div class="plan-grid">
 
-<!-- TRIAL -->
+<!-- FREEMIUM -->
 <div class="plan highlight">
-<h3>Trial</h3>
-<p class="price">Gratis / 7 días</p>
+<h3>Freemium</h3>
+<p class="price">Gratis / limitado</p>
 <ul style="line-height:30px;">
-<li>✔ Acceso completo a herramientas PRO</li>
-<li>✔ Hasta 6 usuarios</li>
-<li>✔ Órdenes ilimitadas</li>
-<li>❌ Facturación electrónica</li>
+<li>✔ 1 técnico</li>
+<li>✔ Hasta 20 órdenes/mes</li>
+<li>❌ IA mecánica</li>
+<li>❌ Reportes PDF</li>
+<li>❌ Alertas automáticas</li>
 </ul>
-<button class="btn-main" onclick="activarTrial(this)">Probar gratis 7 días</button>
+<button class="btn-main" onclick="activarTrial(this)">Probar Gratis</button>
 <div class="loader">Activando trial...</div>
 </div>
 
-<!-- BÁSICO -->
-<div class="plan">
-<h3>Básico</h3>
-<p class="price">$29.900 / mes</p>
-<ul style="line-height:30px;">
-<li>✔ Hasta 30 órdenes</li>
-<li>✔ Hasta 3 usuarios</li>
-<li>✔ Gestión digital</li>
-<li>❌ Facturación electrónica</li>
-</ul>
-<button class="btn-main" onclick="iniciarPago('basico', this)">Comenzar ahora</button>
-<div class="loader">Redirigiendo a pago...</div>
-</div>
-
 <!-- PRO -->
-<div class="plan highlight">
-<h3>PRO</h3>
-<p class="price">$69.900 / mes</p>
-<p class="electronica tooltip">
-Facturación Electrónica: +$15.000
-<span class="tooltiptext">Integración con Siigo o Factura.com vía API.</span>
-</p>
+<div class="plan">
+<h3>Pro</h3>
+<p class="price">$69.000 / mes</p>
 <ul style="line-height:30px;">
-<li>✔ Hasta 150 órdenes</li>
-<li>✔ Hasta 6 usuarios</li>
-<li>✔ Diagnóstico por voz</li>
-<li>✔ Reportes inteligentes</li>
-<li>✔ Facturación electrónica activa</li>
+<li>✔ Hasta 6 técnicos</li>
+<li>✔ IA mecánica incluida</li>
+<li>✔ Reportes PDF</li>
+<li>✔ Alertas automáticas</li>
+<li>✔ Órdenes ilimitadas</li>
 </ul>
-<button class="btn-main" onclick="mostrarModalFacturacion()">Activar Facturación</button>
+<button class="btn-main" onclick="iniciarPago('pro', this)">Comenzar ahora</button>
 <div class="loader">Redirigiendo a pago...</div>
 </div>
 
-<!-- PRO ANUAL -->
+<!-- ELITE -->
 <div class="plan dark-plan">
-<h3>PRO Anual</h3>
-<p class="price" style="color:#22c55e;">$699.000 / año</p>
-<p class="electronica tooltip">
-Facturación Electrónica: +$150.000
-<span class="tooltiptext">Integración con Siigo o Factura.com vía API.</span>
-</p>
+<h3>Elite</h3>
+<p class="price" style="color:#22c55e;">$129.000 / mes</p>
 <ul style="line-height:30px;">
-<li>✔ Todo lo PRO</li>
-<li>✔ Órdenes ilimitadas</li>
-<li>✔ Hasta 20 usuarios</li>
+<li>✔ Todos los beneficios Pro</li>
+<li>✔ Marketplace de repuestos</li>
+<li>✔ Integraciones contables</li>
+<li>✔ Acceso completo</li>
 <li>✔ Soporte directo</li>
-<li>✔ Facturación electrónica activa</li>
 </ul>
-<button class="btn-main" onclick="iniciarPago('pro_anual', this)">Elegir plan anual</button>
+<button class="btn-main" onclick="iniciarPago('elite', this)">Comenzar ahora</button>
 <div class="loader">Redirigiendo a pago...</div>
 </div>
 
@@ -190,7 +168,6 @@ TallerPRO360 © 2026 · Tu ayudante inteligente en el taller
 
 <!-- ANIMACIONES -->
 <script>
-// Scroll animations premium
 const observer = new IntersectionObserver(entries=>{
   entries.forEach(entry=>{
     if(entry.isIntersecting){
@@ -219,7 +196,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 </script>
 
-<!-- DEMO DINÁMICO + TRIAL + PAGOS + FACTURACIÓN -->
+<!-- DEMO, USUARIOS, TRIAL, PAGOS -->
 <script>
 async function actualizarDemo(){
   try{
@@ -241,7 +218,6 @@ async function actualizarDemo(){
 }
 setInterval(actualizarDemo,5000); actualizarDemo();
 
-// Usuarios dinámicos
 async function cargarUsuarios(){
   const list=document.getElementById("userList");
   list.innerHTML="";
@@ -259,7 +235,6 @@ async function cargarUsuarios(){
 }
 cargarUsuarios();
 
-// Pagos
 async function iniciarPago(plan, boton){
   boton.disabled=true;
   const loader=boton.nextElementSibling;
@@ -273,7 +248,6 @@ async function iniciarPago(plan, boton){
   }catch(e){alert("Error iniciando pago: "+e.message); boton.disabled=false; loader.style.display="none";}
 }
 
-// Trial
 async function activarTrial(boton){
   boton.disabled=true;
   const loader=boton.nextElementSibling; loader.style.display="block";
@@ -281,26 +255,24 @@ async function activarTrial(boton){
     const response=await firebase.functions().httpsCallable('activarTrial')();
     const data=response.data;
     if(!data.success) throw new Error(data.mensaje||"Error activando trial");
-    alert("✅ Trial activado por 7 días. Todas las funciones PRO activas, excepto Facturación Electrónica.");
+    alert("✅ Trial activado por 7 días. Funciones PRO limitadas.");
     await firebase.auth().currentUser.getIdToken(true);
     window.location.reload();
   }catch(e){alert("Error activando trial: "+e.message); boton.disabled=false; loader.style.display="none";}
 }
 
-// Facturación
 function mostrarModalFacturacion(){document.getElementById('modalFacturacion').style.display='block';}
 function cerrarModalFacturacion(){document.getElementById('modalFacturacion').style.display='none';}
 function activarFacturacion(aliado){alert("✅ Facturación activada con "+aliado);cerrarModalFacturacion();}
 
-// Usuarios demo
 function agregarUsuarioDemo(){
   const list=document.getElementById('userList');
   const item=document.createElement('div'); item.className='user-item';
   item.innerHTML='<span>Nuevo Usuario</span><button class="btn-main" onclick="alert(\'Editar demo\')">Editar</button>';
   list.appendChild(item);
 }
-</script>
 
+// Service Worker
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/service-worker.js")
