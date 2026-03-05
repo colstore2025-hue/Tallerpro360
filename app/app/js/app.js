@@ -1,5 +1,8 @@
 // app/js/app.js
-
+// Validar sesión
+if(!localStorage.getItem("uid")) {
+  window.location.href="/login.html";
+}
 import { db } from "./firebase.js";
 import {
   collection,
