@@ -1,108 +1,75 @@
+// ======================================
+// REPUESTOS - CREAR NUEVO REPUESTO
+// ======================================
+
 import { db } from "./firebase.js";
+import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import {
-collection,
-addDoc,
-serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+export async function crearRepuesto(data) {
 
+  try {
 
-// =============================
-// CREAR REPUESTO
-// =============================
+    // ==========================
+    // VALIDACIONES OBLIGATORIAS
+    // ==========================
+    if (!data.nombre || !data.costoCompra) {
+      throw new Error("Nombre y costo de compra son obligatorios");
+    }
 
-export async function crearRepuesto(data){
+    // ==========================
+    // NORMALIZAR DATOS NUMÉRICOS
+    // ==========================
+    const costoCompra = Number(data.costoCompra);
+    const margen = Number(data.margen) || 30;
+    const stock = Number(data.stock) || 0;
+    const stockMinimo = Number(data.stockMinimo) || 1;
 
-try{
+    // ==========================
+    // CALCULAR PRECIO DE VENTA
+    // ==========================
+    let precioVenta = costoCompra * (1 + margen / 100);
+    precioVenta = Math.round(precioVenta); // redondeo comercial COP
 
-// =============================
-// VALIDACIONES
-// =============================
+    // ==========================
+    // CREAR DOCUMENTO FIRESTORE
+    // ==========================
+    const docRef = await addDoc(collection(db, "repuestos"), {
 
-if(!data.nombre || !data.costoCompra){
-throw new Error("Nombre y costo de compra son obligatorios");
-}
+      // info básica
+      nombre: data.nombre.trim(),
+      codigo: data.codigo || "",
+      marca: data.marca || "",
+      categoria: data.categoria || "",
 
+      // precios en COP
+      costoCompra: costoCompra,
+      margen: margen,
+      precioVenta: precioVenta,
 
-// =============================
-// NORMALIZAR DATOS NUMÉRICOS
-// =============================
+      // inventario
+      stock: stock,
+      stockMinimo: stockMinimo,
 
-const costoCompra = Number(data.costoCompra);
-const margen = Number(data.margen) || 30;
+      // proveedor
+      proveedor: data.proveedor || "No definido",
 
+      // métricas comerciales (para dashboard financiero)
+      vecesVendido: 0,
+      ingresosGenerados: 0,
+      utilidadGenerada: 0,
 
-// =============================
-// CÁLCULO PRECIO VENTA
-// =============================
+      // estado
+      activo: true,
 
-let precioVenta = costoCompra * (1 + margen / 100);
+      // timestamps
+      fechaCreacion: serverTimestamp(),
+      fechaActualizacion: serverTimestamp()
+    });
 
-// redondeo comercial COP
-precioVenta = Math.round(precioVenta);
+    return docRef.id;
 
-
-// =============================
-// CREAR DOCUMENTO
-// =============================
-
-const docRef = await addDoc(
-collection(db,"repuestos"),
-{
-
-// información base
-
-nombre: data.nombre.trim(),
-codigo: data.codigo || "",
-marca: data.marca || "",
-categoria: data.categoria || "",
-
-
-// precios (COP)
-
-costoCompra: costoCompra,
-margen: margen,
-precioVenta: precioVenta,
-
-
-// inventario
-
-stock: Number(data.stock) || 0,
-stockMinimo: Number(data.stockMinimo) || 1,
-
-
-// proveedor
-
-proveedor: data.proveedor || "No definido",
-
-
-// métricas comerciales
-
-vecesVendido: 0,
-ingresosGenerados: 0,
-utilidadGenerada: 0,
-
-
-// estado
-
-activo: true,
-
-
-// fechas
-
-fechaCreacion: serverTimestamp(),
-fechaActualizacion: serverTimestamp()
-
-});
-
-return docRef.id;
-
-}catch(error){
-
-console.error("Error creando repuesto:", error);
-
-throw error;
-
-}
-
+  } catch (error) {
+    console.error("Error creando repuesto:", error);
+    throw error;
+  }
 }
