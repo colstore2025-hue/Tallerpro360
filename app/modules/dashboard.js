@@ -1,112 +1,121 @@
 import { db } from "../js/firebase.js";
 
 import {
-  collection,
-  getDocs
+collection,
+getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-export async function dashboard(container) {
 
-  container.innerHTML = `
-  <div class="p-6">
+export async function dashboard(container){
 
-    <h1 class="text-2xl font-bold mb-6">
-      Dashboard TallerPRO360
-    </h1>
+container.innerHTML = `
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+<h1 class="text-2xl font-bold mb-6">
+Dashboard TallerPRO360
+</h1>
 
-      <div class="bg-white p-4 rounded shadow">
-        <h3 class="text-gray-500 text-sm">Órdenes activas</h3>
-        <p id="ordenesActivas" class="text-2xl font-bold">0</p>
-      </div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
 
-      <div class="bg-white p-4 rounded shadow">
-        <h3 class="text-gray-500 text-sm">Ingresos hoy</h3>
-        <p id="ingresosHoy" class="text-2xl font-bold">$0</p>
-      </div>
+<div class="bg-white p-4 rounded shadow">
+<h3 class="text-gray-500">Órdenes activas</h3>
+<p id="kpiOrdenes" class="text-2xl font-bold">0</p>
+</div>
 
-      <div class="bg-white p-4 rounded shadow">
-        <h3 class="text-gray-500 text-sm">Vehículos en proceso</h3>
-        <p id="vehiculosProceso" class="text-2xl font-bold">0</p>
-      </div>
+<div class="bg-white p-4 rounded shadow">
+<h3 class="text-gray-500">Ingresos hoy</h3>
+<p id="kpiIngresos" class="text-2xl font-bold">$0</p>
+</div>
 
-      <div class="bg-white p-4 rounded shadow">
-        <h3 class="text-gray-500 text-sm">Total órdenes</h3>
-        <p id="totalOrdenes" class="text-2xl font-bold">0</p>
-      </div>
+<div class="bg-white p-4 rounded shadow">
+<h3 class="text-gray-500">Vehículos en proceso</h3>
+<p id="kpiVehiculos" class="text-2xl font-bold">0</p>
+</div>
 
-    </div>
+<div class="bg-white p-4 rounded shadow">
+<h3 class="text-gray-500">Clientes</h3>
+<p id="kpiClientes" class="text-2xl font-bold">0</p>
+</div>
 
-    <div class="bg-white p-4 rounded shadow">
+</div>
 
-      <h2 class="font-semibold mb-3">
-        Últimas órdenes
-      </h2>
 
-      <div id="ultimasOrdenes">
-      Cargando...
-      </div>
+<div class="bg-white p-4 rounded shadow">
 
-    </div>
+<h2 class="font-bold mb-4">
+Actividad reciente
+</h2>
 
-  </div>
-  `;
+<div id="actividad">
+Cargando actividad...
+</div>
 
-  cargarDashboard();
+</div>
+
+`;
+
+cargarKPIs();
+
 }
 
-async function cargarDashboard() {
+async function cargarKPIs(){
 
-  try {
+const empresaId = localStorage.getItem("empresaId");
 
-    const snapshot = await getDocs(collection(db, "ordenes"));
+if(!empresaId){
+console.log("empresaId no encontrado");
+return;
+}
 
-    let totalOrdenes = 0;
-    let ordenesActivas = 0;
-    let vehiculosProceso = 0;
-    let ingresosHoy = 0;
+try{
 
-    let html = "";
+const ordenesRef = collection(db,"empresas",empresaId,"ordenes");
+const ordenesSnap = await getDocs(ordenesRef);
 
-    snapshot.forEach(doc => {
+let ordenesActivas = 0;
+let ingresosHoy = 0;
+let vehiculos = 0;
 
-      const data = doc.data();
+const hoy = new Date().toDateString();
 
-      totalOrdenes++;
+ordenesSnap.forEach(doc=>{
 
-      if (data.estado === "activa") ordenesActivas++;
-      if (data.estado === "proceso") vehiculosProceso++;
+const data = doc.data();
 
-      ingresosHoy += data.total || 0;
+if(data.estado !== "entregado"){
+ordenesActivas++;
+}
 
-      html += `
-      <div class="border p-3 rounded mb-2 flex justify-between">
+vehiculos++;
 
-        <div>
-          <strong>${data.cliente}</strong><br>
-          ${data.vehiculo} - ${data.placa}
-        </div>
+if(data.fecha){
 
-        <div class="text-sm text-gray-500">
-          ${data.estado}
-        </div>
+const fecha = data.fecha.toDate?.() || new Date();
 
-      </div>
-      `;
-    });
+if(fecha.toDateString() === hoy){
+ingresosHoy += data.total || 0;
+}
 
-    document.getElementById("ordenesActivas").innerText = ordenesActivas;
-    document.getElementById("vehiculosProceso").innerText = vehiculosProceso;
-    document.getElementById("totalOrdenes").innerText = totalOrdenes;
-    document.getElementById("ingresosHoy").innerText =
-      "$ " + ingresosHoy.toLocaleString("es-CO");
+}
 
-    document.getElementById("ultimasOrdenes").innerHTML = html || "Sin datos";
+});
 
-  } catch (error) {
+document.getElementById("kpiOrdenes").innerText = ordenesActivas;
 
-    console.error("Error cargando dashboard:", error);
+document.getElementById("kpiIngresos").innerText =
+"$" + ingresosHoy.toLocaleString("es-CO");
 
-  }
+document.getElementById("kpiVehiculos").innerText = vehiculos;
+
+const clientesRef = collection(db,"empresas",empresaId,"clientes");
+const clientesSnap = await getDocs(clientesRef);
+
+document.getElementById("kpiClientes").innerText = clientesSnap.size;
+
+}
+catch(e){
+
+console.error("Error dashboard",e);
+
+}
+
 }
