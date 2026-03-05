@@ -1,225 +1,107 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>TallerPRO360 · Ingreso</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- PWA -->
-  <link rel="manifest" href="./manifest.json" />
-
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-  <style>
-    body { background:#0f172a; }
-  </style>
+<meta charset="UTF-8">
+<title>TallerPRO360 · Login SaaS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="./manifest.json">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>body{background:#0f172a;}</style>
 </head>
-
 <body class="text-slate-200 flex items-center justify-center min-h-screen px-4">
 
-  <div class="w-full max-w-sm bg-slate-800 rounded-2xl p-6 shadow-xl">
+<div class="w-full max-w-sm bg-slate-800 rounded-2xl p-6 shadow-xl">
 
-    <!-- LOGO -->
-    <div class="text-center mb-6">
-      <img src="./logo.png" alt="TallerPRO360" class="h-14 mx-auto mb-3">
-      <h1 class="text-xl font-black text-emerald-400">
-        TallerPRO360
-      </h1>
-      <p class="text-xs text-slate-400 mt-1">
-        Plataforma de gestión de servicios
-      </p>
-    </div>
-
-    <!-- FORM -->
-    <form id="loginForm" class="space-y-4">
-
-      <div>
-        <label class="text-xs text-slate-400">Correo</label>
-        <input
-          type="email"
-          id="email"
-          required
-          class="w-full mt-1 px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 focus:outline-none focus:border-emerald-400"
-          placeholder="usuario@correo.com"
-        />
-      </div>
-
-      <div>
-        <label class="text-xs text-slate-400">Contraseña</label>
-        <input
-          type="password"
-          id="password"
-          required
-          class="w-full mt-1 px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 focus:outline-none focus:border-emerald-400"
-          placeholder="••••••••"
-        />
-      </div>
-
-      <button
-        type="submit"
-        class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-900 font-bold py-2 rounded-lg transition">
-        Ingresar
-      </button>
-    </form>
-
-    <!-- ERROR -->
-    <p id="errorMsg" class="hidden text-red-400 text-xs text-center mt-4"></p>
-
-    <!-- FOOTER -->
-    <p class="text-center text-[10px] text-slate-500 mt-6">
-      Acceso para Superadmin · CEO · Staff
-    </p>
+  <!-- LOGO -->
+  <div class="text-center mb-6">
+    <img src="./assets/logo-192.png" alt="TallerPRO360" class="h-14 mx-auto mb-3">
+    <h1 class="text-xl font-black text-emerald-400">TallerPRO360</h1>
+    <p class="text-xs text-slate-400 mt-1">Plataforma SaaS de gestión de talleres</p>
   </div>
+
+  <!-- FORM -->
+  <form id="loginForm" class="space-y-4">
+    <div>
+      <label class="text-xs text-slate-400">Correo</label>
+      <input type="email" id="email" required class="w-full mt-1 px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 focus:outline-none focus:border-emerald-400" placeholder="usuario@correo.com"/>
+    </div>
+    <div>
+      <label class="text-xs text-slate-400">Contraseña</label>
+      <input type="password" id="password" required class="w-full mt-1 px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 focus:outline-none focus:border-emerald-400" placeholder="••••••••"/>
+    </div>
+    <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-900 font-bold py-2 rounded-lg transition">Ingresar</button>
+  </form>
+
+  <p id="errorMsg" class="hidden text-red-400 text-xs text-center mt-4"></p>
+  <p class="text-center text-[10px] text-slate-500 mt-6">Acceso Superadmin · CEO · Staff</p>
+</div>
 
 <!-- FIREBASE AUTH -->
 <script type="module">
-import { auth, db } from "./firebase-config.js";
-import { 
-  signInWithEmailAndPassword,
-  onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-import { 
-  doc,
-  getDoc
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { auth, db } from "./js/firebase-config.js";
+import { signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const form = document.getElementById("loginForm");
 const errorMsg = document.getElementById("errorMsg");
 
-/* ================= AUTO LOGIN ================= */
-
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return;
-
-  const globalRef = doc(db, "usuariosGlobal", user.uid);
-  const globalSnap = await getDoc(globalRef);
-
-  if (!globalSnap.exists()) {
-    await auth.signOut();
-    return;
+async function redirigir(rol){
+  switch(rol){
+    case "dueno":
+    case "admin":
+    case "tecnico":
+    case "asesor": window.location.href="/app/index.html"; break;
+    case "cliente": window.location.href="/cliente.html"; break;
+    case "superadmin": window.location.href="/admin/ceo-dashboard.html"; break;
+    default: showError("Rol no válido");
   }
+}
 
+function showError(msg){errorMsg.textContent=msg; errorMsg.classList.remove("hidden");}
+
+// Auto-login
+onAuthStateChanged(auth, async (user)=>{
+  if(!user) return;
+  const globalSnap = await getDoc(doc(db,"usuariosGlobal",user.uid));
+  if(!globalSnap.exists() || !globalSnap.data().activo) { await auth.signOut(); return; }
   const data = globalSnap.data();
-
-  if (!data.activo) {
-    await auth.signOut();
-    return;
-  }
-
   localStorage.setItem("empresaId", data.empresaId);
   localStorage.setItem("uid", user.uid);
   localStorage.setItem("rol", data.rol);
   localStorage.setItem("sucursalId", data.sucursalId);
   localStorage.setItem("planTipo", data.planTipo);
-
   redirigir(data.rol);
 });
 
-/* ================= LOGIN ================= */
-
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  errorMsg.classList.add("hidden");
-
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-
-  if (!email || !password) {
-    return showError("Correo y contraseña requeridos");
-  }
-
-  try {
-
-    const cred = await signInWithEmailAndPassword(auth, email, password);
+// Login manual
+form.addEventListener("submit", async (e)=>{
+  e.preventDefault(); errorMsg.classList.add("hidden");
+  const email=document.getElementById("email").value.trim();
+  const password=document.getElementById("password").value;
+  if(!email||!password) return showError("Correo y contraseña requeridos");
+  try{
+    const cred = await signInWithEmailAndPassword(auth,email,password);
     const uid = cred.user.uid;
-
-    /* 🔎 Buscar usuario global (ESCALABLE) */
-    const globalRef = doc(db, "usuariosGlobal", uid);
-    const globalSnap = await getDoc(globalRef);
-
-    if (!globalSnap.exists()) {
-      throw new Error("Usuario no registrado en la plataforma");
+    const globalSnap = await getDoc(doc(db,"usuariosGlobal",uid));
+    if(globalSnap.exists() && globalSnap.data().activo){
+      const data = globalSnap.data();
+      localStorage.setItem("empresaId", data.empresaId);
+      localStorage.setItem("uid", uid);
+      localStorage.setItem("rol", data.rol);
+      localStorage.setItem("sucursalId", data.sucursalId);
+      localStorage.setItem("planTipo", data.planTipo);
+      redirigir(data.rol);
+    } else {
+      // Usuarios Freemium / Pro demo
+      localStorage.setItem("empresaId","demo-empresa");
+      localStorage.setItem("uid",uid);
+      localStorage.setItem("rol","demo");
+      localStorage.setItem("planTipo","freemium");
+      redirigir("dueno");
     }
-
-    const data = globalSnap.data();
-
-    if (!data.activo) {
-      throw new Error("Usuario inactivo");
-    }
-
-    /* 🔒 Validar empresa */
-    const empresaRef = doc(db, "empresas", data.empresaId);
-    const empresaSnap = await getDoc(empresaRef);
-
-    if (!empresaSnap.exists()) {
-      throw new Error("Empresa no encontrada");
-    }
-
-    const empresaData = empresaSnap.data();
-
-    if (empresaData.estado !== "activa") {
-      throw new Error("Empresa suspendida");
-    }
-
-    if (!empresaData.plan || empresaData.plan.estado !== "activo") {
-      throw new Error("Plan inactivo o vencido");
-    }
-
-    /* 🧹 Limpiar sesión previa */
-    localStorage.clear();
-
-    /* 💾 Guardar sesión */
-    localStorage.setItem("empresaId", data.empresaId);
-    localStorage.setItem("uid", uid);
-    localStorage.setItem("rol", data.rol);
-    localStorage.setItem("sucursalId", data.sucursalId);
-    localStorage.setItem("planTipo", empresaData.plan.tipo);
-
-    redirigir(data.rol);
-
-  } catch (err) {
-    console.error("ERROR LOGIN:", err);
-    showError(err.message);
-  }
+  }catch(err){showError(err.message);}
 });
-
-/* ================= REDIRECCIÓN ================= */
-
-function redirigir(rol) {
-
-  switch (rol) {
-
-    case "dueno":
-    case "admin":
-    case "tecnico":
-    case "asesor":
-      window.location.href = "/erp";
-      break;
-
-    case "cliente":
-      window.location.href = "/cliente";
-      break;
-
-    case "superadmin":
-      window.location.href = "/admin";
-      break;
-
-    default:
-      showError("Rol no válido");
-  }
-}
-
-/* ================= ERROR UI ================= */
-
-function showError(message) {
-  errorMsg.textContent = message;
-  errorMsg.classList.remove("hidden");
-}
 </script>
 
 </body>
