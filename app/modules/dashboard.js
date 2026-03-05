@@ -4,13 +4,13 @@ import { diagnosticoIA } from "../js/iaMecanica.js";
 
 import {
 collection,
-getDocs
+getDocs,
+doc,
+updateDoc,
+arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import Chart from "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm";
-
-let chartEstados = null;
-let chartIngresos = null;
 
 export async function dashboard(container){
 
@@ -52,22 +52,26 @@ Dashboard TallerPRO360
 <div class="grid md:grid-cols-2 gap-6">
 
 <div class="bg-white p-4 rounded shadow">
+
 <h2 class="font-bold mb-4">
 Ingresos últimos 7 días
 </h2>
+
 <canvas id="graficaIngresos"></canvas>
+
 </div>
 
 <div class="bg-white p-4 rounded shadow">
+
 <h2 class="font-bold mb-4">
 Órdenes por estado
 </h2>
+
 <canvas id="graficaEstados"></canvas>
-</div>
 
 </div>
 
-<div id="diagnosticoIA" class="mt-6"></div>
+</div>
 
 `;
 
@@ -80,28 +84,11 @@ await cargarGraficas();
 
 }
 
-/* =========================
-VOZ + IA MECÁNICA
-========================= */
-
 async function escucharProblema(){
 
-const SpeechRecognition =
-window.SpeechRecognition ||
-window.webkitSpeechRecognition;
+const recognition = new webkitSpeechRecognition();
 
-if(!SpeechRecognition){
-
-alert("Tu navegador no soporta reconocimiento de voz");
-
-return;
-
-}
-
-const recognition = new SpeechRecognition();
-
-recognition.lang = "es-CO";
-recognition.continuous = false;
+recognition.lang = "es-ES";
 
 recognition.start();
 
@@ -109,7 +96,7 @@ recognition.onresult = async function(event){
 
 const texto = event.results[0][0].transcript;
 
-alert("Problema detectado: " + texto);
+alert("Problema detectado: "+texto);
 
 const respuestaIA = await diagnosticoIA(texto);
 
@@ -121,46 +108,30 @@ mostrarDiagnostico(respuestaIA);
 
 function mostrarDiagnostico(respuesta){
 
-const container = document.getElementById("diagnosticoIA");
+const div = document.createElement("div");
 
-container.innerHTML = `
+div.className =
+"bg-yellow-100 p-4 rounded shadow mt-6";
 
-<div class="bg-yellow-100 p-4 rounded shadow">
-
+div.innerHTML = `
 <h3 class="font-bold mb-2">
-🤖 Diagnóstico IA
+Diagnóstico IA
 </h3>
 
-<p class="whitespace-pre-line">
-${respuesta}
-</p>
-
-</div>
-
+<p>${respuesta}</p>
 `;
 
-}
+document
+.querySelector("main")
+.appendChild(div);
 
-/* =========================
-KPIs
-========================= */
+}
 
 async function cargarKPIs(){
 
-try{
-
 const empresaId = localStorage.getItem("empresaId");
 
-if(!empresaId){
-
-console.error("empresaId no encontrado");
-
-return;
-
-}
-
-const ordenesRef =
-collection(db,"empresas",empresaId,"ordenes");
+const ordenesRef = collection(db,"empresas",empresaId,"ordenes");
 
 const snapshot = await getDocs(ordenesRef);
 
@@ -182,46 +153,30 @@ ordenesActivas++;
 
 if(data.fecha){
 
-const fecha =
-data.fecha.toDate?.() || new Date();
+const fecha = data.fecha.toDate?.() || new Date();
 
 if(fecha.toDateString() === hoy){
-
 ingresosHoy += data.total || 0;
-
 }
 
 }
 
 });
 
-document.getElementById("kpiOrdenes").innerText =
-ordenesActivas;
+document.getElementById("kpiOrdenes").innerText = ordenesActivas;
 
 document.getElementById("kpiIngresos").innerText =
 "$"+ingresosHoy.toLocaleString("es-CO");
 
-document.getElementById("kpiVehiculos").innerText =
-vehiculos;
+document.getElementById("kpiVehiculos").innerText = vehiculos;
 
 const clientesSnap = await getDocs(
 collection(db,"empresas",empresaId,"clientes")
 );
 
-document.getElementById("kpiClientes").innerText =
-clientesSnap.size;
-
-}catch(error){
-
-console.error("Error cargando KPIs", error);
+document.getElementById("kpiClientes").innerText = clientesSnap.size;
 
 }
-
-}
-
-/* =========================
-GRÁFICAS
-========================= */
 
 async function cargarGraficas(){
 
@@ -232,11 +187,9 @@ collection(db,"empresas",empresaId,"ordenes")
 );
 
 let estados = {
-
 activa:0,
 proceso:0,
 entregado:0
-
 };
 
 let ingresosSemana = [0,0,0,0,0,0,0];
@@ -245,13 +198,10 @@ let labels = [];
 for(let i=6;i>=0;i--){
 
 const d = new Date();
-
 d.setDate(d.getDate()-i);
 
 labels.push(
-
 d.toLocaleDateString("es-CO",{weekday:"short"})
-
 );
 
 }
@@ -261,9 +211,7 @@ snapshot.forEach(doc=>{
 const data = doc.data();
 
 if(estados[data.estado] !== undefined){
-
 estados[data.estado]++;
-
 }
 
 if(data.fecha){
@@ -273,18 +221,11 @@ const fecha = data.fecha.toDate?.();
 if(fecha){
 
 const diff = Math.floor(
-
-(new Date() - fecha) /
-
-(1000*60*60*24)
-
+(new Date() - fecha) / (1000*60*60*24)
 );
 
 if(diff >=0 && diff <=6){
-
-ingresosSemana[6-diff] +=
-data.total || 0;
-
+ingresosSemana[6-diff] += data.total || 0;
 }
 
 }
@@ -293,72 +234,35 @@ data.total || 0;
 
 });
 
-/* destruir graficas si existen */
-
-if(chartEstados){
-chartEstados.destroy();
-}
-
-if(chartIngresos){
-chartIngresos.destroy();
-}
-
-/* grafica estados */
-
-chartEstados = new Chart(
-
-document.getElementById("graficaEstados"),
-
-{
+new Chart(document.getElementById("graficaEstados"),{
 
 type:"doughnut",
 
 data:{
-
 labels:["Activas","En proceso","Entregadas"],
-
 datasets:[{
-
 data:[
 estados.activa,
 estados.proceso,
 estados.entregado
 ]
-
 }]
-
 }
 
-}
+});
 
-);
-
-/* grafica ingresos */
-
-chartIngresos = new Chart(
-
-document.getElementById("graficaIngresos"),
-
-{
+new Chart(document.getElementById("graficaIngresos"),{
 
 type:"bar",
 
 data:{
-
 labels:labels,
-
 datasets:[{
-
 label:"Ingresos",
-
 data:ingresosSemana
-
 }]
-
 }
 
-}
-
-);
+});
 
 }
