@@ -3,12 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MultiServicios PRO</title>
+  <title>MultiServicios PRO - TallerPRO360</title>
 
+  <!-- Manifest y PWA -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0f172a">
 
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Favicon opcional -->
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
 </head>
 
 <body class="bg-gray-100">
@@ -17,11 +22,15 @@
 
   <!-- Sidebar -->
   <aside class="w-64 bg-gray-900 text-white p-4 flex flex-col">
-    <h2 class="text-xl font-bold mb-6">MultiPRO</h2>
-    <nav id="menu" class="flex flex-col gap-2"></nav>
-    <button onclick="logout()" class="mt-auto bg-red-600 p-2 rounded">
-      Cerrar sesión
-    </button>
+    <h2 class="text-2xl font-bold mb-6">TallerPRO360</h2>
+    <nav id="menu" class="flex flex-col gap-2">
+      <button data-module="dashboard" class="text-left p-2 hover:bg-gray-700 rounded">Dashboard</button>
+      <button data-module="ordenes" class="text-left p-2 hover:bg-gray-700 rounded">Órdenes</button>
+      <button data-module="repuestos" class="text-left p-2 hover:bg-gray-700 rounded">Repuestos</button>
+      <button data-module="finanzas" class="text-left p-2 hover:bg-gray-700 rounded">Panel Financiero</button>
+      <button data-module="clientes" class="text-left p-2 hover:bg-gray-700 rounded">Clientes</button>
+    </nav>
+    <button onclick="logout()" class="mt-auto bg-red-600 p-2 rounded hover:bg-red-700">Cerrar sesión</button>
   </aside>
 
   <!-- Contenido -->
@@ -31,14 +40,34 @@
 
 </div>
 
-<script type="module" src="./js/main.js"></script>
+<!-- JS principal -->
+<script type="module" src="./js/app.js"></script>
 
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm"></script>
 
+<!-- Service Worker PWA -->
 <script>
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/service-worker.js");
+  navigator.serviceWorker.register("/service-worker.js").then(() => {
+    console.log("Service Worker registrado correctamente");
+  }).catch(err => console.error("Error registrando Service Worker:", err));
+}
+
+// Manejo menú SPA
+document.querySelectorAll('#menu button[data-module]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const modulo = btn.getAttribute('data-module');
+    if (window.loadModule) window.loadModule(modulo);
+  });
+});
+
+// Logout placeholder
+function logout() {
+  alert("Cerrar sesión ejecutado. Implementar autenticación real.");
+  // Aquí se puede limpiar Firebase Auth y redirigir
 }
 </script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </body>
 </html>
