@@ -12,31 +12,6 @@ const firebaseConfig = {
 
 try{
 
-const prompt = `
-Eres un mecánico automotriz experto con 25 años de experiencia.
-
-Analiza el siguiente problema reportado por un técnico:
-
-"${texto}"
-
-Responde en español con este formato:
-
-POSIBLES CAUSAS:
-• causa 1
-• causa 2
-• causa 3
-• causa 4
-
-PRUEBAS RECOMENDADAS:
-• prueba 1
-• prueba 2
-
-SEVERIDAD:
-Baja / Media / Alta
-
-No des explicaciones largas.
-`;
-
 const respuesta = await fetch(
 "https://api.openai.com/v1/chat/completions",
 {
@@ -49,28 +24,27 @@ body:JSON.stringify({
 model:"gpt-4o-mini",
 messages:[
 {
+role:"system",
+content:"Eres un mecánico experto en diagnóstico automotriz."
+},
+{
 role:"user",
 content:prompt
 }
 ],
-temperature:0.3,
-max_tokens:300
+temperature:0.3
 })
 });
 
-if(!respuesta.ok){
-throw new Error("Error en API OpenAI");
-}
-
 const data = await respuesta.json();
 
-return data.choices?.[0]?.message?.content || "No se pudo generar diagnóstico.";
+return data.choices[0].message.content;
 
 }catch(error){
 
-console.error("Error IA:", error);
+console.error(error);
 
-return "Error generando diagnóstico.";
+return "No se pudo obtener diagnóstico de IA.";
 
 }
 
