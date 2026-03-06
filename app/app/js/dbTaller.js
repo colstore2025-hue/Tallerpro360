@@ -1,14 +1,23 @@
 import { db } from "./firebase.js";
-import { obtenerTallerId } from "./tallerContext.js";
-import { collection } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-export function coleccionTaller(nombre) {
-  const tallerId = obtenerTallerId();
+import {
+collection
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  return collection(
-    db,
-    "talleres",
-    tallerId,
-    nombre
-  );
+
+export function coleccionTaller(nombre){
+
+const empresaId = localStorage.getItem("empresaId");
+
+if(!empresaId){
+throw new Error("Empresa no identificada");
+}
+
+return collection(
+db,
+"empresas",
+empresaId,
+nombre
+);
+
 }
