@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CEO Dashboard | TallerPRO360</title>
+<title>CEO Dashboard | TallerPRO360 Global</title>
 <link rel="icon" href="logo-tallerpro360.png">
 
 <script src="https://cdn.tailwindcss.com"></script>
@@ -14,38 +14,39 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body { background:#0f172a; font-family:'Inter',sans-serif; color:#f1f5f9; }
+body{background:#0f172a;font-family:'Inter',sans-serif;color:#f1f5f9;}
 .font-nexus{font-family:'Orbitron',sans-serif;}
 .glass{background:rgba(15,23,42,.7);backdrop-filter:blur(20px);border-radius:1.5rem;border:1px solid rgba(255,255,255,.05);}
 .status-activo{color:#10b981;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;}
 .status-suspendido{color:#ef4444;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;}
-#mapa{height:380px;border-radius:1rem;}
+#mapa{height:400px;border-radius:1rem;}
 .tabcontent{display:none;}
 .tablinks.active{border-bottom:2px solid #f59e0b;}
-.alerta {color:#ef4444; font-weight:bold;}
+.alerta{color:#ef4444;font-weight:bold;}
 </style>
 </head>
 <body class="p-6">
 
 <header class="flex justify-between items-center mb-8">
-<h1 class="text-3xl font-nexus font-black text-amber-500">TallerPRO360 <span class="text-white">CEO</span></h1>
+<h1 class="text-3xl font-nexus font-black text-amber-500">TallerPRO360 <span class="text-white">CEO Global</span></h1>
 <button onclick="logout()" class="bg-red-600 px-4 py-2 rounded font-bold hover:bg-red-700">
 <i class="fas fa-power-off"></i> Salir
 </button>
 </header>
 
-<!-- ================= TAB NAV ================= -->
+<!-- ================= TABS ================= -->
 <div class="mb-6 flex flex-wrap gap-2">
 <button class="tablinks active glass px-4 py-2" onclick="openTab(event,'Dashboard')">Dashboard</button>
 <button class="tablinks glass px-4 py-2" onclick="openTab(event,'Marketplace')">Marketplace</button>
-<button class="tablinks glass px-4 py-2" onclick="openTab(event,'Mantenimiento')">Mantenimiento</button>
-<button class="tablinks glass px-4 py-2" onclick="openTab(event,'Alertas')">Alertas IA</button>
+<button class="tablinks glass px-4 py-2" onclick="openTab(event,'Mantenimiento')">Mantenimiento IA</button>
+<button class="tablinks glass px-4 py-2" onclick="openTab(event,'Alertas')">Alertas</button>
 <button class="tablinks glass px-4 py-2" onclick="openTab(event,'Clientes')">Clientes</button>
 <button class="tablinks glass px-4 py-2" onclick="openTab(event,'Ranking')">Ranking Global</button>
 </div>
 
-<!-- ================= TAB DASHBOARD ================= -->
+<!-- ================= DASHBOARD ================= -->
 <div id="Dashboard" class="tabcontent" style="display:block;">
+
 <section class="grid grid-cols-1 md:grid-cols-6 gap-6 mb-8">
 <div class="glass p-6 text-center"><p class="text-xs text-gray-400">Talleres</p><h2 id="kpiTalleres" class="text-4xl font-nexus text-amber-500">0</h2></div>
 <div class="glass p-6 text-center"><p class="text-xs text-gray-400">Activos</p><h2 id="kpiActivos" class="text-4xl font-nexus text-green-500">0</h2></div>
@@ -81,9 +82,10 @@ body { background:#0f172a; font-family:'Inter',sans-serif; color:#f1f5f9; }
 <div class="glass p-6"><canvas id="chartCiudades"></canvas></div>
 <div class="glass p-6"><div id="mapa"></div></div>
 </section>
+
 </div>
 
-<!-- ================= TABS RESTANTES (Marketplace, Mantenimiento, Alertas, Clientes, Ranking) ================= -->
+<!-- ================= OTROS TABS ================= -->
 <div id="Marketplace" class="tabcontent"><div class="glass p-6 mb-8"><h2 class="font-bold mb-2">Pedidos de Repuestos</h2><div id="marketplacePedidos"></div></div></div>
 <div id="Mantenimiento" class="tabcontent"><div class="glass p-6 mb-8"><h2 class="font-bold mb-2">Mantenimiento Predictivo</h2><div id="predictiveAlerts"></div></div></div>
 <div id="Alertas" class="tabcontent"><div class="glass p-6 mb-8"><h2 class="font-bold mb-2">Alertas de Fraude y Sistema</h2><div id="fraudeAlerts"></div></div></div>
@@ -93,22 +95,19 @@ body { background:#0f172a; font-family:'Inter',sans-serif; color:#f1f5f9; }
 <footer class="text-center text-xs text-gray-500">© 2026 TallerPRO360 · CEO Control Panel</footer>
 
 <script type="module">
-// ================= IMPORTS =================
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, collection, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import { iniciarDashboardIA } from "./app/js/dashboardIA.js";
-import { calcularPrecioInteligente } from "./app/js/pricingAI.js";
+import { publicarRepuesto, obtenerPedidosEmpresa } from "./app/js/autoPartsMarketplace.js";
 import { PredictiveMaintenance } from "./app/js/predictiveMaintenance.js";
 import { detectarRepuestos } from "./app/js/iaMecanica.js";
-import { publicarRepuesto, obtenerPedidosEmpresa } from "./app/js/autoPartsMarketplace.js";
 import { iniciarVoz } from "./app/js/workshopVoiceAssistant.js";
 import { workshopRanking } from "./app/js/workshopRankingAI.js";
 import { fraudeDetect } from "./app/js/fraudDetectionAI.js";
 import { customerRetention } from "./app/js/customerRetentionAI.js";
 
-// ================= AUTH =================
 onAuthStateChanged(auth, async(user)=>{
   if(!user){ window.location="login.html"; return; }
   const snap = await getDoc(doc(db,"usuarios",user.uid));
@@ -116,7 +115,6 @@ onAuthStateChanged(auth, async(user)=>{
   initDashboard();
 });
 
-// ================= INIT =================
 let map, markers=[], chart, chartHist;
 function initDashboard(){
   initMap();
@@ -131,7 +129,6 @@ function initDashboard(){
   cargarRankingGlobal();
 }
 
-// ================= TABS =================
 function openTab(evt, tabName){
   document.querySelectorAll('.tabcontent').forEach(el=>el.style.display='none');
   document.querySelectorAll('.tablinks').forEach(el=>el.classList.remove('active'));
@@ -139,13 +136,11 @@ function openTab(evt, tabName){
   evt.currentTarget.classList.add('active');
 }
 
-// ================= MAPA =================
 function initMap(){
   map=L.map("mapa").setView([4.57,-74.29],6);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18}).addTo(map);
 }
 
-// ================= FUNCIONES AUXILIARES =================
 async function cargarTalleres(){
   onSnapshot(collection(db,"talleres"),snap=>{
     let total=0, activos=0, vence=0, planes=0, tbody=document.getElementById("tabla"), ciudades={};
@@ -165,15 +160,15 @@ async function cargarTalleres(){
     document.getElementById("kpiVence").innerText=vence;
     document.getElementById("kpiPlanes").innerText=planes;
     renderChart(ciudades);
-    renderChartHist(snap); // tendencia histórica
+    renderChartHist(snap);
   });
 }
 
-// ================= CHART =================
 function renderChart(data){
   if(chart) chart.destroy();
   chart=new Chart(document.getElementById("chartCiudades"),{type:"doughnut",data:{labels:Object.keys(data),datasets:[{data:Object.values(data),backgroundColor:["#f59e0b","#10b981","#3b82f6","#ef4444","#8b5cf6"]}]},options:{plugins:{legend:{position:"bottom"}}}});
 }
+
 function renderChartHist(snap){
   const labels=[], data=[];
   snap.forEach(docSnap=>{ const t=docSnap.data(); labels.push(t.nombreTaller||"-"); data.push(t.total || 0); });
@@ -181,46 +176,35 @@ function renderChartHist(snap){
   chartHist=new Chart(document.getElementById("chartIngresosHist"),{type:"line",data:{labels, datasets:[{label:"Ingresos",data, borderColor:"#10b981", backgroundColor:"rgba(16,185,129,.2)", tension:0.4}]},options:{responsive:true, plugins:{legend:{display:false}}}});
 }
 
-// ================= CAMBIAR ESTADO =================
 window.toggle=async(id,estadoActual)=>{
   const next=estadoActual==="activo"?"suspendido":"activo";
   if(!confirm(`Cambiar estado a ${next}?`)) return;
   await updateDoc(doc(db,"talleres",id),{estado:next,actualizadoEn:new Date()});
 };
 
-// ================= LOGOUT =================
 window.logout=()=>{ signOut(auth).then(()=>window.location="login.html"); };
 
-// ================= MARKETPLACE =================
+// ================= FUNCIONES AVANZADAS =================
 async function cargarMarketplace(){ 
   const pedidos=await obtenerPedidosEmpresa("global"); 
   document.getElementById("marketplacePedidos").innerText=pedidos.length+" pedidos activos"; 
 }
-
-// ================= MANTENIMIENTO =================
 async function cargarMantenimiento(){ 
   const pm=new PredictiveMaintenance(); 
   document.getElementById("predictiveAlerts").innerText="Alertas: "+JSON.stringify(pm.predict({km:90000,lastOilChange:9000,brakeWear:75})); 
 }
-
-// ================= ALERTAS =================
 async function cargarAlertas(){ 
   const alertasFraude=fraudeDetect(); 
   document.getElementById("fraudeAlerts").innerText="Alertas: "+alertasFraude.join(", "); 
 }
-
-// ================= CLIENTES =================
 async function cargarClientes(){ 
   const clientes=customerRetention(); 
   document.getElementById("clientesRetention").innerText="Clientes en riesgo: "+clientes.join(", "); 
 }
-
-// ================= RANKING GLOBAL =================
 async function cargarRankingGlobal(){
   const ranking=await workshopRanking();
   document.getElementById("rankingGlobal").innerHTML=ranking.map((r,i)=>`<div>${i+1}. ${r.nombreTaller} (${r.ingresos} COP)</div>`).join("");
 }
 </script>
-
 </body>
 </html>
