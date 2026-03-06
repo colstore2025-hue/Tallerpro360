@@ -200,20 +200,6 @@ async function cargarRepuestosLista(){
   });
 }
 
-/* ===============================
-   PANEL FINANCIERO
-=============================== */
-export async function panelFinanciero(container){
-  container.innerHTML = `<h2 class="text-xl font-bold mb-4">Panel Financiero</h2>
-  <div class="grid md:grid-cols-2 gap-6">
-    <canvas id="graficaUtilidad"></canvas>
-    <canvas id="graficaServicios"></canvas>
-    <canvas id="graficaRepuestos"></canvas>
-    <canvas id="graficaTecnicos"></canvas>
-  </div>`;
-  await cargarDatosFinancieros();
-}
-
 async function cargarDatosFinancieros(){
   const empresaId = localStorage.getItem("empresaId");
   const snapshot = await getDocs(collection(db,"ordenes"));
@@ -244,26 +230,57 @@ async function cargarDatosFinancieros(){
     utilidadMes[mes]+=utilidadOrden;
   });
 
+  // ===============================
+  // GRÁFICAS
+  // ===============================
   new Chart(document.getElementById("graficaUtilidad"), {
     type:"line",
     data:{
       labels:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
-      datasets:[{label:"Utilidad COP", data:utilidadMes}]
-    }
+      datasets:[{label:"Utilidad COP", data:utilidadMes, borderColor:"rgba(34,197,94,1)", backgroundColor:"rgba(34,197,94,0.2)"}]
+    },
+    options: { responsive:true, plugins:{legend:{display:true}} }
   });
 
   new Chart(document.getElementById("graficaServicios"), {
     type:"bar",
-    data:{labels:Object.keys(servicios), datasets:[{label:"Utilidad COP", data:Object.values(servicios)}]}
+    data:{
+      labels:Object.keys(servicios),
+      datasets:[{label:"Utilidad COP", data:Object.values(servicios), backgroundColor:"rgba(59,130,246,0.7)"}]
+    },
+    options: { responsive:true, plugins:{legend:{display:true}} }
   });
 
   new Chart(document.getElementById("graficaRepuestos"), {
     type:"bar",
-    data:{labels:Object.keys(repuestos), datasets:[{label:"Cantidad vendida", data:Object.values(repuestos)}]}
+    data:{
+      labels:Object.keys(repuestos),
+      datasets:[{label:"Cantidad vendida", data:Object.values(repuestos), backgroundColor:"rgba(234,179,8,0.7)"}]
+    },
+    options: { responsive:true, plugins:{legend:{display:true}} }
   });
 
   new Chart(document.getElementById("graficaTecnicos"), {
     type:"bar",
-    data:{labels:Object.keys(tecnicos), datasets:[{label:"Utilidad COP", data:Object.values(tecnicos)}]}
+    data:{
+      labels:Object.keys(tecnicos),
+      datasets:[{label:"Utilidad COP", data:Object.values(tecnicos), backgroundColor:"rgba(129,140,248,0.7)"}]
+    },
+    options: { responsive:true, plugins:{legend:{display:true}} }
   });
 }
+
+/* ===============================
+   PANEL FINANCIERO
+=============================== */
+export async function panelFinanciero(container){
+  container.innerHTML = `<h2 class="text-xl font-bold mb-4">Panel Financiero</h2>
+  <div class="grid md:grid-cols-2 gap-6">
+    <canvas id="graficaUtilidad"></canvas>
+    <canvas id="graficaServicios"></canvas>
+    <canvas id="graficaRepuestos"></canvas>
+    <canvas id="graficaTecnicos"></canvas>
+  </div>`;
+  await cargarDatosFinancieros();
+}
+
