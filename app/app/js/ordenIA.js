@@ -20,23 +20,42 @@ export async function crearOrdenIA(descripcion){
 
   try{
 
-    // 🧠 IA analiza la falla
     const resultadoIA = await detectarRepuestos(descripcion);
 
     const diagnostico = resultadoIA.diagnostico || "";
     const repuestos = resultadoIA.repuestos || [];
     const accionesIA = resultadoIA.acciones || [];
 
-    // convertir acciones IA a texto
     const acciones = accionesIA.map(a => {
-      if(typeof a === "string") return a;
-      return a.nombre || "";
+
+      if(typeof a === "string"){
+
+        return {
+          descripcion:a,
+          costo:0,
+          costoInterno:0,
+          estado:"pendiente"
+        };
+
+      }
+
+      return {
+        descripcion:a.nombre || "",
+        costo:0,
+        costoInterno:0,
+        estado:"pendiente"
+      };
+
     });
 
 
-    // 📦 crear orden en Firebase
     await addDoc(
-      collection(db,"empresas",empresaId,"ordenes"),
+      collection(
+        db,
+        "empresas",
+        empresaId,
+        "ordenes"
+      ),
       {
         cliente: "Pendiente",
         vehiculo: "Por definir",
