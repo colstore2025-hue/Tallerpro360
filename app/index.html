@@ -3,140 +3,94 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TallerPRO360 | Panel Operativo</title>
+<title>TallerPRO360 - ERP + CRM</title>
 <link rel="icon" href="../logo-tallerpro360.png">
 
-<!-- Tailwind y Font Awesome -->
+<!-- Tailwind + FontAwesome -->
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
 
 <style>
-body {
-  font-family: 'Inter', sans-serif;
-  background: #0f172a;
-  color: #f1f5f9;
-  display: flex;
-  min-height: 100vh;
-}
-.sidebar {
-  width: 280px;
-  background: #1e293b;
-  display: flex;
-  flex-direction: column;
-  padding: 1rem;
-}
-.sidebar h2 {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 1.5rem;
-  color: #f59e0b;
-  margin-bottom: 2rem;
-}
-.sidebar button {
-  background: transparent;
-  color: #f1f5f9;
-  border: none;
-  text-align: left;
-  padding: 0.75rem 1rem;
-  font-size: 0.95rem;
-  border-radius: 0.5rem;
-  margin-bottom: 0.5rem;
-  transition: all 0.2s;
-}
-.sidebar button:hover {
-  background: #3b82f6;
-  color: #fff;
-}
-.main {
-  flex: 1;
-  padding: 1rem 2rem;
-  overflow-y: auto;
-}
-.card {
-  background: rgba(15,23,42,.8);
-  backdrop-filter: blur(15px);
-  border-radius: 1rem;
-  border: 1px solid rgba(255,255,255,.05);
-  padding: 1rem 1.5rem;
-}
+body { margin:0; font-family:'Inter',sans-serif; background:#0f172a; color:#f1f5f9; }
+.font-nexus { font-family:'Orbitron',sans-serif; }
+.sidebar { width:250px; background:#1e293b; height:100vh; position:fixed; top:0; left:0; display:flex; flex-direction:column; padding:1rem; }
+.sidebar a { color:#f1f5f9; padding:0.75rem 1rem; border-radius:0.5rem; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem; text-decoration:none; transition:0.2s; }
+.sidebar a:hover { background:#334155; }
+.main { margin-left:250px; padding:1.5rem; }
+.card { background:rgba(15,23,42,.7); backdrop-filter:blur(20px); border-radius:1rem; border:1px solid rgba(255,255,255,.05); padding:1rem; margin-bottom:1rem; }
+.card h3 { font-family:'Orbitron',sans-serif; font-weight:900; margin-bottom:0.5rem; }
 </style>
-</head>
 
+</head>
 <body>
 
-<!-- SIDEBAR -->
+<!-- Sidebar -->
 <div class="sidebar">
-  <h2>TallerPRO360</h2>
-  <button data-module="dashboard">📊 Dashboard</button>
-  <button data-module="ordenes">🛠 Órdenes</button>
-  <button data-module="clientes">👥 Clientes</button>
-  <button data-module="inventario">📦 Inventario</button>
-  <button data-module="finanzas">💰 Finanzas</button>
-  <button data-module="ia">🤖 IA</button>
-  <button data-module="ceo">🏢 CEO</button>
-  <button data-module="pagos">💳 Pagos</button>
-  <button onclick="logout()" class="mt-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold">
-    <i class="fas fa-power-off"></i> Salir
-  </button>
+  <h2 class="font-nexus text-2xl text-amber-500 mb-6">TallerPRO360</h2>
+  <a href="#" onclick="loadModule('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</a>
+  <a href="#" onclick="loadModule('ordenes')"><i class="fas fa-tools"></i> Órdenes</a>
+  <a href="#" onclick="loadModule('clientes')"><i class="fas fa-users"></i> Clientes</a>
+  <a href="#" onclick="loadModule('inventario')"><i class="fas fa-boxes"></i> Inventario</a>
+  <a href="#" onclick="loadModule('finanzas')"><i class="fas fa-dollar-sign"></i> Finanzas</a>
+  <a href="#" onclick="loadModule('ceo')"><i class="fas fa-user-tie"></i> CEO</a>
+  <a href="#" onclick="loadModule('pagos')"><i class="fas fa-credit-card"></i> Pagos</a>
+  <a href="#" onclick="logout()"><i class="fas fa-power-off"></i> Salir</a>
 </div>
 
-<!-- CONTENEDOR PRINCIPAL -->
+<!-- Contenedor principal -->
 <div class="main" id="mainContent">
-  <!-- Contenido de módulo cargado dinámicamente -->
+  <div class="text-center mt-12">
+    <h1 class="text-4xl font-nexus text-amber-500">Bienvenido a TallerPRO360</h1>
+    <p class="text-gray-400 mt-2">Selecciona un módulo en el menú lateral</p>
+  </div>
 </div>
 
-<!-- SCRIPTS -->
+<!-- Firebase -->
 <script type="module">
-// Importar Firebase config y auth
-import { auth } from "./js/firebase-config.js";
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { auth, db } from "./js/firebase-config.js";
+import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// Importar todos los módulos
+// Importar todos los módulos JS
 import * as dashboard from "./js/dashboard.js";
 import * as ordenes from "./js/ordenes.js";
 import * as clientes from "./js/clientes.js";
 import * as inventario from "./js/inventario.js";
 import * as finanzas from "./js/finanzas.js";
-import * as ia from "./js/ia.js";
 import * as ceo from "./js/ceo.js";
 import * as pagos from "./js/pagos.js";
+import * as ia from "./js/ia.js";
 
-// Verificar sesión
-onAuthStateChanged(auth, (user) => {
-  if (!user) window.location = "../login.html";
-  // Aquí puedes validar roles: técnico, jefe, dueño, superadmin
-});
+// Función para cargar módulos dinámicamente
+window.loadModule = async(moduleName)=>{
+  const container = document.getElementById("mainContent");
+  container.innerHTML = "<p class='text-center text-gray-400 mt-12'>Cargando módulo...</p>";
 
-// Manejo de carga de módulos
-const buttons = document.querySelectorAll(".sidebar button[data-module]");
-const main = document.getElementById("mainContent");
-
-buttons.forEach(btn => {
-  btn.addEventListener("click", async () => {
-    const module = btn.dataset.module;
-    main.innerHTML = "<p class='text-gray-400'>Cargando...</p>";
-    switch(module) {
-      case "dashboard": await dashboard.init(main); break;
-      case "ordenes": await ordenes.init(main); break;
-      case "clientes": await clientes.init(main); break;
-      case "inventario": await inventario.init(main); break;
-      case "finanzas": await finanzas.init(main); break;
-      case "ia": await ia.init(main); break;
-      case "ceo": await ceo.init(main); break;
-      case "pagos": await pagos.init(main); break;
-      default: main.innerHTML = "<p>No disponible</p>";
-    }
-  });
-});
-
-// Cargar módulo inicial
-document.querySelector(".sidebar button[data-module='dashboard']").click();
+  switch(moduleName){
+    case 'dashboard': dashboard.init(container); break;
+    case 'ordenes': ordenes.init(container); break;
+    case 'clientes': clientes.init(container); break;
+    case 'inventario': inventario.init(container); break;
+    case 'finanzas': finanzas.init(container); break;
+    case 'ceo': ceo.init(container); break;
+    case 'pagos': pagos.init(container); break;
+    default: container.innerHTML="<p class='text-center text-red-500 mt-12'>Módulo no encontrado</p>";
+  }
+}
 
 // Logout
-window.logout = () => {
-  signOut(auth).then(() => window.location = "../login.html");
-};
+window.logout = ()=>{
+  signOut(auth).then(()=>window.location="../login.html");
+}
 
+// Auth
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+onAuthStateChanged(auth,user=>{
+  if(!user){ window.location="../login.html"; return; }
+});
 </script>
+
 </body>
 </html>
