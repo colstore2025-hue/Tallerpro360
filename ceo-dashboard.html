@@ -34,7 +34,7 @@ TallerPRO360 <span class="text-white">CEO</span>
 </button>
 </header>
 
-<!-- ================= KPIs ================= -->
+<!-- KPIs -->
 <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
 <div class="glass p-6 text-center"><p class="text-xs text-gray-400">Talleres</p><h2 id="kpiTalleres" class="text-4xl font-nexus text-amber-500">0</h2></div>
 <div class="glass p-6 text-center"><p class="text-xs text-gray-400">Activos</p><h2 id="kpiActivos" class="text-4xl font-nexus text-green-500">0</h2></div>
@@ -42,7 +42,7 @@ TallerPRO360 <span class="text-white">CEO</span>
 <div class="glass p-6 text-center"><p class="text-xs text-gray-400">Planes activos</p><h2 id="kpiPlanes" class="text-4xl font-nexus text-blue-500">0</h2></div>
 </section>
 
-<!-- ================= FINANZAS IA ================= -->
+<!-- FINANZAS IA -->
 <section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
 <div class="glass p-4"><div class="text-xs text-slate-400">Ingresos</div><div id="iaIngresos" class="text-xl font-bold"></div></div>
 <div class="glass p-4"><div class="text-xs text-slate-400">Costos</div><div id="iaCostos"></div></div>
@@ -50,7 +50,7 @@ TallerPRO360 <span class="text-white">CEO</span>
 <div class="glass p-4"><div class="text-xs text-slate-400">Margen</div><div id="iaMargen"></div></div>
 </section>
 
-<!-- ================= IA ANALYTICS ================= -->
+<!-- IA ANALYTICS -->
 <section class="grid md:grid-cols-2 gap-6 mb-8">
 <div class="glass p-6"><div class="font-bold mb-2">Repuestos más usados</div><div id="iaTopRepuestos"></div></div>
 <div class="glass p-6"><div class="font-bold mb-2">Técnicos más productivos</div><div id="iaTopTecnicos"></div></div>
@@ -58,17 +58,17 @@ TallerPRO360 <span class="text-white">CEO</span>
 
 <div class="glass p-6 mb-8"><div class="text-xs text-slate-400">Predicción ingresos mensual</div><div id="iaPrediccion" class="text-xl font-bold text-emerald-400"></div></div>
 
-<!-- ================= TABLA ================= -->
+<!-- TABLA -->
 <section class="glass p-6 mb-8 overflow-x-auto">
 <table class="w-full text-sm">
 <thead class="text-gray-400">
-<tr><th class="text-left">Taller</th><th class="text-left">Ciudad</th><th class="text-left">Plan</th><th class="text-left">Estado</th><th class="text-left">Vence</th><th class="text-right">Acción</th></tr>
+<tr><th>Taller</th><th>Ciudad</th><th>Plan</th><th>Estado</th><th>Vence</th><th>Acción</th></tr>
 </thead>
 <tbody id="tabla"></tbody>
 </table>
 </section>
 
-<!-- ================= MAPA Y CHART ================= -->
+<!-- MAPA Y CHART -->
 <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
 <div class="glass p-6"><canvas id="chartCiudades"></canvas></div>
 <div class="glass p-6"><div id="mapa"></div></div>
@@ -78,11 +78,18 @@ TallerPRO360 <span class="text-white">CEO</span>
 
 <script type="module">
 
+// Firebase base
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, getDoc, collection, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// === INICIALIZACIÓN ===
+// Módulos IA global
+import { iniciarDashboardIA } from "./dashboardIA.js";
+import { calcularComision, crearPedido, buscarRepuestos } from "./autoPartsMarketplace.js";
+import { rankTalleres } from "./workshopRankingAI.js";
+import { predecirFallasGlobal } from "./globalDiagnosticsAI.js";
+
+// ==== VARIABLES ====
 let map, markers=[], chart;
 
 // ==== AUTH ====
@@ -97,6 +104,8 @@ onAuthStateChanged(auth, async(user)=>{
 function initDashboard(){
   initMap();
   cargarTalleres();
+  iniciarDashboardIA(); // Activar analítica IA
+  rankTalleres();       // Ranking mundial de talleres
 }
 
 // ==== MAPA ====
@@ -168,6 +177,5 @@ window.toggle=async(id,estadoActual)=>{
 window.logout=()=>{ signOut(auth).then(()=>window.location="login.html"); };
 
 </script>
-
 </body>
 </html>
