@@ -241,4 +241,29 @@ async function cargarDatosFinancieros(){
       });
     }
     if(data.tecnico) tecnicos[data.tecnico] = (tecnicos[data.tecnico]||0)+utilidadOrden;
-    utilidadMes[mes]+=utilidadOrden
+    utilidadMes[mes]+=utilidadOrden;
+  });
+
+  new Chart(document.getElementById("graficaUtilidad"), {
+    type:"line",
+    data:{
+      labels:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
+      datasets:[{label:"Utilidad COP", data:utilidadMes}]
+    }
+  });
+
+  new Chart(document.getElementById("graficaServicios"), {
+    type:"bar",
+    data:{labels:Object.keys(servicios), datasets:[{label:"Utilidad COP", data:Object.values(servicios)}]}
+  });
+
+  new Chart(document.getElementById("graficaRepuestos"), {
+    type:"bar",
+    data:{labels:Object.keys(repuestos), datasets:[{label:"Cantidad vendida", data:Object.values(repuestos)}]}
+  });
+
+  new Chart(document.getElementById("graficaTecnicos"), {
+    type:"bar",
+    data:{labels:Object.keys(tecnicos), datasets:[{label:"Utilidad COP", data:Object.values(tecnicos)}]}
+  });
+}
