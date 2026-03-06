@@ -8,28 +8,50 @@ getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
-export async function agregarAccionOrden(ordenId, accion, costo = 0){
+export async function agregarAccionOrden(
+empresaId,
+ordenId,
+accion,
+costo = 0,
+costoInterno = 0
+){
 
-const ref = doc(db,"ordenes",ordenId);
+const ref = doc(
+db,
+"empresas",
+empresaId,
+"ordenes",
+ordenId
+);
 
 await updateDoc(ref,{
 acciones: arrayUnion({
 descripcion:accion,
 costo:costo,
+costoInterno:costoInterno,
 fecha:new Date(),
 estado:"pendiente"
 })
 });
 
-await recalcularTotal(ordenId);
+await recalcularTotal(empresaId,ordenId);
 
 }
 
 
 
-export async function recalcularTotal(ordenId){
+export async function recalcularTotal(
+empresaId,
+ordenId
+){
 
-const ref = doc(db,"ordenes",ordenId);
+const ref = doc(
+db,
+"empresas",
+empresaId,
+"ordenes",
+ordenId
+);
 
 const snap = await getDoc(ref);
 
