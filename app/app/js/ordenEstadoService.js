@@ -10,17 +10,24 @@ import { enviarWhatsApp } from "./whatsappService.js";
 
 
 export async function cambiarEstadoOrden(
+  empresaId,
   ordenId,
   nuevoEstado
 ){
 
   try{
 
-    if(!ordenId){
-      throw new Error("ID de orden inválido");
+    if(!ordenId || !empresaId){
+      throw new Error("Datos inválidos");
     }
 
-    const ref = doc(db,"ordenes",ordenId);
+    const ref = doc(
+      db,
+      "empresas",
+      empresaId,
+      "ordenes",
+      ordenId
+    );
 
     const snap = await getDoc(ref);
 
@@ -34,14 +41,12 @@ export async function cambiarEstadoOrden(
     const cliente = data.cliente || "Cliente";
     const vehiculo = data.vehiculo || "";
 
-    // actualizar estado en Firestore
     await updateDoc(ref,{
       estado:nuevoEstado
     });
 
     console.log("Estado actualizado:",nuevoEstado);
 
-    // si hay teléfono enviamos notificación
     if(telefonoCliente){
 
       const mensaje = `
