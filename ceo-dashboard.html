@@ -22,6 +22,7 @@ body { background:#0f172a; font-family:'Inter',sans-serif; color:#f1f5f9; }
 #mapa{height:380px;border-radius:1rem;}
 .tabcontent{display:none;}
 .tablinks.active{border-bottom:2px solid #f59e0b;}
+.alerta {color:#ef4444; font-weight:bold;}
 </style>
 </head>
 <body class="p-6">
@@ -114,11 +115,10 @@ body { background:#0f172a; font-family:'Inter',sans-serif; color:#f1f5f9; }
 <footer class="text-center text-xs text-gray-500">© 2026 TallerPRO360 · CEO Control Panel</footer>
 
 <script type="module">
+// ================= IMPORTS =================
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, collection, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-// Todos tus módulos JS
 import { iniciarDashboardIA } from "./app/js/dashboardIA.js";
 import { calcularPrecioInteligente } from "./app/js/pricingAI.js";
 import { PredictiveMaintenance } from "./app/js/predictiveMaintenance.js";
@@ -129,7 +129,7 @@ import { workshopRanking } from "./app/js/workshopRankingAI.js";
 import { fraudeDetect } from "./app/js/fraudDetectionAI.js";
 import { customerRetention } from "./app/js/customerRetentionAI.js";
 
-// ================= AUTENTICACIÓN =================
+// ================= AUTH =================
 onAuthStateChanged(auth, async(user)=>{
   if(!user){ window.location="login.html"; return; }
   const snap = await getDoc(doc(db,"usuarios",user.uid));
@@ -205,16 +205,28 @@ window.toggle=async(id,estadoActual)=>{
 window.logout=()=>{ signOut(auth).then(()=>window.location="login.html"); };
 
 // ================= MARKETPLACE =================
-async function cargarMarketplace(){ const pedidos=await obtenerPedidosEmpresa("global"); document.getElementById("marketplacePedidos").innerText=pedidos.length+" pedidos activos"; }
+async function cargarMarketplace(){ 
+  const pedidos=await obtenerPedidosEmpresa("global"); 
+  document.getElementById("marketplacePedidos").innerText=pedidos.length+" pedidos activos"; 
+}
 
 // ================= MANTENIMIENTO =================
-async function cargarMantenimiento(){ const pm=new PredictiveMaintenance(); document.getElementById("predictiveAlerts").innerText="Alertas: "+JSON.stringify(pm.predict({km:90000,lastOilChange:9000,brakeWear:75})); }
+async function cargarMantenimiento(){ 
+  const pm=new PredictiveMaintenance(); 
+  document.getElementById("predictiveAlerts").innerText="Alertas: "+JSON.stringify(pm.predict({km:90000,lastOilChange:9000,brakeWear:75})); 
+}
 
 // ================= ALERTAS =================
-async function cargarAlertas(){ const alertasFraude=fraudeDetect(); document.getElementById("fraudeAlerts").innerText="Alertas: "+alertasFraude.join(", "); }
+async function cargarAlertas(){ 
+  const alertasFraude=fraudeDetect(); 
+  document.getElementById("fraudeAlerts").innerText="Alertas: "+alertasFraude.join(", "); 
+}
 
 // ================= CLIENTES =================
-async function cargarClientes(){ const clientes=customerRetention(); document.getElementById("clientesRetention").innerText="Clientes en riesgo: "+clientes.join(", "); }
+async function cargarClientes(){ 
+  const clientes=customerRetention(); 
+  document.getElementById("clientesRetention").innerText="Clientes en riesgo: "+clientes.join(", "); 
+}
 </script>
 </body>
 </html>
