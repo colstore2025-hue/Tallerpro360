@@ -45,14 +45,14 @@
 import { auth, db } from "./app/js/firebase-config.js";
 
 import {
-signInWithEmailAndPassword,
-onAuthStateChanged,
-signOut
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
-doc,
-getDoc
+  doc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
@@ -60,8 +60,19 @@ const form = document.getElementById("loginForm");
 const errorMsg = document.getElementById("errorMsg");
 
 
-// REDIRECCIÓN POR ROL
-function redirigir(rol){
+/* ================================
+   REDIRECCIÓN POR ROL
+================================ */
+
+function redirigir(data){
+
+  const rol = data.rol || "demo";
+  const rolGlobal = data.rolGlobal || "";
+
+  if(rolGlobal === "superadmin"){
+    window.location.href="/admin/ceo-dashboard.html";
+    return;
+  }
 
   switch(rol){
 
@@ -70,22 +81,14 @@ function redirigir(rol){
     case "tecnico":
     case "asesor":
     case "demo":
-
       window.location.href="/app/index.html";
       break;
 
     case "cliente":
-
       window.location.href="/cliente.html";
       break;
 
-    case "superadmin":
-
-      window.location.href="/admin/ceo-dashboard.html";
-      break;
-
     default:
-
       showError("Rol no válido");
 
   }
@@ -93,8 +96,13 @@ function redirigir(rol){
 }
 
 
-// MOSTRAR ERRORES
+/* ================================
+   MOSTRAR ERROR
+================================ */
+
 function showError(msg){
+
+  if(!errorMsg) return;
 
   errorMsg.textContent = msg;
   errorMsg.classList.remove("hidden");
@@ -102,8 +110,13 @@ function showError(msg){
 }
 
 
-// LIMPIAR ERROR
+/* ================================
+   LIMPIAR ERROR
+================================ */
+
 function hideError(){
+
+  if(!errorMsg) return;
 
   errorMsg.textContent = "";
   errorMsg.classList.add("hidden");
@@ -111,39 +124,38 @@ function hideError(){
 }
 
 
-// AUTO LOGIN
+/* ================================
+   AUTO LOGIN
+================================ */
+
 onAuthStateChanged(auth, async (user)=>{
 
   if(!user) return;
 
   try{
 
-    const globalSnap = await getDoc(doc(db,"usuariosGlobal",user.uid));
+    const snap = await getDoc(doc(db,"usuariosGlobal",user.uid));
 
-    if(!globalSnap.exists()){
-
+    if(!snap.exists()){
       await signOut(auth);
       return;
-
     }
 
-    const data = globalSnap.data();
+    const data = snap.data();
 
     if(!data.activo){
-
       await signOut(auth);
       return;
-
     }
 
     setLocalStorage(data,user.uid);
 
-    redirigir(data.rol);
+    redirigir(data);
 
   }
   catch(e){
 
-    console.error("Error auto-login:",e);
+    console.error("AutoLogin error:",e);
     await signOut(auth);
 
   }
@@ -151,7 +163,12 @@ onAuthStateChanged(auth, async (user)=>{
 });
 
 
-// LOGIN MANUAL
+/* ================================
+   LOGIN MANUAL
+================================ */
+
+if(form){
+
 form.addEventListener("submit", async (e)=>{
 
   e.preventDefault();
@@ -162,10 +179,8 @@ form.addEventListener("submit", async (e)=>{
   const password = document.getElementById("password").value;
 
   if(!email || !password){
-
     showError("Correo y contraseña requeridos");
     return;
-
   }
 
   try{
@@ -174,17 +189,17 @@ form.addEventListener("submit", async (e)=>{
 
     const uid = cred.user.uid;
 
-    const globalSnap = await getDoc(doc(db,"usuariosGlobal",uid));
+    const snap = await getDoc(doc(db,"usuariosGlobal",uid));
 
-    if(globalSnap.exists()){
+    if(snap.exists()){
 
-      const data = globalSnap.data();
+      const data = snap.data();
 
       if(data.activo){
 
         setLocalStorage(data,uid);
 
-        redirigir(data.rol);
+        redirigir(data);
 
         return;
 
@@ -192,20 +207,23 @@ form.addEventListener("submit", async (e)=>{
 
     }
 
-    // DEMO AUTOMÁTICO
-    setLocalStorage({
+    // ACCESO DEMO AUTOMÁTICO
 
+    const demo = {
       empresaId:"demo-empresa",
       rol:"demo",
       planTipo:"freemium",
-      sucursalId:null
+      sucursalId:""
+    };
 
-    },uid);
+    setLocalStorage(demo,uid);
 
-    redirigir("demo");
+    redirigir(demo);
 
   }
   catch(err){
+
+    console.error("Login error:",err);
 
     showError("Credenciales incorrectas");
 
@@ -213,8 +231,13 @@ form.addEventListener("submit", async (e)=>{
 
 });
 
+}
 
-// LOCAL STORAGE
+
+/* ================================
+   LOCAL STORAGE
+================================ */
+
 function setLocalStorage(data, uid){
 
   localStorage.setItem("uid", uid);
