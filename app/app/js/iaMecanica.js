@@ -1,67 +1,109 @@
 // iaMecanica.js
-import { db } from "./firebase.js";
+// Motor de diagnóstico IA para TallerPro360
 
-// API_KEY debe estar en entorno seguro o .env
-const firebaseConfig = {
-  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-  authDomain: "tallerpro360.firebaseapp.com",
-  projectId: "tallerpro360",
-  storageBucket: "tallerpro360.firebasestorage.app",
-  messagingSenderId: "636224778184",
-  appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
-  measurementId: "G-VEC2C0QX2G"
-};
+import { db } from "./firebase-config.js";
 
 /**
- * Detecta repuestos y acciones recomendadas a partir de la descripción de la falla.
- * @param {string} descripcion - Descripción de la falla del vehículo.
- * @returns {Promise<Object>} - JSON con diagnóstico, repuestos y acciones.
+ * Detecta diagnóstico, repuestos y acciones a partir
+ * de la descripción de la falla del vehículo.
+ * 
+ * La llamada real a OpenAI debe hacerse desde
+ * un backend seguro o Cloud Function.
  */
-export async function detectarRepuestos(descripcion) {
-  if (!descripcion) throw new Error("Debe proporcionar una descripción de la falla");
+
+export async function detectarRepuestos(descripcion){
+
+  if(!descripcion || descripcion.trim().length < 5){
+    throw new Error("Descripción de falla inválida");
+  }
 
   const prompt = `
-Eres un mecánico experto.
-Analiza esta falla: "${descripcion}"
-Devuelve JSON: { 
-  "diagnostico": "", 
-  "repuestos": [{"nombre": "", "prioridad": "alta/media/baja"}], 
-  "acciones": [] 
-}
-Solo JSON, nada más.
-  `;
+Eres un mecánico automotriz experto.
 
-  try {
-    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${API_KEY}`
+Analiza la siguiente falla del vehículo:
+
+"${descripcion}"
+
+Devuelve SOLO JSON con esta estructura:
+
+{
+ "diagnostico": "",
+ "repuestos":[
+   {"nombre":"", "prioridad":"alta|media|baja"}
+ ],
+ "acciones":[]
+}
+
+No agregues texto adicional.
+`;
+
+  try{
+
+    const resp = await fetch("/api/diagnosticoIA",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
       },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.2
+      body:JSON.stringify({
+        prompt
       })
     });
 
     const data = await resp.json();
 
-    if (!data.choices?.[0]?.message?.content) {
-      throw new Error("No se recibió respuesta válida de OpenAI");
+    if(!data){
+      throw new Error("Respuesta IA vacía");
     }
 
-    // Convertir la respuesta en JSON
-    return JSON.parse(data.choices[0].message.content);
-  } catch (err) {
-    console.error("Error detectando repuestos:", err);
-    return { diagnostico: "", repuestos: [], acciones: [] };
+    return data;
+
+  }catch(error){
+
+    console.error("Error IA Mecánica:",error);
+
+    return {
+      diagnostico:"No se pudo generar diagnóstico automático",
+      repuestos:[],
+      acciones:[]
+    };
+
   }
+
 }
 
+
 /**
- * Inicia la creación de orden por voz (placeholder para integración con Web Speech API)
+ * Activar creación de orden por voz
+ * (Integración futura con Web Speech API)
  */
-export function iniciarVoz() {
-  alert("Función de creación de órdenes por voz activada (pendiente integración Web Speech API)");
+
+export function iniciarVoz(){
+
+  if(!('webkitSpeechRecognition' in window)){
+    alert("Tu navegador no soporta reconocimiento de voz");
+    return;
+  }
+
+  const recognition = new webkitSpeechRecognition();
+
+  recognition.lang = "es-ES";
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onresult = function(event){
+
+    const texto = event.results[0][0].transcript;
+
+    console.log("Descripción detectada:",texto);
+
+    const inputDescripcion = document.getElementById("descripcionFalla");
+
+    if(inputDescripcion){
+      inputDescripcion.value = texto;
+    }
+
+  };
+
+  recognition.start();
+
 }
