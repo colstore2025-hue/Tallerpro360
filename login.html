@@ -41,102 +41,216 @@
 
 <!-- FIREBASE AUTH -->
 <script type="module">
-  // Ajuste de imports según tu estructura: app/app/js/
-  import { auth, db } from "./app/js/firebase-config.js";
-  import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  const form = document.getElementById("loginForm");
-  const errorMsg = document.getElementById("errorMsg");
+import { auth, db } from "./app/js/firebase-config.js";
 
-  // REDIRECCIÓN POR ROL
-  async function redirigir(rol){
-    switch(rol){
-      case "dueno":
-      case "admin":
-      case "tecnico":
-      case "asesor":
-      case "demo":
-        window.location.href="/app/index.html";
-        break;
-      case "cliente":
-        window.location.href="/cliente.html";
-        break;
-      case "superadmin":
-        window.location.href="/admin/ceo-dashboard.html";
-        break;
-      default:
-        showError("Rol no válido");
-    }
+import {
+signInWithEmailAndPassword,
+onAuthStateChanged,
+signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+doc,
+getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+const form = document.getElementById("loginForm");
+const errorMsg = document.getElementById("errorMsg");
+
+
+// REDIRECCIÓN POR ROL
+function redirigir(rol){
+
+  switch(rol){
+
+    case "dueno":
+    case "admin":
+    case "tecnico":
+    case "asesor":
+    case "demo":
+
+      window.location.href="/app/index.html";
+      break;
+
+    case "cliente":
+
+      window.location.href="/cliente.html";
+      break;
+
+    case "superadmin":
+
+      window.location.href="/admin/ceo-dashboard.html";
+      break;
+
+    default:
+
+      showError("Rol no válido");
+
   }
 
-  // MOSTRAR ERRORES
-  function showError(msg){
-    errorMsg.textContent = msg;
-    errorMsg.classList.remove("hidden");
-  }
+}
 
-  // LIMPIAR ERROR
-  function hideError(){
-    errorMsg.textContent = "";
-    errorMsg.classList.add("hidden");
-  }
 
-  // AUTO-LOGIN
-  onAuthStateChanged(auth, async (user)=>{
-    if(!user) return;
-    try{
-      const globalSnap = await getDoc(doc(db,"usuariosGlobal",user.uid));
-      if(!globalSnap.exists() || !globalSnap.data().activo){
-        await signOut(auth);
-        return;
-      }
-      const data = globalSnap.data();
-      setLocalStorage(data, user.uid);
-      redirigir(data.rol);
-    } catch(e){
-      console.error("Error al iniciar sesión automáticamente:", e);
+// MOSTRAR ERRORES
+function showError(msg){
+
+  errorMsg.textContent = msg;
+  errorMsg.classList.remove("hidden");
+
+}
+
+
+// LIMPIAR ERROR
+function hideError(){
+
+  errorMsg.textContent = "";
+  errorMsg.classList.add("hidden");
+
+}
+
+
+// AUTO LOGIN
+onAuthStateChanged(auth, async (user)=>{
+
+  if(!user) return;
+
+  try{
+
+    const globalSnap = await getDoc(doc(db,"usuariosGlobal",user.uid));
+
+    if(!globalSnap.exists()){
+
       await signOut(auth);
+      return;
+
     }
-  });
 
-  // LOGIN MANUAL
-  form.addEventListener("submit", async (e)=>{
-    e.preventDefault();
-    hideError();
+    const data = globalSnap.data();
 
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
-    if(!email || !password) return showError("Correo y contraseña requeridos");
+    if(!data.activo){
 
-    try{
-      const cred = await signInWithEmailAndPassword(auth, email, password);
-      const uid = cred.user.uid;
-      const globalSnap = await getDoc(doc(db,"usuariosGlobal",uid));
+      await signOut(auth);
+      return;
 
-      if(globalSnap.exists() && globalSnap.data().activo){
-        const data = globalSnap.data();
-        setLocalStorage(data, uid);
-        redirigir(data.rol);
-      } else {
-        // DEMO/FREEMIUM SI NO EXISTE O NO ACTIVO
-        setLocalStorage({empresaId:"demo-empresa", rol:"demo", planTipo:"freemium", sucursalId:null}, uid);
-        redirigir("demo");
-      }
-    } catch(err){
-      showError(err.message);
     }
-  });
 
-  // FUNCIÓN PARA GUARDAR LOCALSTORAGE
-  function setLocalStorage(data, uid){
-    localStorage.setItem("empresaId", data.empresaId || "demo-empresa");
-    localStorage.setItem("uid", uid);
-    localStorage.setItem("rol", data.rol || "demo");
-    localStorage.setItem("sucursalId", data.sucursalId || "");
-    localStorage.setItem("planTipo", data.planTipo || "freemium");
+    setLocalStorage(data,user.uid);
+
+    redirigir(data.rol);
+
   }
-</script>
+  catch(e){
 
+    console.error("Error auto-login:",e);
+    await signOut(auth);
+
+  }
+
+});
+
+
+// LOGIN MANUAL
+form.addEventListener("submit", async (e)=>{
+
+  e.preventDefault();
+
+  hideError();
+
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  if(!email || !password){
+
+    showError("Correo y contraseña requeridos");
+    return;
+
+  }
+
+  try{
+
+    const cred = await signInWithEmailAndPassword(auth,email,password);
+
+    const uid = cred.user.uid;
+
+    const globalSnap = await getDoc(doc(db,"usuariosGlobal",uid));
+
+    if(globalSnap.exists()){
+
+      const data = globalSnap.data();
+
+      if(data.activo){
+
+        setLocalStorage(data,uid);
+
+        redirigir(data.rol);
+
+        return;
+
+      }
+
+    }
+
+    // DEMO AUTOMÁTICO
+    setLocalStorage({
+
+      empresaId:"demo-empresa",
+      rol:"demo",
+      planTipo:"freemium",
+      sucursalId:null
+
+    },uid);
+
+    redirigir("demo");
+
+  }
+  catch(err){
+
+    showError("Credenciales incorrectas");
+
+  }
+
+});
+
+
+// LOCAL STORAGE
+function setLocalStorage(data, uid){
+
+  localStorage.setItem("uid", uid);
+
+  localStorage.setItem(
+    "empresaId",
+    data.empresaId || "demo-empresa"
+  );
+
+  localStorage.setItem(
+    "rol",
+    data.rol || "demo"
+  );
+
+  localStorage.setItem(
+    "sucursalId",
+    data.sucursalId || ""
+  );
+
+  localStorage.setItem(
+    "planTipo",
+    data.planTipo || "freemium"
+  );
+
+  localStorage.setItem(
+    "rolGlobal",
+    data.rolGlobal || ""
+  );
+
+  localStorage.setItem(
+    "loginTime",
+    Date.now()
+  );
+
+}
+
+</script>
 </body>
 </html>
