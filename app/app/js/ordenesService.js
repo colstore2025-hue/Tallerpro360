@@ -14,13 +14,18 @@ await addDoc(
 coleccionTaller("ordenes"),
 {
 cliente:data.cliente,
+telefono:data.telefono || "",
+
 vehiculo:data.vehiculo,
 placa:data.placa,
+
 tecnico:data.tecnico || "Sin asignar",
 
 estado:"activa",
-total:0,
+
 acciones:[],
+
+total:0,
 
 fecha:serverTimestamp()
 });
