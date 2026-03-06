@@ -101,7 +101,7 @@ async function crearOrden() {
     total: 0,
     acciones: [],
     fecha: serverTimestamp(),
-    empresaId: localStorage.getItem("empresaId"), // Multiempresa
+    empresaId: localStorage.getItem("empresaId"),
   });
 
   alert("Orden creada correctamente");
@@ -117,7 +117,6 @@ async function cargarOrdenes() {
   const lista = document.getElementById("listaOrdenes");
   const empresaId = localStorage.getItem("empresaId");
   const snapshot = await getDocs(collection(db,"ordenes"));
-
   const ordenes = snapshot.docs.filter(docSnap => docSnap.data().empresaId === empresaId);
 
   if (ordenes.length === 0) return lista.innerHTML = "<p>No hay órdenes registradas</p>";
@@ -200,6 +199,9 @@ async function cargarRepuestosLista(){
   });
 }
 
+/* ===============================
+   PANEL FINANCIERO
+=============================== */
 async function cargarDatosFinancieros(){
   const empresaId = localStorage.getItem("empresaId");
   const snapshot = await getDocs(collection(db,"ordenes"));
@@ -230,9 +232,6 @@ async function cargarDatosFinancieros(){
     utilidadMes[mes]+=utilidadOrden;
   });
 
-  // ===============================
-  // GRÁFICAS
-  // ===============================
   new Chart(document.getElementById("graficaUtilidad"), {
     type:"line",
     data:{
@@ -270,9 +269,6 @@ async function cargarDatosFinancieros(){
   });
 }
 
-/* ===============================
-   PANEL FINANCIERO
-=============================== */
 export async function panelFinanciero(container){
   container.innerHTML = `<h2 class="text-xl font-bold mb-4">Panel Financiero</h2>
   <div class="grid md:grid-cols-2 gap-6">
@@ -283,4 +279,3 @@ export async function panelFinanciero(container){
   </div>`;
   await cargarDatosFinancieros();
 }
-
