@@ -67,6 +67,31 @@ body { background:#0f172a; font-family:'Inter',sans-serif; color:#f1f5f9; }
 
 <!-- KPIs -->
 <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+
+<div class="bg-slate-800 p-4 rounded-xl">
+<div class="text-xs text-slate-400">Órdenes</div>
+<div id="totalOrdenes" class="text-xl font-bold"></div>
+</div>
+
+<div class="bg-slate-800 p-4 rounded-xl">
+<div class="text-xs text-slate-400">Facturado</div>
+<div id="totalFacturado" class="text-xl font-bold"></div>
+</div>
+
+<div class="bg-slate-800 p-4 rounded-xl">
+<div class="text-xs text-slate-400">Activas</div>
+<div id="ordenesActivas"></div>
+</div>
+
+<div class="bg-slate-800 p-4 rounded-xl">
+<div class="text-xs text-slate-400">En proceso</div>
+<div id="ordenesProceso"></div>
+</div>
+
+</div>
+
+<div id="listaOrdenes"></div>
   <div class="glass p-6 text-center">
     <p class="text-xs uppercase text-gray-400">Talleres</p>
     <h2 id="kpiTalleres" class="text-4xl font-nexus text-amber-500">0</h2>
