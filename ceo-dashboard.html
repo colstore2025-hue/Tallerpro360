@@ -116,7 +116,7 @@ TallerPRO360 <span class="text-white">CEO</span>
 
 <!-- ================= ALERTAS EN TIEMPO REAL ================= -->
 <section id="alertas" class="mb-8">
-<!-- Alertas se generan dinámicamente con JS -->
+<!-- Alertas dinámicas -->
 </section>
 
 <!-- ================= IA ANALYTICS ================= -->
@@ -169,12 +169,11 @@ TallerPRO360 <span class="text-white">CEO</span>
 © 2026 TallerPRO360 · CEO Control Panel
 </footer>
 
-<!-- ================= SCRIPTS ================= -->
 <script type="module">
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, getDoc, collection, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { iniciarDashboardIA, generarAlertas } from "./app/app/js/dashboardIA.js";
+import { iniciarDashboardIA } from "./app/app/js/dashboardIA.js";
 import { workshopRankingAI } from "./app/app/js/workshopRankingAI.js";
 
 let map, markers=[], chartCiudades, chartIngresos;
@@ -204,7 +203,7 @@ function initMap(){
 function cargarTalleres(){
     onSnapshot(collection(db,"talleres"),snap=>{
         let total=0, activos=0, vence=0, planes=0, ingresosTotal=0, clientesPendientes=0;
-        const ciudades={}; const tbody=document.getElementById("tabla"); tbody.innerHTML="";
+        const ciudades={}, tbody=document.getElementById("tabla"); tbody.innerHTML="";
         markers.forEach(m=>map.removeLayer(m)); markers=[];
         const alertContainer=document.getElementById("alertas"); alertContainer.innerHTML="";
 
