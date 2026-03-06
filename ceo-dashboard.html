@@ -21,17 +21,19 @@ body{
     background:#0f172a;
     font-family:'Inter',sans-serif;
     color:#f1f5f9;
+    margin:0; padding:0;
 }
 .font-nexus{ font-family:'Orbitron',sans-serif; }
 .glass{
-    background:rgba(15,23,42,.7);
+    background:rgba(15,23,42,.75);
     backdrop-filter:blur(20px);
     border-radius:1.5rem;
     border:1px solid rgba(255,255,255,.05);
+    padding:1rem;
 }
 .card-title{
     font-weight:700; font-size:0.875rem; text-transform:uppercase; 
-    color:#fff; border-bottom:2px solid #fff; padding-bottom:4px;
+    color:#fff; border-bottom:2px solid #fff; padding-bottom:4px; margin-bottom:6px;
 }
 .card-value{ font-size:1.875rem; font-weight:900; }
 .status-activo{
@@ -48,16 +50,18 @@ body{
     padding:2px 8px; border-radius:8px;
     font-size:10px; font-weight:700;
 }
-#mapa{ height:400px; border-radius:1rem; }
+#mapa{ height:450px; border-radius:1rem; }
 .alerta{
     background:#ef4444; color:white; padding:6px 12px; border-radius:8px; margin-bottom:6px;
+    font-weight:700;
 }
+.chart-card canvas{ width:100% !important; height:200px !important; }
 </style>
 </head>
-<body class="p-6">
+<body class="p-4">
 
 <!-- HEADER -->
-<header class="flex justify-between items-center mb-8">
+<header class="flex justify-between items-center mb-6">
 <h1 class="text-3xl font-nexus font-black text-amber-500">
 TallerPRO360 <span class="text-white">CEO</span>
 </h1>
@@ -66,107 +70,102 @@ TallerPRO360 <span class="text-white">CEO</span>
 </button>
 </header>
 
-<!-- ================= KPIs GENERALES ================= -->
-<section class="grid grid-cols-1 md:grid-cols-6 gap-6 mb-8">
-<div class="glass p-6 text-center">
+<!-- ================= KPIs ================= -->
+<section class="grid grid-cols-1 md:grid-cols-6 gap-6 mb-6">
+<div class="glass text-center">
 <div class="card-title">Talleres</div>
 <div id="kpiTalleres" class="card-value text-amber-500">0</div>
 </div>
-<div class="glass p-6 text-center">
+<div class="glass text-center">
 <div class="card-title">Activos</div>
 <div id="kpiActivos" class="card-value text-green-500">0</div>
 </div>
-<div class="glass p-6 text-center">
+<div class="glass text-center">
 <div class="card-title">Por vencer</div>
 <div id="kpiVence" class="card-value text-red-500">0</div>
 </div>
-<div class="glass p-6 text-center">
+<div class="glass text-center">
 <div class="card-title">Planes activos</div>
 <div id="kpiPlanes" class="card-value text-blue-500">0</div>
 </div>
-<div class="glass p-6 text-center">
+<div class="glass text-center">
 <div class="card-title">Ingresos Totales</div>
 <div id="kpiIngresos" class="card-value text-emerald-400">0</div>
 </div>
-<div class="glass p-6 text-center">
+<div class="glass text-center">
 <div class="card-title">Clientes pendientes</div>
 <div id="kpiClientesPendientes" class="card-value text-yellow-400">0</div>
 </div>
 </section>
 
+<!-- ================= ALERTAS EN TIEMPO REAL ================= -->
+<section id="alertas" class="mb-6">
+<!-- Dinámicas -->
+</section>
+
 <!-- ================= FINANZAS IA ================= -->
-<section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-<div class="glass p-4 text-center">
+<section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+<div class="glass text-center">
 <div class="card-title">Ingresos IA</div>
 <div id="iaIngresos" class="card-value text-emerald-400"></div>
 </div>
-<div class="glass p-4 text-center">
+<div class="glass text-center">
 <div class="card-title">Costos IA</div>
 <div id="iaCostos" class="card-value text-red-400"></div>
 </div>
-<div class="glass p-4 text-center">
+<div class="glass text-center">
 <div class="card-title">Utilidad IA</div>
 <div id="iaUtilidad" class="card-value text-yellow-400"></div>
 </div>
-<div class="glass p-4 text-center">
+<div class="glass text-center">
 <div class="card-title">Margen IA</div>
 <div id="iaMargen" class="card-value text-purple-400"></div>
 </div>
 </section>
 
-<!-- ================= ALERTAS EN TIEMPO REAL ================= -->
-<section id="alertas" class="mb-8">
-<!-- Alertas dinámicas -->
-</section>
-
-<!-- ================= IA ANALYTICS ================= -->
-<section class="grid md:grid-cols-2 gap-6 mb-8">
-<div class="glass p-6">
+<!-- ================= ANALYTICS ================= -->
+<section class="grid md:grid-cols-2 gap-6 mb-6">
+<div class="glass p-4">
 <div class="card-title">Repuestos más usados</div>
 <div id="iaTopRepuestos"></div>
 </div>
-<div class="glass p-6">
+<div class="glass p-4">
 <div class="card-title">Técnicos más productivos</div>
 <div id="iaTopTecnicos"></div>
 </div>
 </section>
 
-<div class="glass p-6 mb-8">
+<div class="glass p-4 mb-6">
 <div class="card-title">Predicción mensual ingresos</div>
 <div id="iaPrediccion" class="card-value text-emerald-400"></div>
 </div>
 
-<!-- ================= TABLA TALLERES ================= -->
-<section class="glass p-6 mb-8 overflow-x-auto">
+<!-- ================= TABLA ================= -->
+<section class="glass p-4 mb-6 overflow-x-auto">
 <table class="w-full text-sm">
 <thead class="text-gray-400">
 <tr>
-<th class="text-left">Taller</th>
-<th class="text-left">Ciudad</th>
-<th class="text-left">Plan</th>
-<th class="text-left">Estado</th>
-<th class="text-left">Vence</th>
-<th class="text-right">Acción</th>
-<th class="text-right">Ingresos</th>
+<th>Taller</th><th>Ciudad</th><th>Plan</th><th>Estado</th><th>Vence</th>
+<th class="text-right">Acción</th><th class="text-right">Ingresos</th>
 </tr>
 </thead>
 <tbody id="tabla"></tbody>
 </table>
 </section>
 
-<!-- ================= MAPA + CHARTS ================= -->
-<section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-<div class="glass p-6">
+<!-- ================= MAPA + GRÁFICOS ================= -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+<div class="glass p-4 chart-card">
 <canvas id="chartCiudades"></canvas>
-<canvas id="chartIngresos" class="mt-6"></canvas>
+<canvas id="chartIngresos" class="mt-4"></canvas>
 </div>
-<div class="glass p-6">
+<div class="glass p-4">
 <div id="mapa"></div>
 </div>
 </section>
 
 <footer class="text-center text-xs text-gray-500">
-© 2026 TallerPRO360 · CEO Control Panel
+© 2026 TallerPRO360 · CEO Global Panel
 </footer>
 
 <script type="module">
@@ -186,7 +185,7 @@ onAuthStateChanged(auth, async(user)=>{
     initDashboard();
 });
 
-// ================= INIT DASHBOARD =================
+// ================= INIT =================
 function initDashboard(){
     initMap();
     cargarTalleres();
@@ -268,7 +267,6 @@ window.toggleEstado=async(id,estadoActual)=>{
 
 // ================= LOGOUT =================
 window.logout=()=>{ signOut(auth).then(()=>window.location="login.html"); }
-
 </script>
 </body>
 </html>
