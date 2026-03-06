@@ -1,3 +1,9 @@
+/**
+ * dashboardIA.js
+ * TallerPRO360 ERP
+ * Analítica IA en tiempo real
+ */
+
 import { db } from "./firebase.js";
 
 import {
@@ -7,21 +13,29 @@ onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
+/* ===============================
+CONFIGURACIÓN
+=============================== */
+
 const empresaId = localStorage.getItem("empresaId");
 
 let ordenes = [];
 
 
 /* ===============================
-INICIAR ANALÍTICA IA
+INICIAR DASHBOARD IA
 =============================== */
 
 export function iniciarDashboardIA(){
 
 if(!empresaId){
-console.warn("Empresa no identificada");
+
+console.warn("⚠️ Empresa no identificada en localStorage");
 return;
+
 }
+
+try{
 
 const q = query(
 collection(db,"empresas",empresaId,"ordenes")
@@ -32,15 +46,26 @@ onSnapshot(q,(snapshot)=>{
 ordenes = [];
 
 snapshot.forEach(doc=>{
+
 ordenes.push({
 id:doc.id,
 ...doc.data()
 });
+
 });
 
 analizarDatos();
 
+},
+(error)=>{
+console.error("Error escuchando órdenes:",error);
 });
+
+}catch(e){
+
+console.error("Error iniciando Dashboard IA:",e);
+
+}
 
 }
 
@@ -55,14 +80,20 @@ let ingresoTotal = 0;
 let costoTotal = 0;
 let utilidadTotal = 0;
 
-let repuestos = {};
-let tecnicos = {};
+const repuestos = {};
+const tecnicos = {};
 
 ordenes.forEach(o=>{
 
-ingresoTotal += Number(o.total || 0);
+const totalOrden = Number(o.total || 0);
 
-if(o.acciones){
+ingresoTotal += totalOrden;
+
+/* ===============================
+ACCIONES
+=============================== */
+
+if(Array.isArray(o.acciones)){
 
 o.acciones.forEach(a=>{
 
@@ -72,7 +103,10 @@ const costo = Number(a.costoInterno || 0);
 costoTotal += costo;
 utilidadTotal += (venta - costo);
 
-/* REPUESTOS */
+
+/* ===============================
+REPUESTOS
+=============================== */
 
 if(a.descripcion){
 
@@ -88,7 +122,10 @@ repuestos[a.descripcion]++;
 
 }
 
-/* TÉCNICOS */
+
+/* ===============================
+TÉCNICOS
+=============================== */
 
 const tecnico = o.tecnico || "Sin asignar";
 
@@ -96,28 +133,35 @@ if(!tecnicos[tecnico]){
 tecnicos[tecnico] = 0;
 }
 
-tecnicos[tecnico] += Number(o.total || 0);
+tecnicos[tecnico] += totalOrden;
 
 });
 
+
+/* ===============================
+MARGEN
+=============================== */
 
 const margen = ingresoTotal
 ? ((utilidadTotal / ingresoTotal) * 100).toFixed(2)
 : 0;
 
 
-/* predicción simple */
+/* ===============================
+PREDICCIÓN IA SIMPLE
+=============================== */
 
 const prediccion = predecirIngresos();
 
 
-/* actualizar dashboard */
+/* ===============================
+ACTUALIZAR DASHBOARD
+=============================== */
 
 setHTML("iaIngresos", formatoCOP(ingresoTotal));
 setHTML("iaCostos", formatoCOP(costoTotal));
 setHTML("iaUtilidad", formatoCOP(utilidadTotal));
 setHTML("iaMargen", margen + "%");
-
 setHTML("iaPrediccion", formatoCOP(prediccion));
 
 mostrarTopRepuestos(repuestos);
@@ -136,7 +180,7 @@ const cont = document.getElementById("iaTopRepuestos");
 
 if(!cont) return;
 
-cont.innerHTML="";
+cont.innerHTML = "";
 
 const lista = Object.entries(repuestos)
 .sort((a,b)=>b[1]-a[1])
@@ -170,7 +214,7 @@ const cont = document.getElementById("iaTopTecnicos");
 
 if(!cont) return;
 
-cont.innerHTML="";
+cont.innerHTML = "";
 
 const lista = Object.entries(tecnicos)
 .sort((a,b)=>b[1]-a[1])
@@ -195,7 +239,7 @@ cont.appendChild(div);
 
 
 /* ===============================
-PREDICCIÓN SIMPLE DE INGRESOS
+PREDICCIÓN SIMPLE
 =============================== */
 
 function predecirIngresos(){
@@ -227,7 +271,8 @@ return new Intl.NumberFormat(
 "es-CO",
 {
 style:"currency",
-currency:"COP"
+currency:"COP",
+minimumFractionDigits:0
 }
 ).format(valor);
 
@@ -242,6 +287,10 @@ function setHTML(id,value){
 
 const el = document.getElementById(id);
 
-if(el) el.innerHTML = value;
+if(el){
+
+el.innerHTML = value;
+
+}
 
 }
