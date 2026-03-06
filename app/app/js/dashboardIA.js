@@ -1,7 +1,7 @@
 /**
  * dashboardIA.js
  * TallerPRO360 ERP
- * Analítica IA en tiempo real
+ * Analítica IA avanzada en tiempo real
  */
 
 import { db } from "./firebase.js";
@@ -20,6 +20,7 @@ CONFIGURACIÓN
 const empresaId = localStorage.getItem("empresaId");
 
 let ordenes = [];
+let unsubscribe = null;
 
 
 /* ===============================
@@ -30,9 +31,15 @@ export function iniciarDashboardIA(){
 
 if(!empresaId){
 
-console.warn("⚠️ Empresa no identificada en localStorage");
+console.warn("⚠️ Empresa no identificada");
 return;
 
+}
+
+/* evitar múltiples listeners */
+
+if(unsubscribe){
+unsubscribe();
 }
 
 try{
@@ -41,7 +48,7 @@ const q = query(
 collection(db,"empresas",empresaId,"ordenes")
 );
 
-onSnapshot(q,(snapshot)=>{
+unsubscribe = onSnapshot(q,(snapshot)=>{
 
 ordenes = [];
 
@@ -53,6 +60,13 @@ id:doc.id,
 });
 
 });
+
+/* guardar cache PWA */
+
+localStorage.setItem(
+"cacheOrdenes",
+JSON.stringify(ordenes)
+);
 
 analizarDatos();
 
@@ -89,6 +103,7 @@ const totalOrden = Number(o.total || 0);
 
 ingresoTotal += totalOrden;
 
+
 /* ===============================
 ACCIONES
 =============================== */
@@ -104,9 +119,7 @@ costoTotal += costo;
 utilidadTotal += (venta - costo);
 
 
-/* ===============================
-REPUESTOS
-=============================== */
+/* REPUESTOS */
 
 if(a.descripcion){
 
@@ -139,17 +152,16 @@ tecnicos[tecnico] += totalOrden;
 
 
 /* ===============================
-MARGEN
+MÉTRICAS IA
 =============================== */
 
 const margen = ingresoTotal
 ? ((utilidadTotal / ingresoTotal) * 100).toFixed(2)
 : 0;
 
-
-/* ===============================
-PREDICCIÓN IA SIMPLE
-=============================== */
+const ticketPromedio = ordenes.length
+? ingresoTotal / ordenes.length
+: 0;
 
 const prediccion = predecirIngresos();
 
@@ -161,8 +173,15 @@ ACTUALIZAR DASHBOARD
 setHTML("iaIngresos", formatoCOP(ingresoTotal));
 setHTML("iaCostos", formatoCOP(costoTotal));
 setHTML("iaUtilidad", formatoCOP(utilidadTotal));
+
 setHTML("iaMargen", margen + "%");
+
 setHTML("iaPrediccion", formatoCOP(prediccion));
+
+setHTML("iaOrdenes", ordenes.length);
+
+setHTML("iaTicketPromedio", formatoCOP(ticketPromedio));
+
 
 mostrarTopRepuestos(repuestos);
 mostrarTopTecnicos(tecnicos);
@@ -239,7 +258,7 @@ cont.appendChild(div);
 
 
 /* ===============================
-PREDICCIÓN SIMPLE
+PREDICCIÓN IA SIMPLE
 =============================== */
 
 function predecirIngresos(){
@@ -254,7 +273,7 @@ suma += Number(o.total || 0);
 
 const promedio = suma / ordenes.length;
 
-/* predicción mensual simple */
+/* predicción mensual */
 
 return promedio * 30;
 
@@ -288,9 +307,7 @@ function setHTML(id,value){
 const el = document.getElementById(id);
 
 if(el){
-
 el.innerHTML = value;
-
 }
 
 }
