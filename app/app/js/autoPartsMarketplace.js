@@ -1,29 +1,32 @@
 /**
  * autoPartsMarketplace.js
  * TallerPRO360 Global Marketplace
- * Marketplace de autopartes tipo Amazon
+ * Marketplace de autopartes estilo Amazon
+ * Integración LATAM con MercadoPago
  */
 
-import { db } from "./firebase.js";
+import { db } from "./firebase.js"
 
 import {
 collection,
 addDoc,
 getDocs,
-getDoc,
 doc,
 query,
 where,
 updateDoc,
-serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+serverTimestamp,
+orderBy,
+limit
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 
 
 /* =====================================================
-CONFIGURACIÓN
+CONFIGURACIÓN GLOBAL
 ===================================================== */
 
-const COMISION_PLATAFORMA = 0.08; // 8%
+const COMISION_PLATAFORMA = 0.08
+const MARKETPLACE_VERSION = "1.0.0"
 
 
 /* =====================================================
@@ -35,15 +38,30 @@ export async function publicarRepuesto(repuesto){
 try{
 
 const data = {
-nombre: repuesto.nombre,
+
+nombre: repuesto.nombre || "",
 marca: repuesto.marca || "",
 modeloCompatible: repuesto.modeloCompatible || "",
 categoria: repuesto.categoria || "",
+descripcion: repuesto.descripcion || "",
+
 precio: Number(repuesto.precio || 0),
 stock: Number(repuesto.stock || 0),
+
+imagenes: repuesto.imagenes || [],
+
 proveedorId: repuesto.proveedorId,
-descripcion: repuesto.descripcion || "",
+proveedorNombre: repuesto.proveedorNombre || "",
+
+pais: repuesto.pais || "Colombia",
+
+rating: 0,
+ventas: 0,
+
+activo: true,
+
 fecha: serverTimestamp()
+
 }
 
 const ref = await addDoc(
@@ -79,12 +97,17 @@ if(filtro){
 
 q = query(
 collection(db,"marketplaceRepuestos"),
-where("nombre","==",filtro)
+where("nombre","==",filtro),
+limit(50)
 )
 
 }else{
 
-q = query(collection(db,"marketplaceRepuestos"))
+q = query(
+collection(db,"marketplaceRepuestos"),
+orderBy("ventas","desc"),
+limit(50)
+)
 
 }
 
@@ -92,11 +115,11 @@ const snap = await getDocs(q)
 
 const resultados = []
 
-snap.forEach(doc=>{
+snap.forEach(d=>{
 
 resultados.push({
-id:doc.id,
-...doc.data()
+id:d.id,
+...d.data()
 })
 
 })
@@ -123,16 +146,28 @@ try{
 
 const precioTotal = Number(data.precioTotal || 0)
 
-const comision = precioTotal * COMISION_PLATAFORMA
+const comision = calcularComision(precioTotal)
 
 const pedido = {
+
 empresaId: data.empresaId,
 proveedorId: data.proveedorId,
+
 items: data.items || [],
+
 precioTotal: precioTotal,
 comisionPlataforma: comision,
+
 estado: "pendiente",
+
+metodoPago: data.metodoPago || "mercadopago",
+
+pagoId: null,
+
+pais: data.pais || "Colombia",
+
 fecha: serverTimestamp()
+
 }
 
 const ref = await addDoc(
@@ -147,6 +182,48 @@ return ref.id
 }catch(e){
 
 console.error("Error creando pedido:",e)
+return null
+
+}
+
+}
+
+
+/* =====================================================
+CREAR PAGO MERCADOPAGO
+===================================================== */
+
+export async function crearPagoMercadoPago(pedidoId,monto){
+
+try{
+
+const body = {
+
+pedidoId: pedidoId,
+monto: monto,
+descripcion: "Compra de autopartes TallerPRO360"
+
+}
+
+const res = await fetch("/api/mercadopago/create-payment",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify(body)
+
+})
+
+const data = await res.json()
+
+return data
+
+}catch(e){
+
+console.error("Error creando pago MercadoPago:",e)
 return null
 
 }
@@ -190,18 +267,19 @@ try{
 
 const q = query(
 collection(db,"marketplacePedidos"),
-where("empresaId","==",empresaId)
+where("empresaId","==",empresaId),
+limit(100)
 )
 
 const snap = await getDocs(q)
 
 const pedidos = []
 
-snap.forEach(doc=>{
+snap.forEach(d=>{
 
 pedidos.push({
-id:doc.id,
-...doc.data()
+id:d.id,
+...d.data()
 })
 
 })
@@ -219,11 +297,50 @@ return []
 
 
 /* =====================================================
-CALCULAR COMISIÓN PLATAFORMA
+CALCULAR COMISIÓN
 ===================================================== */
 
 export function calcularComision(total){
 
 return Math.round(total * COMISION_PLATAFORMA)
+
+}
+
+
+/* =====================================================
+TOP REPUESTOS MÁS VENDIDOS
+===================================================== */
+
+export async function topRepuestos(){
+
+try{
+
+const q = query(
+collection(db,"marketplaceRepuestos"),
+orderBy("ventas","desc"),
+limit(20)
+)
+
+const snap = await getDocs(q)
+
+const productos = []
+
+snap.forEach(d=>{
+
+productos.push({
+id:d.id,
+...d.data()
+})
+
+})
+
+return productos
+
+}catch(e){
+
+console.error("Error obteniendo top repuestos:",e)
+return []
+
+}
 
 }
