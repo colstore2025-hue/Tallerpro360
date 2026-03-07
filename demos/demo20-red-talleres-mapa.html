@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Red de Talleres - TallerPRO360</title>
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+
+body{
+margin:0;
+background:#020617;
+color:white;
+font-family:system-ui;
+}
+
+#map{
+height:100vh;
+}
+
+.panel{
+position:absolute;
+top:20px;
+left:20px;
+background:#020617;
+padding:20px;
+border-radius:10px;
+z-index:1000;
+width:250px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="panel">
+
+<h2 style="color:#22c55e">
+Red de Talleres
+</h2>
+
+<p>Talleres activos: <b>3</b></p>
+<p>Vehículos en servicio: <b id="vehiculos">0</b></p>
+
+</div>
+
+<div id="map"></div>
+
+<script>
+
+const map = L.map('map').setView([4.7110,-74.0721],12)
+
+L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{ maxZoom:19 }
+).addTo(map)
+
+
+const talleres=[
+
+{
+nombre:"Taller Norte",
+lat:4.75,
+lng:-74.05
+},
+
+{
+nombre:"Taller Centro",
+lat:4.71,
+lng:-74.07
+},
+
+{
+nombre:"Taller Sur",
+lat:4.66,
+lng:-74.10
+}
+
+]
+
+
+talleres.forEach(t=>{
+
+L.marker([t.lat,t.lng])
+.addTo(map)
+.bindPopup("🔧 "+t.nombre)
+
+})
+
+
+const autos=[]
+
+
+function crearAuto(){
+
+const base=talleres[
+Math.floor(Math.random()*talleres.length)
+]
+
+const lat=base.lat+(Math.random()-0.5)/100
+const lng=base.lng+(Math.random()-0.5)/100
+
+const marker=L.marker([lat,lng]).addTo(map)
+
+marker.bindPopup("🚗 Vehículo en servicio")
+
+autos.push(marker)
+
+document.getElementById("vehiculos").innerText=autos.length
+
+}
+
+
+function moverAutos(){
+
+autos.forEach(a=>{
+
+const pos=a.getLatLng()
+
+const lat=pos.lat+(Math.random()-0.5)/500
+const lng=pos.lng+(Math.random()-0.5)/500
+
+a.setLatLng([lat,lng])
+
+})
+
+}
+
+
+for(let i=0;i<6;i++){
+
+crearAuto()
+
+}
+
+setInterval(moverAutos,3000)
+
+</script>
+
+</body>
+
+</html>
