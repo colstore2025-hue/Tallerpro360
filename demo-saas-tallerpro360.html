@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>TallerPRO360 SaaS</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+background:#020617;
+color:white;
+font-family:system-ui;
+}
+
+.sidebar{
+background:#0f172a;
+width:240px;
+height:100vh;
+position:fixed;
+padding:20px;
+border-right:1px solid #1e293b;
+}
+
+.main{
+margin-left:260px;
+padding:30px;
+}
+
+.card{
+background:#0f172a;
+border:1px solid #1e293b;
+border-radius:16px;
+padding:20px;
+}
+
+.menu{
+padding:10px;
+margin-top:10px;
+cursor:pointer;
+border-radius:8px;
+}
+
+.menu:hover{
+background:#1e293b;
+}
+
+.glow{
+color:#22c55e;
+}
+
+.chat{
+height:220px;
+overflow:auto;
+background:#020617;
+border:1px solid #1e293b;
+border-radius:12px;
+padding:10px;
+}
+
+.msg{
+margin-bottom:6px;
+padding:8px;
+border-radius:8px;
+}
+
+.client{
+background:#065f46;
+text-align:right;
+}
+
+.ai{
+background:#1e293b;
+}
+
+.login{
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- LOGIN -->
+
+<div id="login" class="login">
+
+<div class="card w-80 text-center">
+
+<h2 class="text-2xl glow mb-6">
+TallerPRO360
+</h2>
+
+<input class="w-full p-2 mb-3 rounded text-black" placeholder="Email">
+
+<input type="password" class="w-full p-2 mb-4 rounded text-black" placeholder="Contraseña">
+
+<button onclick="enter()" class="bg-green-500 w-full p-2 rounded">
+Entrar
+</button>
+
+</div>
+
+</div>
+
+
+<!-- APP -->
+
+<div id="app" style="display:none">
+
+<div class="sidebar">
+
+<h2 class="text-xl glow mb-6">
+TallerPRO360
+</h2>
+
+<div class="menu" onclick="show('dashboard')">📊 Dashboard</div>
+<div class="menu" onclick="show('vehiculos')">🚗 Vehículos</div>
+<div class="menu" onclick="show('inventario')">📦 Inventario</div>
+<div class="menu" onclick="show('clientes')">💬 Clientes</div>
+<div class="menu" onclick="show('ia')">🤖 Diagnóstico IA</div>
+<div class="menu" onclick="show('suscripcion')">💰 Suscripción</div>
+
+</div>
+
+
+<div class="main">
+
+<!-- DASHBOARD -->
+
+<div id="dashboard">
+
+<h1 class="text-3xl glow mb-6">
+Dashboard
+</h1>
+
+<div class="grid grid-cols-4 gap-6">
+
+<div class="card">
+Vehículos
+<div id="vehiculosKPI" class="text-2xl glow mt-2">0</div>
+</div>
+
+<div class="card">
+Órdenes
+<div id="ordenesKPI" class="text-2xl glow mt-2">0</div>
+</div>
+
+<div class="card">
+Clientes
+<div id="clientesKPI" class="text-2xl glow mt-2">0</div>
+</div>
+
+<div class="card">
+Ingresos
+<div id="ingresosKPI" class="text-2xl glow mt-2">$0</div>
+</div>
+
+</div>
+
+<canvas id="chart" class="mt-10"></canvas>
+
+</div>
+
+
+<!-- VEHICULOS -->
+
+<div id="vehiculos" style="display:none">
+
+<h1 class="text-3xl glow mb-6">
+Vehículos
+</h1>
+
+<div id="listaVehiculos"></div>
+
+</div>
+
+
+<!-- INVENTARIO -->
+
+<div id="inventario" style="display:none">
+
+<h1 class="text-3xl glow mb-6">
+Inventario
+</h1>
+
+<div class="card mb-2">Filtro aceite</div>
+<div class="card mb-2">Pastillas freno</div>
+<div class="card mb-2">Batería</div>
+<div class="card mb-2">Aceite sintético</div>
+
+</div>
+
+
+<!-- CLIENTES CHAT -->
+
+<div id="clientes" style="display:none">
+
+<h1 class="text-3xl glow mb-6">
+Chat cliente
+</h1>
+
+<div id="chat" class="chat"></div>
+
+</div>
+
+
+<!-- IA -->
+
+<div id="ia" style="display:none">
+
+<h1 class="text-3xl glow mb-6">
+Diagnóstico IA
+</h1>
+
+<div id="diagnostico" class="card"></div>
+
+</div>
+
+
+<!-- SUSCRIPCION -->
+
+<div id="suscripcion" style="display:none">
+
+<h1 class="text-3xl glow mb-6">
+Plan SaaS
+</h1>
+
+<div class="card mb-4">
+Plan TallerPRO360  
+<br><br>
+$39 USD / mes  
+<br><br>
+✔ órdenes ilimitadas  
+✔ diagnóstico IA  
+✔ chat cliente  
+✔ inventario
+</div>
+
+<button class="bg-green-500 px-6 py-2 rounded">
+Activar suscripción
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+
+function enter(){
+
+document.getElementById("login").style.display="none"
+document.getElementById("app").style.display="block"
+
+}
+
+function show(id){
+
+const sections=["dashboard","vehiculos","inventario","clientes","ia","suscripcion"]
+
+sections.forEach(s=>{
+document.getElementById(s).style.display="none"
+})
+
+document.getElementById(id).style.display="block"
+
+}
+
+
+let vehiculos=0
+let ordenes=0
+let clientes=0
+let ingresos=0
+
+const autos=["Toyota","Mazda","Kia","Renault","Chevrolet"]
+const fallas=["Frenos","Sensor ABS","Batería","Filtro","Aceite"]
+
+const ctx=document.getElementById("chart")
+
+const chart=new Chart(ctx,{
+type:"line",
+data:{
+labels:[],
+datasets:[{
+label:"Ingresos",
+data:[],
+borderColor:"#22c55e"
+}]
+}
+})
+
+
+function chat(msg,type){
+
+const c=document.getElementById("chat")
+
+const m=document.createElement("div")
+
+m.className="msg "+type
+
+m.innerHTML=msg
+
+c.prepend(m)
+
+}
+
+
+function simulate(){
+
+const auto=autos[Math.floor(Math.random()*autos.length)]
+const falla=fallas[Math.floor(Math.random()*fallas.length)]
+const precio=Math.floor(Math.random()*200000)+80000
+
+vehiculos++
+ordenes++
+clientes++
+ingresos+=precio
+
+
+document.getElementById("vehiculosKPI").innerText=vehiculos
+document.getElementById("ordenesKPI").innerText=ordenes
+document.getElementById("clientesKPI").innerText=clientes
+document.getElementById("ingresosKPI").innerText="$"+ingresos.toLocaleString()
+
+
+const v=document.createElement("div")
+v.className="card mb-2"
+v.innerHTML="🚗 "+auto+" — reparación "+falla
+
+document.getElementById("listaVehiculos").prepend(v)
+
+
+document.getElementById("diagnostico").innerHTML=
+"La IA detectó <span class='glow'>"+falla+"</span> en "+auto
+
+
+chat("Cliente: traje mi "+auto,"client")
+chat("IA: detectamos "+falla,"ai")
+chat("Sistema: reparación $"+precio.toLocaleString(),"ai")
+
+
+chart.data.labels.push(new Date().toLocaleTimeString())
+chart.data.datasets[0].data.push(ingresos)
+chart.update()
+
+}
+
+setInterval(simulate,5000)
+
+</script>
+
+</body>
+
+</html>
