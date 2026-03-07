@@ -48,7 +48,6 @@ h3{font-size:24px;}
 </head>
 <body>
 
-<!-- HERO -->
 <section class="section hero-bg center fade-in">
 <div class="container">
 <img src="/assets/logo-192.png" width="100" alt="Logo">
@@ -64,7 +63,6 @@ TallerPRO360 organiza, controla y profesionaliza tu taller automotriz.
 </div>
 </section>
 
-<!-- DASHBOARD DEMO -->
 <section class="section center fade-in" style="background:#ffffff;">
 <div class="container">
 <h2>Demo Interactivo del Taller</h2>
@@ -83,14 +81,12 @@ TallerPRO360 organiza, controla y profesionaliza tu taller automotriz.
 </div>
 </section>
 
-<!-- PLANES -->
 <section class="section fade-in" style="background:linear-gradient(135deg,#f0fdf4,#f8fafc);">
 <div class="container center">
 <h2>Planes diseñados para crecer tu taller</h2>
 <p style="color:#555;margin-bottom:60px;">Empieza pequeño. Crece sin límites.</p>
 <div class="plan-grid">
 
-<!-- FREEMIUM -->
 <div class="plan highlight">
 <h3>Freemium</h3>
 <p class="price">Gratis / limitado</p>
@@ -105,7 +101,6 @@ TallerPRO360 organiza, controla y profesionaliza tu taller automotriz.
 <div class="loader">Activando trial...</div>
 </div>
 
-<!-- PRO -->
 <div class="plan">
 <h3>Pro</h3>
 <p class="price">$69.000 / mes</p>
@@ -120,7 +115,6 @@ TallerPRO360 organiza, controla y profesionaliza tu taller automotriz.
 <div class="loader">Redirigiendo a pago...</div>
 </div>
 
-<!-- ELITE -->
 <div class="plan dark-plan">
 <h3>Elite</h3>
 <p class="price" style="color:#22c55e;">$129.000 / mes</p>
@@ -139,7 +133,6 @@ TallerPRO360 organiza, controla y profesionaliza tu taller automotriz.
 </div>
 </section>
 
-<!-- MODAL FACTURACIÓN -->
 <div id="modalFacturacion" class="modal">
 <div class="modal-content">
 <span class="close" onclick="cerrarModalFacturacion()">&times;</span>
@@ -150,7 +143,6 @@ TallerPRO360 organiza, controla y profesionaliza tu taller automotriz.
 </div>
 </div>
 
-<!-- USUARIOS DEMO -->
 <section class="section fade-in center">
 <div class="container">
 <h2>Gestión de Usuarios (Demo)</h2>
@@ -166,7 +158,14 @@ TallerPRO360 © 2026 · Tu ayudante inteligente en el taller
 </p>
 </footer>
 
-<!-- ANIMACIONES -->
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-functions-compat.js"></script>
+<script src="/app/js/firebase-config.js"></script>
+
+<script src="/app/js/index-functions.js"></script> <!-- Aquí puedes poner todas las funciones demo, trial, pagos, usuarios en un solo JS -->
+
 <script>
 const observer = new IntersectionObserver(entries=>{
   entries.forEach(entry=>{
@@ -176,110 +175,6 @@ const observer = new IntersectionObserver(entries=>{
   });
 },{threshold:0.2});
 document.querySelectorAll('.fade-in').forEach(el=>observer.observe(el));
-</script>
-
-<!-- FIREBASE -->
-<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-functions-compat.js"></script>
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-  authDomain: "tallerpro360.firebaseapp.com",
-  projectId: "tallerpro360",
-  storageBucket: "tallerpro360.firebasestorage.app",
-  messagingSenderId: "636224778184",
-  appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
-  measurementId: "G-VEC2C0QX2G"
-};
-firebase.initializeApp(firebaseConfig);
-</script>
-
-<!-- DEMO, USUARIOS, TRIAL, PAGOS -->
-<script>
-async function actualizarDemo(){
-  try{
-    const user = firebase.auth().currentUser;
-    const empresaId = localStorage.getItem("empresaId") || "demo-empresa";
-    const ordenesRef = firebase.firestore().collection("empresas").doc(empresaId).collection("ordenes");
-    const snapshot = await ordenesRef.get();
-    let ordenesActivas=0, ingresosHoy=0;
-    snapshot.forEach(doc=>{
-      const data=doc.data();
-      const fechaOrden=data.creadoEn?.toDate?.() || new Date();
-      const hoy=new Date();
-      if(fechaOrden.toDateString()===hoy.toDateString()) ingresosHoy+=data.pagado||0;
-      if(data.estado!=="entregado") ordenesActivas++;
-    });
-    document.getElementById("demoOrdenes").innerText=ordenesActivas;
-    document.getElementById("demoIngresos").innerText=ingresosHoy.toLocaleString("es-CO");
-  }catch(e){console.error("Error demo:",e);}
-}
-setInterval(actualizarDemo,5000); actualizarDemo();
-
-async function cargarUsuarios(){
-  const list=document.getElementById("userList");
-  list.innerHTML="";
-  try{
-    const empresaId=localStorage.getItem("empresaId")||"demo-empresa";
-    const snapshot=await firebase.firestore().collection("empresas").doc(empresaId).collection("usuarios").get();
-    snapshot.forEach(doc=>{
-      const data=doc.data();
-      const item=document.createElement('div');
-      item.className='user-item';
-      item.innerHTML=`<span>${data.nombre}</span><button class="btn-main" onclick="alert('Editar ${data.nombre}')">Editar</button>`;
-      list.appendChild(item);
-    });
-  }catch(e){console.error("Error usuarios:",e);}
-}
-cargarUsuarios();
-
-async function iniciarPago(plan, boton){
-  boton.disabled=true;
-  const loader=boton.nextElementSibling;
-  loader.style.display="block";
-  try{
-    const userId=firebase.auth().currentUser?.uid||"demo-user-123";
-    const response=await fetch("/api/create-preference",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({plan,userId})});
-    const data=await response.json();
-    if(!response.ok||!data.init_point) throw new Error(data.error||"Error creando pago");
-    window.location.href=data.init_point;
-  }catch(e){alert("Error iniciando pago: "+e.message); boton.disabled=false; loader.style.display="none";}
-}
-
-async function activarTrial(boton){
-  boton.disabled=true;
-  const loader=boton.nextElementSibling; loader.style.display="block";
-  try{
-    const response=await firebase.functions().httpsCallable('activarTrial')();
-    const data=response.data;
-    if(!data.success) throw new Error(data.mensaje||"Error activando trial");
-    alert("✅ Trial activado por 7 días. Funciones PRO limitadas.");
-    await firebase.auth().currentUser.getIdToken(true);
-    window.location.reload();
-  }catch(e){alert("Error activando trial: "+e.message); boton.disabled=false; loader.style.display="none";}
-}
-
-function mostrarModalFacturacion(){document.getElementById('modalFacturacion').style.display='block';}
-function cerrarModalFacturacion(){document.getElementById('modalFacturacion').style.display='none';}
-function activarFacturacion(aliado){alert("✅ Facturación activada con "+aliado);cerrarModalFacturacion();}
-
-function agregarUsuarioDemo(){
-  const list=document.getElementById('userList');
-  const item=document.createElement('div'); item.className='user-item';
-  item.innerHTML='<span>Nuevo Usuario</span><button class="btn-main" onclick="alert(\'Editar demo\')">Editar</button>';
-  list.appendChild(item);
-}
-
-// Service Worker
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/service-worker.js")
-      .then(reg => console.log("✅ Service Worker registrado:", reg.scope))
-      .catch(err => console.log("❌ Error SW:", err));
-  });
-}
 </script>
 
 </body>
