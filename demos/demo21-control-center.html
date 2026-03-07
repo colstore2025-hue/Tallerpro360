@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Control Center TallerPRO360</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+
+body{
+background:#020617;
+color:white;
+font-family:system-ui;
+}
+
+#map{
+height:500px;
+border-radius:10px;
+}
+
+</style>
+
+</head>
+
+<body class="p-8">
+
+<h1 class="text-4xl text-green-400 mb-8">
+TallerPRO360 Control Center
+</h1>
+
+
+<div class="grid md:grid-cols-4 gap-6 mb-8">
+
+<div class="bg-slate-900 p-6 rounded">
+<p class="text-slate-400">Ingresos</p>
+<h2 id="ingresos" class="text-2xl text-green-400">$0</h2>
+</div>
+
+<div class="bg-slate-900 p-6 rounded">
+<p class="text-slate-400">Vehículos</p>
+<h2 id="vehiculos" class="text-2xl text-blue-400">0</h2>
+</div>
+
+<div class="bg-slate-900 p-6 rounded">
+<p class="text-slate-400">Órdenes</p>
+<h2 id="ordenes" class="text-2xl text-yellow-400">0</h2>
+</div>
+
+<div class="bg-slate-900 p-6 rounded">
+<p class="text-slate-400">Talleres</p>
+<h2 class="text-2xl text-purple-400">3</h2>
+</div>
+
+</div>
+
+
+<div id="map" class="mb-8"></div>
+
+
+<div class="bg-slate-900 p-6 rounded">
+
+<h2 class="text-xl text-green-400 mb-4">
+Actividad en vivo
+</h2>
+
+<ul id="actividad" class="space-y-2 text-slate-300"></ul>
+
+</div>
+
+
+
+<script>
+
+let ingresos=0
+let vehiculos=0
+let ordenes=0
+
+const eventos=[
+"Vehículo recibido",
+"Diagnóstico iniciado",
+"Reparación en curso",
+"Factura generada",
+"Cliente recogió vehículo"
+]
+
+function actualizarKPIs(){
+
+ingresos+=Math.floor(Math.random()*100000)
+
+vehiculos+=Math.floor(Math.random()*2)
+
+ordenes+=Math.floor(Math.random()*1)
+
+document.getElementById("ingresos").innerText="$"+ingresos
+
+document.getElementById("vehiculos").innerText=vehiculos
+
+document.getElementById("ordenes").innerText=ordenes
+
+}
+
+setInterval(actualizarKPIs,4000)
+
+
+function agregarEvento(){
+
+const lista=document.getElementById("actividad")
+
+const evento=eventos[
+Math.floor(Math.random()*eventos.length)
+]
+
+const li=document.createElement("li")
+
+li.innerText="🔧 "+evento
+
+lista.prepend(li)
+
+}
+
+setInterval(agregarEvento,3000)
+
+
+
+const map=L.map('map')
+.setView([4.7110,-74.0721],12)
+
+L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{maxZoom:19}
+).addTo(map)
+
+
+const autos=[]
+
+function crearAuto(){
+
+const lat=4.7110+(Math.random()-0.5)/100
+const lng=-74.0721+(Math.random()-0.5)/100
+
+const marker=L.marker([lat,lng])
+.addTo(map)
+.bindPopup("🚗 Vehículo en servicio")
+
+autos.push(marker)
+
+vehiculos++
+
+document.getElementById("vehiculos").innerText=vehiculos
+
+}
+
+
+function moverAutos(){
+
+autos.forEach(a=>{
+
+const pos=a.getLatLng()
+
+const lat=pos.lat+(Math.random()-0.5)/500
+const lng=pos.lng+(Math.random()-0.5)/500
+
+a.setLatLng([lat,lng])
+
+})
+
+}
+
+
+for(let i=0;i<5;i++){
+
+crearAuto()
+
+}
+
+setInterval(moverAutos,3000)
+
+</script>
+
+</body>
+
+</html>
