@@ -1,96 +1,237 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TallerPRO360 - ERP + CRM</title>
-<link rel="icon" href="../logo-tallerpro360.png">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
-<!-- Tailwind + FontAwesome -->
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<title>TallerPRO360</title>
 
-<!-- Google Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+<link rel="manifest" href="../manifest.json">
+
+<script src="../service-worker.js"></script>
 
 <style>
-body { margin:0; font-family:'Inter',sans-serif; background:#0f172a; color:#f1f5f9; }
-.font-nexus { font-family:'Orbitron',sans-serif; }
-.sidebar { width:250px; background:#1e293b; height:100vh; position:fixed; top:0; left:0; display:flex; flex-direction:column; padding:1rem; }
-.sidebar a { color:#f1f5f9; padding:0.75rem 1rem; border-radius:0.5rem; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem; text-decoration:none; transition:0.2s; }
-.sidebar a:hover { background:#334155; }
-.main { margin-left:250px; padding:1.5rem; }
-.card { background:rgba(15,23,42,.7); backdrop-filter:blur(20px); border-radius:1rem; border:1px solid rgba(255,255,255,.05); padding:1rem; margin-bottom:1rem; }
-.card h3 { font-family:'Orbitron',sans-serif; font-weight:900; margin-bottom:0.5rem; }
+
+body{
+margin:0;
+font-family:Arial;
+background:#0f172a;
+color:white;
+display:flex;
+height:100vh;
+}
+
+/* SIDEBAR */
+
+.sidebar{
+
+width:240px;
+background:#020617;
+padding:20px;
+border-right:1px solid #1e293b;
+}
+
+.sidebar h2{
+color:#38bdf8;
+margin-bottom:30px;
+}
+
+.sidebar button{
+
+display:block;
+width:100%;
+margin:8px 0;
+padding:12px;
+background:#0f172a;
+border:1px solid #1e293b;
+color:white;
+cursor:pointer;
+border-radius:8px;
+
+}
+
+.sidebar button:hover{
+
+background:#1e293b;
+
+}
+
+/* PANEL */
+
+.main{
+
+flex:1;
+padding:30px;
+overflow:auto;
+
+}
+
+.card{
+
+background:#020617;
+padding:20px;
+margin-bottom:20px;
+border-radius:10px;
+border:1px solid #1e293b;
+
+}
+
 </style>
 
 </head>
+
+
 <body>
 
-<!-- Sidebar -->
+
+<!-- SIDEBAR -->
+
 <div class="sidebar">
-  <h2 class="font-nexus text-2xl text-amber-500 mb-6">TallerPRO360</h2>
-  <a href="#" onclick="loadModule('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</a>
-  <a href="#" onclick="loadModule('ordenes')"><i class="fas fa-tools"></i> Órdenes</a>
-  <a href="#" onclick="loadModule('clientes')"><i class="fas fa-users"></i> Clientes</a>
-  <a href="#" onclick="loadModule('inventario')"><i class="fas fa-boxes"></i> Inventario</a>
-  <a href="#" onclick="loadModule('finanzas')"><i class="fas fa-dollar-sign"></i> Finanzas</a>
-  <a href="#" onclick="loadModule('ceo')"><i class="fas fa-user-tie"></i> CEO</a>
-  <a href="#" onclick="loadModule('pagos')"><i class="fas fa-credit-card"></i> Pagos</a>
-  <a href="#" onclick="logout()"><i class="fas fa-power-off"></i> Salir</a>
+
+<h2>TallerPRO360</h2>
+
+<button onclick="loadModule('dashboard')">Dashboard</button>
+
+<button onclick="loadModule('ordenes')">Ordenes</button>
+
+<button onclick="loadModule('clientes')">Clientes</button>
+
+<button onclick="loadModule('inventario')">Inventario</button>
+
+<button onclick="loadModule('finanzas')">Finanzas</button>
+
+<button onclick="loadModule('pagos')">Pagos</button>
+
+<button onclick="loadModule('ia')">IA Mecánica</button>
+
+<button onclick="loadModule('ceo')">CEO Panel</button>
+
 </div>
 
-<!-- Contenedor principal -->
-<div class="main" id="mainContent">
-  <div class="text-center mt-12">
-    <h1 class="text-4xl font-nexus text-amber-500">Bienvenido a TallerPRO360</h1>
-    <p class="text-gray-400 mt-2">Selecciona un módulo en el menú lateral</p>
-  </div>
+
+
+<!-- CONTENIDO -->
+
+<div class="main" id="contenido">
+
+<div class="card">
+
+<h2>Bienvenido a TallerPRO360</h2>
+
+<p>ERP Inteligente para talleres automotrices.</p>
+
 </div>
 
-<!-- Firebase -->
-<script type="module">
-import { auth, db } from "./js/firebase-config.js";
-import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+</div>
 
-// Importar todos los módulos JS
-import * as dashboard from "./js/dashboard.js";
-import * as ordenes from "./js/ordenes.js";
-import * as clientes from "./js/clientes.js";
-import * as inventario from "./js/inventario.js";
-import * as finanzas from "./js/finanzas.js";
-import * as ceo from "./js/ceo.js";
-import * as pagos from "./js/pagos.js";
-import * as ia from "./js/ia.js";
 
-// Función para cargar módulos dinámicamente
-window.loadModule = async(moduleName)=>{
-  const container = document.getElementById("mainContent");
-  container.innerHTML = "<p class='text-center text-gray-400 mt-12'>Cargando módulo...</p>";
 
-  switch(moduleName){
-    case 'dashboard': dashboard.init(container); break;
-    case 'ordenes': ordenes.init(container); break;
-    case 'clientes': clientes.init(container); break;
-    case 'inventario': inventario.init(container); break;
-    case 'finanzas': finanzas.init(container); break;
-    case 'ceo': ceo.init(container); break;
-    case 'pagos': pagos.init(container); break;
-    default: container.innerHTML="<p class='text-center text-red-500 mt-12'>Módulo no encontrado</p>";
-  }
+<!-- FIREBASE -->
+
+<script src="app/js/firebase-config.js"></script>
+
+
+
+<!-- IA GLOBAL -->
+
+<script src="app/js/dashboardIA.js"></script>
+
+<script src="app/js/motorIAglobal.js"></script>
+
+<script src="app/js/cotizacionIA.js"></script>
+
+<script src="app/js/workshopBrain.js"></script>
+
+<script src="app/js/autoPartsAI.js"></script>
+
+<script src="app/js/customerRetentionAI.js"></script>
+
+<script src="app/js/workshopRevenueOptimizer.js"></script>
+
+<script src="app/js/globalDiagnosticsAI.js"></script>
+
+<script src="app/js/workshopRankingAI.js"></script>
+
+<script src="app/js/superAI-orchestrator.js"></script>
+
+<script src="app/js/predictiveMaintenance.js"></script>
+
+<script src="app/js/pricingAI.js"></script>
+
+<script src="app/js/voiceAssistant.js"></script>
+
+
+
+<!-- MODULOS ERP -->
+
+<script src="modules/dashboard.js"></script>
+
+<script src="modules/ordenes.js"></script>
+
+<script src="modules/clientes.js"></script>
+
+<script src="modules/inventario.js"></script>
+
+<script src="modules/finanzas.js"></script>
+
+<script src="modules/pagos.js"></script>
+
+<script src="modules/ceo.js"></script>
+
+<script src="modules/ia.js"></script>
+
+
+
+<script>
+
+function loadModule(modulo){
+
+const contenido=document.getElementById("contenido");
+
+contenido.innerHTML="Cargando...";
+
+switch(modulo){
+
+case "dashboard":
+dashboardModule();
+break;
+
+case "ordenes":
+ordenesModule();
+break;
+
+case "clientes":
+clientesModule();
+break;
+
+case "inventario":
+inventarioModule();
+break;
+
+case "finanzas":
+finanzasModule();
+break;
+
+case "pagos":
+pagosModule();
+break;
+
+case "ceo":
+ceoModule();
+break;
+
+case "ia":
+iaModule();
+break;
+
 }
 
-// Logout
-window.logout = ()=>{
-  signOut(auth).then(()=>window.location="../login.html");
 }
 
-// Auth
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-onAuthStateChanged(auth,user=>{
-  if(!user){ window.location="../login.html"; return; }
-});
 </script>
+
 
 </body>
 </html>
