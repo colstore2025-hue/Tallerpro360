@@ -8,24 +8,118 @@
 
 <title>TallerPRO360 | ERP Inteligente para Talleres Automotrices</title>
 
-<meta name="description" content="TallerPRO360 es el ERP inteligente que organiza talleres automotrices con IA mecánica, control de órdenes, inventario y finanzas.">
+<meta name="description" content="ERP inteligente para talleres automotrices con IA mecánica, control de órdenes, clientes, inventario y finanzas.">
+
+<meta name="keywords" content="software taller automotriz, ERP taller mecánico, sistema taller mecánico, software mecánicos Colombia">
 
 <link rel="icon" href="/assets/logo-192.png">
 <link rel="manifest" href="/manifest.json">
 
 <meta name="theme-color" content="#16a34a">
 
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+
 <style>
 
-body{
-font-family:Arial;
+*{
+box-sizing:border-box;
 margin:0;
-background:#f9fafb;
-color:#111827;
+padding:0;
+}
+
+body{
+font-family:'Inter',sans-serif;
+background:#0b0f19;
+color:white;
+line-height:1.6;
+}
+
+nav{
+position:fixed;
+width:100%;
+top:0;
+background:rgba(10,10,20,.7);
+backdrop-filter:blur(12px);
+padding:18px 40px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+z-index:100;
+}
+
+nav a{
+color:white;
+text-decoration:none;
+margin-left:25px;
+font-weight:600;
+opacity:.9;
+}
+
+nav a:hover{
+opacity:1;
+}
+
+.hero{
+
+height:100vh;
+
+background:
+linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.9)),
+radial-gradient(circle at 20% 20%,#16a34a33,transparent 40%),
+radial-gradient(circle at 80% 30%,#2563eb33,transparent 40%),
+#0b0f19;
+
+display:flex;
+align-items:center;
+justify-content:center;
+text-align:center;
+padding:40px;
+}
+
+.hero h1{
+font-size:64px;
+font-weight:900;
+margin-bottom:20px;
+}
+
+.subtitle{
+font-size:22px;
+color:#cbd5e1;
+max-width:700px;
+margin:auto;
+}
+
+.btn{
+
+background:linear-gradient(135deg,#16a34a,#22c55e);
+
+border:none;
+
+padding:16px 32px;
+
+border-radius:14px;
+
+font-weight:700;
+
+cursor:pointer;
+
+color:white;
+
+margin-top:25px;
+
+font-size:18px;
+
+transition:.25s;
+
+}
+
+.btn:hover{
+transform:translateY(-3px);
+box-shadow:0 15px 40px rgba(0,0,0,.4);
 }
 
 .section{
-padding:90px 20px;
+padding:120px 20px;
 }
 
 .container{
@@ -33,103 +127,57 @@ max-width:1200px;
 margin:auto;
 }
 
-.center{
-text-align:center;
-}
-
-.hero{
-background:linear-gradient(135deg,#ecfdf5,#eff6ff);
-}
-
-h1{
-font-size:52px;
-font-weight:900;
-}
-
-h2{
-font-size:36px;
-font-weight:800;
-}
-
-.subtitle{
-font-size:20px;
-margin-top:20px;
-color:#555;
-}
-
-.btn{
-background:#16a34a;
-color:white;
-padding:16px 28px;
-border:none;
-border-radius:14px;
-font-weight:700;
-cursor:pointer;
-font-size:16px;
-}
-
-.btn:hover{
-opacity:.9;
-}
-
 .grid{
 display:grid;
 grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-gap:30px;
-margin-top:50px;
+gap:40px;
+margin-top:60px;
 }
 
 .card{
-background:white;
-padding:30px;
-border-radius:16px;
-box-shadow:0 15px 40px rgba(0,0,0,.06);
-}
 
-.plan{
-background:white;
+background:rgba(255,255,255,.03);
+
+border:1px solid rgba(255,255,255,.06);
+
 padding:35px;
+
 border-radius:16px;
-box-shadow:0 10px 35px rgba(0,0,0,.07);
-display:flex;
-flex-direction:column;
+
+transition:.3s;
+
 }
 
-.highlight{
-border:3px solid #16a34a;
+.card:hover{
+transform:translateY(-6px);
+background:rgba(255,255,255,.05);
 }
 
-.dark{
-background:#111827;
-color:white;
-}
-
-.price{
-font-size:38px;
+h2{
+font-size:42px;
 font-weight:900;
-color:#16a34a;
-margin:10px 0;
+text-align:center;
 }
 
-.features{
-text-align:left;
-line-height:30px;
-margin-top:15px;
-}
+.demo-box{
 
-.badge{
-background:#16a34a;
-color:white;
-padding:6px 14px;
+background:linear-gradient(135deg,#16a34a,#2563eb);
+
+padding:60px;
+
 border-radius:20px;
-font-size:12px;
-font-weight:700;
+
+text-align:center;
+
+margin-top:80px;
+
 }
 
 footer{
-padding:40px;
 text-align:center;
-color:#777;
+padding:60px 20px;
+color:#9ca3af;
+border-top:1px solid rgba(255,255,255,.08);
 }
 
 </style>
@@ -138,72 +186,91 @@ color:#777;
 
 <body>
 
-<!-- HERO -->
+<nav>
 
-<section class="section hero center">
+<div style="display:flex;align-items:center;gap:10px">
 
-<div class="container">
+<img src="/assets/logo-192.png" width="34">
 
-<img src="/assets/logo-192.png" width="100">
+<strong>TallerPRO360</strong>
+
+</div>
+
+<div>
+
+<a href="/demos">Demos</a>
+
+<a href="/login.html">Entrar</a>
+
+</div>
+
+</nav>
+
+<section class="hero">
+
+<div>
+
+<img src="/assets/logo-192.png" width="110">
 
 <h1>
-El asistente inteligente  
+
+El sistema operativo  
 de tu taller
+
 </h1>
 
 <p class="subtitle">
 
-TallerPRO360 transforma talleres automotrices  
-con **IA mecánica, control de órdenes y gestión inteligente.**
-
-<br><br>
-
-Menos desorden.  
-Más clientes.  
-Más ingresos.
+TallerPRO360 transforma talleres automotrices con  
+inteligencia artificial mecánica, control de órdenes, clientes, inventario y finanzas.
 
 </p>
 
+<a href="/login.html">
+
+<button class="btn">
+
+Entrar al sistema
+
+</button>
+
+</a>
+
 <br>
 
-<a href="/login.html">
+<a href="/demos">
+
 <button class="btn">
-Entrar al sistema
+
+Explorar demos
+
 </button>
+
 </a>
-
-<br><br>
-
-<a href="/demos" 
-class="bg-green-500 px-6 py-3 rounded text-white">
-Ver demos del sistema
-</a>
-
-<span class="badge">ERP Automotriz Colombiano 🇨🇴</span>
 
 </div>
 
 </section>
 
-<!-- BENEFICIOS -->
-
-<section class="section center">
+<section class="section">
 
 <div class="container">
 
 <h2>
+
 Organiza tu taller en minutos
+
 </h2>
 
 <div class="grid">
 
 <div class="card">
 
-<h3>Órdenes organizadas</h3>
+<h3>Órdenes inteligentes</h3>
 
 <p>
 
-Registra cada vehículo, diagnóstico, repuestos y trabajo técnico.
+Registra diagnósticos, repuestos y trabajo técnico de cada vehículo.
 
 </p>
 
@@ -215,7 +282,7 @@ Registra cada vehículo, diagnóstico, repuestos y trabajo técnico.
 
 <p>
 
-La inteligencia artificial ayuda al técnico a detectar fallas.
+Diagnóstico asistido por inteligencia artificial.
 
 </p>
 
@@ -223,11 +290,11 @@ La inteligencia artificial ayuda al técnico a detectar fallas.
 
 <div class="card">
 
-<h3>Control de ingresos</h3>
+<h3>Control financiero</h3>
 
 <p>
 
-Visualiza ingresos diarios y rentabilidad del taller.
+Visualiza ingresos, costos y rentabilidad del taller.
 
 </p>
 
@@ -239,7 +306,7 @@ Visualiza ingresos diarios y rentabilidad del taller.
 
 <p>
 
-El técnico puede registrar diagnósticos hablando.
+Los técnicos pueden registrar diagnósticos hablando.
 
 </p>
 
@@ -247,261 +314,27 @@ El técnico puede registrar diagnósticos hablando.
 
 </div>
 
-</div>
-
-</section>
-
-<!-- IMPACTO ECONÓMICO -->
-
-<section class="section center" style="background:#f0fdf4">
-
-<div class="container">
+<div class="demo-box">
 
 <h2>
 
-Un taller organizado  
-gana más dinero
+Explora 26 demos interactivos del sistema
 
 </h2>
 
-<br>
-
-<div class="grid">
-
-<div class="card">
-
-<h3>Más productividad</h3>
-
 <p>
 
-Reduce tiempos administrativos  
-hasta un **60%**.
+Descubre todas las funciones del ERP automotriz.
 
 </p>
 
-</div>
-
-<div class="card">
-
-<h3>Más órdenes</h3>
-
-<p>
-
-Los talleres organizados atienden  
-hasta **30% más vehículos**.
-
-</p>
-
-</div>
-
-<div class="card">
-
-<h3>Más ingresos</h3>
-
-<p>
-
-Controlar cada trabajo aumenta  
-la rentabilidad del taller.
-
-</p>
-
-</div>
-
-</div>
-
-</div>
-
-</section>
-
-<!-- PLANES -->
-
-<section class="section center">
-
-<div class="container">
-
-<h2>
-Planes para cada tipo de taller
-</h2>
-
-<p>Empieza pequeño y crece sin límites</p>
-
-<div class="grid">
-
-<!-- FREEMIUM -->
-
-<div class="plan">
-
-<h3>Freemium</h3>
-
-<div class="price">Gratis</div>
-
-<span class="badge">7 días</span>
-
-<div class="features">
-
-✔ 1 técnico  
-✔ 20 órdenes  
-✔ IA mecánica básica  
-
-❌ Reportes  
-❌ Finanzas  
-
-</div>
-
 <br>
 
-<button class="btn" onclick="activarTrial()">
-Probar gratis
-</button>
-
-</div>
-
-<!-- BASICO -->
-
-<div class="plan highlight">
-
-<h3>Básico</h3>
-
-<div class="price">$42.000/Mes</div>
-
-<p>IVA incluido</p>
-
-<div class="features">
-
-✔ 3 técnicos  
-✔ Órdenes ilimitadas  
-✔ IA mecánica  
-✔ Clientes  
-✔ Inventario básico  
-
-</div>
-
-<br>
-
-<button class="btn" onclick="pagar('basico')">
-Comenzar
-</button>
-
-</div>
-
-<!-- PRO -->
-
-<div class="plan">
-
-<h3>Pro</h3>
-
-<div class="price">$79.000/Mes</div>
-
-<div class="features">
-
-✔ 6 técnicos  
-✔ Reportes PDF  
-✔ Finanzas  
-✔ Alertas automáticas  
-✔ IA avanzada  
-
-Facturación electrónica  
-por cuenta del cliente
-
-</div>
-
-<br>
-
-<button class="btn" onclick="pagar('pro')">
-Comenzar
-</button>
-
-</div>
-
-<!-- ELITE -->
-
-<div class="plan dark">
-
-<h3>Elite</h3>
-
-<div class="price">$129.000/Mes</div>
-
-<div class="features">
-
-✔ Todo Pro  
-✔ CRM clientes  
-✔ Marketplace repuestos  
-✔ Integraciones contables  
-
--Facturación electrónica  
-integrable - No incluida
-
-</div>
-
-<br>
-
-<button class="btn" onclick="pagar('elite')">
-Comenzar
-</button>
-
-</div>
-
-<!-- ENTERPRISE -->
-
-<div class="plan">
-
-<h3>Enterprise</h3>
-
-<div class="price">$250.000/Mes</div>
-
-<div class="features">
-
-✔ Multi sucursal  
-✔ Facturación electrónica incluida  
-✔ Soporte prioritario x (6) Meses
-✔ Personalización  
-
-</div>
-
-<br>
-
-<button class="btn" onclick="pagar('enterprise')">
-Hablar con ventas
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-</section>
-
-<!-- CTA FINAL -->
-
-<section class="section center">
-
-<div class="container">
-
-<h2>
-
-Si tu taller crece  
-nosotros también crecemos contigo
-
-
-</h2>
-
-<br>
-
-<p class="subtitle">
-
-TallerPRO360 fue creado para ayudar  
-a pequeños talleres a convertirse en empresas.
-
-</p>
-
-<br>
-
-<a href="/login.html">
+<a href="/demos">
 
 <button class="btn">
 
-Comenzar ahora
+Ver plataforma
 
 </button>
 
@@ -509,11 +342,13 @@ Comenzar ahora
 
 </div>
 
+</div>
+
 </section>
 
 <footer>
 
-<img src="/assets/logo-192.png" width="50">
+<img src="/assets/logo-192.png" width="60">
 
 <p>
 
@@ -523,42 +358,6 @@ ERP Inteligente para talleres automotrices
 </p>
 
 </footer>
-
-<script>
-
-async function pagar(plan){
-
-const res=await fetch("/api/create-preference",{
-
-method:"POST",
-
-headers:{ "Content-Type":"application/json" },
-
-body:JSON.stringify({plan})
-
-})
-
-const data=await res.json()
-
-window.location=data.init_point
-
-}
-
-async function activarTrial(){
-
-await fetch("/api/activar-trial",{
-
-method:"POST"
-
-})
-
-alert("Trial activado por 7 días")
-
-window.location="/login.html"
-
-}
-
-</script>
 
 </body>
 </html>
