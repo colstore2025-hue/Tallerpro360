@@ -6,9 +6,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>TallerPRO360 | Simulador del Taller</title>
+<title>TallerPRO360 | Simulación del Taller Inteligente</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -39,7 +41,7 @@ border:1px solid #1e293b;
 border-radius:10px;
 padding:10px;
 font-size:14px;
-height:200px;
+height:220px;
 overflow:auto;
 }
 
@@ -58,26 +60,22 @@ overflow:auto;
 TallerPRO360
 </h1>
 
-<div class="space-y-4">
+<div class="space-y-4 text-slate-300">
 
 <div>
-<i class="fa-solid fa-car"></i>
-Órdenes
+<i class="fa-solid fa-car"></i> Órdenes
 </div>
 
 <div>
-<i class="fa-solid fa-brain"></i>
-IA Mecánica
+<i class="fa-solid fa-brain"></i> IA Mecánica
 </div>
 
 <div>
-<i class="fa-solid fa-chart-line"></i>
-Finanzas
+<i class="fa-solid fa-chart-line"></i> Finanzas
 </div>
 
 <div>
-<i class="fa-solid fa-users"></i>
-Clientes
+<i class="fa-solid fa-users"></i> Clientes
 </div>
 
 </div>
@@ -89,9 +87,12 @@ Clientes
 
 <div class="flex-1 p-10">
 
-<h2 class="text-3xl font-bold mb-6">
+<h2 class="text-3xl font-bold mb-8">
 Simulación del Taller Inteligente
 </h2>
+
+
+<!-- KPIs -->
 
 <div class="grid md:grid-cols-3 gap-6">
 
@@ -134,9 +135,22 @@ Clientes Atendidos
 </div>
 
 
+<!-- GRAFICO -->
+
+<div class="card mt-8">
+
+<h3 class="text-lg font-bold mb-4">
+Ingresos del Día
+</h3>
+
+<canvas id="graficoIngresos"></canvas>
+
+</div>
+
+
 <!-- ACTIVIDAD -->
 
-<div class="mt-10">
+<div class="mt-8">
 
 <h3 class="text-xl font-bold mb-3">
 Actividad del Taller
@@ -149,15 +163,20 @@ Actividad del Taller
 </div>
 
 
+
 <script>
 
-/* ==========================
-DATOS DEMO
-========================== */
+/* ========================
+VARIABLES
+======================== */
 
 let ordenes = 0
 let ingresos = 0
 let clientes = 0
+
+let datosGrafico = []
+
+
 
 const vehiculos = [
 "Toyota Corolla",
@@ -185,14 +204,50 @@ const costos = [
 
 
 
-/* ==========================
+/* ========================
+GRAFICO
+======================== */
+
+const ctx = document.getElementById('graficoIngresos')
+
+const grafico = new Chart(ctx, {
+
+type: 'line',
+
+data: {
+
+labels: [],
+
+datasets: [{
+
+label: 'Ingresos',
+
+data: [],
+
+borderColor: '#10b981',
+
+backgroundColor: '#10b98133',
+
+tension:0.3
+
+}]
+
+}
+
+})
+
+
+
+/* ========================
 SIMULADOR
-========================== */
+======================== */
 
 function simular(){
 
 const v = vehiculos[Math.floor(Math.random()*vehiculos.length)]
+
 const f = fallas[Math.floor(Math.random()*fallas.length)]
+
 const c = costos[Math.floor(Math.random()*costos.length)]
 
 ordenes++
@@ -200,19 +255,23 @@ clientes++
 ingresos += c
 
 document.getElementById("ordenes").innerText = ordenes
+
 document.getElementById("clientes").innerText = clientes
+
 document.getElementById("ingresos").innerText =
 "$"+ingresos.toLocaleString("es-CO")
 
 registrarLog(v,f,c)
 
+actualizarGrafico()
+
 }
 
 
 
-/* ==========================
-LOG ACTIVIDAD
-========================== */
+/* ========================
+LOG
+======================== */
 
 function registrarLog(vehiculo,falla,costo){
 
@@ -222,15 +281,11 @@ const item = document.createElement("div")
 
 item.innerHTML =
 
-`<p class="text-slate-300">
+`<p class="text-slate-300 mb-2">
 
-🚗 ${vehiculo} ingresó al taller
+🚗 ${vehiculo} ingresó al taller<br>
 
-<br>
-
-🧠 IA detecta: ${falla}
-
-<br>
+🧠 IA detecta: ${falla}<br>
 
 💰 Orden creada: $${costo.toLocaleString("es-CO")}
 
@@ -242,9 +297,27 @@ log.prepend(item)
 
 
 
-/* ==========================
-EJECUCIÓN AUTOMÁTICA
-========================== */
+/* ========================
+GRAFICO
+======================== */
+
+function actualizarGrafico(){
+
+const hora = new Date().toLocaleTimeString()
+
+grafico.data.labels.push(hora)
+
+grafico.data.datasets[0].data.push(ingresos)
+
+grafico.update()
+
+}
+
+
+
+/* ========================
+EJECUCION
+======================== */
 
 setInterval(simular,4000)
 
