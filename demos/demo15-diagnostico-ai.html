@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Diagnóstico AI - TallerPRO360</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+<body class="bg-slate-950 text-white p-8">
+
+<h1 class="text-4xl text-green-400 mb-6">
+Diagnóstico Inteligente
+</h1>
+
+<p class="mb-6 text-slate-300">
+Describe el problema de tu vehículo y el sistema sugerirá una posible falla.
+</p>
+
+<textarea
+id="problema"
+placeholder="Ej: mi carro hace ruido al frenar"
+class="w-full p-3 text-black mb-4 rounded">
+</textarea>
+
+<button
+onclick="diagnosticar()"
+class="bg-green-500 px-6 py-3 rounded">
+Analizar
+</button>
+
+<div id="resultado" class="mt-8"></div>
+
+
+<script>
+
+function diagnosticar(){
+
+const texto=document
+.getElementById("problema")
+.value
+.toLowerCase()
+
+let falla="No detectada"
+let costo="$0"
+let tiempo="---"
+
+if(texto.includes("freno")){
+
+falla="Pastillas de freno desgastadas"
+costo="$120.000"
+tiempo="2 horas"
+
+}
+
+else if(texto.includes("bateria")){
+
+falla="Batería descargada"
+costo="$200.000"
+tiempo="30 minutos"
+
+}
+
+else if(texto.includes("motor")){
+
+falla="Posible problema de bujías"
+costo="$180.000"
+tiempo="1 hora"
+
+}
+
+else if(texto.includes("aceite")){
+
+falla="Cambio de aceite necesario"
+costo="$90.000"
+tiempo="20 minutos"
+
+}
+
+document.getElementById("resultado").innerHTML=
+`
+<div class="bg-slate-900 p-6 rounded">
+
+<h2 class="text-2xl text-green-400 mb-4">
+Resultado del diagnóstico
+</h2>
+
+<p>🔧 Falla probable: ${falla}</p>
+<p>💰 Costo estimado: ${costo}</p>
+<p>⏱ Tiempo estimado: ${tiempo}</p>
+
+</div>
+`
+
+}
+
+</script>
+
+</body>
+
+</html>
