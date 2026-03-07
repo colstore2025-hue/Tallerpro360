@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Simulador TallerPRO360</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+<body class="bg-slate-950 text-white p-8">
+
+<h1 class="text-4xl text-green-400 mb-10">
+Simulación de Operación de Taller
+</h1>
+
+<div class="grid md:grid-cols-2 gap-8">
+
+<div class="bg-slate-900 p-6 rounded">
+
+<h2 class="text-xl mb-4 text-blue-400">
+Eventos del Taller
+</h2>
+
+<ul id="eventos" class="space-y-2 text-slate-300"></ul>
+
+</div>
+
+<div class="bg-slate-900 p-6 rounded">
+
+<h2 class="text-xl mb-4 text-yellow-400">
+Órdenes activas
+</h2>
+
+<div id="ordenes" class="space-y-4"></div>
+
+</div>
+
+</div>
+
+
+<script>
+
+const eventos=document.getElementById("eventos")
+const ordenes=document.getElementById("ordenes")
+
+let numeroOrden=1001
+
+
+function agregarEvento(texto){
+
+const li=document.createElement("li")
+
+li.textContent=texto
+
+eventos.prepend(li)
+
+}
+
+
+function crearOrden(){
+
+const orden=document.createElement("div")
+
+orden.className="bg-slate-800 p-4 rounded"
+
+orden.id="orden"+numeroOrden
+
+orden.innerHTML=`
+
+<div class="flex justify-between">
+
+<span class="text-green-400">
+Orden #${numeroOrden}
+</span>
+
+<span class="estado text-yellow-400">
+Esperando diagnóstico
+</span>
+
+</div>
+
+`
+
+ordenes.prepend(orden)
+
+agregarEvento("🚗 Vehículo recibido → Orden #"+numeroOrden)
+
+numeroOrden++
+
+}
+
+
+function asignarMecanico(){
+
+const lista=document.querySelectorAll(".estado")
+
+if(lista.length==0)return
+
+const item=lista[0]
+
+item.innerText="Asignado a mecánico"
+
+item.className="estado text-blue-400"
+
+agregarEvento("🔧 Mecánico asignado")
+
+}
+
+
+function reparar(){
+
+const lista=document.querySelectorAll(".estado")
+
+if(lista.length==0)return
+
+const item=lista[0]
+
+item.innerText="En reparación"
+
+item.className="estado text-orange-400"
+
+agregarEvento("🛠 Reparación en proceso")
+
+}
+
+
+function facturar(){
+
+const lista=document.querySelectorAll(".estado")
+
+if(lista.length==0)return
+
+const item=lista[0]
+
+item.innerText="Facturado"
+
+item.className="estado text-green-400"
+
+agregarEvento("💰 Factura generada")
+
+}
+
+
+setInterval(()=>{
+
+const r=Math.random()
+
+if(r<0.3){
+
+crearOrden()
+
+}
+
+else if(r<0.5){
+
+asignarMecanico()
+
+}
+
+else if(r<0.7){
+
+reparar()
+
+}
+
+else{
+
+facturar()
+
+}
+
+},3000)
+
+</script>
+
+</body>
+
+</html>
