@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Recepción Inteligente TallerPRO360</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+<body class="bg-slate-950 text-white p-8">
+
+<h1 class="text-4xl text-green-400 mb-10">
+Recepción Inteligente
+</h1>
+
+<div class="bg-slate-900 p-6 rounded max-w-xl">
+
+<label class="text-slate-400">
+Escanear o escribir placa
+</label>
+
+<input 
+id="placa"
+class="w-full mt-2 p-3 rounded bg-slate-800"
+placeholder="ABC123"
+>
+
+<button
+onclick="buscarVehiculo()"
+class="mt-4 bg-green-500 px-6 py-2 rounded"
+>
+Buscar vehículo
+</button>
+
+</div>
+
+
+<div id="resultado" class="mt-10"></div>
+
+
+<script>
+
+const baseDatos={
+
+"ABC123":{
+
+cliente:"Juan Perez",
+vehiculo:"Toyota Corolla 2018",
+historial:[
+"Cambio aceite - Enero",
+"Pastillas freno - Marzo",
+"Alineación - Junio"
+]
+
+},
+
+"XYZ987":{
+
+cliente:"Maria Lopez",
+vehiculo:"Mazda CX5 2021",
+historial:[
+"Cambio aceite - Febrero",
+"Batería nueva - Mayo"
+]
+
+}
+
+}
+
+
+function buscarVehiculo(){
+
+const placa=document.getElementById("placa").value.toUpperCase()
+
+const resultado=document.getElementById("resultado")
+
+if(baseDatos[placa]){
+
+const data=baseDatos[placa]
+
+let html=`
+
+<div class="bg-slate-900 p-6 rounded">
+
+<h2 class="text-2xl text-blue-400 mb-4">
+Vehículo identificado
+</h2>
+
+<p><b>Cliente:</b> ${data.cliente}</p>
+
+<p><b>Vehículo:</b> ${data.vehiculo}</p>
+
+<h3 class="mt-4 text-yellow-400">
+Historial
+</h3>
+
+<ul class="list-disc ml-6 mt-2">
+
+`
+
+data.historial.forEach(h=>{
+
+html+=`<li>${h}</li>`
+
+})
+
+html+=`
+
+</ul>
+
+<button
+onclick="crearOrden()"
+class="mt-6 bg-green-500 px-6 py-2 rounded"
+>
+
+Crear Orden de Servicio
+
+</button>
+
+</div>
+
+`
+
+resultado.innerHTML=html
+
+}
+
+else{
+
+resultado.innerHTML=`
+
+<div class="bg-red-900 p-6 rounded">
+
+Vehículo no registrado
+
+<button
+onclick="registrar()"
+class="mt-4 bg-yellow-500 px-6 py-2 rounded"
+>
+
+Registrar cliente
+
+</button>
+
+</div>
+
+`
+
+}
+
+}
+
+
+function crearOrden(){
+
+alert("Orden de servicio creada")
+
+}
+
+function registrar(){
+
+alert("Abrir formulario de registro")
+
+}
+
+</script>
+
+</body>
+
+</html>
