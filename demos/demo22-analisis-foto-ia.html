@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Análisis de Daños AI</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+<body class="bg-slate-950 text-white p-8">
+
+<h1 class="text-4xl text-green-400 mb-8">
+Análisis de Daños con IA
+</h1>
+
+<p class="text-slate-400 mb-6">
+Sube una foto del daño del vehículo para analizarlo.
+</p>
+
+
+<input 
+type="file"
+id="foto"
+accept="image/*"
+class="mb-6"
+onchange="mostrarImagen(event)"
+>
+
+
+<div id="preview" class="mb-6"></div>
+
+
+<button
+onclick="analizarImagen()"
+class="bg-green-500 px-6 py-3 rounded"
+>
+Analizar daño
+</button>
+
+
+<div id="resultado" class="mt-8"></div>
+
+
+<script>
+
+function mostrarImagen(event){
+
+const archivo=event.target.files[0]
+
+if(!archivo)return
+
+const url=URL.createObjectURL(archivo)
+
+document.getElementById("preview").innerHTML=
+`
+<img src="${url}" class="rounded max-w-md">
+`
+
+}
+
+
+function analizarImagen(){
+
+const posiblesDaños=[
+
+{
+tipo:"Rayón en pintura",
+costo:"$150.000",
+tiempo:"4 horas"
+},
+
+{
+tipo:"Golpe en puerta",
+costo:"$450.000",
+tiempo:"1 día"
+},
+
+{
+tipo:"Parachoques dañado",
+costo:"$600.000",
+tiempo:"2 días"
+},
+
+{
+tipo:"Faro roto",
+costo:"$300.000",
+tiempo:"3 horas"
+}
+
+]
+
+
+const resultado=posiblesDaños[
+Math.floor(Math.random()*posiblesDaños.length)
+]
+
+
+document.getElementById("resultado").innerHTML=
+`
+
+<div class="bg-slate-900 p-6 rounded max-w-md">
+
+<h2 class="text-2xl text-green-400 mb-4">
+Resultado del análisis
+</h2>
+
+<p>🔧 Daño detectado: <b>${resultado.tipo}</b></p>
+
+<p class="mt-2">💰 Costo estimado: ${resultado.costo}</p>
+
+<p class="mt-2">⏱ Tiempo de reparación: ${resultado.tiempo}</p>
+
+</div>
+
+`
+
+}
+
+</script>
+
+</body>
+
+</html>
