@@ -55,7 +55,7 @@ export default async function handler(req, res) {
 
     /*
     ================================================
-    VALIDAR SI YA EXISTE
+    VALIDAR SI EMPRESA YA EXISTE
     ================================================
     */
 
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         status: "empresa ya existe",
-        empresaId: empresaId
+        empresaId
       });
 
     }
@@ -78,11 +78,11 @@ export default async function handler(req, res) {
     ================================================
     */
 
-    const hoy = new Date();
+    const ahora = admin.firestore.Timestamp.now();
 
-    const trialFin = new Date();
-    trialFin.setDate(hoy.getDate() + 7);
-
+    const fechaFin = admin.firestore.Timestamp.fromDate(
+      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    );
 
 
     /*
@@ -97,14 +97,14 @@ export default async function handler(req, res) {
 
       estado: "activa",
 
-      creadoEn: admin.firestore.Timestamp.now(),
+      creadoEn: ahora,
 
       plan: {
         tipo: "freemium",
         estado: "trial",
         ciclo: "7dias",
-        fechaInicio: hoy,
-        fechaFin: trialFin
+        fechaInicio: ahora,
+        fechaFin: fechaFin
       },
 
       limites: {
@@ -122,25 +122,73 @@ export default async function handler(req, res) {
     });
 
 
-
     /*
     ================================================
-    CREAR USUARIO
+    CREAR USUARIO SAAS
     ================================================
     */
 
     const usuarioRef = db.collection("usuarios").doc(usuarioId);
 
-    await usuarioRef.set({
+    const usuarioDoc = await usuarioRef.get();
 
-      email: email || "",
-      empresaId: empresaId,
-      rol: "dueno",
-      estado: "activo",
-      creadoEn: admin.firestore.Timestamp.now()
+    if (!usuarioDoc.exists) {
+
+      await usuarioRef.set({
+
+        email: email || "",
+        empresaId: empresaId,
+        rol: "dueno",
+        estado: "activo",
+        creadoEn: ahora
+
+      });
+
+    }
+
+
+    /*
+    ================================================
+    CREAR SUCURSAL PRINCIPAL
+    ================================================
+    */
+
+    const sucursalRef = empresaRef
+      .collection("sucursales")
+      .doc("principal");
+
+    await sucursalRef.set({
+
+      nombre: "Sucursal Principal",
+      direccion: "",
+      ciudad: "",
+      telefono: "",
+      estado: "activa",
+      creadoEn: ahora
 
     });
 
+
+    /*
+    ================================================
+    CREAR EMPLEADO DUEÑO
+    ================================================
+    */
+
+    const empleadoRef = empresaRef
+      .collection("empleados")
+      .doc(usuarioId);
+
+    await empleadoRef.set({
+
+      nombre: "Administrador",
+      rol: "dueno",
+      email: email || "",
+      sucursalId: "principal",
+      estado: "activo",
+      creadoEn: ahora
+
+    });
 
 
     /*
@@ -149,22 +197,17 @@ export default async function handler(req, res) {
     ================================================
     */
 
-    await empresaRef.collection("ordenes").doc("init").set({
-      demo: true
-    });
+    await empresaRef.collection("ordenes").doc("init").set({ demo: true });
 
-    await empresaRef.collection("clientes").doc("init").set({
-      demo: true
-    });
+    await empresaRef.collection("clientes").doc("init").set({ demo: true });
 
-    await empresaRef.collection("inventario").doc("init").set({
-      demo: true
-    });
+    await empresaRef.collection("inventario").doc("init").set({ demo: true });
 
-    await empresaRef.collection("finanzas").doc("init").set({
-      demo: true
-    });
+    await empresaRef.collection("finanzas").doc("init").set({ demo: true });
 
+    await empresaRef.collection("nomina").doc("init").set({ demo: true });
+
+    await empresaRef.collection("ia_logs").doc("init").set({ demo: true });
 
 
     /*
@@ -176,11 +219,8 @@ export default async function handler(req, res) {
     return res.status(200).json({
 
       status: "trial activado",
-
-      empresaId: empresaId,
-
+      empresaId,
       plan: "freemium",
-
       trialDias: 7
 
     });
