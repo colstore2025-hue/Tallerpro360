@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TallerPRO360 · Demo 27 | Super AI Dashboard</title>
+<meta name="description" content="Demo futurista del panel inteligente de TallerPRO360 con predicción de ingresos, carga de trabajo y recomendaciones automáticas.">
+<link rel="icon" href="/assets/logo-192.png">
+
+<!-- Fuente moderna estilo Tesla/Apple -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+body {
+    font-family: 'Inter', sans-serif;
+    background: #0b0f19;
+    color: #ffffff;
+    margin: 0;
+    overflow-x: hidden;
+}
+
+nav {
+    position: fixed;
+    width: 100%;
+    top: 0;
+    background: rgba(10,10,20,.8);
+    backdrop-filter: blur(12px);
+    padding: 18px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    margin-left: 25px;
+    font-weight: 600;
+    opacity: .9;
+}
+
+nav a:hover {
+    opacity: 1;
+}
+
+.hero {
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background:
+        radial-gradient(circle at 20% 20%, #16a34a33, transparent 40%),
+        radial-gradient(circle at 80% 30%, #2563eb33, transparent 40%),
+        linear-gradient(180deg, #0b0f19 0%, #111827 100%);
+}
+
+.hero h1 {
+    font-size: 64px;
+    font-weight: 900;
+    margin-bottom: 20px;
+    background: linear-gradient(90deg, #16a34a, #22c55e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+    font-size: 22px;
+    color: #cbd5e1;
+    max-width: 700px;
+    margin: auto;
+}
+
+.btn {
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    border: none;
+    padding: 16px 32px;
+    border-radius: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    color: white;
+    margin-top: 25px;
+    font-size: 18px;
+    transition: .25s;
+}
+
+.btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(0,0,0,.4);
+}
+
+.section {
+    padding: 100px 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 40px;
+    margin-top: 60px;
+}
+
+.card {
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.06);
+    padding: 30px;
+    border-radius: 20px;
+    transition: .3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.card:hover {
+    transform: translateY(-6px);
+    background: rgba(255,255,255,.05);
+}
+
+.card h3 {
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    color: #22c55e;
+}
+
+.card p {
+    text-align: center;
+    font-size: 16px;
+    color: #cbd5e1;
+}
+
+.chart {
+    width: 100%;
+    height: 220px;
+}
+
+.recommendation {
+    background: #111827;
+    padding: 20px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,.5);
+    font-size: 16px;
+    margin-top: 20px;
+}
+
+footer {
+    text-align: center;
+    padding: 40px;
+    color: #9ca3af;
+    border-top: 1px solid rgba(255,255,255,.08);
+}
+</style>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<nav>
+<div style="display:flex;align-items:center;gap:10px">
+<img src="/assets/logo-192.png" width="34">
+<strong>TallerPRO360</strong>
+</div>
+<div>
+<a href="/index.html">Inicio</a>
+<a href="/demos">Demos</a>
+</div>
+</nav>
+
+<section class="hero">
+<div>
+<h1>Super AI Dashboard</h1>
+<p class="subtitle">Predicción de ingresos, carga de trabajo y recomendaciones automáticas para tu taller.</p>
+<a href="/demos">
+<button class="btn">Ver todos los demos</button>
+</a>
+</div>
+</section>
+
+<section class="section container">
+<h2 class="text-center text-4xl font-bold mb-12">Panel Futurista</h2>
+
+<div class="grid">
+
+<div class="card">
+<h3>Predicción de ingresos</h3>
+<canvas id="chartIngresos" class="chart"></canvas>
+<p>Visualiza tus ingresos proyectados para los próximos 6 meses.</p>
+</div>
+
+<div class="card">
+<h3>Carga de trabajo</h3>
+<canvas id="chartCarga" class="chart"></canvas>
+<p>Monitorea la carga de trabajo de tu taller en tiempo real.</p>
+</div>
+
+<div class="card">
+<h3>Recomendaciones automáticas</h3>
+<div class="recommendation" id="recomendaciones">
+- Optimizar el horario de técnicos<br>
+- Revisar repuestos con stock bajo<br>
+- Priorizar vehículos VIP
+</div>
+</div>
+
+</div>
+</section>
+
+<footer>
+<img src="/assets/logo-192.png" width="50">
+<p>TallerPRO360 © 2026 · ERP Inteligente para talleres automotrices</p>
+</footer>
+
+<script>
+// Datos simulados para charts
+const ingresosData = [1200, 1500, 1800, 2000, 2300, 2500];
+const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
+
+const cargaData = [30, 50, 45, 60, 70, 65];
+
+// Chart de ingresos
+new Chart(document.getElementById('chartIngresos'), {
+    type: 'line',
+    data: {
+        labels: meses,
+        datasets: [{
+            label: 'Ingresos (USD)',
+            data: ingresosData,
+            borderColor: '#16a34a',
+            backgroundColor: 'rgba(22,163,74,0.2)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 6,
+            pointBackgroundColor: '#22c55e'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true },
+            x: { grid: { display: false } }
+        }
+    }
+});
+
+// Chart de carga de trabajo
+new Chart(document.getElementById('chartCarga'), {
+    type: 'bar',
+    data: {
+        labels: meses,
+        datasets: [{
+            label: 'Vehículos por mes',
+            data: cargaData,
+            backgroundColor: '#2563eb',
+            borderRadius: 10
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true },
+            x: { grid: { display: false } }
+        }
+    }
+});
+</script>
+
+</body>
+</html>
