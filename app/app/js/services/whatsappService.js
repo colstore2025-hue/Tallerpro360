@@ -1,34 +1,52 @@
-// ======================================
-// NOTIFICACIÓN AUTOMÁTICA WHATSAPP
-// ======================================
+/**
+ * whatsappService.js
+ * Servicio de notificación por WhatsApp
+ * TallerPRO360 ERP
+ */
+
+
+/* ======================================
+   NOTIFICACIÓN AUTOMÁTICA WHATSAPP
+====================================== */
 
 export function notificarCliente(telefono, cliente, estado, vehiculo) {
+
   try {
 
-    // ==============================
-    // VALIDAR TELÉFONO
-    // ==============================
+    /* ==============================
+       VALIDAR TELÉFONO
+    ============================== */
+
     if (!telefono) {
-      alert("Número de teléfono no válido");
+      console.warn("Número de teléfono no válido");
       return;
     }
 
-    // Eliminar caracteres no numéricos
+    // eliminar caracteres no numéricos
     telefono = telefono.replace(/\D/g, "");
 
     if (telefono.length < 8) {
-      alert("Teléfono inválido");
+      console.warn("Teléfono inválido");
       return;
     }
 
-    // ==============================
-    // ESTADO CON EMOJI
-    // ==============================
+    // agregar código país si no existe
+    if (!telefono.startsWith("57")) {
+      telefono = "57" + telefono;
+    }
+
+
+    /* ==============================
+       ESTADO CON EMOJI
+    ============================== */
+
     const estadoEmoji = obtenerEmojiEstado(estado);
 
-    // ==============================
-    // MENSAJE
-    // ==============================
+
+    /* ==============================
+       MENSAJE
+    ============================== */
+
     const mensaje = `
 Hola ${cliente}
 
@@ -45,31 +63,54 @@ TallerPRO360
 Servicio automotriz
 `;
 
-    // Codificar mensaje para URL
-    const mensajeCodificado = encodeURIComponent(mensaje.trim());
+    const mensajeCodificado =
+      encodeURIComponent(mensaje.trim());
 
-    // URL WhatsApp
-    const url = `https://wa.me/57${telefono}?text=${mensajeCodificado}`;
 
-    // Abrir WhatsApp en nueva ventana
+    /* ==============================
+       URL WHATSAPP
+    ============================== */
+
+    const url =
+      `https://wa.me/${telefono}?text=${mensajeCodificado}`;
+
+
+    /* ==============================
+       ABRIR WHATSAPP
+    ============================== */
+
     window.open(url, "_blank");
 
+
   } catch (error) {
-    console.error("Error enviando WhatsApp:", error);
-    alert("No fue posible abrir WhatsApp");
+
+    console.error(
+      "Error enviando WhatsApp:",
+      error
+    );
+
   }
+
 }
 
-// ======================================
-// FUNCION AUXILIAR: EMOJIS SEGÚN ESTADO
-// ======================================
+
+
+/* ======================================
+   EMOJIS SEGÚN ESTADO
+====================================== */
+
 function obtenerEmojiEstado(estado) {
+
+  if (!estado) return "ℹ️";
+
   const e = estado.toLowerCase();
 
   if (e.includes("activa")) return "📋";
   if (e.includes("proceso")) return "🔧";
+  if (e.includes("diagnostico")) return "🧠";
   if (e.includes("listo")) return "✅";
   if (e.includes("entregado")) return "🚘";
 
   return "ℹ️";
+
 }
