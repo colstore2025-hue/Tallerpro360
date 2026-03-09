@@ -1,32 +1,56 @@
-import { db } from "./firebase.js";
-import { obtenerTallerId } from "./tallerContext.js";
+/**
+ * suscripcionService.js
+ * Servicio de verificación de suscripción
+ * TallerPRO360 ERP
+ */
+
+import { db } from "../core/firebase-config.js";
+import { getTallerId } from "../core/tallerContext.js";
 
 import {
-doc,
-getDoc
+  doc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
+/* ========================================
+   VERIFICAR SUSCRIPCIÓN
+======================================== */
+
 export async function verificarSuscripcion(){
 
-const tallerId = obtenerTallerId();
+  try{
 
-const ref = doc(db,"talleres",tallerId);
+    const tallerId = getTallerId();
 
-const snap = await getDoc(ref);
+    if(!tallerId){
+      throw new Error("No hay taller activo en el contexto");
+    }
 
-if(!snap.exists()) return false;
+    const ref = doc(db,"empresas",tallerId);
 
-const data = snap.data();
+    const snap = await getDoc(ref);
 
-if(data.estado !== "activo"){
+    if(!snap.exists()){
+      console.warn("Empresa no encontrada");
+      return false;
+    }
 
-alert("Suscripción inactiva");
+    const data = snap.data();
 
-return false;
+    if(data.estado !== "activo"){
+      console.warn("Suscripción inactiva");
+      return false;
+    }
 
-}
+    return true;
 
-return true;
+  }catch(error){
+
+    console.error("Error verificando suscripción:",error);
+
+    return false;
+
+  }
 
 }
