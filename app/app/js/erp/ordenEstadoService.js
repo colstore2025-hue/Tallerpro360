@@ -1,12 +1,20 @@
-import { db } from "./firebase.js";
+/**
+ * ordenEstadoService.js
+ * Servicio ERP para cambiar estado de órdenes
+ * TallerPRO360
+ */
+
+import { db } from "../core/firebase-config.js";
+import { getTallerId } from "../core/tallerContext.js";
 
 import {
-doc,
-updateDoc,
-getDoc
+  doc,
+  updateDoc,
+  getDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { enviarWhatsApp } from "./whatsappService.js";
+import { notificarCliente } from "../services/whatsappService.js";
 
 
 /* ===============================
@@ -14,94 +22,80 @@ CAMBIAR ESTADO DE ORDEN
 =============================== */
 
 export async function cambiarEstadoOrden(
-empresaId,
-ordenId,
-nuevoEstado
+  ordenId,
+  nuevoEstado
 ){
 
-try{
+  try{
 
-if(!empresaId || !ordenId){
+    const empresaId = getTallerId();
 
-throw new Error("empresaId u ordenId inválidos");
-
-}
-
-const ref = doc(
-db,
-"empresas",
-empresaId,
-"ordenes",
-ordenId
-);
-
-const snap = await getDoc(ref);
-
-if(!snap.exists()){
-
-throw new Error("La orden no existe");
-
-}
-
-const data = snap.data();
-
-const telefonoCliente = data.telefono || null;
-const cliente = data.cliente || "Cliente";
-const vehiculo = data.vehiculo || "Vehículo";
+    if(!empresaId || !ordenId){
+      throw new Error("empresaId u ordenId inválidos");
+    }
 
 
-/* ===============================
-ACTUALIZAR ESTADO
-=============================== */
+    /* ===============================
+       REFERENCIA A ORDEN
+    =============================== */
 
-await updateDoc(ref,{
-estado:nuevoEstado
-});
+    const ref = doc(
+      db,
+      "empresas",
+      empresaId,
+      "ordenes",
+      ordenId
+    );
 
-console.log("Estado actualizado:",nuevoEstado);
+    const snap = await getDoc(ref);
+
+    if(!snap.exists()){
+      throw new Error("La orden no existe");
+    }
+
+    const data = snap.data();
+
+    const telefonoCliente = data.telefono ?? null;
+    const cliente = data.cliente ?? "Cliente";
+    const vehiculo = data.vehiculo ?? "Vehículo";
 
 
-/* ===============================
-NOTIFICACIÓN WHATSAPP
-=============================== */
+    /* ===============================
+       ACTUALIZAR ESTADO
+    =============================== */
 
-if(telefonoCliente){
+    await updateDoc(ref,{
+      estado: nuevoEstado,
+      fechaActualizacion: serverTimestamp()
+    });
 
-const mensaje = `
-Hola ${cliente}
+    console.log("Estado actualizado:",nuevoEstado);
 
-Su vehículo:
 
-🚗 ${vehiculo}
+    /* ===============================
+       NOTIFICACIÓN WHATSAPP
+    =============================== */
 
-cambió de estado:
+    if(telefonoCliente){
 
-📊 ${nuevoEstado}
+      notificarCliente(
+        telefonoCliente,
+        cliente,
+        nuevoEstado,
+        vehiculo
+      );
 
-Gracias por confiar en nosotros.
+    }
 
-TallerPRO360
-Servicio Automotriz
-`;
+  }catch(error){
 
-await enviarWhatsApp(
-telefonoCliente,
-mensaje
-);
+    console.error(
+      "Error cambiando estado de orden:",
+      error
+    );
 
-}
+    throw error;
 
-}catch(error){
-
-console.error(
-"Error cambiando estado de orden:",
-error
-);
-
-alert(
-"No fue posible actualizar el estado de la orden"
-);
-
-}
+  }
 
 }
