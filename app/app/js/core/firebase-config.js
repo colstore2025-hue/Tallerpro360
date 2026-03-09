@@ -2,99 +2,157 @@
  * firebase-config.js
  * TallerPRO360 ERP SaaS
  * Configuración central Firebase
- * SDK Modular v10+
+ * Compatible PWA / Offline / SDK v10+
  */
 
-import { initializeApp, getApps, getApp } 
-  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+// ======================================================
+// 🔧 IMPORTS FIREBASE
+// ======================================================
 
-import { 
-  getAuth, 
-  setPersistence, 
-  browserLocalPersistence 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { initializeApp, getApps, getApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-import { 
-  getFirestore, 
-  enableIndexedDbPersistence 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  getAuth,
+  setPersistence,
+  browserLocalPersistence
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-import { 
-  getAnalytics, 
-  isSupported 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+import {
+  getFirestore,
+  enableIndexedDbPersistence
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import {
+  getAnalytics,
+  isSupported
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+
 
 // ======================================================
-// 🔐 CONFIGURACIÓN
+// 🔐 CONFIGURACIÓN FIREBASE
 // ======================================================
 
 const firebaseConfig = {
+
   apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+
   authDomain: "tallerpro360.firebaseapp.com",
+
   projectId: "tallerpro360",
+
   storageBucket: "tallerpro360.firebasestorage.app",
+
   messagingSenderId: "636224778184",
+
   appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
+
   measurementId: "G-VEC2C0QX2G"
+
 };
 
-// ======================================================
-// 🚀 INICIALIZACIÓN SEGURA (evita doble carga)
-// ======================================================
-
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 // ======================================================
-// 🔑 AUTH
+// 🚀 INICIALIZACIÓN SEGURA
+// Evita reinicializar Firebase en SPA / PWA
+// ======================================================
+
+const app = getApps().length
+  ? getApp()
+  : initializeApp(firebaseConfig);
+
+
+// ======================================================
+// 🔑 AUTHENTICATION
 // ======================================================
 
 export const auth = getAuth(app);
 
-// Persistencia local (usuario permanece logueado)
 setPersistence(auth, browserLocalPersistence)
-  .then(() => {
-    console.log("🔐 Persistencia Auth activada");
-  })
-  .catch((error) => {
-    console.warn("⚠️ Error persistencia Auth:", error);
-  });
+.then(() => {
+
+  console.log("🔐 Auth persistente activado");
+
+})
+.catch((error) => {
+
+  console.warn("⚠️ Error configurando persistencia Auth:", error);
+
+});
+
 
 // ======================================================
-// 🗄️ FIRESTORE
+// 🗄️ FIRESTORE DATABASE
 // ======================================================
 
 export const db = getFirestore(app);
 
-// Habilitar persistencia offline (PWA ready)
-enableIndexedDbPersistence(db)
-  .then(() => {
-    console.log("📦 Firestore modo offline activado");
-  })
-  .catch((err) => {
-    if (err.code === "failed-precondition") {
-      console.warn("⚠️ Persistencia ya activa en otra pestaña");
-    } else if (err.code === "unimplemented") {
-      console.warn("⚠️ Navegador no soporta persistencia offline");
-    }
-  });
 
 // ======================================================
-// 📊 ANALYTICS (opcional, solo si navegador soporta)
+// 📦 OFFLINE MODE (PWA)
+// ======================================================
+
+enableIndexedDbPersistence(db)
+.then(() => {
+
+  console.log("📦 Firestore offline habilitado");
+
+})
+.catch((err) => {
+
+  if (err.code === "failed-precondition") {
+
+    console.warn("⚠️ Persistencia activa en otra pestaña");
+
+  }
+  else if (err.code === "unimplemented") {
+
+    console.warn("⚠️ Navegador no soporta modo offline");
+
+  }
+  else {
+
+    console.error("🔥 Error activando offline:", err);
+
+  }
+
+});
+
+
+// ======================================================
+// 📊 ANALYTICS (solo si el navegador soporta)
 // ======================================================
 
 let analytics = null;
 
-isSupported().then((yes) => {
-  if (yes) {
+isSupported()
+.then((supported) => {
+
+  if (supported) {
+
     analytics = getAnalytics(app);
-    console.log("📊 Analytics activado");
+
+    console.log("📊 Firebase Analytics activo");
+
   }
+  else {
+
+    console.warn("⚠️ Analytics no soportado en este navegador");
+
+  }
+
+})
+.catch((error) => {
+
+  console.warn("⚠️ Error iniciando Analytics:", error);
+
 });
 
 export { analytics };
 
+
 // ======================================================
-// 📌 EXPORT APP (por si se necesita)
+// 📌 EXPORT APP
 // ======================================================
 
 export default app;
