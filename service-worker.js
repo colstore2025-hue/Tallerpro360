@@ -1,7 +1,23 @@
-const CACHE_NAME = "tallerpro360-v6";
+/*
+========================================
+SERVICE WORKER
+TallerPRO360 ERP SaaS
+PWA Offline Engine
+Versión: v7
+========================================
+*/
+
+const CACHE_VERSION = "v7";
+const STATIC_CACHE = `tallerpro360-static-${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `tallerpro360-dynamic-${CACHE_VERSION}`;
+
 const OFFLINE_URL = "/index.html";
 
-const ASSETS_TO_CACHE = [
+/* ===============================
+   ARCHIVOS CRÍTICOS
+=============================== */
+
+const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/taller.html",
@@ -9,74 +25,198 @@ const ASSETS_TO_CACHE = [
   "/ceo.html",
   "/login.html",
   "/manifest.json",
+
   "/assets/logo-192.png",
   "/assets/logo-512.png",
   "/assets/logo-180.png",
   "/assets/favicon.png"
 ];
 
-// ===============================
-// 🚀 INSTALACIÓN
-// ===============================
+
+/* ===============================
+   🚀 INSTALL
+=============================== */
+
 self.addEventListener("install", event => {
+
+  console.log("🚀 Instalando Service Worker TallerPRO360");
+
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      console.log("🚀 TallerPRO360: Infraestructura lista");
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
+    caches.open(STATIC_CACHE)
+      .then(cache => {
+        return cache.addAll(STATIC_ASSETS);
+      })
   );
+
   self.skipWaiting();
+
 });
 
-// ===============================
-// 🛰️ ACTIVACIÓN
-// ===============================
+
+/* ===============================
+   🛰️ ACTIVATE
+=============================== */
+
 self.addEventListener("activate", event => {
+
+  console.log("🛰️ Activando Service Worker");
+
   event.waitUntil(
+
     caches.keys().then(keys => {
+
       return Promise.all(
+
         keys
-          .filter(key => key !== CACHE_NAME)
+          .filter(key => key !== STATIC_CACHE && key !== DYNAMIC_CACHE)
           .map(key => caches.delete(key))
+
       );
+
     })
+
   );
+
   self.clients.claim();
-  console.log("🛰️ TallerPRO360 activo");
+
 });
 
-// ===============================
-// 🌐 FETCH - Estrategia Inteligente
-// ===============================
+
+/* ===============================
+   🌐 FETCH STRATEGY
+=============================== */
+
 self.addEventListener("fetch", event => {
 
-  if (event.request.method !== "GET") return;
-  if (!event.request.url.startsWith("http")) return;
+  const request = event.request;
 
-  event.respondWith(
-    caches.match(event.request).then(cachedResponse => {
+  if (request.method !== "GET") return;
 
-      const networkFetch = fetch(event.request)
-        .then(networkResponse => {
+  const url = new URL(request.url);
 
-          if (!networkResponse || networkResponse.status !== 200) {
-            return networkResponse;
-          }
 
-          const responseClone = networkResponse.clone();
+  /* ===============================
+     🔥 FIREBASE / CDN
+     Network First
+  =============================== */
 
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseClone);
+  if (
+    url.origin.includes("firebase") ||
+    url.origin.includes("gstatic")
+  ) {
+
+    event.respondWith(
+
+      fetch(request)
+        .then(response => response)
+        .catch(() => caches.match(request))
+
+    );
+
+    return;
+  }
+
+
+  /* ===============================
+     📄 HTML
+     Network First
+  =============================== */
+
+  if (request.headers.get("accept").includes("text/html")) {
+
+    event.respondWith(
+
+      fetch(request)
+        .then(response => {
+
+          const copy = response.clone();
+
+          caches.open(DYNAMIC_CACHE).then(cache => {
+            cache.put(request, copy);
           });
 
-          return networkResponse;
+          return response;
+
         })
         .catch(() => {
-          console.log("⚠️ Modo offline activo");
-          return cachedResponse || caches.match(OFFLINE_URL);
+
+          return caches.match(request)
+            .then(res => res || caches.match(OFFLINE_URL));
+
+        })
+
+    );
+
+    return;
+
+  }
+
+
+  /* ===============================
+     🧩 ASSETS
+     Cache First
+  =============================== */
+
+  event.respondWith(
+
+    caches.match(request).then(cached => {
+
+      if (cached) return cached;
+
+      return fetch(request).then(response => {
+
+        const copy = response.clone();
+
+        caches.open(DYNAMIC_CACHE).then(cache => {
+          cache.put(request, copy);
         });
 
-      return cachedResponse || networkFetch;
+        return response;
+
+      }).catch(() => {
+        console.log("⚠️ Recurso no disponible offline:", request.url);
+      });
+
     })
+
   );
+
+});
+
+
+/* ===============================
+   🔔 PUSH NOTIFICATIONS READY
+=============================== */
+
+self.addEventListener("push", event => {
+
+  const data = event.data ? event.data.json() : {};
+
+  const title = data.title || "TallerPRO360";
+  const options = {
+    body: data.body || "Nueva notificación",
+    icon: "/assets/logo-192.png",
+    badge: "/assets/logo-192.png",
+    data: data.url || "/"
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+
+});
+
+
+/* ===============================
+   📲 CLICK NOTIFICATION
+=============================== */
+
+self.addEventListener("notificationclick", event => {
+
+  event.notification.close();
+
+  event.waitUntil(
+    clients.openWindow(event.notification.data || "/")
+  );
+
 });
