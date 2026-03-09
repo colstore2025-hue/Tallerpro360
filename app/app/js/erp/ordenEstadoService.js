@@ -1,7 +1,9 @@
 /**
+ * ==============================================
  * ordenEstadoService.js
  * Servicio ERP para cambiar estado de órdenes
- * TallerPRO360
+ * Proyecto: TallerPRO360
+ * ==============================================
  */
 
 import { db } from "../core/firebase-config.js";
@@ -14,32 +16,36 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { notificarCliente } from "../services/whatsappService.js";
+import { notificarCliente } from "./whatsappService.js";
 
 
-/* ===============================
-CAMBIAR ESTADO DE ORDEN
-=============================== */
+/* =========================================================
+   CAMBIAR ESTADO DE ORDEN
+========================================================= */
 
-export async function cambiarEstadoOrden(
-  ordenId,
-  nuevoEstado
-){
+export async function cambiarEstadoOrden(ordenId, nuevoEstado) {
 
-  try{
+  try {
 
     const empresaId = getTallerId();
 
-    if(!empresaId || !ordenId){
-      throw new Error("empresaId u ordenId inválidos");
+    if (!empresaId) {
+      throw new Error("empresaId no disponible");
     }
 
+    if (!ordenId) {
+      throw new Error("ordenId inválido");
+    }
 
-    /* ===============================
-       REFERENCIA A ORDEN
-    =============================== */
+    if (!nuevoEstado) {
+      throw new Error("nuevoEstado inválido");
+    }
 
-    const ref = doc(
+    /* =========================================================
+       REFERENCIA A LA ORDEN
+    ========================================================= */
+
+    const ordenRef = doc(
       db,
       "empresas",
       empresaId,
@@ -47,9 +53,9 @@ export async function cambiarEstadoOrden(
       ordenId
     );
 
-    const snap = await getDoc(ref);
+    const snap = await getDoc(ordenRef);
 
-    if(!snap.exists()){
+    if (!snap.exists()) {
       throw new Error("La orden no existe");
     }
 
@@ -59,38 +65,40 @@ export async function cambiarEstadoOrden(
     const cliente = data.cliente ?? "Cliente";
     const vehiculo = data.vehiculo ?? "Vehículo";
 
-
-    /* ===============================
+    /* =========================================================
        ACTUALIZAR ESTADO
-    =============================== */
+    ========================================================= */
 
-    await updateDoc(ref,{
+    await updateDoc(ordenRef, {
       estado: nuevoEstado,
       fechaActualizacion: serverTimestamp()
     });
 
-    console.log("Estado actualizado:",nuevoEstado);
+    console.log("Estado de orden actualizado:", nuevoEstado);
 
+    /* =========================================================
+       NOTIFICACIÓN AL CLIENTE (WHATSAPP)
+    ========================================================= */
 
-    /* ===============================
-       NOTIFICACIÓN WHATSAPP
-    =============================== */
+    if (telefonoCliente) {
 
-    if(telefonoCliente){
-
-      notificarCliente(
+      await notificarCliente(
         telefonoCliente,
         cliente,
         nuevoEstado,
         vehiculo
       );
 
+      console.log("Cliente notificado por WhatsApp");
+
     }
 
-  }catch(error){
+    return true;
+
+  } catch (error) {
 
     console.error(
-      "Error cambiando estado de orden:",
+      "Error cambiando estado de la orden:",
       error
     );
 
