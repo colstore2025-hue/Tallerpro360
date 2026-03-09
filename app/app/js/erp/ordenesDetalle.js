@@ -18,6 +18,18 @@ export async function verDetalleOrden(ordenId, contenedorId){
 
   const contenedor = document.getElementById(contenedorId);
 
+  if(!contenedor){
+    console.error("Contenedor no encontrado:", contenedorId);
+    return;
+  }
+
+  const empresaId = localStorage.getItem("empresaId");
+
+  if(!empresaId){
+    contenedor.innerHTML = "Empresa no identificada";
+    return;
+  }
+
   if(!ordenId){
     contenedor.innerHTML = "Orden no especificada";
     return;
@@ -27,19 +39,25 @@ export async function verDetalleOrden(ordenId, contenedorId){
 
   try{
 
-    const ref = doc(db,"ordenes",ordenId);
+    const ref = doc(
+      db,
+      "empresas",
+      empresaId,
+      "ordenes",
+      ordenId
+    );
 
     const snap = await getDoc(ref);
 
     if(!snap.exists()){
 
       contenedor.innerHTML = "Orden no encontrada";
-
       return;
 
     }
 
     const o = snap.data();
+
 
     /* ===============================
        ACCIONES DEL MECÁNICO
@@ -47,11 +65,17 @@ export async function verDetalleOrden(ordenId, contenedorId){
 
     let accionesHTML = "";
 
-    if(o.acciones && o.acciones.length > 0){
+    if(Array.isArray(o.acciones) && o.acciones.length > 0){
 
       o.acciones.forEach(a => {
 
-        accionesHTML += `<li>${a}</li>`;
+        accionesHTML += `
+        <li class="mb-1">
+          ${a.descripcion || "Acción"} 
+          - $${a.costo || 0}
+          (${a.estado || "pendiente"})
+        </li>
+        `;
 
       });
 
@@ -61,19 +85,21 @@ export async function verDetalleOrden(ordenId, contenedorId){
 
     }
 
+
     /* ===============================
        REPUESTOS
     =============================== */
 
     let repuestosHTML = "";
 
-    if(o.repuestos && o.repuestos.length > 0){
+    if(Array.isArray(o.repuestos) && o.repuestos.length > 0){
 
       o.repuestos.forEach(r => {
 
         repuestosHTML += `
         <li>
-          ${r.nombre} - Cantidad: ${r.cantidad}
+          ${r.nombre || "Repuesto"} 
+          - Cantidad: ${r.cantidad || 1}
         </li>
         `;
 
@@ -84,6 +110,7 @@ export async function verDetalleOrden(ordenId, contenedorId){
       repuestosHTML = "<li>No se han usado repuestos</li>";
 
     }
+
 
     /* ===============================
        RENDER
@@ -97,15 +124,15 @@ export async function verDetalleOrden(ordenId, contenedorId){
           Detalle de Orden
         </h2>
 
-        <p><strong>Cliente:</strong> ${o.cliente}</p>
+        <p><strong>Cliente:</strong> ${o.cliente || "-"}</p>
 
-        <p><strong>Vehículo:</strong> ${o.vehiculo}</p>
+        <p><strong>Vehículo:</strong> ${o.vehiculo || "-"}</p>
 
-        <p><strong>Placa:</strong> ${o.placa}</p>
+        <p><strong>Placa:</strong> ${o.placa || "-"}</p>
 
-        <p><strong>Técnico:</strong> ${o.tecnico}</p>
+        <p><strong>Técnico:</strong> ${o.tecnico || "-"}</p>
 
-        <p><strong>Estado:</strong> ${o.estado}</p>
+        <p><strong>Estado:</strong> ${o.estado || "-"}</p>
 
         <hr class="my-4">
 
@@ -133,7 +160,9 @@ export async function verDetalleOrden(ordenId, contenedorId){
 
     `;
 
-  }catch(error){
+  }
+
+  catch(error){
 
     console.error("Error cargando detalle:", error);
 
