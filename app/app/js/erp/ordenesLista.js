@@ -10,9 +10,7 @@ import { db } from "../core/firebase-config.js";
 
 import {
   collection,
-  getDocs,
-  query,
-  where
+  getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
@@ -20,28 +18,38 @@ export async function cargarOrdenes(contenedorId){
 
   const contenedor = document.getElementById(contenedorId);
 
+  if(!contenedor){
+    console.error("Contenedor no encontrado:", contenedorId);
+    return;
+  }
+
   const empresaId = localStorage.getItem("empresaId");
 
   if(!empresaId){
+
     contenedor.innerHTML = "Empresa no identificada";
     return;
+
   }
 
   contenedor.innerHTML = "Cargando órdenes...";
 
   try{
 
-    const q = query(
-      collection(db,"ordenes"),
-      where("empresaId","==",empresaId)
-    );
+    const snapshot = await getDocs(
 
-    const snapshot = await getDocs(q);
+      collection(
+        db,
+        "empresas",
+        empresaId,
+        "ordenes"
+      )
+
+    );
 
     if(snapshot.empty){
 
       contenedor.innerHTML = "<p>No hay órdenes registradas</p>";
-
       return;
 
     }
@@ -51,9 +59,10 @@ export async function cargarOrdenes(contenedorId){
     snapshot.forEach(doc => {
 
       const o = doc.data();
+      const ordenId = doc.id;
 
       html += `
-      <div class="border p-3 rounded mb-2">
+      <div class="border p-3 rounded mb-3 bg-white shadow-sm">
 
         <strong>${o.cliente}</strong><br>
 
@@ -63,7 +72,14 @@ export async function cargarOrdenes(contenedorId){
 
         Técnico: ${o.tecnico}<br>
 
-        Estado: ${o.estado}
+        Estado: ${o.estado}<br>
+
+        <button 
+          onclick="verOrden('${ordenId}')"
+          class="mt-2 px-3 py-1 bg-blue-600 text-white rounded"
+        >
+          Ver detalle
+        </button>
 
       </div>
       `;
@@ -72,7 +88,8 @@ export async function cargarOrdenes(contenedorId){
 
     contenedor.innerHTML = html;
 
-  }catch(error){
+  }
+  catch(error){
 
     console.error("Error cargando órdenes:", error);
 
