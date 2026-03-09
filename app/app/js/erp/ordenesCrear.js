@@ -20,37 +20,56 @@ export async function crearOrden(data){
   const empresaId = localStorage.getItem("empresaId");
 
   if(!empresaId){
+
     alert("Empresa no identificada");
     return;
+
   }
+
 
   const orden = {
 
-    cliente: data.cliente,
-    vehiculo: data.vehiculo,
-    placa: data.placa,
+    cliente: data.cliente || "Cliente no definido",
+
+    vehiculo: data.vehiculo || "Vehículo no definido",
+
+    placa: data.placa || "Sin placa",
+
     tecnico: data.tecnico || "Sin asignar",
 
     estado: "abierta",
 
     acciones: [],
+
     repuestos: [],
 
     total: 0,
-
-    empresaId: empresaId,
 
     creadoEn: serverTimestamp()
 
   };
 
+
   try{
 
-    await addDoc(collection(db,"ordenes"), orden);
+    await addDoc(
 
-    console.log("Orden creada");
+      collection(
+        db,
+        "empresas",
+        empresaId,
+        "ordenes"
+      ),
 
-  }catch(error){
+      orden
+
+    );
+
+    console.log("Orden creada correctamente");
+
+  }
+
+  catch(error){
 
     console.error("Error creando orden:", error);
 
