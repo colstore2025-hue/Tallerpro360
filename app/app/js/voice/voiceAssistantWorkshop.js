@@ -1,111 +1,183 @@
-/**
- * TallerPRO360 Voice Assistant
- * Control por voz del sistema
- */
+/*
+===============================================
+VOICE ASSISTANT WORKSHOP
+Asistente global del sistema del taller
+Ubicación: /app/app/js/voice/voiceAssistantWorkshop.js
+===============================================
+*/
 
-export function iniciarVoz(){
+import { iniciarVoiceMechanic } from "./voiceMechanicAI.js";
+
+import { procesarOrdenGlobal } from "../erp/procesarOrdenGlobal.js";
+
+import { buscarCliente } from "../clientes/clientesLista.js";
+
+import { generarFactura } from "../finanzas/generarFactura.js";
+
 
 const SpeechRecognition =
-window.SpeechRecognition ||
-window.webkitSpeechRecognition
+  window.SpeechRecognition || window.webkitSpeechRecognition;
+
+let recognition = null;
+
+
+
+export function iniciarAsistenteWorkshop(){
 
 if(!SpeechRecognition){
 
-alert("Tu navegador no soporta reconocimiento de voz")
-return
+console.warn("Reconocimiento de voz no soportado");
+
+return;
 
 }
 
-const recognition = new SpeechRecognition()
+recognition = new SpeechRecognition();
 
-recognition.lang = "es-CO"
-recognition.continuous = false
-recognition.interimResults = false
-
-recognition.start()
+recognition.lang = "es-ES";
+recognition.continuous = true;
+recognition.interimResults = false;
 
 recognition.onstart = ()=>{
 
-console.log("🎙️ Asistente escuchando...")
+console.log("🤖 Asistente del taller activo");
 
-}
+hablar("Asistente del taller activado");
 
-recognition.onresult = (event)=>{
-
-const texto = event.results[0][0].transcript
-
-console.log("🗣️ Voz detectada:",texto)
-
-procesarComando(texto)
-
-}
-
-recognition.onerror = (event)=>{
-
-console.error("Error voz:",event.error)
-
-}
-
-}
+};
 
 
-/* ==============================
-PROCESAR COMANDOS
-============================== */
+recognition.onresult = async (event)=>{
 
-function procesarComando(texto){
+const comando = event.results[event.results.length-1][0].transcript.toLowerCase();
 
-texto = texto.toLowerCase()
+console.log("Comando:",comando);
+
+await interpretarComando(comando);
+
+};
 
 
-/* CREAR ORDEN */
+recognition.onerror = (e)=>{
 
-if(texto.includes("crear orden")){
+console.error("Error voz:",e);
 
-alert("🛠️ Crear nueva orden")
+};
 
-window.location.href="/app/orden-nueva.html"
+
+recognition.start();
 
 }
 
 
-/* INVENTARIO */
 
-else if(texto.includes("inventario")){
+export function detenerAsistenteWorkshop(){
 
-alert("📦 Abrir inventario")
+if(recognition){
 
-window.location.href="/app/inventario.html"
+recognition.stop();
+
+hablar("Asistente desactivado");
+
+}
 
 }
 
 
-/* DASHBOARD */
 
-else if(texto.includes("dashboard")){
+async function interpretarComando(comando){
 
-alert("📊 Abrir dashboard")
+/*
+COMANDOS DISPONIBLES
+-------------------
 
-window.location.href="/app/index.html"
+crear orden
+buscar cliente
+generar factura
+abrir inventario
+abrir reportes
+asistente mecanico
+*/
+
+
+if(comando.includes("crear orden")){
+
+hablar("Creando nueva orden");
+
+await procesarOrdenGlobal({accion:"crear"});
+
+return;
+
+}
+
+
+if(comando.includes("buscar cliente")){
+
+hablar("Buscando cliente");
+
+await buscarCliente();
+
+return;
 
 }
 
 
-/* CLIENTES */
+if(comando.includes("generar factura")){
 
-else if(texto.includes("clientes")){
+hablar("Generando factura");
 
-alert("👥 Abrir clientes")
+await generarFactura();
 
-window.location.href="/app/clientes.html"
+return;
+
+}
+
+
+if(comando.includes("abrir inventario")){
+
+hablar("Abriendo inventario");
+
+window.location.href = "/inventario.html";
+
+return;
 
 }
 
 
-else{
+if(comando.includes("abrir reportes")){
 
-alert("No entendí el comando: " + texto)
+hablar("Mostrando reportes");
+
+window.location.href = "/reportes.html";
+
+return;
 
 }
+
+
+if(comando.includes("asistente mecanico")){
+
+hablar("Activando asistente del mecánico");
+
+iniciarVoiceMechanic();
+
+return;
+
+}
+
+
+hablar("No entendí el comando");
+
+}
+
+
+
+function hablar(texto){
+
+const speech = new SpeechSynthesisUtterance(texto);
+
+speech.lang = "es-ES";
+
+window.speechSynthesis.speak(speech);
 
 }
