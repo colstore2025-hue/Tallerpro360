@@ -1,4 +1,4 @@
-import { db } from "../core/firebase-config.js";
+import { db } from "../erp/firebase-config.js";
 
 import {
 collection,
