@@ -1,106 +1,106 @@
+/**
+ * ordenesService.js
+ * Servicio de órdenes de trabajo
+ * TallerPRO360 ERP
+ */
+
 import {
-addDoc,
-serverTimestamp
+  addDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { coleccionTaller } from "./dbTaller.js";
+import { coleccionTaller } from "../core/dbTaller.js";
 
 
 /* ========================================
-CREAR ORDEN
+   CREAR ORDEN
 ======================================== */
 
-export async function crearOrden(data){
+export async function crearOrden(data) {
 
-try{
+  try {
 
-/* ===============================
-VALIDACIÓN BÁSICA
-=============================== */
+    /* ===============================
+       VALIDACIÓN BÁSICA
+    =============================== */
 
-if(!data){
-throw new Error("Datos de orden no enviados");
-}
+    if (!data) {
+      throw new Error("Datos de orden no enviados");
+    }
 
-if(!data.cliente){
-throw new Error("El cliente es obligatorio");
-}
+    if (!data.cliente) {
+      throw new Error("El cliente es obligatorio");
+    }
 
-if(!data.vehiculo){
-throw new Error("El vehículo es obligatorio");
-}
+    if (!data.vehiculo) {
+      throw new Error("El vehículo es obligatorio");
+    }
 
-if(!data.placa){
-throw new Error("La placa es obligatoria");
-}
-
-
-/* ===============================
-NORMALIZAR DATOS
-=============================== */
-
-const orden = {
-
-cliente: data.cliente.trim(),
-
-telefono: data.telefono || "",
-
-vehiculo: data.vehiculo.trim(),
-
-placa: data.placa.trim().toUpperCase(),
-
-tecnico: data.tecnico || "Sin asignar",
-
-estado: "activa",
-
-descripcionProblema: data.descripcionProblema || "",
-
-diagnosticoIA: null,
-
-repuestosIA: [],
-
-acciones: [],
-
-total: 0,
-
-creadoPor: data.usuario || "sistema",
-
-fecha: serverTimestamp()
-
-};
+    if (!data.placa) {
+      throw new Error("La placa es obligatoria");
+    }
 
 
-/* ===============================
-CREAR ORDEN EN FIRESTORE
-=============================== */
+    /* ===============================
+       NORMALIZAR DATOS
+    =============================== */
 
-const docRef = await addDoc(
-coleccionTaller("ordenes"),
-orden
-);
+    const orden = {
 
-console.log("Orden creada:",docRef.id);
+      cliente: data.cliente.trim(),
 
-return docRef.id;
+      telefono: data.telefono ?? "",
+
+      vehiculo: data.vehiculo.trim(),
+
+      placa: data.placa.trim().toUpperCase(),
+
+      tecnico: data.tecnico ?? "Sin asignar",
+
+      estado: "activa",
+
+      descripcionProblema: data.descripcionProblema ?? "",
+
+      diagnosticoIA: null,
+
+      repuestosIA: [],
+
+      acciones: [],
+
+      total: 0,
+
+      creadoPor: data.usuario ?? "sistema",
+
+      fechaCreacion: serverTimestamp(),
+
+      fechaActualizacion: serverTimestamp()
+
+    };
 
 
-/* ===============================
-ERRORES
-=============================== */
+    /* ===============================
+       CREAR ORDEN EN FIRESTORE
+    =============================== */
 
-}catch(error){
+    const docRef = await addDoc(
+      coleccionTaller("ordenes"),
+      orden
+    );
 
-console.error(
-"Error creando orden:",
-error
-);
+    console.log("Orden creada:", docRef.id);
 
-alert(
-"No fue posible crear la orden"
-);
+    return docRef.id;
 
-return null;
 
-}
+  } catch (error) {
+
+    console.error(
+      "Error creando orden:",
+      error
+    );
+
+    throw error;
+
+  }
 
 }
