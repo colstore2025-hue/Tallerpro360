@@ -1,5 +1,4 @@
-import { db } from "./firebase.js";
-
+import { db } from "../core/firebase-config.js";
 import {
 doc,
 updateDoc,
