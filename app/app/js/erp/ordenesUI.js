@@ -1,7 +1,9 @@
 /**
+ * ======================================================
  * ordenesUI.js
  * Interfaz del módulo de órdenes
- * TallerPRO360 ERP
+ * Proyecto: TallerPRO360 ERP
+ * ======================================================
  */
 
 import { crearOrden } from "../services/ordenesService.js";
@@ -9,34 +11,44 @@ import { agregarAccionOrden } from "./ordenesAcciones.js";
 import { getTallerId } from "../core/tallerContext.js";
 
 
-/* =========================
-CREAR ORDEN DESDE FORMULARIO
-========================= */
+/* ======================================================
+   CREAR ORDEN DESDE FORMULARIO
+====================================================== */
 
-export async function crearOrdenUI(){
+export async function crearOrdenUI() {
 
-  try{
+  try {
+
+    const empresaId = getTallerId();
+
+    if (!empresaId) {
+      throw new Error("Empresa no identificada");
+    }
 
     const cliente =
-      document.getElementById("cliente").value.trim();
+      document.getElementById("cliente")?.value.trim();
 
     const telefono =
-      document.getElementById("telefono").value.trim();
+      document.getElementById("telefono")?.value.trim();
 
     const vehiculo =
-      document.getElementById("vehiculo").value.trim();
+      document.getElementById("vehiculo")?.value.trim();
 
     const placa =
-      document.getElementById("placa").value.trim();
+      document.getElementById("placa")?.value.trim();
 
     const tecnico =
-      document.getElementById("tecnico").value;
+      document.getElementById("tecnico")?.value || null;
 
     const descripcion =
-      document.getElementById("descripcion").value.trim();
+      document.getElementById("descripcion")?.value.trim();
 
 
-    if(!cliente || !vehiculo || !placa){
+    /* ===============================
+       VALIDACIÓN
+    =============================== */
+
+    if (!cliente || !vehiculo || !placa) {
 
       alert("Complete los campos obligatorios");
 
@@ -44,6 +56,10 @@ export async function crearOrdenUI(){
 
     }
 
+
+    /* ===============================
+       CREAR ORDEN
+    =============================== */
 
     const ordenId = await crearOrden({
 
@@ -57,7 +73,7 @@ export async function crearOrdenUI(){
     });
 
 
-    if(ordenId){
+    if (ordenId) {
 
       alert("Orden creada correctamente");
 
@@ -65,9 +81,9 @@ export async function crearOrdenUI(){
 
     }
 
-  }catch(error){
+  } catch (error) {
 
-    console.error("Error creando orden:",error);
+    console.error("Error creando orden:", error);
 
     alert("No fue posible crear la orden");
 
@@ -77,19 +93,33 @@ export async function crearOrdenUI(){
 
 
 
-/* =========================
-AGREGAR ACCIÓN A ORDEN
-========================= */
+/* ======================================================
+   AGREGAR ACCIÓN A ORDEN
+====================================================== */
 
-export async function agregarAccionUI(ordenId){
+export async function agregarAccionUI(ordenId) {
 
-  try{
+  try {
 
     const empresaId = getTallerId();
 
+    if (!empresaId) {
+      throw new Error("Empresa no identificada");
+    }
+
+    if (!ordenId) {
+      throw new Error("ordenId inválido");
+    }
+
+
+    /* ===============================
+       SOLICITAR DATOS
+    =============================== */
+
     const accion = prompt("Descripción de la acción");
 
-    if(!accion) return;
+    if (!accion || accion.trim() === "") return;
+
 
     const costo =
       Number(prompt("Costo para cliente") || 0);
@@ -98,21 +128,27 @@ export async function agregarAccionUI(ordenId){
       Number(prompt("Costo interno") || 0);
 
 
+    /* ===============================
+       GUARDAR ACCIÓN
+    =============================== */
+
     await agregarAccionOrden(
 
       empresaId,
       ordenId,
-      accion,
-      costo,
-      costoInterno
+      accion.trim(),
+      isNaN(costo) ? 0 : costo,
+      isNaN(costoInterno) ? 0 : costoInterno
 
     );
 
+
     alert("Acción agregada correctamente");
 
-  }catch(error){
 
-    console.error("Error agregando acción:",error);
+  } catch (error) {
+
+    console.error("Error agregando acción:", error);
 
     alert("No fue posible agregar la acción");
 
@@ -122,16 +158,28 @@ export async function agregarAccionUI(ordenId){
 
 
 
-/* =========================
-LIMPIAR FORMULARIO
-========================= */
+/* ======================================================
+   LIMPIAR FORMULARIO
+====================================================== */
 
-function limpiarFormulario(){
+function limpiarFormulario() {
 
-  document.getElementById("cliente").value = "";
-  document.getElementById("telefono").value = "";
-  document.getElementById("vehiculo").value = "";
-  document.getElementById("placa").value = "";
-  document.getElementById("descripcion").value = "";
+  const campos = [
+
+    "cliente",
+    "telefono",
+    "vehiculo",
+    "placa",
+    "descripcion"
+
+  ];
+
+  campos.forEach(id => {
+
+    const input = document.getElementById(id);
+
+    if (input) input.value = "";
+
+  });
 
 }
