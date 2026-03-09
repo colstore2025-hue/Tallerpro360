@@ -1,111 +1,117 @@
+/**
+ * inventarioService.js
+ * Servicio de inventario - TallerPRO360
+ */
+
 import {
-addDoc,
-serverTimestamp
+  addDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { coleccionTaller } from "./dbTaller.js";
+import { coleccionTaller } from "../core/dbTaller.js";
 
 
-export async function crearRepuesto(data){
+/**
+ * Crear nuevo repuesto en inventario
+ */
+export async function crearRepuesto(data) {
 
-try{
+  try {
 
-/* =========================
-VALIDACIONES
-========================= */
+    /* =========================
+       VALIDACIONES
+    ========================= */
 
-if(!data.nombre){
-throw new Error("El nombre del repuesto es obligatorio");
-}
+    if (!data?.nombre) {
+      throw new Error("El nombre del repuesto es obligatorio");
+    }
 
-if(data.costoCompra === undefined){
-throw new Error("El costo de compra es obligatorio");
-}
-
-
-/* =========================
-NORMALIZACIÓN DE DATOS
-========================= */
-
-const costoCompra = Number(data.costoCompra);
-const margen = Number(data.margen) || 30;
-
-if(isNaN(costoCompra)){
-throw new Error("Costo de compra inválido");
-}
+    if (data.costoCompra === undefined || data.costoCompra === null) {
+      throw new Error("El costo de compra es obligatorio");
+    }
 
 
-/* =========================
-CÁLCULO DE PRECIO
-========================= */
+    /* =========================
+       NORMALIZACIÓN DE DATOS
+    ========================= */
 
-const precioVenta =
-costoCompra * (1 + margen / 100);
+    const costoCompra = Number(data.costoCompra);
+    const margen = Number(data.margen ?? 30);
 
-const utilidadUnidad =
-precioVenta - costoCompra;
-
-
-/* =========================
-CREACIÓN DOCUMENTO
-========================= */
-
-const docRef = await addDoc(
-coleccionTaller("repuestos"),
-{
-
-/* info básica */
-
-nombre: data.nombre,
-codigo: data.codigo || "",
-
-marca: data.marca || "",
-categoria: data.categoria || "",
+    if (isNaN(costoCompra)) {
+      throw new Error("Costo de compra inválido");
+    }
 
 
-/* costos */
+    /* =========================
+       CÁLCULO DE PRECIO
+    ========================= */
 
-costoCompra: costoCompra,
-margen: margen,
+    const precioVenta = costoCompra * (1 + margen / 100);
 
-precioVenta: Math.round(precioVenta),
-utilidadUnidad: Math.round(utilidadUnidad),
-
-
-/* inventario */
-
-stock: Number(data.stock) || 0,
-stockMinimo: Number(data.stockMinimo) || 1,
-
-rotacion: 0,
+    const utilidadUnidad = precioVenta - costoCompra;
 
 
-/* proveedor */
+    /* =========================
+       CREACIÓN DOCUMENTO
+    ========================= */
 
-proveedor: data.proveedor || "No definido",
+    const docRef = await addDoc(
+      coleccionTaller("repuestos"),
+      {
+
+        /* info básica */
+
+        nombre: data.nombre.trim(),
+        codigo: data.codigo ?? "",
+
+        marca: data.marca ?? "",
+        categoria: data.categoria ?? "",
 
 
-/* estado */
+        /* costos */
 
-estado: "activo",
+        costoCompra,
+        margen,
+
+        precioVenta: Math.round(precioVenta),
+        utilidadUnidad: Math.round(utilidadUnidad),
 
 
-/* fechas */
+        /* inventario */
 
-fechaCreacion: serverTimestamp(),
-fechaActualizacion: serverTimestamp()
+        stock: Number(data.stock ?? 0),
+        stockMinimo: Number(data.stockMinimo ?? 1),
 
-}
-);
+        rotacion: 0,
 
-return docRef.id;
 
-}catch(error){
+        /* proveedor */
 
-console.error("Error creando repuesto:", error);
+        proveedor: data.proveedor ?? "No definido",
 
-throw error;
 
-}
+        /* estado */
+
+        estado: "activo",
+
+
+        /* fechas */
+
+        fechaCreacion: serverTimestamp(),
+        fechaActualizacion: serverTimestamp()
+
+      }
+    );
+
+    return docRef.id;
+
+  } catch (error) {
+
+    console.error("Error creando repuesto:", error);
+
+    throw error;
+
+  }
 
 }
