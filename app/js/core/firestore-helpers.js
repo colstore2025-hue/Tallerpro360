@@ -1,38 +1,44 @@
 /**
- * Firestore Helpers
+ * firestore-helpers.js
  * TallerPRO360 ERP SaaS
- * Manejo de colecciones por taller (multiempresa)
+ * Helpers para acceder a Firestore en arquitectura multiempresa
  */
 
 import { db } from "./firebase-config.js";
-import { obtenerTallerId } from "../services/empresaService.js";
+import { obtenerEmpresaId } from "./empresa-context.js";
 
 import {
   collection
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
+/* ===============================
+   COLECCIÓN DE EMPRESA
+=============================== */
+
 /**
  * Devuelve la referencia a una colección
- * dentro del taller actual
+ * dentro de la empresa activa
  *
  * Ejemplo:
- * coleccionTaller("ordenes")
- * -> talleres/{tallerId}/ordenes
+ * coleccionEmpresa("ordenes")
+ * -> empresas/{empresaId}/ordenes
  */
 
-export function coleccionTaller(nombreColeccion) {
+export function coleccionEmpresa(nombreColeccion){
 
-  const tallerId = obtenerTallerId();
+  const empresaId = obtenerEmpresaId();
 
-  if (!tallerId) {
-    throw new Error("No se encontró el tallerId activo");
+  if(!empresaId){
+
+    throw new Error("No se encontró empresaId activo");
+
   }
 
   return collection(
     db,
-    "talleres",
-    tallerId,
+    "empresas",
+    empresaId,
     nombreColeccion
   );
 
