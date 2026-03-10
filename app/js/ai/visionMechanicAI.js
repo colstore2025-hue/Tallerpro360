@@ -1,19 +1,26 @@
-// visionMechanicAI.js
-// IA que analiza fotos de motores
+/**
+ * visionMechanicAI.js
+ * IA de visión para diagnóstico mecánico
+ * TallerPRO360
+ */
 
-export async function analizarMotor(base64Image){
+/* ===============================
+   ANALIZAR MOTOR CON IA
+=============================== */
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-  authDomain: "tallerpro360.firebaseapp.com",
-  projectId: "tallerpro360",
-  storageBucket: "tallerpro360.firebasestorage.app",
-  messagingSenderId: "636224778184",
-  appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
-  measurementId: "G-VEC2C0QX2G"
-};
+export async function analizarMotor(base64Image, apiKey){
 
-const prompt = `
+  if(!base64Image){
+    console.warn("Imagen no enviada");
+    return null;
+  }
+
+  if(!apiKey){
+    console.error("API Key de OpenAI no definida");
+    return null;
+  }
+
+  const prompt = `
 Analiza esta imagen de un motor automotriz.
 
 Detecta:
@@ -23,46 +30,70 @@ Detecta:
 - mangueras dañadas
 - corrosión
 
-Devuelve JSON:
+Devuelve SOLO JSON con esta estructura:
 
 {
-problemas:[
-{tipo:"",descripcion:"",gravedad:""}
-]
+  "problemas":[
+    {"tipo":"","descripcion":"","gravedad":""}
+  ]
 }
 `;
 
-const response = await fetch("https://api.openai.com/v1/chat/completions",{
+  try{
 
-method:"POST",
+    const response = await fetch(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        method:"POST",
 
-headers:{
-"Content-Type":"application/json",
-"Authorization":"Bearer "+API_KEY
-},
+        headers:{
+          "Content-Type":"application/json",
+          "Authorization":"Bearer " + apiKey
+        },
 
-body:JSON.stringify({
+        body:JSON.stringify({
 
-model:"gpt-4.1",
+          model:"gpt-4.1",
 
-messages:[
-{
-role:"user",
-content:[
-{type:"text",text:prompt},
-{type:"image_url",image_url:{url:base64Image}}
-]
-}
-],
+          messages:[
+            {
+              role:"user",
+              content:[
+                { type:"text", text: prompt },
+                { type:"image_url", image_url:{ url: base64Image } }
+              ]
+            }
+          ],
 
-max_tokens:500
+          max_tokens:500
 
-})
+        })
+      }
+    );
 
-});
+    const data = await response.json();
 
-const data = await response.json();
+    if(!data.choices){
+      console.error("Respuesta inesperada IA:", data);
+      return null;
+    }
 
-return data;
+    const content = data.choices[0].message.content;
+
+    try{
+      return JSON.parse(content);
+    }
+    catch(e){
+      console.warn("Respuesta no es JSON puro:", content);
+      return { raw: content };
+    }
+
+  }
+  catch(error){
+
+    console.error("Error analizando motor:", error);
+    return null;
+
+  }
 
 }
