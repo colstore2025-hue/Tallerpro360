@@ -75,9 +75,7 @@ border:1px solid #1e293b;
 
 </head>
 
-
 <body>
-
 
 <!-- SIDEBAR -->
 
@@ -86,25 +84,16 @@ border:1px solid #1e293b;
 <h2>TallerPRO360</h2>
 
 <button onclick="loadModule('dashboard')">Dashboard</button>
-
 <button onclick="loadModule('ordenes')">Órdenes</button>
-
 <button onclick="loadModule('clientes')">Clientes</button>
-
 <button onclick="loadModule('inventario')">Inventario</button>
-
 <button onclick="loadModule('finanzas')">Finanzas</button>
-
 <button onclick="loadModule('pagos')">Pagos</button>
-
 <button onclick="loadModule('ia')">IA Mecánica</button>
-
 <button onclick="loadModule('ceo')">CEO Panel</button>
-
 <button onclick="logout()">Salir</button>
 
 </div>
-
 
 
 <!-- CONTENIDO -->
@@ -122,71 +111,31 @@ border:1px solid #1e293b;
 </div>
 
 
-
-<!-- APP SCRIPT -->
+<!-- ========================= -->
+<!-- APP INIT -->
+<!-- ========================= -->
 
 <script type="module">
 
-import { auth } from "./js/core/firebase-config.js";
-
-import {
-
-onAuthStateChanged,
-signOut
-
-}
-
 import { iniciarApp } from "./js/core/app-init.js";
+import { cerrarSesion } from "./js/auth/authGuard.js";
 
 iniciarApp();
 
+window.logout = cerrarSesion;
+
 </script>
 
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
+<!-- ========================= -->
+<!-- SERVICE WORKER -->
+<!-- ========================= -->
 
-// ============================
-// VALIDAR LOGIN
-// ============================
-
-onAuthStateChanged(auth,(user)=>{
-
-if(!user){
-
-window.location.href="../login.html";
-
-return;
-
-}
-
-console.log("Usuario activo:",user.email);
-
-});
-
-
-// ============================
-// LOGOUT
-// ============================
-
-window.logout=async function(){
-
-await signOut(auth);
-
-localStorage.clear();
-
-window.location.href="../login.html";
-
-}
-
-
-// ============================
-// SERVICE WORKER
-// ============================
+<script>
 
 if("serviceWorker" in navigator){
 
 navigator.serviceWorker.register("../service-worker.js")
-
 .then(()=>{
 
 console.log("PWA activa");
@@ -195,10 +144,14 @@ console.log("PWA activa");
 
 }
 
+</script>
 
-// ============================
-// CARGAR MODULOS
-// ============================
+
+<!-- ========================= -->
+<!-- CARGAR MODULOS -->
+<!-- ========================= -->
+
+<script>
 
 window.loadModule=function(modulo){
 
@@ -247,55 +200,37 @@ break;
 </script>
 
 
-
+<!-- ========================= -->
 <!-- IA GLOBAL -->
+<!-- ========================= -->
 
 <script src="./js/dashboardIA.js"></script>
-
 <script src="./js/motorIAglobal.js"></script>
-
 <script src="./js/cotizacionIA.js"></script>
-
 <script src="./js/workshopBrain.js"></script>
-
 <script src="./js/autoPartsAI.js"></script>
-
 <script src="./js/customerRetentionAI.js"></script>
-
 <script src="./js/workshopRevenueOptimizer.js"></script>
-
 <script src="./js/globalDiagnosticsAI.js"></script>
-
 <script src="./js/workshopRankingAI.js"></script>
-
 <script src="./js/superAI-orchestrator.js"></script>
-
 <script src="./js/predictiveMaintenance.js"></script>
-
 <script src="./js/pricingAI.js"></script>
-
 <script src="./js/voiceAssistant.js"></script>
 
 
-
+<!-- ========================= -->
 <!-- MODULOS ERP -->
+<!-- ========================= -->
 
 <script src="./modules/dashboard.js"></script>
-
 <script src="./modules/ordenes.js"></script>
-
 <script src="./modules/clientes.js"></script>
-
 <script src="./modules/inventario.js"></script>
-
 <script src="./modules/finanzas.js"></script>
-
 <script src="./modules/pagos.js"></script>
-
 <script src="./modules/ceo.js"></script>
-
 <script src="./modules/ia.js"></script>
-
 
 
 </body>
