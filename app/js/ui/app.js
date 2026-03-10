@@ -1,13 +1,16 @@
 /* ===============================
-   VALIDAR SESIÓN
+VALIDAR SESIÓN
 =============================== */
+
 if (!localStorage.getItem("uid")) {
   window.location.href = "/login.html";
 }
 
+
 /* ===============================
-   IMPORTS FIREBASE Y UTILIDADES
+IMPORTS FIREBASE
 =============================== */
+
 import { db } from "../core/firebase-config.js";
 
 import {
@@ -19,23 +22,33 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+
+/* ===============================
+IMPORTS SISTEMA
+=============================== */
+
 import Chart from "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm";
 
-/* módulos del sistema */
-import { diagnosticoIA, iniciarVoz } from "../ai/iaMecanica.js";
+import { detectarRepuestos, iniciarVoz } from "../ai/iaMecanica.js";
 import { crearRepuesto } from "../inventario/repuestos.js";
 import { notificarCliente } from "../services/whatsappService.js";
 import { generarFactura } from "../finanzas/factura.js";
+import { panelFinanciero } from "../finanzas/panelFinanciero.js";
+
 
 /* ===============================
-   INICIAR APP
+INICIAR APP
 =============================== */
+
 export async function iniciarApp(container) {
 
   container.innerHTML = `
-    <h1 class="text-2xl font-bold mb-6">TallerPRO360 - SaaS Automotriz</h1>
+    <h1 class="text-2xl font-bold mb-6">
+      TallerPRO360 - SaaS Automotriz
+    </h1>
 
-    <div id="menuPrincipal" class="grid grid-cols-3 gap-4 mb-6">
+    <div id="menuPrincipal"
+    class="grid grid-cols-3 gap-4 mb-6">
 
       <button id="btnDashboard"
       class="bg-blue-600 text-white px-4 py-2 rounded">
@@ -63,27 +76,38 @@ export async function iniciarApp(container) {
   `;
 
   document.getElementById("btnDashboard")
-  .onclick = () => dashboard(container.querySelector("#appContentInner"));
+  .onclick = () => dashboard(
+    container.querySelector("#appContentInner")
+  );
 
   document.getElementById("btnOrdenes")
-  .onclick = () => ordenes(container.querySelector("#appContentInner"));
+  .onclick = () => ordenes(
+    container.querySelector("#appContentInner")
+  );
 
   document.getElementById("btnRepuestos")
-  .onclick = () => repuestos(container.querySelector("#appContentInner"));
+  .onclick = () => repuestos(
+    container.querySelector("#appContentInner")
+  );
 
   document.getElementById("btnFinanzas")
-  .onclick = () => panelFinanciero(container.querySelector("#appContentInner"));
+  .onclick = () => panelFinanciero(
+    container.querySelector("#appContentInner")
+  );
 
 }
 
+
 /* ===============================
-   DASHBOARD
+DASHBOARD
 =============================== */
 
 export async function dashboard(container) {
 
   container.innerHTML = `
-    <h2 class="text-xl font-bold mb-4">Dashboard TallerPRO360</h2>
+    <h2 class="text-xl font-bold mb-4">
+    Dashboard TallerPRO360
+    </h2>
 
     <div id="kpis"
     class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -115,16 +139,20 @@ export async function dashboard(container) {
   document
     .getElementById("btnVoz")
     .addEventListener("click", iniciarVoz);
+
 }
 
+
 /* ===============================
-   ÓRDENES
+ÓRDENES
 =============================== */
 
 export async function ordenes(container) {
 
   container.innerHTML = `
-    <h2 class="text-xl font-bold mb-4">Gestión de Órdenes</h2>
+    <h2 class="text-xl font-bold mb-4">
+    Gestión de Órdenes
+    </h2>
 
     <div class="bg-white p-4 rounded shadow mb-6">
 
@@ -161,7 +189,13 @@ export async function ordenes(container) {
   document.getElementById("crearOrden").onclick = crearOrden;
 
   await cargarOrdenes();
+
 }
+
+
+/* ===============================
+CREAR ORDEN
+=============================== */
 
 async function crearOrden(){
 
@@ -170,8 +204,9 @@ async function crearOrden(){
   const placa = document.getElementById("placa").value;
   const tecnico = document.getElementById("tecnico").value;
 
-  if (!cliente || !vehiculo || !placa)
+  if (!cliente || !vehiculo || !placa){
     return alert("Complete los campos obligatorios");
+  }
 
   await addDoc(collection(db,"ordenes"),{
 
@@ -195,14 +230,24 @@ async function crearOrden(){
 
 }
 
+
+/* ===============================
+LIMPIAR FORMULARIO
+=============================== */
+
 function limpiarFormulario(){
 
   ["cliente","vehiculo","placa","tecnico"]
-  .forEach(id =>
-    document.getElementById(id).value = ""
-  );
+  .forEach(id => {
+    document.getElementById(id).value = "";
+  });
 
 }
+
+
+/* ===============================
+CARGAR ORDENES
+=============================== */
 
 async function cargarOrdenes(){
 
@@ -254,5 +299,127 @@ async function cargarOrdenes(){
     lista.appendChild(div);
 
   });
+
+}
+
+
+/* ===============================
+AGREGAR ACCIÓN
+=============================== */
+
+window.agregarAccion = async function(id){
+
+  const input = document.getElementById(`accion-${id}`);
+
+  const texto = input.value.trim();
+
+  if(!texto) return;
+
+  const ref = doc(db,"ordenes",id);
+
+  const snapshot = await getDocs(collection(db,"ordenes"));
+
+  const orden = snapshot.docs.find(d => d.id === id);
+
+  let acciones = orden.data().acciones || [];
+
+  acciones.push({
+    descripcion:texto,
+    fecha:new Date()
+  });
+
+  await updateDoc(ref,{
+    acciones
+  });
+
+  input.value="";
+
+  await cargarOrdenes();
+
+}
+
+
+/* ===============================
+KPIS
+=============================== */
+
+async function cargarKPIs(){
+
+  const cont = document.getElementById("kpis");
+
+  const snap = await getDocs(collection(db,"ordenes"));
+
+  const empresaId = localStorage.getItem("empresaId");
+
+  const ordenes = snap.docs
+  .map(d => d.data())
+  .filter(o => o.empresaId === empresaId);
+
+  const totalOrdenes = ordenes.length;
+
+  const ingresos = ordenes.reduce(
+    (sum,o)=> sum + (o.total || 0),0
+  );
+
+  cont.innerHTML = `
+    <div class="bg-white p-4 rounded shadow">
+      <strong>Órdenes</strong><br>
+      ${totalOrdenes}
+    </div>
+
+    <div class="bg-white p-4 rounded shadow">
+      <strong>Ingresos</strong><br>
+      $${ingresos}
+    </div>
+  `;
+
+}
+
+
+/* ===============================
+GRÁFICAS
+=============================== */
+
+async function cargarGraficas(){
+
+  const snap = await getDocs(collection(db,"ordenes"));
+
+  const datos = new Array(7).fill(0);
+
+  snap.forEach(doc => {
+
+    const d = doc.data();
+
+    if(!d.fecha) return;
+
+    const fecha = d.fecha.toDate();
+
+    const diff =
+    Math.floor(
+      (Date.now() - fecha.getTime())
+      / (1000*60*60*24)
+    );
+
+    if(diff < 7){
+      datos[6-diff] += d.total || 0;
+    }
+
+  });
+
+  new Chart(
+    document.getElementById("graficaIngresos"),
+    {
+      type:"line",
+      data:{
+        labels:["-6","-5","-4","-3","-2","-1","Hoy"],
+        datasets:[
+          {
+            label:"Ingresos",
+            data:datos
+          }
+        ]
+      }
+    }
+  );
 
 }
