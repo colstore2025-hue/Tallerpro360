@@ -16,17 +16,25 @@ import {
   getAuth,
   setPersistence,
   browserLocalPersistence
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
   getFirestore,
   enableIndexedDbPersistence
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import {
   getAnalytics,
   isSupported
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+
+import {
+  getStorage
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 
 // ======================================================
@@ -89,6 +97,13 @@ export const db = getFirestore(app);
 
 
 // ======================================================
+// ☁️ STORAGE (FACTURAS / IMÁGENES)
+// ======================================================
+
+export const storage = getStorage(app);
+
+
+// ======================================================
 // 📦 OFFLINE MODE (PWA)
 // ======================================================
 
@@ -105,11 +120,13 @@ enableIndexedDbPersistence(db)
     console.warn("⚠️ Persistencia activa en otra pestaña");
 
   }
+
   else if (err.code === "unimplemented") {
 
     console.warn("⚠️ Navegador no soporta modo offline");
 
   }
+
   else {
 
     console.error("🔥 Error activando offline:", err);
@@ -135,6 +152,7 @@ isSupported()
     console.log("📊 Firebase Analytics activo");
 
   }
+
   else {
 
     console.warn("⚠️ Analytics no soportado en este navegador");
