@@ -1,14 +1,5 @@
 // app/js/ai/iaMecanica.js
-// Motor de diagnóstico IA para TallerPro360
-
-
-/**
- * Detecta diagnóstico, repuestos y acciones
- * a partir de la descripción de la falla del vehículo.
- *
- * La llamada real a OpenAI se hace desde:
- * /api/diagnosticoIA
- */
+// Motor de diagnóstico IA para TallerPRO360
 
 export async function detectarRepuestos(descripcion){
 
@@ -17,90 +8,59 @@ throw new Error("Descripción de falla inválida");
 }
 
 const prompt = `
-Eres un mecánico automotriz experto.
+Eres un mecánico experto en diagnóstico automotriz.
 
-Analiza la siguiente falla del vehículo:
+Analiza la siguiente descripción de falla:
 
 "${descripcion}"
 
-Devuelve SOLO JSON con esta estructura:
+Devuelve SOLO JSON válido con esta estructura:
 
 {
-"diagnostico":"",
+"diagnostico":"explicación corta del problema",
 "repuestos":[
-{"nombre":"","prioridad":"alta|media|baja"}
+{"nombre":"","prioridad":"alta"},
+{"nombre":"","prioridad":"media"}
 ],
-"acciones":[]
+"acciones":[
+"acción recomendada 1",
+"acción recomendada 2"
+]
 }
 
-No agregues texto adicional.
+No agregues texto fuera del JSON.
 `;
 
 try{
 
-const resp = await fetch("/api/diagnosticoIA",{
+const respuesta = await fetch("/api/diagnosticoIA",{
 method:"POST",
 headers:{
 "Content-Type":"application/json"
 },
-body:JSON.stringify({ prompt })
+body:JSON.stringify({
+prompt
+})
 });
 
-const data = await resp.json();
-
-if(!data || !data.diagnostico){
-throw new Error("Respuesta IA inválida");
+if(!respuesta.ok){
+throw new Error("Error en API IA");
 }
+
+const data = await respuesta.json();
 
 return data;
 
 }catch(error){
 
-console.error("Error IA Mecánica:",error);
+console.error("Error IA repuestos:",error);
 
-return {
-diagnostico:"No se pudo generar diagnóstico automático",
+return{
+diagnostico:"No se pudo generar diagnóstico IA",
 repuestos:[],
 acciones:[]
 };
 
 }
-
-}
-
-
-/* =================================
-RECONOCIMIENTO DE VOZ
-================================= */
-
-export function iniciarVoz(){
-
-if(!('webkitSpeechRecognition' in window)){
-alert("Tu navegador no soporta reconocimiento de voz");
-return;
-}
-
-const recognition = new webkitSpeechRecognition();
-
-recognition.lang = "es-ES";
-recognition.continuous = false;
-recognition.interimResults = false;
-
-recognition.onresult = function(event){
-
-const texto = event.results[0][0].transcript;
-
-console.log("Descripción detectada:",texto);
-
-const inputDescripcion =
-document.getElementById("descripcionFalla");
-
-if(inputDescripcion){
-inputDescripcion.value = texto;
-}
-
-};
-
-recognition.start();
 
 }
