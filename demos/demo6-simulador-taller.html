@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Simulador TallerPRO360</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+
+body{
+background:#020617;
+color:white;
+font-family:system-ui;
+}
+
+.card{
+background:#0f172a;
+border:1px solid #1e293b;
+border-radius:14px;
+padding:16px;
+}
+
+.glow{
+color:#22c55e;
+}
+
+.section{
+margin-bottom:30px;
+}
+
+.vehicle{
+padding:8px;
+border-bottom:1px solid #1e293b;
+}
+
+</style>
+
+</head>
+
+<body class="p-10">
+
+<h1 class="text-4xl glow mb-10">
+Simulador TallerPRO360
+</h1>
+
+
+<!-- KPIs -->
+
+<div class="grid grid-cols-4 gap-6 mb-10">
+
+<div class="card">
+Vehículos hoy
+<div id="vehiculos" class="text-2xl glow mt-2">0</div>
+</div>
+
+<div class="card">
+Reparaciones
+<div id="reparaciones" class="text-2xl glow mt-2">0</div>
+</div>
+
+<div class="card">
+Repuestos usados
+<div id="repuestos" class="text-2xl glow mt-2">0</div>
+</div>
+
+<div class="card">
+Ingresos
+<div id="ingresos" class="text-2xl glow mt-2">$0</div>
+</div>
+
+</div>
+
+
+<!-- VEHICULOS -->
+
+<div class="section">
+
+<h2 class="text-2xl glow mb-4">
+Vehículos entrando al taller
+</h2>
+
+<div id="listaVehiculos" class="card"></div>
+
+</div>
+
+
+<!-- MECANICOS -->
+
+<div class="section">
+
+<h2 class="text-2xl glow mb-4">
+Mecánicos trabajando
+</h2>
+
+<div id="listaMecanicos" class="card"></div>
+
+</div>
+
+
+<!-- FACTURAS -->
+
+<div class="section">
+
+<h2 class="text-2xl glow mb-4">
+Facturación generada
+</h2>
+
+<div id="listaFacturas" class="card"></div>
+
+</div>
+
+
+<script>
+
+let vehiculos=0
+let reparaciones=0
+let repuestos=0
+let ingresos=0
+
+const autos=[
+"Toyota Hilux",
+"Kia Rio",
+"Mazda 3",
+"Chevrolet Onix",
+"Renault Duster"
+]
+
+const fallas=[
+"Frenos desgastados",
+"Batería descargada",
+"Sensor ABS",
+"Cambio de aceite",
+"Filtro de aire"
+]
+
+const mecanicos=[
+"Carlos",
+"Luis",
+"Andrés",
+"Jorge"
+]
+
+
+function simulate(){
+
+const auto=autos[Math.floor(Math.random()*autos.length)]
+const falla=fallas[Math.floor(Math.random()*fallas.length)]
+const mecanico=mecanicos[Math.floor(Math.random()*mecanicos.length)]
+
+const precio=Math.floor(Math.random()*250000)+80000
+
+vehiculos++
+reparaciones++
+repuestos+=Math.floor(Math.random()*3)+1
+ingresos+=precio
+
+
+document.getElementById("vehiculos").innerText=vehiculos
+document.getElementById("reparaciones").innerText=reparaciones
+document.getElementById("repuestos").innerText=repuestos
+document.getElementById("ingresos").innerText="$"+ingresos.toLocaleString()
+
+
+const v=document.createElement("div")
+v.className="vehicle"
+v.innerHTML="🚗 "+auto+" llegó por "+falla
+
+document.getElementById("listaVehiculos").prepend(v)
+
+
+const m=document.createElement("div")
+m.className="vehicle"
+m.innerHTML="👨‍🔧 "+mecanico+" reparando "+auto
+
+document.getElementById("listaMecanicos").prepend(m)
+
+
+const f=document.createElement("div")
+f.className="vehicle"
+f.innerHTML="🧾 Factura generada $"+precio.toLocaleString()
+
+document.getElementById("listaFacturas").prepend(f)
+
+}
+
+setInterval(simulate,4000)
+
+</script>
+
+</body>
+
+</html>
