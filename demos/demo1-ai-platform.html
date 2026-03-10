@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>TallerPRO360 AI Platform</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+background:#020617;
+color:white;
+font-family:system-ui;
+}
+
+.sidebar{
+background:#0f172a;
+width:230px;
+height:100vh;
+position:fixed;
+padding:20px;
+border-right:1px solid #1e293b;
+}
+
+.main{
+margin-left:250px;
+padding:30px;
+}
+
+.card{
+background:#0f172a;
+border:1px solid #1e293b;
+border-radius:16px;
+padding:20px;
+}
+
+.menu{
+padding:10px;
+margin-top:10px;
+cursor:pointer;
+border-radius:8px;
+}
+
+.menu:hover{
+background:#1e293b;
+}
+
+.glow{
+color:#22c55e;
+}
+
+.chat{
+height:250px;
+overflow:auto;
+background:#020617;
+border:1px solid #1e293b;
+border-radius:12px;
+padding:10px;
+}
+
+.msg{
+padding:8px;
+margin-bottom:6px;
+border-radius:8px;
+}
+
+.client{
+background:#065f46;
+text-align:right;
+}
+
+.ai{
+background:#1e293b;
+}
+
+.vehicle{
+padding:8px;
+border-bottom:1px solid #1e293b;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+
+<div class="sidebar">
+
+<h2 class="text-xl glow mb-6">
+TallerPRO360 AI
+</h2>
+
+<div class="menu" onclick="show('dashboard')">📊 Dashboard</div>
+<div class="menu" onclick="show('diagnostico')">🤖 Diagnóstico IA</div>
+<div class="menu" onclick="show('vehiculos')">🚗 Vehículos</div>
+<div class="menu" onclick="show('clientes')">💬 Clientes</div>
+<div class="menu" onclick="show('analytics')">📈 Analytics</div>
+
+</div>
+
+
+<div class="main">
+
+<!-- DASHBOARD -->
+
+<div id="dashboard">
+
+<h1 class="text-3xl glow mb-6">
+Dashboard Inteligente
+</h1>
+
+<div class="grid grid-cols-4 gap-6">
+
+<div class="card">
+Vehículos
+<div id="vehiculosKPI" class="text-2xl glow mt-2">0</div>
+</div>
+
+<div class="card">
+Órdenes
+<div id="ordenesKPI" class="text-2xl glow mt-2">0</div>
+</div>
+
+<div class="card">
+Clientes
+<div id="clientesKPI" class="text-2xl glow mt-2">0</div>
+</div>
+
+<div class="card">
+Ingresos
+<div id="ingresosKPI" class="text-2xl glow mt-2">$0</div>
+</div>
+
+</div>
+
+</div>
+
+
+<!-- DIAGNOSTICO IA -->
+
+<div id="diagnostico" style="display:none">
+
+<h1 class="text-3xl glow mb-6">
+Diagnóstico con IA
+</h1>
+
+<div id="diagnosticoIA" class="card"></div>
+
+</div>
+
+
+<!-- VEHICULOS -->
+
+<div id="vehiculos" style="display:none">
+
+<h1 class="text-3xl glow mb-6">
+Vehículos en taller
+</h1>
+
+<div id="listaVehiculos"></div>
+
+</div>
+
+
+<!-- CLIENTES CHAT -->
+
+<div id="clientes" style="display:none">
+
+<h1 class="text-3xl glow mb-6">
+Chat cliente
+</h1>
+
+<div id="chat" class="chat"></div>
+
+</div>
+
+
+<!-- ANALYTICS -->
+
+<div id="analytics" style="display:none">
+
+<h1 class="text-3xl glow mb-6">
+Analytics
+</h1>
+
+<canvas id="grafico"></canvas>
+
+</div>
+
+</div>
+
+
+<script>
+
+function show(id){
+
+const sections=["dashboard","diagnostico","vehiculos","clientes","analytics"]
+
+sections.forEach(s=>{
+document.getElementById(s).style.display="none"
+})
+
+document.getElementById(id).style.display="block"
+
+}
+
+
+let vehiculos=0
+let ordenes=0
+let clientes=0
+let ingresos=0
+
+const autos=["Toyota Hilux","Kia Rio","Mazda CX5","Renault Duster"]
+const fallas=["Sensor ABS","Frenos desgastados","Filtro sucio","Batería descargada"]
+
+const ctx=document.getElementById("grafico")
+
+const chart=new Chart(ctx,{
+type:"line",
+data:{
+labels:[],
+datasets:[{
+label:"Ingresos",
+data:[],
+borderColor:"#22c55e"
+}]
+}
+})
+
+
+function chat(msg,type){
+
+const c=document.getElementById("chat")
+
+const m=document.createElement("div")
+
+m.className="msg "+type
+
+m.innerHTML=msg
+
+c.prepend(m)
+
+}
+
+
+function simulate(){
+
+const auto=autos[Math.floor(Math.random()*autos.length)]
+const falla=fallas[Math.floor(Math.random()*fallas.length)]
+
+const precio=Math.floor(Math.random()*200000)+100000
+
+vehiculos++
+ordenes++
+clientes++
+ingresos+=precio
+
+
+document.getElementById("vehiculosKPI").innerText=vehiculos
+document.getElementById("ordenesKPI").innerText=ordenes
+document.getElementById("clientesKPI").innerText=clientes
+document.getElementById("ingresosKPI").innerText="$"+ingresos.toLocaleString()
+
+
+const v=document.createElement("div")
+
+v.className="vehicle"
+
+v.innerHTML="🚗 "+auto+" — "+falla
+
+document.getElementById("listaVehiculos").prepend(v)
+
+
+document.getElementById("diagnosticoIA").innerHTML=
+"IA detectó <span class='glow'>"+falla+"</span> en "+auto
+
+
+chat("Cliente: Traje mi "+auto,"client")
+
+chat("IA: Detectamos "+falla,"ai")
+
+chat("Sistema: Reparación estimada $"+precio.toLocaleString(),"ai")
+
+
+chart.data.labels.push(new Date().toLocaleTimeString())
+chart.data.datasets[0].data.push(ingresos)
+
+chart.update()
+
+}
+
+setInterval(simulate,5000)
+
+</script>
+
+</body>
+
+</html>
