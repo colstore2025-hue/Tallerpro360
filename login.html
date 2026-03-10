@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
 
 <meta charset="UTF-8">
-<title>TallerPRO360 · Login SaaS</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TallerPRO360 · Login</title>
 
 <link rel="manifest" href="./manifest.json">
 
@@ -15,9 +16,12 @@
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
+
 body{
 background:#0f172a;
+font-family:Inter,system-ui;
 }
+
 </style>
 
 </head>
@@ -38,7 +42,7 @@ TallerPRO360
 </h1>
 
 <p class="text-xs text-slate-400 mt-1">
-Plataforma SaaS de gestión de talleres
+ERP SaaS para talleres automotrices
 </p>
 
 </div>
@@ -71,6 +75,8 @@ placeholder="usuario@correo.com"
 Contraseña
 </label>
 
+<div class="relative">
+
 <input
 type="password"
 id="password"
@@ -78,6 +84,17 @@ required
 class="w-full mt-1 px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 focus:outline-none focus:border-emerald-400"
 placeholder="••••••••"
 />
+
+<button
+type="button"
+id="togglePass"
+class="absolute right-3 top-3 text-slate-400">
+
+<i class="fa fa-eye"></i>
+
+</button>
+
+</div>
 
 </div>
 
@@ -94,6 +111,20 @@ Ingresar
 </form>
 
 
+<!-- RECUPERAR -->
+
+<p class="text-center text-xs mt-3">
+
+<button id="resetBtn"
+class="text-emerald-400 hover:underline">
+
+¿Olvidaste tu contraseña?
+
+</button>
+
+</p>
+
+
 <p id="errorMsg"
 class="hidden text-red-400 text-xs text-center mt-4">
 </p>
@@ -107,82 +138,86 @@ Acceso Superadmin · CEO · Staff
 
 <script type="module">
 
-import { auth, db } from "./app/js/firebase-config.js";
+import { auth, db } from "./app/js/core/firebase-config.js";
 
 import {
+
 signInWithEmailAndPassword,
 onAuthStateChanged,
-signOut
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+signOut,
+sendPasswordResetEmail
+
+}
+
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
+
 doc,
 getDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+}
+
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
 const form=document.getElementById("loginForm");
 const errorMsg=document.getElementById("errorMsg");
+const togglePass=document.getElementById("togglePass");
+const resetBtn=document.getElementById("resetBtn");
 
 
 /* ===============================
-REDIRECCIÓN
+MOSTRAR PASSWORD
 =============================== */
 
-function redirigir(data){
+togglePass.addEventListener("click",()=>{
 
-const rol=data.rol||"demo";
-const rolGlobal=data.rolGlobal||"";
+const pass=document.getElementById("password");
 
-if(rolGlobal==="superadmin"){
+if(pass.type==="password"){
 
-window.location.href="/admin/ceo-dashboard.html";
+pass.type="text";
+togglePass.innerHTML='<i class="fa fa-eye-slash"></i>';
+
+}else{
+
+pass.type="password";
+togglePass.innerHTML='<i class="fa fa-eye"></i>';
+
+}
+
+});
+
+
+/* ===============================
+RESET PASSWORD
+=============================== */
+
+resetBtn.addEventListener("click",async()=>{
+
+const email=document.getElementById("email").value.trim();
+
+if(!email){
+
+showError("Escribe tu correo para recuperar contraseña");
 return;
 
 }
 
-switch(rol){
+try{
 
-case "dueno":
-case "admin":
-case "tecnico":
-case "asesor":
-case "demo":
+await sendPasswordResetEmail(auth,email);
 
-window.location.href="/app/index.html";
-break;
+alert("Te enviamos un correo para cambiar tu contraseña");
 
-case "cliente":
+}catch(e){
 
-window.location.href="/cliente.html";
-break;
-
-default:
-
-showError("Rol no válido");
+showError("No se pudo enviar el correo");
 
 }
 
-}
-
-
-/* ===============================
-ERROR
-=============================== */
-
-function showError(msg){
-
-errorMsg.textContent=msg;
-errorMsg.classList.remove("hidden");
-
-}
-
-function hideError(){
-
-errorMsg.textContent="";
-errorMsg.classList.add("hidden");
-
-}
+});
 
 
 /* ===============================
@@ -221,8 +256,7 @@ redirigir(data);
 
 catch(e){
 
-console.error("AutoLogin error",e);
-
+console.error(e);
 await signOut(auth);
 
 }
@@ -231,7 +265,7 @@ await signOut(auth);
 
 
 /* ===============================
-LOGIN MANUAL
+LOGIN
 =============================== */
 
 form.addEventListener("submit",async(e)=>{
@@ -242,13 +276,6 @@ hideError();
 
 const email=document.getElementById("email").value.trim();
 const password=document.getElementById("password").value;
-
-if(!email||!password){
-
-showError("Correo y contraseña requeridos");
-return;
-
-}
 
 try{
 
@@ -284,13 +311,44 @@ redirigir(data);
 
 catch(err){
 
-console.error(err);
-
 showError("Credenciales incorrectas");
 
 }
 
 });
+
+
+/* ===============================
+REDIRECCIÓN
+=============================== */
+
+function redirigir(data){
+
+if(data.rolGlobal==="superadmin"){
+
+window.location="/admin/ceo-dashboard.html";
+return;
+
+}
+
+switch(data.rol){
+
+case "dueno":
+case "admin":
+case "tecnico":
+case "asesor":
+
+window.location="/app/index.html";
+break;
+
+case "cliente":
+
+window.location="/cliente.html";
+break;
+
+}
+
+}
 
 
 /* ===============================
@@ -300,36 +358,27 @@ LOCAL STORAGE
 function setLocalStorage(data,uid){
 
 localStorage.setItem("uid",uid);
+localStorage.setItem("empresaId",data.empresaId||"");
+localStorage.setItem("rol",data.rol||"");
+localStorage.setItem("planTipo",data.planTipo||"freemium");
 
-localStorage.setItem(
-"empresaId",
-data.empresaId||""
-);
+}
 
-localStorage.setItem(
-"rol",
-data.rol||""
-);
 
-localStorage.setItem(
-"sucursalId",
-data.sucursalId||""
-);
+/* ===============================
+ERROR
+=============================== */
 
-localStorage.setItem(
-"planTipo",
-data.planTipo||"freemium"
-);
+function showError(msg){
 
-localStorage.setItem(
-"rolGlobal",
-data.rolGlobal||""
-);
+errorMsg.textContent=msg;
+errorMsg.classList.remove("hidden");
 
-localStorage.setItem(
-"loginTime",
-Date.now()
-);
+}
+
+function hideError(){
+
+errorMsg.classList.add("hidden");
 
 }
 
