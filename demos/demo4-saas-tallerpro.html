@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>TallerPRO360 SaaS Demo</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+background:#020617;
+color:white;
+font-family:system-ui;
+}
+
+.card{
+background:#0f172a;
+border:1px solid #1e293b;
+border-radius:16px;
+padding:20px;
+}
+
+.log{
+background:#020617;
+border:1px solid #1e293b;
+border-radius:12px;
+height:220px;
+overflow:auto;
+padding:15px;
+font-size:14px;
+}
+
+.glow{
+color:#10b981;
+}
+
+.phone{
+background:#020617;
+border:1px solid #1e293b;
+border-radius:20px;
+padding:15px;
+height:260px;
+overflow:auto;
+}
+
+</style>
+
+</head>
+
+<body class="p-10">
+
+<!-- HEADER -->
+
+<div class="flex justify-between mb-8">
+
+<h1 class="text-3xl font-bold glow">
+TallerPRO360 SaaS
+</h1>
+
+<div class="text-slate-400">
+Gestión Inteligente de Taller
+</div>
+
+</div>
+
+
+<!-- KPIs -->
+
+<div class="grid md:grid-cols-4 gap-6 mb-8">
+
+<div class="card">
+
+<div class="text-slate-400">
+Vehículos
+</div>
+
+<div id="vehiculos" class="text-3xl glow mt-2">
+0
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="text-slate-400">
+Órdenes
+</div>
+
+<div id="ordenes" class="text-3xl glow mt-2">
+0
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="text-slate-400">
+Clientes
+</div>
+
+<div id="clientes" class="text-3xl glow mt-2">
+0
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="text-slate-400">
+Ingresos
+</div>
+
+<div id="ingresos" class="text-3xl glow mt-2">
+$0
+</div>
+
+</div>
+
+</div>
+
+
+<!-- GRAFICO -->
+
+<div class="card mb-8">
+
+<h3 class="mb-4 font-bold">
+Ingresos del Taller
+</h3>
+
+<canvas id="grafico"></canvas>
+
+</div>
+
+
+
+<div class="grid md:grid-cols-2 gap-6">
+
+<!-- ACTIVIDAD IA -->
+
+<div class="card">
+
+<h3 class="mb-4 font-bold">
+Actividad del Sistema
+</h3>
+
+<div id="log" class="log"></div>
+
+</div>
+
+
+<!-- NOTIFICACIONES CLIENTE -->
+
+<div class="card">
+
+<h3 class="mb-4 font-bold">
+Notificaciones al Cliente
+</h3>
+
+<div id="phone" class="phone"></div>
+
+</div>
+
+</div>
+
+
+<script>
+
+let vehiculos = 0
+let ordenes = 0
+let clientes = 0
+let ingresos = 0
+
+const autos = [
+
+"Toyota Hilux",
+"Chevrolet Onix",
+"Kia Rio",
+"Renault Duster",
+"Mazda CX5"
+
+]
+
+const fallas = [
+
+"Pastillas de freno desgastadas",
+"Falla en sensor ABS",
+"Filtro de aire obstruido",
+"Fuga de aceite",
+"Batería descargada"
+
+]
+
+const precios = [
+
+90000,
+120000,
+180000,
+250000,
+320000
+
+]
+
+
+function log(msg){
+
+const area = document.getElementById("log")
+
+const item = document.createElement("div")
+
+item.classList.add("mb-1")
+
+item.innerHTML = msg
+
+area.prepend(item)
+
+}
+
+
+function notify(msg){
+
+const area = document.getElementById("phone")
+
+const item = document.createElement("div")
+
+item.classList.add("mb-2","p-2","bg-green-900","rounded")
+
+item.innerHTML = msg
+
+area.prepend(item)
+
+}
+
+
+
+/* GRAFICO */
+
+const ctx = document.getElementById("grafico")
+
+const chart = new Chart(ctx,{
+
+type:"bar",
+
+data:{
+labels:[],
+datasets:[{
+label:"Ingresos",
+data:[],
+backgroundColor:"#10b981"
+}]
+}
+
+})
+
+
+
+function actualizarGrafico(){
+
+const t = new Date().toLocaleTimeString()
+
+chart.data.labels.push(t)
+chart.data.datasets[0].data.push(ingresos)
+
+chart.update()
+
+}
+
+
+
+function simular(){
+
+const auto = autos[Math.floor(Math.random()*autos.length)]
+const falla = fallas[Math.floor(Math.random()*fallas.length)]
+const precio = precios[Math.floor(Math.random()*precios.length)]
+
+
+vehiculos++
+ordenes++
+clientes++
+ingresos+=precio
+
+
+document.getElementById("vehiculos").innerText=vehiculos
+document.getElementById("ordenes").innerText=ordenes
+document.getElementById("clientes").innerText=clientes
+document.getElementById("ingresos").innerText="$"+ingresos.toLocaleString("es-CO")
+
+
+log("🚗 Vehículo recibido: <span class='glow'>"+auto+"</span>")
+log("🤖 IA realizando diagnóstico")
+log("🔎 Problema detectado: "+falla)
+log("📦 Orden generada automáticamente")
+
+notify("📱 Tu vehículo "+auto+" fue recibido en el taller")
+notify("🔎 Diagnóstico: "+falla)
+notify("💰 Cotización: $"+precio.toLocaleString("es-CO"))
+notify("📄 Factura generada")
+
+log("💰 Factura emitida: $"+precio.toLocaleString("es-CO"))
+log("<hr class='border-slate-800'>")
+
+actualizarGrafico()
+
+}
+
+
+setInterval(simular,4000)
+
+</script>
+
+</body>
+
+</html>
