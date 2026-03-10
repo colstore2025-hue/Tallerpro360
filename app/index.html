@@ -6,11 +6,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
-<title>TallerPRO360</title>
+<title>TallerPRO360 ERP</title>
 
 <link rel="manifest" href="../manifest.json">
 
-<script src="../service-worker.js"></script>
+<meta name="theme-color" content="#16a34a">
 
 <style>
 
@@ -26,7 +26,6 @@ height:100vh;
 /* SIDEBAR */
 
 .sidebar{
-
 width:240px;
 background:#020617;
 padding:20px;
@@ -53,29 +52,23 @@ border-radius:8px;
 }
 
 .sidebar button:hover{
-
 background:#1e293b;
-
 }
 
 /* PANEL */
 
 .main{
-
 flex:1;
 padding:30px;
 overflow:auto;
-
 }
 
 .card{
-
 background:#020617;
 padding:20px;
 margin-bottom:20px;
 border-radius:10px;
 border:1px solid #1e293b;
-
 }
 
 </style>
@@ -94,7 +87,7 @@ border:1px solid #1e293b;
 
 <button onclick="loadModule('dashboard')">Dashboard</button>
 
-<button onclick="loadModule('ordenes')">Ordenes</button>
+<button onclick="loadModule('ordenes')">Órdenes</button>
 
 <button onclick="loadModule('clientes')">Clientes</button>
 
@@ -107,6 +100,8 @@ border:1px solid #1e293b;
 <button onclick="loadModule('ia')">IA Mecánica</button>
 
 <button onclick="loadModule('ceo')">CEO Panel</button>
+
+<button onclick="logout()">Salir</button>
 
 </div>
 
@@ -128,69 +123,82 @@ border:1px solid #1e293b;
 
 
 
-<!-- FIREBASE -->
+<!-- APP SCRIPT -->
 
-<script src="app/js/firebase-config.js"></script>
+<script type="module">
 
+import { auth } from "./js/core/firebase-config.js";
 
+import {
 
-<!-- IA GLOBAL -->
+onAuthStateChanged,
+signOut
 
-<script src="app/js/dashboardIA.js"></script>
+}
 
-<script src="app/js/motorIAglobal.js"></script>
-
-<script src="app/js/cotizacionIA.js"></script>
-
-<script src="app/js/workshopBrain.js"></script>
-
-<script src="app/js/autoPartsAI.js"></script>
-
-<script src="app/js/customerRetentionAI.js"></script>
-
-<script src="app/js/workshopRevenueOptimizer.js"></script>
-
-<script src="app/js/globalDiagnosticsAI.js"></script>
-
-<script src="app/js/workshopRankingAI.js"></script>
-
-<script src="app/js/superAI-orchestrator.js"></script>
-
-<script src="app/js/predictiveMaintenance.js"></script>
-
-<script src="app/js/pricingAI.js"></script>
-
-<script src="app/js/voiceAssistant.js"></script>
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 
+// ============================
+// VALIDAR LOGIN
+// ============================
 
-<!-- MODULOS ERP -->
+onAuthStateChanged(auth,(user)=>{
 
-<script src="modules/dashboard.js"></script>
+if(!user){
 
-<script src="modules/ordenes.js"></script>
+window.location.href="../login.html";
 
-<script src="modules/clientes.js"></script>
+return;
 
-<script src="modules/inventario.js"></script>
+}
 
-<script src="modules/finanzas.js"></script>
+console.log("Usuario activo:",user.email);
 
-<script src="modules/pagos.js"></script>
-
-<script src="modules/ceo.js"></script>
-
-<script src="modules/ia.js"></script>
-
+});
 
 
-<script>
+// ============================
+// LOGOUT
+// ============================
 
-function loadModule(modulo){
+window.logout=async function(){
+
+await signOut(auth);
+
+localStorage.clear();
+
+window.location.href="../login.html";
+
+}
+
+
+// ============================
+// SERVICE WORKER
+// ============================
+
+if("serviceWorker" in navigator){
+
+navigator.serviceWorker.register("../service-worker.js")
+
+.then(()=>{
+
+console.log("PWA activa");
+
+});
+
+}
+
+
+// ============================
+// CARGAR MODULOS
+// ============================
+
+window.loadModule=function(modulo){
 
 const contenido=document.getElementById("contenido");
 
-contenido.innerHTML="Cargando...";
+contenido.innerHTML="Cargando módulo...";
 
 switch(modulo){
 
@@ -231,6 +239,57 @@ break;
 }
 
 </script>
+
+
+
+<!-- IA GLOBAL -->
+
+<script src="./js/dashboardIA.js"></script>
+
+<script src="./js/motorIAglobal.js"></script>
+
+<script src="./js/cotizacionIA.js"></script>
+
+<script src="./js/workshopBrain.js"></script>
+
+<script src="./js/autoPartsAI.js"></script>
+
+<script src="./js/customerRetentionAI.js"></script>
+
+<script src="./js/workshopRevenueOptimizer.js"></script>
+
+<script src="./js/globalDiagnosticsAI.js"></script>
+
+<script src="./js/workshopRankingAI.js"></script>
+
+<script src="./js/superAI-orchestrator.js"></script>
+
+<script src="./js/predictiveMaintenance.js"></script>
+
+<script src="./js/pricingAI.js"></script>
+
+<script src="./js/voiceAssistant.js"></script>
+
+
+
+<!-- MODULOS ERP -->
+
+<script src="./modules/dashboard.js"></script>
+
+<script src="./modules/ordenes.js"></script>
+
+<script src="./modules/clientes.js"></script>
+
+<script src="./modules/inventario.js"></script>
+
+<script src="./modules/finanzas.js"></script>
+
+<script src="./modules/pagos.js"></script>
+
+<script src="./modules/ceo.js"></script>
+
+<script src="./modules/ia.js"></script>
+
 
 
 </body>
