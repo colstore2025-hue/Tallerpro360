@@ -1,31 +1,163 @@
-import { db } from "./firebase.js";
-import { collection, addDoc, getDocs, updateDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { detectarRepuestos } from "./iaMecanica.js";
-import { generarFactura } from "./facturacion.js";
-import { enviarWhatsApp } from "./whatsappService.js";
+import { db } from "../js/core/firebase-config.js";
 
-export async function crearOrden(orden){
-  // Crear orden en Firestore
-  const docRef = await addDoc(collection(db,"ordenes"),{
-    ...orden, estado:"activa", acciones:[], total:0, fecha:serverTimestamp()
-  });
-  return docRef.id;
+import {
+collection,
+addDoc,
+getDoc,
+updateDoc,
+doc,
+serverTimestamp
 }
 
-export async function agregarAccionOrden(ordenId, accion){
-  const ref = doc(db,"ordenes",ordenId);
-  const ordenSnap = await getDocs(collection(db,"ordenes"));
-  // Detectar repuestos
-  const ia = await detectarRepuestos(accion.descripcion);
-  accion.repuestosIA = ia.repuestos;
-  // Actualizar Firestore
-  await updateDoc(ref,{acciones:[...ordenSnap.data().acciones, accion]});
-  // Notificar cliente
-  enviarWhatsApp(ordenSnap.data().telefonoCliente, `Nueva acción agregada: ${accion.descripcion}`);
-  // Actualizar total
-  const totalActual = ordenSnap.data().total || 0;
-  const totalNuevo = totalActual + (accion.costo || 0);
-  await updateDoc(ref,{total:totalNuevo});
-  // Generar factura PDF
-  generarFactura({...ordenSnap.data(), acciones:[...ordenSnap.data().acciones, accion], total:totalNuevo});
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+import { detectarRepuestos } from "../js/iaMecanica.js";
+import { generarFactura } from "../js/facturacion.js";
+import { enviarWhatsApp } from "../js/whatsappService.js";
+
+
+/* ========================================
+CREAR ORDEN
+======================================== */
+
+export async function crearOrden(orden){
+
+try{
+
+const empresaId = localStorage.getItem("empresaId");
+
+const docRef = await addDoc(collection(db,"ordenes"),{
+
+...orden,
+
+empresaId:empresaId,
+
+estado:"activa",
+
+acciones:[],
+
+total:0,
+
+fecha:serverTimestamp()
+
+});
+
+console.log("Orden creada:",docRef.id);
+
+return docRef.id;
+
+}catch(error){
+
+console.error("Error creando orden:",error);
+
+}
+
+}
+
+
+/* ========================================
+AGREGAR ACCION A ORDEN
+======================================== */
+
+export async function agregarAccionOrden(ordenId,accion){
+
+try{
+
+const ref = doc(db,"ordenes",ordenId);
+
+const ordenSnap = await getDoc(ref);
+
+if(!ordenSnap.exists()){
+
+console.error("Orden no existe");
+
+return;
+
+}
+
+const ordenData = ordenSnap.data();
+
+
+/* ======================
+IA DETECTAR REPUESTOS
+====================== */
+
+const ia = await detectarRepuestos(accion.descripcion);
+
+accion.repuestosIA = ia?.repuestos || [];
+
+
+/* ======================
+ACCIONES ACTUALES
+====================== */
+
+const accionesActuales = ordenData.acciones || [];
+
+const nuevasAcciones = [...accionesActuales,accion];
+
+
+/* ======================
+TOTAL
+====================== */
+
+const totalActual = ordenData.total || 0;
+
+const totalNuevo = totalActual + (accion.costo || 0);
+
+
+/* ======================
+ACTUALIZAR FIRESTORE
+====================== */
+
+await updateDoc(ref,{
+
+acciones:nuevasAcciones,
+
+total:totalNuevo
+
+});
+
+
+/* ======================
+NOTIFICACION CLIENTE
+====================== */
+
+if(ordenData.telefonoCliente){
+
+await enviarWhatsApp(
+
+ordenData.telefonoCliente,
+
+`🔧 TallerPRO360\n\nNueva acción registrada:\n${accion.descripcion}`
+
+);
+
+}
+
+
+/* ======================
+GENERAR FACTURA
+====================== */
+
+await generarFactura({
+
+...ordenData,
+
+acciones:nuevasAcciones,
+
+total:totalNuevo
+
+});
+
+
+console.log("Acción agregada correctamente");
+
+
+}catch(error){
+
+console.error("Error agregando acción:",error);
+
+}
+
 }
