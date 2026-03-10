@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>TallerPRO360 Plataforma</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+
+body{
+background:#020617;
+color:white;
+font-family:system-ui;
+}
+
+.sidebar{
+background:#0f172a;
+width:220px;
+height:100vh;
+position:fixed;
+left:0;
+top:0;
+padding:20px;
+border-right:1px solid #1e293b;
+}
+
+.menu{
+padding:10px;
+margin-top:10px;
+border-radius:8px;
+cursor:pointer;
+}
+
+.menu:hover{
+background:#1e293b;
+}
+
+.main{
+margin-left:240px;
+padding:30px;
+}
+
+.card{
+background:#0f172a;
+border:1px solid #1e293b;
+border-radius:16px;
+padding:20px;
+}
+
+.glow{
+color:#22c55e;
+}
+
+.login{
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- LOGIN -->
+
+<div id="loginPage" class="login">
+
+<div class="card w-80 text-center">
+
+<h2 class="text-2xl mb-6 glow">
+TallerPRO360
+</h2>
+
+<input id="user" class="w-full p-2 mb-3 rounded text-black" placeholder="Usuario">
+
+<input id="pass" type="password" class="w-full p-2 mb-4 rounded text-black" placeholder="Contraseña">
+
+<button onclick="login()" class="bg-green-500 w-full p-2 rounded">
+Entrar
+</button>
+
+</div>
+
+</div>
+
+
+<!-- APP -->
+
+<div id="app" style="display:none">
+
+<div class="sidebar">
+
+<h2 class="text-xl glow mb-6">
+TallerPRO360
+</h2>
+
+<div class="menu" onclick="show('dashboard')">📊 Dashboard</div>
+
+<div class="menu" onclick="show('vehiculos')">🚗 Vehículos</div>
+
+<div class="menu" onclick="show('inventario')">📦 Inventario</div>
+
+<div class="menu" onclick="show('facturacion')">🧾 Facturación</div>
+
+<div class="menu" onclick="show('mecanicos')">👨‍🔧 Mecánicos</div>
+
+</div>
+
+
+<div class="main">
+
+<!-- DASHBOARD -->
+
+<div id="dashboard">
+
+<h1 class="text-3xl glow mb-6">
+Dashboard
+</h1>
+
+<div class="grid grid-cols-4 gap-6">
+
+<div class="card">
+Vehículos
+<div id="kpiVehiculos" class="text-2xl glow mt-2">0</div>
+</div>
+
+<div class="card">
+Órdenes
+<div id="kpiOrdenes" class="text-2xl glow mt-2">0</div>
+</div>
+
+<div class="card">
+Clientes
+<div id="kpiClientes" class="text-2xl glow mt-2">0</div>
+</div>
+
+<div class="card">
+Ingresos
+<div id="kpiIngresos" class="text-2xl glow mt-2">$0</div>
+</div>
+
+</div>
+
+</div>
+
+
+<!-- VEHICULOS -->
+
+<div id="vehiculos" style="display:none">
+
+<h1 class="text-3xl glow mb-6">
+Vehículos en Taller
+</h1>
+
+<div id="listaVehiculos"></div>
+
+</div>
+
+
+<!-- INVENTARIO -->
+
+<div id="inventario" style="display:none">
+
+<h1 class="text-3xl glow mb-6">
+Inventario
+</h1>
+
+<div class="card mb-3">Filtro de aceite</div>
+<div class="card mb-3">Pastillas de freno</div>
+<div class="card mb-3">Batería</div>
+<div class="card mb-3">Aceite sintético</div>
+
+</div>
+
+
+<!-- FACTURACION -->
+
+<div id="facturacion" style="display:none">
+
+<h1 class="text-3xl glow mb-6">
+Facturación
+</h1>
+
+<div id="facturas"></div>
+
+</div>
+
+
+<!-- MECANICOS -->
+
+<div id="mecanicos" style="display:none">
+
+<h1 class="text-3xl glow mb-6">
+Mecánicos
+</h1>
+
+<div class="card mb-3">Carlos — Especialista motor</div>
+<div class="card mb-3">Luis — Frenos</div>
+<div class="card mb-3">Andrés — Electricidad</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+
+function login(){
+
+document.getElementById("loginPage").style.display="none"
+document.getElementById("app").style.display="block"
+
+}
+
+function show(id){
+
+const sections=["dashboard","vehiculos","inventario","facturacion","mecanicos"]
+
+sections.forEach(s=>{
+document.getElementById(s).style.display="none"
+})
+
+document.getElementById(id).style.display="block"
+
+}
+
+
+
+let vehiculos=0
+let ordenes=0
+let clientes=0
+let ingresos=0
+
+const autos=["Toyota","Mazda","Kia","Renault","Chevrolet"]
+const fallas=["Frenos","Batería","Sensor ABS","Filtro","Aceite"]
+
+function simulate(){
+
+const auto=autos[Math.floor(Math.random()*autos.length)]
+const falla=fallas[Math.floor(Math.random()*fallas.length)]
+const precio=Math.floor(Math.random()*200000)+80000
+
+vehiculos++
+ordenes++
+clientes++
+ingresos+=precio
+
+document.getElementById("kpiVehiculos").innerText=vehiculos
+document.getElementById("kpiOrdenes").innerText=ordenes
+document.getElementById("kpiClientes").innerText=clientes
+document.getElementById("kpiIngresos").innerText="$"+ingresos.toLocaleString()
+
+const v=document.createElement("div")
+
+v.className="card mb-3"
+
+v.innerHTML="🚗 "+auto+" — Reparación "+falla
+
+document.getElementById("listaVehiculos").prepend(v)
+
+const f=document.createElement("div")
+
+f.className="card mb-3"
+
+f.innerHTML="Factura generada — $"+precio.toLocaleString()
+
+document.getElementById("facturas").prepend(f)
+
+}
+
+setInterval(simulate,6000)
+
+</script>
+
+</body>
+
+</html>
