@@ -1,125 +1,81 @@
 {
   "name": "TallerPRO360 - ERP Inteligente para Talleres Automotrices",
   "short_name": "TallerPRO360",
-  "description": "ERP inteligente para la gestión total de talleres automotrices. Control de órdenes, vehículos, clientes, inventario y procesos con trazabilidad completa.",
-
+  "description": "ERP inteligente para la gestión total de talleres automotrices. Control de órdenes, vehículos, clientes, inventario y trazabilidad completa.",
   "id": "/",
   "start_url": "/index.html?utm_source=pwa",
-
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
-
   "orientation": "portrait-primary",
-
   "lang": "es-CO",
   "dir": "ltr",
-
   "background_color": "#ffffff",
   "theme_color": "#16a34a",
-
-  "categories": [
-    "business",
-    "productivity",
-    "utilities"
-  ],
-
+  "categories": ["business", "productivity", "utilities"],
   "icons": [
-
     {
       "src": "/assets/logo-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
-
     {
       "src": "/assets/logo-192-maskable.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
-
     {
       "src": "/assets/logo-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
-
     {
       "src": "/assets/logo-512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
-
   ],
-
   "screenshots": [
-
     {
       "src": "/assets/screen-dashboard.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide"
     },
-
     {
       "src": "/assets/screen-mobile.png",
       "sizes": "540x720",
       "type": "image/png",
       "form_factor": "narrow"
     }
-
   ],
-
   "shortcuts": [
-
     {
       "name": "Nueva Orden",
       "short_name": "Orden",
       "description": "Crear una nueva orden de trabajo",
       "url": "/taller.html?action=nueva-orden",
-      "icons": [
-        {
-          "src": "/assets/icon-orden.png",
-          "sizes": "192x192"
-        }
-      ]
+      "icons": [{ "src": "/assets/icon-orden.png", "sizes": "192x192" }]
     },
-
     {
       "name": "Clientes",
       "short_name": "Clientes",
       "description": "Ver lista de clientes",
       "url": "/cliente.html",
-      "icons": [
-        {
-          "src": "/assets/icon-clientes.png",
-          "sizes": "192x192"
-        }
-      ]
+      "icons": [{ "src": "/assets/icon-clientes.png", "sizes": "192x192" }]
     },
-
     {
       "name": "Dashboard CEO",
       "short_name": "Dashboard",
       "description": "Panel de control financiero",
       "url": "/ceo.html",
-      "icons": [
-        {
-          "src": "/assets/icon-dashboard.png",
-          "sizes": "192x192"
-        }
-      ]
+      "icons": [{ "src": "/assets/icon-dashboard.png", "sizes": "192x192" }]
     }
-
   ],
-
   "prefer_related_applications": false,
-
-  "launch_handler": {
-    "client_mode": "navigate-existing"
-  }
+  "launch_handler": { "client_mode": "navigate-existing" }
 }
