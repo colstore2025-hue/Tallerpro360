@@ -1,4 +1,4 @@
-<script type="module">
+// billing-ui.js
 import { getAuth, onAuthStateChanged } 
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -11,30 +11,38 @@ const db = getFirestore();
 onAuthStateChanged(auth, async (user) => {
   if (!user) return;
 
-  const userSnap = await getDoc(doc(db,"usuarios",user.uid));
-  if (!userSnap.exists()) return;
+  try {
+    const userSnap = await getDoc(doc(db, "usuarios", user.uid));
+    if (!userSnap.exists()) return;
 
-  const { tallerId } = userSnap.data();
-  if (!tallerId) return;
+    const { empresaId } = userSnap.data();
+    if (!empresaId) return;
 
-  const tallerSnap = await getDoc(doc(db,"talleres",tallerId));
-  if (!tallerSnap.exists()) return;
+    const empresaSnap = await getDoc(doc(db, "empresas", empresaId));
+    if (!empresaSnap.exists()) return;
 
-  const taller = tallerSnap.data();
-  const ahora = new Date();
-  const vence = taller.venceEn?.toDate?.();
+    const empresa = empresaSnap.data();
+    const ahora = new Date();
+    const vence = empresa.venceEn?.toDate?.();
 
-  if (!vence) return;
+    if (!vence) return;
 
-  const dias = Math.ceil((vence - ahora) / (1000*60*60*24));
+    const dias = Math.ceil((vence - ahora) / (1000 * 60 * 60 * 24));
 
-  if (taller.estadoPlan !== "activo" || dias < 0) {
-    mostrarBloqueo("🔒 Tu plan está vencido", "Debes realizar el pago para continuar usando TallerPRO360.");
-    return;
-  }
+    if (empresa.estadoPlan !== "ACTIVO" || dias < 0) {
+      mostrarBloqueo(
+        "🔒 Tu plan está vencido",
+        "Debes realizar el pago para continuar usando TallerPRO360."
+      );
+      return;
+    }
 
-  if (dias <= 7) {
-    mostrarAviso(`⏳ Tu plan vence en ${dias} día${dias===1?"":"s"}`);
+    if (dias <= 7) {
+      mostrarAviso(`⏳ Tu plan vence en ${dias} día${dias === 1 ? "" : "s"}`);
+    }
+
+  } catch (error) {
+    console.error("Error validando plan:", error);
   }
 });
 
@@ -101,4 +109,3 @@ function mostrarBloqueo(titulo, texto) {
     </div>
   `;
 }
-</script>
