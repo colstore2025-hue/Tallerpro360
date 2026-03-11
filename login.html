@@ -5,18 +5,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TallerPRO360 · Login</title>
+<meta name="description" content="Acceso seguro al ERP SaaS TallerPRO360">
 <link rel="manifest" href="./manifest.json">
-
-<!-- TailwindCSS + FontAwesome -->
 <script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet"
- href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-body {
-  background: #0f172a;
-  font-family: Inter, system-ui;
-}
+body { background:#0f172a; font-family:Inter,system-ui; }
 </style>
 </head>
 
@@ -33,12 +27,11 @@ body {
 
   <!-- FORM -->
   <form id="loginForm" class="space-y-4">
-
     <div>
       <label class="text-xs text-slate-400">Correo</label>
       <input type="email" id="email" required
         class="w-full mt-1 px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 focus:outline-none focus:border-emerald-400"
-        placeholder="usuario@correo.com" />
+        placeholder="usuario@correo.com"/>
     </div>
 
     <div>
@@ -46,7 +39,7 @@ body {
       <div class="relative">
         <input type="password" id="password" required
           class="w-full mt-1 px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 focus:outline-none focus:border-emerald-400"
-          placeholder="••••••••" />
+          placeholder="••••••••"/>
         <button type="button" id="togglePass" class="absolute right-3 top-3 text-slate-400">
           <i class="fa fa-eye"></i>
         </button>
@@ -57,7 +50,6 @@ body {
       class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-900 font-bold py-2 rounded-lg transition">
       Ingresar
     </button>
-
   </form>
 
   <!-- RECUPERAR -->
@@ -68,24 +60,18 @@ body {
   </p>
 
   <p id="errorMsg" class="hidden text-red-400 text-xs text-center mt-4"></p>
-
-  <p class="text-center text-[10px] text-slate-500 mt-6">
-    Acceso Superadmin · CEO · Staff
-  </p>
+  <p class="text-center text-[10px] text-slate-500 mt-6">Acceso Superadmin · CEO · Staff</p>
 
 </div>
 
 <script type="module">
-
-import { auth, db } from "./core/firebase-config.js";
-
+import { auth, db } from "./app/js/core/firebase-config.js";
 import {
   signInWithEmailAndPassword,
   onAuthStateChanged,
   signOut,
   sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const form = document.getElementById("loginForm");
@@ -94,11 +80,11 @@ const togglePass = document.getElementById("togglePass");
 const resetBtn = document.getElementById("resetBtn");
 
 /* ===============================
-MOSTRAR / OCULTAR PASSWORD
+MOSTRAR PASSWORD
 =============================== */
 togglePass.addEventListener("click", () => {
   const pass = document.getElementById("password");
-  if (pass.type === "password") {
+  if(pass.type === "password") {
     pass.type = "text";
     togglePass.innerHTML = '<i class="fa fa-eye-slash"></i>';
   } else {
@@ -112,10 +98,7 @@ RESET PASSWORD
 =============================== */
 resetBtn.addEventListener("click", async () => {
   const email = document.getElementById("email").value.trim();
-  if (!email) {
-    showError("Escribe tu correo para recuperar contraseña");
-    return;
-  }
+  if(!email) return showError("Escribe tu correo para recuperar contraseña");
   try {
     await sendPasswordResetEmail(auth, email);
     alert("Te enviamos un correo para cambiar tu contraseña");
@@ -127,19 +110,16 @@ resetBtn.addEventListener("click", async () => {
 /* ===============================
 AUTO LOGIN
 =============================== */
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return;
-
+onAuthStateChanged(auth, async user => {
+  if(!user) return;
   try {
     const snap = await getDoc(doc(db, "usuariosGlobal", user.uid));
-    if (!snap.exists() || !snap.data().activo) {
-      await signOut(auth);
-      return;
-    }
+    if(!snap.exists()) { await signOut(auth); return; }
     const data = snap.data();
+    if(!data.activo) { await signOut(auth); return; }
     setLocalStorage(data, user.uid);
     redirigir(data);
-  } catch (e) {
+  } catch(e) {
     console.error(e);
     await signOut(auth);
   }
@@ -148,35 +128,21 @@ onAuthStateChanged(auth, async (user) => {
 /* ===============================
 LOGIN
 =============================== */
-form.addEventListener("submit", async (e) => {
+form.addEventListener("submit", async e => {
   e.preventDefault();
   hideError();
-
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
-
   try {
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
     const snap = await getDoc(doc(db, "usuariosGlobal", uid));
-
-    if (!snap.exists()) {
-      showError("Usuario no registrado");
-      await signOut(auth);
-      return;
-    }
-
+    if(!snap.exists()) { showError("Usuario no registrado"); await signOut(auth); return; }
     const data = snap.data();
-    if (!data.activo) {
-      showError("Usuario desactivado");
-      await signOut(auth);
-      return;
-    }
-
+    if(!data.activo) { showError("Usuario desactivado"); await signOut(auth); return; }
     setLocalStorage(data, uid);
     redirigir(data);
-
-  } catch (err) {
+  } catch(err) {
     showError("Credenciales incorrectas");
   }
 });
@@ -184,21 +150,17 @@ form.addEventListener("submit", async (e) => {
 /* ===============================
 REDIRECCIÓN
 =============================== */
-function redirigir(data) {
-  if (data.rolGlobal === "superadmin") {
-    window.location = "/admin/ceo-dashboard.html";
-    return;
-  }
-
-  switch (data.rol) {
+function redirigir(data){
+  if(data.rolGlobal === "superadmin") { window.location="/admin/ceo-dashboard.html"; return; }
+  switch(data.rol) {
     case "dueno":
     case "admin":
     case "tecnico":
     case "asesor":
-      window.location = "/app/index.html";
+      window.location="/app/index.html";
       break;
     case "cliente":
-      window.location = "/cliente.html";
+      window.location="/cliente.html";
       break;
   }
 }
@@ -206,7 +168,7 @@ function redirigir(data) {
 /* ===============================
 LOCAL STORAGE
 =============================== */
-function setLocalStorage(data, uid) {
+function setLocalStorage(data, uid){
   localStorage.setItem("uid", uid);
   localStorage.setItem("empresaId", data.empresaId || "");
   localStorage.setItem("rol", data.rol || "");
@@ -216,14 +178,13 @@ function setLocalStorage(data, uid) {
 /* ===============================
 ERROR
 =============================== */
-function showError(msg) {
+function showError(msg){
   errorMsg.textContent = msg;
   errorMsg.classList.remove("hidden");
 }
-function hideError() {
+function hideError(){
   errorMsg.classList.add("hidden");
 }
-
 </script>
 
 </body>
