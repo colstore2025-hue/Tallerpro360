@@ -1,25 +1,35 @@
 /************************************************
- * TallerPRO360 · Functions Principales
- * Pagos MercadoPago + Webhook
+ * TallerPRO360 · Firebase Functions
+ * Pagos MercadoPago + Webhook + Setup Talleres
  ************************************************/
 
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const mercadopago = require("mercadopago");
 
-// Inicializar Firebase Admin
+// ===============================
+// INICIALIZAR FIREBASE ADMIN
+// ===============================
 admin.initializeApp();
 const db = admin.firestore();
 
 // ===============================
-// CONFIGURACIÓN MERCADO PAGO
+// IMPORTAR MODULOS
 // ===============================
-mercadopago.configure({ access_token: functions.config().mp.token });
+const { crearTalleresParaUsuarios } = require("./modules/setupTaller");
 
 // ===============================
-// 1️⃣ CREAR PAGO (Callable Function)
+// CONFIGURACIÓN MERCADO PAGO
 // ===============================
+mercadopago.configure({
+  access_token: functions.config().mp.token
+});
+
+// =====================================================
+// 1️⃣ CREAR PAGO (Callable Function)
+// =====================================================
 exports.crearPago = functions.https.onCall(async (data, context) => {
+
   if (!context.auth) {
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -33,6 +43,7 @@ exports.crearPago = functions.https.onCall(async (data, context) => {
 
   // 🔎 Validar plan
   const planSnap = await db.collection("planes").doc(planId).get();
+
   if (!planSnap.exists || !planSnap.data().activo) {
     throw new functions.https.HttpsError(
       "invalid-argument",
@@ -42,8 +53,11 @@ exports.crearPago = functions.https.onCall(async (data, context) => {
 
   const plan = planSnap.data();
 
-  // ✅ Crear preferencia MercadoPago
+  // ===============================
+  // CREAR PREFERENCIA MERCADOPAGO
+  // ===============================
   const preference = {
+
     items: [
       {
         title: `TallerPRO360 · ${plan.nombre}`,
@@ -52,81 +66,148 @@ exports.crearPago = functions.https.onCall(async (data, context) => {
         unit_price: plan.precio
       }
     ],
+
     payer: { email },
-    metadata: { uid, planId },
+
+    metadata: {
+      uid,
+      planId
+    },
+
     auto_return: "approved",
+
     back_urls: {
       success: "https://tallerpro360.com/pago-exitoso.html",
       failure: "https://tallerpro360.com/pago-fallido.html",
       pending: "https://tallerpro360.com/pago-pendiente.html"
     },
-    notification_url: "https://us-central1-tallerpro360.cloudfunctions.net/webhookMP"
+
+    notification_url:
+      "https://us-central1-tallerpro360.cloudfunctions.net/webhookMP"
+
   };
 
   try {
+
     const resp = await mercadopago.preferences.create(preference);
-    return { init_point: resp.body.init_point };
+
+    return {
+      init_point: resp.body.init_point
+    };
+
   } catch (error) {
+
     console.error("Error creando preferencia MercadoPago:", error);
+
     throw new functions.https.HttpsError(
       "internal",
       "Error creando preferencia de pago"
     );
+
   }
+
 });
 
-// ===============================
+
+// =====================================================
 // 2️⃣ WEBHOOK MERCADO PAGO
-// ===============================
+// =====================================================
 exports.webhookMP = functions.https.onRequest(async (req, res) => {
+
   try {
+
     const paymentId = req.query["data.id"];
+
     if (!paymentId) return res.sendStatus(200);
 
     const payment = await mercadopago.payment.findById(paymentId);
     const data = payment.body;
 
-    // ✅ Solo pagos aprobados
-    if (data.status !== "approved") return res.sendStatus(200);
+    // Solo pagos aprobados
+    if (data.status !== "approved") {
+      return res.sendStatus(200);
+    }
 
     const { uid, planId } = data.metadata;
 
     const planSnap = await db.collection("planes").doc(planId).get();
-    if (!planSnap.exists) return res.sendStatus(200);
+
+    if (!planSnap.exists) {
+      return res.sendStatus(200);
+    }
 
     const plan = planSnap.data();
+
     const ahora = admin.firestore.Timestamp.now();
+
     const vence = admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + plan.duracion_dias * 86400000)
     );
 
-    // 🔥 Activación del plan en Firestore
-    await db.collection("talleres").doc(uid).set(
-      {
-        planId,
-        planNombre: plan.nombre,
-        estadoPlan: "ACTIVO",
-        inicioPlan: ahora,
-        venceEn: vence,
-        metodoPago: "mercado_pago",
-        alertas: { d7: false, d3: false, d1: false }
-      },
-      { merge: true }
-    );
+    // ===============================
+    // ACTIVAR PLAN EN TALLER
+    // ===============================
+    await db.collection("talleres").doc(uid).set({
 
-    // 🧾 Registrar pago
+      planId: planId,
+      planNombre: plan.nombre,
+      estadoPlan: "ACTIVO",
+      inicioPlan: ahora,
+      venceEn: vence,
+      metodoPago: "mercado_pago",
+
+      alertas: {
+        d7: false,
+        d3: false,
+        d1: false
+      }
+
+    }, { merge: true });
+
+
+    // ===============================
+    // REGISTRAR PAGO
+    // ===============================
     await db.collection("pagos").add({
-      uid,
-      planId,
+
+      uid: uid,
+      planId: planId,
       monto: plan.precio,
       estado: "aprobado",
       metodo: "mercado_pago",
       creadoEn: ahora
+
     });
 
     res.sendStatus(200);
+
   } catch (err) {
+
     console.error("Error Webhook MP:", err);
     res.sendStatus(500);
+
   }
+
+});
+
+
+// =====================================================
+// 3️⃣ SETUP TALLERES PARA USUARIOS EXISTENTES
+// =====================================================
+exports.setupTalleres = functions.https.onRequest(async (req, res) => {
+
+  try {
+
+    await crearTalleresParaUsuarios();
+
+    res.send("Talleres creados correctamente");
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).send("Error creando talleres");
+
+  }
+
 });
