@@ -3,15 +3,19 @@
 
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TallerPRO360 · Login</title>
 <link rel="manifest" href="./manifest.json">
+
+<!-- TailwindCSS + FontAwesome -->
 <script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet"
+ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 <style>
 body {
-  background:#0f172a;
-  font-family:Inter,system-ui;
+  background: #0f172a;
+  font-family: Inter, system-ui;
 }
 </style>
 </head>
@@ -27,14 +31,14 @@ body {
     <p class="text-xs text-slate-400 mt-1">ERP SaaS para talleres automotrices</p>
   </div>
 
-  <!-- FORMULARIO -->
+  <!-- FORM -->
   <form id="loginForm" class="space-y-4">
 
     <div>
       <label class="text-xs text-slate-400">Correo</label>
       <input type="email" id="email" required
         class="w-full mt-1 px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 focus:outline-none focus:border-emerald-400"
-        placeholder="usuario@correo.com">
+        placeholder="usuario@correo.com" />
     </div>
 
     <div>
@@ -42,7 +46,7 @@ body {
       <div class="relative">
         <input type="password" id="password" required
           class="w-full mt-1 px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 focus:outline-none focus:border-emerald-400"
-          placeholder="••••••••">
+          placeholder="••••••••" />
         <button type="button" id="togglePass" class="absolute right-3 top-3 text-slate-400">
           <i class="fa fa-eye"></i>
         </button>
@@ -56,7 +60,7 @@ body {
 
   </form>
 
-  <!-- RECUPERAR CONTRASEÑA -->
+  <!-- RECUPERAR -->
   <p class="text-center text-xs mt-3">
     <button id="resetBtn" class="text-emerald-400 hover:underline">
       ¿Olvidaste tu contraseña?
@@ -72,13 +76,16 @@ body {
 </div>
 
 <script type="module">
-import { auth, db } from "./app/js/core/firebase-config.js";
+
+import { auth, db } from "./core/firebase-config.js";
+
 import {
   signInWithEmailAndPassword,
   onAuthStateChanged,
   signOut,
   sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const form = document.getElementById("loginForm");
@@ -91,7 +98,7 @@ MOSTRAR / OCULTAR PASSWORD
 =============================== */
 togglePass.addEventListener("click", () => {
   const pass = document.getElementById("password");
-  if(pass.type === "password") {
+  if (pass.type === "password") {
     pass.type = "text";
     togglePass.innerHTML = '<i class="fa fa-eye-slash"></i>';
   } else {
@@ -105,13 +112,15 @@ RESET PASSWORD
 =============================== */
 resetBtn.addEventListener("click", async () => {
   const email = document.getElementById("email").value.trim();
-  if(!email) { showError("Escribe tu correo para recuperar contraseña"); return; }
+  if (!email) {
+    showError("Escribe tu correo para recuperar contraseña");
+    return;
+  }
   try {
     await sendPasswordResetEmail(auth, email);
     alert("Te enviamos un correo para cambiar tu contraseña");
-  } catch(e) {
+  } catch (e) {
     showError("No se pudo enviar el correo");
-    console.error(e);
   }
 });
 
@@ -119,15 +128,18 @@ resetBtn.addEventListener("click", async () => {
 AUTO LOGIN
 =============================== */
 onAuthStateChanged(auth, async (user) => {
-  if(!user) return;
+  if (!user) return;
+
   try {
     const snap = await getDoc(doc(db, "usuariosGlobal", user.uid));
-    if(!snap.exists()) { await signOut(auth); return; }
+    if (!snap.exists() || !snap.data().activo) {
+      await signOut(auth);
+      return;
+    }
     const data = snap.data();
-    if(!data.activo) { await signOut(auth); return; }
     setLocalStorage(data, user.uid);
     redirigir(data);
-  } catch(e) {
+  } catch (e) {
     console.error(e);
     await signOut(auth);
   }
@@ -139,37 +151,54 @@ LOGIN
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   hideError();
+
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
+
   try {
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
     const snap = await getDoc(doc(db, "usuariosGlobal", uid));
-    if(!snap.exists()) { showError("Usuario no registrado"); await signOut(auth); return; }
+
+    if (!snap.exists()) {
+      showError("Usuario no registrado");
+      await signOut(auth);
+      return;
+    }
+
     const data = snap.data();
-    if(!data.activo) { showError("Usuario desactivado"); await signOut(auth); return; }
+    if (!data.activo) {
+      showError("Usuario desactivado");
+      await signOut(auth);
+      return;
+    }
+
     setLocalStorage(data, uid);
     redirigir(data);
-  } catch(err) {
+
+  } catch (err) {
     showError("Credenciales incorrectas");
-    console.error(err);
   }
 });
 
 /* ===============================
-REDIRECCIÓN SEGÚN ROL
+REDIRECCIÓN
 =============================== */
-function redirigir(data){
-  if(data.rolGlobal === "superadmin") { window.location="/admin/ceo-dashboard.html"; return; }
-  switch(data.rol){
+function redirigir(data) {
+  if (data.rolGlobal === "superadmin") {
+    window.location = "/admin/ceo-dashboard.html";
+    return;
+  }
+
+  switch (data.rol) {
     case "dueno":
     case "admin":
     case "tecnico":
     case "asesor":
-      window.location="/app/index.html";
+      window.location = "/app/index.html";
       break;
     case "cliente":
-      window.location="/cliente.html";
+      window.location = "/cliente.html";
       break;
   }
 }
@@ -177,7 +206,7 @@ function redirigir(data){
 /* ===============================
 LOCAL STORAGE
 =============================== */
-function setLocalStorage(data, uid){
+function setLocalStorage(data, uid) {
   localStorage.setItem("uid", uid);
   localStorage.setItem("empresaId", data.empresaId || "");
   localStorage.setItem("rol", data.rol || "");
@@ -185,15 +214,16 @@ function setLocalStorage(data, uid){
 }
 
 /* ===============================
-ERROR HANDLING
+ERROR
 =============================== */
-function showError(msg){
+function showError(msg) {
   errorMsg.textContent = msg;
   errorMsg.classList.remove("hidden");
 }
-function hideError(){
+function hideError() {
   errorMsg.classList.add("hidden");
 }
+
 </script>
 
 </body>
