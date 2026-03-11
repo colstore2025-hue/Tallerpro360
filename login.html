@@ -64,6 +64,9 @@ body { background:#0f172a; font-family:Inter,system-ui; }
 
 </div>
 
+<!-- ===============================
+     SCRIPTS
+=============================== -->
 <script type="module">
 import { auth, db } from "./app/js/core/firebase-config.js";
 import {
@@ -73,6 +76,7 @@ import {
   sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import "/billing-ui.js"; // ✅ Integración de billing UI
 
 const form = document.getElementById("loginForm");
 const errorMsg = document.getElementById("errorMsg");
@@ -108,7 +112,7 @@ resetBtn.addEventListener("click", async () => {
 });
 
 /* ===============================
-AUTO LOGIN
+AUTO LOGIN + VALIDACION PLAN
 =============================== */
 onAuthStateChanged(auth, async user => {
   if(!user) return;
@@ -117,8 +121,13 @@ onAuthStateChanged(auth, async user => {
     if(!snap.exists()) { await signOut(auth); return; }
     const data = snap.data();
     if(!data.activo) { await signOut(auth); return; }
+
+    // Guardar info local
     setLocalStorage(data, user.uid);
+
+    // REDIRECCIÓN SEGÚN ROL
     redirigir(data);
+
   } catch(e) {
     console.error(e);
     await signOut(auth);
@@ -140,8 +149,13 @@ form.addEventListener("submit", async e => {
     if(!snap.exists()) { showError("Usuario no registrado"); await signOut(auth); return; }
     const data = snap.data();
     if(!data.activo) { showError("Usuario desactivado"); await signOut(auth); return; }
+
+    // Guardar info local
     setLocalStorage(data, uid);
+
+    // REDIRECCIÓN SEGÚN ROL
     redirigir(data);
+
   } catch(err) {
     showError("Credenciales incorrectas");
   }
