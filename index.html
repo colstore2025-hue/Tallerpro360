@@ -28,7 +28,7 @@ a { transition: all 0.3s; }
   <h1 class="text-4xl md:text-5xl font-extrabold mb-4">TallerPRO360</h1>
   <p class="text-lg md:text-xl mb-6">ERP inteligente para talleres automotrices. Gestiona órdenes, clientes, vehículos, inventario y finanzas.</p>
   <a href="/login.html" class="inline-block bg-white text-green-600 font-bold px-8 py-3 rounded-full shadow hover:bg-gray-100 mb-3 md:mb-0">Inicia Sesión</a>
-  <a href="/demos/demos/index.html" class="inline-block bg-transparent border-2 border-white text-white px-8 py-3 rounded-full ml-4 hover:bg-white hover:text-green-600">Ver Demo</a>
+  <a href="/demos/index.html" class="inline-block bg-transparent border-2 border-white text-white px-8 py-3 rounded-full ml-4 hover:bg-white hover:text-green-600">Ver Demo</a>
 </section>
 
 <!-- BENEFICIOS -->
@@ -57,35 +57,30 @@ a { transition: all 0.3s; }
 <section class="py-20 bg-slate-800 text-center">
   <h2 class="text-3xl font-bold mb-12">Planes para tu taller</h2>
   <div class="grid md:grid-cols-5 gap-6 max-w-7xl mx-auto">
-    <!-- Freemium -->
     <div class="bg-slate-700 p-6 rounded-xl shadow hover:shadow-xl transition flex flex-col">
       <h3 class="text-xl font-semibold mb-2">Freemium</h3>
       <p class="mb-4">Ideal para probar el sistema.</p>
       <p class="text-2xl font-bold mb-4">$0 / mes</p>
       <button onclick="crearPreference('freemium')" class="mt-auto bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Comenzar</button>
     </div>
-    <!-- Básico -->
     <div class="bg-slate-700 p-6 rounded-xl shadow hover:shadow-xl transition flex flex-col">
       <h3 class="text-xl font-semibold mb-2">Básico</h3>
       <p class="mb-4">Para talleres pequeños.</p>
       <p class="text-2xl font-bold mb-4">$29 / mes</p>
       <button onclick="crearPreference('basico')" class="mt-auto bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Pagar</button>
     </div>
-    <!-- Pro -->
     <div class="bg-slate-700 p-6 rounded-xl shadow hover:shadow-xl transition flex flex-col">
       <h3 class="text-xl font-semibold mb-2">Pro</h3>
       <p class="mb-4">Talleres en crecimiento.</p>
       <p class="text-2xl font-bold mb-4">$79 / mes</p>
       <button onclick="crearPreference('pro')" class="mt-auto bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Pagar</button>
     </div>
-    <!-- Elite -->
     <div class="bg-slate-700 p-6 rounded-xl shadow hover:shadow-xl transition flex flex-col">
       <h3 class="text-xl font-semibold mb-2">Elite</h3>
       <p class="mb-4">Control avanzado y reportes.</p>
       <p class="text-2xl font-bold mb-4">$149 / mes</p>
       <button onclick="crearPreference('elite')" class="mt-auto bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Pagar</button>
     </div>
-    <!-- Enterprise -->
     <div class="bg-slate-700 p-6 rounded-xl shadow hover:shadow-xl transition flex flex-col">
       <h3 class="text-xl font-semibold mb-2">Enterprise</h3>
       <p class="mb-4">Solución completa para cadenas de talleres.</p>
@@ -99,7 +94,7 @@ a { transition: all 0.3s; }
 <section class="py-20 bg-gradient-to-r from-green-600 to-emerald-500 text-center">
   <h2 class="text-3xl font-bold mb-6">Listo para transformar tu taller?</h2>
   <a href="/login.html" class="bg-white text-green-600 font-bold px-8 py-3 rounded-full shadow hover:bg-gray-100 mr-4">Inicia Sesión</a>
-  <a href="/demos/demos/index.html" class="bg-transparent border-2 border-white text-white px-8 py-3 rounded-full hover:bg-white hover:text-green-600">Probar Demo</a>
+  <a href="/demos/index.html" class="bg-transparent border-2 border-white text-white px-8 py-3 rounded-full hover:bg-white hover:text-green-600">Probar Demo</a>
 </section>
 
 <!-- FOOTER -->
@@ -109,9 +104,6 @@ a { transition: all 0.3s; }
 </footer>
 
 <script type="module">
-/* ===============================
-PAGOS / API CREATING PREFERENCE
-=============================== */
 async function crearPreference(planTipo){
   try {
     const res = await fetch("/api/create-preference", {
