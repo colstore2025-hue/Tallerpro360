@@ -1,13 +1,14 @@
-/* ===================================
+// app/js/ui/app.js
+/* ===============================
 VALIDAR SESIÓN
-=================================== */
+=============================== */
 if (!localStorage.getItem("uid")) {
   window.location.href = "/login.html";
 }
 
-/* ===================================
+/* ===============================
 IMPORTS FIREBASE
-=================================== */
+=============================== */
 import { db } from "../core/firebase-config.js";
 import {
   collection,
@@ -18,32 +19,27 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ===================================
-IMPORTS SISTEMA
-=================================== */
+/* ===============================
+IMPORTS SISTEMA / MÓDULOS
+=============================== */
 import Chart from "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm";
 import { detectarRepuestos, iniciarVoz } from "../modules/ia.js";
 import { crearRepuesto } from "../modules/Inventario.js";
-import { notificarCliente } from "../modules/pagos.js";
+import { notificarCliente } from "../modules/pagos.js"; // Si whatsappService.js migrado
 import { generarFactura, panelFinanciero } from "../modules/finanzas.js";
 
-/* ===================================
+/* ===============================
 INICIAR APP
-=================================== */
+=============================== */
 export async function iniciarApp(container) {
-
   container.innerHTML = `
     <h1 class="text-2xl font-bold mb-6">TallerPRO360 - SaaS Automotriz</h1>
-
     <div id="menuPrincipal" class="grid grid-cols-3 gap-4 mb-6">
-
       <button id="btnDashboard" class="bg-blue-600 text-white px-4 py-2 rounded">Dashboard</button>
       <button id="btnOrdenes" class="bg-green-600 text-white px-4 py-2 rounded">Órdenes</button>
       <button id="btnRepuestos" class="bg-yellow-600 text-white px-4 py-2 rounded">Repuestos</button>
       <button id="btnFinanzas" class="bg-indigo-600 text-white px-4 py-2 rounded col-span-3">Panel Financiero</button>
-
     </div>
-
     <div id="appContentInner"></div>
   `;
 
@@ -53,16 +49,13 @@ export async function iniciarApp(container) {
   document.getElementById("btnFinanzas").onclick = () => panelFinanciero(container.querySelector("#appContentInner"));
 }
 
-/* ===================================
+/* ===============================
 DASHBOARD
-=================================== */
+=============================== */
 export async function dashboard(container) {
-
   container.innerHTML = `
     <h2 class="text-xl font-bold mb-4">Dashboard TallerPRO360</h2>
-
     <div id="kpis" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>
-
     <div class="grid md:grid-cols-2 gap-6">
       <div class="bg-white p-4 rounded shadow">
         <h3>Ingresos últimos 7 días</h3>
@@ -73,7 +66,6 @@ export async function dashboard(container) {
         <canvas id="graficaEstados"></canvas>
       </div>
     </div>
-
     <button id="btnVoz" class="mt-4 bg-green-600 text-white px-4 py-2 rounded">🎙️ Crear orden por voz</button>
   `;
 
@@ -83,14 +75,12 @@ export async function dashboard(container) {
   document.getElementById("btnVoz").addEventListener("click", iniciarVoz);
 }
 
-/* ===================================
+/* ===============================
 ÓRDENES
-=================================== */
+=============================== */
 export async function ordenes(container) {
-
   container.innerHTML = `
     <h2 class="text-xl font-bold mb-4">Gestión de Órdenes</h2>
-
     <div class="bg-white p-4 rounded shadow mb-6">
       <input id="cliente" placeholder="Cliente" class="border p-2 rounded w-full mb-2">
       <input id="vehiculo" placeholder="Vehículo" class="border p-2 rounded w-full mb-2">
@@ -98,7 +88,6 @@ export async function ordenes(container) {
       <input id="tecnico" placeholder="Técnico" class="border p-2 rounded w-full mb-4">
       <button id="crearOrden" class="bg-blue-600 text-white px-4 py-2 rounded">Crear Orden</button>
     </div>
-
     <div class="bg-white p-4 rounded shadow">
       <div id="listaOrdenes">Cargando órdenes...</div>
     </div>
@@ -108,15 +97,14 @@ export async function ordenes(container) {
   await cargarOrdenes();
 }
 
-/* ===================================
+/* ===============================
 CREAR ORDEN
-=================================== */
+=============================== */
 async function crearOrden() {
-
-  const cliente = document.getElementById("cliente").value.trim();
-  const vehiculo = document.getElementById("vehiculo").value.trim();
-  const placa = document.getElementById("placa").value.trim();
-  const tecnico = document.getElementById("tecnico").value.trim();
+  const cliente = document.getElementById("cliente").value;
+  const vehiculo = document.getElementById("vehiculo").value;
+  const placa = document.getElementById("placa").value;
+  const tecnico = document.getElementById("tecnico").value;
 
   if (!cliente || !vehiculo || !placa) return alert("Complete los campos obligatorios");
 
@@ -137,23 +125,19 @@ async function crearOrden() {
   await cargarOrdenes();
 }
 
-/* ===================================
+/* ===============================
 LIMPIAR FORMULARIO
-=================================== */
+=============================== */
 function limpiarFormulario() {
-  ["cliente", "vehiculo", "placa", "tecnico"].forEach(id => {
-    document.getElementById(id).value = "";
-  });
+  ["cliente", "vehiculo", "placa", "tecnico"].forEach(id => document.getElementById(id).value = "");
 }
 
-/* ===================================
-CARGAR ORDENES
-=================================== */
+/* ===============================
+CARGAR ÓRDENES
+=============================== */
 async function cargarOrdenes() {
-
   const lista = document.getElementById("listaOrdenes");
   const empresaId = localStorage.getItem("empresaId");
-
   const snapshot = await getDocs(collection(db, "ordenes"));
   const ordenes = snapshot.docs.filter(d => d.data().empresaId === empresaId);
 
@@ -167,7 +151,6 @@ async function cargarOrdenes() {
   ordenes.forEach(docSnap => {
     const data = docSnap.data();
     const id = docSnap.id;
-
     const div = document.createElement("div");
     div.className = "border p-3 rounded mb-2";
     div.innerHTML = `
@@ -182,29 +165,28 @@ async function cargarOrdenes() {
   });
 }
 
-/* ===================================
+/* ===============================
 AGREGAR ACCIÓN
-=================================== */
-window.agregarAccion = async function (id) {
+=============================== */
+window.agregarAccion = async function(id) {
   const input = document.getElementById(`accion-${id}`);
   const texto = input.value.trim();
-  if (!texto) return;
+  if(!texto) return;
 
   const ref = doc(db, "ordenes", id);
   const snapshot = await getDocs(collection(db, "ordenes"));
   const orden = snapshot.docs.find(d => d.id === id);
   let acciones = orden.data().acciones || [];
-
   acciones.push({ descripcion: texto, fecha: new Date() });
-  await updateDoc(ref, { acciones });
 
+  await updateDoc(ref, { acciones });
   input.value = "";
   await cargarOrdenes();
 }
 
-/* ===================================
+/* ===============================
 KPIS
-=================================== */
+=============================== */
 async function cargarKPIs() {
   const cont = document.getElementById("kpis");
   const snap = await getDocs(collection(db, "ordenes"));
@@ -212,7 +194,7 @@ async function cargarKPIs() {
   const ordenes = snap.docs.map(d => d.data()).filter(o => o.empresaId === empresaId);
 
   const totalOrdenes = ordenes.length;
-  const ingresos = ordenes.reduce((sum, o) => sum + (o.total || 0), 0);
+  const ingresos = ordenes.reduce((sum,o) => sum + (o.total || 0),0);
 
   cont.innerHTML = `
     <div class="bg-white p-4 rounded shadow"><strong>Órdenes</strong><br>${totalOrdenes}</div>
@@ -220,23 +202,26 @@ async function cargarKPIs() {
   `;
 }
 
-/* ===================================
+/* ===============================
 GRÁFICAS
-=================================== */
+=============================== */
 async function cargarGraficas() {
   const snap = await getDocs(collection(db, "ordenes"));
   const datos = new Array(7).fill(0);
 
   snap.forEach(doc => {
     const d = doc.data();
-    if (!d.fecha) return;
+    if(!d.fecha) return;
     const fecha = d.fecha.toDate();
-    const diff = Math.floor((Date.now() - fecha.getTime()) / (1000 * 60 * 60 * 24));
-    if (diff < 7) datos[6 - diff] += d.total || 0;
+    const diff = Math.floor((Date.now() - fecha.getTime())/(1000*60*60*24));
+    if(diff < 7) datos[6-diff] += d.total || 0;
   });
 
   new Chart(document.getElementById("graficaIngresos"), {
-    type: "line",
-    data: { labels: ["-6","-5","-4","-3","-2","-1","Hoy"], datasets: [{ label: "Ingresos", data: datos }] }
+    type:"line",
+    data:{
+      labels:["-6","-5","-4","-3","-2","-1","Hoy"],
+      datasets:[{ label:"Ingresos", data:datos }]
+    }
   });
 }
