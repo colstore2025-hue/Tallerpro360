@@ -1,32 +1,36 @@
+// /functions/security.js
 /************************************************
  * TallerPRO360 · Seguridad Enterprise
+ * Funciones helper para validar usuario,
+ * permisos y límites de plan
  ************************************************/
 
 const admin = require("firebase-admin");
 const functions = require("firebase-functions");
-
 const db = admin.firestore();
 
 /**
- * 🔐 Validar autenticación
+ * 🔐 Validar autenticación Firebase
+ * @param {object} context - Contexto de la función callable
+ * @returns {string} uid - UID del usuario autenticado
  */
 async function validarUsuario(context) {
-
-  if (!context.auth) {
+  if (!context?.auth) {
     throw new functions.https.HttpsError(
       "unauthenticated",
       "Usuario no autenticado"
     );
   }
-
   return context.auth.uid;
 }
 
 /**
- * 👤 Obtener usuario interno de empresa
+ * 👤 Obtener usuario interno de la empresa
+ * @param {string} empresaId
+ * @param {string} uid
+ * @returns {object} usuario
  */
 async function obtenerUsuarioEmpresa(empresaId, uid) {
-
   const empresaRef = db.collection("empresas").doc(empresaId);
   const empresaSnap = await empresaRef.get();
 
@@ -37,17 +41,10 @@ async function obtenerUsuarioEmpresa(empresaId, uid) {
     );
   }
 
-  const usuarioSnap = await empresaRef
-    .collection("usuarios")
-    .doc(uid)
-    .get();
+  const usuarioSnap = await empresaRef.collection("usuarios").doc(uid).get();
 
-  if (!usuarioSnap.exists) {
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      "Usuario no pertenece a la empresa"
-    );
-  }
+  // Permitir login aunque no exista usuario interno (para admin global)
+  if (!usuarioSnap.exists) return null;
 
   const usuario = usuarioSnap.data();
 
@@ -63,8 +60,12 @@ async function obtenerUsuarioEmpresa(empresaId, uid) {
 
 /**
  * 🛡 Validar permiso dinámico por rol
+ * @param {string} empresaId
+ * @param {string} rol
+ * @param {string} permiso
  */
 async function validarPermiso(empresaId, rol, permiso) {
+  if (!rol || !permiso) return; // Ignorar si no hay rol asignado
 
   const rolSnap = await db
     .collection("empresas")
@@ -91,10 +92,11 @@ async function validarPermiso(empresaId, rol, permiso) {
 }
 
 /**
- * 📦 Validar plan activo y límites
+ * 📦 Validar plan activo y límites dinámicos
+ * @param {string} empresaId
+ * @param {string} tipo - "ordenes" | "sucursales"
  */
 async function validarLimitePlan(empresaId, tipo) {
-
   const empresaSnap = await db.collection("empresas").doc(empresaId).get();
 
   if (!empresaSnap.exists) {
@@ -106,7 +108,7 @@ async function validarLimitePlan(empresaId, tipo) {
 
   const empresa = empresaSnap.data();
 
-  // 🔹 Validar estado plan
+  // 🔹 Plan activo
   if (!empresa.plan || empresa.plan.estado !== "activo") {
     throw new functions.https.HttpsError(
       "failed-precondition",
@@ -114,10 +116,9 @@ async function validarLimitePlan(empresaId, tipo) {
     );
   }
 
-  // 🔹 Validar vencimiento
+  // 🔹 Validar vencimiento del plan
   if (empresa.plan.fechaVencimiento) {
     const ahora = admin.firestore.Timestamp.now();
-
     if (empresa.plan.fechaVencimiento.seconds < ahora.seconds) {
       throw new functions.https.HttpsError(
         "failed-precondition",
@@ -126,9 +127,8 @@ async function validarLimitePlan(empresaId, tipo) {
     }
   }
 
-  // 🔹 Validar límites dinámicos
+  // 🔹 Validar límites
   if (tipo === "ordenes") {
-
     const ordenesMes = empresa.metricas?.ordenesMes || 0;
     const limite = empresa.limites?.ordenesMes || 0;
 
@@ -141,9 +141,7 @@ async function validarLimitePlan(empresaId, tipo) {
   }
 
   if (tipo === "sucursales") {
-
     const limite = empresa.limites?.sucursales || 1;
-
     const sucursalesSnap = await db
       .collection("empresas")
       .doc(empresaId)
