@@ -1,4 +1,8 @@
-// /functions/index.js
+/************************************************
+ * TallerPRO360 · Functions Principales
+ * Pagos MercadoPago + Webhook
+ ************************************************/
+
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const mercadopago = require("mercadopago");
@@ -16,7 +20,6 @@ mercadopago.configure({ access_token: functions.config().mp.token });
 // 1️⃣ CREAR PAGO (Callable Function)
 // ===============================
 exports.crearPago = functions.https.onCall(async (data, context) => {
-  // 🔒 Verificar autenticación
   if (!context.auth) {
     throw new functions.https.HttpsError(
       "unauthenticated",
