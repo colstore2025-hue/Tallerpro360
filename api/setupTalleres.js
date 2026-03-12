@@ -2,7 +2,9 @@ import admin from "firebase-admin";
 
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+    credential: admin.credential.cert(
+      JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+    )
   });
 }
 
@@ -12,43 +14,70 @@ export default async function handler(req, res) {
 
   try {
 
-    const usuarios = await db.collection("usuariosGlobal").get();
+    const planes = {
 
-    for (const doc of usuarios.docs) {
+      freemium: {
+        nombre: "Freemium",
+        precio: 0,
+        duracion_dias: 3650,
+        limites: {
+          ordenesMes: 30,
+          usuarios: 1
+        }
+      },
 
-      const uid = doc.id;
+      basico: {
+        nombre: "Básico",
+        precio: 42000,
+        duracion_dias: 30,
+        limites: {
+          ordenesMes: 200,
+          usuarios: 2
+        }
+      },
 
-      const ref = db.collection("talleres").doc(uid);
-      const snap = await ref.get();
+      pro: {
+        nombre: "Pro",
+        precio: 79000,
+        duracion_dias: 30,
+        limites: {
+          ordenesMes: 600,
+          usuarios: 5
+        }
+      },
 
-      if (!snap.exists) {
-
-        const ahora = admin.firestore.Timestamp.now();
-
-        const vence = admin.firestore.Timestamp.fromDate(
-          new Date(Date.now() + 7 * 86400000)
-        );
-
-        await ref.set({
-          planId: "freemium",
-          planNombre: "Plan Freemium",
-          estadoPlan: "ACTIVO",
-          inicioPlan: ahora,
-          venceEn: vence,
-          metodoPago: "manual",
-          alertas: { d7:false, d3:false, d1:false }
-        });
-
+      elite: {
+        nombre: "Elite",
+        precio: 149000,
+        duracion_dias: 30,
+        limites: {
+          ordenesMes: 2000,
+          usuarios: 15
+        }
       }
+
+    };
+
+    for (const id in planes) {
+
+      await db.collection("planes")
+        .doc(id)
+        .set(planes[id], { merge: true });
 
     }
 
-    res.status(200).json({ ok:true });
+    res.status(200).json({
+      ok: true,
+      message: "Planes creados correctamente"
+    });
 
-  } catch (err) {
+  } catch (error) {
 
-    console.error(err);
-    res.status(500).json({ error:true });
+    console.error(error);
+
+    res.status(500).json({
+      error: true
+    });
 
   }
 
