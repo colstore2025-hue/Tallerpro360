@@ -267,9 +267,10 @@ headers:{
 "Content-Type":"application/json"
 },
 
-body:JSON.stringify({ planId })
-
-});
+body: JSON.stringify({
+  uid: usuario.uid,
+  planId: planId
+})
 
 const data = await res.json();
 
