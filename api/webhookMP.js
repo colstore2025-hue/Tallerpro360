@@ -14,7 +14,15 @@ export default async function handler(req, res) {
 
   try {
 
-    const paymentId = req.query["data.id"];
+    if (req.method !== "POST") {
+      return res.status(200).send("ok");
+    }
+
+    if (req.body.type !== "payment") {
+      return res.status(200).send("ok");
+    }
+
+    const paymentId = req.body?.data?.id;
 
     if (!paymentId) {
       return res.status(200).send("ok");
