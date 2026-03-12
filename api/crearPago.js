@@ -20,6 +20,11 @@ export default async function handler(req, res) {
 
     const { uid, planId } = req.body;
 
+    if (!uid || !planId) {
+      return res.status(400).json({ error: "uid o planId faltante" });
+    }
+
+    // Buscar plan en Firestore
     const planSnap = await db.collection("planes").doc(planId).get();
 
     if (!planSnap.exists) {
@@ -28,27 +33,34 @@ export default async function handler(req, res) {
 
     const plan = planSnap.data();
 
+    // Crear preferencia de pago
     const preference = {
       items: [
         {
           title: `TallerPRO360 · ${plan.nombre}`,
           quantity: 1,
           currency_id: "COP",
-          unit_price: plan.precio
+          unit_price: Number(plan.precio)
         }
       ],
+
       metadata: {
-        uid,
-        planId
+        uid: uid,
+        planId: planId
       },
+
       back_urls: {
         success: "https://tallerpro360.com/pago-exitoso.html",
         failure: "https://tallerpro360.com/pago-fallido.html",
         pending: "https://tallerpro360.com/pago-pendiente.html"
       },
+
       auto_return: "approved",
+
       notification_url:
-        "https://tallerpro360.vercel.app/api/webhookMP"
+        "https://tallerpro360.vercel.app/api/webhookMP",
+
+      statement_descriptor: "TallerPRO360"
     };
 
     const response = await fetch(
@@ -65,14 +77,24 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    res.status(200).json({
+    if (!data.init_point) {
+      console.error("Error creando preferencia:", data);
+      return res.status(500).json({
+        error: "No se pudo crear el pago"
+      });
+    }
+
+    return res.status(200).json({
       init_point: data.init_point
     });
 
   } catch (error) {
 
-    console.error(error);
-    res.status(500).json({ error: true });
+    console.error("crearPago error:", error);
+
+    return res.status(500).json({
+      error: "Error interno"
+    });
 
   }
 
