@@ -6,21 +6,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>TallerPRO360 · ERP SaaS Inteligente</title>
+<title>TallerPRO360 · ERP Inteligente para Talleres</title>
 
-<meta name="description" content="ERP inteligente para talleres automotrices: órdenes, clientes, vehículos, inventario y trazabilidad completa.">
+<meta name="description" content="ERP SaaS inteligente para talleres automotrices en Colombia. Control de órdenes, clientes, inventario, finanzas e inteligencia artificial por voz.">
 
-<meta property="og:title" content="TallerPRO360 · ERP SaaS para Talleres">
-<meta property="og:description" content="Gestión completa de talleres automotrices.">
+<meta property="og:title" content="TallerPRO360">
+<meta property="og:description" content="El ERP más avanzado para talleres automotrices.">
 <meta property="og:image" content="/assets/logo-512.png">
 
 <meta name="theme-color" content="#16a34a">
 
 <link rel="manifest" href="/manifest.json">
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
 <script src="https://cdn.tailwindcss.com"></script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
 
@@ -30,28 +30,22 @@ background:#0f172a;
 color:#f8fafc;
 }
 
-.tesla-card{
-background:#1e293b;
-border-radius:20px;
-padding:30px;
-transition:all .35s;
-}
-
-.tesla-card:hover{
-transform:translateY(-6px);
-box-shadow:0 20px 40px rgba(0,0,0,.45);
-}
-
 .plan-card{
 background:#111827;
-border-radius:24px;
-padding:30px;
+border-radius:20px;
+padding:28px;
 display:flex;
 flex-direction:column;
+transition:.35s;
 }
 
 .plan-card:hover{
-transform:scale(1.03);
+transform:translateY(-6px);
+box-shadow:0 25px 50px rgba(0,0,0,.45);
+}
+
+.popular{
+border:2px solid #22c55e;
 }
 
 </style>
@@ -62,68 +56,30 @@ transform:scale(1.03);
 
 <!-- HERO -->
 
-<section class="bg-gradient-to-r from-green-600 to-emerald-500 py-28 text-center">
+<section class="bg-gradient-to-r from-green-600 to-emerald-500 py-24 text-center">
 
-<img src="/assets/logo-512.png" class="mx-auto mb-6 w-32 h-32 object-contain bg-white rounded-2xl p-3 shadow-lg">
+<img src="/assets/logo-512.png"
+class="mx-auto mb-6 w-32 h-32 object-contain bg-white rounded-2xl p-3 shadow-lg">
 
-<h1 class="text-5xl font-extrabold mb-6 tracking-tight">
+<h1 class="text-5xl font-extrabold mb-6">
 TallerPRO360
 </h1>
 
-<p class="text-xl mb-8 max-w-2xl mx-auto">
-ERP inteligente para talleres automotrices.
-Gestiona órdenes, clientes, vehículos, inventario y finanzas desde cualquier lugar.
+<p class="text-xl max-w-2xl mx-auto mb-8">
+ERP inteligente para talleres automotrices con inteligencia artificial por voz, control financiero y gestión total del negocio.
 </p>
 
 <div class="flex justify-center gap-4 flex-wrap">
 
 <a href="/login.html"
-class="bg-white text-green-600 font-bold px-8 py-3 rounded-full shadow hover:bg-gray-100">
-Iniciar sesión
+class="bg-white text-green-600 px-8 py-3 rounded-full font-bold hover:bg-gray-100">
+Ingresar al ERP
 </a>
 
 <a href="/demos/index.html"
-class="border-2 border-white text-white px-8 py-3 rounded-full hover:bg-white hover:text-green-600">
+class="border border-white px-8 py-3 rounded-full hover:bg-white hover:text-green-600">
 Ver Demo
 </a>
-
-<a href="/publish.html"
-class="bg-black text-white px-8 py-3 rounded-full hover:bg-slate-900">
-Publicar Taller
-</a>
-
-</div>
-
-</section>
-
-
-<!-- BENEFICIOS -->
-
-<section class="py-24 text-center bg-slate-900">
-
-<h2 class="text-3xl font-bold mb-16">
-Beneficios para tu taller
-</h2>
-
-<div class="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
-
-<div class="tesla-card">
-<i class="fa-solid fa-gear text-green-400 text-3xl mb-4"></i>
-<h3 class="text-xl font-semibold mb-2">Gestión Total</h3>
-<p>Controla órdenes, clientes y vehículos en un solo sistema.</p>
-</div>
-
-<div class="tesla-card">
-<i class="fa-solid fa-chart-line text-green-400 text-3xl mb-4"></i>
-<h3 class="text-xl font-semibold mb-2">Panel Financiero</h3>
-<p>Visualiza ingresos, costos y rendimiento del taller.</p>
-</div>
-
-<div class="tesla-card">
-<i class="fa-solid fa-robot text-green-400 text-3xl mb-4"></i>
-<h3 class="text-xl font-semibold mb-2">IA Asistida</h3>
-<p>Automatiza diagnóstico, repuestos y gestión de órdenes.</p>
-</div>
 
 </div>
 
@@ -132,106 +88,152 @@ Beneficios para tu taller
 
 <!-- PLANES -->
 
-<section class="py-24 bg-slate-800 text-center">
+<section class="py-24 bg-slate-900 text-center">
 
 <h2 class="text-3xl font-bold mb-16">
-Planes para tu taller
+Planes diseñados para talleres reales
 </h2>
 
 <div class="grid md:grid-cols-5 gap-6 max-w-7xl mx-auto">
 
+<!-- FREEMIUM -->
+
 <div class="plan-card">
+
 <h3 class="text-xl font-semibold mb-2">Freemium</h3>
-<p class="mb-4 text-slate-400">Prueba el sistema</p>
+
+<p class="text-slate-400 mb-4">Prueba el sistema</p>
+
 <p class="text-3xl font-bold mb-6">$0</p>
 
-<button onclick="pagarPlan('freemium')"
-class="mt-auto bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg">
+<ul class="text-sm text-left mb-6 space-y-1">
+
+<li>✔ 30 órdenes / mes</li>
+<li>✔ 1 usuario</li>
+<li>✔ IA por voz</li>
+<li>✔ control financiero básico</li>
+
+</ul>
+
+<button onclick="pagar('freemium')"
+class="bg-green-500 py-2 rounded hover:bg-green-600">
 Comenzar
 </button>
 
 </div>
 
+
+<!-- BASICO -->
+
 <div class="plan-card">
 
 <h3 class="text-xl font-semibold mb-2">Básico</h3>
-<p class="mb-4 text-slate-400">Talleres pequeños</p>
+
+<p class="text-slate-400 mb-4">Ideal para empezar</p>
+
 <p class="text-3xl font-bold mb-6">$42.000</p>
 
-<button onclick="pagarPlan('basico')"
-class="mt-auto bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg">
-Comprar
+<ul class="text-sm text-left mb-6 space-y-1">
+
+<li>✔ 200 órdenes</li>
+<li>✔ 2 usuarios</li>
+<li>✔ IA por voz</li>
+<li>✔ contabilidad básica</li>
+<li>✔ reportes mensuales</li>
+
+</ul>
+
+<button onclick="pagar('basico')"
+class="bg-green-500 py-2 rounded hover:bg-green-600">
+Elegir plan
 </button>
 
 </div>
 
-<div class="plan-card">
+
+<!-- PRO -->
+
+<div class="plan-card popular">
 
 <h3 class="text-xl font-semibold mb-2">Pro</h3>
-<p class="mb-4 text-slate-400">Talleres en crecimiento</p>
+
+<p class="text-slate-400 mb-4">El más popular</p>
+
 <p class="text-3xl font-bold mb-6">$79.000</p>
 
-<button onclick="pagarPlan('pro')"
-class="mt-auto bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg">
-Comprar
+<ul class="text-sm text-left mb-6 space-y-1">
+
+<li>✔ 600 órdenes</li>
+<li>✔ 5 usuarios</li>
+<li>✔ IA por voz avanzada</li>
+<li>✔ contabilidad completa</li>
+<li>✔ análisis financiero</li>
+
+</ul>
+
+<button onclick="pagar('pro')"
+class="bg-green-500 py-2 rounded hover:bg-green-600">
+Elegir plan
 </button>
 
 </div>
+
+
+<!-- ELITE -->
 
 <div class="plan-card">
 
 <h3 class="text-xl font-semibold mb-2">Elite</h3>
-<p class="mb-4 text-slate-400">Control avanzado</p>
+
+<p class="text-slate-400 mb-4">Talleres grandes</p>
+
 <p class="text-3xl font-bold mb-6">$149.000</p>
 
-<button onclick="pagarPlan('elite')"
-class="mt-auto bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg">
-Comprar
+<ul class="text-sm text-left mb-6 space-y-1">
+
+<li>✔ 2000 órdenes</li>
+<li>✔ 15 usuarios</li>
+<li>✔ IA por voz avanzada</li>
+<li>✔ contabilidad completa</li>
+<li>✔ reportes por periodos</li>
+<li>✔ analítica avanzada</li>
+
+</ul>
+
+<button onclick="pagar('elite')"
+class="bg-green-500 py-2 rounded hover:bg-green-600">
+Elegir plan
 </button>
 
 </div>
 
+
+<!-- ENTERPRISE -->
+
 <div class="plan-card">
 
 <h3 class="text-xl font-semibold mb-2">Enterprise</h3>
-<p class="mb-4 text-slate-400">Cadenas de talleres</p>
-<p class="text-3xl font-bold mb-6">Consultoría</p>
 
-<a href="/publish.html"
-class="mt-auto bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg text-center">
+<p class="text-slate-400 mb-4">Implementación premium</p>
+
+<p class="text-3xl font-bold mb-6">$250.000</p>
+
+<ul class="text-sm text-left mb-6 space-y-1">
+
+<li>✔ Todo Elite</li>
+<li>✔ soporte dedicado</li>
+<li>✔ implementación guiada</li>
+<li>✔ facturación electrónica incluida</li>
+<li>✔ soporte personalizado 6 meses</li>
+
+</ul>
+
+<button onclick="pagar('enterprise')"
+class="bg-green-500 py-2 rounded hover:bg-green-600">
 Contactar
-</a>
+</button>
 
 </div>
-
-</div>
-
-</section>
-
-
-<!-- MARKETPLACE -->
-
-<section class="py-24 bg-slate-900 text-center">
-
-<h2 class="text-3xl font-bold mb-6">
-Marketplace Automotriz
-</h2>
-
-<p class="max-w-xl mx-auto mb-10 text-slate-400">
-Publica tu taller, vende repuestos o conecta con nuevos clientes.
-</p>
-
-<div class="flex justify-center gap-4 flex-wrap">
-
-<a href="/marketplace.html"
-class="bg-green-500 px-8 py-3 rounded-full hover:bg-green-600">
-Explorar Marketplace
-</a>
-
-<a href="/publish.html"
-class="border border-green-400 px-8 py-3 rounded-full hover:bg-green-500 hover:text-white">
-Publicar negocio
-</a>
 
 </div>
 
@@ -242,24 +244,20 @@ Publicar negocio
 
 <footer class="bg-slate-950 py-10 text-center text-slate-400 text-sm">
 
-<p class="mb-3">
 © 2026 TallerPRO360
-</p>
-
-<a href="/login.html" class="text-green-400 hover:underline">
-Acceso ERP
-</a>
 
 </footer>
 
 
-<script type="module">
+<script>
 
-async function pagarPlan(planId){
+async function pagar(planId){
 
 try{
 
-const res = await fetch("/api/crearPago",{
+const uid="demoUser";
+
+const res=await fetch("/api/crearPago",{
 
 method:"POST",
 
@@ -267,16 +265,18 @@ headers:{
 "Content-Type":"application/json"
 },
 
-body: JSON.stringify({
-  uid: usuario.uid,
-  planId: planId
+body:JSON.stringify({
+uid:uid,
+planId:planId
 })
 
-const data = await res.json();
+});
+
+const data=await res.json();
 
 if(data.init_point){
 
-window.location.href = data.init_point;
+window.location.href=data.init_point;
 
 }else{
 
@@ -286,9 +286,8 @@ alert("No se pudo iniciar el pago");
 
 }catch(err){
 
-alert("Error procesando pago");
-
 console.error(err);
+alert("Error procesando pago");
 
 }
 
