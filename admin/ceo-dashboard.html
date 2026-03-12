@@ -180,7 +180,7 @@ let map, markers=[], chartCiudades, chartIngresos;
 // ================= AUTH =================
 onAuthStateChanged(auth, async(user)=>{
     if(!user){ window.location="login.html"; return; }
-    const snap = await getDoc(doc(db,"usuarios",user.uid));
+    const snap = await getDoc(doc(db,"usuariosGlobal",user.uid));
     if(!snap.exists() || snap.data().rolGlobal!=="superadmin"){ window.location="login.html"; return; }
     initDashboard();
 });
