@@ -1,9 +1,9 @@
 // app/js/ai/iaMecanica.js
 // Motor de diagnóstico IA para TallerPRO360
 
-export async function detectarRepuestos(descripcion){
+export async function detectarRepuestos(descripcion) {
 
-if(!descripcion || descripcion.trim().length < 5){
+if (!descripcion || descripcion.trim().length < 5) {
 throw new Error("Descripción de falla inválida");
 }
 
@@ -31,19 +31,17 @@ Devuelve SOLO JSON válido con esta estructura:
 No agregues texto fuera del JSON.
 `;
 
-try{
+try {
 
-const respuesta = await fetch("/api/diagnosticoIA",{
-method:"POST",
-headers:{
-"Content-Type":"application/json"
+const respuesta = await fetch("/api/diagnosticoIA", {
+method: "POST",
+headers: {
+"Content-Type": "application/json"
 },
-body:JSON.stringify({
-prompt
-})
+body: JSON.stringify({ prompt })
 });
 
-if(!respuesta.ok){
+if (!respuesta.ok) {
 throw new Error("Error en API IA");
 }
 
@@ -51,14 +49,14 @@ const data = await respuesta.json();
 
 return data;
 
-}catch(error){
+} catch (error) {
 
-console.error("Error IA repuestos:",error);
+console.error("Error IA repuestos:", error);
 
-return{
-diagnostico:"No se pudo generar diagnóstico IA",
-repuestos:[],
-acciones:[]
+return {
+diagnostico: "No se pudo generar diagnóstico IA",
+repuestos: [],
+acciones: []
 };
 
 }
