@@ -1,23 +1,20 @@
-import { db } from "../js/firebase.js";
-import { iniciarVoz } from "../js/voiceAssistant.js";
-import { diagnosticoIA } from "../js/iaMecanica.js";
+import { db } from "../core/firebase-config.js";
+import { diagnosticoIA } from "../ai/iaMecanica.js";
 
 import {
 collection,
-getDocs,
-doc,
-updateDoc,
-arrayUnion
+getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import Chart from "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm";
+
 
 export async function dashboard(container){
 
 container.innerHTML = `
 
 <button id="btnVoz"
-class="bg-green-600 text-white px-4 py-2 rounded mb-6 hover:bg-green-700">
+class="bg-green-600 text-white px-4 py-2 rounded mb-6">
 🎙️ Diagnóstico por voz
 </button>
 
@@ -52,39 +49,51 @@ Dashboard TallerPRO360
 <div class="grid md:grid-cols-2 gap-6">
 
 <div class="bg-white p-4 rounded shadow">
-
 <h2 class="font-bold mb-4">
 Ingresos últimos 7 días
 </h2>
-
 <canvas id="graficaIngresos"></canvas>
-
 </div>
 
 <div class="bg-white p-4 rounded shadow">
-
 <h2 class="font-bold mb-4">
 Órdenes por estado
 </h2>
-
 <canvas id="graficaEstados"></canvas>
-
 </div>
 
 </div>
 
 `;
 
-document
-.getElementById("btnVoz")
-.addEventListener("click", escucharProblema);
+
+const btn = document.getElementById("btnVoz");
+
+if(btn){
+
+btn.addEventListener("click", escucharProblema);
+
+}
 
 await cargarKPIs();
 await cargarGraficas();
 
 }
 
+
+/* ===============================
+VOZ
+=============================== */
+
 async function escucharProblema(){
+
+if(!("webkitSpeechRecognition" in window)){
+
+alert("Tu navegador no soporta reconocimiento de voz");
+
+return;
+
+}
 
 const recognition = new webkitSpeechRecognition();
 
@@ -106,38 +115,46 @@ mostrarDiagnostico(respuestaIA);
 
 }
 
+
+/* ===============================
+MOSTRAR DIAGNOSTICO
+=============================== */
+
 function mostrarDiagnostico(respuesta){
+
+const container = document.getElementById("appContent");
 
 const div = document.createElement("div");
 
-div.className =
-"bg-yellow-100 p-4 rounded shadow mt-6";
+div.className = "bg-yellow-100 p-4 rounded shadow mt-6";
 
 div.innerHTML = `
-<h3 class="font-bold mb-2">
-Diagnóstico IA
-</h3>
-
+<h3 class="font-bold mb-2">Diagnóstico IA</h3>
 <p>${respuesta}</p>
 `;
 
-document
-.querySelector("main")
-.appendChild(div);
+container.appendChild(div);
 
 }
+
+
+/* ===============================
+KPIs
+=============================== */
 
 async function cargarKPIs(){
 
 const empresaId = localStorage.getItem("empresaId");
 
+if(!empresaId) return;
+
 const ordenesRef = collection(db,"empresas",empresaId,"ordenes");
 
 const snapshot = await getDocs(ordenesRef);
 
-let ordenesActivas = 0;
-let ingresosHoy = 0;
-let vehiculos = 0;
+let ordenesActivas=0;
+let ingresosHoy=0;
+let vehiculos=0;
 
 const hoy = new Date().toDateString();
 
@@ -178,26 +195,29 @@ document.getElementById("kpiClientes").innerText = clientesSnap.size;
 
 }
 
+
+/* ===============================
+GRAFICAS
+=============================== */
+
 async function cargarGraficas(){
 
 const empresaId = localStorage.getItem("empresaId");
+
+if(!empresaId) return;
 
 const snapshot = await getDocs(
 collection(db,"empresas",empresaId,"ordenes")
 );
 
-let estados = {
-activa:0,
-proceso:0,
-entregado:0
-};
+let estados={activa:0,proceso:0,entregado:0};
 
-let ingresosSemana = [0,0,0,0,0,0,0];
-let labels = [];
+let ingresosSemana=[0,0,0,0,0,0,0];
+let labels=[];
 
 for(let i=6;i>=0;i--){
 
-const d = new Date();
+const d=new Date();
 d.setDate(d.getDate()-i);
 
 labels.push(
@@ -208,24 +228,24 @@ d.toLocaleDateString("es-CO",{weekday:"short"})
 
 snapshot.forEach(doc=>{
 
-const data = doc.data();
+const data=doc.data();
 
-if(estados[data.estado] !== undefined){
+if(estados[data.estado]!==undefined){
 estados[data.estado]++;
 }
 
 if(data.fecha){
 
-const fecha = data.fecha.toDate?.();
+const fecha=data.fecha.toDate?.();
 
 if(fecha){
 
-const diff = Math.floor(
-(new Date() - fecha) / (1000*60*60*24)
+const diff=Math.floor(
+(new Date()-fecha)/(1000*60*60*24)
 );
 
-if(diff >=0 && diff <=6){
-ingresosSemana[6-diff] += data.total || 0;
+if(diff>=0 && diff<=6){
+ingresosSemana[6-diff]+=data.total||0;
 }
 
 }
@@ -233,6 +253,7 @@ ingresosSemana[6-diff] += data.total || 0;
 }
 
 });
+
 
 new Chart(document.getElementById("graficaEstados"),{
 
@@ -240,16 +261,15 @@ type:"doughnut",
 
 data:{
 labels:["Activas","En proceso","Entregadas"],
-datasets:[{
-data:[
+datasets:[{data:[
 estados.activa,
 estados.proceso,
 estados.entregado
-]
-}]
+]}]
 }
 
 });
+
 
 new Chart(document.getElementById("graficaIngresos"),{
 
