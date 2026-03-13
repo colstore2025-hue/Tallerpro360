@@ -6,19 +6,20 @@ import { finanzas } from "./modules/finanzas.js";
 import { ceo } from "./modules/ceo.js";
 import { pagos } from "./modules/pagos.js";
 
+
 /* ===========================
 SECCIONES DEL SISTEMA
 =========================== */
 
 const sections = {
 
-dashboard:{name:"Dashboard",module:dashboard},
-clientes:{name:"Clientes",module:clientes},
-ordenes:{name:"Órdenes",module:ordenes},
-inventario:{name:"Inventario",module:inventario},
-finanzas:{name:"Finanzas",module:finanzas},
-ceo:{name:"CEO",module:ceo},
-pagos:{name:"Pagos",module:pagos}
+  dashboard: { name: "Dashboard", module: dashboard },
+  clientes: { name: "Clientes", module: clientes },
+  ordenes: { name: "Órdenes", module: ordenes },
+  inventario: { name: "Inventario", module: inventario },
+  finanzas: { name: "Finanzas", module: finanzas },
+  ceo: { name: "CEO", module: ceo },
+  pagos: { name: "Pagos", module: pagos }
 
 };
 
@@ -29,34 +30,30 @@ CREAR MENU
 
 export function buildMenu(){
 
-const menu=document.getElementById("menu");
+  const menu = document.getElementById("menu");
 
-if(!menu){
+  if(!menu){
+    console.error("❌ No existe #menu");
+    return;
+  }
 
-console.error("No existe #menu");
-return;
+  menu.innerHTML = "";
 
-}
+  Object.keys(sections).forEach(key => {
 
-menu.innerHTML="";
+    const btn = document.createElement("button");
 
-Object.keys(sections).forEach(key=>{
+    btn.innerText = sections[key].name;
 
-const btn=document.createElement("button");
+    btn.className = "w-full text-left p-3 rounded hover:bg-gray-700 transition";
 
-btn.innerText=sections[key].name;
+    btn.onclick = () => {
+      loadSection(key);
+    };
 
-btn.className="w-full text-left p-3 rounded hover:bg-gray-700 transition";
+    menu.appendChild(btn);
 
-btn.onclick=()=>{
-
-loadSection(key);
-
-};
-
-menu.appendChild(btn);
-
-});
+  });
 
 }
 
@@ -67,17 +64,29 @@ INICIAR ROUTER
 
 export function initRouter(){
 
-const hash = window.location.hash.replace("#","");
+  const hash = window.location.hash.replace("#","");
 
-if(hash && sections[hash]){
+  if(hash && sections[hash]){
 
-loadSection(hash);
+    loadSection(hash);
 
-}else{
+  }else{
 
-loadSection("dashboard");
+    loadSection("dashboard");
 
-}
+  }
+
+  /* Escuchar cambios en URL */
+
+  window.addEventListener("hashchange", () => {
+
+    const newHash = window.location.hash.replace("#","");
+
+    if(sections[newHash]){
+      loadSection(newHash);
+    }
+
+  });
 
 }
 
@@ -88,52 +97,53 @@ CARGAR SECCION
 
 async function loadSection(section){
 
-const container=document.getElementById("appContent");
+  const container = document.getElementById("appContent");
 
-if(!container){
+  if(!container){
+    console.error("❌ No existe #appContent");
+    return;
+  }
 
-console.error("No existe #appContent");
-return;
+  container.innerHTML =
+  `<div class="p-6 text-gray-400">Cargando ${section}...</div>`;
 
-}
+  const selected = sections[section];
 
-container.innerHTML=`<div class="p-6 text-gray-500">Cargando ${section}...</div>`;
+  if(!selected){
 
-const selected=sections[section];
+    container.innerHTML =
+    `<div class="p-6 text-red-500">Sección no encontrada</div>`;
 
-if(!selected){
+    return;
 
-container.innerHTML=`<div class="p-6 text-red-500">Sección no encontrada</div>`;
-return;
+  }
 
-}
+  /* actualizar URL */
 
-/* actualizar URL */
+  window.location.hash = section;
 
-window.location.hash = section;
+  try{
 
-try{
+    if(typeof selected.module === "function"){
 
-if(typeof selected.module === "function"){
+      await selected.module(container);
 
-await selected.module(container);
+    }else{
 
-}else{
+      throw new Error("Módulo inválido");
 
-throw new Error("Módulo inválido");
+    }
 
-}
+  }catch(error){
 
-}catch(error){
+    console.error("Error cargando módulo:", error);
 
-console.error("Error cargando módulo:",error);
+    container.innerHTML = `
+      <div class="p-6 text-red-500">
+        Error cargando módulo: ${section}
+      </div>
+    `;
 
-container.innerHTML=`
-<div class="p-6 text-red-500">
-Error cargando módulo: ${section}
-</div>
-`;
-
-}
+  }
 
 }
