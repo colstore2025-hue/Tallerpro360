@@ -6,7 +6,6 @@
 
 import { auth } from "./firebase-config.js";
 import { obtenerEmpresaId } from "./empresa-context.js";
-
 import { protegerApp } from "../auth/authGuard.js";
 
 import {
@@ -22,16 +21,17 @@ export function iniciarApp(){
 
   console.log("🚀 Iniciando TallerPRO360...");
 
+  // Protección básica de acceso
   protegerApp();
 
+  // Escuchar estado de autenticación
   onAuthStateChanged(auth,(user)=>{
 
     if(!user){
 
-      console.warn("Usuario no autenticado");
+      console.warn("⚠️ Usuario no autenticado");
 
       window.location.href = "/login.html";
-
       return;
 
     }
@@ -40,10 +40,9 @@ export function iniciarApp(){
 
     if(!empresaId){
 
-      console.warn("Empresa no encontrada");
+      console.warn("⚠️ Empresa no encontrada");
 
       window.location.href = "/login.html";
-
       return;
 
     }
@@ -71,5 +70,10 @@ function iniciarERP(){
   if(loader){
     loader.style.display = "none";
   }
+
+  // Evento global para avisar que el ERP está listo
+  document.dispatchEvent(
+    new CustomEvent("erp-ready")
+  );
 
 }
