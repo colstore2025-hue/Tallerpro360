@@ -38,6 +38,11 @@ async processVehicleService(vehicleData,customerData){
 
 try{
 
+if(!vehicleData){
+console.warn("⚠️ Datos de vehículo faltantes");
+return null;
+}
+
 console.log("🚗 Iniciando proceso inteligente de servicio...");
 
 
@@ -54,6 +59,11 @@ if(!customer){
 
 const id = await this.customerManager.createCustomer(customerData);
 
+if(!id){
+console.warn("⚠️ No se pudo crear cliente");
+return null;
+}
+
 customer = {
 id:id,
 ...customerData
@@ -62,7 +72,9 @@ id:id,
 }
 else{
 
+if(customer?.id){
 await this.customerManager.updateVisit(customer.id);
+}
 
 }
 
@@ -78,9 +90,11 @@ await this.inventoryAI.loadInventory();
 
 const partsNeeded = diagnosis?.partsNeeded || [];
 
+const inventoryParts = this.inventoryAI.parts || [];
+
 const inventoryStatus = partsNeeded.map(part=>{
 
-const found = this.inventoryAI.parts?.find(
+const found = inventoryParts.find(
 p => p.name === part || p.nombre === part
 );
 
@@ -99,7 +113,7 @@ price:found?.price || 0
 
 const workOrder = {
 
-customerId: customer.id,
+customerId: customer?.id || null,
 
 vehicle: vehicleData,
 
@@ -162,7 +176,7 @@ total:laborCost + partsCost
 }
 catch(error){
 
-console.error("Error calculando estimación",error);
+console.error("❌ Error calculando estimación",error);
 
 return{
 labor:0,
@@ -190,7 +204,7 @@ await this.workshopBrain.trainModel(repairData);
 }
 catch(error){
 
-console.error("Error entrenamiento IA",error);
+console.error("❌ Error entrenamiento IA",error);
 
 }
 
@@ -219,12 +233,16 @@ console.error("❌ IA no pudo iniciarse:",error);
 }
 
 
-/* EXPORT */
+/* ===================================
+EXPORT
+=================================== */
 
 export default superAI;
 
 
-/* GLOBAL DEBUG */
+/* ===================================
+GLOBAL DEBUG
+=================================== */
 
 if(typeof window !== "undefined"){
 
