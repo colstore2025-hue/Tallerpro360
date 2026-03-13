@@ -5,172 +5,174 @@
  * Compatible PWA / Offline / SDK v10+
  */
 
-// ======================================================
-// 🔧 IMPORTS FIREBASE
-// ======================================================
+
+/* ======================================================
+IMPORTS FIREBASE
+====================================================== */
 
 import { initializeApp, getApps, getApp }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
-  getAuth,
-  setPersistence,
-  browserLocalPersistence
+getAuth,
+setPersistence,
+browserLocalPersistence
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
-  getFirestore,
-  enableIndexedDbPersistence
+getFirestore,
+enableIndexedDbPersistence
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import {
-  getAnalytics,
-  isSupported
+getAnalytics,
+isSupported
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
 
-import {
-  getStorage
-}
+import { getStorage }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 
-// ======================================================
-// 🔐 CONFIGURACIÓN FIREBASE
-// ======================================================
+/* ======================================================
+CONFIGURACIÓN FIREBASE
+====================================================== */
 
 const firebaseConfig = {
 
-  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
 
-  authDomain: "tallerpro360.firebaseapp.com",
+authDomain: "tallerpro360.firebaseapp.com",
 
-  projectId: "tallerpro360",
+projectId: "tallerpro360",
 
-  storageBucket: "tallerpro360.firebasestorage.app",
+storageBucket: "tallerpro360.appspot.com",
 
-  messagingSenderId: "636224778184",
+messagingSenderId: "636224778184",
 
-  appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
+appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
 
-  measurementId: "G-VEC2C0QX2G"
+measurementId: "G-VEC2C0QX2G"
 
 };
 
 
-// ======================================================
-// 🚀 INICIALIZACIÓN SEGURA
-// Evita reinicializar Firebase en SPA / PWA
-// ======================================================
+/* ======================================================
+INICIALIZACIÓN SEGURA FIREBASE
+====================================================== */
 
 const app = getApps().length
-  ? getApp()
-  : initializeApp(firebaseConfig);
+? getApp()
+: initializeApp(firebaseConfig);
 
 
-// ======================================================
-// 🔑 AUTHENTICATION
-// ======================================================
+/* ======================================================
+AUTHENTICATION
+====================================================== */
 
 export const auth = getAuth(app);
 
 setPersistence(auth, browserLocalPersistence)
 .then(() => {
 
-  console.log("🔐 Auth persistente activado");
+console.log("🔐 Auth persistente activado");
 
 })
 .catch((error) => {
 
-  console.warn("⚠️ Error configurando persistencia Auth:", error);
+console.warn("⚠️ Error persistencia Auth:", error);
 
 });
 
 
-// ======================================================
-// 🗄️ FIRESTORE DATABASE
-// ======================================================
+/* ======================================================
+FIRESTORE DATABASE
+====================================================== */
 
 export const db = getFirestore(app);
 
 
-// ======================================================
-// ☁️ STORAGE (FACTURAS / IMÁGENES)
-// ======================================================
+/* ======================================================
+STORAGE
+====================================================== */
 
 export const storage = getStorage(app);
 
 
-// ======================================================
-// 📦 OFFLINE MODE (PWA)
-// ======================================================
+/* ======================================================
+OFFLINE MODE (PWA)
+====================================================== */
 
-enableIndexedDbPersistence(db)
-.then(() => {
+async function activarOffline(){
 
-  console.log("📦 Firestore offline habilitado");
+try{
 
-})
-.catch((err) => {
+await enableIndexedDbPersistence(db);
 
-  if (err.code === "failed-precondition") {
+console.log("📦 Firestore offline habilitado");
 
-    console.warn("⚠️ Persistencia activa en otra pestaña");
+}catch(err){
 
-  }
+if(err.code === "failed-precondition"){
 
-  else if (err.code === "unimplemented") {
+console.warn("⚠️ Offline ya activo en otra pestaña");
 
-    console.warn("⚠️ Navegador no soporta modo offline");
+}
+else if(err.code === "unimplemented"){
 
-  }
+console.warn("⚠️ Navegador no soporta IndexedDB");
 
-  else {
+}
+else{
 
-    console.error("🔥 Error activando offline:", err);
+console.warn("⚠️ Offline no disponible:",err);
 
-  }
+}
 
-});
+}
+
+}
+
+activarOffline();
 
 
-// ======================================================
-// 📊 ANALYTICS (solo si el navegador soporta)
-// ======================================================
+/* ======================================================
+ANALYTICS
+====================================================== */
 
 let analytics = null;
 
-isSupported()
-.then((supported) => {
+async function iniciarAnalytics(){
 
-  if (supported) {
+try{
 
-    analytics = getAnalytics(app);
+const supported = await isSupported();
 
-    console.log("📊 Firebase Analytics activo");
+if(supported){
 
-  }
+analytics = getAnalytics(app);
 
-  else {
+console.log("📊 Firebase Analytics activo");
 
-    console.warn("⚠️ Analytics no soportado en este navegador");
+}
 
-  }
+}catch(e){
 
-})
-.catch((error) => {
+console.warn("⚠️ Analytics no disponible");
 
-  console.warn("⚠️ Error iniciando Analytics:", error);
+}
 
-});
+}
+
+iniciarAnalytics();
 
 export { analytics };
 
 
-// ======================================================
-// 📌 EXPORT APP
-// ======================================================
+/* ======================================================
+EXPORT APP
+====================================================== */
 
 export default app;
