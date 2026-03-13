@@ -8,8 +8,9 @@
 
 <title>TallerPRO360 ERP</title>
 
-<link rel="manifest" href="./manifest.json">
+<!-- PWA -->
 
+<link rel="manifest" href="../manifest.json">
 <meta name="theme-color" content="#16a34a">
 
 <style>
@@ -98,7 +99,6 @@ Salir
 <div class="card">
 
 <h2>Bienvenido a TallerPRO360</h2>
-
 <p>ERP Inteligente para talleres automotrices.</p>
 
 </div>
@@ -107,21 +107,17 @@ Salir
 
 </div>
 
-<!-- APP INIT -->
+
+<!-- ========================= -->
+<!-- SYSTEM LOADER (ARRANQUE) -->
+<!-- ========================= -->
 
 <script type="module" src="./system-loader.js"></script>
 
-import { iniciarApp } from "./js/core/app-init.js";
-import { buildMenu, initRouter } from "./js/router.js";
-import "./js/ai/superAI-orchestrator.js";
 
-iniciarApp();
-buildMenu();
-initRouter();
-
-</script>
-
+<!-- ========================= -->
 <!-- LOGOUT -->
+<!-- ========================= -->
 
 <script>
 
@@ -136,14 +132,17 @@ window.location.href="/login.html";
 
 </script>
 
+
+<!-- ========================= -->
 <!-- SERVICE WORKER -->
+<!-- ========================= -->
 
 <script>
 
 if("serviceWorker" in navigator){
 
 navigator.serviceWorker
-.register("./service-worker.js")
+.register("../service-worker.js")
 .then(()=>{
 
 console.log("PWA activa");
