@@ -1,0 +1,18 @@
+import admin from "firebase-admin"
+
+export default async function handler(req,res){
+
+const {uid}=req.body
+
+const vence=new Date()
+vence.setDate(vence.getDate()+7)
+
+await admin.firestore().collection("talleres").doc(uid).set({
+plan:"freemium",
+estadoPlan:"ACTIVO",
+venceEn:vence
+},{merge:true})
+
+res.json({ok:true})
+
+}
