@@ -1,30 +1,21 @@
 /**
  * system-loader.js
- * Bootloader principal del sistema
- * TallerPRO360 ERP
+ * Bootloader principal del ERP
  */
 
 import { iniciarApp } from "./js/core/app-init.js";
 import "./js/ai/superAI-orchestrator.js";
 
-console.log("🚀 Iniciando sistema TallerPRO360...");
+console.log("🚀 Iniciando sistema TallerPRO360");
 
-
-/* ===========================
-ARRANQUE DEL SISTEMA
-=========================== */
 
 document.addEventListener("DOMContentLoaded", () => {
 
 try{
 
-console.log("⚙️ Cargando núcleo del ERP...");
-
-/* iniciar sistema */
+console.log("⚙️ Arrancando núcleo del ERP");
 
 iniciarApp();
-
-console.log("✅ Bootloader ejecutado correctamente");
 
 }
 catch(error){
