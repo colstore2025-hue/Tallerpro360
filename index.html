@@ -115,7 +115,7 @@ Planes diseñados para talleres reales
 
 </ul>
 
-<button onclick="pagar('freemium')"
+<button onclick="activarFreemium()"
 class="bg-green-500 py-2 rounded hover:bg-green-600">
 Comenzar
 </button>
@@ -250,6 +250,33 @@ Contactar
 
 
 <script>
+
+async function activarFreemium(){
+
+const uid = localStorage.getItem("uid");
+
+const res = await fetch("/api/activarFreemium",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({uid})
+});
+
+const data = await res.json();
+
+if(data.ok){
+
+alert("Plan Freemium activado por 7 días");
+window.location.href="/app";
+
+}else{
+
+alert("Error activando plan");
+
+}
+
+}
 
 async function pagar(planId){
 
