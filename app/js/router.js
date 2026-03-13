@@ -1,3 +1,9 @@
+/**
+ * router.js
+ * Router SPA principal
+ * TallerPRO360 ERP
+ */
+
 import { dashboard } from "./modules/dashboard.js";
 import { clientes } from "./modules/clientes.js";
 import { ordenes } from "./modules/ordenes.js";
@@ -8,6 +14,10 @@ import { pagos } from "./modules/pagos.js";
 
 console.log("📦 Router cargado");
 
+
+/* =====================================
+SECCIONES DEL SISTEMA
+===================================== */
 
 const sections = {
 
@@ -22,9 +32,13 @@ pagos:{name:"Pagos",module:pagos}
 };
 
 
+/* =====================================
+CONSTRUIR MENÚ
+===================================== */
+
 export function buildMenu(){
 
-const menu=document.getElementById("menu");
+const menu = document.getElementById("menu");
 
 if(!menu){
 
@@ -33,15 +47,21 @@ return;
 
 }
 
-menu.innerHTML="";
+menu.innerHTML = "";
 
 Object.keys(sections).forEach(key=>{
 
-const btn=document.createElement("button");
+const btn = document.createElement("button");
 
-btn.innerText=sections[key].name;
+btn.innerText = sections[key].name;
 
-btn.onclick=()=>loadSection(key);
+btn.className = "menu-btn";
+
+btn.onclick = ()=>{
+
+loadSection(key);
+
+};
 
 menu.appendChild(btn);
 
@@ -50,38 +70,51 @@ menu.appendChild(btn);
 }
 
 
+/* =====================================
+INICIALIZAR ROUTER
+===================================== */
+
 export function initRouter(){
 
-const hash=window.location.hash.replace("#","");
+let hash = window.location.hash.replace("#","");
 
-if(hash && sections[hash]){
+if(!sections[hash]){
+
+hash = "dashboard";
+
+}
 
 loadSection(hash);
 
-}else{
-
-loadSection("dashboard");
+window.addEventListener("hashchange", handleHashChange);
 
 }
 
-window.addEventListener("hashchange",()=>{
 
-const newHash=window.location.hash.replace("#","");
+/* =====================================
+MANEJAR CAMBIO DE HASH
+===================================== */
 
-if(sections[newHash]){
+function handleHashChange(){
 
-loadSection(newHash);
+const hash = window.location.hash.replace("#","");
+
+if(sections[hash]){
+
+loadSection(hash);
 
 }
 
-});
-
 }
 
+
+/* =====================================
+CARGAR SECCIÓN
+===================================== */
 
 async function loadSection(section){
 
-const container=document.getElementById("appContent");
+const container = document.getElementById("appContent");
 
 if(!container){
 
@@ -90,29 +123,60 @@ return;
 
 }
 
-container.innerHTML=`Cargando ${section}...`;
-
-const selected=sections[section];
+const selected = sections[section];
 
 if(!selected){
 
-container.innerHTML="Sección no encontrada";
+container.innerHTML = "Sección no encontrada";
 return;
 
 }
 
-window.location.hash=section;
+container.innerHTML = `Cargando ${selected.name}...`;
+
+if(window.location.hash !== "#"+section){
+
+window.location.hash = section;
+
+}
 
 try{
 
 await selected.module(container);
 
+activarMenu(section);
+
 }
 catch(error){
 
-console.error("Error cargando módulo:",error);
+console.error("❌ Error cargando módulo:",error);
 
-container.innerHTML=`Error cargando módulo ${section}`;
+container.innerHTML = `Error cargando módulo ${section}`;
+
+}
+
+}
+
+
+/* =====================================
+ACTIVAR BOTON MENU
+===================================== */
+
+function activarMenu(section){
+
+const buttons = document.querySelectorAll("#menu button");
+
+buttons.forEach(btn=>{
+
+btn.classList.remove("activo");
+
+});
+
+const index = Object.keys(sections).indexOf(section);
+
+if(buttons[index]){
+
+buttons[index].classList.add("activo");
 
 }
 
