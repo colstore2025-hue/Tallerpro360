@@ -1,79 +1,208 @@
 /**
- * app-init.js
- * TallerPRO360 ERP SaaS
- * Inicialización global de la aplicación
+ * ordenes.js
+ * Módulo de órdenes de trabajo
+ * TallerPRO360 ERP
  */
 
-import { auth } from "./firebase-config.js";
-import { obtenerEmpresaId } from "./empresa-context.js";
-import { protegerApp } from "../auth/authGuard.js";
+import { db } from "../core/firebase-config.js";
 
 import {
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+collection,
+addDoc,
+getDoc,
+updateDoc,
+doc,
+serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import { detectarRepuestos } from "../ai/iaMecanica.js";
+import { generarFactura } from "../core/facturacion.js";
+import { enviarWhatsApp } from "../services/whatsappService.js";
 
 
-/* ===============================
-   INICIAR APLICACIÓN
-=============================== */
+/* ========================================
+MODULO PRINCIPAL (LO USA EL ROUTER)
+======================================== */
 
-export function iniciarApp(){
+export async function ordenes(container){
 
-  console.log("🚀 Iniciando TallerPRO360...");
+if(!container){
+console.error("❌ Contenedor no recibido en módulo ordenes");
+return;
+}
 
-  // Protección básica de acceso
-  protegerApp();
+container.innerHTML = `
 
-  // Escuchar estado de autenticación
-  onAuthStateChanged(auth,(user)=>{
+<div class="card">
 
-    if(!user){
+<h1 class="text-2xl font-bold mb-4">
+Órdenes de trabajo
+</h1>
 
-      console.warn("⚠️ Usuario no autenticado");
+<p class="text-gray-400 mb-4">
+Gestión de órdenes del taller.
+</p>
 
-      window.location.href = "/login.html";
-      return;
+<button id="btnNuevaOrden"
+class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
 
-    }
+Nueva Orden
 
-    const empresaId = obtenerEmpresaId();
+</button>
 
-    if(!empresaId){
+</div>
 
-      console.warn("⚠️ Empresa no encontrada");
-
-      window.location.href = "/login.html";
-      return;
-
-    }
-
-    console.log("✅ Usuario activo:", user.uid);
-    console.log("🏢 Empresa activa:", empresaId);
-
-    iniciarERP();
-
-  });
+`;
 
 }
 
 
-/* ===============================
-   INICIAR ERP
-=============================== */
+/* ========================================
+CREAR ORDEN
+======================================== */
 
-function iniciarERP(){
+export async function crearOrden(orden){
 
-  console.log("📊 ERP listo");
+try{
 
-  const loader = document.getElementById("appLoader");
+const empresaId = localStorage.getItem("empresaId");
 
-  if(loader){
-    loader.style.display = "none";
-  }
+if(!empresaId){
+console.warn("⚠️ empresaId no encontrado");
+return;
+}
 
-  // Evento global para avisar que el ERP está listo
-  document.dispatchEvent(
-    new CustomEvent("erp-ready")
-  );
+const docRef = await addDoc(
+
+collection(db,"empresas",empresaId,"ordenes"),
+
+{
+...orden,
+empresaId,
+estado:"activa",
+acciones:[],
+total:0,
+fecha:serverTimestamp()
+}
+
+);
+
+console.log("✅ Orden creada:",docRef.id);
+
+return docRef.id;
+
+}catch(error){
+
+console.error("❌ Error creando orden:",error);
+
+}
+
+}
+
+
+/* ========================================
+AGREGAR ACCION A ORDEN
+======================================== */
+
+export async function agregarAccionOrden(ordenId,accion){
+
+try{
+
+const empresaId = localStorage.getItem("empresaId");
+
+if(!empresaId){
+console.warn("⚠️ empresaId no encontrado");
+return;
+}
+
+const ref = doc(db,"empresas",empresaId,"ordenes",ordenId);
+
+const ordenSnap = await getDoc(ref);
+
+if(!ordenSnap.exists()){
+
+console.error("❌ Orden no existe");
+return;
+
+}
+
+const ordenData = ordenSnap.data();
+
+
+/* ======================
+IA DETECTAR REPUESTOS
+====================== */
+
+const ia = await detectarRepuestos(accion.descripcion);
+
+accion.repuestosIA = ia?.repuestos || [];
+
+
+/* ======================
+ACCIONES ACTUALES
+====================== */
+
+const accionesActuales = ordenData.acciones || [];
+
+const nuevasAcciones = [...accionesActuales,accion];
+
+
+/* ======================
+TOTAL
+====================== */
+
+const totalActual = ordenData.total || 0;
+
+const totalNuevo = totalActual + (accion.costo || 0);
+
+
+/* ======================
+ACTUALIZAR FIRESTORE
+====================== */
+
+await updateDoc(ref,{
+acciones:nuevasAcciones,
+total:totalNuevo
+});
+
+
+/* ======================
+NOTIFICACION CLIENTE
+====================== */
+
+if(ordenData.telefonoCliente){
+
+await enviarWhatsApp(
+ordenData.telefonoCliente,
+`🔧 TallerPRO360
+
+Nueva acción registrada:
+${accion.descripcion}`
+);
+
+}
+
+
+/* ======================
+GENERAR FACTURA
+====================== */
+
+await generarFactura({
+
+...ordenData,
+acciones:nuevasAcciones,
+total:totalNuevo
+
+});
+
+
+console.log("✅ Acción agregada correctamente");
+
+
+}catch(error){
+
+console.error("❌ Error agregando acción:",error);
+
+}
 
 }
