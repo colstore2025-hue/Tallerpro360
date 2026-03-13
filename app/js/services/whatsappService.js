@@ -6,48 +6,58 @@
 
 
 /* ======================================
-   NOTIFICACIÓN AUTOMÁTICA WHATSAPP
+   ENVIAR MENSAJE WHATSAPP
 ====================================== */
 
-export function notificarCliente(telefono, cliente, estado, vehiculo) {
+export function enviarWhatsApp(telefono, mensaje){
 
-  try {
+try{
 
-    /* ==============================
-       VALIDAR TELÉFONO
-    ============================== */
+if(!telefono){
+console.warn("⚠️ Número de teléfono vacío");
+return;
+}
 
-    if (!telefono) {
-      console.warn("Número de teléfono no válido");
-      return;
-    }
+telefono = telefono.replace(/\D/g,"");
 
-    // eliminar caracteres no numéricos
-    telefono = telefono.replace(/\D/g, "");
+if(telefono.length < 8){
+console.warn("⚠️ Teléfono inválido");
+return;
+}
 
-    if (telefono.length < 8) {
-      console.warn("Teléfono inválido");
-      return;
-    }
+if(!telefono.startsWith("57")){
+telefono = "57" + telefono;
+}
 
-    // agregar código país si no existe
-    if (!telefono.startsWith("57")) {
-      telefono = "57" + telefono;
-    }
+const mensajeCodificado =
+encodeURIComponent(mensaje);
+
+const url =
+`https://wa.me/${telefono}?text=${mensajeCodificado}`;
+
+window.open(url,"_blank");
+
+}catch(error){
+
+console.error("❌ Error enviando WhatsApp:",error);
+
+}
+
+}
 
 
-    /* ==============================
-       ESTADO CON EMOJI
-    ============================== */
 
-    const estadoEmoji = obtenerEmojiEstado(estado);
+/* ======================================
+   NOTIFICACIÓN AUTOMÁTICA CLIENTE
+====================================== */
 
+export function notificarCliente(telefono, cliente, estado, vehiculo){
 
-    /* ==============================
-       MENSAJE
-    ============================== */
+try{
 
-    const mensaje = `
+const estadoEmoji = obtenerEmojiEstado(estado);
+
+const mensaje = `
 Hola ${cliente}
 
 Le informamos el estado de su vehículo:
@@ -63,54 +73,34 @@ TallerPRO360
 Servicio automotriz
 `;
 
-    const mensajeCodificado =
-      encodeURIComponent(mensaje.trim());
+enviarWhatsApp(telefono, mensaje.trim());
 
+}catch(error){
 
-    /* ==============================
-       URL WHATSAPP
-    ============================== */
+console.error("❌ Error notificando cliente:",error);
 
-    const url =
-      `https://wa.me/${telefono}?text=${mensajeCodificado}`;
-
-
-    /* ==============================
-       ABRIR WHATSAPP
-    ============================== */
-
-    window.open(url, "_blank");
-
-
-  } catch (error) {
-
-    console.error(
-      "Error enviando WhatsApp:",
-      error
-    );
-
-  }
+}
 
 }
 
 
 
 /* ======================================
-   EMOJIS SEGÚN ESTADO
+   EMOJI SEGÚN ESTADO
 ====================================== */
 
-function obtenerEmojiEstado(estado) {
+function obtenerEmojiEstado(estado){
 
-  if (!estado) return "ℹ️";
+if(!estado) return "ℹ️";
 
-  const e = estado.toLowerCase();
+const e = estado.toLowerCase();
 
-  if (e.includes("activa")) return "📋";
-  if (e.includes("proceso")) return "🔧";
-  if (e.includes("diagnostico")) return "🧠";
-  if (e.includes("listo")) return "✅";
-  if (e.includes("entregado")) return "🚘";
+if(e.includes("activa")) return "📋";
+if(e.includes("proceso")) return "🔧";
+if(e.includes("diagnostico")) return "🧠";
+if(e.includes("listo")) return "✅";
+if(e.includes("entregado")) return "🚘";
 
-  return "ℹ️";
+return "ℹ️";
 
 }
