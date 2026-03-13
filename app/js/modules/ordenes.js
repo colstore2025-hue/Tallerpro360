@@ -1,4 +1,10 @@
-import { db } from "../js/core/firebase-config.js";
+/**
+ * ordenes.js
+ * Módulo de órdenes de trabajo
+ * TallerPRO360 ERP
+ */
+
+import { db } from "../core/firebase-config.js";
 
 import {
 collection,
@@ -7,12 +13,48 @@ getDoc,
 updateDoc,
 doc,
 serverTimestamp
-}
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { detectarRepuestos } from "../js/ai/iaMecanica.js";
-import { generarFactura } from "../js/facturacion.js";
-import { enviarWhatsApp } from "../js/whatsappService.js";
+import { detectarRepuestos } from "../ai/iaMecanica.js";
+import { generarFactura } from "../core/facturacion.js";
+import { enviarWhatsApp } from "../core/whatsappService.js";
+
+
+/* ========================================
+MODULO PRINCIPAL (LO USA EL ROUTER)
+======================================== */
+
+export async function ordenes(container){
+
+if(!container){
+console.error("❌ Contenedor no recibido en módulo ordenes");
+return;
+}
+
+container.innerHTML = `
+
+<div class="card">
+
+<h1 class="text-2xl font-bold mb-4">
+Órdenes de trabajo
+</h1>
+
+<p class="text-gray-400 mb-4">
+Gestión de órdenes del taller.
+</p>
+
+<button id="btnNuevaOrden"
+class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+
+Nueva Orden
+
+</button>
+
+</div>
+
+`;
+
+}
 
 
 /* ========================================
@@ -25,24 +67,28 @@ try{
 
 const empresaId = localStorage.getItem("empresaId");
 
-const docRef = await addDoc(collection(db,"ordenes"),{
+const docRef = await addDoc(
 
+collection(db,"empresas",empresaId,"ordenes"),
+
+{
 ...orden,
 empresaId,
 estado:"activa",
 acciones:[],
 total:0,
 fecha:serverTimestamp()
+}
 
-});
+);
 
-console.log("Orden creada:",docRef.id);
+console.log("✅ Orden creada:",docRef.id);
 
 return docRef.id;
 
 }catch(error){
 
-console.error("Error creando orden:",error);
+console.error("❌ Error creando orden:",error);
 
 }
 
@@ -57,13 +103,15 @@ export async function agregarAccionOrden(ordenId,accion){
 
 try{
 
-const ref = doc(db,"ordenes",ordenId);
+const empresaId = localStorage.getItem("empresaId");
+
+const ref = doc(db,"empresas",empresaId,"ordenes",ordenId);
 
 const ordenSnap = await getDoc(ref);
 
 if(!ordenSnap.exists()){
 
-console.error("Orden no existe");
+console.error("❌ Orden no existe");
 return;
 
 }
@@ -138,12 +186,12 @@ total:totalNuevo
 });
 
 
-console.log("Acción agregada correctamente");
+console.log("✅ Acción agregada correctamente");
 
 
 }catch(error){
 
-console.error("Error agregando acción:",error);
+console.error("❌ Error agregando acción:",error);
 
 }
 
