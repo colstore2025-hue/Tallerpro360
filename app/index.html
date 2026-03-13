@@ -37,7 +37,7 @@ color:#38bdf8;
 margin-bottom:30px;
 }
 
-.sidebar button{
+#menu button{
 
 display:block;
 width:100%;
@@ -51,7 +51,7 @@ border-radius:8px;
 
 }
 
-.sidebar button:hover{
+#menu button:hover{
 background:#1e293b;
 }
 
@@ -83,22 +83,20 @@ border:1px solid #1e293b;
 
 <h2>TallerPRO360</h2>
 
-<button onclick="loadModule('dashboard')">Dashboard</button>
-<button onclick="loadModule('ordenes')">Órdenes</button>
-<button onclick="loadModule('clientes')">Clientes</button>
-<button onclick="loadModule('inventario')">Inventario</button>
-<button onclick="loadModule('finanzas')">Finanzas</button>
-<button onclick="loadModule('pagos')">Pagos</button>
-<button onclick="loadModule('ia')">IA Mecánica</button>
-<button onclick="loadModule('ceo')">CEO Panel</button>
-<button onclick="logout()">Salir</button>
+<div id="menu"></div>
+
+<button onclick="logout()" style="margin-top:20px;background:#dc2626">
+Salir
+</button>
 
 </div>
 
 
 <!-- CONTENIDO -->
 
-<div class="main" id="contenido">
+<div class="main">
+
+<div id="appContent">
 
 <div class="card">
 
@@ -110,19 +108,38 @@ border:1px solid #1e293b;
 
 </div>
 
+</div>
+
 
 <!-- ========================= -->
 <!-- APP INIT -->
 <!-- ========================= -->
 
-<script type="module">
+<script type="module" src="./js/ai/superAI-orchestrator.js"></script>
 
-import { iniciarApp } from "./js/core/app-init.js";
-import { cerrarSesion } from "./js/auth/authGuard.js";
+import { buildMenu, initRouter } from "./router.js";
 
-iniciarApp();
+buildMenu();
 
-window.logout = cerrarSesion;
+initRouter();
+
+</script>
+
+
+<!-- ========================= -->
+<!-- LOGOUT SIMPLE -->
+<!-- ========================= -->
+
+<script>
+
+window.logout=function(){
+
+localStorage.removeItem("uid");
+localStorage.removeItem("empresaId");
+
+window.location.href="/login.html";
+
+}
 
 </script>
 
@@ -135,103 +152,22 @@ window.logout = cerrarSesion;
 
 if("serviceWorker" in navigator){
 
-navigator.serviceWorker.register("../service-worker.js")
+navigator.serviceWorker
+.register("../service-worker.js")
 .then(()=>{
 
 console.log("PWA activa");
+
+})
+.catch(e=>{
+
+console.log("SW error",e);
 
 });
 
 }
 
 </script>
-
-
-<!-- ========================= -->
-<!-- CARGAR MODULOS -->
-<!-- ========================= -->
-
-<script>
-
-window.loadModule=function(modulo){
-
-const contenido=document.getElementById("contenido");
-
-contenido.innerHTML="Cargando módulo...";
-
-switch(modulo){
-
-case "dashboard":
-dashboardModule();
-break;
-
-case "ordenes":
-ordenesModule();
-break;
-
-case "clientes":
-clientesModule();
-break;
-
-case "inventario":
-inventarioModule();
-break;
-
-case "finanzas":
-finanzasModule();
-break;
-
-case "pagos":
-pagosModule();
-break;
-
-case "ceo":
-ceoModule();
-break;
-
-case "ia":
-iaModule();
-break;
-
-}
-
-}
-
-</script>
-
-
-<!-- ========================= -->
-<!-- IA GLOBAL -->
-<!-- ========================= -->
-
-<script src="./js/dashboardIA.js"></script>
-<script src="./js/motorIAglobal.js"></script>
-<script src="./js/cotizacionIA.js"></script>
-<script src="./js/workshopBrain.js"></script>
-<script src="./js/autoPartsAI.js"></script>
-<script src="./js/customerRetentionAI.js"></script>
-<script src="./js/workshopRevenueOptimizer.js"></script>
-<script src="./js/globalDiagnosticsAI.js"></script>
-<script src="./js/workshopRankingAI.js"></script>
-<script src="./js/superAI-orchestrator.js"></script>
-<script src="./js/predictiveMaintenance.js"></script>
-<script src="./js/pricingAI.js"></script>
-<script src="./js/voiceAssistant.js"></script>
-
-
-<!-- ========================= -->
-<!-- MODULOS ERP -->
-<!-- ========================= -->
-
-<script src="./modules/dashboard.js"></script>
-<script src="./modules/ordenes.js"></script>
-<script src="./modules/clientes.js"></script>
-<script src="./modules/inventario.js"></script>
-<script src="./modules/finanzas.js"></script>
-<script src="./modules/pagos.js"></script>
-<script src="./modules/ceo.js"></script>
-<script src="./modules/ia.js"></script>
-
 
 </body>
 </html>
