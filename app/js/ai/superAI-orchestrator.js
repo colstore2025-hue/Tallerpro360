@@ -1,11 +1,10 @@
 /**
  * SUPER AI ORCHESTRATOR
  * Cerebro central del sistema IA para talleres
- * Coordina diagnóstico, clientes, inventario y aprendizaje automático
  */
 
 import WorkshopBrain from "./workshopBrain.js";
-import CustomerManager from "./customerManager.js";
+import CustomerManager from "../clientes/customerManager.js";
 import InventoryAI from "./inventoryAI.js";
 
 class SuperAIOrchestrator {
@@ -20,25 +19,65 @@ console.log("🧠 Super AI Orchestrator iniciado");
 
 }
 
-/**
- * Proceso completo de atención de vehículo
- */
+/* ===================================
+PROCESO COMPLETO DE SERVICIO
+=================================== */
+
 async processVehicleService(vehicleData, customerData){
 
 console.log("🚗 Iniciando proceso inteligente de servicio...");
 
-// 1 Registrar o actualizar cliente
-const customer = await this.customerManager.registerOrUpdateCustomer(customerData);
+/* 1 BUSCAR CLIENTE */
 
-// 2 Diagnóstico IA
+let customer = await this.customerManager.searchCustomer(
+customerData.phone
+);
+
+/* 2 CREAR SI NO EXISTE */
+
+if(!customer){
+
+const id = await this.customerManager.createCustomer(customerData);
+
+customer = {
+id:id,
+...customerData
+};
+
+}else{
+
+await this.customerManager.updateVisit(customer.id);
+
+}
+
+/* 3 DIAGNOSTICO IA */
+
 const diagnosis = await this.workshopBrain.runDiagnosis(vehicleData);
 
-// 3 Revisar inventario
+/* 4 INVENTARIO */
+
+await this.inventoryAI.loadInventory();
+
 const partsNeeded = diagnosis.partsNeeded || [];
 
-const inventoryStatus = await this.inventoryAI.checkParts(partsNeeded);
+const inventoryStatus = partsNeeded.map(part=>{
 
-// 4 Generar orden inteligente
+const found = this.inventoryAI.parts.find(
+p => p.name === part || p.nombre === part
+);
+
+return{
+
+part:part,
+available:!!found,
+price:found?.price || 0
+
+};
+
+});
+
+/* 5 ORDEN INTELIGENTE */
+
 const workOrder = {
 
 customerId: customer.id,
@@ -49,7 +88,10 @@ diagnosis: diagnosis,
 
 partsStatus: inventoryStatus,
 
-estimatedCost: this.calculateEstimate(diagnosis, inventoryStatus),
+estimatedCost: this.calculateEstimate(
+diagnosis,
+inventoryStatus
+),
 
 timestamp: new Date()
 
@@ -61,22 +103,23 @@ return workOrder;
 
 }
 
-/**
- * Estimación automática de costos
- */
-calculateEstimate(diagnosis, inventoryStatus){
+/* ===================================
+ESTIMACION COSTOS
+=================================== */
+
+calculateEstimate(diagnosis,inventoryStatus){
 
 let laborCost = (diagnosis.estimatedLaborHours || 0) * 40;
 
 let partsCost = 0;
 
-inventoryStatus.forEach(part => {
+inventoryStatus.forEach(part=>{
 
 partsCost += part.price || 0;
 
 });
 
-return {
+return{
 
 labor: laborCost,
 
@@ -88,38 +131,31 @@ total: laborCost + partsCost
 
 }
 
-/**
- * Aprendizaje automático
- */
+/* ===================================
+APRENDIZAJE IA
+=================================== */
+
 async learnFromRepair(repairData){
 
 console.log("📚 IA aprendiendo de reparación");
 
 await this.workshopBrain.trainModel(repairData);
 
-await this.inventoryAI.updateDemandPrediction(
-repairData.partsUsed || []
-);
-
 }
 
 }
 
-/* ===============================
-INSTANCIA GLOBAL IA
-=============================== */
+/* ===================================
+INSTANCIA GLOBAL
+=================================== */
 
 const superAI = new SuperAIOrchestrator();
 
-/* ===============================
-EXPORT PARA MODULOS
-=============================== */
+/* EXPORT PARA MODULOS */
 
 export default superAI;
 
-/* ===============================
-DISPONIBLE GLOBALMENTE
-=============================== */
+/* GLOBAL PARA DEBUG */
 
 window.SuperAI = superAI;
 
