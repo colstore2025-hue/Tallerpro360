@@ -111,9 +111,11 @@ Salir
 
 <script type="module">
 
-import "./js/ai/superAI-orchestrator.js";
+import { iniciarApp } from "./js/core/app-init.js";
 import { buildMenu, initRouter } from "./js/router.js";
+import "./js/ai/superAI-orchestrator.js";
 
+iniciarApp();
 buildMenu();
 initRouter();
 
