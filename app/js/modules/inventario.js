@@ -4,7 +4,21 @@
  * TallerPRO360 ERP
  */
 
-export function inventario(container){
+import { db } from "../core/firebase-config.js";
+
+import {
+collection,
+addDoc,
+getDocs,
+serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+/* ======================================
+MODULO PRINCIPAL
+====================================== */
+
+export async function inventario(container){
 
 if(!container){
 console.error("❌ Contenedor no recibido en módulo inventario");
@@ -21,6 +35,12 @@ Inventario
 
 <div class="card">
 
+<input id="productoNombre" placeholder="Nombre del producto" style="padding:8px;margin-right:10px">
+
+<input id="productoPrecio" placeholder="Precio" type="number" style="padding:8px;margin-right:10px">
+
+<input id="productoStock" placeholder="Stock" type="number" style="padding:8px;margin-right:10px">
+
 <button id="btnNuevoProducto"
 style="
 background:#16a34a;
@@ -31,7 +51,7 @@ border-radius:8px;
 cursor:pointer;
 ">
 
-+ Agregar Producto
+Guardar Producto
 
 </button>
 
@@ -46,7 +66,7 @@ Productos Registrados
 <div id="listaInventario">
 
 <p style="color:#94a3b8;">
-Inventario vacío.
+Cargando inventario...
 </p>
 
 </div>
@@ -56,5 +76,129 @@ Inventario vacío.
 </div>
 
 `;
+
+document
+.getElementById("btnNuevoProducto")
+.onclick = guardarProducto;
+
+
+/* cargar inventario */
+
+cargarInventario();
+
+}
+
+
+/* ======================================
+GUARDAR PRODUCTO
+====================================== */
+
+async function guardarProducto(){
+
+const nombre =
+document.getElementById("productoNombre").value;
+
+const precio =
+Number(document.getElementById("productoPrecio").value);
+
+const stock =
+Number(document.getElementById("productoStock").value);
+
+if(!nombre){
+alert("Ingrese nombre del producto");
+return;
+}
+
+try{
+
+const empresaId =
+localStorage.getItem("empresaId");
+
+await addDoc(
+
+collection(db,"empresas",empresaId,"inventario"),
+
+{
+nombre,
+precio,
+stock,
+fecha:serverTimestamp()
+}
+
+);
+
+alert("Producto guardado");
+
+location.reload();
+
+}
+catch(error){
+
+console.error("❌ Error guardando producto:",error);
+
+}
+
+}
+
+
+/* ======================================
+CARGAR INVENTARIO
+====================================== */
+
+async function cargarInventario(){
+
+const lista =
+document.getElementById("listaInventario");
+
+try{
+
+const empresaId =
+localStorage.getItem("empresaId");
+
+const snapshot = await getDocs(
+
+collection(db,"empresas",empresaId,"inventario")
+
+);
+
+if(snapshot.empty){
+
+lista.innerHTML =
+"<p style='color:#94a3b8'>Inventario vacío</p>";
+
+return;
+
+}
+
+let html = "";
+
+snapshot.forEach(doc=>{
+
+const p = doc.data();
+
+html += `
+
+<div class="card">
+
+<b>${p.nombre}</b><br>
+
+Precio: $${p.precio}<br>
+
+Stock: ${p.stock}
+
+</div>
+
+`;
+
+});
+
+lista.innerHTML = html;
+
+}
+catch(error){
+
+console.error("❌ Error cargando inventario:",error);
+
+}
 
 }
