@@ -17,7 +17,7 @@ serverTimestamp
 
 import { detectarRepuestos } from "../ai/iaMecanica.js";
 import { generarFactura } from "../core/facturacion.js";
-import { enviarWhatsApp } from "../core/whatsappService.js";
+import { enviarWhatsApp } from "../services/whatsappService.js";
 
 
 /* ========================================
@@ -67,6 +67,11 @@ try{
 
 const empresaId = localStorage.getItem("empresaId");
 
+if(!empresaId){
+console.warn("⚠️ empresaId no encontrado");
+return;
+}
+
 const docRef = await addDoc(
 
 collection(db,"empresas",empresaId,"ordenes"),
@@ -104,6 +109,11 @@ export async function agregarAccionOrden(ordenId,accion){
 try{
 
 const empresaId = localStorage.getItem("empresaId");
+
+if(!empresaId){
+console.warn("⚠️ empresaId no encontrado");
+return;
+}
 
 const ref = doc(db,"empresas",empresaId,"ordenes",ordenId);
 
