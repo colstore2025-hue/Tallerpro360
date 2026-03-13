@@ -75,9 +75,7 @@ border:1px solid #1e293b;
 
 <body>
 
-<!-- ========================= -->
 <!-- SIDEBAR -->
-<!-- ========================= -->
 
 <div class="sidebar">
 
@@ -91,9 +89,7 @@ Salir
 
 </div>
 
-<!-- ========================= -->
 <!-- CONTENIDO -->
-<!-- ========================= -->
 
 <div class="main">
 
@@ -111,25 +107,19 @@ Salir
 
 </div>
 
-<!-- ========================= -->
 <!-- APP INIT -->
-<!-- ========================= -->
 
 <script type="module">
 
 import "./js/ai/superAI-orchestrator.js";
 import { buildMenu, initRouter } from "./js/router.js";
 
-export function buildMenu()
-export function initRouter()
-
+buildMenu();
+initRouter();
 
 </script>
 
-
-<!-- ========================= -->
-<!-- LOGOUT SIMPLE -->
-<!-- ========================= -->
+<!-- LOGOUT -->
 
 <script>
 
@@ -144,10 +134,7 @@ window.location.href="/login.html";
 
 </script>
 
-
-<!-- ========================= -->
 <!-- SERVICE WORKER -->
-<!-- ========================= -->
 
 <script>
 
