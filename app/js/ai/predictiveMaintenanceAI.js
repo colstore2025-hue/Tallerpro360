@@ -6,82 +6,90 @@
 
 export class PredictiveMaintenanceAI {
 
-  predict(vehicleHistory){
+predict(vehicleHistory){
 
-    let alerts = []
+let alerts = []
 
-    if(!vehicleHistory) return alerts
+if(!vehicleHistory) return alerts
 
-    /* ==============================
-       CAMBIO ACEITE
-    ============================= */
 
-    if(vehicleHistory.kmUltimoAceite){
+/* ==============================
+CAMBIO ACEITE
+============================= */
 
-      const km = vehicleHistory.kmActual - vehicleHistory.kmUltimoAceite
+if(vehicleHistory.kmUltimoAceite){
 
-      if(km > 8000){
-        alerts.push({
-          tipo:"mantenimiento",
-          mensaje:"Cambio de aceite recomendado",
-          prioridad:"alta"
-        })
-      }
+const km =
+(vehicleHistory.kmActual || 0) -
+(vehicleHistory.kmUltimoAceite || 0)
 
-    }
+if(km > 8000){
 
-    /* ==============================
-       FRENOS
-    ============================= */
+alerts.push({
+tipo:"mantenimiento",
+mensaje:"Cambio de aceite recomendado",
+prioridad:"alta"
+})
 
-    if(vehicleHistory.brakeWear){
+}
 
-      if(vehicleHistory.brakeWear > 70){
+}
 
-        alerts.push({
-          tipo:"seguridad",
-          mensaje:"Pastillas de freno próximas a cambio",
-          prioridad:"alta"
-        })
 
-      }
+/* ==============================
+FRENOS
+============================= */
 
-    }
+if(vehicleHistory.brakeWear){
 
-    /* ==============================
-       SUSPENSIÓN
-    ============================= */
+if(vehicleHistory.brakeWear > 70){
 
-    if(vehicleHistory.kmActual > 90000){
+alerts.push({
+tipo:"seguridad",
+mensaje:"Pastillas de freno próximas a cambio",
+prioridad:"alta"
+})
 
-      alerts.push({
-        tipo:"mantenimiento",
-        mensaje:"Revisar sistema de suspensión",
-        prioridad:"media"
-      })
+}
 
-    }
+}
 
-    /* ==============================
-       BATERÍA
-    ============================= */
 
-    if(vehicleHistory.batteryAge){
+/* ==============================
+SUSPENSIÓN
+============================= */
 
-      if(vehicleHistory.batteryAge > 3){
+if(vehicleHistory.kmActual > 90000){
 
-        alerts.push({
-          tipo:"mantenimiento",
-          mensaje:"Revisar estado de batería",
-          prioridad:"media"
-        })
+alerts.push({
+tipo:"mantenimiento",
+mensaje:"Revisar sistema de suspensión",
+prioridad:"media"
+})
 
-      }
+}
 
-    }
 
-    return alerts
+/* ==============================
+BATERÍA
+============================= */
 
-  }
+if(vehicleHistory.batteryAge){
+
+if(vehicleHistory.batteryAge > 3){
+
+alerts.push({
+tipo:"mantenimiento",
+mensaje:"Revisar estado de batería",
+prioridad:"media"
+})
+
+}
+
+}
+
+return alerts
+
+}
 
 }
