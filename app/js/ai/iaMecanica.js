@@ -1,11 +1,31 @@
-// app/js/ai/iaMecanica.js
-// Motor de diagnóstico IA para TallerPRO360
+/**
+ * iaMecanica.js
+ * Motor de diagnóstico IA
+ * TallerPRO360 ERP
+ */
 
-export async function detectarRepuestos(descripcion) {
+export async function detectarRepuestos(descripcion){
 
-if (!descripcion || descripcion.trim().length < 5) {
-throw new Error("Descripción de falla inválida");
+/* ===============================
+VALIDACIÓN
+=============================== */
+
+if(!descripcion || descripcion.trim().length < 5){
+
+console.warn("⚠️ Descripción inválida para diagnóstico IA");
+
+return {
+diagnostico:"Descripción insuficiente para análisis",
+repuestos:[],
+acciones:[]
+};
+
 }
+
+
+/* ===============================
+PROMPT IA
+=============================== */
 
 const prompt = `
 Eres un mecánico experto en diagnóstico automotriz.
@@ -31,32 +51,65 @@ Devuelve SOLO JSON válido con esta estructura:
 No agregues texto fuera del JSON.
 `;
 
-try {
 
-const respuesta = await fetch("/api/diagnosticoIA", {
-method: "POST",
-headers: {
-"Content-Type": "application/json"
+/* ===============================
+LLAMADA API IA
+=============================== */
+
+try{
+
+const respuesta = await fetch("/api/diagnosticoIA",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
 },
-body: JSON.stringify({ prompt })
+
+body:JSON.stringify({prompt})
+
 });
 
-if (!respuesta.ok) {
-throw new Error("Error en API IA");
+
+if(!respuesta.ok){
+
+throw new Error(`API IA respondió ${respuesta.status}`);
+
 }
+
+
+/* ===============================
+PARSEAR RESPUESTA
+=============================== */
 
 const data = await respuesta.json();
 
-return data;
 
-} catch (error) {
+/* ===============================
+VALIDAR JSON
+=============================== */
 
-console.error("Error IA repuestos:", error);
+if(!data || typeof data !== "object"){
+
+throw new Error("Respuesta IA inválida");
+
+}
 
 return {
-diagnostico: "No se pudo generar diagnóstico IA",
-repuestos: [],
-acciones: []
+diagnostico:data.diagnostico || "Diagnóstico no disponible",
+repuestos:data.repuestos || [],
+acciones:data.acciones || []
+};
+
+
+}catch(error){
+
+console.error("❌ Error IA repuestos:",error);
+
+return {
+diagnostico:"No se pudo generar diagnóstico IA",
+repuestos:[],
+acciones:[]
 };
 
 }
