@@ -3,34 +3,35 @@
  * Cargador principal del sistema
  */
 
-console.log("🚀 Iniciando sistema...");
-
 import { iniciarApp } from "./js/core/app-init.js";
 import { buildMenu, initRouter } from "./js/router.js";
 import "./js/ai/superAI-orchestrator.js";
 
+console.log("🚀 Iniciando sistema TallerPRO360...");
 
-async function startSystem(){
+/* ===========================
+INICIAR CUANDO EL DOM ESTE LISTO
+=========================== */
 
-try{
+document.addEventListener("DOMContentLoaded", () => {
 
-console.log("⚙️ Cargando ERP...");
+  try{
 
-iniciarApp();
+    console.log("⚙️ Inicializando ERP...");
 
-buildMenu();
+    iniciarApp();
 
-initRouter();
+    buildMenu();
 
-console.log("✅ Sistema cargado");
+    initRouter();
 
-}
-catch(error){
+    console.log("✅ Sistema cargado correctamente");
 
-console.error("❌ Error iniciando sistema:",error);
+  }
+  catch(error){
 
-}
+    console.error("❌ Error iniciando sistema:",error);
 
-}
+  }
 
-startSystem();
+});
