@@ -1,13 +1,19 @@
-/**
- * clientes.js
- * UI de gestión de clientes - TallerPRO360 ERP
- * Interfaz que consume CustomerManager
- */
+/*
+================================================
+CLIENTES.JS - Versión Avanzada
+Gestión de clientes con dictado y voz de IA
+Ubicación: /app/js/modules/clientes.js
+================================================
+*/
 
 import CustomerManager from "./customerManager.js";
+import { iniciarAsistenteWorkshop } from "../voice/voiceAssistantWorkshop.js";
 
 const customerManager = new CustomerManager();
 
+/**
+ * Función principal de UI clientes
+ */
 export async function clientes(container) {
   container.innerHTML = `
 <h1 style="font-size:26px;margin-bottom:20px;">👥 Clientes</h1>
@@ -17,6 +23,7 @@ export async function clientes(container) {
   <input id="nombreCliente" placeholder="Nombre" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
   <input id="telefonoCliente" placeholder="Teléfono" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
   <input id="emailCliente" placeholder="Email" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+  <button id="vozCliente" style="margin-top:5px;padding:8px 15px;background:#6366f1;border:none;border-radius:6px;color:white;cursor:pointer;">🎤 Dictar Nombre</button>
   <button id="guardarCliente" style="margin-top:10px;padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Guardar Cliente</button>
 </div>
 
@@ -36,6 +43,7 @@ export async function clientes(container) {
   // ===========================
   document.getElementById("guardarCliente").onclick = guardarCliente;
   document.getElementById("buscarCliente").oninput = filtrarClientes;
+  document.getElementById("vozCliente").onclick = () => dictarInput("nombreCliente");
 
   // Cargar clientes inicial
   await cargarClientes();
@@ -50,14 +58,19 @@ async function guardarCliente() {
   const telefono = document.getElementById("telefonoCliente").value.trim();
   const email = document.getElementById("emailCliente").value.trim();
 
-  if (!nombre || !telefono) return alert("Nombre y teléfono requeridos");
+  if (!nombre || !telefono) {
+    hablar("Nombre y teléfono son requeridos");
+    return alert("Nombre y teléfono requeridos");
+  }
 
   const id = await customerManager.createCustomer({ name: nombre, phone: telefono, email });
   if (id) {
+    hablar("Cliente guardado correctamente");
     alert("✅ Cliente guardado");
     limpiarFormulario();
     await cargarClientes();
   } else {
+    hablar("Error guardando cliente");
     alert("❌ Error guardando cliente");
   }
 }
@@ -90,6 +103,7 @@ async function cargarClientes() {
   } catch (error) {
     console.error("Error cargando clientes:", error);
     lista.innerHTML = "❌ Error cargando clientes";
+    hablar("Ocurrió un error cargando los clientes");
   }
 }
 
@@ -106,4 +120,54 @@ function limpiarFormulario() {
   document.getElementById("nombreCliente").value = "";
   document.getElementById("telefonoCliente").value = "";
   document.getElementById("emailCliente").value = "";
+}
+
+/* ===========================
+FUNCIONES DE VOZ
+=========================== */
+
+/**
+ * Dictado de texto en input o textarea
+ * @param {string} inputId 
+ */
+function dictarInput(inputId) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    hablar("Tu navegador no soporta dictado por voz");
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = "es-ES";
+  recognition.interimResults = false;
+  recognition.continuous = false;
+
+  recognition.onstart = () => hablar("Comienza a dictar");
+  recognition.onerror = (e) => {
+    console.error("Error dictado:", e);
+    hablar("Error en dictado de voz");
+  };
+  recognition.onresult = (event) => {
+    const texto = event.results[0][0].transcript;
+    input.value += texto + " ";
+    hablar("Texto agregado");
+  };
+  recognition.start();
+}
+
+/**
+ * Función de voz de IA
+ * @param {string} texto
+ */
+function hablar(texto) {
+  if (!texto) return;
+  const speech = new SpeechSynthesisUtterance(texto);
+  speech.lang = "es-ES";
+  speech.rate = 1;
+  speech.pitch = 1;
+  speech.volume = 1;
+  window.speechSynthesis.speak(speech);
 }
