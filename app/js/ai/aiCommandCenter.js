@@ -1,6 +1,6 @@
 /**
  * aiCommandCenter.js
- * Centro de comandos IA
+ * Centro de Comandos IA
  * TallerPRO360 ERP
  */
 
@@ -12,27 +12,34 @@ console.log("🤖 AI Command Center iniciado")
 
 this.history = []
 
+/* ==============================
+MAPA DE COMANDOS
+============================== */
+
 this.commands = {
 
 dashboard:[
 "dashboard",
 "inicio",
 "panel",
-"home"
+"home",
+"panel principal"
 ],
 
 inventario:[
 "inventario",
 "stock",
 "repuestos",
-"productos"
+"productos",
+"almacen"
 ],
 
 clientes:[
 "clientes",
 "cliente",
 "buscar cliente",
-"ver clientes"
+"ver clientes",
+"lista clientes"
 ],
 
 ordenes:[
@@ -40,7 +47,8 @@ ordenes:[
 "ordenes",
 "orden trabajo",
 "crear orden",
-"nueva orden"
+"nueva orden",
+"orden servicio"
 ],
 
 finanzas:[
@@ -48,20 +56,23 @@ finanzas:[
 "dinero",
 "estado financiero",
 "ingresos",
-"gastos"
+"gastos",
+"contabilidad"
 ],
 
 pagos:[
 "pagos",
 "facturas",
 "cobros",
-"facturacion"
+"facturacion",
+"caja"
 ],
 
-reportes:[
-"reportes",
-"estadisticas",
-"analisis"
+ceo:[
+"ceo",
+"analisis negocio",
+"estado empresa",
+"analisis financiero"
 ]
 
 }
@@ -75,10 +86,13 @@ NORMALIZAR TEXTO
 
 normalize(text){
 
+if(!text) return ""
+
 return text
 .toLowerCase()
 .normalize("NFD")
 .replace(/[\u0300-\u036f]/g,"")
+.trim()
 
 }
 
@@ -89,9 +103,9 @@ PROCESAR COMANDO
 
 processCommand(text){
 
-if(!text) return null
-
 const command = this.normalize(text)
+
+if(!command) return null
 
 for(const module in this.commands){
 
@@ -122,31 +136,34 @@ execute(text){
 
 try{
 
+if(!text) return null
+
 const module = this.processCommand(text)
 
 if(!module){
 
 console.warn("⚠️ Comando no reconocido:",text)
+
+this.addHistory(text,null)
+
 return null
 
 }
 
 console.log("🧠 IA abre módulo:",module)
 
-this.history.push({
-command:text,
-module,
-date:new Date()
-})
+this.addHistory(text,module)
 
 this.navigate(module)
+
+this.emitEvent("ai:navigation",{module})
 
 return module
 
 }
 catch(error){
 
-console.error("Error ejecutando comando IA:",error)
+console.error("❌ Error ejecutando comando IA:",error)
 
 return null
 
@@ -166,6 +183,31 @@ if(!module) return
 if(typeof window !== "undefined"){
 
 window.location.hash = module
+
+}
+
+}
+
+
+/* ==============================
+AGREGAR HISTORIAL
+============================== */
+
+addHistory(command,module){
+
+this.history.push({
+
+command,
+module,
+date:new Date().toISOString()
+
+})
+
+/* limitar historial */
+
+if(this.history.length > 50){
+
+this.history.shift()
 
 }
 
@@ -193,6 +235,25 @@ this.history = []
 
 }
 
+
+/* ==============================
+EVENTOS IA
+============================== */
+
+emitEvent(name,data){
+
+if(typeof window !== "undefined"){
+
+window.dispatchEvent(
+
+new CustomEvent(name,{detail:data})
+
+)
+
+}
+
+}
+
 }
 
 
@@ -206,7 +267,7 @@ export default aiCommandCenter
 
 
 /* ==============================
-GLOBAL DEBUG
+DEBUG GLOBAL
 ============================== */
 
 if(typeof window !== "undefined"){
