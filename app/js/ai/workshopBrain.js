@@ -1,45 +1,63 @@
 /**
  * workshopBrain.js
- * Motor de diagnóstico IA
+ * Motor central de diagnóstico IA
+ * TallerPRO360 ERP
  */
 
 import { detectarRepuestos } from "./iaMecanica.js";
+import VehicleScanner from "./vehicleScanner.js";
+import { PredictiveMaintenanceAI } from "./predictiveMaintenanceAI.js";
 
 class WorkshopBrain {
 
 constructor(){
 
+this.scanner = new VehicleScanner();
+this.predictiveAI = new PredictiveMaintenanceAI();
+
 console.log("🧠 WorkshopBrain iniciado");
 
 }
 
+
 /* ===============================
-DIAGNOSTICO IA
+DIAGNOSTICO COMPLETO
 =============================== */
 
 async runDiagnosis(vehicleData){
 
 try{
 
+console.log("🔧 Iniciando diagnóstico completo...");
+
+/* ===============================
+1 ESCANEO TECNICO
+=============================== */
+
+const technicalDiagnosis = this.scanner.scanVehicle(
+vehicleData?.obd || {},
+vehicleData?.symptoms || []
+);
+
+
+/* ===============================
+2 IA MECANICA
+=============================== */
+
 const descripcion = vehicleData?.problem || "";
 
-if(!descripcion){
+let ia = null;
 
-return {
+if(descripcion){
 
-diagnosis:"Sin descripción del problema",
-
-partsNeeded:[],
-estimatedLaborHours:1
-
-};
+ia = await detectarRepuestos(descripcion);
 
 }
 
-const ia = await detectarRepuestos(descripcion);
 
-
-/* convertir repuestos IA a solo nombres */
+/* ===============================
+3 REPUESTOS IA
+=============================== */
 
 const partsNeeded = (ia?.repuestos || []).map(r =>
 
@@ -49,9 +67,27 @@ typeof r === "string"
 
 );
 
+
+/* ===============================
+4 MANTENIMIENTO PREDICTIVO
+=============================== */
+
+const predictiveAlerts = this.predictiveAI.predict(
+vehicleData?.history || {}
+);
+
+
+/* ===============================
+5 RESULTADO FINAL
+=============================== */
+
 return {
 
 diagnosis: ia?.diagnostico || "Diagnóstico generado por IA",
+
+technicalFindings: technicalDiagnosis,
+
+predictiveAlerts: predictiveAlerts,
 
 partsNeeded: partsNeeded,
 
@@ -68,7 +104,12 @@ return {
 
 diagnosis:"No se pudo generar diagnóstico",
 
+technicalFindings:[],
+
+predictiveAlerts:[],
+
 partsNeeded:[],
+
 estimatedLaborHours:1
 
 };
@@ -88,7 +129,15 @@ try{
 
 console.log("📚 IA aprendiendo reparación",repairData);
 
-/* futuro: guardar datos para mejorar predicciones */
+/*
+FUTURO:
+
+guardar historial de:
+- falla
+- repuestos usados
+- tiempo reparación
+- vehículo
+*/
 
 return true;
 
