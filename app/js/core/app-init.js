@@ -3,7 +3,7 @@
  * Inicializador principal del ERP
  */
 
-import { panel } from "../panel.js";
+import { panel } from "../modules/panel.js";
 
 export async function iniciarApp(){
 
@@ -14,9 +14,7 @@ const uid = localStorage.getItem("uid");
 if(!uid){
 
 console.warn("Usuario no autenticado");
-
 window.location.href="/login.html";
-
 return;
 
 }
@@ -26,7 +24,6 @@ const container = document.getElementById("appContent");
 if(!container){
 
 console.error("No existe contenedor appContent");
-
 return;
 
 }
@@ -43,7 +40,7 @@ catch(e){
 console.error("Error cargando panel:",e);
 
 container.innerHTML=`
-<div class="card">
+<div style="text-align:center;">
 <h2>Error cargando sistema</h2>
 <p>Revisa la consola</p>
 <button onclick="location.reload()">Reintentar</button>
