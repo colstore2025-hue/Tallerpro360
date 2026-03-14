@@ -1,11 +1,13 @@
-/**
- * pagosTaller.js
- * Módulo avanzado de Pagos y Flujo de Caja - TallerPRO360
- * Consolida pagos diarios, bancos y caja con integración contable
- */
+/*
+================================================
+PAGOSTALLER.JS - Módulo Avanzado de Pagos y Flujo de Caja
+TallerPRO360 - Versión Final Integrada
+================================================
+*/
 
 import { db } from "../core/firebase-config.js";
-import { collection, addDoc, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { actualizarContabilidad } from "./contabilidad.js"; // integración contable
 
 export async function pagosTaller(container) {
   container.innerHTML = `
@@ -29,6 +31,7 @@ export async function pagosTaller(container) {
       <p id="resumenEfectivo">Efectivo: $0</p>
       <p id="resumenBancos">Bancos: $0</p>
       <p id="resumenTarjeta">Tarjetas: $0</p>
+      <button id="btnCierreDia" class="mt-3 bg-blue-600 text-white px-4 py-2 rounded">Cerrar Día</button>
     </div>
 
     <div class="card">
@@ -38,16 +41,20 @@ export async function pagosTaller(container) {
     </div>
   `;
 
+  // ===========================
+  // Eventos
+  // ===========================
   document.getElementById("btnRegistrarPago").onclick = registrarPago;
   document.getElementById("buscarPago").oninput = filtrarPagos;
+  document.getElementById("btnCierreDia").onclick = cierreDelDia;
 
   await cargarPagos();
   await calcularResumenDiario();
 }
 
-/* ===========================
-REGISTRAR PAGO NUEVO
-=========================== */
+// ===========================
+// Registrar un nuevo pago
+// ===========================
 async function registrarPago() {
   const cliente = document.getElementById("pagoCliente").value.trim();
   const monto = Number(document.getElementById("pagoMonto").value);
@@ -57,21 +64,32 @@ async function registrarPago() {
   if(monto <= 0) return alert("Monto inválido");
 
   try {
-    await addDoc(collection(db,"pagos"),{
+    const pagoDoc = {
       cliente,
       monto,
       metodo,
       fecha: new Date()
+    };
+
+    await addDoc(collection(db,"pagos"), pagoDoc);
+
+    // Integración contable automática
+    await actualizarContabilidad({
+      tipo: "ingreso",
+      cliente,
+      monto,
+      metodo,
+      fecha: pagoDoc.fecha,
+      descripcion: `Pago recibido de ${cliente}`
     });
 
-    alert("✅ Pago registrado correctamente");
+    alert("✅ Pago registrado y contabilidad actualizada");
 
     // Limpiar formulario
     document.getElementById("pagoCliente").value = "";
     document.getElementById("pagoMonto").value = "";
     document.getElementById("pagoMetodo").value = "efectivo";
 
-    // Actualizar lista y resumen
     await cargarPagos();
     await calcularResumenDiario();
 
@@ -81,12 +99,11 @@ async function registrarPago() {
   }
 }
 
-/* ===========================
-CARGAR PAGOS
-=========================== */
+// ===========================
+// Cargar pagos desde Firestore
+// ===========================
 async function cargarPagos() {
   const lista = document.getElementById("listaPagos");
-
   try {
     const q = query(collection(db,"pagos"), orderBy("fecha","desc"));
     const snapshot = await getDocs(q);
@@ -103,7 +120,7 @@ async function cargarPagos() {
 
     snapshot.forEach(docSnap=>{
       const p = docSnap.data();
-      const fecha = new Date(p.fecha.seconds * 1000).toLocaleDateString();
+      const fecha = new Date(p.fecha.seconds * 1000).toLocaleString();
       html += `<tr>
         <td>${fecha}</td>
         <td>${p.cliente}</td>
@@ -121,9 +138,9 @@ async function cargarPagos() {
   }
 }
 
-/* ===========================
-FILTRAR PAGOS
-=========================== */
+// ===========================
+// Filtrar pagos
+// ===========================
 function filtrarPagos() {
   const input = document.getElementById("buscarPago").value.toLowerCase();
   const rows = document.querySelectorAll("#listaPagos table tr");
@@ -133,18 +150,15 @@ function filtrarPagos() {
   });
 }
 
-/* ===========================
-RESUMEN DIARIO
-=========================== */
+// ===========================
+// Resumen diario
+// ===========================
 async function calcularResumenDiario() {
   try {
     const snapshot = await getDocs(collection(db,"pagos"));
     const hoy = new Date().toDateString();
 
-    let ingresos = 0;
-    let efectivo = 0;
-    let bancos = 0;
-    let tarjeta = 0;
+    let ingresos = 0, efectivo = 0, bancos = 0, tarjeta = 0;
 
     snapshot.forEach(docSnap=>{
       const p = docSnap.data();
@@ -164,5 +178,27 @@ async function calcularResumenDiario() {
 
   } catch(e) {
     console.error("Error calculando resumen diario:", e);
+  }
+}
+
+// ===========================
+// Cierre del día
+// ===========================
+async function cierreDelDia() {
+  const resumen = {
+    fecha: new Date(),
+    ingresos: document.getElementById("resumenIngresos").innerText.replace("Ingresos: $",""),
+    efectivo: document.getElementById("resumenEfectivo").innerText.replace("Efectivo: $",""),
+    bancos: document.getElementById("resumenBancos").innerText.replace("Bancos: $",""),
+    tarjeta: document.getElementById("resumenTarjeta").innerText.replace("Tarjetas: $","")
+  };
+
+  // Guardar cierre en Firestore para auditoría
+  try {
+    await addDoc(collection(db,"cierres_diarios"), resumen);
+    alert("✅ Cierre del día registrado correctamente");
+  } catch(e) {
+    console.error("Error registrando cierre diario:", e);
+    alert("❌ Error registrando cierre diario");
   }
 }
