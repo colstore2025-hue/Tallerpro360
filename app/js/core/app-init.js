@@ -1,126 +1,58 @@
 /**
  * app-init.js
- * Inicialización del sistema
- * TallerPRO360 ERP
+ * Inicializador del ERP TallerPRO360
+ * Carga segura de Firebase, Plan Manager y Panel
  */
 
-import { buildMenu, initRouter } from "../router.js";
-import { loadAICore } from "../system/aiCoreLoader.js";
+import { panel } from "../panel.js";
+import { db } from "./firebase-config.js";
+import { getModulosDisponibles } from "../planManager.js";
 
-import { auth } from "./firebase-config.js";
+/**
+ * Función principal para iniciar la app
+ */
+export async function iniciarApp() {
+  console.log("⚡ Iniciando TallerPRO360 ERP...");
 
-import {
-onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  const userId = localStorage.getItem("uid");
+  const appContainer = document.getElementById("appContent");
 
+  // ===========================
+  // Validar sesión
+  // ===========================
+  if (!userId) {
+    console.warn("Usuario no autenticado. Redirigiendo a login...");
+    window.location.href = "./login.html";
+    return;
+  }
 
-let sistemaIniciado = false;
+  // ===========================
+  // Verificar plan del usuario
+  // ===========================
+  try {
+    const modulos = await getModulosDisponibles(userId);
 
+    if (!modulos || modulos.length === 0) {
+      appContainer.innerHTML = `<div class="card" style="text-align:center;">
+        <h2>Tu plan no tiene módulos habilitados</h2>
+        <p>Contacta soporte para asistencia.</p>
+        <button onclick="window.location.href='./login.html'" style="margin-top:10px;padding:10px;background:#dc2626;color:white;border:none;border-radius:6px;cursor:pointer;">Salir</button>
+      </div>`;
+      return;
+    }
 
-/* ==============================
-INICIAR APP
-============================== */
+    // ===========================
+    // Limpiar contenido y cargar panel
+    // ===========================
+    appContainer.innerHTML = ""; 
+    await panel(appContainer, userId);
 
-export function iniciarApp(){
-
-console.log("🚀 Iniciando TallerPRO360...");
-
-/* evitar doble inicio */
-
-if(sistemaIniciado){
-console.warn("⚠️ El sistema ya fue iniciado");
-return;
-}
-
-verificarSesion();
-
-}
-
-
-/* ==============================
-VERIFICAR SESION
-============================== */
-
-function verificarSesion(){
-
-console.log("🔐 Verificando sesión...");
-
-onAuthStateChanged(auth,(user)=>{
-
-if(user){
-
-console.log("✅ Usuario autenticado:",user.email);
-
-cargarSistema();
-
-}else{
-
-console.warn("⚠️ Usuario no autenticado");
-
-window.location.href="/login.html";
-
-}
-
-});
-
-}
-
-
-/* ==============================
-CARGAR SISTEMA
-============================== */
-
-async function cargarSistema(){
-
-try{
-
-console.log("⚙️ Iniciando núcleo ERP...");
-
-/* evitar doble carga */
-
-if(sistemaIniciado) return;
-
-sistemaIniciado = true;
-
-
-/* ==============================
-CARGAR IA
-============================== */
-
-await loadAICore();
-
-console.log("🧠 IA cargada");
-
-
-/* ==============================
-CONSTRUIR MENU
-============================== */
-
-buildMenu();
-
-console.log("📋 Menú generado");
-
-
-/* ==============================
-INICIAR ROUTER
-============================== */
-
-initRouter();
-
-console.log("🧭 Router iniciado");
-
-
-/* ==============================
-SISTEMA LISTO
-============================== */
-
-console.log("✅ ERP listo");
-
-}
-catch(error){
-
-console.error("🔥 Error iniciando sistema:",error);
-
-}
-
+  } catch (e) {
+    console.error("Error iniciando la app:", e);
+    appContainer.innerHTML = `<div class="card" style="text-align:center;">
+      <h2>⚠️ Error al cargar la aplicación</h2>
+      <p>${e.message}</p>
+      <button onclick="window.location.reload()" style="margin-top:10px;padding:10px;background:#dc2626;color:white;border:none;border-radius:6px;cursor:pointer;">Reintentar</button>
+    </div>`;
+  }
 }
