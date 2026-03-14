@@ -4,9 +4,15 @@
  * TallerPRO360 ERP
  */
 
-export function clientes(container){
+export async function clientes(container){
 
-if(!container){
+container.innerHTML = `
+<div class="card">
+<h2>Clientes</h2>
+</div>
+`;
+
+}
 
 console.error("❌ Contenedor no recibido en módulo clientes");
 
