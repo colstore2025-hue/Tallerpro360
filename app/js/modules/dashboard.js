@@ -4,8 +4,8 @@
  * TallerPRO360
  */
 
-import { generarManualPDF } from "../manual/manual.js"; // módulo de PDF
-import { clientes } from "../clientes/clientes.js"; // si quieres usar datos reales
+import { generarManualPDF } from "../system/manual.js"; // módulo de PDF
+import { clientes } from "../clientes/clientes.js"; // opcional para datos reales
 import { ordenes } from "../ordenes/ordenes.js"; // opcional para datos de órdenes
 
 export async function dashboard(container) {
@@ -54,13 +54,13 @@ style="padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:
 `;
 
   // ===========================
-  // Cargar datos de ejemplo
+  // Cargar datos simulados
   // ===========================
   loadStats();
   loadOrders();
 
   // ===========================
-  // Botón manual
+  // Botón manual PDF
   // ===========================
   document.getElementById("btnManual").onclick = () => {
     generarManualPDF();
@@ -87,10 +87,9 @@ style="padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:
 
 }
 
-
-/* ===========================
-SIMULACIÓN DE ESTADÍSTICAS
-=========================== */
+// ===========================
+// Simulación de estadísticas
+// ===========================
 function loadStats(){
   document.getElementById("ordenesActivas").innerText = "5";
   document.getElementById("clientesTotal").innerText = "28";
@@ -98,9 +97,9 @@ function loadStats(){
   document.getElementById("vehiculosTaller").innerText = "3";
 }
 
-/* ===========================
-ORDENES RECIENTES
-=========================== */
+// ===========================
+// Órdenes recientes
+// ===========================
 function loadOrders(){
   const container = document.getElementById("ordenesRecientes");
   container.innerHTML = `
@@ -129,9 +128,9 @@ function loadOrders(){
   `;
 }
 
-/* ===========================
-RESPUESTAS FAQ SIMULADAS
-=========================== */
+// ===========================
+// Respuestas FAQ simuladas
+// ===========================
 function generarRespuestaFAQ(pregunta){
   pregunta = pregunta.toLowerCase();
   if(pregunta.includes("cliente")) return "Para agregar un cliente, ve al módulo Clientes y presiona 'Guardar Cliente'.";
