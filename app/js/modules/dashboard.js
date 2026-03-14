@@ -1,22 +1,28 @@
 /**
  * dashboard.js
- * Dashboard funcional del TallerPRO360 ERP
+ * Panel principal del ERP - TallerPRO360
+ * Versión funcional y elegante
  */
 
 import { clientes } from "./clientes/clientes.js";
 import { ordenes } from "./ordenes/ordenes.js";
-import { configuracion } from "./configuracion.js"; // módulo de configuración
+import { inventario } from "./inventario/inventario.js";
+import { configuracion } from "./configuracion/configuracion.js";
+import { generarManualPDF } from "../manual/manual.js";
 import { db } from "../core/firebase-config.js";
-
-import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export async function dashboard(container) {
 
   container.innerHTML = `
-<h1 style="font-size:28px;margin-bottom:20px;">🚗 Dashboard TallerPRO360</h1>
+<h1 style="font-size:28px;margin-bottom:20px;">🚗 TallerPRO360 - Dashboard</h1>
 
-<div style="margin-bottom:20px;">
-<button id="btnConfiguracion" style="padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">⚙ Configuración y Ayuda</button>
+<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+  <button id="btnManual" class="btn-primary">📄 Manual Usuario</button>
+  <button id="btnConfiguracion" class="btn-primary">⚙ Configuración Taller</button>
+  <button id="btnClientes" class="btn-primary">👥 Clientes</button>
+  <button id="btnOrdenes" class="btn-primary">🛠 Órdenes</button>
+  <button id="btnInventario" class="btn-primary">📦 Inventario</button>
 </div>
 
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-bottom:25px;">
@@ -39,92 +45,109 @@ export async function dashboard(container) {
 </div>
 
 <div class="card">
-<h2>📋 Órdenes recientes</h2>
-<div id="ordenesRecientes">Cargando órdenes...</div>
+  <h2>📋 Órdenes recientes</h2>
+  <div id="ordenesRecientes">Cargando...</div>
+</div>
+
+<div class="card">
+  <h2>🤖 Ayuda rápida</h2>
+  <input id="inputPregunta" placeholder="Escribe tu consulta..." style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+  <div id="respuestasAyuda" style="margin-top:10px;max-height:150px;overflow-y:auto;background:#111827;color:white;padding:10px;border-radius:6px;"></div>
 </div>
 `;
 
   // ===========================
-  // Botón abrir módulo configuración
+  // Botones de navegación
   // ===========================
-  document.getElementById("btnConfiguracion").onclick = () => {
-    configuracion(container);
-  };
+  document.getElementById("btnManual").onclick = () => generarManualPDF();
+  document.getElementById("btnConfiguracion").onclick = () => configuracion(container);
+  document.getElementById("btnClientes").onclick = () => clientes(container);
+  document.getElementById("btnOrdenes").onclick = () => ordenes(container);
+  document.getElementById("btnInventario").onclick = () => inventario(container);
 
   // ===========================
   // Cargar estadísticas reales
   // ===========================
-  await cargarEstadisticas();
-  await cargarOrdenesRecientes();
+  await loadStats();
+  await loadOrders();
+
+  // ===========================
+  // Módulo de ayuda interactivo
+  // ===========================
+  const inputPregunta = document.getElementById("inputPregunta");
+  const respuestasContainer = document.getElementById("respuestasAyuda");
+
+  inputPregunta.addEventListener("keypress", function(e) {
+    if(e.key === "Enter") {
+      const pregunta = inputPregunta.value.trim();
+      if(!pregunta) return;
+      const respuesta = generarRespuestaFAQ(pregunta);
+      const div = document.createElement("div");
+      div.style.marginBottom = "8px";
+      div.innerHTML = `<b>Pregunta:</b> ${pregunta}<br><b>Respuesta:</b> ${respuesta}`;
+      respuestasContainer.prepend(div);
+      inputPregunta.value = "";
+    }
+  });
 }
 
-
 /* ===========================
-CARGAR ESTADÍSTICAS
+FUNCIONES DE DATOS
 =========================== */
-async function cargarEstadisticas() {
+
+async function loadStats() {
   try {
-    // Órdenes activas
-    const ordenesSnapshot = await getDocs(collection(db, "ordenes"));
-    document.getElementById("ordenesActivas").innerText = ordenesSnapshot.size;
+    const clientesSnap = await getDocs(collection(db,"clientes"));
+    const ordenesSnap = await getDocs(collection(db,"ordenes"));
+    
+    const ingresosHoy = ordenesSnap.docs.reduce((acc,doc)=>{
+      const data = doc.data();
+      const hoy = new Date().toDateString();
+      return data.fecha.toDate().toDateString() === hoy ? acc + (data.total || 0) : acc;
+    },0);
 
-    // Clientes
-    const clientesSnapshot = await getDocs(collection(db, "clientes"));
-    document.getElementById("clientesTotal").innerText = clientesSnapshot.size;
-
-    // Vehículos en taller (órdenes no entregadas)
-    const q = query(collection(db, "ordenes"), where("estado", "==", "en_taller"));
-    const vehiculosSnapshot = await getDocs(q);
-    document.getElementById("vehiculosTaller").innerText = vehiculosSnapshot.size;
-
-    // Ingresos hoy
-    const hoy = new Date();
-    const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
-    let ingresosHoy = 0;
-    ordenesSnapshot.forEach(doc => {
-      const o = doc.data();
-      const fechaOrden = o.fecha?.toDate ? o.fecha.toDate() : new Date(o.fecha);
-      if(fechaOrden >= inicioDia) ingresosHoy += o.total || 0;
-    });
-    document.getElementById("ingresosHoy").innerText = `$${ingresosHoy.toLocaleString()}`;
-
-  } catch (e) {
+    document.getElementById("ordenesActivas").innerText = ordenesSnap.docs.length;
+    document.getElementById("clientesTotal").innerText = clientesSnap.docs.length;
+    document.getElementById("ingresosHoy").innerText = `$${ingresosHoy}`;
+    document.getElementById("vehiculosTaller").innerText = ordenesSnap.docs.length; // simplificado
+  } catch(e) {
     console.error("Error cargando estadísticas:", e);
-    document.getElementById("ordenesActivas").innerText = "0";
-    document.getElementById("clientesTotal").innerText = "0";
-    document.getElementById("vehiculosTaller").innerText = "0";
-    document.getElementById("ingresosHoy").innerText = "$0";
   }
 }
 
-/* ===========================
-ORDENES RECIENTES
-=========================== */
-async function cargarOrdenesRecientes() {
-  const container = document.getElementById("ordenesRecientes");
+async function loadOrders() {
   try {
-    const ordenesSnapshot = await getDocs(collection(db, "ordenes"));
-    let html = `<table style="width:100%;border-collapse:collapse;">
-      <tr style="border-bottom:1px solid #1e293b;">
-        <th align="left">Cliente</th>
-        <th align="left">Vehículo</th>
-        <th align="left">Estado</th>
-      </tr>`;
+    const q = query(collection(db,"ordenes"), orderBy("fecha","desc"), limit(5));
+    const querySnapshot = await getDocs(q);
 
-    ordenesSnapshot.forEach(doc => {
+    let html = `<table style="width:100%;border-collapse:collapse;">
+      <tr style="border-bottom:1px solid #1e293b;"><th>Cliente</th><th>Vehículo</th><th>Estado</th></tr>`;
+
+    querySnapshot.forEach(doc => {
       const o = doc.data();
       html += `<tr>
         <td>${o.cliente || "-"}</td>
         <td>${o.vehiculo || "-"}</td>
-        <td>${o.estado || "Pendiente"}</td>
+        <td>${o.estado || "En proceso"}</td>
       </tr>`;
     });
 
     html += "</table>";
-    container.innerHTML = html;
-
-  } catch (e) {
-    console.error("Error cargando órdenes recientes:", e);
-    container.innerHTML = "Error cargando órdenes";
+    document.getElementById("ordenesRecientes").innerHTML = html;
+  } catch(e) {
+    console.error("Error cargando órdenes:", e);
+    document.getElementById("ordenesRecientes").innerText = "Error cargando órdenes";
   }
+}
+
+/* ===========================
+RESPUESTAS FAQ SIMULADAS
+=========================== */
+function generarRespuestaFAQ(pregunta) {
+  pregunta = pregunta.toLowerCase();
+  if(pregunta.includes("cliente")) return "Para agregar un cliente, ve al módulo Clientes y presiona 'Guardar Cliente'.";
+  if(pregunta.includes("orden")) return "Para crear una orden, completa los datos, agrega productos y presiona 'Guardar Orden'.";
+  if(pregunta.includes("inventario")) return "Agrega nuevos productos en Inventario, definiendo costo, margen y stock inicial.";
+  if(pregunta.includes("factura")) return "Cada orden genera automáticamente una factura PDF al guardarla.";
+  return "Lo sentimos, aún no tenemos información para esa consulta. Intenta otra pregunta.";
 }
