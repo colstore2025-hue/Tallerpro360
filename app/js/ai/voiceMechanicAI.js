@@ -1,80 +1,167 @@
-// voiceMechanicAI.js
-// IA de voz para mecánicos
+/**
+ * voiceMechanicAI.js
+ * IA de voz para mecánicos
+ * TallerPRO360
+ */
 
 export class VoiceMechanicAI {
 
 constructor(){
 
-this.recognition = null;
+this.recognition = null
 
-if ('webkitSpeechRecognition' in window) {
+const SpeechRecognition =
+window.SpeechRecognition ||
+window.webkitSpeechRecognition
 
-this.recognition = new webkitSpeechRecognition();
-this.recognition.lang = "es-ES";
-this.recognition.continuous = false;
-this.recognition.interimResults = false;
+if(SpeechRecognition){
+
+this.recognition = new SpeechRecognition()
+
+this.recognition.lang = "es-ES"
+this.recognition.continuous = false
+this.recognition.interimResults = false
+
+}else{
+
+console.warn("⚠️ Navegador sin soporte de voz")
 
 }
 
 }
 
-iniciar(callback){
+
+/* ==============================
+INICIAR ESCUCHA
+============================== */
+
+start(callback){
 
 if(!this.recognition){
-alert("El navegador no soporta reconocimiento de voz");
-return;
+
+alert("El navegador no soporta reconocimiento de voz")
+return
+
 }
 
-this.recognition.start();
+console.log("🎤 Escuchando...")
+
+this.recognition.start()
+
 
 this.recognition.onresult = (event)=>{
 
-const texto = event.results[0][0].transcript;
+const texto = event.results[0][0].transcript
 
-console.log("Comando voz:",texto);
+console.log("🎤 Voz detectada:",texto)
 
-const comando = this.procesarComando(texto);
+const comando = this.processCommand(texto)
 
-callback(comando);
-
-};
+if(callback){
+callback(comando,texto)
+}
 
 }
 
-procesarComando(texto){
 
-texto = texto.toLowerCase();
+this.recognition.onerror = (event)=>{
+
+console.error("❌ Error reconocimiento voz:",event.error)
+
+}
+
+
+this.recognition.onend = ()=>{
+
+console.log("🎤 Voz finalizada")
+
+}
+
+}
+
+
+/* ==============================
+DETENER
+============================== */
+
+stop(){
+
+if(this.recognition){
+this.recognition.stop()
+}
+
+}
+
+
+/* ==============================
+PROCESAR TEXTO
+============================== */
+
+processCommand(text){
+
+const texto = text.toLowerCase()
+
 
 if(texto.includes("crear orden")){
 
 return{
-tipo:"crear_orden",
-detalle:texto.replace("crear orden","").trim()
+type:"crear_orden",
+detail:texto.replace("crear orden","").trim()
 }
 
 }
+
 
 if(texto.includes("cotizar")){
 
 return{
-tipo:"cotizar",
-detalle:texto.replace("cotizar","").trim()
+type:"cotizar",
+detail:texto.replace("cotizar","").trim()
 }
 
 }
+
 
 if(texto.includes("buscar cliente")){
 
 return{
-tipo:"buscar_cliente",
-detalle:texto.replace("buscar cliente","").trim()
+type:"buscar_cliente",
+detail:texto.replace("buscar cliente","").trim()
 }
 
 }
+
+
+if(texto.includes("abrir inventario")){
 
 return{
-tipo:"desconocido",
-detalle:texto
+type:"abrir_inventario"
+}
+
+}
+
+
+if(texto.includes("abrir clientes")){
+
+return{
+type:"abrir_clientes"
+}
+
+}
+
+
+if(texto.includes("abrir ordenes")){
+
+return{
+type:"abrir_ordenes"
+}
+
+}
+
+
+return{
+type:"desconocido",
+detail:texto
 }
 
 }
