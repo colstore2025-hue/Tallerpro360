@@ -1,14 +1,14 @@
 /**
  * dashboard.js
- * Panel principal del ERP con módulo de ayuda interactivo
+ * Panel principal funcional del ERP
  * TallerPRO360
  */
 
-import { generarManualPDF } from "../system/manual.js"; // módulo de PDF
-import { clientes } from "../clientes/clientes.js"; // opcional para datos reales
-import { ordenes } from "../ordenes/ordenes.js"; // opcional para datos de órdenes
+import { generarManualPDF } from "./system/manual.js"; // módulo de PDF
+import { db } from "./core/firebase-config.js";
+import { getDocs, collection, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-export async function dashboard(container) {
+export async function dashboard(container){
 
   container.innerHTML = `
 <h1 style="font-size:28px;margin-bottom:20px;">
@@ -16,8 +16,7 @@ export async function dashboard(container) {
 </h1>
 
 <!-- Botón Manual -->
-<button id="btnManual"
-style="padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;margin-bottom:20px;">
+<button id="btnManual" style="padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;margin-bottom:20px;">
 📄 Descargar Manual de Usuario
 </button>
 
@@ -53,27 +52,21 @@ style="padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:
 </div>
 `;
 
-  // ===========================
-  // Cargar datos simulados
-  // ===========================
-  loadStats();
-  loadOrders();
+  // Cargar datos reales
+  await loadStats();
+  await loadOrders();
 
-  // ===========================
-  // Botón manual PDF
-  // ===========================
+  // Botón para descargar manual
   document.getElementById("btnManual").onclick = () => {
     generarManualPDF();
   };
 
-  // ===========================
   // Módulo de ayuda interactivo
-  // ===========================
   const inputPregunta = document.getElementById("inputPregunta");
   const respuestasContainer = document.getElementById("respuestasAyuda");
 
-  inputPregunta.addEventListener("keypress", function(e) {
-    if(e.key === "Enter") {
+  inputPregunta.addEventListener("keypress", function(e){
+    if(e.key === "Enter"){
       const pregunta = inputPregunta.value.trim();
       if(!pregunta) return;
       const respuesta = generarRespuestaFAQ(pregunta);
@@ -87,50 +80,72 @@ style="padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:
 
 }
 
-// ===========================
-// Simulación de estadísticas
-// ===========================
-function loadStats(){
-  document.getElementById("ordenesActivas").innerText = "5";
-  document.getElementById("clientesTotal").innerText = "28";
-  document.getElementById("ingresosHoy").innerText = "$1,250";
-  document.getElementById("vehiculosTaller").innerText = "3";
+
+/* ===========================
+CARGAR ESTADÍSTICAS REALES
+=========================== */
+async function loadStats(){
+  try{
+    // Órdenes activas
+    const ordenesSnapshot = await getDocs(collection(db,"ordenes"));
+    let ordenesActivas = 0, ingresosHoy = 0, vehiculosTaller = 0;
+    const hoy = new Date().toISOString().split('T')[0];
+
+    ordenesSnapshot.forEach(doc => {
+      const o = doc.data();
+      const fechaOrden = o.fecha.toDate ? o.fecha.toDate() : o.fecha;
+      const fechaStr = fechaOrden.toISOString().split('T')[0];
+      if(!o.entregada) ordenesActivas++;
+      if(fechaStr === hoy) ingresosHoy += o.total || 0;
+      if(!o.entregada) vehiculosTaller++;
+    });
+
+    document.getElementById("ordenesActivas").innerText = ordenesActivas;
+    document.getElementById("ingresosHoy").innerText = `$${ingresosHoy}`;
+    document.getElementById("vehiculosTaller").innerText = vehiculosTaller;
+
+    // Clientes
+    const clientesSnapshot = await getDocs(collection(db,"clientes"));
+    document.getElementById("clientesTotal").innerText = clientesSnapshot.size;
+
+  }catch(e){
+    console.error("Error cargando estadísticas:", e);
+  }
 }
 
-// ===========================
-// Órdenes recientes
-// ===========================
-function loadOrders(){
-  const container = document.getElementById("ordenesRecientes");
-  container.innerHTML = `
-  <table style="width:100%;border-collapse:collapse;">
-    <tr style="border-bottom:1px solid #1e293b;">
-      <th align="left">Cliente</th>
-      <th align="left">Vehículo</th>
-      <th align="left">Estado</th>
-    </tr>
-    <tr>
-      <td>Carlos Pérez</td>
-      <td>Toyota Corolla</td>
-      <td>Diagnóstico</td>
-    </tr>
-    <tr>
-      <td>Ana Rodríguez</td>
-      <td>Chevrolet Spark</td>
-      <td>Reparación</td>
-    </tr>
-    <tr>
-      <td>Luis Gómez</td>
-      <td>Nissan Frontier</td>
-      <td>Entrega hoy</td>
-    </tr>
-  </table>
-  `;
+
+/* ===========================
+CARGAR ÓRDENES RECIENTES
+=========================== */
+async function loadOrders(){
+  try{
+    const container = document.getElementById("ordenesRecientes");
+    const querySnapshot = await getDocs(collection(db,"ordenes"));
+    let html = `<table style="width:100%;border-collapse:collapse;">
+    <tr style="border-bottom:1px solid #1e293b;"><th>Cliente</th><th>Vehículo</th><th>Total</th><th>Estado</th></tr>`;
+
+    querySnapshot.forEach(doc => {
+      const o = doc.data();
+      html += `<tr>
+        <td>${o.cliente}</td>
+        <td>${o.vehiculo}</td>
+        <td>$${o.total || 0}</td>
+        <td>${o.entregada ? "Entregada" : "En taller"}</td>
+      </tr>`;
+    });
+
+    html += `</table>`;
+    container.innerHTML = html;
+
+  }catch(e){
+    console.error("Error cargando órdenes recientes:", e);
+  }
 }
 
-// ===========================
-// Respuestas FAQ simuladas
-// ===========================
+
+/* ===========================
+RESPUESTAS FAQ SIMULADAS
+=========================== */
 function generarRespuestaFAQ(pregunta){
   pregunta = pregunta.toLowerCase();
   if(pregunta.includes("cliente")) return "Para agregar un cliente, ve al módulo Clientes y presiona 'Guardar Cliente'.";
