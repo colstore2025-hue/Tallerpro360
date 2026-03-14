@@ -6,19 +6,22 @@
  */
 
 import { db } from "../core/firebase-config.js";
-import { collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { formatCurrency } from "../core/utils.js"; // función utilitaria para formato de moneda
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import Chart from "https://cdn.jsdelivr.net/npm/chart.js"; // gráficos interactivos
+import jsPDF from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"; // export PDF
+import { formatCurrency } from "../core/utils.js"; // utilidades para moneda
 
-export async function contabilidad(container) {
+export async function contabilidad(container){
 
   container.innerHTML = `
-    <h1 style="font-size:28px;margin-bottom:20px;">💼 Contabilidad</h1>
+    <h1 style="font-size:28px;margin-bottom:20px;">💼 Contabilidad Avanzada</h1>
 
     <div class="card" style="margin-bottom:20px;">
       <h3>Filtros</h3>
       <label>Mes:</label>
       <input type="month" id="mesContabilidad" style="padding:6px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
       <button id="cargarReporte" style="margin-left:10px;padding:6px 12px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Generar Reporte</button>
+      <button id="exportPDF" style="margin-left:10px;padding:6px 12px;background:#3b82f6;border:none;border-radius:6px;color:white;cursor:pointer;">Exportar PDF</button>
     </div>
 
     <div class="card" id="resumenContabilidad" style="margin-bottom:20px;">
@@ -26,25 +29,34 @@ export async function contabilidad(container) {
       <p>Seleccione un mes y haga clic en "Generar Reporte"</p>
     </div>
 
-    <div class="card" id="detallesContabilidad">
+    <div class="card" id="detallesContabilidad" style="margin-bottom:20px;">
       <h3>Detalles de Movimientos</h3>
       <p>Sin datos aún.</p>
     </div>
+
+    <div class="card">
+      <h3>Gráficos</h3>
+      <canvas id="chartContabilidad" height="200"></canvas>
+    </div>
   `;
 
-  document.getElementById("cargarReporte").onclick = async () => {
+  const btnReporte = document.getElementById("cargarReporte");
+  const btnPDF = document.getElementById("exportPDF");
+
+  btnReporte.onclick = async () => {
     const mesInput = document.getElementById("mesContabilidad").value;
     if(!mesInput) return alert("Seleccione un mes");
     const [anio, mes] = mesInput.split("-").map(Number);
     await generarReporte(anio, mes);
   };
+
+  btnPDF.onclick = exportarPDF;
 }
 
 /* ===================================
-GENERAR REPORTE CONTABLE
+GENERAR REPORTE CONTABLE AVANZADO
 =================================== */
 async function generarReporte(anio, mes){
-
   const resumen = document.getElementById("resumenContabilidad");
   const detalles = document.getElementById("detallesContabilidad");
 
@@ -53,13 +65,14 @@ async function generarReporte(anio, mes){
 
   try {
     // =========================
-    // Obtener ingresos y gastos desde Firestore
+    // Obtener ingresos y gastos
     // =========================
     const ingresosSnap = await getDocs(collection(db,"finanzasIngresos"));
     const gastosSnap = await getDocs(collection(db,"finanzasGastos"));
 
     let ingresos = 0, gastos = 0;
     const movimientos = [];
+    const cuentas = {}; // P&L por cuentas contables
 
     ingresosSnap.forEach(docSnap => {
       const m = docSnap.data();
@@ -67,6 +80,7 @@ async function generarReporte(anio, mes){
       if(fecha.getFullYear() === anio && fecha.getMonth()+1 === mes){
         ingresos += m.monto || 0;
         movimientos.push({...m, tipo:"Ingreso"});
+        cuentas[m.cuenta] = (cuentas[m.cuenta] || 0) + m.monto;
       }
     });
 
@@ -76,6 +90,7 @@ async function generarReporte(anio, mes){
       if(fecha.getFullYear() === anio && fecha.getMonth()+1 === mes){
         gastos += m.monto || 0;
         movimientos.push({...m, tipo:"Gasto"});
+        cuentas[m.cuenta] = (cuentas[m.cuenta] || 0) - m.monto;
       }
     });
 
@@ -96,31 +111,82 @@ async function generarReporte(anio, mes){
     // =========================
     if(movimientos.length === 0){
       detalles.innerHTML = "<p>No hay movimientos registrados para este mes.</p>";
-      return;
+    } else {
+      let html = `<table style="width:100%;border-collapse:collapse;">
+        <tr style="border-bottom:1px solid #333;"><th>Fecha</th><th>Tipo</th><th>Cuenta</th><th>Concepto</th><th>Monto</th></tr>`;
+      movimientos.sort((a,b)=>b.fecha.seconds - a.fecha.seconds);
+      movimientos.forEach(m=>{
+        const fecha = new Date(m.fecha.seconds * 1000).toLocaleDateString();
+        html += `<tr>
+          <td>${fecha}</td>
+          <td>${m.tipo}</td>
+          <td>${m.cuenta || "-"}</td>
+          <td>${m.descripcion || "-"}</td>
+          <td>${formatCurrency(m.monto)}</td>
+        </tr>`;
+      });
+      html += "</table>";
+      detalles.innerHTML = html;
     }
 
-    let html = `<table style="width:100%;border-collapse:collapse;">
-      <tr style="border-bottom:1px solid #333;"><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Monto</th></tr>`;
-
-    movimientos.sort((a,b)=>b.fecha.seconds - a.fecha.seconds);
-
-    movimientos.forEach(m=>{
-      const fecha = new Date(m.fecha.seconds * 1000).toLocaleDateString();
-      html += `<tr>
-        <td>${fecha}</td>
-        <td>${m.tipo}</td>
-        <td>${m.descripcion || "-"}</td>
-        <td>${formatCurrency(m.monto)}</td>
-      </tr>`;
-    });
-
-    html += "</table>";
-    detalles.innerHTML = html;
+    // =========================
+    // Renderizar gráfico P&L
+    // =========================
+    renderChart(cuentas);
 
   } catch(error){
     console.error("Error generando reporte contable:",error);
     resumen.innerHTML = "❌ Error cargando datos contables";
     detalles.innerHTML = "";
   }
+}
 
+/* ===================================
+GRAFICO P&L
+=================================== */
+let chartInstance = null;
+
+function renderChart(cuentas){
+  const ctx = document.getElementById("chartContabilidad").getContext("2d");
+  const labels = Object.keys(cuentas);
+  const data = Object.values(cuentas);
+
+  if(chartInstance) chartInstance.destroy();
+
+  chartInstance = new Chart(ctx,{
+    type: 'bar',
+    data: {
+      labels,
+      datasets:[{
+        label: 'Ingresos/Gastos por cuenta',
+        data,
+        backgroundColor: data.map(v => v>=0 ? '#16a34a' : '#dc2626')
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{display:false},
+        title:{display:true,text:'P&L por cuentas contables'}
+      }
+    }
+  });
+}
+
+/* ===================================
+EXPORTAR PDF
+=================================== */
+async function exportarPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  const resumen = document.getElementById("resumenContabilidad").innerText;
+  const detalles = document.getElementById("detallesContabilidad").innerText;
+
+  doc.setFontSize(14);
+  doc.text("Reporte Contable - TallerPRO360", 10, 10);
+  doc.setFontSize(12);
+  doc.text(resumen, 10, 20);
+  doc.text(detalles, 10, 40);
+  doc.save(`Contabilidad-${new Date().toISOString().slice(0,10)}.pdf`);
 }
