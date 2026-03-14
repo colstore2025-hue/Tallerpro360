@@ -4,6 +4,7 @@
  */
 
 import { buildMenu, initRouter } from "../router.js";
+import { loadAICore } from "../system/aiCoreLoader.js";
 
 import { auth } from "./firebase-config.js";
 
@@ -48,19 +49,28 @@ window.location.href="/login.html";
 }
 
 
-function cargarSistema(){
+async function cargarSistema(){
 
 try{
 
-console.log("⚙️ Cargando ERP...");
+console.log("⚙️ Iniciando núcleo ERP");
+
+/* cargar IA */
+
+await loadAICore();
+
+/* construir menú */
 
 buildMenu();
 
+/* iniciar router */
+
 initRouter();
 
-console.log("✅ ERP cargado");
+console.log("✅ ERP listo");
 
-}catch(error){
+}
+catch(error){
 
 console.error("🔥 Error iniciando sistema:",error);
 
