@@ -1,5 +1,12 @@
 import jsPDF from "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm";
 
+import { generarManualPDF } from "./manual.js";
+
+// Conectar el botón al PDF
+document.getElementById("btnManual").onclick = () => {
+  generarManualPDF();
+};
+
 export function generarManualPDF() {
   const doc = new jsPDF();
   let y = 20;
