@@ -5,14 +5,13 @@
  */
 
 import { db } from "../core/firebase-config.js";
-import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import CustomerManager from "./customerManager.js";
 import { aiAssistant } from "./aiAssistant.js"; // integración con IA para recomendaciones
 import { escucharVoz } from "../core/voice.js";  // función para dictado por voz
 import { actualizarStock } from "./inventario.js"; // ajuste automático de inventario
 
 export async function ordenes(container) {
-
   const customerManager = new CustomerManager();
 
   container.innerHTML = `
