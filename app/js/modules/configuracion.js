@@ -1,82 +1,53 @@
 /**
  * configuracion.js
- * Módulo de configuración y ayuda del TallerPRO360 ERP
+ * Configuración del TallerPRO360: datos del taller, ayuda IA y manual
  */
 
+import { db } from "../core/firebase-config.js";
 import { generarManualPDF } from "../manual/manual.js"; // módulo de PDF
+import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const CONFIG_DOC = "configuracion_taller"; // Documento único en Firestore
 
 export async function configuracion(container) {
 
   container.innerHTML = `
 <h1 style="font-size:28px;margin-bottom:20px;">⚙ Configuración del Taller</h1>
 
-<!-- Datos del Taller -->
 <div class="card">
-<h3>Datos de la Empresa/Taller</h3>
-<input id="empresaNombre" placeholder="Nombre del taller" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-<input id="empresaDireccion" placeholder="Dirección" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-<input id="empresaTelefono" placeholder="Teléfono" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-<input id="empresaNIT" placeholder="NIT / Documento fiscal" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-<button id="guardarEmpresa" style="margin-top:10px;padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Guardar Datos</button>
+<h3>Datos del Taller</h3>
+<input id="tallerNombre" placeholder="Nombre del Taller" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+<input id="tallerNit" placeholder="NIT / Identificación" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+<input id="tallerDireccion" placeholder="Dirección" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+<input id="tallerTelefono" placeholder="Teléfono" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+<input id="tallerLogo" placeholder="URL o base64 del logo" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+<button id="guardarTaller" style="margin-top:10px;padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Guardar Configuración</button>
 </div>
 
-<!-- Ayuda interactiva -->
 <div class="card">
-<h3>Ayuda IA</h3>
+<h3>Manual de Usuario</h3>
+<button id="btnManual" style="padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">📄 Descargar Manual</button>
+</div>
+
+<div class="card">
+<h3>Ayuda Interactiva</h3>
 <p>Escribe tu consulta y presiona Enter:</p>
 <input id="inputPregunta" placeholder="Ej: Cómo agregar un cliente..." style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
 <div id="respuestasAyuda" style="margin-top:10px;max-height:150px;overflow-y:auto;background:#111827;color:white;padding:10px;border-radius:6px;"></div>
 </div>
-
-<!-- Manual PDF -->
-<div class="card">
-<h3>Manual de Usuario</h3>
-<button id="btnManual" style="padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">📄 Descargar Manual PDF</button>
-</div>
 `;
 
   // ===========================
-  // Guardar datos de la empresa
+  // Cargar configuración existente
   // ===========================
-  document.getElementById("guardarEmpresa").onclick = () => {
-    const nombre = document.getElementById("empresaNombre").value.trim();
-    const direccion = document.getElementById("empresaDireccion").value.trim();
-    const telefono = document.getElementById("empresaTelefono").value.trim();
-    const nit = document.getElementById("empresaNIT").value.trim();
-
-    if(!nombre){
-      alert("El nombre del taller es obligatorio");
-      return;
-    }
-
-    // Aquí se puede guardar en Firebase o LocalStorage
-    const empresa = { nombre, direccion, telefono, nit };
-    localStorage.setItem("tallerConfig", JSON.stringify(empresa));
-    alert("✅ Datos de la empresa guardados correctamente");
-  };
+  await cargarConfiguracion();
 
   // ===========================
-  // Cargar configuración previa
+  // Eventos botones
   // ===========================
-  const configPrev = localStorage.getItem("tallerConfig");
-  if(configPrev){
-    const c = JSON.parse(configPrev);
-    document.getElementById("empresaNombre").value = c.nombre || "";
-    document.getElementById("empresaDireccion").value = c.direccion || "";
-    document.getElementById("empresaTelefono").value = c.telefono || "";
-    document.getElementById("empresaNIT").value = c.nit || "";
-  }
+  document.getElementById("guardarTaller").onclick = guardarConfiguracion;
+  document.getElementById("btnManual").onclick = () => generarManualPDF();
 
-  // ===========================
-  // Botón manual
-  // ===========================
-  document.getElementById("btnManual").onclick = () => {
-    generarManualPDF();
-  };
-
-  // ===========================
-  // Módulo de ayuda interactivo
-  // ===========================
   const inputPregunta = document.getElementById("inputPregunta");
   const respuestasContainer = document.getElementById("respuestasAyuda");
 
@@ -97,6 +68,55 @@ export async function configuracion(container) {
 
 
 /* ===========================
+CARGAR CONFIGURACIÓN DESDE FIRESTORE
+=========================== */
+async function cargarConfiguracion() {
+  const docRef = doc(db, "configuracion", CONFIG_DOC);
+  try {
+    const docSnap = await getDoc(docRef);
+    if(docSnap.exists()) {
+      const data = docSnap.data();
+      document.getElementById("tallerNombre").value = data.nombre || "";
+      document.getElementById("tallerNit").value = data.nit || "";
+      document.getElementById("tallerDireccion").value = data.direccion || "";
+      document.getElementById("tallerTelefono").value = data.telefono || "";
+      document.getElementById("tallerLogo").value = data.logo || "";
+    }
+  } catch(e) {
+    console.error("Error cargando configuración:", e);
+  }
+}
+
+
+/* ===========================
+GUARDAR CONFIGURACIÓN
+=========================== */
+async function guardarConfiguracion() {
+  const nombre = document.getElementById("tallerNombre").value.trim();
+  const nit = document.getElementById("tallerNit").value.trim();
+  const direccion = document.getElementById("tallerDireccion").value.trim();
+  const telefono = document.getElementById("tallerTelefono").value.trim();
+  const logo = document.getElementById("tallerLogo").value.trim();
+
+  if(!nombre) return alert("Nombre del taller requerido");
+
+  try {
+    await setDoc(doc(db,"configuracion", CONFIG_DOC), {
+      nombre,
+      nit,
+      direccion,
+      telefono,
+      logo
+    });
+    alert("✅ Configuración guardada correctamente");
+  } catch(e) {
+    console.error("Error guardando configuración:", e);
+    alert("❌ Error al guardar configuración");
+  }
+}
+
+
+/* ===========================
 RESPUESTAS FAQ SIMULADAS
 =========================== */
 function generarRespuestaFAQ(pregunta){
@@ -105,6 +125,5 @@ function generarRespuestaFAQ(pregunta){
   if(pregunta.includes("orden")) return "Para crear una orden, completa los datos y agrega productos, luego presiona 'Guardar Orden'.";
   if(pregunta.includes("inventario")) return "Puedes agregar nuevos productos en Inventario, definiendo costo, margen y stock inicial.";
   if(pregunta.includes("factura")) return "Cada orden permite generar una factura PDF automáticamente al guardarla.";
-  if(pregunta.includes("manual")) return "Haz clic en 'Descargar Manual PDF' para obtener el manual completo de usuario.";
   return "Lo sentimos, aún no tenemos información para esa consulta. Intenta otra pregunta.";
 }
