@@ -14,10 +14,10 @@ import { ceo } from "./modules/ceo.js";
 import { aiAssistant } from "./modules/aiAssistant.js";
 import { aiAdvisor } from "./modules/aiAdvisor.js";
 import aiCommandCenter from "./ai/aiCommandCenter.js";
+import { configuracion } from "./modules/configuracion.js";
 import { loadAICore } from "./system/aiCoreLoader.js";
-import { configuracion } from "./configuracion.js";
 
-export async function panel(container){
+export async function panel(container) {
   container.innerHTML = `
     <div style="display:flex;height:100vh;">
       <nav id="menuLateral" style="width:280px;background:#111827;color:white;padding:20px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;">
@@ -33,8 +33,7 @@ export async function panel(container){
         <button class="btnModulo" data-modulo="aiAssistant">IA Assistant</button>
         <button class="btnModulo" data-modulo="aiCommand">AI Command Center</button>
         <button class="btnModulo" data-modulo="aiAdvisor">AI Advisor</button>
-
-<button class="btnModulo" data-modulo="configuracion">Configuración</button>
+        <button class="btnModulo" data-modulo="configuracion">Configuración</button>
       </nav>
       <main id="contenedorPrincipal" style="flex:1;padding:25px;overflow-y:auto;background:#1e293b;color:white;">
         <h2>Cargando panel estratégico...</h2>
@@ -42,6 +41,9 @@ export async function panel(container){
     </div>
   `;
 
+  // ===========================
+  // Cargar IA Core
+  // ===========================
   await loadAICore();
 
   const contenedor = document.getElementById("contenedorPrincipal");
@@ -57,9 +59,13 @@ export async function panel(container){
     ceo,
     iaAssistant,
     aiAdvisor,
-    aiCommand: async()=>aiCommandCenter
+    aiCommand: async()=>aiCommandCenter,
+    configuracion
   };
 
+  // ===========================
+  // Función para cargar módulo
+  // ===========================
   async function cargarModulo(nombre){
     contenedor.style.opacity="0.5";
     contenedor.innerHTML=`<p>Cargando ${nombre}...</p>`;
@@ -70,16 +76,19 @@ export async function panel(container){
         const resultado = typeof fnModulo==="function" ? await fnModulo(contenedor) : null;
         contenedor.style.opacity="1";
       } else{
-        contenedor.innerHTML=`<p style="color:red;">Módulo no encontrado: ${nombre}</p>`;
+        contenedor.innerHTML=`<p style="color:red;">⚠️ Módulo no encontrado: ${nombre}</p>`;
         contenedor.style.opacity="1";
       }
-    }catch(e){
+    } catch(e){
       console.error(`Error cargando módulo ${nombre}:`,e);
       contenedor.innerHTML=`<p style="color:red;">⚠️ Error cargando módulo: ${nombre}</p>`;
       contenedor.style.opacity="1";
     }
   }
 
+  // ===========================
+  // Configurar botones del menú
+  // ===========================
   document.querySelectorAll(".btnModulo").forEach(btn=>{
     btn.style.padding="12px";
     btn.style.border="none";
@@ -93,6 +102,9 @@ export async function panel(container){
     btn.onclick=()=>cargarModulo(btn.dataset.modulo);
   });
 
+  // ===========================
+  // Tecla rápida para Dashboard
+  // ===========================
   window.addEventListener("keydown", e=>{
     if(e.altKey && e.key.toLowerCase()==="d"){
       cargarModulo("dashboard");
@@ -100,8 +112,14 @@ export async function panel(container){
     }
   });
 
+  // ===========================
+  // Cargar módulo inicial
+  // ===========================
   cargarModulo("dashboard");
 
+  // ===========================
+  // Función de síntesis de voz
+  // ===========================
   function hablar(texto){
     if(!texto) return;
     const speech = new SpeechSynthesisUtterance(texto);
