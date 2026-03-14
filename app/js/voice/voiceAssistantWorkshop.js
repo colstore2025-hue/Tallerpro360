@@ -1,7 +1,7 @@
 /*
 ===============================================
-VOICE ASSISTANT WORKSHOP - Avanzado
-Asistente global del taller
+VOICE ASSISTANT WORKSHOP - Avanzado y Mejorado
+Asistente global del taller - TallerPRO360
 Ubicación: /app/js/voice/voiceAssistantWorkshop.js
 ===============================================
 */
@@ -16,6 +16,9 @@ const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecogni
 let recognition = null;
 let activo = false;
 
+/**
+ * Inicia el asistente global del taller
+ */
 export function iniciarAsistenteWorkshop() {
   if (!SpeechRecognition) {
     console.warn("Reconocimiento de voz no soportado");
@@ -36,27 +39,43 @@ export function iniciarAsistenteWorkshop() {
 
   recognition.onresult = async (event) => {
     if (!activo) return;
+
     const comando = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
-    console.log("Comando detectado:", comando);
+    console.log("📢 Comando detectado:", comando);
+
+    // Mostrar comandos recientes en consola visual (si se integra en UI)
+    if (document.getElementById("logComandosIA")) {
+      const log = document.getElementById("logComandosIA");
+      const div = document.createElement("div");
+      div.innerText = `> ${comando}`;
+      div.style.marginBottom = "4px";
+      log.prepend(div);
+    }
+
     await interpretarComando(comando);
   };
 
   recognition.onerror = (e) => {
     console.error("Error en reconocimiento de voz:", e);
+    hablar("Hubo un error en el reconocimiento de voz");
   };
 
   recognition.onend = () => {
-    if (activo) recognition.start(); // reinicia automáticamente
+    if (activo) recognition.start(); // reinicia automáticamente si está activo
   };
 
   recognition.start();
 }
 
+/**
+ * Detener el asistente global
+ */
 export function detenerAsistenteWorkshop() {
   if (recognition) {
     activo = false;
     recognition.stop();
     hablar("Asistente desactivado");
+    console.log("🤖 Asistente del taller detenido");
   }
 }
 
@@ -65,6 +84,8 @@ export function detenerAsistenteWorkshop() {
 // ============================================
 async function interpretarComando(comando) {
   try {
+    if (!comando) return;
+
     if (comando.includes("crear orden")) {
       hablar("Creando nueva orden");
       await procesarOrdenGlobal({ accion: "crear" });
@@ -98,6 +119,19 @@ async function interpretarComando(comando) {
     if (comando.includes("asistente mecanico")) {
       hablar("Activando asistente del mecánico");
       iniciarVoiceMechanic();
+      return;
+    }
+
+    // Comando avanzado de dictado para inputs
+    if (comando.startsWith("dictar:")) {
+      const texto = comando.replace("dictar:", "").trim();
+      const focused = document.activeElement;
+      if (focused && (focused.tagName === "INPUT" || focused.tagName === "TEXTAREA")) {
+        focused.value += texto + " ";
+        hablar("Texto dictado agregado");
+      } else {
+        hablar("No hay un campo de texto seleccionado");
+      }
       return;
     }
 
