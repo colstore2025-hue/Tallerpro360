@@ -1,19 +1,10 @@
 /**
  * router.js
- * Router SPA principal
+ * Router SPA inteligente
  * TallerPRO360 ERP
  */
 
-import { dashboard } from "./modules/dashboard.js";
-import { clientes } from "./modules/clientes.js";
-import { ordenes } from "./modules/ordenes.js";
-import { inventario } from "./modules/inventario.js";
-import { finanzas } from "./modules/finanzas.js";
-import { ceo } from "./modules/ceo.js";
-import { pagos } from "./modules/pagos.js";
-import { aiAdvisor } from "./modules/aiAdvisor.js";
-
-console.log("📦 Router cargado");
+console.log("📦 Smart Router cargado");
 
 
 /* =====================================
@@ -22,18 +13,26 @@ SECCIONES DEL SISTEMA
 
 const sections = {
 
-dashboard:{name:"Dashboard",module:dashboard},
-clientes:{name:"Clientes",module:clientes},
-ordenes:{name:"Órdenes",module:ordenes},
-inventario:{name:"Inventario",module:inventario},
-finanzas:{name:"Finanzas",module:finanzas},
-pagos:{name:"Pagos",module:pagos},
-ceo:{name:"CEO",module:ceo},
+dashboard:{name:"Dashboard",path:"./modules/dashboard.js"},
+clientes:{name:"Clientes",path:"./modules/clientes.js"},
+ordenes:{name:"Órdenes",path:"./modules/ordenes.js"},
+inventario:{name:"Inventario",path:"./modules/inventario.js"},
+finanzas:{name:"Finanzas",path:"./modules/finanzas.js"},
+pagos:{name:"Pagos",path:"./modules/pagos.js"},
+ceo:{name:"CEO",path:"./modules/ceo.js"},
 
 /* IA */
-aiadvisor:{name:"AI Advisor",module:aiAdvisor}
+
+aiadvisor:{name:"AI Advisor",path:"./modules/aiAdvisor.js"}
 
 };
+
+
+/* =====================================
+CACHE DE MODULOS
+===================================== */
+
+const moduleCache = {};
 
 
 /* =====================================
@@ -61,11 +60,7 @@ btn.innerText = sections[key].name;
 
 btn.className = "menu-btn";
 
-btn.onclick = ()=>{
-
-loadSection(key);
-
-};
+btn.onclick = ()=>loadSection(key);
 
 menu.appendChild(btn);
 
@@ -82,8 +77,6 @@ export function initRouter(){
 
 let hash = window.location.hash.replace("#","");
 
-/* sección por defecto */
-
 if(!sections[hash]){
 
 hash = "dashboard";
@@ -92,15 +85,13 @@ hash = "dashboard";
 
 loadSection(hash);
 
-/* escuchar cambios */
-
 window.addEventListener("hashchange", handleHashChange);
 
 }
 
 
 /* =====================================
-MANEJAR CAMBIO DE HASH
+CAMBIO DE HASH
 ===================================== */
 
 function handleHashChange(){
@@ -135,14 +126,14 @@ const selected = sections[section];
 
 if(!selected){
 
-container.innerHTML = "Sección no encontrada";
+container.innerHTML="Sección no encontrada";
 return;
 
 }
 
-/* indicador carga */
+/* loader */
 
-container.innerHTML = `
+container.innerHTML=`
 <div class="card">
 ⏳ Cargando ${selected.name}...
 </div>
@@ -158,11 +149,39 @@ window.location.hash = section;
 
 try{
 
-/* ejecutar módulo */
+let module;
 
-await selected.module(container);
+/* =============================
+CACHE INTELIGENTE
+============================= */
 
-/* activar menú */
+if(moduleCache[section]){
+
+module = moduleCache[section];
+
+}else{
+
+module = await import(selected.path);
+
+moduleCache[section] = module;
+
+}
+
+/* =============================
+EJECUTAR MODULO
+============================= */
+
+const moduleFunction = module[section] || Object.values(module)[0];
+
+if(typeof moduleFunction !== "function"){
+
+throw new Error("El módulo no exporta función");
+
+}
+
+await moduleFunction(container);
+
+/* activar menu */
 
 activarMenu(section);
 
@@ -171,9 +190,9 @@ catch(error){
 
 console.error("❌ Error cargando módulo:",error);
 
-container.innerHTML = `
+container.innerHTML=`
 <div class="card">
-❌ Error cargando módulo <b>${section}</b>
+❌ Error cargando módulo ${section}
 </div>
 `;
 
@@ -183,7 +202,7 @@ container.innerHTML = `
 
 
 /* =====================================
-ACTIVAR BOTÓN DE MENÚ
+ACTIVAR BOTON MENU
 ===================================== */
 
 function activarMenu(section){
