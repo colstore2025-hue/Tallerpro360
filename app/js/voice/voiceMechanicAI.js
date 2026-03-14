@@ -104,7 +104,6 @@ async function interpretarComando(comando) {
 
   if (comando.includes("estado de orden")) {
     hablar("Consultando estado de la orden");
-    // Aquí se puede integrar IA o Firestore para traer el estado
     console.log("Consultar estado de orden (pendiente integración IA)");
     return;
   }
