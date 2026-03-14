@@ -2,9 +2,11 @@
 ================================================
 PANEL.JS - Panel Estratégico TallerPRO360
 Versión Final Avanzada para Dueños de Taller
+Integración completa con AI y KPIs
 ================================================
 */
 
+import { dashboard } from "./dashboard.js";
 import { clientes } from "./clientes.js";
 import { ordenes } from "./ordenes.js";
 import { inventario } from "./inventario.js";
@@ -16,7 +18,7 @@ import { aiCommand } from "./aiComand.js";
 import { aiAssistant } from "./aiAssistant.js";
 import { aiAdvisor } from "./aiAdvisor.js";
 
-export async function panel(container){
+export async function panel(container) {
 
   container.innerHTML = `
   <div style="display:flex;height:100vh;font-family:sans-serif;">
@@ -67,7 +69,7 @@ export async function panel(container){
   };
 
   // ===========================
-  // Cargar módulo con animación y feedback IA
+  // Función para cargar módulo con animación
   // ===========================
   async function cargarModulo(nombre){
     contenedor.style.opacity = "0.5";
@@ -77,8 +79,8 @@ export async function panel(container){
     if(fnModulo){
       await fnModulo(contenedor);
 
-      // Si hay métricas de IA disponibles, llamar al dashboard analítico
-      if(window.aiMetrics){
+      // Actualizar métricas IA si están disponibles
+      if(window.aiMetrics && typeof window.aiMetrics.actualizarKPI === "function"){
         window.aiMetrics.actualizarKPI(contenedor);
       }
 
@@ -90,12 +92,12 @@ export async function panel(container){
   }
 
   // ===========================
-  // Inicializar módulo principal del taller
+  // Inicializar módulo principal
   // ===========================
   cargarModulo("dashboard");
 
   // ===========================
-  // Configurar botones del menú lateral
+  // Configurar botones menú lateral
   // ===========================
   const botones = document.querySelectorAll(".btnModulo");
   botones.forEach(btn=>{
@@ -114,7 +116,7 @@ export async function panel(container){
   });
 
   // ===========================
-  // Tecla rápida para abrir Dashboard
+  // Tecla rápida Alt+D -> Dashboard
   // ===========================
   window.addEventListener("keydown", e=>{
     if(e.altKey && e.key.toLowerCase()==="d"){
@@ -122,11 +124,10 @@ export async function panel(container){
       hablar("Abriendo panel del taller");
     }
   });
-
 }
 
 // ===========================
-// Función de síntesis de voz
+// Síntesis de voz integrada
 // ===========================
 function hablar(texto){
   if(!texto) return;
