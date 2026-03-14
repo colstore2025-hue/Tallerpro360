@@ -1,6 +1,7 @@
 /**
  * router.js
  * Smart Router + AI Module Scanner
+ * TallerPRO360 ERP
  */
 
 import { scanModules } from "./system/moduleScanner.js";
@@ -16,7 +17,7 @@ const sections = scanModules();
 
 
 /* =====================================
-CACHE
+CACHE DE MODULOS
 ===================================== */
 
 const moduleCache = {};
@@ -28,26 +29,28 @@ CREAR MENU
 
 export function buildMenu(){
 
-const menu=document.getElementById("menu");
+const menu = document.getElementById("menu");
 
 if(!menu){
 
-console.error("❌ menu no encontrado");
+console.error("❌ Menu no encontrado");
 return;
 
 }
 
-menu.innerHTML="";
+menu.innerHTML = "";
 
 Object.entries(sections).forEach(([key,section])=>{
 
-const btn=document.createElement("button");
+const btn = document.createElement("button");
 
-btn.innerText=section.name;
+btn.innerText = section.name;
 
-btn.onclick=()=>{
+btn.dataset.module = key;
 
-window.location.hash=key;
+btn.onclick = ()=>{
+
+window.location.hash = key;
 
 };
 
@@ -55,33 +58,43 @@ menu.appendChild(btn);
 
 });
 
+console.log("📋 Menu generado:",Object.keys(sections).length,"módulos");
+
 }
 
 
 /* =====================================
-INIT ROUTER
+INICIAR ROUTER
 ===================================== */
 
 export function initRouter(){
+
+console.log("🧭 Router iniciado");
 
 window.addEventListener("hashchange",handleHashChange);
 
 handleHashChange();
 
+/* precargar dashboard */
+
+preloadModule("dashboard");
+
 }
 
 
 /* =====================================
-HASH
+GESTION HASH
 ===================================== */
 
 function handleHashChange(){
 
-let hash=window.location.hash.replace("#","");
+let hash = window.location.hash.replace("#","");
 
 if(!sections[hash]){
 
-hash="dashboard";
+console.warn("⚠️ Módulo no encontrado:",hash);
+
+hash = "dashboard";
 
 }
 
@@ -91,18 +104,23 @@ loadSection(hash);
 
 
 /* =====================================
-LOAD MODULE
+CARGAR MODULO
 ===================================== */
 
 async function loadSection(section){
 
-const container=document.getElementById("appContent");
+const container = document.getElementById("appContent");
 
-if(!container) return;
+if(!container){
 
-const selected=sections[section];
+console.error("❌ appContent no encontrado");
+return;
 
-container.innerHTML=`
+}
+
+const selected = sections[section];
+
+container.innerHTML = `
 <div class="card">
 ⏳ Cargando ${selected.name}...
 </div>
@@ -112,44 +130,93 @@ try{
 
 let module;
 
+/* usar cache */
+
 if(moduleCache[section]){
 
-module=moduleCache[section];
+module = moduleCache[section];
 
 }else{
 
-module=await import(selected.path);
+module = await import(selected.path);
 
-moduleCache[section]=module;
+moduleCache[section] = module;
+
+}
+
+
+/* detectar función */
+
+let moduleFunction = module[section];
+
+if(!moduleFunction){
+
+moduleFunction = module.default;
+
+}
+
+if(!moduleFunction){
+
+moduleFunction = Object.values(module).find(v=>typeof v==="function");
+
+}
+
+if(!moduleFunction){
+
+throw new Error("El módulo no exporta función válida");
 
 }
 
 
-const moduleFunction =
-module[section] ||
-module.default ||
-Object.values(module)[0];
-
-if(typeof moduleFunction!=="function"){
-
-throw new Error("El módulo no exporta función");
-
-}
+/* ejecutar módulo */
 
 await moduleFunction(container);
 
 activateMenu(section);
 
+console.log("✅ Módulo cargado:",section);
+
 }
 catch(error){
 
-console.error("❌ Error cargando módulo:",error);
+console.error("❌ Error cargando módulo:",section,error);
 
-container.innerHTML=`
+container.innerHTML = `
 <div class="card">
-❌ Error cargando módulo ${section}
+
+<h2>⚠️ Error cargando módulo</h2>
+
+<p>Módulo: <b>${section}</b></p>
+
+<button onclick="location.hash='dashboard'">
+Volver al Dashboard
+</button>
+
 </div>
 `;
+
+}
+
+}
+
+
+/* =====================================
+PRELOAD MODULO
+===================================== */
+
+async function preloadModule(name){
+
+if(!sections[name]) return;
+
+try{
+
+await import(sections[name].path);
+
+console.log("⚡ Módulo precargado:",name);
+
+}catch(e){
+
+console.warn("⚠️ No se pudo precargar:",name);
 
 }
 
@@ -162,16 +229,18 @@ MENU ACTIVO
 
 function activateMenu(section){
 
-const buttons=document.querySelectorAll("#menu button");
+const buttons = document.querySelectorAll("#menu button");
 
-buttons.forEach(btn=>btn.classList.remove("activo"));
+buttons.forEach(btn=>{
 
-const index=Object.keys(sections).indexOf(section);
+btn.classList.remove("activo");
 
-if(buttons[index]){
+if(btn.dataset.module===section){
 
-buttons[index].classList.add("activo");
+btn.classList.add("activo");
 
 }
+
+});
 
 }
