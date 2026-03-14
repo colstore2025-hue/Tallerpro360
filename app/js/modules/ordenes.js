@@ -6,6 +6,9 @@
 
 import { db } from "../core/firebase-config.js";
 
+import { calcularUtilidadOrden } from "../finanzas/calcularUtilidadOrden.js"
+import { generarFactura } from "../finanzas/generarFactura.js"
+
 import {
 collection,
 addDoc,
