@@ -43,7 +43,7 @@ export function iniciarAsistenteWorkshop() {
     const comando = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
     console.log("📢 Comando detectado:", comando);
 
-    // Mostrar comandos recientes en consola visual (si se integra en UI)
+    // Mostrar comandos recientes en UI si existe contenedor
     if (document.getElementById("logComandosIA")) {
       const log = document.getElementById("logComandosIA");
       const div = document.createElement("div");
@@ -135,7 +135,7 @@ async function interpretarComando(comando) {
       return;
     }
 
-    // Aquí se pueden añadir más comandos futuros
+    // Comando no reconocido
     hablar("No entendí el comando, por favor repite");
   } catch (error) {
     console.error("Error ejecutando comando de voz:", error);
@@ -150,8 +150,8 @@ function hablar(texto) {
   if (!texto) return;
   const speech = new SpeechSynthesisUtterance(texto);
   speech.lang = "es-ES";
-  speech.rate = 1;       // velocidad normal
-  speech.pitch = 1;      // tono normal
-  speech.volume = 1;     // volumen máximo
+  speech.rate = 1;
+  speech.pitch = 1;
+  speech.volume = 1;
   window.speechSynthesis.speak(speech);
 }
