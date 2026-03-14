@@ -15,24 +15,36 @@
 
 body{
 margin:0;
-font-family:Arial;
+font-family:Arial, Helvetica, sans-serif;
 background:#0f172a;
 color:white;
 display:flex;
 height:100vh;
+overflow:hidden;
 }
+
+/* SIDEBAR */
 
 .sidebar{
 width:240px;
 background:#020617;
 padding:20px;
 border-right:1px solid #1e293b;
+display:flex;
+flex-direction:column;
 }
 
 .sidebar h2{
 color:#38bdf8;
 margin-bottom:30px;
 }
+
+#menu{
+flex:1;
+overflow:auto;
+}
+
+/* BOTONES */
 
 #menu button{
 display:block;
@@ -44,17 +56,27 @@ border:1px solid #1e293b;
 color:white;
 cursor:pointer;
 border-radius:8px;
+text-align:left;
 }
 
 #menu button:hover{
 background:#1e293b;
 }
 
+#menu button.activo{
+background:#16a34a;
+border-color:#16a34a;
+}
+
+/* MAIN */
+
 .main{
 flex:1;
 padding:30px;
 overflow:auto;
 }
+
+/* CARDS */
 
 .card{
 background:#020617;
@@ -76,7 +98,7 @@ border:1px solid #1e293b;
 
 <div id="menu"></div>
 
-<button onclick="logout()" style="margin-top:20px;background:#dc2626">
+<button onclick="logout()" style="margin-top:20px;background:#dc2626;border:none;padding:10px;border-radius:6px;color:white;">
 Salir
 </button>
 
@@ -95,7 +117,10 @@ Salir
 
 </div>
 
+
+<!-- LOADER DEL SISTEMA -->
 <script type="module" src="./system-loader.js"></script>
+
 
 <script>
 
@@ -110,7 +135,10 @@ window.location.href="/login.html";
 
 </script>
 
+
 <script>
+
+/* PWA */
 
 if("serviceWorker" in navigator){
 
@@ -118,7 +146,7 @@ navigator.serviceWorker
 .register("../service-worker.js")
 .then(()=>{
 
-console.log("PWA activa");
+console.log("📱 PWA activa");
 
 })
 .catch(e=>{
