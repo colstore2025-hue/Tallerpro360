@@ -1,6 +1,6 @@
 /**
  * ordenes.js
- * Módulo de órdenes de trabajo
+ * Órdenes de trabajo
  * TallerPRO360 ERP
  */
 
@@ -9,200 +9,197 @@ import { db } from "../core/firebase-config.js";
 import {
 collection,
 addDoc,
-getDoc,
-updateDoc,
-doc,
-serverTimestamp
+getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { detectarRepuestos } from "../ai/iaMecanica.js";
-import { generarFactura } from "../core/facturacion.js";
-import { enviarWhatsApp } from "../services/whatsappService.js";
-
-
-/* ========================================
-MODULO PRINCIPAL (LO USA EL ROUTER)
-======================================== */
 
 export async function ordenes(container){
 
-if(!container){
-console.error("❌ Contenedor no recibido en módulo ordenes");
-return;
-}
-
 container.innerHTML = `
+
+<h1 style="font-size:26px;margin-bottom:20px;">
+🛠 Órdenes de Trabajo
+</h1>
+
 
 <div class="card">
 
-<h1 class="text-2xl font-bold mb-4">
-Órdenes de trabajo
-</h1>
+<h3>Nueva Orden</h3>
 
-<p class="text-gray-400 mb-4">
-Gestión de órdenes del taller.
-</p>
+<input id="clienteOrden" placeholder="Cliente"
+style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
 
-<button id="btnNuevaOrden"
-class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+<input id="vehiculoOrden" placeholder="Vehículo"
+style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
 
-Nueva Orden
+<textarea id="diagnosticoOrden"
+placeholder="Diagnóstico"
+style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;"></textarea>
 
+<select id="estadoOrden"
+style="width:100%;padding:10px;margin:6px 0;border-radius:6px;background:#020617;color:white;border:1px solid #333;">
+
+<option value="Diagnóstico">Diagnóstico</option>
+<option value="Reparación">Reparación</option>
+<option value="Esperando repuestos">Esperando repuestos</option>
+<option value="Listo para entrega">Listo para entrega</option>
+
+</select>
+
+<button id="guardarOrden"
+style="margin-top:10px;padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">
+Crear Orden
 </button>
+
+</div>
+
+
+
+<div class="card">
+
+<h3>Órdenes del Taller</h3>
+
+<div id="listaOrdenes">
+
+Cargando órdenes...
+
+</div>
 
 </div>
 
 `;
 
+
+/* ===========================
+EVENTOS
+=========================== */
+
+document.getElementById("guardarOrden")
+.onclick = guardarOrden;
+
+
+/* ===========================
+CARGAR ORDENES
+=========================== */
+
+cargarOrdenes();
+
 }
 
 
-/* ========================================
-CREAR ORDEN
-======================================== */
 
-export async function crearOrden(orden){
+/* ===========================
+GUARDAR ORDEN
+=========================== */
+
+async function guardarOrden(){
+
+const cliente = document.getElementById("clienteOrden").value;
+const vehiculo = document.getElementById("vehiculoOrden").value;
+const diagnostico = document.getElementById("diagnosticoOrden").value;
+const estado = document.getElementById("estadoOrden").value;
+
+if(!cliente){
+
+alert("Cliente requerido");
+return;
+
+}
 
 try{
 
-const empresaId = localStorage.getItem("empresaId");
+await addDoc(collection(db,"ordenes"),{
 
-if(!empresaId){
-console.warn("⚠️ empresaId no encontrado");
-return;
+cliente,
+vehiculo,
+diagnostico,
+estado,
+fecha:new Date()
+
+});
+
+alert("Orden creada");
+
+limpiarFormulario();
+
+cargarOrdenes();
+
 }
+catch(error){
 
-const docRef = await addDoc(
+console.error("Error creando orden",error);
 
-collection(db,"empresas",empresaId,"ordenes"),
-
-{
-...orden,
-empresaId,
-estado:"activa",
-acciones:[],
-total:0,
-fecha:serverTimestamp()
-}
-
-);
-
-console.log("✅ Orden creada:",docRef.id);
-
-return docRef.id;
-
-}catch(error){
-
-console.error("❌ Error creando orden:",error);
+alert("Error creando orden");
 
 }
 
 }
 
 
-/* ========================================
-AGREGAR ACCION A ORDEN
-======================================== */
 
-export async function agregarAccionOrden(ordenId,accion){
+/* ===========================
+CARGAR ORDENES
+=========================== */
+
+async function cargarOrdenes(){
+
+const lista = document.getElementById("listaOrdenes");
 
 try{
 
-const empresaId = localStorage.getItem("empresaId");
+const querySnapshot = await getDocs(collection(db,"ordenes"));
 
-if(!empresaId){
-console.warn("⚠️ empresaId no encontrado");
-return;
-}
+let html = `
+<table style="width:100%;border-collapse:collapse;">
 
-const ref = doc(db,"empresas",empresaId,"ordenes",ordenId);
+<tr style="border-bottom:1px solid #1e293b;">
+<th align="left">Cliente</th>
+<th align="left">Vehículo</th>
+<th align="left">Estado</th>
+<th align="left">Fecha</th>
+</tr>
+`;
 
-const ordenSnap = await getDoc(ref);
+querySnapshot.forEach(doc=>{
 
-if(!ordenSnap.exists()){
+const o = doc.data();
 
-console.error("❌ Orden no existe");
-return;
-
-}
-
-const ordenData = ordenSnap.data();
-
-
-/* ======================
-IA DETECTAR REPUESTOS
-====================== */
-
-const ia = await detectarRepuestos(accion.descripcion);
-
-accion.repuestosIA = ia?.repuestos || [];
-
-
-/* ======================
-ACCIONES ACTUALES
-====================== */
-
-const accionesActuales = ordenData.acciones || [];
-
-const nuevasAcciones = [...accionesActuales,accion];
-
-
-/* ======================
-TOTAL
-====================== */
-
-const totalActual = ordenData.total || 0;
-
-const totalNuevo = totalActual + (accion.costo || 0);
-
-
-/* ======================
-ACTUALIZAR FIRESTORE
-====================== */
-
-await updateDoc(ref,{
-acciones:nuevasAcciones,
-total:totalNuevo
-});
-
-
-/* ======================
-NOTIFICACION CLIENTE
-====================== */
-
-if(ordenData.telefonoCliente){
-
-await enviarWhatsApp(
-ordenData.telefonoCliente,
-`🔧 TallerPRO360
-
-Nueva acción registrada:
-${accion.descripcion}`
-);
-
-}
-
-
-/* ======================
-GENERAR FACTURA
-====================== */
-
-await generarFactura({
-
-...ordenData,
-acciones:nuevasAcciones,
-total:totalNuevo
+html += `
+<tr>
+<td>${o.cliente || ""}</td>
+<td>${o.vehiculo || ""}</td>
+<td>${o.estado || ""}</td>
+<td>${new Date(o.fecha.seconds*1000).toLocaleDateString()}</td>
+</tr>
+`;
 
 });
 
+html += "</table>";
 
-console.log("✅ Acción agregada correctamente");
-
-
-}catch(error){
-
-console.error("❌ Error agregando acción:",error);
+lista.innerHTML = html;
 
 }
+catch(error){
+
+console.error("Error cargando ordenes",error);
+
+lista.innerHTML="Error cargando órdenes";
+
+}
+
+}
+
+
+
+/* ===========================
+LIMPIAR FORM
+=========================== */
+
+function limpiarFormulario(){
+
+document.getElementById("clienteOrden").value="";
+document.getElementById("vehiculoOrden").value="";
+document.getElementById("diagnosticoOrden").value="";
 
 }
