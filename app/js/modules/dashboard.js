@@ -12,6 +12,13 @@ import Chart from "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm";
 export async function dashboard(container){
 
 container.innerHTML = `
+<div class="card">
+<h2>Dashboard</h2>
+<p>Panel principal del sistema.</p>
+</div>
+`;
+
+}
 
 <button id="btnVoz"
 class="bg-green-600 text-white px-4 py-2 rounded mb-6">
