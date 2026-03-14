@@ -97,13 +97,15 @@ function initAIAdvisor(){
 
 const btn = document.getElementById("btnDiagnostico");
 
+if(!btn) return;
+
 btn.onclick = async ()=>{
 
-const nombre = document.getElementById("aiCliente").value;
-const telefono = document.getElementById("aiTelefono").value;
-const vehiculo = document.getElementById("aiVehiculo").value;
-const placa = document.getElementById("aiPlaca").value;
-const problema = document.getElementById("aiProblema").value;
+const nombre = document.getElementById("aiCliente")?.value.trim();
+const telefono = document.getElementById("aiTelefono")?.value.trim();
+const vehiculo = document.getElementById("aiVehiculo")?.value.trim();
+const placa = document.getElementById("aiPlaca")?.value.trim();
+const problema = document.getElementById("aiProblema")?.value.trim();
 
 if(!problema){
 
@@ -122,28 +124,44 @@ resultado.innerHTML = `
 
 
 /* ===============================
+DATOS VEHÍCULO
+=============================== */
+
+const vehicleData = {
+
+vehicle: vehiculo || "",
+plate: placa || "",
+problem: problema,
+symptoms: [problema]
+
+};
+
+
+/* ===============================
+DATOS CLIENTE
+=============================== */
+
+const customerData = {
+
+name: nombre || "Cliente",
+phone: telefono || "",
+vehicle: vehiculo || "",
+plate: placa || ""
+
+};
+
+
+/* ===============================
 LLAMAR SUPER IA
 =============================== */
 
 try{
 
-const vehicleData = {
+if(!window.SuperAI){
 
-vehicle:vehiculo,
-plate:placa,
-problem:problema,
-symptoms:[problema]
+throw new Error("SuperAI no está inicializado");
 
-};
-
-const customerData = {
-
-name:nombre,
-phone:telefono,
-vehicle:vehiculo,
-plate:placa
-
-};
+}
 
 const orden = await window.SuperAI.processVehicleService(
 vehicleData,
@@ -160,11 +178,13 @@ renderAIResult(orden);
 }
 catch(error){
 
-console.error(error);
+console.error("Error ejecutando IA:",error);
 
-resultado.innerHTML=`
+resultado.innerHTML = `
 <div class="card">
 ❌ Error ejecutando IA
+<br><br>
+Verifica que el motor SuperAI esté activo.
 </div>
 `;
 
@@ -186,7 +206,7 @@ const container = document.getElementById("aiResultado");
 
 if(!orden){
 
-container.innerHTML=`
+container.innerHTML = `
 <div class="card">
 No se pudo generar diagnóstico
 </div>
@@ -197,19 +217,44 @@ return;
 }
 
 
+/* ===============================
+RENDER REPUESTOS
+=============================== */
+
 let partsHTML = "";
+
+if(orden.partsStatus && orden.partsStatus.length){
 
 orden.partsStatus.forEach(p=>{
 
 partsHTML += `
 <li>
 ${p.part}
-${p.available ? "✅ Disponible" : "❌ No disponible"}
+${p.available ? " ✅ Disponible" : " ❌ No disponible"}
 </li>
 `;
 
 });
 
+}else{
+
+partsHTML = "<li>No se detectaron repuestos</li>";
+
+}
+
+
+/* ===============================
+COSTOS
+=============================== */
+
+const labor = orden?.estimatedCost?.labor || 0;
+const parts = orden?.estimatedCost?.parts || 0;
+const total = orden?.estimatedCost?.total || (labor + parts);
+
+
+/* ===============================
+HTML RESULTADO
+=============================== */
 
 container.innerHTML = `
 
@@ -219,7 +264,7 @@ container.innerHTML = `
 🧠 Diagnóstico IA
 </h2>
 
-<p>${orden.diagnosis.diagnosis}</p>
+<p>${orden?.diagnosis?.diagnosis || "Diagnóstico no disponible"}</p>
 
 </div>
 
@@ -239,10 +284,10 @@ ${partsHTML}
 
 <h2>💰 Estimación</h2>
 
-<p>Mano de obra: $${orden.estimatedCost.labor}</p>
-<p>Repuestos: $${orden.estimatedCost.parts}</p>
+<p>Mano de obra: $${labor}</p>
+<p>Repuestos: $${parts}</p>
 
-<h3>Total estimado: $${orden.estimatedCost.total}</h3>
+<h3>Total estimado: $${total}</h3>
 
 </div>
 
@@ -268,10 +313,21 @@ Crear Orden de Trabajo
 
 `;
 
-document.getElementById("crearOrden").onclick = ()=>{
+
+/* ===============================
+CREAR ORDEN
+=============================== */
+
+const btn = document.getElementById("crearOrden");
+
+if(btn){
+
+btn.onclick = ()=>{
 
 alert("Orden generada con éxito 🚀");
 
 };
+
+}
 
 }
