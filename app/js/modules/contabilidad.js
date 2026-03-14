@@ -1,7 +1,7 @@
 /*
 ================================================
-CONTABILIDAD.JS - Versión Avanzada
-Módulo contable con voz de IA y alertas inteligentes
+CONTABILIDAD.JS - Versión Final Avanzada
+Módulo contable con IA y alertas inteligentes
 Ubicación: /app/js/modules/contabilidad.js
 ================================================
 */
@@ -14,7 +14,7 @@ INICIALIZAR CONTABILIDAD
 =========================== */
 export async function contabilidad(container) {
   container.innerHTML = `
-    <h1 style="font-size:28px;margin-bottom:20px;">💼 Contabilidad Avanzada</h1>
+    <h1 style="font-size:28px;margin-bottom:20px;">💼 Contabilidad Avanzada - Taller</h1>
 
     <div class="card">
       <h3>Filtrar por fecha</h3>
@@ -51,14 +51,14 @@ export async function contabilidad(container) {
 GENERAR REPORTE CONTABLE
 =========================== */
 async function generarReporte() {
-  const inicio = document.getElementById("fechaInicio").value;
-  const fin = document.getElementById("fechaFin").value;
+  const inicioInput = document.getElementById("fechaInicio").value;
+  const finInput = document.getElementById("fechaFin").value;
 
-  const fechaInicio = inicio ? new Date(inicio + "-01") : new Date(new Date().getFullYear(), 0, 1);
-  const fechaFin = fin ? new Date(fin + "-01") : new Date();
+  const inicio = inicioInput ? new Date(inicioInput + "-01") : new Date(new Date().getFullYear(),0,1);
+  const fin = finInput ? new Date(finInput + "-01") : new Date();
 
   // Balance General
-  const balance = await calcularBalance(fechaInicio, fechaFin);
+  const balance = await calcularBalance(inicio, fin);
   document.getElementById("balanceGeneral").innerHTML = `
     <p>Activos: $${balance.activos}</p>
     <p>Pasivos: $${balance.pasivos}</p>
@@ -67,7 +67,7 @@ async function generarReporte() {
   hablar(`Balance general actualizado. Activos: ${balance.activos}, Pasivos: ${balance.pasivos}, Patrimonio: ${balance.patrimonio}`);
 
   // Estado de Resultados
-  const resultados = await calcularEstadoResultados(fechaInicio, fechaFin);
+  const resultados = await calcularEstadoResultados(inicio, fin);
   document.getElementById("estadoResultados").innerHTML = `
     <p>Ingresos: $${resultados.ingresos}</p>
     <p>Costos: $${resultados.costos}</p>
@@ -99,7 +99,7 @@ async function calcularBalance(inicio, fin){
     const o = docSnap.data();
     const fecha = o.fecha.toDate();
     if(fecha >= inicio && fecha <= fin){
-      activos += o.estimatedRevenue || 0;
+      activos += o.total || 0;
     }
   });
 
@@ -128,8 +128,8 @@ async function calcularEstadoResultados(inicio, fin){
     const o = docSnap.data();
     const fecha = o.fecha.toDate();
     if(fecha >= inicio && fecha <= fin){
-      ingresos += o.estimatedRevenue || 0;
-      costos += o.estimatedCost?.total || 0;
+      ingresos += o.total || 0;
+      costos += o.costoTotal || 0;
     }
   });
 
@@ -152,7 +152,7 @@ GENERAR ALERTAS IA
 let alertasCache = "";
 
 async function generarAlertasIA(resultados){
-  if(!window.SuperAI) {
+  if(!window.SuperAI){
     alertasCache = "SuperAI no disponible";
     return "<p>SuperAI no disponible</p>";
   }
@@ -161,7 +161,7 @@ async function generarAlertasIA(resultados){
     const alertas = await window.SuperAI.analyzeFinance(resultados);
     alertasCache = alertas.join(". ");
     return alertas.map(a=>`<p>⚠️ ${a}</p>`).join("");
-  } catch(e){
+  }catch(e){
     console.error("Error IA alertas:",e);
     alertasCache = "Error generando alertas";
     return "<p>❌ Error generando alertas</p>";
@@ -185,7 +185,7 @@ function hablar(texto){
 LEER ALERTAS POR VOZ
 =========================== */
 function leerAlertasVoz(){
-  if(!alertasCache) {
+  if(!alertasCache){
     hablar("No hay alertas generadas aún");
   } else {
     hablar(alertasCache);
