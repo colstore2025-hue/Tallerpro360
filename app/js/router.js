@@ -1,36 +1,41 @@
 /**
  * router.js
- * Smart SPA Router con AutoLoader
+ * Smart Router + AI Module Scanner
  */
 
-import { getModules } from "./system/moduleLoader.js";
+import { scanModules } from "./system/moduleScanner.js";
 
-console.log("📦 Smart Router iniciado");
-
-
-/* ======================================
-CARGAR MODULOS AUTOMÁTICOS
-====================================== */
-
-const sections = getModules();
+console.log("📦 Router inteligente iniciado");
 
 
-/* ======================================
+/* =====================================
+ESCANEAR MODULOS
+===================================== */
+
+const sections = scanModules();
+
+
+/* =====================================
 CACHE
-====================================== */
+===================================== */
 
 const moduleCache = {};
 
 
-/* ======================================
-MENU
-====================================== */
+/* =====================================
+CREAR MENU
+===================================== */
 
 export function buildMenu(){
 
-const menu = document.getElementById("menu");
+const menu=document.getElementById("menu");
 
-if(!menu) return;
+if(!menu){
+
+console.error("❌ menu no encontrado");
+return;
+
+}
 
 menu.innerHTML="";
 
@@ -53,9 +58,9 @@ menu.appendChild(btn);
 }
 
 
-/* ======================================
+/* =====================================
 INIT ROUTER
-====================================== */
+===================================== */
 
 export function initRouter(){
 
@@ -66,9 +71,9 @@ handleHashChange();
 }
 
 
-/* ======================================
+/* =====================================
 HASH
-====================================== */
+===================================== */
 
 function handleHashChange(){
 
@@ -85,9 +90,9 @@ loadSection(hash);
 }
 
 
-/* ======================================
+/* =====================================
 LOAD MODULE
-====================================== */
+===================================== */
 
 async function loadSection(section){
 
@@ -119,7 +124,8 @@ moduleCache[section]=module;
 
 }
 
-const moduleFunction=
+
+const moduleFunction =
 module[section] ||
 module.default ||
 Object.values(module)[0];
@@ -132,7 +138,7 @@ throw new Error("El módulo no exporta función");
 
 await moduleFunction(container);
 
-activarMenu(section);
+activateMenu(section);
 
 }
 catch(error){
@@ -150,11 +156,11 @@ container.innerHTML=`
 }
 
 
-/* ======================================
+/* =====================================
 MENU ACTIVO
-====================================== */
+===================================== */
 
-function activarMenu(section){
+function activateMenu(section){
 
 const buttons=document.querySelectorAll("#menu button");
 
