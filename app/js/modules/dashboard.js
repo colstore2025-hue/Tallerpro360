@@ -12,7 +12,7 @@ import { configuracion } from "./configuracion.js";
 import { pagosTaller } from "./pagosTaller.js";
 import { db } from "../core/firebase-config.js";
 import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { calcularPredicciones } from "../ai/aiMetrics.js";
+import { calcularPredicciones, calcularIndicadoresTaller } from "../ai/aiMetrics.js";
 
 export async function dashboard(container) {
   container.innerHTML = `
@@ -55,6 +55,10 @@ export async function dashboard(container) {
   <div class="card">
     <h3>Ingresos vs. Pagos</h3>
     <p id="resumenIngresosHoy" style="font-size:28px;">$0</p>
+  </div>
+  <div class="card">
+    <h3>Rendimiento Taller</h3>
+    <p id="rendimientoTaller" style="font-size:28px;">0%</p>
   </div>
 </div>
 
@@ -102,6 +106,7 @@ async function cargarKPIs() {
 
     const hoy = new Date().toDateString();
 
+    // KPIs básicos
     let ingresosHoy = 0, completadasHoy = 0, tiempoTotal = 0, margenTotal = 0, ingresosPagosHoy = 0;
 
     ordenesSnap.docs.forEach(doc => {
@@ -131,6 +136,12 @@ async function cargarKPIs() {
     document.getElementById("tiempoPromedio").innerText = `${tiempoPromedio}h`;
     document.getElementById("stockCritico").innerText = stockCritico;
     document.getElementById("resumenIngresosHoy").innerText = `$${ingresosPagosHoy}`;
+
+    // ===========================
+    // Indicadores IA avanzados
+    // ===========================
+    const indicadores = calcularIndicadoresTaller(ordenesSnap.docs, inventarioSnap.docs, pagosSnap.docs);
+    document.getElementById("rendimientoTaller").innerText = `${indicadores.rendimiento}%`;
 
   } catch(e) {
     console.error("Error cargando KPIs:", e);
