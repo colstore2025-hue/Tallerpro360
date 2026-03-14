@@ -1,101 +1,138 @@
 /**
- * panelFinanciero.js
+ * panel-financiero.js
+ * Panel financiero del taller
  * TallerPRO360 ERP
- * Panel financiero con gráfica de utilidades
  */
 
-import { db } from "../core/firebase-config.js";
+import { db } from "../core/firebase-config.js"
+import { calcularUtilidadOrden } from "./calcularUtilidadOrden.js"
 
 import {
-  getDocs,
-  collection
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-import Chart from "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm";
+collection,
+getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 
 
-/* ===============================
-PANEL FINANCIERO
-=============================== */
 
 export async function panelFinanciero(container){
 
-  container.innerHTML = `
-    <h1 class="text-2xl font-bold mb-6">Panel Financiero</h1>
-    <canvas id="graficaUtilidad"></canvas>
-  `;
+container.innerHTML = `
+<h1 style="font-size:26px;margin-bottom:20px;">
+📊 Panel Financiero
+</h1>
 
-  const empresaId = localStorage.getItem("empresaId");
+<div class="card">
+<h3>Resumen del Taller</h3>
 
-  if(!empresaId){
-    container.innerHTML += "<p>Empresa no definida</p>";
-    return;
-  }
+<div id="finanzasResumen">
+Cargando datos financieros...
+</div>
 
-  const ordenesSnap = await getDocs(
-    collection(db,"empresas",empresaId,"ordenes")
-  );
+</div>
+`
 
-  const utilidadMes = new Array(12).fill(0);
+cargarFinanzas()
 
-  ordenesSnap.forEach(docSnap=>{
-
-    const data = docSnap.data();
-
-    if(!data.fecha) return;
-
-    let fecha;
-
-    if(typeof data.fecha.toDate === "function"){
-      fecha = data.fecha.toDate();
-    }else{
-      fecha = new Date(data.fecha);
-    }
-
-    const mes = fecha.getMonth();
-
-    const utilidad = (data.acciones || []).reduce((sum,a)=>{
-
-      const precio = Number(a.precio || a.costo || 0);
-      const costo = Number(a.costoInterno || a.costo || 0);
-
-      return sum + (precio - costo);
-
-    },0);
-
-    utilidadMes[mes] += utilidad;
-
-  });
+}
 
 
-  /* ===============================
-  GRÁFICA
-  =============================== */
 
-  new Chart(
-    document.getElementById("graficaUtilidad"),
-    {
-      type:"line",
+/* ===============================
+CARGAR DATOS
+=============================== */
 
-      data:{
-        labels:[
-          "Ene","Feb","Mar","Abr","May","Jun",
-          "Jul","Ago","Sep","Oct","Nov","Dic"
-        ],
+async function cargarFinanzas(){
 
-        datasets:[
-          {
-            label:"Utilidad mensual",
-            data:utilidadMes
-          }
-        ]
-      },
+const contenedor = document.getElementById("finanzasResumen")
 
-      options:{
-        responsive:true
-      }
+try{
 
-    }
-  );
+const snapshot = await getDocs(collection(db,"ordenes"))
+
+let ingresos = 0
+let costos = 0
+let utilidad = 0
+let ordenes = 0
+
+snapshot.forEach(doc=>{
+
+const orden = doc.data()
+
+const util = calcularUtilidadOrden(orden)
+
+ingresos += util.venta
+costos += util.costo
+utilidad += util.utilidad
+
+ordenes++
+
+})
+
+const margen = ingresos
+? ((utilidad / ingresos) * 100).toFixed(2)
+: 0
+
+
+renderResumen({
+ingresos,
+costos,
+utilidad,
+margen,
+ordenes
+})
+
+}
+catch(error){
+
+console.error("Error cargando finanzas",error)
+
+contenedor.innerHTML = "Error cargando datos financieros"
+
+}
+
+}
+
+
+
+/* ===============================
+RENDER
+=============================== */
+
+function renderResumen(data){
+
+const contenedor = document.getElementById("finanzasResumen")
+
+contenedor.innerHTML = `
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px">
+
+<div class="card">
+<h3>💰 Ingresos</h3>
+<p>$${data.ingresos}</p>
+</div>
+
+<div class="card">
+<h3>💸 Costos</h3>
+<p>$${data.costos}</p>
+</div>
+
+<div class="card">
+<h3>📈 Utilidad</h3>
+<p>$${data.utilidad}</p>
+</div>
+
+<div class="card">
+<h3>📊 Margen</h3>
+<p>${data.margen}%</p>
+</div>
+
+<div class="card">
+<h3>🧾 Órdenes</h3>
+<p>${data.ordenes}</p>
+</div>
+
+</div>
+
+`
 
 }
