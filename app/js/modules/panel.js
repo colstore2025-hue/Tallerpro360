@@ -1,7 +1,6 @@
 /**
  * panel.js
- * Panel Estratégico TallerPRO360 - Versión Avanzada y Última Generación
- * Integración completa con planes, IA y todos los módulos
+ * Panel Estratégico TallerPRO360 - Versión Final Avanzada con control de planes
  */
 
 import { dashboard } from "./modules/dashboard.js";
@@ -14,26 +13,34 @@ import { pagosTaller } from "./modules/pagosTaller.js";
 import { ceo } from "./modules/ceo.js";
 import { aiAssistant } from "./modules/aiAssistant.js";
 import { aiAdvisor } from "./modules/aiAdvisor.js";
-import aiCommandCenter from "./ai/aiCommandCenter.js";
-import { configuracion } from "./modules/configuracion.js";
+import aiCommandCenter from "./modules/aiCommandCenter.js";
 import { loadAICore } from "./system/aiCoreLoader.js";
+import { configuracion } from "./modules/configuracion.js";
 import { getModulosDisponibles } from "./planManager.js";
 
 export async function panel(container, userId){
   container.innerHTML = `
-    <div style="display:flex;height:100vh;">
+    <div style="display:flex;height:100vh;flex-direction:row;">
       <nav id="menuLateral" style="width:280px;background:#111827;color:white;padding:20px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;">
-        <h2 style="text-align:center;">TallerPRO360 BSC</h2>
+        <h2 style="text-align:center;margin-bottom:20px;">TallerPRO360 BSC</h2>
         <div id="menuModulos"></div>
+        <button id="btnSalirPanel" style="margin-top:20px;background:#dc2626;border:none;padding:10px;border-radius:6px;color:white;cursor:pointer;">Salir</button>
       </nav>
-      <main id="contenedorPrincipal" style="flex:1;padding:25px;overflow-y:auto;background:#1e293b;color:white;">
-        <h2>Cargando panel estratégico...</h2>
+      <main id="contenedorPrincipal" style="flex:1;padding:25px;overflow-y:auto;background:#1e293b;color:white;display:flex;align-items:center;justify-content:center;">
+        <p>Cargando panel estratégico...</p>
       </main>
     </div>
   `;
 
+  // Botón salir dentro del panel
+  document.getElementById("btnSalirPanel").onclick = ()=>{
+    localStorage.removeItem("uid");
+    localStorage.removeItem("empresaId");
+    window.location.href="./login.html";
+  };
+
   // ===========================
-  // Cargar IA y módulos críticos
+  // Inicializar AI Core
   // ===========================
   await loadAICore();
 
@@ -41,7 +48,7 @@ export async function panel(container, userId){
   const menuModulos = document.getElementById("menuModulos");
 
   // ===========================
-  // Todos los módulos disponibles en el sistema
+  // Todos los módulos disponibles
   // ===========================
   const todosModulos = {
     dashboard,
@@ -59,37 +66,43 @@ export async function panel(container, userId){
   };
 
   // ===========================
-  // Obtener módulos permitidos según plan del usuario
+  // Obtener módulos según plan
   // ===========================
   const modulosPermitidos = await getModulosDisponibles(userId);
 
+  if(modulosPermitidos.length === 0){
+    contenedor.innerHTML = `<p style="color:red;">No se encontraron módulos para tu plan. Contacta soporte.</p>`;
+    return;
+  }
+
   // ===========================
-  // Pintar menú dinámico
+  // Pintar menú lateral dinámicamente
   // ===========================
   menuModulos.innerHTML = "";
-  modulosPermitidos.forEach(mod => {
+  modulosPermitidos.forEach(mod=>{
     const btn = document.createElement("button");
-    btn.className = "btnModulo";
+    btn.className="btnModulo";
     btn.dataset.modulo = mod;
     btn.innerText = mod.charAt(0).toUpperCase() + mod.slice(1).replace(/([A-Z])/g," $1");
     menuModulos.appendChild(btn);
   });
 
   // ===========================
-  // Función de carga de módulos
+  // Función para cargar módulo
   // ===========================
   async function cargarModulo(nombre){
     contenedor.style.opacity="0.5";
     contenedor.innerHTML = `<p>Cargando ${nombre}...</p>`;
-    await new Promise(r=>setTimeout(r,150));
+    await new Promise(r=>setTimeout(r,150)); // Simulación carga
 
     const fnModulo = todosModulos[nombre];
     try{
       if(fnModulo){
-        // Ejecutar módulo
-        const resultado = typeof fnModulo === "function" ? await fnModulo(contenedor) : null;
+        // Limpia contenedor antes de cargar
+        contenedor.innerHTML = "";
+        const resultado = typeof fnModulo==="function" ? await fnModulo(contenedor) : null;
         contenedor.style.opacity="1";
-      } else {
+      } else{
         contenedor.innerHTML = `<p style="color:red;">Módulo no encontrado: ${nombre}</p>`;
         contenedor.style.opacity="1";
       }
@@ -101,14 +114,14 @@ export async function panel(container, userId){
   }
 
   // ===========================
-  // Eventos de los botones
+  // Eventos de botones del menú
   // ===========================
   document.querySelectorAll(".btnModulo").forEach(btn=>{
-    btn.style.padding="12px"; 
-    btn.style.border="none"; 
+    btn.style.padding="12px";
+    btn.style.border="none";
     btn.style.borderRadius="6px";
-    btn.style.background="#1f2937"; 
-    btn.style.color="white"; 
+    btn.style.background="#1f2937";
+    btn.style.color="white";
     btn.style.cursor="pointer";
     btn.style.transition="all 0.2s";
     btn.onmouseenter=()=>btn.style.background="#374151";
@@ -117,28 +130,27 @@ export async function panel(container, userId){
   });
 
   // ===========================
-  // Atajos de teclado
+  // Atajo ALT+D para dashboard
   // ===========================
   window.addEventListener("keydown", e=>{
     if(e.altKey && e.key.toLowerCase()==="d"){
-      cargarModulo("dashboard"); 
-      hablar("Abriendo panel del taller");
+      cargarModulo("dashboard"); hablar("Abriendo panel del taller");
     }
   });
 
   // ===========================
-  // Dashboard por defecto
+  // Cargar dashboard por defecto
   // ===========================
-  cargarModulo("dashboard");
+  await cargarModulo("dashboard");
 
   // ===========================
-  // Voz de IA
+  // Función de voz opcional
   // ===========================
   function hablar(texto){
     if(!texto) return;
     const speech = new SpeechSynthesisUtterance(texto);
-    speech.lang = "es-ES";
-    speech.rate = 1; speech.pitch=1; speech.volume=1;
+    speech.lang="es-ES";
+    speech.rate=1; speech.pitch=1; speech.volume=1;
     window.speechSynthesis.speak(speech);
   }
 }
