@@ -1,153 +1,182 @@
 /**
  * dashboard.js
- * Panel principal funcional - TallerPRO360
- * Versión SaaS profesional
+ * Panel avanzado para gerentes de taller - TallerPRO360 ERP
+ * Versión Final Avanzada
  */
 
-import { clientes } from "./clientes/clientes.js";
-import { ordenes } from "./ordenes/ordenes.js";
-import { inventario } from "./inventario/inventario.js";
-import { configuracion } from "./configuracion/configuracion.js";
-import { generarManualPDF } from "../manual/manual.js";
+import { clientes } from "./clientes.js";
+import { ordenes } from "./ordenes.js";
+import { inventario } from "./inventario.js";
+import { configuracion } from "./configuracion.js";
 import { db } from "../core/firebase-config.js";
-import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, getDocs, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { calcularPredicciones } from "../ai/aiMetrics.js";
 
 export async function dashboard(container) {
 
   container.innerHTML = `
-<h1 style="font-size:28px;margin-bottom:20px;">🚗 TallerPRO360 - Dashboard</h1>
+<h1 style="font-size:28px;margin-bottom:20px;">🚀 Dashboard Gerente - TallerPRO360</h1>
 
 <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
-  <button id="btnManual" class="btn-primary">📄 Manual Usuario</button>
-  <button id="btnConfiguracion" class="btn-primary">⚙ Configuración Taller</button>
   <button id="btnClientes" class="btn-primary">👥 Clientes</button>
   <button id="btnOrdenes" class="btn-primary">🛠 Órdenes</button>
   <button id="btnInventario" class="btn-primary">📦 Inventario</button>
+  <button id="btnConfiguracion" class="btn-primary">⚙ Configuración</button>
 </div>
 
+<!-- KPIs principales -->
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-bottom:25px;">
   <div class="card">
     <h3>Órdenes activas</h3>
     <p id="ordenesActivas" style="font-size:28px;">0</p>
   </div>
   <div class="card">
-    <h3>Clientes</h3>
-    <p id="clientesTotal" style="font-size:28px;">0</p>
+    <h3>Órdenes completadas hoy</h3>
+    <p id="ordenesCompletadas" style="font-size:28px;">0</p>
   </div>
   <div class="card">
     <h3>Ingresos hoy</h3>
     <p id="ingresosHoy" style="font-size:28px;">$0</p>
   </div>
   <div class="card">
-    <h3>Vehículos en taller</h3>
-    <p id="vehiculosTaller" style="font-size:28px;">0</p>
+    <h3>Margen de utilidad promedio</h3>
+    <p id="margenUtilidad" style="font-size:28px;">0%</p>
+  </div>
+  <div class="card">
+    <h3>Tiempo promedio de reparación</h3>
+    <p id="tiempoPromedio" style="font-size:28px;">0h</p>
+  </div>
+  <div class="card">
+    <h3>Stock crítico</h3>
+    <p id="stockCritico" style="font-size:28px;">0</p>
   </div>
 </div>
 
+<!-- Órdenes recientes -->
 <div class="card">
   <h2>📋 Órdenes recientes</h2>
   <div id="ordenesRecientes">Cargando...</div>
 </div>
 
+<!-- Recomendaciones IA -->
 <div class="card">
-  <h2>🤖 Ayuda rápida</h2>
-  <input id="inputPregunta" placeholder="Escribe tu consulta..." style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-  <div id="respuestasAyuda" style="margin-top:10px;max-height:150px;overflow-y:auto;background:#111827;color:white;padding:10px;border-radius:6px;"></div>
+  <h2>🤖 Recomendaciones IA</h2>
+  <div id="recomendacionesIA" style="margin-top:10px;max-height:150px;overflow-y:auto;background:#111827;color:white;padding:10px;border-radius:6px;">
+    Cargando sugerencias...
+  </div>
 </div>
 `;
 
   // ===========================
-  // Botones de navegación
+  // Botones de navegación rápida
   // ===========================
-  document.getElementById("btnManual").onclick = () => generarManualPDF();
-  document.getElementById("btnConfiguracion").onclick = () => configuracion(container);
   document.getElementById("btnClientes").onclick = () => clientes(container);
   document.getElementById("btnOrdenes").onclick = () => ordenes(container);
   document.getElementById("btnInventario").onclick = () => inventario(container);
+  document.getElementById("btnConfiguracion").onclick = () => configuracion(container);
 
   // ===========================
-  // Cargar estadísticas reales
+  // Cargar datos operativos
   // ===========================
-  await loadStats();
-  await loadOrders();
-
-  // ===========================
-  // Módulo de ayuda interactivo
-  // ===========================
-  const inputPregunta = document.getElementById("inputPregunta");
-  const respuestasContainer = document.getElementById("respuestasAyuda");
-
-  inputPregunta.addEventListener("keypress", function(e) {
-    if(e.key === "Enter") {
-      const pregunta = inputPregunta.value.trim();
-      if(!pregunta) return;
-      const respuesta = generarRespuestaFAQ(pregunta);
-      const div = document.createElement("div");
-      div.style.marginBottom = "8px";
-      div.innerHTML = `<b>Pregunta:</b> ${pregunta}<br><b>Respuesta:</b> ${respuesta}`;
-      respuestasContainer.prepend(div);
-      inputPregunta.value = "";
-    }
-  });
+  await cargarKPIs();
+  await cargarOrdenes();
+  await cargarRecomendacionesIA();
 }
 
 /* ===========================
-FUNCIONES DE DATOS REALES
+CARGAR KPIs
 =========================== */
-async function loadStats() {
-  try {
+async function cargarKPIs(){
+  try{
     const clientesSnap = await getDocs(collection(db,"clientes"));
     const ordenesSnap = await getDocs(collection(db,"ordenes"));
+    const inventarioSnap = await getDocs(collection(db,"inventario"));
 
     const hoy = new Date().toDateString();
-    const ingresosHoy = ordenesSnap.docs.reduce((acc,doc)=>{
-      const data = doc.data();
-      const fechaOrden = data.fecha.toDate().toDateString();
-      return fechaOrden === hoy ? acc + (data.total || 0) : acc;
-    },0);
 
-    document.getElementById("ordenesActivas").innerText = ordenesSnap.docs.length;
-    document.getElementById("clientesTotal").innerText = clientesSnap.docs.length;
+    let ingresosHoy = 0;
+    let completadasHoy = 0;
+    let tiempoTotal = 0;
+    let margenTotal = 0;
+
+    ordenesSnap.docs.forEach(doc=>{
+      const o = doc.data();
+      const fechaOrden = o.fecha.toDate().toDateString();
+      if(fechaOrden === hoy){
+        ingresosHoy += o.total || 0;
+        if(o.estado === "completada") completadasHoy++;
+      }
+      if(o.estado === "completada" && o.tiempoReparacion){
+        tiempoTotal += o.tiempoReparacion;
+      }
+      if(o.margen) margenTotal += o.margen;
+    });
+
+    const tiempoPromedio = ordenesSnap.docs.length ? (tiempoTotal / ordenesSnap.docs.length).toFixed(1) : 0;
+    const margenPromedio = ordenesSnap.docs.length ? (margenTotal / ordenesSnap.docs.length).toFixed(1) : 0;
+
+    // Stock crítico
+    const stockCritico = inventarioSnap.docs.filter(p=>p.data().stock <= 3).length;
+
+    document.getElementById("ordenesActivas").innerText = ordenesSnap.docs.filter(o=>o.data().estado!=="completada").length;
+    document.getElementById("ordenesCompletadas").innerText = completadasHoy;
     document.getElementById("ingresosHoy").innerText = `$${ingresosHoy}`;
-    document.getElementById("vehiculosTaller").innerText = ordenesSnap.docs.length; // simplificado
-  } catch(e) {
-    console.error("Error cargando estadísticas:", e);
+    document.getElementById("margenUtilidad").innerText = `${margenPromedio}%`;
+    document.getElementById("tiempoPromedio").innerText = `${tiempoPromedio}h`;
+    document.getElementById("stockCritico").innerText = stockCritico;
+
+  }catch(e){
+    console.error("Error cargando KPIs:", e);
   }
 }
 
-async function loadOrders() {
-  try {
+/* ===========================
+CARGAR ÓRDENES RECIENTES
+=========================== */
+async function cargarOrdenes(){
+  try{
     const q = query(collection(db,"ordenes"), orderBy("fecha","desc"), limit(5));
-    const querySnapshot = await getDocs(q);
+    const snapshot = await getDocs(q);
 
     let html = `<table style="width:100%;border-collapse:collapse;">
-      <tr style="border-bottom:1px solid #1e293b;"><th>Cliente</th><th>Vehículo</th><th>Estado</th></tr>`;
+      <tr style="border-bottom:1px solid #1e293b;"><th>Cliente</th><th>Vehículo</th><th>Estado</th><th>Total</th></tr>`;
 
-    querySnapshot.forEach(doc => {
+    snapshot.forEach(doc=>{
       const o = doc.data();
       html += `<tr>
         <td>${o.cliente || "-"}</td>
         <td>${o.vehiculo || "-"}</td>
         <td>${o.estado || "En proceso"}</td>
+        <td>$${o.total || 0}</td>
       </tr>`;
     });
 
     html += "</table>";
     document.getElementById("ordenesRecientes").innerHTML = html;
-  } catch(e) {
-    console.error("Error cargando órdenes:", e);
+  }catch(e){
+    console.error("Error cargando órdenes recientes:", e);
     document.getElementById("ordenesRecientes").innerText = "Error cargando órdenes";
   }
 }
 
 /* ===========================
-RESPUESTAS FAQ SIMULADAS
+CARGAR RECOMENDACIONES IA
 =========================== */
-function generarRespuestaFAQ(pregunta) {
-  pregunta = pregunta.toLowerCase();
-  if(pregunta.includes("cliente")) return "Para agregar un cliente, ve al módulo Clientes y presiona 'Guardar Cliente'.";
-  if(pregunta.includes("orden")) return "Para crear una orden, completa los datos, agrega productos y presiona 'Guardar Orden'.";
-  if(pregunta.includes("inventario")) return "Agrega nuevos productos en Inventario, definiendo costo, margen y stock inicial.";
-  if(pregunta.includes("factura")) return "Cada orden genera automáticamente una factura PDF al guardarla.";
-  return "Lo sentimos, aún no tenemos información para esa consulta. Intenta otra pregunta.";
+async function cargarRecomendacionesIA(){
+  try{
+    const recomendaciones = await calcularPredicciones(); // retorna un array de strings
+    const container = document.getElementById("recomendacionesIA");
+    container.innerHTML = "";
+
+    recomendaciones.forEach(r=>{
+      const div = document.createElement("div");
+      div.style.marginBottom = "6px";
+      div.innerHTML = `• ${r}`;
+      container.appendChild(div);
+    });
+
+  }catch(e){
+    console.error("Error cargando recomendaciones IA:", e);
+    document.getElementById("recomendacionesIA").innerText = "Error cargando sugerencias";
+  }
 }
