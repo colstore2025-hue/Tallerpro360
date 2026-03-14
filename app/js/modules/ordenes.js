@@ -1,20 +1,22 @@
-/**
- * ordenes.js
- * Módulo avanzado de gestión de Órdenes - TallerPRO360
- * Ruta: app/js/modules/ordenes.js
- */
+/*
+================================================
+ORDENES.JS - Versión Avanzada
+Gestión de órdenes con dictado y voz de IA
+Ubicación: /app/js/modules/ordenes.js
+================================================
+*/
 
 import { db } from "../core/firebase-config.js";
 import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import CustomerManager from "./customerManager.js";
-import { aiAssistant } from "./aiAssistant.js"; // integración con IA para recomendaciones
-import { iniciarAsistenteWorkshop } from "../voice/voiceAssistantWorkshop.js";  // asistente global de voz
-import { actualizarStock } from "./inventario.js"; // ajuste automático de inventario
+import { aiAssistant } from "./aiAssistant.js"; 
+import { iniciarAsistenteWorkshop } from "../voice/voiceAssistantWorkshop.js";  
+import { actualizarStock } from "./inventario.js"; 
 
 export async function ordenes(container) {
   const customerManager = new CustomerManager();
 
-  // Inicializar asistente de voz del taller
+  // Inicializar asistente de voz global
   iniciarAsistenteWorkshop();
 
   container.innerHTML = `
@@ -52,12 +54,7 @@ export async function ordenes(container) {
   // ===========================
   document.getElementById("guardarOrden").onclick = async () => await guardarOrden(customerManager);
   document.getElementById("buscarOrden").oninput = filtrarOrdenes;
-  document.getElementById("vozOrden").onclick = () => {
-    const desc = document.getElementById("descripcionOrden");
-    // Usamos el asistente global para dictado directo en textarea
-    const comandoDictado = prompt("Hable ahora para dictar la descripción de la orden:");
-    if (comandoDictado) desc.value += comandoDictado + " ";
-  };
+  document.getElementById("vozOrden").onclick = () => dictarInput("descripcionOrden");
 
   // AI assistant input
   const inputAI = document.getElementById("inputAI");
@@ -71,6 +68,7 @@ export async function ordenes(container) {
       div.style.marginBottom = "8px";
       div.innerHTML = `<b>Consulta:</b> ${pregunta}<br><b>Respuesta:</b> ${respuesta}`;
       respuestasAI.prepend(div);
+      hablar(respuesta);
       inputAI.value = "";
     }
   });
@@ -91,7 +89,10 @@ async function guardarOrden(customerManager){
   const placa = document.getElementById("placaOrden").value.trim();
   const descripcion = document.getElementById("descripcionOrden").value.trim();
 
-  if(!phone || !vehiculo) return alert("Cliente y Vehículo son obligatorios");
+  if(!phone || !vehiculo) {
+    hablar("Cliente y vehículo son obligatorios");
+    return alert("Cliente y Vehículo son obligatorios");
+  }
 
   // Verificar o crear cliente
   let cliente = await customerManager.searchCustomer(phone);
@@ -116,11 +117,13 @@ async function guardarOrden(customerManager){
     // Actualizar inventario automáticamente (ejemplo: repuestos)
     actualizarStock(descripcion);
 
+    hablar("Orden guardada correctamente");
     alert("✅ Orden guardada");
     limpiarFormularioOrden();
     await cargarOrdenes();
   } catch(e){
     console.error("Error guardando orden:",e);
+    hablar("Error al guardar la orden");
     alert("❌ Error guardando orden");
   }
 }
@@ -150,6 +153,7 @@ async function cargarOrdenes(){
   } catch(e){
     console.error("Error cargando órdenes:",e);
     lista.innerHTML = "❌ Error cargando órdenes";
+    hablar("Error cargando las órdenes");
   }
 }
 
@@ -167,4 +171,54 @@ function limpiarFormularioOrden(){
   document.getElementById("vehiculoOrden").value = "";
   document.getElementById("placaOrden").value = "";
   document.getElementById("descripcionOrden").value = "";
+}
+
+/* ===========================
+FUNCIONES DE VOZ
+=========================== */
+
+/**
+ * Dictado de texto en input o textarea
+ * @param {string} inputId 
+ */
+function dictarInput(inputId) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    hablar("Tu navegador no soporta dictado por voz");
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = "es-ES";
+  recognition.interimResults = false;
+  recognition.continuous = false;
+
+  recognition.onstart = () => hablar("Comienza a dictar");
+  recognition.onerror = (e) => {
+    console.error("Error dictado:", e);
+    hablar("Error en dictado de voz");
+  };
+  recognition.onresult = (event) => {
+    const texto = event.results[0][0].transcript;
+    input.value += texto + " ";
+    hablar("Texto agregado");
+  };
+  recognition.start();
+}
+
+/**
+ * Función de voz de IA
+ * @param {string} texto
+ */
+function hablar(texto) {
+  if (!texto) return;
+  const speech = new SpeechSynthesisUtterance(texto);
+  speech.lang = "es-ES";
+  speech.rate = 1;
+  speech.pitch = 1;
+  speech.volume = 1;
+  window.speechSynthesis.speak(speech);
 }
