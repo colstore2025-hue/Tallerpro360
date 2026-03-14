@@ -7,14 +7,16 @@
 import { db } from "../core/firebase-config.js";
 import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import CustomerManager from "./customerManager.js";
-import { aiAssistant } from "../ai/aiAssistant.js"; // integración con AI para recomendaciones
+import { aiAssistant } from "./aiAssistant.js"; // integración con IA para recomendaciones
+import { escucharVoz } from "../core/voice.js";  // función para dictado por voz
+import { actualizarStock } from "./inventario.js"; // ajuste automático de inventario
 
 export async function ordenes(container) {
 
   const customerManager = new CustomerManager();
 
   container.innerHTML = `
-    <h1 style="font-size:28px;margin-bottom:20px;">🛠 Órdenes</h1>
+    <h1 style="font-size:28px;margin-bottom:20px;">🛠 Órdenes Avanzadas</h1>
 
     <div class="card">
       <h3>Registrar Nueva Orden</h3>
@@ -22,12 +24,13 @@ export async function ordenes(container) {
       <input id="vehiculoOrden" placeholder="Vehículo" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
       <input id="placaOrden" placeholder="Placa" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
       <textarea id="descripcionOrden" placeholder="Descripción del servicio" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;"></textarea>
+      <button id="vozOrden" style="margin-top:10px;padding:10px 20px;background:#6366f1;border:none;border-radius:6px;color:white;cursor:pointer;">🎙 Dictar Orden por Voz</button>
       <button id="guardarOrden" style="margin-top:10px;padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Guardar Orden</button>
     </div>
 
     <div class="card">
       <h3>Buscar Órdenes</h3>
-      <input id="buscarOrden" placeholder="Buscar por cliente o placa..." style="width:100%;padding:10px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+      <input id="buscarOrden" placeholder="Buscar por cliente, placa o vehículo..." style="width:100%;padding:10px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
     </div>
 
     <div class="card">
@@ -47,6 +50,7 @@ export async function ordenes(container) {
   // ===========================
   document.getElementById("guardarOrden").onclick = async () => await guardarOrden(customerManager);
   document.getElementById("buscarOrden").oninput = filtrarOrdenes;
+  document.getElementById("vozOrden").onclick = () => escucharVoz("descripcionOrden");
 
   // AI assistant input
   const inputAI = document.getElementById("inputAI");
@@ -92,7 +96,7 @@ async function guardarOrden(customerManager){
   }
 
   try {
-    await addDoc(collection(db,"ordenes"),{
+    const docRef = await addDoc(collection(db,"ordenes"),{
       clienteId: cliente.id,
       clientePhone: phone,
       vehiculo,
@@ -101,6 +105,10 @@ async function guardarOrden(customerManager){
       estado: "Recepción",
       fecha: new Date()
     });
+
+    // Actualizar inventario automáticamente (ejemplo: repuestos)
+    actualizarStock(descripcion);
+
     alert("✅ Orden guardada");
     limpiarFormularioOrden();
     await cargarOrdenes();
