@@ -5,107 +5,74 @@
  */
 
 import { db } from "../core/firebase-config.js";
-import { calcularUtilidadOrden } from "../finanzas/calcularUtilidadOrden.js";
 import { generarFactura } from "../finanzas/generarFactura.js";
-
-import {
-  collection,
-  addDoc,
-  getDocs,
-  updateDoc,
-  doc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { calcularUtilidadOrden } from "../finanzas/calcularUtilidadOrden.js";
+import { collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 let inventario = [];
 let itemsOrden = [];
 
-export async function ordenes(container) {
-
+export async function ordenes(container){
   container.innerHTML = `
 <h1 style="font-size:26px;margin-bottom:20px;">🛠 Órdenes de Trabajo</h1>
 
 <div class="card">
 <h3>Datos de la Orden</h3>
-<input id="clienteOrden" placeholder="Cliente"
-style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
-<input id="vehiculoOrden" placeholder="Vehículo"
-style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
-<textarea id="diagnosticoOrden"
-placeholder="Diagnóstico"
-style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;"></textarea>
+<input id="clienteOrden" placeholder="Cliente" style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
+<input id="vehiculoOrden" placeholder="Vehículo" style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
+<textarea id="diagnosticoOrden" placeholder="Diagnóstico" style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;"></textarea>
 </div>
 
 <div class="card">
 <h3>Agregar Repuesto</h3>
-<select id="productoSelect"
-style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
-</select>
-<input id="cantidadProducto" type="number" placeholder="Cantidad"
-style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
-<input id="utilidadProducto" type="number" placeholder="Utilidad por unidad ($)"
-style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
-<button id="agregarProducto"
-style="padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">
-Agregar
-</button>
+<select id="productoSelect" style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;"></select>
+<input id="cantidadProducto" type="number" placeholder="Cantidad" style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
+<input id="utilidadProducto" type="number" placeholder="Utilidad por unidad ($)" style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
+<button id="agregarProducto" style="padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Agregar</button>
 </div>
 
 <div class="card">
 <h3>Mano de obra</h3>
-<input id="manoObra" type="number" placeholder="Valor mano de obra"
-style="width:100%;padding:10px;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
+<input id="manoObra" type="number" placeholder="Valor mano de obra" style="width:100%;padding:10px;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
 </div>
 
 <div class="card">
 <h3>Items de la Orden</h3>
 <div id="itemsOrden"></div>
-<h2 id="totalOrden">Total: $0</h2>
-<button id="guardarOrden"
-style="margin-top:10px;padding:12px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">
-Guardar Orden
-</button>
+<h2 id="totalOrden">Total: $0 | Costo: $0 | Utilidad: $0 | Margen: 0%</h2>
+<button id="guardarOrden" style="margin-top:10px;padding:12px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Guardar Orden</button>
 </div>
 `;
 
   await cargarInventario();
-
   document.getElementById("agregarProducto").onclick = agregarProducto;
   document.getElementById("guardarOrden").onclick = guardarOrden;
 }
 
-
-/* ===============================
-CARGAR INVENTARIO
-=============================== */
-async function cargarInventario() {
+async function cargarInventario(){
   const select = document.getElementById("productoSelect");
-  const querySnapshot = await getDocs(collection(db, "inventario"));
-  inventario = [];
   select.innerHTML = "";
-
-  querySnapshot.forEach(docSnap => {
-    const data = docSnap.data();
-    inventario.push({ id: docSnap.id, ...data });
+  const querySnapshot = await getDocs(collection(db,"inventario"));
+  inventario = [];
+  querySnapshot.forEach(docSnap=>{
+    const p = docSnap.data(); p.id = docSnap.id;
+    inventario.push(p);
     const option = document.createElement("option");
-    option.value = inventario.length - 1;
-    option.textContent = `${data.nombre} ($${data.precio})`;
+    option.value = inventario.length-1;
+    option.textContent = `${p.nombre} ($${p.precio})`;
     select.appendChild(option);
   });
 }
 
-
-/* ===============================
-AGREGAR PRODUCTO
-=============================== */
-function agregarProducto() {
-  const index = document.getElementById("productoSelect").value;
+function agregarProducto(){
+  const index = Number(document.getElementById("productoSelect").value);
   const cantidad = Number(document.getElementById("cantidadProducto").value);
-  const utilidad = Number(document.getElementById("utilidadProducto").value) || 0;
+  let utilidad = Number(document.getElementById("utilidadProducto").value);
 
-  if (cantidad <= 0) return alert("Ingrese cantidad válida");
-
+  if(cantidad <= 0) return alert("Ingrese cantidad válida");
   const producto = inventario[index];
-  const total = (producto.precio + utilidad) * cantidad;
+  if(!producto) return alert("Producto no encontrado");
+  if(utilidad <= 0) utilidad = producto.precio - (producto.costo || 0);
 
   itemsOrden.push({
     nombre: producto.nombre,
@@ -113,92 +80,65 @@ function agregarProducto() {
     precio: producto.precio,
     cantidad,
     utilidad,
-    total,
+    total: producto.precio * cantidad
   });
 
   renderItems();
 }
 
-
-/* ===============================
-RENDER ITEMS
-=============================== */
-function renderItems() {
+function renderItems(){
   const container = document.getElementById("itemsOrden");
-  let html = `<table style="width:100%">
-    <tr>
-      <th>Producto</th>
-      <th>Cant</th>
-      <th>Precio</th>
-      <th>Utilidad</th>
-      <th>Total</th>
-    </tr>`;
+  let html = `<table style="width:100%"><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Utilidad</th><th>Total</th></tr>`;
 
-  let total = 0;
-  itemsOrden.forEach(item => {
-    total += item.total;
-    html += `
-    <tr>
-      <td>${item.nombre}</td>
-      <td>${item.cantidad}</td>
-      <td>$${item.precio}</td>
-      <td>$${item.utilidad}</td>
-      <td>$${item.total}</td>
-    </tr>`;
+  let total=0, totalCosto=0, totalUtilidad=0;
+  itemsOrden.forEach(i=>{
+    total += i.total;
+    totalCosto += i.costoInterno*i.cantidad;
+    totalUtilidad += i.utilidad*i.cantidad;
+    html += `<tr><td>${i.nombre}</td><td>${i.cantidad}</td><td>$${i.precio}</td><td>$${i.utilidad}</td><td>$${i.total}</td></tr>`;
   });
 
   const manoObra = Number(document.getElementById("manoObra").value || 0);
   total += manoObra;
+  totalUtilidad += manoObra;
 
-  html += "</table>";
   container.innerHTML = html;
-  document.getElementById("totalOrden").innerText = "Total: $" + total;
+  const margen = total>0 ? ((totalUtilidad/total)*100).toFixed(2) : 0;
+  document.getElementById("totalOrden").innerText = `Total: $${total} | Costo: $${totalCosto} | Utilidad: $${totalUtilidad} | Margen: ${margen}%`;
 }
 
-
-/* ===============================
-GUARDAR ORDEN
-=============================== */
-async function guardarOrden() {
-  const cliente = document.getElementById("clienteOrden").value.trim();
-  const vehiculo = document.getElementById("vehiculoOrden").value.trim();
-  const diagnostico = document.getElementById("diagnosticoOrden").value.trim();
+async function guardarOrden(){
+  const cliente = document.getElementById("clienteOrden").value;
+  const vehiculo = document.getElementById("vehiculoOrden").value;
+  const diagnostico = document.getElementById("diagnosticoOrden").value;
   const manoObra = Number(document.getElementById("manoObra").value || 0);
 
-  if (!cliente || !vehiculo) return alert("Complete cliente y vehículo");
-  if (itemsOrden.length === 0) return alert("Agregue al menos un producto a la orden");
+  if(!cliente || !vehiculo) return alert("Complete cliente y vehículo");
 
   const nuevaOrden = {
-    cliente,
-    vehiculo,
-    diagnostico,
+    cliente, vehiculo, diagnostico,
     acciones: itemsOrden,
     manoObra,
-    total: itemsOrden.reduce((s, i) => s + i.total, 0) + manoObra,
+    total: itemsOrden.reduce((s,i)=>s+i.total,0)+manoObra,
     fecha: new Date()
   };
 
-  try {
-    await addDoc(collection(db, "ordenes"), nuevaOrden);
+  try{
+    await addDoc(collection(db,"ordenes"), nuevaOrden);
+    alert("✅ Orden guardada");
 
-    // Calcular utilidad
-    const utilidadTotal = calcularUtilidadOrden(nuevaOrden);
-    console.log("💰 Utilidad total:", utilidadTotal);
-
-    // Generar factura PDF
+    const utilidad = calcularUtilidadOrden(nuevaOrden);
+    console.log("Utilidad calculada:", utilidad);
     generarFactura(nuevaOrden);
 
-    alert("✅ Orden guardada con éxito");
-
-    // Limpiar
-    itemsOrden = [];
-    document.getElementById("clienteOrden").value = "";
-    document.getElementById("vehiculoOrden").value = "";
-    document.getElementById("diagnosticoOrden").value = "";
-    document.getElementById("manoObra").value = 0;
+    itemsOrden=[]; 
+    document.getElementById("clienteOrden").value="";
+    document.getElementById("vehiculoOrden").value="";
+    document.getElementById("diagnosticoOrden").value="";
+    document.getElementById("manoObra").value=0;
     renderItems();
 
-  } catch (e) {
+  }catch(e){
     console.error("Error guardando orden:", e);
     alert("❌ Error al guardar la orden");
   }
