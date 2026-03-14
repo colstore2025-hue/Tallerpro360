@@ -1,27 +1,41 @@
 /**
  * system-loader.js
- * Bootloader principal del ERP
+ * Loader principal del sistema
+ * TallerPRO360 ERP
  */
 
-import { iniciarApp } from "./js/core/app-init.js";
-import "./js/ai/superAI-orchestrator.js";
-
-console.log("🚀 Iniciando sistema TallerPRO360");
+console.log("⚡ System Loader iniciado");
 
 
-document.addEventListener("DOMContentLoaded", () => {
+/* =========================================
+CARGAR APP
+========================================= */
+
+async function startSystem(){
 
 try{
 
-console.log("⚙️ Arrancando núcleo del ERP");
+console.log("📦 Cargando app-init...");
 
-iniciarApp();
+const app = await import("./js/core/app-init.js");
+
+if(app && app.iniciarApp){
+
+app.iniciarApp();
+
+}else{
+
+throw new Error("iniciarApp no encontrado");
 
 }
-catch(error){
 
-console.error("❌ Error iniciando sistema:",error);
+}catch(error){
+
+console.error("🔥 Error cargando sistema:",error);
 
 }
 
-});
+}
+
+
+startSystem();
