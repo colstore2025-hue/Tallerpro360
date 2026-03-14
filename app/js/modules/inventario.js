@@ -1,202 +1,135 @@
 /**
  * inventario.js
- * Gestión de inventario
+ * Gestión de inventario con margen de utilidad
  * TallerPRO360 ERP
  */
 
 import { db } from "../core/firebase-config.js";
-
 import {
-collection,
-addDoc,
-getDocs
+  collection,
+  addDoc,
+  getDocs,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+export async function inventario(container) {
 
-export async function inventario(container){
+  container.innerHTML = `
 
-container.innerHTML = `
-
-<h1 style="font-size:26px;margin-bottom:20px;">
-📦 Inventario
-</h1>
-
+<h1 style="font-size:26px;margin-bottom:20px;">📦 Inventario</h1>
 
 <div class="card">
-
 <h3>Nuevo Producto</h3>
-
 <input id="productoNombre" placeholder="Nombre del producto"
 style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-
-<input id="productoCosto" placeholder="Costo compra"
-type="number"
+<input id="productoCosto" placeholder="Costo compra" type="number"
 style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-
-<input id="productoMargen" placeholder="Margen utilidad (%)"
-type="number"
+<input id="productoMargen" placeholder="Margen utilidad (%)" type="number"
 style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-
-<input id="productoStock" placeholder="Stock inicial"
-type="number"
+<input id="productoStock" placeholder="Stock inicial" type="number"
 style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-
 <button id="guardarProducto"
 style="margin-top:10px;padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">
 Guardar Producto
 </button>
-
 </div>
-
-
 
 <div class="card">
-
 <h3>Inventario del Taller</h3>
-
-<div id="listaInventario">
-
-Cargando inventario...
-
+<div id="listaInventario">Cargando inventario...</div>
 </div>
-
-</div>
-
 `;
 
+  // Eventos
+  document.getElementById("guardarProducto").onclick = guardarProducto;
 
-/* EVENTOS */
-
-document.getElementById("guardarProducto")
-.onclick = guardarProducto;
-
-
-/* CARGAR INVENTARIO */
-
-cargarInventario();
-
+  // Cargar inventario inicial
+  await cargarInventario();
 }
-
 
 
 /* ===============================
 GUARDAR PRODUCTO
 =============================== */
+async function guardarProducto() {
 
-async function guardarProducto(){
+  const nombre = document.getElementById("productoNombre").value.trim();
+  const costo = Number(document.getElementById("productoCosto").value);
+  const margen = Number(document.getElementById("productoMargen").value);
+  const stock = Number(document.getElementById("productoStock").value);
 
-const nombre = document.getElementById("productoNombre").value;
-const costo = Number(document.getElementById("productoCosto").value);
-const margen = Number(document.getElementById("productoMargen").value);
-const stock = Number(document.getElementById("productoStock").value);
+  if (!nombre || costo <= 0) return alert("Nombre y costo válidos requeridos");
 
-if(!nombre){
+  // Calcular precio de venta según margen
+  const precio = costo + (costo * margen / 100);
 
-alert("Nombre requerido");
-return;
+  try {
+    await addDoc(collection(db, "inventario"), {
+      nombre,
+      costo,
+      margen,
+      precio,
+      stock,
+      fecha: new Date()
+    });
 
+    alert("✅ Producto guardado");
+    limpiarFormulario();
+    cargarInventario();
+
+  } catch (error) {
+    console.error("Error guardando producto:", error);
+    alert("❌ Error al guardar producto");
+  }
 }
-
-/* calcular precio */
-
-const precio = costo + (costo * margen / 100);
-
-try{
-
-await addDoc(collection(db,"inventario"),{
-
-nombre,
-costo,
-margen,
-precio,
-stock,
-fecha:new Date()
-
-});
-
-alert("Producto guardado");
-
-limpiarFormulario();
-
-cargarInventario();
-
-}
-catch(error){
-
-console.error("Error guardando producto",error);
-
-}
-
-}
-
 
 
 /* ===============================
 CARGAR INVENTARIO
 =============================== */
+async function cargarInventario() {
 
-async function cargarInventario(){
+  const lista = document.getElementById("listaInventario");
 
-const lista = document.getElementById("listaInventario");
-
-try{
-
-const querySnapshot = await getDocs(collection(db,"inventario"));
-
-let html = `
+  try {
+    const querySnapshot = await getDocs(collection(db, "inventario"));
+    let html = `
 <table style="width:100%;border-collapse:collapse;">
-
 <tr style="border-bottom:1px solid #1e293b;">
 <th>Producto</th>
 <th>Costo</th>
 <th>Margen</th>
 <th>Precio</th>
 <th>Stock</th>
-</tr>
-`;
+</tr>`;
 
-querySnapshot.forEach(doc=>{
-
-const p = doc.data();
-
-html += `
+    querySnapshot.forEach(docSnap => {
+      const p = docSnap.data();
+      html += `
 <tr>
 <td>${p.nombre}</td>
-<td>$${p.costo}</td>
+<td>$${p.costo.toFixed(2)}</td>
 <td>${p.margen}%</td>
-<td>$${p.precio}</td>
+<td>$${p.precio.toFixed(2)}</td>
 <td>${p.stock}</td>
-</tr>
-`;
+</tr>`;
+    });
 
-});
+    html += "</table>";
+    lista.innerHTML = html;
 
-html += "</table>";
-
-lista.innerHTML = html;
-
+  } catch (error) {
+    console.error("Error cargando inventario:", error);
+    lista.innerHTML = "❌ Error cargando inventario";
+  }
 }
-catch(error){
-
-console.error(error);
-
-lista.innerHTML = "Error cargando inventario";
-
-}
-
-}
-
 
 
 /* ===============================
-LIMPIAR FORM
+LIMPIAR FORMULARIO
 =============================== */
-
-function limpiarFormulario(){
-
-document.getElementById("productoNombre").value="";
-document.getElementById("productoCosto").value="";
-document.getElementById("productoMargen").value="";
-document.getElementById("productoStock").value="";
-
+function limpiarFormulario() {
+  document.getElementById("productoNombre").value = "";
+  document.getElementById("productoCosto").value = "";
+  document.getElementById("productoMargen").value = "";
+  document.getElementById("productoStock").value = "";
 }
