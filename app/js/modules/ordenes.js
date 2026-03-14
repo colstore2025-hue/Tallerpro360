@@ -8,11 +8,14 @@ import { db } from "../core/firebase-config.js";
 import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import CustomerManager from "./customerManager.js";
 import { aiAssistant } from "./aiAssistant.js"; // integración con IA para recomendaciones
-import { escucharVoz } from "../core/voice.js";  // función para dictado por voz
+import { iniciarAsistenteWorkshop } from "../voice/voiceAssistantWorkshop.js";  // asistente global de voz
 import { actualizarStock } from "./inventario.js"; // ajuste automático de inventario
 
 export async function ordenes(container) {
   const customerManager = new CustomerManager();
+
+  // Inicializar asistente de voz del taller
+  iniciarAsistenteWorkshop();
 
   container.innerHTML = `
     <h1 style="font-size:28px;margin-bottom:20px;">🛠 Órdenes Avanzadas</h1>
@@ -49,7 +52,12 @@ export async function ordenes(container) {
   // ===========================
   document.getElementById("guardarOrden").onclick = async () => await guardarOrden(customerManager);
   document.getElementById("buscarOrden").oninput = filtrarOrdenes;
-  document.getElementById("vozOrden").onclick = () => escucharVoz("descripcionOrden");
+  document.getElementById("vozOrden").onclick = () => {
+    const desc = document.getElementById("descripcionOrden");
+    // Usamos el asistente global para dictado directo en textarea
+    const comandoDictado = prompt("Hable ahora para dictar la descripción de la orden:");
+    if (comandoDictado) desc.value += comandoDictado + " ";
+  };
 
   // AI assistant input
   const inputAI = document.getElementById("inputAI");
@@ -95,7 +103,7 @@ async function guardarOrden(customerManager){
   }
 
   try {
-    const docRef = await addDoc(collection(db,"ordenes"),{
+    await addDoc(collection(db,"ordenes"),{
       clienteId: cliente.id,
       clientePhone: phone,
       vehiculo,
