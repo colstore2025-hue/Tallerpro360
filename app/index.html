@@ -26,20 +26,11 @@ body{
   display:flex;
   width:100%;
   height:100%;
+  justify-content:center;
+  align-items:center;
 }
 
-/* BOTÓN SALIR */
-#btnSalir{
-  margin-top:20px;
-  background:#dc2626;
-  border:none;
-  padding:10px;
-  border-radius:6px;
-  color:white;
-  cursor:pointer;
-}
-
-/* CARD */
+/* CARD INICIAL */
 .card{
   background:#020617;
   padding:20px;
@@ -47,18 +38,27 @@ body{
   border:1px solid #1e293b;
   text-align:center;
 }
+
+/* BOTÓN SALIR */
+#btnSalir{
+  margin-top:20px;
+  background:#dc2626;
+  border:none;
+  padding:10px 20px;
+  border-radius:6px;
+  color:white;
+  cursor:pointer;
+}
 </style>
 </head>
 
 <body>
 
 <div id="appContent">
-  <div style="flex:1;display:flex;justify-content:center;align-items:center;">
-    <div class="card">
-      <h2>Bienvenido a TallerPRO360</h2>
-      <p>ERP Inteligente para talleres automotrices.</p>
-      <button id="btnSalir">Salir</button>
-    </div>
+  <div class="card">
+    <h2>Bienvenido a TallerPRO360</h2>
+    <p>ERP Inteligente para talleres automotrices.</p>
+    <button id="btnSalir">Salir</button>
   </div>
 </div>
 
@@ -67,26 +67,31 @@ body{
 import { panel } from "./js/panel.js";
 
 const userId = localStorage.getItem("uid");
+const appContainer = document.getElementById("appContent");
 
-// Si hay sesión activa, cargar panel, si no enviar a login
+// Función de logout
+function logout(){
+  localStorage.removeItem("uid");
+  localStorage.removeItem("empresaId");
+  window.location.href = "./login.html";
+}
+
+document.getElementById("btnSalir")?.addEventListener("click", logout);
+
+// Si hay sesión activa, cargar panel
 if(userId){
-  const appContainer = document.getElementById("appContent");
-  appContainer.innerHTML = ""; // Limpiar mensaje de bienvenida
-  panel(appContainer, userId);
+  appContainer.innerHTML = `<p style="color:white;">Cargando panel...</p>`;
+  try {
+    await panel(appContainer, userId);
+  } catch(e){
+    console.error("Error cargando panel:", e);
+    appContainer.innerHTML = `<p style="color:red;">Error cargando el panel. Revisa la consola.</p>`;
+  }
 } else {
   window.location.href = "./login.html";
 }
 
-// Botón salir
-document.getElementById("btnSalir")?.addEventListener("click",()=>{
-  localStorage.removeItem("uid");
-  localStorage.removeItem("empresaId");
-  window.location.href = "./login.html";
-});
-</script>
-
-<!-- PWA -->
-<script>
+// PWA
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("./service-worker.js")
     .then(()=>console.log("📱 PWA activa"))
