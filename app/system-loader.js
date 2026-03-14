@@ -4,7 +4,7 @@
  * TallerPRO360
  */
 
-import { iniciarApp } from "../js/core/app-init.js";
+import { iniciarApp } from "./js/core/app-init.js";
 
 console.log("⚡ System Loader iniciado");
 
