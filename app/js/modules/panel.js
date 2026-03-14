@@ -1,15 +1,13 @@
 /*
 ================================================
-PANEL.JS - Panel Principal Avanzado
-TallerPRO360 ERP - Versión Final Avanzada
+PANEL.JS - Panel Estratégico TallerPRO360
+Versión Final Avanzada para Dueños de Taller
 ================================================
 */
 
-import { dashboard } from "./dashboard.js";
 import { clientes } from "./clientes.js";
 import { ordenes } from "./ordenes.js";
 import { inventario } from "./inventario.js";
-import { configuracion } from "./configuracion.js";
 import { finanzas } from "./finanzas.js";
 import { contabilidad } from "./contabilidad.js";
 import { pagos } from "./pagos.js";
@@ -17,19 +15,17 @@ import { ia } from "./ia.js";
 import { aiCommand } from "./aiComand.js";
 import { aiAssistant } from "./aiAssistant.js";
 import { aiAdvisor } from "./aiAdvisor.js";
-import { ceo } from "./ceo.js";
 
-export async function panel(container) {
+export async function panel(container){
 
   container.innerHTML = `
   <div style="display:flex;height:100vh;font-family:sans-serif;">
     <!-- Menú lateral -->
-    <nav id="menuLateral" style="width:260px;background:#111827;color:white;padding:15px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;">
-      <h2 style="margin-bottom:20px;text-align:center;">TallerPRO360</h2>
+    <nav id="menuLateral" style="width:280px;background:#111827;color:white;padding:20px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;">
+      <h2 style="margin-bottom:20px;text-align:center;">TallerPRO360 BSC</h2>
 
       <!-- Secciones principales -->
-      <button class="btnModulo" data-modulo="dashboard">Dashboard</button>
-      <button class="btnModulo" data-modulo="ceo">Panel CEO</button>
+      <button class="btnModulo" data-modulo="dashboard">Dashboard Taller</button>
       <button class="btnModulo" data-modulo="clientes">Clientes</button>
       <button class="btnModulo" data-modulo="ordenes">Órdenes</button>
       <button class="btnModulo" data-modulo="inventario">Inventario</button>
@@ -37,19 +33,16 @@ export async function panel(container) {
       <button class="btnModulo" data-modulo="contabilidad">Contabilidad</button>
       <button class="btnModulo" data-modulo="pagos">Pagos / Suscripciones</button>
       <button class="btnModulo" data-modulo="ia">IA Mecánica</button>
-      
-      <!-- Sección IA avanzada -->
+
+      <!-- IA estratégica -->
       <button class="btnModulo" data-modulo="aiAssistant">AI Assistant</button>
       <button class="btnModulo" data-modulo="aiCommand">AI Command Center</button>
       <button class="btnModulo" data-modulo="aiAdvisor">AI Service Advisor</button>
-
-      <!-- Configuración general -->
-      <button class="btnModulo" data-modulo="configuracion">Configuración</button>
     </nav>
 
     <!-- Contenedor principal -->
-    <main id="contenedorPrincipal" style="flex:1;padding:20px;overflow-y:auto;background:#1e293b;color:white;transition:all 0.3s;">
-      Cargando módulo...
+    <main id="contenedorPrincipal" style="flex:1;padding:25px;overflow-y:auto;background:#1e293b;color:white;transition:all 0.3s;">
+      <h2>Cargando panel estratégico...</h2>
     </main>
   </div>
   `;
@@ -61,11 +54,9 @@ export async function panel(container) {
   // ===========================
   const modulos = {
     dashboard,
-    ceo,
     clientes,
     ordenes,
     inventario,
-    configuracion,
     finanzas,
     contabilidad,
     pagos,
@@ -76,15 +67,21 @@ export async function panel(container) {
   };
 
   // ===========================
-  // Función para cargar módulo con animación
+  // Cargar módulo con animación y feedback IA
   // ===========================
-  async function cargarModulo(nombre) {
+  async function cargarModulo(nombre){
     contenedor.style.opacity = "0.5";
     contenedor.innerHTML = `<p>Cargando ${nombre}...</p>`;
-    await new Promise(r => setTimeout(r, 150)); // efecto de transición
+    await new Promise(r => setTimeout(r, 150));
     const fnModulo = modulos[nombre];
     if(fnModulo){
       await fnModulo(contenedor);
+
+      // Si hay métricas de IA disponibles, llamar al dashboard analítico
+      if(window.aiMetrics){
+        window.aiMetrics.actualizarKPI(contenedor);
+      }
+
       contenedor.style.opacity = "1";
     } else {
       contenedor.innerHTML = `<p style="color:red;">Módulo no encontrado: ${nombre}</p>`;
@@ -93,16 +90,16 @@ export async function panel(container) {
   }
 
   // ===========================
-  // Inicializar dashboard por defecto
+  // Inicializar módulo principal del taller
   // ===========================
   cargarModulo("dashboard");
 
   // ===========================
-  // Eventos botones menú
+  // Configurar botones del menú lateral
   // ===========================
   const botones = document.querySelectorAll(".btnModulo");
-  botones.forEach(btn => {
-    btn.style.padding = "10px";
+  botones.forEach(btn=>{
+    btn.style.padding = "12px";
     btn.style.border = "none";
     btn.style.borderRadius = "6px";
     btn.style.background = "#1f2937";
@@ -113,18 +110,16 @@ export async function panel(container) {
     btn.onmouseenter = ()=> btn.style.background = "#374151";
     btn.onmouseleave = ()=> btn.style.background = "#1f2937";
 
-    btn.onclick = () => {
-      cargarModulo(btn.dataset.modulo);
-    };
+    btn.onclick = ()=> cargarModulo(btn.dataset.modulo);
   });
 
   // ===========================
   // Tecla rápida para abrir Dashboard
   // ===========================
-  window.addEventListener("keydown", e => {
-    if(e.altKey && e.key.toLowerCase() === "d"){
+  window.addEventListener("keydown", e=>{
+    if(e.altKey && e.key.toLowerCase()==="d"){
       cargarModulo("dashboard");
-      hablar("Abriendo Dashboard");
+      hablar("Abriendo panel del taller");
     }
   });
 
