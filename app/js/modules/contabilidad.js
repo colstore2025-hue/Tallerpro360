@@ -1,204 +1,155 @@
 /**
  * contabilidad.js
- * Contabilidad Avanzada + IA - TallerPRO360
- * Balance mensual, P&L, reportes PDF y alertas inteligentes
+ * Módulo Contabilidad Avanzada - TallerPRO360
  * Ruta: app/js/modules/contabilidad.js
  */
 
 import { db } from "../core/firebase-config.js";
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import Chart from "https://cdn.jsdelivr.net/npm/chart.js";
-import jsPDF from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-import { formatCurrency } from "../core/utils.js";
-
-// IA contable: alertas y recomendaciones
-async function IAContable(ingresos, gastos, balance) {
-  const alerts = [];
-  if(balance < 0) alerts.push("⚠️ Balance negativo: revisar gastos urgentes");
-  if(ingresos < gastos*0.8) alerts.push("⚠️ Ingresos bajos en comparación con gastos");
-  if(balance > 1000000) alerts.push("✅ Excelente balance: considerar reinversión o expansión");
-  return alerts;
-}
+import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export async function contabilidad(container) {
   container.innerHTML = `
-    <h1 style="font-size:28px;margin-bottom:20px;">💼 Contabilidad Avanzada + IA</h1>
-
-    <div class="card mb-4">
-      <h3>Filtros</h3>
-      <label>Mes:</label>
-      <input type="month" id="mesContabilidad" style="padding:6px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-      <button id="cargarReporte" style="margin-left:10px;padding:6px 12px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Generar Reporte</button>
-      <button id="exportPDF" style="margin-left:10px;padding:6px 12px;background:#3b82f6;border:none;border-radius:6px;color:white;cursor:pointer;">Exportar PDF</button>
-    </div>
-
-    <div class="card mb-4" id="resumenContabilidad">
-      <h3>Resumen Contable</h3>
-      <p>Seleccione un mes y haga clic en "Generar Reporte"</p>
-    </div>
-
-    <div class="card mb-4" id="detallesContabilidad">
-      <h3>Movimientos</h3>
-      <p>Sin datos aún.</p>
-    </div>
-
-    <div class="card mb-4" id="alertasIA">
-      <h3>Alertas IA</h3>
-      <p>Sin alertas</p>
-    </div>
+    <h1 style="font-size:28px;margin-bottom:20px;">💼 Contabilidad</h1>
 
     <div class="card">
-      <h3>Gráfico P&L por cuentas</h3>
-      <canvas id="chartContabilidad" height="200"></canvas>
+      <h3>Filtrar por fecha</h3>
+      <input type="month" id="fechaInicio" style="padding:8px;margin-right:10px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+      <input type="month" id="fechaFin" style="padding:8px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+      <button id="btnGenerar" style="padding:10px 20px;margin-left:10px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Generar Reporte</button>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3>Balance General</h3>
+      <div id="balanceGeneral">Cargando...</div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3>Estado de Resultados (P&L)</h3>
+      <div id="estadoResultados">Cargando...</div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3>Alertas Financieras IA</h3>
+      <div id="alertasIA">Esperando generación...</div>
     </div>
   `;
 
-  document.getElementById("cargarReporte").onclick = async () => {
-    const mesInput = document.getElementById("mesContabilidad").value;
-    if(!mesInput) return alert("Seleccione un mes");
-    const [anio, mes] = mesInput.split("-").map(Number);
-    await generarReporte(anio, mes);
-  };
+  document.getElementById("btnGenerar").onclick = generarReporte;
 
-  document.getElementById("exportPDF").onclick = exportarPDF;
+  // Cargar reporte inicial
+  await generarReporte();
 }
 
-// ============================================
-// GENERAR REPORTE CONTABLE + ALERTAS IA
-// ============================================
-let chartInstance = null;
+/* ===========================
+GENERAR REPORTE CONTABLE
+=========================== */
+async function generarReporte() {
+  const inicio = document.getElementById("fechaInicio").value;
+  const fin = document.getElementById("fechaFin").value;
 
-async function generarReporte(anio, mes) {
-  const resumen = document.getElementById("resumenContabilidad");
-  const detalles = document.getElementById("detallesContabilidad");
-  const alertas = document.getElementById("alertasIA");
+  // Convertir fechas
+  const fechaInicio = inicio ? new Date(inicio + "-01") : new Date(new Date().getFullYear(), 0, 1);
+  const fechaFin = fin ? new Date(fin + "-01") : new Date();
 
-  resumen.innerHTML = "Cargando datos contables...";
-  detalles.innerHTML = "Cargando movimientos...";
-  alertas.innerHTML = "Analizando alertas IA...";
+  // Balance General
+  const balance = await calcularBalance(fechaInicio, fechaFin);
+  document.getElementById("balanceGeneral").innerHTML = `
+    <p>Activos: $${balance.activos}</p>
+    <p>Pasivos: $${balance.pasivos}</p>
+    <p>Patrimonio: $${balance.patrimonio}</p>
+  `;
 
-  try {
-    const ingresosSnap = await getDocs(collection(db,"finanzasIngresos"));
-    const gastosSnap = await getDocs(collection(db,"finanzasGastos"));
+  // Estado de Resultados
+  const resultados = await calcularEstadoResultados(fechaInicio, fechaFin);
+  document.getElementById("estadoResultados").innerHTML = `
+    <p>Ingresos: $${resultados.ingresos}</p>
+    <p>Costos: $${resultados.costos}</p>
+    <p>Gastos: $${resultados.gastos}</p>
+    <p>Ganancia Neta: $${resultados.gananciaNeta}</p>
+  `;
 
-    let ingresos = 0, gastos = 0;
-    const movimientos = [];
-    const cuentas = {};
-
-    // Procesar ingresos
-    ingresosSnap.forEach(docSnap => {
-      const m = docSnap.data();
-      const fecha = new Date(m.fecha.seconds * 1000);
-      if(fecha.getFullYear() === anio && fecha.getMonth()+1 === mes){
-        ingresos += m.monto || 0;
-        movimientos.push({...m, tipo:"Ingreso"});
-        cuentas[m.cuenta] = (cuentas[m.cuenta] || 0) + m.monto;
-      }
-    });
-
-    // Procesar gastos
-    gastosSnap.forEach(docSnap => {
-      const m = docSnap.data();
-      const fecha = new Date(m.fecha.seconds * 1000);
-      if(fecha.getFullYear() === anio && fecha.getMonth()+1 === mes){
-        gastos += m.monto || 0;
-        movimientos.push({...m, tipo:"Gasto"});
-        cuentas[m.cuenta] = (cuentas[m.cuenta] || 0) - m.monto;
-      }
-    });
-
-    const balance = ingresos - gastos;
-
-    // Resumen
-    resumen.innerHTML = `
-      <h3>Resumen ${anio}-${String(mes).padStart(2,"0")}</h3>
-      <p>Ingresos: <b>${formatCurrency(ingresos)}</b></p>
-      <p>Gastos: <b>${formatCurrency(gastos)}</b></p>
-      <p>Balance: <b>${formatCurrency(balance)}</b></p>
-    `;
-
-    // Movimientos
-    if(movimientos.length === 0){
-      detalles.innerHTML = "<p>No hay movimientos registrados para este mes.</p>";
-    } else {
-      let html = `<table style="width:100%;border-collapse:collapse;">
-        <tr style="border-bottom:1px solid #333;"><th>Fecha</th><th>Tipo</th><th>Cuenta</th><th>Concepto</th><th>Monto</th></tr>`;
-      movimientos.sort((a,b)=>b.fecha.seconds - a.fecha.seconds);
-      movimientos.forEach(m=>{
-        const fecha = new Date(m.fecha.seconds * 1000).toLocaleDateString();
-        html += `<tr>
-          <td>${fecha}</td>
-          <td>${m.tipo}</td>
-          <td>${m.cuenta || "-"}</td>
-          <td>${m.descripcion || "-"}</td>
-          <td>${formatCurrency(m.monto)}</td>
-        </tr>`;
-      });
-      html += "</table>";
-      detalles.innerHTML = html;
-    }
-
-    // Alertas IA
-    const alerts = await IAContable(ingresos, gastos, balance);
-    alertas.innerHTML = alerts.length ? alerts.map(a=>`<p>${a}</p>`).join("") : "<p>✅ Todo en orden</p>";
-
-    // Gráfico P&L
-    renderChart(cuentas);
-
-  } catch(error){
-    console.error("Error generando reporte contable IA:",error);
-    resumen.innerHTML = "❌ Error cargando datos contables";
-    detalles.innerHTML = "";
-    alertas.innerHTML = "";
-  }
+  // Alertas IA
+  document.getElementById("alertasIA").innerHTML = await generarAlertasIA(resultados);
 }
 
-// ============================================
-// RENDERIZAR GRÁFICO P&L
-// ============================================
-function renderChart(cuentas){
-  const ctx = document.getElementById("chartContabilidad").getContext("2d");
-  const labels = Object.keys(cuentas);
-  const data = Object.values(cuentas);
+/* ===========================
+CALCULAR BALANCE
+=========================== */
+async function calcularBalance(inicio, fin){
+  // Ejemplo: integrar órdenes, inventario, caja y cuentas
+  let activos = 0, pasivos = 0, patrimonio = 0;
 
-  if(chartInstance) chartInstance.destroy();
+  // Obtener inventario
+  const invSnap = await getDocs(collection(db,"inventario"));
+  invSnap.forEach(docSnap=>{
+    const p = docSnap.data();
+    activos += p.precio * p.stock || 0;
+  });
 
-  chartInstance = new Chart(ctx,{
-    type:'bar',
-    data:{
-      labels,
-      datasets:[{
-        label:'Ingresos/Gastos por cuenta',
-        data,
-        backgroundColor:data.map(v=>v>=0 ? '#16a34a':'#dc2626')
-      }]
-    },
-    options:{
-      responsive:true,
-      plugins:{
-        legend:{display:false},
-        title:{display:true,text:'P&L por cuentas contables'}
-      }
+  // Ingresos y gastos de finanzas
+  const ordSnap = await getDocs(collection(db,"ordenes"));
+  ordSnap.forEach(docSnap=>{
+    const o = docSnap.data();
+    const fecha = o.fecha.toDate();
+    if(fecha >= inicio && fecha <= fin){
+      activos += o.estimatedRevenue || 0;
     }
   });
+
+  // Pasivos (ejemplo: por pagar)
+  const gastosSnap = await getDocs(collection(db,"gastos"));
+  gastosSnap.forEach(docSnap=>{
+    const g = docSnap.data();
+    const fecha = g.fecha.toDate();
+    if(fecha >= inicio && fecha <= fin){
+      pasivos += g.monto || 0;
+    }
+  });
+
+  patrimonio = activos - pasivos;
+  return {activos,pasivos,patrimonio};
 }
 
-// ============================================
-// EXPORTAR PDF
-// ============================================
-async function exportarPDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+/* ===========================
+CALCULAR ESTADO DE RESULTADOS
+=========================== */
+async function calcularEstadoResultados(inicio, fin){
+  let ingresos = 0, costos = 0, gastos = 0;
 
-  const resumen = document.getElementById("resumenContabilidad").innerText;
-  const detalles = document.getElementById("detallesContabilidad").innerText;
-  const alertas = document.getElementById("alertasIA").innerText;
+  const ordSnap = await getDocs(collection(db,"ordenes"));
+  ordSnap.forEach(docSnap=>{
+    const o = docSnap.data();
+    const fecha = o.fecha.toDate();
+    if(fecha >= inicio && fecha <= fin){
+      ingresos += o.estimatedRevenue || 0;
+      costos += o.estimatedCost?.total || 0;
+    }
+  });
 
-  doc.setFontSize(14);
-  doc.text("Reporte Contable + IA - TallerPRO360", 10, 10);
-  doc.setFontSize(12);
-  doc.text(resumen, 10, 20);
-  doc.text(detalles, 10, 40);
-  doc.text(alertas, 10, 60);
-  doc.save(`ContabilidadIA-${new Date().toISOString().slice(0,10)}.pdf`);
+  const gastosSnap = await getDocs(collection(db,"gastos"));
+  gastosSnap.forEach(docSnap=>{
+    const g = docSnap.data();
+    const fecha = g.fecha.toDate();
+    if(fecha >= inicio && fecha <= fin){
+      gastos += g.monto || 0;
+    }
+  });
+
+  const gananciaNeta = ingresos - costos - gastos;
+  return {ingresos,costos,gastos,gananciaNeta};
+}
+
+/* ===========================
+GENERAR ALERTAS IA
+=========================== */
+async function generarAlertasIA(resultados){
+  if(!window.SuperAI) return "<p>SuperAI no disponible</p>";
+
+  try{
+    const alertas = await window.SuperAI.analyzeFinance(resultados);
+    return alertas.map(a=>`<p>⚠️ ${a}</p>`).join("");
+  } catch(e){
+    console.error("Error IA alertas:",e);
+    return "<p>❌ Error generando alertas</p>";
+  }
 }
