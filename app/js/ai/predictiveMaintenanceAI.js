@@ -1,21 +1,36 @@
 /**
  * predictiveMaintenanceAI.js
+ * IA de mantenimiento predictivo
  * TallerPRO360 ERP
- * Predicción inteligente de mantenimiento
  */
 
-export class PredictiveMaintenanceAI {
+import { analizarFallaGlobal } from "./globalDiagnosticsAI.js";
 
-predict(vehicleHistory){
+class PredictiveMaintenanceAI {
 
-let alerts = []
+constructor(){
+
+console.log("🔮 Predictive Maintenance AI iniciada");
+
+}
+
+
+/* ======================================
+PREDICCION PRINCIPAL
+====================================== */
+
+async predict(vehicleHistory = {}){
+
+try{
+
+const alerts = []
 
 if(!vehicleHistory) return alerts
 
 
 /* ==============================
-CAMBIO ACEITE
-============================= */
+ACEITE
+============================== */
 
 if(vehicleHistory.kmUltimoAceite){
 
@@ -26,9 +41,13 @@ const km =
 if(km > 8000){
 
 alerts.push({
-tipo:"mantenimiento",
-mensaje:"Cambio de aceite recomendado",
-prioridad:"alta"
+
+type:"maintenance",
+component:"engine_oil",
+message:"Cambio de aceite recomendado",
+priority:"alta",
+km
+
 })
 
 }
@@ -38,16 +57,19 @@ prioridad:"alta"
 
 /* ==============================
 FRENOS
-============================= */
+============================== */
 
 if(vehicleHistory.brakeWear){
 
 if(vehicleHistory.brakeWear > 70){
 
 alerts.push({
-tipo:"seguridad",
-mensaje:"Pastillas de freno próximas a cambio",
-prioridad:"alta"
+
+type:"safety",
+component:"brakes",
+message:"Pastillas de freno próximas a cambio",
+priority:"alta"
+
 })
 
 }
@@ -56,40 +78,163 @@ prioridad:"alta"
 
 
 /* ==============================
-SUSPENSIÓN
-============================= */
+SUSPENSION
+============================== */
 
 if(vehicleHistory.kmActual > 90000){
 
 alerts.push({
-tipo:"mantenimiento",
-mensaje:"Revisar sistema de suspensión",
-prioridad:"media"
+
+type:"maintenance",
+component:"suspension",
+message:"Revisar sistema de suspensión",
+priority:"media"
+
 })
 
 }
 
 
 /* ==============================
-BATERÍA
-============================= */
+BATERIA
+============================== */
 
 if(vehicleHistory.batteryAge){
 
 if(vehicleHistory.batteryAge > 3){
 
 alerts.push({
-tipo:"mantenimiento",
-mensaje:"Revisar estado de batería",
-prioridad:"media"
+
+type:"maintenance",
+component:"battery",
+message:"Revisar estado de batería",
+priority:"media"
+
 })
 
 }
 
 }
 
+
+/* ==============================
+IA GLOBAL (MUY IMPORTANTE)
+============================== */
+
+if(
+vehicleHistory.marca &&
+vehicleHistory.modelo &&
+vehicleHistory.fallaActual
+){
+
+try{
+
+const globalData = await analizarFallaGlobal(
+
+vehicleHistory.marca,
+vehicleHistory.modelo,
+vehicleHistory.fallaActual
+
+)
+
+if(globalData && globalData.length){
+
+alerts.push({
+
+type:"ai_prediction",
+component:"global_pattern",
+message:"IA global detecta repuestos comunes para esta falla",
+priority:"media",
+data:globalData
+
+})
+
+}
+
+}catch(e){
+
+console.warn("IA global no disponible")
+
+}
+
+}
+
+
+/* ==============================
+RESULTADO
+============================== */
+
 return alerts
 
 }
+catch(error){
+
+console.error("❌ Error Predictive Maintenance:",error)
+
+return []
+
+}
+
+}
+
+
+/* ======================================
+EVALUAR SALUD DEL VEHICULO
+====================================== */
+
+vehicleHealthScore(vehicleHistory = {}){
+
+let score = 100
+
+
+if(vehicleHistory.brakeWear > 70){
+score -= 20
+}
+
+if(vehicleHistory.batteryAge > 3){
+score -= 10
+}
+
+if(vehicleHistory.kmActual > 100000){
+score -= 15
+}
+
+if(vehicleHistory.kmUltimoAceite){
+
+const km =
+(vehicleHistory.kmActual || 0) -
+(vehicleHistory.kmUltimoAceite || 0)
+
+if(km > 8000){
+score -= 10
+}
+
+}
+
+if(score < 0) score = 0
+
+return score
+
+}
+
+}
+
+
+/* ======================================
+INSTANCIA GLOBAL
+====================================== */
+
+const predictiveMaintenanceAI = new PredictiveMaintenanceAI()
+
+export default predictiveMaintenanceAI
+
+
+/* ======================================
+GLOBAL DEBUG
+====================================== */
+
+if(typeof window !== "undefined"){
+
+window.PredictiveMaintenanceAI = predictiveMaintenanceAI
 
 }
