@@ -1,65 +1,48 @@
 /**
  * router.js
- * Smart SPA Router
- * TallerPRO360 ERP
+ * Smart SPA Router con AutoLoader
  */
+
+import { getModules } from "./system/moduleLoader.js";
 
 console.log("📦 Smart Router iniciado");
 
 
-/* =========================================
-SECCIONES DEL ERP
-========================================= */
+/* ======================================
+CARGAR MODULOS AUTOMÁTICOS
+====================================== */
 
-const sections = {
-
-dashboard:{name:"Dashboard",path:"./modules/dashboard.js"},
-clientes:{name:"Clientes",path:"./modules/clientes.js"},
-ordenes:{name:"Órdenes",path:"./modules/ordenes.js"},
-inventario:{name:"Inventario",path:"./modules/inventario.js"},
-finanzas:{name:"Finanzas",path:"./modules/finanzas.js"},
-pagos:{name:"Pagos",path:"./modules/pagos.js"},
-ceo:{name:"CEO",path:"./modules/ceo.js"},
-aiadvisor:{name:"AI Advisor",path:"./modules/aiAdvisor.js"}
-
-};
+const sections = getModules();
 
 
-/* =========================================
-CACHE DE MODULOS
-========================================= */
+/* ======================================
+CACHE
+====================================== */
 
 const moduleCache = {};
 
 
-/* =========================================
-CONSTRUIR MENÚ
-========================================= */
+/* ======================================
+MENU
+====================================== */
 
 export function buildMenu(){
 
 const menu = document.getElementById("menu");
 
-if(!menu){
+if(!menu) return;
 
-console.error("❌ No existe #menu");
-return;
-
-}
-
-menu.innerHTML = "";
+menu.innerHTML="";
 
 Object.entries(sections).forEach(([key,section])=>{
 
-const btn = document.createElement("button");
+const btn=document.createElement("button");
 
-btn.innerText = section.name;
+btn.innerText=section.name;
 
-btn.className = "menu-btn";
+btn.onclick=()=>{
 
-btn.onclick = ()=>{
-
-window.location.hash = key;
+window.location.hash=key;
 
 };
 
@@ -70,32 +53,30 @@ menu.appendChild(btn);
 }
 
 
-/* =========================================
-INICIAR ROUTER
-========================================= */
+/* ======================================
+INIT ROUTER
+====================================== */
 
 export function initRouter(){
 
-console.log("🚦 Router iniciado");
-
-window.addEventListener("hashchange", handleHashChange);
+window.addEventListener("hashchange",handleHashChange);
 
 handleHashChange();
 
 }
 
 
-/* =========================================
-MANEJAR CAMBIO DE HASH
-========================================= */
+/* ======================================
+HASH
+====================================== */
 
 function handleHashChange(){
 
-let hash = window.location.hash.replace("#","");
+let hash=window.location.hash.replace("#","");
 
 if(!sections[hash]){
 
-hash = "dashboard";
+hash="dashboard";
 
 }
 
@@ -104,86 +85,50 @@ loadSection(hash);
 }
 
 
-/* =========================================
-CARGAR SECCIÓN
-========================================= */
+/* ======================================
+LOAD MODULE
+====================================== */
 
 async function loadSection(section){
 
-const container = document.getElementById("appContent");
+const container=document.getElementById("appContent");
 
-if(!container){
+if(!container) return;
 
-console.error("❌ No existe #appContent");
-return;
+const selected=sections[section];
 
-}
-
-const selected = sections[section];
-
-if(!selected){
-
-container.innerHTML = `
-<div class="card">
-Sección no encontrada
-</div>
-`;
-
-return;
-
-}
-
-
-/* loader */
-
-container.innerHTML = `
+container.innerHTML=`
 <div class="card">
 ⏳ Cargando ${selected.name}...
 </div>
 `;
 
-
 try{
 
 let module;
 
-
-/* ================================
-CACHE INTELIGENTE
-================================ */
-
 if(moduleCache[section]){
 
-module = moduleCache[section];
+module=moduleCache[section];
 
 }else{
 
-module = await import(selected.path);
+module=await import(selected.path);
 
-moduleCache[section] = module;
+moduleCache[section]=module;
 
 }
 
-
-/* ================================
-OBTENER FUNCIÓN DEL MÓDULO
-================================ */
-
-const moduleFunction =
+const moduleFunction=
 module[section] ||
 module.default ||
 Object.values(module)[0];
 
-if(typeof moduleFunction !== "function"){
+if(typeof moduleFunction!=="function"){
 
 throw new Error("El módulo no exporta función");
 
 }
-
-
-/* ================================
-EJECUTAR MÓDULO
-================================ */
 
 await moduleFunction(container);
 
@@ -194,7 +139,7 @@ catch(error){
 
 console.error("❌ Error cargando módulo:",error);
 
-container.innerHTML = `
+container.innerHTML=`
 <div class="card">
 ❌ Error cargando módulo ${section}
 </div>
@@ -205,21 +150,17 @@ container.innerHTML = `
 }
 
 
-/* =========================================
-ACTIVAR BOTÓN MENÚ
-========================================= */
+/* ======================================
+MENU ACTIVO
+====================================== */
 
 function activarMenu(section){
 
-const buttons = document.querySelectorAll("#menu button");
+const buttons=document.querySelectorAll("#menu button");
 
-buttons.forEach(btn=>{
+buttons.forEach(btn=>btn.classList.remove("activo"));
 
-btn.classList.remove("activo");
-
-});
-
-const index = Object.keys(sections).indexOf(section);
+const index=Object.keys(sections).indexOf(section);
 
 if(buttons[index]){
 
