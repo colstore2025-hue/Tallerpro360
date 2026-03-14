@@ -5,98 +5,92 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TallerPRO360 ERP</title>
+
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#16a34a">
 
 <style>
+
 body{
-  margin:0;
-  font-family:Arial, Helvetica, sans-serif;
-  background:#0f172a;
-  color:white;
-  display:flex;
-  height:100vh;
-  overflow:hidden;
+margin:0;
+font-family:Arial, Helvetica, sans-serif;
+background:#0f172a;
+color:white;
+display:flex;
+height:100vh;
+overflow:hidden;
 }
 
-/* MAIN CONTAINER */
 #appContent{
-  flex:1;
-  padding:0;
-  display:flex;
-  width:100%;
-  height:100%;
-  justify-content:center;
-  align-items:center;
+flex:1;
+display:flex;
+align-items:center;
+justify-content:center;
 }
 
-/* CARD INICIAL */
 .card{
-  background:#020617;
-  padding:20px;
-  border-radius:10px;
-  border:1px solid #1e293b;
-  text-align:center;
+background:#020617;
+padding:20px;
+border-radius:10px;
+border:1px solid #1e293b;
+text-align:center;
 }
 
-/* BOTÓN SALIR */
-#btnSalir{
-  margin-top:20px;
-  background:#dc2626;
-  border:none;
-  padding:10px 20px;
-  border-radius:6px;
-  color:white;
-  cursor:pointer;
+button{
+padding:10px 20px;
+border:none;
+border-radius:6px;
+cursor:pointer;
 }
+
 </style>
 </head>
 
 <body>
 
 <div id="appContent">
-  <div class="card">
-    <h2>Bienvenido a TallerPRO360</h2>
-    <p>ERP Inteligente para talleres automotrices.</p>
-    <button id="btnSalir">Salir</button>
-  </div>
+
+<div class="card">
+<h2>Bienvenido a TallerPRO360</h2>
+<p>ERP Inteligente para talleres automotrices.</p>
+
+<button id="btnSalir" style="background:#dc2626;color:white;">
+Salir
+</button>
+
 </div>
 
-<!-- SCRIPT PRINCIPAL DEL PANEL -->
+</div>
+
+
 <script type="module">
-import { panel } from "./js/panel.js";
 
-const userId = localStorage.getItem("uid");
-const appContainer = document.getElementById("appContent");
+import { iniciarApp } from "./js/core/app-init.js";
 
-// Función de logout
-function logout(){
-  localStorage.removeItem("uid");
-  localStorage.removeItem("empresaId");
-  window.location.href = "./login.html";
-}
+document.addEventListener("DOMContentLoaded",()=>{
 
-document.getElementById("btnSalir")?.addEventListener("click", logout);
+console.log("🚀 Iniciando sistema...");
 
-// Si hay sesión activa, cargar panel
-if(userId){
-  appContainer.innerHTML = `<p style="color:white;">Cargando panel...</p>`;
-  try {
-    await panel(appContainer, userId);
-  } catch(e){
-    console.error("Error cargando panel:", e);
-    appContainer.innerHTML = `<p style="color:red;">Error cargando el panel. Revisa la consola.</p>`;
-  }
-} else {
-  window.location.href = "./login.html";
-}
+iniciarApp();
 
-// PWA
+});
+
+</script>
+
+
+<script>
+
+/* PWA */
+
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("./service-worker.js")
-    .then(()=>console.log("📱 PWA activa"))
-    .catch(e=>console.log("SW error",e));
+
+navigator.serviceWorker
+.register("./service-worker.js")
+.then(()=>console.log("📱 PWA activa"))
+.catch(e=>console.log("SW error",e));
+
 }
+
 </script>
 
 </body>
