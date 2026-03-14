@@ -15,6 +15,7 @@ import { aiAssistant } from "./modules/aiAssistant.js";
 import { aiAdvisor } from "./modules/aiAdvisor.js";
 import aiCommandCenter from "./ai/aiCommandCenter.js";
 import { loadAICore } from "./system/aiCoreLoader.js";
+import { configuracion } from "./configuracion.js";
 
 export async function panel(container){
   container.innerHTML = `
@@ -32,6 +33,8 @@ export async function panel(container){
         <button class="btnModulo" data-modulo="aiAssistant">IA Assistant</button>
         <button class="btnModulo" data-modulo="aiCommand">AI Command Center</button>
         <button class="btnModulo" data-modulo="aiAdvisor">AI Advisor</button>
+
+<button class="btnModulo" data-modulo="configuracion">Configuración</button>
       </nav>
       <main id="contenedorPrincipal" style="flex:1;padding:25px;overflow-y:auto;background:#1e293b;color:white;">
         <h2>Cargando panel estratégico...</h2>
