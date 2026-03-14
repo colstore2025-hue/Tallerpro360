@@ -1,7 +1,6 @@
 /**
  * app-init.js
- * Inicialización del sistema TallerPRO360
- * Arranque principal del ERP
+ * Inicialización del sistema
  */
 
 import { buildMenu, initRouter } from "../router.js";
@@ -12,10 +11,6 @@ import {
 onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-
-/* =========================================
-INICIAR APP
-========================================= */
 
 export function iniciarApp(){
 
@@ -29,10 +24,6 @@ verificarSesion();
 
 }
 
-
-/* =========================================
-VERIFICAR SESIÓN FIREBASE
-========================================= */
 
 function verificarSesion(){
 
@@ -57,39 +48,17 @@ window.location.href="/login.html";
 }
 
 
-/* =========================================
-CARGAR SISTEMA ERP
-========================================= */
-
 function cargarSistema(){
 
 try{
 
-console.log("⚙️ Cargando sistema...");
-
-/* ===============================
-CREAR MENU
-=============================== */
+console.log("⚙️ Cargando ERP...");
 
 buildMenu();
 
-/* ===============================
-INICIAR ROUTER
-=============================== */
-
 initRouter();
 
-/* ===============================
-ESCuchar cambios de URL
-=============================== */
-
-window.addEventListener("hashchange",()=>{
-
-initRouter();
-
-});
-
-console.log("✅ Sistema cargado correctamente");
+console.log("✅ ERP cargado");
 
 }catch(error){
 
