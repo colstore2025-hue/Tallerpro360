@@ -1,6 +1,6 @@
 /**
  * ordenes.js
- * Órdenes de trabajo
+ * Órdenes de trabajo con repuestos
  * TallerPRO360 ERP
  */
 
@@ -11,6 +11,10 @@ collection,
 addDoc,
 getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+let inventario = []
+let itemsOrden = []
 
 
 export async function ordenes(container){
@@ -24,182 +28,213 @@ container.innerHTML = `
 
 <div class="card">
 
-<h3>Nueva Orden</h3>
+<h3>Datos de la Orden</h3>
 
 <input id="clienteOrden" placeholder="Cliente"
-style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
 
 <input id="vehiculoOrden" placeholder="Vehículo"
-style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
 
 <textarea id="diagnosticoOrden"
 placeholder="Diagnóstico"
-style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;"></textarea>
+style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;"></textarea>
 
-<select id="estadoOrden"
-style="width:100%;padding:10px;margin:6px 0;border-radius:6px;background:#020617;color:white;border:1px solid #333;">
+</div>
 
-<option value="Diagnóstico">Diagnóstico</option>
-<option value="Reparación">Reparación</option>
-<option value="Esperando repuestos">Esperando repuestos</option>
-<option value="Listo para entrega">Listo para entrega</option>
 
+<div class="card">
+
+<h3>Agregar Repuesto</h3>
+
+<select id="productoSelect"
+style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
 </select>
 
-<button id="guardarOrden"
-style="margin-top:10px;padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">
-Crear Orden
+<input id="cantidadProducto"
+type="number"
+placeholder="Cantidad"
+style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
+
+<button id="agregarProducto"
+style="padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">
+Agregar
 </button>
 
 </div>
 
 
+<div class="card">
+
+<h3>Mano de obra</h3>
+
+<input id="manoObra"
+type="number"
+placeholder="Valor mano de obra"
+style="width:100%;padding:10px;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
+
+</div>
+
 
 <div class="card">
 
-<h3>Órdenes del Taller</h3>
+<h3>Items de la Orden</h3>
 
-<div id="listaOrdenes">
+<div id="itemsOrden"></div>
 
-Cargando órdenes...
+<h2 id="totalOrden">Total: $0</h2>
+
+<button id="guardarOrden"
+style="margin-top:10px;padding:12px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">
+Guardar Orden
+</button>
 
 </div>
 
-</div>
+`
 
-`;
+await cargarInventario()
 
-
-/* ===========================
-EVENTOS
-=========================== */
-
-document.getElementById("guardarOrden")
-.onclick = guardarOrden;
-
-
-/* ===========================
-CARGAR ORDENES
-=========================== */
-
-cargarOrdenes();
+document.getElementById("agregarProducto").onclick = agregarProducto
+document.getElementById("guardarOrden").onclick = guardarOrden
 
 }
 
 
 
-/* ===========================
+/* ===============================
+CARGAR INVENTARIO
+=============================== */
+
+async function cargarInventario(){
+
+const select = document.getElementById("productoSelect")
+
+const querySnapshot = await getDocs(collection(db,"inventario"))
+
+inventario = []
+
+querySnapshot.forEach(doc=>{
+
+const data = doc.data()
+
+inventario.push(data)
+
+const option = document.createElement("option")
+
+option.value = inventario.length - 1
+option.textContent = `${data.nombre} ($${data.precio})`
+
+select.appendChild(option)
+
+})
+
+}
+
+
+
+/* ===============================
+AGREGAR PRODUCTO
+=============================== */
+
+function agregarProducto(){
+
+const index = document.getElementById("productoSelect").value
+const cantidad = Number(document.getElementById("cantidadProducto").value)
+
+const producto = inventario[index]
+
+const total = producto.precio * cantidad
+
+itemsOrden.push({
+nombre:producto.nombre,
+precio:producto.precio,
+cantidad,
+total
+})
+
+renderItems()
+
+}
+
+
+
+/* ===============================
+RENDER ITEMS
+=============================== */
+
+function renderItems(){
+
+const container = document.getElementById("itemsOrden")
+
+let html = `
+<table style="width:100%">
+<tr>
+<th>Producto</th>
+<th>Cant</th>
+<th>Precio</th>
+<th>Total</th>
+</tr>
+`
+
+let total = 0
+
+itemsOrden.forEach(item=>{
+
+total += item.total
+
+html += `
+<tr>
+<td>${item.nombre}</td>
+<td>${item.cantidad}</td>
+<td>$${item.precio}</td>
+<td>$${item.total}</td>
+</tr>
+`
+
+})
+
+const manoObra = Number(document.getElementById("manoObra").value || 0)
+
+total += manoObra
+
+html += "</table>"
+
+container.innerHTML = html
+
+document.getElementById("totalOrden").innerText = "Total: $" + total
+
+}
+
+
+
+/* ===============================
 GUARDAR ORDEN
-=========================== */
+=============================== */
 
 async function guardarOrden(){
 
-const cliente = document.getElementById("clienteOrden").value;
-const vehiculo = document.getElementById("vehiculoOrden").value;
-const diagnostico = document.getElementById("diagnosticoOrden").value;
-const estado = document.getElementById("estadoOrden").value;
+const cliente = document.getElementById("clienteOrden").value
+const vehiculo = document.getElementById("vehiculoOrden").value
+const diagnostico = document.getElementById("diagnosticoOrden").value
+const manoObra = Number(document.getElementById("manoObra").value || 0)
 
-if(!cliente){
-
-alert("Cliente requerido");
-return;
-
-}
-
-try{
+let total = itemsOrden.reduce((s,i)=>s+i.total,0) + manoObra
 
 await addDoc(collection(db,"ordenes"),{
 
 cliente,
 vehiculo,
 diagnostico,
-estado,
+items:itemsOrden,
+manoObra,
+total,
 fecha:new Date()
 
-});
+})
 
-alert("Orden creada");
+alert("Orden guardada")
 
-limpiarFormulario();
-
-cargarOrdenes();
-
-}
-catch(error){
-
-console.error("Error creando orden",error);
-
-alert("Error creando orden");
-
-}
-
-}
-
-
-
-/* ===========================
-CARGAR ORDENES
-=========================== */
-
-async function cargarOrdenes(){
-
-const lista = document.getElementById("listaOrdenes");
-
-try{
-
-const querySnapshot = await getDocs(collection(db,"ordenes"));
-
-let html = `
-<table style="width:100%;border-collapse:collapse;">
-
-<tr style="border-bottom:1px solid #1e293b;">
-<th align="left">Cliente</th>
-<th align="left">Vehículo</th>
-<th align="left">Estado</th>
-<th align="left">Fecha</th>
-</tr>
-`;
-
-querySnapshot.forEach(doc=>{
-
-const o = doc.data();
-
-html += `
-<tr>
-<td>${o.cliente || ""}</td>
-<td>${o.vehiculo || ""}</td>
-<td>${o.estado || ""}</td>
-<td>${new Date(o.fecha.seconds*1000).toLocaleDateString()}</td>
-</tr>
-`;
-
-});
-
-html += "</table>";
-
-lista.innerHTML = html;
-
-}
-catch(error){
-
-console.error("Error cargando ordenes",error);
-
-lista.innerHTML="Error cargando órdenes";
-
-}
-
-}
-
-
-
-/* ===========================
-LIMPIAR FORM
-=========================== */
-
-function limpiarFormulario(){
-
-document.getElementById("clienteOrden").value="";
-document.getElementById("vehiculoOrden").value="";
-document.getElementById("diagnosticoOrden").value="";
+itemsOrden = []
 
 }
