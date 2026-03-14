@@ -1,121 +1,98 @@
+/**
+ * app/js/system/manual.js
+ * Genera el Manual de Usuario en PDF
+ * TallerPRO360 ERP
+ */
+
 import jsPDF from "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm";
 
-import { generarManualPDF } from "./manual.js";
-
-// Conectar el botón al PDF
-document.getElementById("btnManual").onclick = () => {
-  generarManualPDF();
-};
-
 export function generarManualPDF() {
+
   const doc = new jsPDF();
   let y = 20;
 
-  // ============================
-  // ENCABEZADO
-  // ============================
+  // ===========================
+  // Portada
+  // ===========================
   doc.setFontSize(22);
-  doc.setTextColor(22, 163, 74); // verde neón
-  doc.text("Manual de Usuario - TallerPRO360 ERP", 20, y);
-  y += 15;
-
-  doc.setFontSize(12);
-  doc.setTextColor(0);
-  doc.text("Guía paso a paso para gestión de clientes, inventario y órdenes de trabajo", 20, y);
-  y += 15;
-
-  // ============================
-  // SECCIÓN 1: Dashboard
-  // ============================
+  doc.text("TallerPRO360 ERP", 105, y, { align: "center" });
+  y += 10;
   doc.setFontSize(16);
-  doc.setTextColor(0);
-  doc.text("1️⃣ Dashboard", 20, y);
-  y += 10;
-  doc.setFontSize(12);
-  doc.text("Al ingresar, verá un menú principal con secciones: Clientes, Inventario, Órdenes de trabajo.", 20, y, { maxWidth: 170 });
-  y += 15;
+  doc.text("Manual de Usuario", 105, y, { align: "center" });
+  y += 20;
 
-  // ============================
-  // SECCIÓN 2: Clientes
-  // ============================
+  doc.setFontSize(12);
+  doc.text("Este manual explica cómo utilizar las funciones principales del ERP TallerPRO360.", 20, y);
+  y += 8;
+  doc.text("Incluye gestión de clientes, inventario, órdenes de trabajo y generación de facturas.", 20, y);
+  y += 20;
+
+  // ===========================
+  // Sección 1: Clientes
+  // ===========================
   doc.setFontSize(16);
-  doc.text("2️⃣ Gestión de Clientes", 20, y);
+  doc.text("1. Gestión de Clientes", 20, y);
   y += 10;
   doc.setFontSize(12);
-  doc.text("Agregar cliente:", 20, y);
+  doc.text("• Para agregar un cliente, ve al módulo 'Clientes'.", 25, y);
   y += 8;
-  doc.text("1. Ingrese Nombre, Teléfono y Email.", 25, y);
+  doc.text("• Ingresa nombre, teléfono y email, luego presiona 'Guardar Cliente'.", 25, y);
   y += 8;
-  doc.text("2. Presione 'Guardar Cliente'.", 25, y);
-  y += 8;
-  doc.text("3. El cliente se agrega automáticamente a la lista.", 25, y);
-  y += 10;
-  doc.text("Buscar cliente:", 20, y);
-  y += 8;
-  doc.text("Escriba cualquier dato en 'Buscar cliente...' para filtrar la lista en tiempo real.", 25, y, { maxWidth: 160 });
-  y += 15;
+  doc.text("• Puedes buscar clientes usando la barra de búsqueda.", 25, y);
+  y += 12;
 
-  // ============================
-  // SECCIÓN 3: Inventario
-  // ============================
+  // ===========================
+  // Sección 2: Inventario
+  // ===========================
   doc.setFontSize(16);
-  doc.text("3️⃣ Gestión de Inventario", 20, y);
+  doc.text("2. Gestión de Inventario", 20, y);
   y += 10;
   doc.setFontSize(12);
-  doc.text("Agregar producto:", 20, y);
+  doc.text("• Agrega nuevos productos definiendo nombre, costo, margen de utilidad y stock inicial.", 25, y);
   y += 8;
-  doc.text("1. Ingrese Nombre, Costo de compra, Margen (%) y Stock inicial.", 25, y);
-  y += 8;
-  doc.text("2. Presione 'Guardar Producto'.", 25, y);
-  y += 8;
-  doc.text("El sistema calculará automáticamente el precio de venta.", 25, y, { maxWidth: 160 });
-  y += 15;
+  doc.text("• El sistema calcula automáticamente el precio de venta según el margen definido.", 25, y);
+  y += 12;
 
-  // ============================
-  // SECCIÓN 4: Órdenes
-  // ============================
+  // ===========================
+  // Sección 3: Órdenes de trabajo
+  // ===========================
   doc.setFontSize(16);
-  doc.text("4️⃣ Crear Órdenes de Trabajo", 20, y);
+  doc.text("3. Órdenes de Trabajo", 20, y);
   y += 10;
   doc.setFontSize(12);
-  doc.text("Pasos:", 20, y);
+  doc.text("• Completa datos de cliente, vehículo y diagnóstico.", 25, y);
   y += 8;
-  doc.text("1. Ingrese Cliente, Vehículo y Diagnóstico.", 25, y);
+  doc.text("• Agrega repuestos con cantidad y utilidad por unidad.", 25, y);
   y += 8;
-  doc.text("2. Agregue productos del inventario, cantidad y utilidad por unidad.", 25, y);
+  doc.text("• Ingresa el valor de la mano de obra.", 25, y);
   y += 8;
-  doc.text("3. Ingrese valor de Mano de obra.", 25, y);
+  doc.text("• El sistema calcula total, costo, utilidad y margen automáticamente.", 25, y);
   y += 8;
-  doc.text("4. Revise la tabla de Items de la Orden y los totales.", 25, y);
-  y += 8;
-  doc.text("5. Presione 'Guardar Orden'. Se generará automáticamente la factura PDF.", 25, y, { maxWidth: 160 });
-  y += 15;
+  doc.text("• Guarda la orden y se generará automáticamente la factura PDF.", 25, y);
+  y += 12;
 
-  // ============================
-  // SECCIÓN 5: Buenas Prácticas
-  // ============================
+  // ===========================
+  // Sección 4: Facturas
+  // ===========================
   doc.setFontSize(16);
-  doc.text("5️⃣ Buenas Prácticas", 20, y);
+  doc.text("4. Facturación", 20, y);
   y += 10;
   doc.setFontSize(12);
-  doc.text("- Registrar clientes antes de crear órdenes.", 25, y);
+  doc.text("• Cada orden guardada permite generar una factura PDF.", 25, y);
   y += 8;
-  doc.text("- Mantener inventario actualizado: cantidad, costo y margen.", 25, y);
-  y += 8;
-  doc.text("- Revisar utilidad y margen antes de guardar la orden.", 25, y);
-  y += 8;
-  doc.text("- Limpiar formularios después de guardar.", 25, y);
-  y += 15;
+  doc.text("• Puedes imprimir o enviar la factura al cliente.", 25, y);
+  y += 12;
 
-  // ============================
-  // PIE DE PÁGINA
-  // ============================
+  // ===========================
+  // Pie de página
+  // ===========================
   doc.setFontSize(10);
   doc.setTextColor(100);
-  doc.text("Documento generado por TALLERPRO360 ERP", 20, 280);
+  doc.text("TallerPRO360 ERP - Manual de Usuario", 105, 290, { align: "center" });
 
-  // ============================
-  // GUARDAR PDF
-  // ============================
+  // ===========================
+  // Guardar PDF
+  // ===========================
   doc.save("Manual_TallerPRO360.pdf");
+
 }
