@@ -1,36 +1,49 @@
 /**
  * inventario.js
- * Gestión de inventario
- * TallerPRO360 ERP
+ * Gestión avanzada de inventario - TallerPRO360 ERP
+ * Ruta: app/js/modules/inventario.js
  */
 
 import { db } from "../core/firebase-config.js";
-import { collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-export async function inventario(container){
+export async function inventario(container) {
+
   container.innerHTML = `
-<h1 style="font-size:26px;margin-bottom:20px;">📦 Inventario</h1>
+<h1 style="font-size:28px;margin-bottom:20px;">📦 Inventario</h1>
 
 <div class="card">
-<h3>Nuevo Producto</h3>
-<input id="productoNombre" placeholder="Nombre del producto" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-<input id="productoCosto" placeholder="Costo compra" type="number" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-<input id="productoMargen" placeholder="Margen utilidad (%)" type="number" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-<input id="productoStock" placeholder="Stock inicial" type="number" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-<button id="guardarProducto" style="margin-top:10px;padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Guardar Producto</button>
+  <h3>Nuevo Producto</h3>
+  <input id="productoNombre" placeholder="Nombre del producto" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+  <input id="productoCosto" placeholder="Costo compra" type="number" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+  <input id="productoMargen" placeholder="Margen utilidad (%)" type="number" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+  <input id="productoStock" placeholder="Stock inicial" type="number" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+  <button id="guardarProducto" style="margin-top:10px;padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Guardar Producto</button>
 </div>
 
 <div class="card">
-<h3>Inventario del Taller</h3>
-<div id="listaInventario">Cargando inventario...</div>
+  <h3>Buscar Producto</h3>
+  <input id="buscarProducto" placeholder="Buscar por nombre..." style="width:100%;padding:10px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+</div>
+
+<div class="card">
+  <h3>Inventario del Taller</h3>
+  <div id="listaInventario">Cargando inventario...</div>
 </div>
 `;
 
+  // Eventos
   document.getElementById("guardarProducto").onclick = guardarProducto;
-  cargarInventario();
+  document.getElementById("buscarProducto").oninput = filtrarInventario;
+
+  // Cargar productos
+  await cargarInventario();
 }
 
-async function guardarProducto(){
+/* ===========================
+GUARDAR / EDITAR PRODUCTO
+=========================== */
+async function guardarProducto(editId = null) {
   const nombre = document.getElementById("productoNombre").value.trim();
   const costo = Number(document.getElementById("productoCosto").value);
   const margen = Number(document.getElementById("productoMargen").value);
@@ -39,32 +52,42 @@ async function guardarProducto(){
   if(!nombre) return alert("Nombre requerido");
   if(costo <= 0) return alert("Costo inválido");
   if(margen < 0) return alert("Margen inválido");
+  if(stock < 0) return alert("Stock inválido");
 
   const precio = costo + (costo * margen / 100);
 
   try{
-    await addDoc(collection(db,"inventario"),{ nombre, costo, margen, precio, stock, fecha: new Date() });
-    alert("✅ Producto guardado");
+    if(editId){
+      const ref = doc(db,"inventario",editId);
+      await updateDoc(ref,{nombre,costo,margen,precio,stock});
+      alert("✅ Producto actualizado");
+    } else {
+      await addDoc(collection(db,"inventario"),{nombre,costo,margen,precio,stock,fecha: new Date()});
+      alert("✅ Producto guardado");
+    }
     limpiarFormulario();
-    cargarInventario();
+    await cargarInventario();
   }catch(e){
     console.error("Error guardando producto:", e);
     alert("❌ Error guardando producto");
   }
 }
 
-async function cargarInventario(){
+/* ===========================
+CARGAR INVENTARIO
+=========================== */
+async function cargarInventario() {
   const lista = document.getElementById("listaInventario");
   try{
-    const querySnapshot = await getDocs(collection(db,"inventario"));
-    if(querySnapshot.empty){ lista.innerHTML = "No hay productos registrados"; return; }
+    const snapshot = await getDocs(query(collection(db,"inventario"), orderBy("fecha","desc")));
+    if(snapshot.empty){ lista.innerHTML = "No hay productos registrados"; return; }
 
     let html = `<table style="width:100%;border-collapse:collapse;">
       <tr style="border-bottom:1px solid #1e293b;">
-        <th>Producto</th><th>Costo</th><th>Margen</th><th>Precio</th><th>Stock</th>
+        <th>Producto</th><th>Costo</th><th>Margen</th><th>Precio</th><th>Stock</th><th>Acciones</th>
       </tr>`;
 
-    querySnapshot.forEach(docSnap=>{
+    snapshot.forEach(docSnap=>{
       const p = docSnap.data();
       html += `<tr>
         <td>${p.nombre}</td>
@@ -72,20 +95,59 @@ async function cargarInventario(){
         <td>${p.margen}%</td>
         <td>$${p.precio}</td>
         <td>${p.stock}</td>
+        <td>
+          <button onclick="editarProducto('${docSnap.id}')" style="margin-right:5px;">✏️</button>
+          <button onclick="eliminarProducto('${docSnap.id}')">🗑️</button>
+        </td>
       </tr>`;
     });
 
     html += "</table>";
     lista.innerHTML = html;
+
+    // Definir funciones globales para botones de edición/eliminación
+    window.editarProducto = async (id) => {
+      const docSnap = await getDocs(collection(db,"inventario"));
+      const p = (await getDocs(doc(db,"inventario",id))).data();
+      document.getElementById("productoNombre").value = p.nombre;
+      document.getElementById("productoCosto").value = p.costo;
+      document.getElementById("productoMargen").value = p.margen;
+      document.getElementById("productoStock").value = p.stock;
+      document.getElementById("guardarProducto").onclick = () => guardarProducto(id);
+    }
+
+    window.eliminarProducto = async (id) => {
+      if(!confirm("¿Deseas eliminar este producto?")) return;
+      await deleteDoc(doc(db,"inventario",id));
+      alert("✅ Producto eliminado");
+      await cargarInventario();
+    }
+
   }catch(e){
     console.error("Error cargando inventario:", e);
     lista.innerHTML = "❌ Error cargando inventario";
   }
 }
 
+/* ===========================
+FILTRAR INVENTARIO
+=========================== */
+function filtrarInventario(){
+  const input = document.getElementById("buscarProducto").value.toLowerCase();
+  const rows = document.querySelectorAll("#listaInventario table tr");
+  rows.forEach((row,index)=>{
+    if(index===0) return;
+    row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
+  });
+}
+
+/* ===========================
+LIMPIAR FORMULARIO
+=========================== */
 function limpiarFormulario(){
   document.getElementById("productoNombre").value = "";
   document.getElementById("productoCosto").value = "";
   document.getElementById("productoMargen").value = "";
   document.getElementById("productoStock").value = "";
+  document.getElementById("guardarProducto").onclick = guardarProducto;
 }
