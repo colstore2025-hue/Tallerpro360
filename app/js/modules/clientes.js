@@ -5,18 +5,10 @@
  */
 
 import { db } from "../core/firebase-config.js";
-
-import {
-  collection,
-  addDoc,
-  getDocs
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
+import { collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export async function clientes(container){
-
   container.innerHTML = `
-
 <h1 style="font-size:26px;margin-bottom:20px;">👥 Clientes</h1>
 
 <div class="card">
@@ -38,51 +30,32 @@ export async function clientes(container){
 </div>
 `;
 
-  // Eventos
   document.getElementById("guardarCliente").onclick = guardarCliente;
   document.getElementById("buscarCliente").oninput = filtrarClientes;
 
-  // Cargar clientes inicialmente
   cargarClientes();
 }
 
-
-/* ===============================
-GUARDAR CLIENTE
-=============================== */
 async function guardarCliente(){
   const nombre = document.getElementById("nombreCliente").value.trim();
   const telefono = document.getElementById("telefonoCliente").value.trim();
   const email = document.getElementById("emailCliente").value.trim();
 
-  if(!nombre){
-    alert("Nombre requerido");
-    return;
-  }
+  if(!nombre) return alert("Nombre requerido");
 
   try {
     await addDoc(collection(db,"clientes"),{
-      nombre,
-      telefono,
-      email,
-      fecha: new Date()
+      nombre, telefono, email, fecha: new Date()
     });
-
     alert("✅ Cliente guardado");
-
     limpiarFormulario();
     cargarClientes();
-
-  } catch(error) {
-    console.error("Error guardando cliente:", error);
+  } catch(e){
+    console.error("Error guardando cliente:", e);
     alert("❌ Error guardando cliente");
   }
 }
 
-
-/* ===============================
-CARGAR CLIENTES
-=============================== */
 async function cargarClientes(){
   const lista = document.getElementById("listaClientes");
 
@@ -96,12 +69,10 @@ async function cargarClientes(){
 
     let html = `<table style="width:100%;border-collapse:collapse;">
       <tr style="border-bottom:1px solid #1e293b;">
-        <th align="left">Nombre</th>
-        <th align="left">Teléfono</th>
-        <th align="left">Email</th>
+        <th align="left">Nombre</th><th align="left">Teléfono</th><th align="left">Email</th>
       </tr>`;
 
-    querySnapshot.forEach(docSnap => {
+    querySnapshot.forEach(docSnap=>{
       const c = docSnap.data();
       html += `<tr>
         <td>${c.nombre || ""}</td>
@@ -113,31 +84,21 @@ async function cargarClientes(){
     html += "</table>";
     lista.innerHTML = html;
 
-  } catch(error) {
-    console.error("Error cargando clientes:", error);
+  } catch(e){
+    console.error("Error cargando clientes:", e);
     lista.innerHTML = "❌ Error cargando clientes";
   }
 }
 
-
-/* ===============================
-BUSCAR CLIENTES
-=============================== */
 function filtrarClientes(){
   const input = document.getElementById("buscarCliente").value.toLowerCase();
   const rows = document.querySelectorAll("#listaClientes table tr");
-
   rows.forEach((row,index)=>{
-    if(index===0) return; // saltar encabezado
-    const text = row.innerText.toLowerCase();
-    row.style.display = text.includes(input) ? "" : "none";
+    if(index===0) return;
+    row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
   });
 }
 
-
-/* ===============================
-LIMPIAR FORMULARIO
-=============================== */
 function limpiarFormulario(){
   document.getElementById("nombreCliente").value = "";
   document.getElementById("telefonoCliente").value = "";
