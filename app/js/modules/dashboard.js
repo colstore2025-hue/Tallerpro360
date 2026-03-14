@@ -1,19 +1,20 @@
-/**
- * dashboard.js
- * Panel avanzado para gerentes de taller - TallerPRO360 ERP
- * Versión Final Avanzada
- */
+/*
+================================================
+DASHBOARD.JS - Panel Avanzado Gerente de Taller
+TallerPRO360 ERP - Versión Final Integrada
+================================================
+*/
 
 import { clientes } from "./clientes.js";
 import { ordenes } from "./ordenes.js";
 import { inventario } from "./inventario.js";
 import { configuracion } from "./configuracion.js";
+import { pagosTaller } from "./pagosTaller.js";
 import { db } from "../core/firebase-config.js";
-import { collection, getDocs, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { calcularPredicciones } from "../ai/aiMetrics.js";
 
 export async function dashboard(container) {
-
   container.innerHTML = `
 <h1 style="font-size:28px;margin-bottom:20px;">🚀 Dashboard Gerente - TallerPRO360</h1>
 
@@ -21,6 +22,7 @@ export async function dashboard(container) {
   <button id="btnClientes" class="btn-primary">👥 Clientes</button>
   <button id="btnOrdenes" class="btn-primary">🛠 Órdenes</button>
   <button id="btnInventario" class="btn-primary">📦 Inventario</button>
+  <button id="btnPagos" class="btn-primary">💳 Pagos / Caja</button>
   <button id="btnConfiguracion" class="btn-primary">⚙ Configuración</button>
 </div>
 
@@ -50,6 +52,10 @@ export async function dashboard(container) {
     <h3>Stock crítico</h3>
     <p id="stockCritico" style="font-size:28px;">0</p>
   </div>
+  <div class="card">
+    <h3>Ingresos vs. Pagos</h3>
+    <p id="resumenIngresosHoy" style="font-size:28px;">$0</p>
+  </div>
 </div>
 
 <!-- Órdenes recientes -->
@@ -68,11 +74,12 @@ export async function dashboard(container) {
 `;
 
   // ===========================
-  // Botones de navegación rápida
+  // Navegación rápida
   // ===========================
   document.getElementById("btnClientes").onclick = () => clientes(container);
   document.getElementById("btnOrdenes").onclick = () => ordenes(container);
   document.getElementById("btnInventario").onclick = () => inventario(container);
+  document.getElementById("btnPagos").onclick = () => pagosTaller(container);
   document.getElementById("btnConfiguracion").onclick = () => configuracion(container);
 
   // ===========================
@@ -84,39 +91,38 @@ export async function dashboard(container) {
 }
 
 /* ===========================
-CARGAR KPIs
+CARGAR KPIs INTEGRADOS
 =========================== */
-async function cargarKPIs(){
-  try{
+async function cargarKPIs() {
+  try {
     const clientesSnap = await getDocs(collection(db,"clientes"));
     const ordenesSnap = await getDocs(collection(db,"ordenes"));
     const inventarioSnap = await getDocs(collection(db,"inventario"));
+    const pagosSnap = await getDocs(collection(db,"pagos"));
 
     const hoy = new Date().toDateString();
 
-    let ingresosHoy = 0;
-    let completadasHoy = 0;
-    let tiempoTotal = 0;
-    let margenTotal = 0;
+    let ingresosHoy = 0, completadasHoy = 0, tiempoTotal = 0, margenTotal = 0, ingresosPagosHoy = 0;
 
-    ordenesSnap.docs.forEach(doc=>{
+    ordenesSnap.docs.forEach(doc => {
       const o = doc.data();
       const fechaOrden = o.fecha.toDate().toDateString();
       if(fechaOrden === hoy){
         ingresosHoy += o.total || 0;
         if(o.estado === "completada") completadasHoy++;
       }
-      if(o.estado === "completada" && o.tiempoReparacion){
-        tiempoTotal += o.tiempoReparacion;
-      }
+      if(o.estado === "completada" && o.tiempoReparacion) tiempoTotal += o.tiempoReparacion;
       if(o.margen) margenTotal += o.margen;
+    });
+
+    pagosSnap.docs.forEach(doc=>{
+      const p = doc.data();
+      if(p.fecha.toDate().toDateString() === hoy) ingresosPagosHoy += p.monto || 0;
     });
 
     const tiempoPromedio = ordenesSnap.docs.length ? (tiempoTotal / ordenesSnap.docs.length).toFixed(1) : 0;
     const margenPromedio = ordenesSnap.docs.length ? (margenTotal / ordenesSnap.docs.length).toFixed(1) : 0;
-
-    // Stock crítico
-    const stockCritico = inventarioSnap.docs.filter(p=>p.data().stock <= 3).length;
+    const stockCritico = inventarioSnap.docs.filter(p=>p.data().stock <=3).length;
 
     document.getElementById("ordenesActivas").innerText = ordenesSnap.docs.filter(o=>o.data().estado!=="completada").length;
     document.getElementById("ordenesCompletadas").innerText = completadasHoy;
@@ -124,17 +130,18 @@ async function cargarKPIs(){
     document.getElementById("margenUtilidad").innerText = `${margenPromedio}%`;
     document.getElementById("tiempoPromedio").innerText = `${tiempoPromedio}h`;
     document.getElementById("stockCritico").innerText = stockCritico;
+    document.getElementById("resumenIngresosHoy").innerText = `$${ingresosPagosHoy}`;
 
-  }catch(e){
+  } catch(e) {
     console.error("Error cargando KPIs:", e);
   }
 }
 
 /* ===========================
-CARGAR ÓRDENES RECIENTES
+ÓRDENES RECIENTES
 =========================== */
-async function cargarOrdenes(){
-  try{
+async function cargarOrdenes() {
+  try {
     const q = query(collection(db,"ordenes"), orderBy("fecha","desc"), limit(5));
     const snapshot = await getDocs(q);
 
@@ -153,18 +160,19 @@ async function cargarOrdenes(){
 
     html += "</table>";
     document.getElementById("ordenesRecientes").innerHTML = html;
-  }catch(e){
+
+  } catch(e) {
     console.error("Error cargando órdenes recientes:", e);
     document.getElementById("ordenesRecientes").innerText = "Error cargando órdenes";
   }
 }
 
 /* ===========================
-CARGAR RECOMENDACIONES IA
+RECOMENDACIONES IA
 =========================== */
-async function cargarRecomendacionesIA(){
-  try{
-    const recomendaciones = await calcularPredicciones(); // retorna un array de strings
+async function cargarRecomendacionesIA() {
+  try {
+    const recomendaciones = await calcularPredicciones(); // array de strings
     const container = document.getElementById("recomendacionesIA");
     container.innerHTML = "";
 
@@ -175,7 +183,7 @@ async function cargarRecomendacionesIA(){
       container.appendChild(div);
     });
 
-  }catch(e){
+  } catch(e) {
     console.error("Error cargando recomendaciones IA:", e);
     document.getElementById("recomendacionesIA").innerText = "Error cargando sugerencias";
   }
