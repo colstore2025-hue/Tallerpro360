@@ -1,8 +1,10 @@
-/**
- * finanzas.js
- * Módulo avanzado de Finanzas - TallerPRO360 ERP
- * Ruta: app/js/modules/finanzas.js
- */
+/*
+================================================
+FINANZAS.JS - Versión Avanzada
+Módulo de Finanzas con voz de IA y alertas
+Ubicación: /app/js/modules/finanzas.js
+================================================
+*/
 
 import { db } from "../core/firebase-config.js";
 import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -10,7 +12,7 @@ import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/fir
 export async function finanzas(container) {
 
   container.innerHTML = `
-    <h1 style="font-size:28px;margin-bottom:20px;">💰 Finanzas del Taller</h1>
+    <h1 style="font-size:28px;margin-bottom:20px;">💰 Finanzas del Taller - Avanzado</h1>
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:25px;">
       <div class="card" style="background:#dcfce7;">
@@ -30,18 +32,22 @@ export async function finanzas(container) {
     <div class="card">
       <h2>Movimientos Financieros</h2>
       <input id="buscarMovimiento" placeholder="Buscar por concepto..." style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+      <button id="leerBalanceVoz" style="margin-bottom:10px;padding:8px 15px;background:#6366f1;border:none;border-radius:6px;color:white;cursor:pointer;">🔊 Leer Balance</button>
       <div id="listaMovimientos">Cargando movimientos...</div>
     </div>
   `;
 
-  await cargarMovimientos();
-
   document.getElementById("buscarMovimiento").addEventListener("input", filtrarMovimientos);
+  document.getElementById("leerBalanceVoz").onclick = leerBalanceVoz;
+
+  await cargarMovimientos();
 }
 
 /* ===========================
 CARGAR MOVIMIENTOS Y CALCULAR BALANCE
 =========================== */
+let ultimoBalance = {ingresos:0, gastos:0, balance:0};
+
 async function cargarMovimientos() {
   const lista = document.getElementById("listaMovimientos");
   try {
@@ -77,14 +83,21 @@ async function cargarMovimientos() {
     html += "</table>";
     lista.innerHTML = html;
 
-    // Actualizar estadísticas
+    const balance = ingresos - gastos;
     document.getElementById("ingresosTotal").innerText = `$${ingresos}`;
     document.getElementById("gastosTotal").innerText = `$${gastos}`;
-    document.getElementById("balanceTotal").innerText = `$${ingresos - gastos}`;
+    document.getElementById("balanceTotal").innerText = `$${balance}`;
+
+    // Guardar último balance para voz
+    ultimoBalance = {ingresos, gastos, balance};
+
+    // Aviso por voz
+    hablar(`Balance actualizado. Ingresos ${ingresos} dólares. Gastos ${gastos} dólares. Balance total ${balance} dólares.`);
 
   } catch(e){
     console.error("Error cargando movimientos:", e);
     lista.innerHTML = "❌ Error cargando movimientos";
+    hablar("Ocurrió un error al cargar los movimientos financieros");
   }
 }
 
@@ -98,4 +111,29 @@ function filtrarMovimientos(){
     if(index===0) return;
     row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
   });
+}
+
+/* ===========================
+VOZ DE IA
+=========================== */
+function hablar(texto){
+  if(!texto) return;
+  const speech = new SpeechSynthesisUtterance(texto);
+  speech.lang = "es-ES";
+  speech.rate = 1;
+  speech.pitch = 1;
+  speech.volume = 1;
+  window.speechSynthesis.speak(speech);
+}
+
+/* ===========================
+LEER BALANCE POR VOZ
+=========================== */
+function leerBalanceVoz(){
+  const {ingresos, gastos, balance} = ultimoBalance;
+  if(ingresos === 0 && gastos === 0){
+    hablar("No hay movimientos registrados aún");
+  } else {
+    hablar(`Resumen financiero. Ingresos: ${ingresos} dólares. Gastos: ${gastos} dólares. Balance total: ${balance} dólares.`);
+  }
 }
