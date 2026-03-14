@@ -1,7 +1,7 @@
 /**
- * modules-configuracion.js
+ * configuracion.js
  * Módulo de Configuración de Taller y Ayuda - TallerPRO360
- * Ruta: app/js/modules-configuracion.js
+ * Ruta: app/js/modules/configuracion.js
  */
 
 import { db } from "../core/firebase-config.js";
