@@ -7,7 +7,7 @@
 import { clientes } from "./clientes/clientes.js";
 import { ordenes } from "./ordenes/ordenes.js";
 import { inventario } from "./inventario/inventario.js";
-import { configuracion } from "./modules-configuracion.js";
+import { configuracion } from "./configuracion/configuracion.js";
 import { generarManualPDF } from "../manual/manual.js";
 import { db } from "../core/firebase-config.js";
 import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
