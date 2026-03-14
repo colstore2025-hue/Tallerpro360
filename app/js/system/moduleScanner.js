@@ -9,7 +9,7 @@ console.log("🧠 Module Scanner iniciado");
 
 
 /* =====================================
-LISTA DE MODULOS
+LISTA DE MODULOS DEL ERP
 ===================================== */
 
 const modules = [
@@ -21,14 +21,18 @@ const modules = [
 "finanzas",
 "pagos",
 "ceo",
+
+/* IA */
+
 "aiAdvisor",
+"aiAssistant",
 "aiCommand"
 
 ];
 
 
 /* =====================================
-GENERAR CONFIGURACION
+GENERAR CONFIGURACIÓN DE SECCIONES
 ===================================== */
 
 export function scanModules(){
@@ -52,13 +56,14 @@ return sections;
 
 
 /* =====================================
-FORMATEAR NOMBRE
+FORMATEAR NOMBRE PARA MENÚ
 ===================================== */
 
 function formatName(name){
 
 return name
 .replace(/([A-Z])/g," $1")
-.replace(/^./,s=>s.toUpperCase());
+.replace(/^./,s=>s.toUpperCase())
+.trim();
 
 }
