@@ -1,7 +1,8 @@
 /**
  * contabilidad.js
  * Contabilidad Avanzada + IA - TallerPRO360
- * Balance, P&L, Movimientos y Alertas inteligentes
+ * Balance mensual, P&L, reportes PDF y alertas inteligentes
+ * Ruta: app/js/modules/contabilidad.js
  */
 
 import { db } from "../core/firebase-config.js";
@@ -10,20 +11,20 @@ import Chart from "https://cdn.jsdelivr.net/npm/chart.js";
 import jsPDF from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 import { formatCurrency } from "../core/utils.js";
 
-// Simulación de IA contable
+// IA contable: alertas y recomendaciones
 async function IAContable(ingresos, gastos, balance) {
   const alerts = [];
-  if(balance < 0) alerts.push("⚠️ Balance negativo, revisar gastos urgentes");
-  if(ingresos < gastos*0.8) alerts.push("⚠️ Los ingresos están bajos respecto a gastos");
-  if(balance > 1000000) alerts.push("✅ Excelente balance, posibilidad de reinversión");
+  if(balance < 0) alerts.push("⚠️ Balance negativo: revisar gastos urgentes");
+  if(ingresos < gastos*0.8) alerts.push("⚠️ Ingresos bajos en comparación con gastos");
+  if(balance > 1000000) alerts.push("✅ Excelente balance: considerar reinversión o expansión");
   return alerts;
 }
 
-export async function contabilidad(container){
+export async function contabilidad(container) {
   container.innerHTML = `
     <h1 style="font-size:28px;margin-bottom:20px;">💼 Contabilidad Avanzada + IA</h1>
 
-    <div class="card" style="margin-bottom:20px;">
+    <div class="card mb-4">
       <h3>Filtros</h3>
       <label>Mes:</label>
       <input type="month" id="mesContabilidad" style="padding:6px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
@@ -31,46 +32,43 @@ export async function contabilidad(container){
       <button id="exportPDF" style="margin-left:10px;padding:6px 12px;background:#3b82f6;border:none;border-radius:6px;color:white;cursor:pointer;">Exportar PDF</button>
     </div>
 
-    <div class="card" id="resumenContabilidad" style="margin-bottom:20px;">
+    <div class="card mb-4" id="resumenContabilidad">
       <h3>Resumen Contable</h3>
       <p>Seleccione un mes y haga clic en "Generar Reporte"</p>
     </div>
 
-    <div class="card" id="detallesContabilidad" style="margin-bottom:20px;">
-      <h3>Detalles de Movimientos</h3>
+    <div class="card mb-4" id="detallesContabilidad">
+      <h3>Movimientos</h3>
       <p>Sin datos aún.</p>
     </div>
 
-    <div class="card" id="alertasIA" style="margin-bottom:20px;">
+    <div class="card mb-4" id="alertasIA">
       <h3>Alertas IA</h3>
       <p>Sin alertas</p>
     </div>
 
     <div class="card">
-      <h3>Gráficos</h3>
+      <h3>Gráfico P&L por cuentas</h3>
       <canvas id="chartContabilidad" height="200"></canvas>
     </div>
   `;
 
-  const btnReporte = document.getElementById("cargarReporte");
-  const btnPDF = document.getElementById("exportPDF");
-
-  btnReporte.onclick = async () => {
+  document.getElementById("cargarReporte").onclick = async () => {
     const mesInput = document.getElementById("mesContabilidad").value;
     if(!mesInput) return alert("Seleccione un mes");
     const [anio, mes] = mesInput.split("-").map(Number);
-    await generarReporteIA(anio, mes);
+    await generarReporte(anio, mes);
   };
 
-  btnPDF.onclick = exportarPDF;
+  document.getElementById("exportPDF").onclick = exportarPDF;
 }
 
-/* ===================================
-REPORTE + IA
-=================================== */
+// ============================================
+// GENERAR REPORTE CONTABLE + ALERTAS IA
+// ============================================
 let chartInstance = null;
 
-async function generarReporteIA(anio, mes){
+async function generarReporte(anio, mes) {
   const resumen = document.getElementById("resumenContabilidad");
   const detalles = document.getElementById("detallesContabilidad");
   const alertas = document.getElementById("alertasIA");
@@ -87,6 +85,7 @@ async function generarReporteIA(anio, mes){
     const movimientos = [];
     const cuentas = {};
 
+    // Procesar ingresos
     ingresosSnap.forEach(docSnap => {
       const m = docSnap.data();
       const fecha = new Date(m.fecha.seconds * 1000);
@@ -97,6 +96,7 @@ async function generarReporteIA(anio, mes){
       }
     });
 
+    // Procesar gastos
     gastosSnap.forEach(docSnap => {
       const m = docSnap.data();
       const fecha = new Date(m.fecha.seconds * 1000);
@@ -109,6 +109,7 @@ async function generarReporteIA(anio, mes){
 
     const balance = ingresos - gastos;
 
+    // Resumen
     resumen.innerHTML = `
       <h3>Resumen ${anio}-${String(mes).padStart(2,"0")}</h3>
       <p>Ingresos: <b>${formatCurrency(ingresos)}</b></p>
@@ -152,9 +153,9 @@ async function generarReporteIA(anio, mes){
   }
 }
 
-/* ===================================
-GRAFICO P&L
-=================================== */
+// ============================================
+// RENDERIZAR GRÁFICO P&L
+// ============================================
 function renderChart(cuentas){
   const ctx = document.getElementById("chartContabilidad").getContext("2d");
   const labels = Object.keys(cuentas);
@@ -163,13 +164,13 @@ function renderChart(cuentas){
   if(chartInstance) chartInstance.destroy();
 
   chartInstance = new Chart(ctx,{
-    type: 'bar',
-    data: {
+    type:'bar',
+    data:{
       labels,
       datasets:[{
-        label: 'Ingresos/Gastos por cuenta',
+        label:'Ingresos/Gastos por cuenta',
         data,
-        backgroundColor: data.map(v => v>=0 ? '#16a34a' : '#dc2626')
+        backgroundColor:data.map(v=>v>=0 ? '#16a34a':'#dc2626')
       }]
     },
     options:{
@@ -182,9 +183,9 @@ function renderChart(cuentas){
   });
 }
 
-/* ===================================
-EXPORTAR PDF
-=================================== */
+// ============================================
+// EXPORTAR PDF
+// ============================================
 async function exportarPDF(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
