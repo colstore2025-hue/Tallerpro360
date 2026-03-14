@@ -134,7 +134,7 @@ async function cargarOrdenes(){
     const q = query(collection(db,"ordenes"), orderBy("fecha","desc"));
     const snapshot = await getDocs(q);
     if(snapshot.empty){
-      lista.innerHTML = "No hay órdenes registradas";
+      lista.innerHTML = "No hay órdenes registradas. Usa el formulario superior para crear la primera orden.";
       return;
     }
     let html = `<table style="width:100%;border-collapse:collapse;">
@@ -177,10 +177,6 @@ function limpiarFormularioOrden(){
 FUNCIONES DE VOZ
 =========================== */
 
-/**
- * Dictado de texto en input o textarea
- * @param {string} inputId 
- */
 function dictarInput(inputId) {
   const input = document.getElementById(inputId);
   if (!input) return;
@@ -209,10 +205,6 @@ function dictarInput(inputId) {
   recognition.start();
 }
 
-/**
- * Función de voz de IA
- * @param {string} texto
- */
 function hablar(texto) {
   if (!texto) return;
   const speech = new SpeechSynthesisUtterance(texto);
