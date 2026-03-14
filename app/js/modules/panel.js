@@ -1,6 +1,7 @@
 /**
  * panel.js
- * Panel Estratégico TallerPRO360 - Versión Final con control de planes
+ * Panel Estratégico TallerPRO360 - Versión Avanzada y Última Generación
+ * Integración completa con planes, IA y todos los módulos
  */
 
 import { dashboard } from "./modules/dashboard.js";
@@ -14,8 +15,8 @@ import { ceo } from "./modules/ceo.js";
 import { aiAssistant } from "./modules/aiAssistant.js";
 import { aiAdvisor } from "./modules/aiAdvisor.js";
 import aiCommandCenter from "./ai/aiCommandCenter.js";
-import { loadAICore } from "./system/aiCoreLoader.js";
 import { configuracion } from "./modules/configuracion.js";
+import { loadAICore } from "./system/aiCoreLoader.js";
 import { getModulosDisponibles } from "./planManager.js";
 
 export async function panel(container, userId){
@@ -31,10 +32,17 @@ export async function panel(container, userId){
     </div>
   `;
 
+  // ===========================
+  // Cargar IA y módulos críticos
+  // ===========================
   await loadAICore();
+
   const contenedor = document.getElementById("contenedorPrincipal");
   const menuModulos = document.getElementById("menuModulos");
 
+  // ===========================
+  // Todos los módulos disponibles en el sistema
+  // ===========================
   const todosModulos = {
     dashboard,
     clientes,
@@ -51,11 +59,13 @@ export async function panel(container, userId){
   };
 
   // ===========================
-  // Cargar solo módulos habilitados según plan
+  // Obtener módulos permitidos según plan del usuario
   // ===========================
   const modulosPermitidos = await getModulosDisponibles(userId);
 
-  // Pintar menú
+  // ===========================
+  // Pintar menú dinámico
+  // ===========================
   menuModulos.innerHTML = "";
   modulosPermitidos.forEach(mod => {
     const btn = document.createElement("button");
@@ -66,15 +76,17 @@ export async function panel(container, userId){
   });
 
   // ===========================
-  // Función para cargar módulos
+  // Función de carga de módulos
   // ===========================
   async function cargarModulo(nombre){
     contenedor.style.opacity="0.5";
     contenedor.innerHTML = `<p>Cargando ${nombre}...</p>`;
     await new Promise(r=>setTimeout(r,150));
+
     const fnModulo = todosModulos[nombre];
     try{
       if(fnModulo){
+        // Ejecutar módulo
         const resultado = typeof fnModulo === "function" ? await fnModulo(contenedor) : null;
         contenedor.style.opacity="1";
       } else {
@@ -89,28 +101,39 @@ export async function panel(container, userId){
   }
 
   // ===========================
-  // Eventos botones
+  // Eventos de los botones
   // ===========================
   document.querySelectorAll(".btnModulo").forEach(btn=>{
-    btn.style.padding="12px"; btn.style.border="none"; btn.style.borderRadius="6px";
-    btn.style.background="#1f2937"; btn.style.color="white"; btn.style.cursor="pointer";
+    btn.style.padding="12px"; 
+    btn.style.border="none"; 
+    btn.style.borderRadius="6px";
+    btn.style.background="#1f2937"; 
+    btn.style.color="white"; 
+    btn.style.cursor="pointer";
     btn.style.transition="all 0.2s";
     btn.onmouseenter=()=>btn.style.background="#374151";
     btn.onmouseleave=()=>btn.style.background="#1f2937";
     btn.onclick=()=>cargarModulo(btn.dataset.modulo);
   });
 
+  // ===========================
+  // Atajos de teclado
+  // ===========================
   window.addEventListener("keydown", e=>{
     if(e.altKey && e.key.toLowerCase()==="d"){
-      cargarModulo("dashboard"); hablar("Abriendo panel del taller");
+      cargarModulo("dashboard"); 
+      hablar("Abriendo panel del taller");
     }
   });
 
   // ===========================
-  // Cargar dashboard por defecto
+  // Dashboard por defecto
   // ===========================
   cargarModulo("dashboard");
 
+  // ===========================
+  // Voz de IA
+  // ===========================
   function hablar(texto){
     if(!texto) return;
     const speech = new SpeechSynthesisUtterance(texto);
