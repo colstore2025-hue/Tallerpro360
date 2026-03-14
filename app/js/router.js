@@ -11,6 +11,7 @@ import { inventario } from "./modules/inventario.js";
 import { finanzas } from "./modules/finanzas.js";
 import { ceo } from "./modules/ceo.js";
 import { pagos } from "./modules/pagos.js";
+import { aiAdvisor } from "./modules/aiAdvisor.js";
 
 console.log("📦 Router cargado");
 
@@ -26,8 +27,11 @@ clientes:{name:"Clientes",module:clientes},
 ordenes:{name:"Órdenes",module:ordenes},
 inventario:{name:"Inventario",module:inventario},
 finanzas:{name:"Finanzas",module:finanzas},
+pagos:{name:"Pagos",module:pagos},
 ceo:{name:"CEO",module:ceo},
-pagos:{name:"Pagos",module:pagos}
+
+/* IA */
+aiadvisor:{name:"AI Advisor",module:aiAdvisor}
 
 };
 
@@ -78,6 +82,8 @@ export function initRouter(){
 
 let hash = window.location.hash.replace("#","");
 
+/* sección por defecto */
+
 if(!sections[hash]){
 
 hash = "dashboard";
@@ -85,6 +91,8 @@ hash = "dashboard";
 }
 
 loadSection(hash);
+
+/* escuchar cambios */
 
 window.addEventListener("hashchange", handleHashChange);
 
@@ -132,7 +140,15 @@ return;
 
 }
 
-container.innerHTML = `Cargando ${selected.name}...`;
+/* indicador carga */
+
+container.innerHTML = `
+<div class="card">
+⏳ Cargando ${selected.name}...
+</div>
+`;
+
+/* actualizar URL */
 
 if(window.location.hash !== "#"+section){
 
@@ -142,7 +158,11 @@ window.location.hash = section;
 
 try{
 
+/* ejecutar módulo */
+
 await selected.module(container);
+
+/* activar menú */
 
 activarMenu(section);
 
@@ -151,7 +171,11 @@ catch(error){
 
 console.error("❌ Error cargando módulo:",error);
 
-container.innerHTML = `Error cargando módulo ${section}`;
+container.innerHTML = `
+<div class="card">
+❌ Error cargando módulo <b>${section}</b>
+</div>
+`;
 
 }
 
@@ -159,7 +183,7 @@ container.innerHTML = `Error cargando módulo ${section}`;
 
 
 /* =====================================
-ACTIVAR BOTON MENU
+ACTIVAR BOTÓN DE MENÚ
 ===================================== */
 
 function activarMenu(section){
