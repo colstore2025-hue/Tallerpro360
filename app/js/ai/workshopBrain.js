@@ -19,13 +19,15 @@ DIAGNOSTICO IA
 
 async runDiagnosis(vehicleData){
 
-const descripcion = vehicleData.problem || "";
+try{
+
+const descripcion = vehicleData?.problem || "";
 
 if(!descripcion){
 
 return {
 
-diagnosis:"Sin descripción",
+diagnosis:"Sin descripción del problema",
 
 partsNeeded:[],
 estimatedLaborHours:1
@@ -36,17 +38,45 @@ estimatedLaborHours:1
 
 const ia = await detectarRepuestos(descripcion);
 
+
+/* convertir repuestos IA a solo nombres */
+
+const partsNeeded = (ia?.repuestos || []).map(r =>
+
+typeof r === "string"
+? r
+: r.nombre
+
+);
+
 return {
 
-diagnosis: ia.diagnostico || "Diagnóstico IA",
+diagnosis: ia?.diagnostico || "Diagnóstico generado por IA",
 
-partsNeeded: ia.repuestos || [],
+partsNeeded: partsNeeded,
 
 estimatedLaborHours: 2
 
 };
 
 }
+catch(error){
+
+console.error("❌ Error en diagnóstico IA:",error);
+
+return {
+
+diagnosis:"No se pudo generar diagnóstico",
+
+partsNeeded:[],
+estimatedLaborHours:1
+
+};
+
+}
+
+}
+
 
 /* ===============================
 APRENDIZAJE IA
@@ -54,9 +84,22 @@ APRENDIZAJE IA
 
 async trainModel(repairData){
 
-console.log("📚 IA aprendiendo reparación");
+try{
+
+console.log("📚 IA aprendiendo reparación",repairData);
+
+/* futuro: guardar datos para mejorar predicciones */
 
 return true;
+
+}
+catch(error){
+
+console.error("Error entrenamiento IA:",error);
+
+return false;
+
+}
 
 }
 
