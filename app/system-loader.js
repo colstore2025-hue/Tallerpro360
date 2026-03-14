@@ -1,41 +1,13 @@
 /**
  * system-loader.js
- * Loader principal del sistema
- * TallerPRO360 ERP
+ * Bootloader del ERP
+ * TallerPRO360
  */
+
+import { iniciarApp } from "../js/core/app-init.js";
 
 console.log("⚡ System Loader iniciado");
 
+/* iniciar sistema */
 
-/* =========================================
-CARGAR APP
-========================================= */
-
-async function startSystem(){
-
-try{
-
-console.log("📦 Cargando app-init...");
-
-const app = await import("./js/core/app-init.js");
-
-if(app && app.iniciarApp){
-
-app.iniciarApp();
-
-}else{
-
-throw new Error("iniciarApp no encontrado");
-
-}
-
-}catch(error){
-
-console.error("🔥 Error cargando sistema:",error);
-
-}
-
-}
-
-
-startSystem();
+iniciarApp();
