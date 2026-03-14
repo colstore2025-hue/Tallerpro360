@@ -4,8 +4,10 @@
  */
 
 import WorkshopBrain from "./workshopBrain.js";
-import CustomerManager from "../modules/customerManager.js";
 import InventoryAI from "./inventoryAI.js";
+import VehicleScanner from "./vehicleScanner.js";
+import { calcularPrecioInteligente } from "./pricingOptimizerAI.js";
+import CustomerManager from "../modules/customerManager.js";
 
 
 class SuperAIOrchestrator {
@@ -15,8 +17,9 @@ constructor(){
 try{
 
 this.workshopBrain = new WorkshopBrain();
-this.customerManager = new CustomerManager();
 this.inventoryAI = new InventoryAI();
+this.customerManager = new CustomerManager();
+this.vehicleScanner = new VehicleScanner();
 
 console.log("🧠 Super AI Orchestrator iniciado");
 
@@ -46,31 +49,28 @@ return null;
 console.log("🚗 Iniciando proceso inteligente de servicio...");
 
 
-/* 1 BUSCAR CLIENTE */
+/* ===============================
+1 BUSCAR CLIENTE
+============================== */
 
 let customer = await this.customerManager.searchCustomer(
 customerData?.phone
 );
 
 
-/* 2 CREAR SI NO EXISTE */
+/* ===============================
+2 CREAR CLIENTE
+============================== */
 
 if(!customer){
 
 const id = await this.customerManager.createCustomer(customerData);
 
-if(!id){
-console.warn("⚠️ No se pudo crear cliente");
-return null;
-}
+if(!id) return null;
 
-customer = {
-id:id,
-...customerData
-};
+customer = { id, ...customerData };
 
-}
-else{
+}else{
 
 if(customer?.id){
 await this.customerManager.updateVisit(customer.id);
@@ -79,37 +79,67 @@ await this.customerManager.updateVisit(customer.id);
 }
 
 
-/* 3 DIAGNOSTICO IA */
+/* ===============================
+3 ESCÁNER MECÁNICO
+============================== */
+
+const scannerDiagnosis = this.vehicleScanner.scanVehicle(
+vehicleData?.obd || {},
+vehicleData?.symptoms || []
+);
+
+
+/* ===============================
+4 DIAGNÓSTICO IA
+============================== */
 
 const diagnosis = await this.workshopBrain.runDiagnosis(vehicleData);
 
 
-/* 4 INVENTARIO */
+/* ===============================
+5 INVENTARIO
+============================== */
 
 await this.inventoryAI.loadInventory();
 
 const partsNeeded = diagnosis?.partsNeeded || [];
-
 const inventoryParts = this.inventoryAI.parts || [];
 
-const inventoryStatus = partsNeeded.map(part=>{
+const partsStatus = partsNeeded.map(part=>{
 
 const found = inventoryParts.find(
 p => p.name === part || p.nombre === part
 );
 
 return{
-
-part:part,
+part,
 available:!!found,
 price:found?.price || 0
-
 };
 
 });
 
 
-/* 5 ORDEN INTELIGENTE */
+/* ===============================
+6 ESTIMACIÓN
+============================== */
+
+const partsCost = partsStatus.reduce(
+(sum,p)=>sum + (p.price || 0),0
+);
+
+const totalPrice = calcularPrecioInteligente({
+
+costoRepuestos: partsCost,
+horasTrabajo: diagnosis?.estimatedLaborHours || 1,
+tipoCliente: customer?.tipo || "normal"
+
+});
+
+
+/* ===============================
+7 ORDEN FINAL
+============================== */
 
 const workOrder = {
 
@@ -117,14 +147,19 @@ customerId: customer?.id || null,
 
 vehicle: vehicleData,
 
-diagnosis: diagnosis,
+diagnosis:{
 
-partsStatus: inventoryStatus,
+...diagnosis,
+scannerInsights: scannerDiagnosis
 
-estimatedCost: this.calculateEstimate(
-diagnosis,
-inventoryStatus
-),
+},
+
+partsStatus,
+
+estimatedCost:{
+total: totalPrice,
+parts: partsCost
+},
 
 timestamp: new Date()
 
@@ -138,51 +173,7 @@ return workOrder;
 catch(error){
 
 console.error("❌ Error en proceso IA:",error);
-
 return null;
-
-}
-
-}
-
-
-/* ===================================
-ESTIMACION COSTOS
-=================================== */
-
-calculateEstimate(diagnosis,inventoryStatus){
-
-try{
-
-let laborCost =
-(diagnosis?.estimatedLaborHours || 0) * 40;
-
-let partsCost = 0;
-
-inventoryStatus?.forEach(part=>{
-
-partsCost += part.price || 0;
-
-});
-
-return{
-
-labor:laborCost,
-parts:partsCost,
-total:laborCost + partsCost
-
-};
-
-}
-catch(error){
-
-console.error("❌ Error calculando estimación",error);
-
-return{
-labor:0,
-parts:0,
-total:0
-};
 
 }
 
@@ -197,7 +188,7 @@ async learnFromRepair(repairData){
 
 try{
 
-console.log("📚 IA aprendiendo de reparación");
+console.log("📚 IA aprendiendo reparación");
 
 await this.workshopBrain.trainModel(repairData);
 
@@ -214,7 +205,7 @@ console.error("❌ Error entrenamiento IA",error);
 
 
 /* ===================================
-CREAR INSTANCIA GLOBAL SEGURA
+INSTANCIA GLOBAL
 =================================== */
 
 let superAI = null;
@@ -232,20 +223,8 @@ console.error("❌ IA no pudo iniciarse:",error);
 
 }
 
-
-/* ===================================
-EXPORT
-=================================== */
-
 export default superAI;
 
-
-/* ===================================
-GLOBAL DEBUG
-=================================== */
-
 if(typeof window !== "undefined"){
-
 window.SuperAI = superAI;
-
 }
