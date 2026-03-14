@@ -1,5 +1,5 @@
 /**
- * Pricing Optimizer AI
+ * pricingOptimizerAI.js
  * Calcula precio inteligente del servicio
  */
 
@@ -11,30 +11,30 @@ tipoCliente = "normal"
 
 }){
 
-/* ==============================
-CONFIGURACIÓN
-============================== */
-
 const valorHora = 60000
+
 let margen = 0.45
 
 
-/* ==============================
-AJUSTE POR CLIENTE
-============================== */
+switch(tipoCliente){
 
-if(tipoCliente === "vip"){
+case "vip":
 margen = 0.40
-}
+break
 
-if(tipoCliente === "empresa"){
+case "empresa":
 margen = 0.35
+break
+
+case "flota":
+margen = 0.30
+break
+
+default:
+margen = 0.45
+
 }
 
-
-/* ==============================
-CÁLCULO
-============================== */
 
 const manoObra = horasTrabajo * valorHora
 
@@ -43,18 +43,9 @@ let subtotal = costoRepuestos + manoObra
 let total = subtotal * (1 + margen)
 
 
-/* ==============================
-PRECIO MÍNIMO
-============================== */
-
 if(total < 30000){
 total = 30000
 }
-
-
-/* ==============================
-REDONDEO COMERCIAL
-============================== */
 
 total = Math.round(total / 1000) * 1000
 
