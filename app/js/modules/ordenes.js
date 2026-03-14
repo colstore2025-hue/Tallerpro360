@@ -1,145 +1,155 @@
 /**
  * ordenes.js
- * Órdenes de trabajo con repuestos y cálculo de utilidad
- * TallerPRO360 ERP
+ * Módulo avanzado de gestión de Órdenes - TallerPRO360
+ * Ruta: app/js/modules/ordenes.js
  */
 
 import { db } from "../core/firebase-config.js";
-import { generarFactura } from "../finanzas/generarFactura.js";
-import { calcularUtilidadOrden } from "../finanzas/calcularUtilidadOrden.js";
-import { collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import CustomerManager from "./customerManager.js";
+import { aiAssistant } from "../ai/aiAssistant.js"; // integración con AI para recomendaciones
 
-let inventario = [];
-let itemsOrden = [];
+export async function ordenes(container) {
 
-export async function ordenes(container){
+  const customerManager = new CustomerManager();
+
   container.innerHTML = `
-<h1 style="font-size:26px;margin-bottom:20px;">🛠 Órdenes de Trabajo</h1>
+    <h1 style="font-size:28px;margin-bottom:20px;">🛠 Órdenes</h1>
 
-<div class="card">
-<h3>Datos de la Orden</h3>
-<input id="clienteOrden" placeholder="Cliente" style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
-<input id="vehiculoOrden" placeholder="Vehículo" style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
-<textarea id="diagnosticoOrden" placeholder="Diagnóstico" style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;"></textarea>
-</div>
+    <div class="card">
+      <h3>Registrar Nueva Orden</h3>
+      <input id="clienteOrden" placeholder="Teléfono Cliente" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+      <input id="vehiculoOrden" placeholder="Vehículo" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+      <input id="placaOrden" placeholder="Placa" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+      <textarea id="descripcionOrden" placeholder="Descripción del servicio" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;"></textarea>
+      <button id="guardarOrden" style="margin-top:10px;padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Guardar Orden</button>
+    </div>
 
-<div class="card">
-<h3>Agregar Repuesto</h3>
-<select id="productoSelect" style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;"></select>
-<input id="cantidadProducto" type="number" placeholder="Cantidad" style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
-<input id="utilidadProducto" type="number" placeholder="Utilidad por unidad ($)" style="width:100%;padding:10px;margin:6px 0;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
-<button id="agregarProducto" style="padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Agregar</button>
-</div>
+    <div class="card">
+      <h3>Buscar Órdenes</h3>
+      <input id="buscarOrden" placeholder="Buscar por cliente o placa..." style="width:100%;padding:10px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+    </div>
 
-<div class="card">
-<h3>Mano de obra</h3>
-<input id="manoObra" type="number" placeholder="Valor mano de obra" style="width:100%;padding:10px;background:#020617;color:white;border:1px solid #333;border-radius:6px;">
-</div>
+    <div class="card">
+      <h3>Órdenes Recientes</h3>
+      <div id="listaOrdenes">Cargando órdenes...</div>
+    </div>
 
-<div class="card">
-<h3>Items de la Orden</h3>
-<div id="itemsOrden"></div>
-<h2 id="totalOrden">Total: $0 | Costo: $0 | Utilidad: $0 | Margen: 0%</h2>
-<button id="guardarOrden" style="margin-top:10px;padding:12px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Guardar Orden</button>
-</div>
-`;
+    <div class="card">
+      <h3>Asistente IA</h3>
+      <input id="inputAI" placeholder="Consulta sobre órdenes, diagnósticos o reparaciones..." style="width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+      <div id="respuestasAI" style="margin-top:10px;max-height:150px;overflow-y:auto;background:#111827;color:white;padding:10px;border-radius:6px;"></div>
+    </div>
+  `;
 
-  await cargarInventario();
-  document.getElementById("agregarProducto").onclick = agregarProducto;
-  document.getElementById("guardarOrden").onclick = guardarOrden;
-}
+  // ===========================
+  // Eventos botones y formularios
+  // ===========================
+  document.getElementById("guardarOrden").onclick = async () => await guardarOrden(customerManager);
+  document.getElementById("buscarOrden").oninput = filtrarOrdenes;
 
-async function cargarInventario(){
-  const select = document.getElementById("productoSelect");
-  select.innerHTML = "";
-  const querySnapshot = await getDocs(collection(db,"inventario"));
-  inventario = [];
-  querySnapshot.forEach(docSnap=>{
-    const p = docSnap.data(); p.id = docSnap.id;
-    inventario.push(p);
-    const option = document.createElement("option");
-    option.value = inventario.length-1;
-    option.textContent = `${p.nombre} ($${p.precio})`;
-    select.appendChild(option);
-  });
-}
-
-function agregarProducto(){
-  const index = Number(document.getElementById("productoSelect").value);
-  const cantidad = Number(document.getElementById("cantidadProducto").value);
-  let utilidad = Number(document.getElementById("utilidadProducto").value);
-
-  if(cantidad <= 0) return alert("Ingrese cantidad válida");
-  const producto = inventario[index];
-  if(!producto) return alert("Producto no encontrado");
-  if(utilidad <= 0) utilidad = producto.precio - (producto.costo || 0);
-
-  itemsOrden.push({
-    nombre: producto.nombre,
-    costoInterno: producto.costo || 0,
-    precio: producto.precio,
-    cantidad,
-    utilidad,
-    total: producto.precio * cantidad
+  // AI assistant input
+  const inputAI = document.getElementById("inputAI");
+  const respuestasAI = document.getElementById("respuestasAI");
+  inputAI.addEventListener("keypress", async (e) => {
+    if(e.key === "Enter"){
+      const pregunta = inputAI.value.trim();
+      if(!pregunta) return;
+      const respuesta = await aiAssistant(pregunta);
+      const div = document.createElement("div");
+      div.style.marginBottom = "8px";
+      div.innerHTML = `<b>Consulta:</b> ${pregunta}<br><b>Respuesta:</b> ${respuesta}`;
+      respuestasAI.prepend(div);
+      inputAI.value = "";
+    }
   });
 
-  renderItems();
+  // ===========================
+  // Cargar órdenes
+  // ===========================
+  await cargarOrdenes();
 }
 
-function renderItems(){
-  const container = document.getElementById("itemsOrden");
-  let html = `<table style="width:100%"><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Utilidad</th><th>Total</th></tr>`;
+/* ===========================
+FUNCIONES DE ORDENES
+=========================== */
 
-  let total=0, totalCosto=0, totalUtilidad=0;
-  itemsOrden.forEach(i=>{
-    total += i.total;
-    totalCosto += i.costoInterno*i.cantidad;
-    totalUtilidad += i.utilidad*i.cantidad;
-    html += `<tr><td>${i.nombre}</td><td>${i.cantidad}</td><td>$${i.precio}</td><td>$${i.utilidad}</td><td>$${i.total}</td></tr>`;
-  });
+async function guardarOrden(customerManager){
+  const phone = document.getElementById("clienteOrden").value.trim();
+  const vehiculo = document.getElementById("vehiculoOrden").value.trim();
+  const placa = document.getElementById("placaOrden").value.trim();
+  const descripcion = document.getElementById("descripcionOrden").value.trim();
 
-  const manoObra = Number(document.getElementById("manoObra").value || 0);
-  total += manoObra;
-  totalUtilidad += manoObra;
+  if(!phone || !vehiculo) return alert("Cliente y Vehículo son obligatorios");
 
-  container.innerHTML = html;
-  const margen = total>0 ? ((totalUtilidad/total)*100).toFixed(2) : 0;
-  document.getElementById("totalOrden").innerText = `Total: $${total} | Costo: $${totalCosto} | Utilidad: $${totalUtilidad} | Margen: ${margen}%`;
-}
-
-async function guardarOrden(){
-  const cliente = document.getElementById("clienteOrden").value;
-  const vehiculo = document.getElementById("vehiculoOrden").value;
-  const diagnostico = document.getElementById("diagnosticoOrden").value;
-  const manoObra = Number(document.getElementById("manoObra").value || 0);
-
-  if(!cliente || !vehiculo) return alert("Complete cliente y vehículo");
-
-  const nuevaOrden = {
-    cliente, vehiculo, diagnostico,
-    acciones: itemsOrden,
-    manoObra,
-    total: itemsOrden.reduce((s,i)=>s+i.total,0)+manoObra,
-    fecha: new Date()
-  };
-
-  try{
-    await addDoc(collection(db,"ordenes"), nuevaOrden);
-    alert("✅ Orden guardada");
-
-    const utilidad = calcularUtilidadOrden(nuevaOrden);
-    console.log("Utilidad calculada:", utilidad);
-    generarFactura(nuevaOrden);
-
-    itemsOrden=[]; 
-    document.getElementById("clienteOrden").value="";
-    document.getElementById("vehiculoOrden").value="";
-    document.getElementById("diagnosticoOrden").value="";
-    document.getElementById("manoObra").value=0;
-    renderItems();
-
-  }catch(e){
-    console.error("Error guardando orden:", e);
-    alert("❌ Error al guardar la orden");
+  // Verificar o crear cliente
+  let cliente = await customerManager.searchCustomer(phone);
+  if(!cliente){
+    const idCliente = await customerManager.createCustomer({phone, name:"Cliente", vehicle:vehiculo, plate:placa});
+    cliente = {id:idCliente, phone, vehicle:vehiculo, plate:placa};
+  } else {
+    await customerManager.updateVisit(cliente.id);
   }
+
+  try {
+    await addDoc(collection(db,"ordenes"),{
+      clienteId: cliente.id,
+      clientePhone: phone,
+      vehiculo,
+      placa,
+      descripcion,
+      estado: "Recepción",
+      fecha: new Date()
+    });
+    alert("✅ Orden guardada");
+    limpiarFormularioOrden();
+    await cargarOrdenes();
+  } catch(e){
+    console.error("Error guardando orden:",e);
+    alert("❌ Error guardando orden");
+  }
+}
+
+async function cargarOrdenes(){
+  const lista = document.getElementById("listaOrdenes");
+  try {
+    const q = query(collection(db,"ordenes"), orderBy("fecha","desc"));
+    const snapshot = await getDocs(q);
+    if(snapshot.empty){
+      lista.innerHTML = "No hay órdenes registradas";
+      return;
+    }
+    let html = `<table style="width:100%;border-collapse:collapse;">
+      <tr style="border-bottom:1px solid #1e293b;"><th>Cliente</th><th>Vehículo</th><th>Estado</th><th>Fecha</th></tr>`;
+    snapshot.forEach(docSnap=>{
+      const o = docSnap.data();
+      html += `<tr>
+        <td>${o.clientePhone || "-"}</td>
+        <td>${o.vehiculo || "-"}</td>
+        <td>${o.estado || "Recepción"}</td>
+        <td>${o.fecha.toDate().toLocaleString()}</td>
+      </tr>`;
+    });
+    html += "</table>";
+    lista.innerHTML = html;
+  } catch(e){
+    console.error("Error cargando órdenes:",e);
+    lista.innerHTML = "❌ Error cargando órdenes";
+  }
+}
+
+function filtrarOrdenes(){
+  const input = document.getElementById("buscarOrden").value.toLowerCase();
+  const rows = document.querySelectorAll("#listaOrdenes table tr");
+  rows.forEach((row,index)=>{
+    if(index===0) return;
+    row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
+  });
+}
+
+function limpiarFormularioOrden(){
+  document.getElementById("clienteOrden").value = "";
+  document.getElementById("vehiculoOrden").value = "";
+  document.getElementById("placaOrden").value = "";
+  document.getElementById("descripcionOrden").value = "";
 }
