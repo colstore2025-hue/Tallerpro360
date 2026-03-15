@@ -47,6 +47,7 @@ basico:[
 "finanzas",
 "pagos",
 "configuracion"
+"reportes"
 ],
 
 pro:[
