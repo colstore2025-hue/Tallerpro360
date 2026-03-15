@@ -2,8 +2,10 @@
 <html lang="es">
 
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+
 <title>TallerPRO360 ERP</title>
 
 <link rel="manifest" href="./manifest.json">
@@ -44,6 +46,7 @@ cursor:pointer;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -63,24 +66,30 @@ Salir
 </div>
 
 
+<!-- ============================
+BOOT SYSTEM
+============================ -->
+
 <script type="module">
 
-import { iniciarApp } from "./js/core/app-init.js";
+import { bootSystem } from "./js/system/bootSystem.js";
 
 document.addEventListener("DOMContentLoaded",()=>{
 
-console.log("🚀 Iniciando sistema...");
+console.log("🚀 Arrancando TallerPRO360...");
 
-iniciarApp();
+bootSystem();
 
 });
 
 </script>
 
 
-<script>
+<!-- ============================
+SERVICE WORKER (PWA)
+============================ -->
 
-/* PWA */
+<script>
 
 if("serviceWorker" in navigator){
 
@@ -90,6 +99,24 @@ navigator.serviceWorker
 .catch(e=>console.log("SW error",e));
 
 }
+
+</script>
+
+
+<!-- ============================
+BOTÓN SALIR
+============================ -->
+
+<script>
+
+document.getElementById("btnSalir").onclick=()=>{
+
+localStorage.removeItem("uid");
+localStorage.removeItem("empresaId");
+
+location.href="/login.html";
+
+};
 
 </script>
 
