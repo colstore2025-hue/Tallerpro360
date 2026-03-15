@@ -1,46 +1,119 @@
 /**
  * planManager.js
- * Control de acceso a módulos según plan activo
- * TallerPRO360 ERP - Versión Final Integrada
+ * Control de acceso a módulos según plan
+ * TallerPRO360 ERP
  */
 
 import { db } from "./core/firebase-config.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/**
- * Obtiene los módulos habilitados para un usuario según su plan
- * @param {string} userId - ID del usuario en Firestore
- * @returns {Promise<string[]>} Lista de módulos disponibles
- */
 export async function getModulosDisponibles(userId){
-  try {
-    const planSnap = await getDoc(doc(db, "usuariosPlanes", userId));
-    if(!planSnap.exists()) return [];
 
-    const planData = planSnap.data();
-    const plan = planData.plan || "Freemium";
+try{
 
-    // Validación de duración del plan
-    const hoy = new Date();
-    if(planData.inicio && planData.fin){
-      const inicio = planData.inicio.toDate ? planData.inicio.toDate() : new Date(planData.inicio);
-      const fin = planData.fin.toDate ? planData.fin.toDate() : new Date(planData.fin);
-      if(hoy < inicio || hoy > fin){
-        console.warn(`Plan expirado o no activo para usuario ${userId}`);
-        return ["dashboard","clientes","ordenes","inventario"]; // Módulos mínimos Freemium
-      }
-    }
+const planSnap = await getDoc(doc(db,"usuariosPlanes",userId));
 
-    // Definición de módulos por plan
-    const planes = {
-      "Freemium": ["dashboard","clientes","ordenes","inventario"],
-      "Profesional": ["dashboard","clientes","ordenes","inventario","finanzas","pagos"],
-      "Enterprise": ["dashboard","clientes","ordenes","inventario","finanzas","pagos","contabilidad","ceo","iaAssistant","aiAdvisor","aiCommand","configuracion"]
-    };
+let plan="Freemium";
 
-    return planes[plan] || [];
-  } catch(e){
-    console.error("Error cargando plan de usuario:", e);
-    return [];
-  }
+if(planSnap.exists()){
+
+const data=planSnap.data();
+
+plan=data.plan || "Freemium";
+
+if(data.inicio && data.fin){
+
+const hoy=new Date();
+
+const inicio=data.inicio.toDate ? data.inicio.toDate() : new Date(data.inicio);
+const fin=data.fin.toDate ? data.fin.toDate() : new Date(data.fin);
+
+if(hoy<inicio || hoy>fin){
+
+console.warn("Plan expirado → Freemium");
+plan="Freemium";
+
+}
+
+}
+
+}
+
+const planes={
+
+Freemium:[
+"dashboard",
+"clientes",
+"ordenes",
+"inventario",
+"configuracion"
+],
+
+Basico:[
+"dashboard",
+"clientes",
+"ordenes",
+"inventario",
+"finanzas",
+"pagos",
+"configuracion"
+],
+
+Pro:[
+"dashboard",
+"clientes",
+"ordenes",
+"inventario",
+"finanzas",
+"pagos",
+"contabilidad",
+"configuracion"
+],
+
+Elite:[
+"dashboard",
+"clientes",
+"ordenes",
+"inventario",
+"finanzas",
+"pagos",
+"contabilidad",
+"ceo",
+"aiAssistant",
+"aiAdvisor",
+"configuracion"
+],
+
+Enterprise:[
+"dashboard",
+"clientes",
+"ordenes",
+"inventario",
+"finanzas",
+"pagos",
+"contabilidad",
+"ceo",
+"aiAssistant",
+"aiAdvisor",
+"configuracion"
+]
+
+};
+
+return planes[plan] || planes["Freemium"];
+
+}catch(e){
+
+console.error("Error cargando plan:",e);
+
+return [
+"dashboard",
+"clientes",
+"ordenes",
+"inventario",
+"configuracion"
+];
+
+}
+
 }
