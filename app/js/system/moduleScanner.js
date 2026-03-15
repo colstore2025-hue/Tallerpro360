@@ -7,19 +7,29 @@
 
 console.log("🧠 Module Scanner iniciado");
 
-
 /* =====================================
-LISTA DE MODULOS DEL ERP
+LISTA REAL DE MODULOS DEL ERP
 ===================================== */
 
 const modules = [
+
+/* CORE ERP */
 
 "dashboard",
 "clientes",
 "ordenes",
 "inventario",
+"reportes",
+
+/* FINANZAS */
+
 "finanzas",
-"pagos",
+"contabilidad",
+"pagosTaller",
+
+/* ADMIN */
+
+"configuracion",
 "ceo",
 
 /* IA */
@@ -41,14 +51,19 @@ const sections = {};
 
 modules.forEach(name=>{
 
-sections[name.toLowerCase()] = {
+const key = name.toLowerCase();
+
+sections[key] = {
 
 name: formatName(name),
+
 path:`./modules/${name}.js`
 
 };
 
 });
+
+console.log("📦 Módulos detectados:",Object.keys(sections));
 
 return sections;
 
