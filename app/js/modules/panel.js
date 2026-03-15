@@ -1,6 +1,7 @@
 /**
  * panel.js
  * Panel principal del ERP
+ * TallerPRO360
  */
 
 import { dashboard } from "./dashboard.js";
@@ -42,7 +43,7 @@ Salir
 <main id="mainPanel"
 style="flex:1;padding:25px;background:#1e293b;overflow:auto">
 
-Cargando...
+Cargando sistema...
 
 </main>
 
@@ -54,6 +55,10 @@ await loadAICore();
 
 const menu=document.getElementById("menu");
 const main=document.getElementById("mainPanel");
+
+/* ===============================
+MAPA DE MÓDULOS
+=============================== */
 
 const modulos={
 
@@ -71,7 +76,37 @@ configuracion
 
 };
 
-const permitidos=await getModulosDisponibles(userId);
+/* ===============================
+CARGAR PLAN DEL USUARIO
+=============================== */
+
+let permitidos=[];
+
+try{
+
+permitidos=await getModulosDisponibles(userId);
+
+}catch(e){
+
+console.error("Error cargando plan:",e);
+
+}
+
+/* ===============================
+FALLBACK SI NO HAY PLAN
+=============================== */
+
+if(!permitidos || permitidos.length===0){
+
+console.warn("Plan no encontrado. Usando fallback.");
+
+permitidos=["dashboard","clientes","ordenes"];
+
+}
+
+/* ===============================
+GENERAR MENÚ
+=============================== */
 
 menu.innerHTML="";
 
@@ -79,7 +114,7 @@ permitidos.forEach(nombre=>{
 
 const btn=document.createElement("button");
 
-btn.textContent=nombre;
+btn.textContent=nombre.charAt(0).toUpperCase()+nombre.slice(1);
 
 btn.style.display="block";
 btn.style.width="100%";
@@ -89,12 +124,17 @@ btn.style.background="#0f172a";
 btn.style.border="1px solid #1e293b";
 btn.style.color="white";
 btn.style.cursor="pointer";
+btn.style.borderRadius="6px";
 
 btn.onclick=()=>cargarModulo(nombre);
 
 menu.appendChild(btn);
 
 });
+
+/* ===============================
+CARGADOR DE MÓDULOS
+=============================== */
 
 async function cargarModulo(nombre){
 
@@ -104,17 +144,37 @@ const fn=modulos[nombre];
 
 if(!fn){
 
-main.innerHTML="Módulo no encontrado";
-
+main.innerHTML="<h3>Módulo no encontrado</h3>";
 return;
 
 }
 
+try{
+
 await fn(main);
+
+}catch(e){
+
+console.error("Error módulo:",nombre,e);
+
+main.innerHTML=`
+<h3>Error cargando módulo</h3>
+<p>${nombre}</p>
+`;
 
 }
 
+}
+
+/* ===============================
+CARGAR DASHBOARD
+=============================== */
+
 cargarModulo("dashboard");
+
+/* ===============================
+LOGOUT
+=============================== */
 
 document.getElementById("logoutBtn").onclick=()=>{
 
