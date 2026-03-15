@@ -19,6 +19,9 @@ import { configuracion } from "./configuracion.js";
 import { getModulosDisponibles } from "../planManager.js";
 import { loadAICore } from "../system/aiCoreLoader.js";
 import { moduleLoader } from "../system/moduleLoader.js";
+import { initRouter } from "../router.js";
+
+initRouter();
 
 export async function panel(container,userId){
 
