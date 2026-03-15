@@ -1,7 +1,7 @@
 /**
  * planManager.js
- * Control de acceso a módulos según plan
- * TallerPRO360 ERP
+ * Control de módulos según plan del usuario
+ * Compatible con Firestore actual de TallerPRO360
  */
 
 import { db } from "./core/firebase-config.js";
@@ -11,37 +11,27 @@ export async function getModulosDisponibles(userId){
 
 try{
 
-const planSnap = await getDoc(doc(db,"usuariosPlanes",userId));
+const userSnap = await getDoc(doc(db,"usuariosGlobal",userId));
 
-let plan="Freemium";
+let plan="freemium";
 
-if(planSnap.exists()){
+if(userSnap.exists()){
 
-const data=planSnap.data();
+const data=userSnap.data();
 
-plan=data.plan || "Freemium";
+plan=(data.planTipo || "freemium").toLowerCase();
 
-if(data.inicio && data.fin){
+}else{
 
-const hoy=new Date();
-
-const inicio=data.inicio.toDate ? data.inicio.toDate() : new Date(data.inicio);
-const fin=data.fin.toDate ? data.fin.toDate() : new Date(data.fin);
-
-if(hoy<inicio || hoy>fin){
-
-console.warn("Plan expirado → Freemium");
-plan="Freemium";
+console.warn("Usuario no encontrado en usuariosGlobal");
 
 }
 
-}
-
-}
+/* PLANES TALLERPRO360 */
 
 const planes={
 
-Freemium:[
+freemium:[
 "dashboard",
 "clientes",
 "ordenes",
@@ -49,7 +39,7 @@ Freemium:[
 "configuracion"
 ],
 
-Basico:[
+basico:[
 "dashboard",
 "clientes",
 "ordenes",
@@ -59,7 +49,7 @@ Basico:[
 "configuracion"
 ],
 
-Pro:[
+pro:[
 "dashboard",
 "clientes",
 "ordenes",
@@ -70,7 +60,7 @@ Pro:[
 "configuracion"
 ],
 
-Elite:[
+elite:[
 "dashboard",
 "clientes",
 "ordenes",
@@ -84,7 +74,7 @@ Elite:[
 "configuracion"
 ],
 
-Enterprise:[
+enterprise:[
 "dashboard",
 "clientes",
 "ordenes",
@@ -100,11 +90,11 @@ Enterprise:[
 
 };
 
-return planes[plan] || planes["Freemium"];
+return planes[plan] || planes["freemium"];
 
 }catch(e){
 
-console.error("Error cargando plan:",e);
+console.error("Error obteniendo plan:",e);
 
 return [
 "dashboard",
