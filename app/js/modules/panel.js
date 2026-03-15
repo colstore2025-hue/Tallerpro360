@@ -1,7 +1,7 @@
 /**
  * panel.js
  * Panel principal del ERP
- * TallerPRO360
+ * TallerPRO360 - Versión SaaS Optimizada
  */
 
 import { dashboard } from "./dashboard.js";
@@ -18,103 +18,117 @@ import { configuracion } from "./configuracion.js";
 
 import { getModulosDisponibles } from "../planManager.js";
 import { loadAICore } from "../system/aiCoreLoader.js";
+import { moduleLoader } from "../system/moduleLoader.js";
 
 export async function panel(container,userId){
 
-console.log("🧠 Cargando Panel ERP");
+console.log("🧠 Iniciando Panel TallerPRO360");
 
-container.innerHTML=`
+/* ===============================
+INTERFAZ PRINCIPAL
+=============================== */
 
-<div style="display:flex;height:100vh;">
+container.innerHTML = `
+<div style="display:flex;height:100vh;font-family:Arial">
 
 <nav style="width:260px;background:#020617;padding:20px;color:white;overflow:auto">
 
-<h2>TallerPRO360</h2>
+<h2 style="margin-top:0;">TallerPRO360</h2>
 
 <div id="menu"></div>
 
 <button id="logoutBtn"
-style="margin-top:20px;background:#dc2626;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;">
-Salir
+style="margin-top:20px;background:#dc2626;color:white;padding:10px;border:none;border-radius:6px;width:100%;cursor:pointer;">
+Cerrar sesión
 </button>
 
 </nav>
 
 <main id="mainPanel"
-style="flex:1;padding:25px;background:#1e293b;overflow:auto">
+style="flex:1;padding:25px;background:#1e293b;color:white;overflow:auto">
 
-Cargando sistema...
+Inicializando sistema...
 
 </main>
 
 </div>
-
 `;
 
+/* ===============================
+INICIAR IA DEL SISTEMA
+=============================== */
+
+try{
 await loadAICore();
+console.log("🤖 IA del sistema cargada");
+}catch(e){
+console.warn("IA no cargó:",e);
+}
+
+/* ===============================
+REGISTRAR MÓDULOS
+=============================== */
+
+moduleLoader.register("dashboard",dashboard);
+moduleLoader.register("clientes",clientes);
+moduleLoader.register("ordenes",ordenes);
+moduleLoader.register("inventario",inventario);
+moduleLoader.register("finanzas",finanzas);
+moduleLoader.register("contabilidad",contabilidad);
+moduleLoader.register("pagos",pagosTaller);
+moduleLoader.register("ceo",ceo);
+moduleLoader.register("aiAssistant",aiAssistant);
+moduleLoader.register("aiAdvisor",aiAdvisor);
+moduleLoader.register("configuracion",configuracion);
+
+/* ===============================
+OBTENER PLAN DEL USUARIO
+=============================== */
+
+let modulosPermitidos=[];
+
+try{
+
+modulosPermitidos = await getModulosDisponibles(userId);
+
+}catch(e){
+
+console.error("Error obteniendo plan:",e);
+
+}
+
+/* ===============================
+FALLBACK SI FALLA FIRESTORE
+=============================== */
+
+if(!modulosPermitidos || modulosPermitidos.length===0){
+
+console.warn("⚠ Usando módulos mínimos");
+
+modulosPermitidos=[
+"dashboard",
+"clientes",
+"ordenes",
+"inventario",
+"configuracion"
+];
+
+}
+
+/* ===============================
+GENERAR MENÚ DINÁMICO
+=============================== */
 
 const menu=document.getElementById("menu");
 const main=document.getElementById("mainPanel");
 
-/* ===============================
-MAPA DE MÓDULOS
-=============================== */
-
-const modulos={
-
-dashboard,
-clientes,
-ordenes,
-inventario,
-finanzas,
-contabilidad,
-pagos:pagosTaller,
-ceo,
-aiAssistant,
-aiAdvisor,
-configuracion
-
-};
-
-/* ===============================
-CARGAR PLAN DEL USUARIO
-=============================== */
-
-let permitidos=[];
-
-try{
-
-permitidos=await getModulosDisponibles(userId);
-
-}catch(e){
-
-console.error("Error cargando plan:",e);
-
-}
-
-/* ===============================
-FALLBACK SI NO HAY PLAN
-=============================== */
-
-if(!permitidos || permitidos.length===0){
-
-console.warn("Plan no encontrado. Usando fallback.");
-
-permitidos=["dashboard","clientes","ordenes"];
-
-}
-
-/* ===============================
-GENERAR MENÚ
-=============================== */
-
 menu.innerHTML="";
 
-permitidos.forEach(nombre=>{
+modulosPermitidos.forEach(nombre=>{
 
 const btn=document.createElement("button");
 
-btn.textContent=nombre.charAt(0).toUpperCase()+nombre.slice(1);
+btn.textContent = nombre.charAt(0).toUpperCase()+nombre.slice(1);
 
 btn.style.display="block";
 btn.style.width="100%";
@@ -126,51 +140,17 @@ btn.style.color="white";
 btn.style.cursor="pointer";
 btn.style.borderRadius="6px";
 
-btn.onclick=()=>cargarModulo(nombre);
+btn.onclick=()=>moduleLoader.load(nombre,main);
 
 menu.appendChild(btn);
 
 });
 
 /* ===============================
-CARGADOR DE MÓDULOS
+CARGAR DASHBOARD INICIAL
 =============================== */
 
-async function cargarModulo(nombre){
-
-main.innerHTML="Cargando módulo...";
-
-const fn=modulos[nombre];
-
-if(!fn){
-
-main.innerHTML="<h3>Módulo no encontrado</h3>";
-return;
-
-}
-
-try{
-
-await fn(main);
-
-}catch(e){
-
-console.error("Error módulo:",nombre,e);
-
-main.innerHTML=`
-<h3>Error cargando módulo</h3>
-<p>${nombre}</p>
-`;
-
-}
-
-}
-
-/* ===============================
-CARGAR DASHBOARD
-=============================== */
-
-cargarModulo("dashboard");
+moduleLoader.load("dashboard",main);
 
 /* ===============================
 LOGOUT
@@ -184,5 +164,7 @@ localStorage.removeItem("empresaId");
 location.href="/login.html";
 
 };
+
+console.log("✅ Panel cargado correctamente");
 
 }
