@@ -133,16 +133,16 @@ modulosPermitidos=[
 GENERAR MENÚ DINÁMICO
 =============================== */
 
-const menu=document.getElementById("menu");
-const main=document.getElementById("mainPanel");
-
-menu.innerHTML="";
-
 modulosPermitidos.forEach(nombre=>{
 
 const btn=document.createElement("button");
 
-btn.textContent = nombre.charAt(0).toUpperCase()+nombre.slice(1);
+/* nombre amigable */
+
+btn.textContent = nombre
+.replace(/([A-Z])/g," $1")
+.replace(/^./,c=>c.toUpperCase())
+.trim();
 
 btn.style.display="block";
 btn.style.width="100%";
@@ -154,7 +154,9 @@ btn.style.color="white";
 btn.style.cursor="pointer";
 btn.style.borderRadius="6px";
 
-btn.onclick=()=>moduleLoader.load(nombre,main);
+/* cargar módulo */
+
+btn.onclick=()=>moduleLoader.load(nombre.toLowerCase(),main);
 
 menu.appendChild(btn);
 
