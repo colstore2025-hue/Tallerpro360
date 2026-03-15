@@ -17,3 +17,4 @@ import "../modules/ceo.js";
 import "../modules/aiAssistant.js";
 import "../modules/aiAdvisor.js";
 import "../modules/configuracion.js";
+import "../modules/reportes.js";
