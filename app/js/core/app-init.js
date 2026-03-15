@@ -12,40 +12,38 @@ console.log("⚡ App Init iniciado");
 const uid = localStorage.getItem("uid");
 
 if(!uid){
-
-console.warn("Usuario no autenticado");
-window.location.href="/login.html";
-return;
-
+  console.warn("Usuario no autenticado");
+  window.location.href="/login.html";
+  return;
 }
 
 const container = document.getElementById("appContent");
 
 if(!container){
-
-console.error("No existe contenedor appContent");
-return;
-
+  console.error("No existe contenedor appContent");
+  return;
 }
 
-container.innerHTML = "<p>Cargando panel...</p>";
+container.innerHTML = "<p>Cargando sistema...</p>";
 
 try{
 
-await panel(container,uid);
+  console.log("Cargando panel para usuario:", uid);
+
+  await panel(container,uid);
 
 }
 catch(e){
 
-console.error("Error cargando panel:",e);
+  console.error("Error cargando panel:",e);
 
-container.innerHTML=`
-<div style="text-align:center;">
-<h2>Error cargando sistema</h2>
-<p>Revisa la consola</p>
-<button onclick="location.reload()">Reintentar</button>
-</div>
-`;
+  container.innerHTML=`
+  <div style="text-align:center;padding:40px;">
+  <h2>⚠ Error cargando sistema</h2>
+  <p>Revisa la consola del navegador</p>
+  <button onclick="location.reload()">Reintentar</button>
+  </div>
+  `;
 
 }
 
