@@ -1,59 +1,122 @@
 /**
  * moduleLoader.js
- * Cargador inteligente de módulos (auto-registro)
- * TallerPRO360
+ * Cargador inteligente de módulos
+ * TallerPRO360 ERP
  */
 
 export const moduleLoader = {
 
   modules:{},
 
-  /* Registrar módulo */
+  /* =====================================
+  REGISTRAR MÓDULO
+  ===================================== */
+
   register(name,fn){
-    if(!name || typeof fn!=="function"){
-      console.warn("Registro inválido:",name);
+
+    if(!name){
+      console.warn("⚠ Nombre de módulo inválido");
       return;
     }
-    this.modules[name]=fn;
-    console.log("📦 módulo registrado:",name);
+
+    if(typeof fn!=="function"){
+      console.warn("⚠ El módulo no es función:",name);
+      return;
+    }
+
+    const key = name.toLowerCase();
+
+    if(this.modules[key]){
+      console.warn("⚠ Módulo ya registrado:",key);
+      return;
+    }
+
+    this.modules[key] = fn;
+
+    console.log("📦 módulo registrado:",key);
+
   },
 
-  /* Ver módulos registrados */
+
+  /* =====================================
+  LISTAR MÓDULOS
+  ===================================== */
+
   list(){
+
     return Object.keys(this.modules);
+
   },
 
-  /* Cargar módulo */
+
+  /* =====================================
+  CARGAR MÓDULO
+  ===================================== */
+
   async load(name,container){
 
     if(!container){
-      console.error("Contenedor no válido");
+      console.error("❌ Contenedor no válido");
       return;
     }
 
-    container.innerHTML="Cargando módulo...";
+    const key = name.toLowerCase();
+
+    container.innerHTML=`
+      <div style="padding:20px">
+      ⏳ Cargando ${key}...
+      </div>
+    `;
 
     try{
 
-      const module=this.modules[name];
+      const module = this.modules[key];
 
       if(!module){
-        throw new Error("Módulo no registrado: "+name);
+
+        console.error("❌ módulo no registrado:",key);
+
+        container.innerHTML=`
+          <div style="padding:30px">
+          <h3>⚠ Módulo no disponible</h3>
+          <p>${key}</p>
+          </div>
+        `;
+
+        return;
+
+      }
+
+      if(typeof module !== "function"){
+        throw new Error("El módulo no es ejecutable");
       }
 
       await module(container);
 
-      console.log("✅ módulo cargado:",name);
+      console.log("✅ módulo cargado:",key);
 
-    }catch(e){
+    }
+    catch(e){
 
-      console.error("Error cargando módulo:",name,e);
+      console.error("❌ Error cargando módulo:",key,e);
 
       container.innerHTML=`
         <div style="padding:30px">
-        <h3>Error cargando módulo</h3>
-        <p>${name}</p>
-        <button onclick="location.reload()">Reiniciar sistema</button>
+        <h3>⚠ Error cargando módulo</h3>
+        <p>${key}</p>
+
+        <button onclick="location.reload()"
+        style="
+        padding:10px;
+        border:none;
+        background:#dc2626;
+        color:white;
+        border-radius:6px;
+        cursor:pointer;
+        ">
+        Reiniciar sistema
+        </button>
+
         </div>
       `;
 
@@ -61,8 +124,25 @@ export const moduleLoader = {
 
   },
 
+
+  /* =====================================
+  DIAGNÓSTICO DEL SISTEMA
+  ===================================== */
+
   diagnostic(){
-    console.table(this.list());
+
+    const list = this.list();
+
+    console.log("🧠 Diagnóstico ModuleLoader");
+
+    if(list.length===0){
+      console.warn("⚠ No hay módulos registrados");
+    }
+
+    console.table(list);
+
+    return list;
+
   }
 
 };
