@@ -1,7 +1,7 @@
 /**
  * panel.js
  * Panel principal del ERP
- * TallerPRO360 - Versión SaaS Optimizada
+ * TallerPRO360 - Versión SaaS Estable
  */
 
 import { dashboard } from "./dashboard.js";
@@ -20,7 +20,6 @@ import { reportes } from "./reportes.js";
 import { getModulosDisponibles } from "../planManager.js";
 import { loadAICore } from "../system/aiCoreLoader.js";
 import { moduleLoader } from "../system/moduleLoader.js";
-import { initRouter } from "../router.js";
 
 
 export async function panel(container,userId){
@@ -57,6 +56,13 @@ Inicializando sistema...
 </div>
 `;
 
+/* ===============================
+REFERENCIAS DOM
+=============================== */
+
+const menu = document.getElementById("menu");
+const main = document.getElementById("mainPanel");
+
 
 /* ===============================
 INICIAR IA DEL SISTEMA
@@ -86,8 +92,12 @@ moduleLoader.register("finanzas",finanzas);
 moduleLoader.register("contabilidad",contabilidad);
 moduleLoader.register("pagos",pagosTaller);
 moduleLoader.register("ceo",ceo);
-moduleLoader.register("aiAssistant",aiAssistant);
-moduleLoader.register("aiAdvisor",aiAdvisor);
+
+/* IA en minúsculas */
+
+moduleLoader.register("aiassistant",aiAssistant);
+moduleLoader.register("aiadvisor",aiAdvisor);
+
 moduleLoader.register("configuracion",configuracion);
 moduleLoader.register("reportes",reportes);
 
@@ -133,6 +143,8 @@ modulosPermitidos=[
 GENERAR MENÚ DINÁMICO
 =============================== */
 
+menu.innerHTML="";
+
 modulosPermitidos.forEach(nombre=>{
 
 const btn=document.createElement("button");
@@ -167,14 +179,7 @@ menu.appendChild(btn);
 CARGAR DASHBOARD INICIAL
 =============================== */
 
-moduleLoader.load("dashboard",main);
-
-
-/* ===============================
-INICIAR ROUTER (DESPUÉS DEL DOM)
-=============================== */
-
-initRouter();
+await moduleLoader.load("dashboard",main);
 
 
 /* ===============================
@@ -191,5 +196,9 @@ location.href="/login.html";
 };
 
 console.log("✅ Panel cargado correctamente");
+
+/* diagnóstico opcional */
+
+moduleLoader.diagnostic();
 
 }
