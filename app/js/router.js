@@ -8,13 +8,63 @@ import { scanModules } from "./system/moduleScanner.js";
 
 console.log("📦 Router inteligente iniciado");
 
-
 /* =====================================
 ESCANEAR MODULOS
 ===================================== */
 
-const sections = scanModules();
+let sections = {};
 
+try{
+
+sections = scanModules();
+
+}catch(e){
+
+console.error("Error escaneando módulos:",e);
+
+}
+
+/* fallback si scanner falla */
+
+if(!sections || Object.keys(sections).length===0){
+
+console.warn("⚠️ Scanner vacío. Usando fallback");
+
+sections = {
+
+dashboard:{
+name:"Dashboard",
+path:"./modules/dashboard.js"
+},
+
+clientes:{
+name:"Clientes",
+path:"./modules/clientes.js"
+},
+
+ordenes:{
+name:"Órdenes",
+path:"./modules/ordenes.js"
+},
+
+inventario:{
+name:"Inventario",
+path:"./modules/inventario.js"
+},
+
+reportes:{
+name:"Reportes",
+path:"./modules/reportes.js"
+},
+
+configuracion:{
+name:"Configuración",
+path:"./modules/configuracion.js"
+}
+
+};
+
+}
 
 /* =====================================
 CACHE DE MODULOS
@@ -48,6 +98,16 @@ btn.innerText = section.name;
 
 btn.dataset.module = key;
 
+btn.style.display="block";
+btn.style.width="100%";
+btn.style.margin="8px 0";
+btn.style.padding="10px";
+btn.style.borderRadius="6px";
+btn.style.border="1px solid #1e293b";
+btn.style.background="#0f172a";
+btn.style.color="white";
+btn.style.cursor="pointer";
+
 btn.onclick = ()=>{
 
 window.location.hash = key;
@@ -71,6 +131,10 @@ export function initRouter(){
 
 console.log("🧭 Router iniciado");
 
+/* generar menu */
+
+buildMenu();
+
 window.addEventListener("hashchange",handleHashChange);
 
 handleHashChange();
@@ -92,8 +156,6 @@ let hash = window.location.hash.replace("#","");
 
 if(!sections[hash]){
 
-console.warn("⚠️ Módulo no encontrado:",hash);
-
 hash = "dashboard";
 
 }
@@ -109,11 +171,12 @@ CARGAR MODULO
 
 async function loadSection(section){
 
-const container = document.getElementById("appContent");
+/* IMPORTANTE */
+const container = document.getElementById("mainPanel");
 
 if(!container){
 
-console.error("❌ appContent no encontrado");
+console.error("❌ mainPanel no encontrado");
 return;
 
 }
@@ -144,7 +207,6 @@ moduleCache[section] = module;
 
 }
 
-
 /* detectar función */
 
 let moduleFunction = module[section];
@@ -166,7 +228,6 @@ if(!moduleFunction){
 throw new Error("El módulo no exporta función válida");
 
 }
-
 
 /* ejecutar módulo */
 
