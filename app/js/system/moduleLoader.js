@@ -1,90 +1,68 @@
 /**
  * moduleLoader.js
- * Cargador inteligente de módulos
- * TallerPRO360 ERP
+ * Cargador inteligente de módulos (auto-registro)
+ * TallerPRO360
  */
 
 export const moduleLoader = {
 
-modules:{},
+  modules:{},
 
-/* ===========================
-Registrar módulo
-=========================== */
+  /* Registrar módulo */
+  register(name,fn){
+    if(!name || typeof fn!=="function"){
+      console.warn("Registro inválido:",name);
+      return;
+    }
+    this.modules[name]=fn;
+    console.log("📦 módulo registrado:",name);
+  },
 
-register(name,fn){
+  /* Ver módulos registrados */
+  list(){
+    return Object.keys(this.modules);
+  },
 
-this.modules[name]=fn;
+  /* Cargar módulo */
+  async load(name,container){
 
-console.log("📦 módulo registrado:",name);
+    if(!container){
+      console.error("Contenedor no válido");
+      return;
+    }
 
-},
+    container.innerHTML="Cargando módulo...";
 
-/* ===========================
-Cargar módulo
-=========================== */
+    try{
 
-async load(name,container){
+      const module=this.modules[name];
 
-if(!container){
+      if(!module){
+        throw new Error("Módulo no registrado: "+name);
+      }
 
-console.error("Contenedor no válido");
+      await module(container);
 
-return;
+      console.log("✅ módulo cargado:",name);
 
-}
+    }catch(e){
 
-container.innerHTML="Cargando módulo...";
+      console.error("Error cargando módulo:",name,e);
 
-try{
+      container.innerHTML=`
+        <div style="padding:30px">
+        <h3>Error cargando módulo</h3>
+        <p>${name}</p>
+        <button onclick="location.reload()">Reiniciar sistema</button>
+        </div>
+      `;
 
-const module=this.modules[name];
+    }
 
-if(!module){
+  },
 
-throw new Error("Módulo no registrado: "+name);
-
-}
-
-await module(container);
-
-console.log("✅ módulo cargado:",name);
-
-}
-catch(e){
-
-console.error("Error cargando módulo:",name,e);
-
-container.innerHTML=`
-
-<div style="padding:30px">
-
-<h3>Error cargando módulo</h3>
-
-<p>${name}</p>
-
-<button onclick="location.reload()">
-
-Reiniciar sistema
-
-</button>
-
-</div>
-
-`;
-
-}
-
-},
-
-/* ===========================
-Diagnóstico de módulos
-=========================== */
-
-diagnostic(){
-
-console.table(Object.keys(this.modules));
-
-}
+  diagnostic(){
+    console.table(this.list());
+  }
 
 };
