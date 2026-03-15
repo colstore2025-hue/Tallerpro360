@@ -21,7 +21,6 @@ import { loadAICore } from "../system/aiCoreLoader.js";
 import { moduleLoader } from "../system/moduleLoader.js";
 import { initRouter } from "../router.js";
 
-initRouter();
 
 export async function panel(container,userId){
 
@@ -171,3 +170,9 @@ location.href="/login.html";
 console.log("✅ Panel cargado correctamente");
 
 }
+
+/* ===============================
+INICIAR ROUTER
+=============================== */
+
+initRouter();
