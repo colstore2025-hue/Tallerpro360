@@ -1,49 +1,90 @@
 /**
  * moduleLoader.js
- * AI Module AutoLoader
+ * Cargador inteligente de módulos
  * TallerPRO360 ERP
  */
 
-console.log("🧠 AI Module Loader iniciado");
+export const moduleLoader = {
 
-/* ======================================
-DEFINICIÓN DE MÓDULOS
-====================================== */
+modules:{},
 
-const modules = {
+/* ===========================
+Registrar módulo
+=========================== */
 
-dashboard:{name:"Dashboard"},
-clientes:{name:"Clientes"},
-ordenes:{name:"Órdenes"},
-inventario:{name:"Inventario"},
-finanzas:{name:"Finanzas"},
-pagos:{name:"Pagos"},
-ceo:{name:"CEO"},
-aiadvisor:{name:"AI Advisor"},
-aicommand:{name:"AI Command"}
+register(name,fn){
 
-};
+this.modules[name]=fn;
 
+console.log("📦 módulo registrado:",name);
 
-/* ======================================
-GENERAR CONFIGURACIÓN
-====================================== */
+},
 
-export function getModules(){
+/* ===========================
+Cargar módulo
+=========================== */
 
-const result = {};
+async load(name,container){
 
-Object.entries(modules).forEach(([key,data])=>{
+if(!container){
 
-result[key] = {
+console.error("Contenedor no válido");
 
-name:data.name,
-path:`./modules/${key}.js`
-
-};
-
-});
-
-return result;
+return;
 
 }
+
+container.innerHTML="Cargando módulo...";
+
+try{
+
+const module=this.modules[name];
+
+if(!module){
+
+throw new Error("Módulo no registrado: "+name);
+
+}
+
+await module(container);
+
+console.log("✅ módulo cargado:",name);
+
+}
+catch(e){
+
+console.error("Error cargando módulo:",name,e);
+
+container.innerHTML=`
+
+<div style="padding:30px">
+
+<h3>Error cargando módulo</h3>
+
+<p>${name}</p>
+
+<button onclick="location.reload()">
+
+Reiniciar sistema
+
+</button>
+
+</div>
+
+`;
+
+}
+
+},
+
+/* ===========================
+Diagnóstico de módulos
+=========================== */
+
+diagnostic(){
+
+console.table(Object.keys(this.modules));
+
+}
+
+};
