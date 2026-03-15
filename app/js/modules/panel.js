@@ -15,6 +15,7 @@ import { ceo } from "./ceo.js";
 import { aiAssistant } from "./aiAssistant.js";
 import { aiAdvisor } from "./aiAdvisor.js";
 import { configuracion } from "./configuracion.js";
+import { reportes } from "./reportes.js";
 
 import { getModulosDisponibles } from "../planManager.js";
 import { loadAICore } from "../system/aiCoreLoader.js";
@@ -56,16 +57,22 @@ Inicializando sistema...
 </div>
 `;
 
+
 /* ===============================
 INICIAR IA DEL SISTEMA
 =============================== */
 
 try{
+
 await loadAICore();
 console.log("🤖 IA del sistema cargada");
+
 }catch(e){
+
 console.warn("IA no cargó:",e);
+
 }
+
 
 /* ===============================
 REGISTRAR MÓDULOS
@@ -82,6 +89,8 @@ moduleLoader.register("ceo",ceo);
 moduleLoader.register("aiAssistant",aiAssistant);
 moduleLoader.register("aiAdvisor",aiAdvisor);
 moduleLoader.register("configuracion",configuracion);
+moduleLoader.register("reportes",reportes);
+
 
 /* ===============================
 OBTENER PLAN DEL USUARIO
@@ -99,6 +108,7 @@ console.error("Error obteniendo plan:",e);
 
 }
 
+
 /* ===============================
 FALLBACK SI FALLA FIRESTORE
 =============================== */
@@ -112,10 +122,12 @@ modulosPermitidos=[
 "clientes",
 "ordenes",
 "inventario",
+"reportes",
 "configuracion"
 ];
 
 }
+
 
 /* ===============================
 GENERAR MENÚ DINÁMICO
@@ -148,11 +160,20 @@ menu.appendChild(btn);
 
 });
 
+
 /* ===============================
 CARGAR DASHBOARD INICIAL
 =============================== */
 
 moduleLoader.load("dashboard",main);
+
+
+/* ===============================
+INICIAR ROUTER (DESPUÉS DEL DOM)
+=============================== */
+
+initRouter();
+
 
 /* ===============================
 LOGOUT
@@ -170,9 +191,3 @@ location.href="/login.html";
 console.log("✅ Panel cargado correctamente");
 
 }
-
-/* ===============================
-INICIAR ROUTER
-=============================== */
-
-initRouter();
