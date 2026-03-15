@@ -1,50 +1,42 @@
 /**
  * app-init.js
- * Inicializador principal del ERP
+ * Inicializador del sistema
  */
 
 import { panel } from "../modules/panel.js";
 
 export async function iniciarApp(){
 
-console.log("⚡ App Init iniciado");
-
-const uid = localStorage.getItem("uid");
-
-if(!uid){
-  console.warn("Usuario no autenticado");
-  window.location.href="/login.html";
-  return;
-}
+console.log("🚀 Iniciando TallerPRO360");
 
 const container = document.getElementById("appContent");
 
-if(!container){
-  console.error("No existe contenedor appContent");
-  return;
-}
+const uid = localStorage.getItem("uid");
 
-container.innerHTML = "<p>Cargando sistema...</p>";
+/* ==========================
+SI NO HAY LOGIN
+========================== */
 
-try{
+if(!uid){
 
-  console.log("Cargando panel para usuario:", uid);
+container.innerHTML = `
+<div class="card">
+<h2>No hay sesión</h2>
+<p>Debes iniciar sesión</p>
+<a href="/login.html">
+<button>Ir a Login</button>
+</a>
+</div>
+`;
 
-  await panel(container,uid);
-
-}
-catch(e){
-
-  console.error("Error cargando panel:",e);
-
-  container.innerHTML=`
-  <div style="text-align:center;padding:40px;">
-  <h2>⚠ Error cargando sistema</h2>
-  <p>Revisa la consola del navegador</p>
-  <button onclick="location.reload()">Reintentar</button>
-  </div>
-  `;
+return;
 
 }
+
+/* ==========================
+CARGAR PANEL ERP
+========================== */
+
+await panel(container,uid);
 
 }
