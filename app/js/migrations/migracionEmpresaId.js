@@ -1,118 +1,105 @@
 /**
- * /app/js/migrations/migracionFirestoreCompleta.js
- * Migración profesional Firestore - TallerPRO360
- * Limpia y unifica empresaId, roles, planes y estados
+ * /app/js/migrations/migracionFirestoreFinal.js
+ * Migración Firestore: unifica empresaId, usuarios, roles, planes y colecciones críticas
+ * Ideal para ERP TallerPRO360
  */
 
 import { initializeApp, applicationDefault } from "firebase-admin/app";
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
+import { getFirestore } from "firebase-admin/firestore";
 
-// Inicializar Firebase Admin (Cloud / GitHub Actions)
 initializeApp({
   credential: applicationDefault()
 });
 
 const db = getFirestore();
-
-// Configuración principal
-const empresaIdDefault = "taller_001"; // ID principal de tu taller
-const rolGlobalDefault = "superadmin";
-const usuarioActivoDefault = true;
-const planEstadoDefault = "activo";
-const planTipoDefault = "enterprise";
+const empresaIdDefault = "taller_001"; // Empresa principal
 
 // Colecciones a migrar
-const coleccionesEmpresaId = ["ordenes", "repuestos", "facturas", "inventario", "gastos", "configuracion", "clientes", "empleados", "nomina", "movimientosInventario"];
+const colecciones = ["ordenes", "repuestos", "facturas", "inventario", "gastos", "clientes", "empleados", "configuracion", "sucursales"];
 
-const coleccionesUsuarios = ["usuariosGlobal", "usuarios"];
+// Función principal
+async function migrarFirestore() {
+  console.log("🚀 Iniciando migración Firestore completa...");
 
-async function migrarEmpresaId() {
-  console.log("🚀 Iniciando migración de empresaId...");
-
-  for (const col of coleccionesEmpresaId) {
+  // 1️⃣ Migrar documentos de colecciones críticas
+  for (const col of colecciones) {
     console.log(`📂 Migrando colección: ${col}`);
     const snapshot = await db.collection(col).get();
-
     let count = 0;
+
     for (const doc of snapshot.docs) {
       const data = doc.data();
-      if (!data.empresaId || data.empresaId !== empresaIdDefault) {
-        await doc.ref.update({ empresaId: empresaIdDefault });
+      if (!data.empresaId) {
+        await db.collection(col).doc(doc.id).update({ empresaId: empresaIdDefault });
         count++;
       }
     }
     console.log(`✅ ${count} documentos actualizados en ${col}`);
   }
 
-  console.log("🎯 EmpresaId migrado correctamente en todas las colecciones");
-}
-
-async function migrarUsuarios() {
-  console.log("👤 Migrando usuariosGlobal y usuarios...");
-
-  for (const col of coleccionesUsuarios) {
-    const snapshot = await db.collection(col).get();
-    let count = 0;
-
-    for (const doc of snapshot.docs) {
-      const data = doc.data();
-      let updateData = {};
-
-      if (!data.empresaId || data.empresaId !== empresaIdDefault) updateData.empresaId = empresaIdDefault;
-      if (!data.rolGlobal || data.rolGlobal === "") updateData.rolGlobal = rolGlobalDefault;
-      if (data.activo !== true) updateData.activo = usuarioActivoDefault;
-
-      if (Object.keys(updateData).length > 0) {
-        await doc.ref.update(updateData);
-        count++;
-      }
-    }
-
-    console.log(`✅ ${count} usuarios actualizados en ${col}`);
-  }
-
-  console.log("🎯 Usuarios migrados correctamente");
-}
-
-async function migrarPlanes() {
-  console.log("💳 Normalizando planes de empresas...");
-
-  const snapshot = await db.collection("empresas").get();
-  let count = 0;
-
-  for (const doc of snapshot.docs) {
+  // 2️⃣ Normalizar usuariosGlobal
+  console.log("👥 Normalizando usuariosGlobal...");
+  const usersSnap = await db.collection("usuariosGlobal").get();
+  let countUsers = 0;
+  for (const doc of usersSnap.docs) {
     const data = doc.data();
-    let updateData = {};
+    const update = {};
+    if (!data.empresaId || data.empresaId !== empresaIdDefault) update.empresaId = empresaIdDefault;
+    if (!data.rol) update.rol = "dueno";
+    if (!data.rolGlobal) update.rolGlobal = "superadmin";
+    if (!("activo" in data) || data.activo !== true) update.activo = true;
+    if (!data.sucursalId) update.sucursalId = "principal";
 
-    // Normalizar estado empresa
-    if (!data.estado || data.estado.trim() === "") updateData.estado = "activo";
-
-    // Normalizar plan
-    if (!data.plan) updateData.plan = { estado: planEstadoDefault, tipo: planTipoDefault, fechaInicio: Timestamp.now() };
-    else {
-      if (!data.plan.estado || data.plan.estado.trim() === "") updateData["plan.estado"] = planEstadoDefault;
-      if (!data.plan.tipo || data.plan.tipo.trim() === "") updateData["plan.tipo"] = planTipoDefault;
-      if (!data.plan.fechaInicio) updateData["plan.fechaInicio"] = Timestamp.now();
-    }
-
-    // EmpresaId
-    if (!data.empresaId || data.empresaId !== empresaIdDefault) updateData.empresaId = empresaIdDefault;
-
-    if (Object.keys(updateData).length > 0) {
-      await doc.ref.update(updateData);
-      count++;
+    if (Object.keys(update).length > 0) {
+      await db.collection("usuariosGlobal").doc(doc.id).update(update);
+      countUsers++;
     }
   }
+  console.log(`✅ ${countUsers} usuariosGlobal actualizados`);
 
-  console.log(`✅ ${count} empresas normalizadas`);
+  // 3️⃣ Normalizar usuarios locales
+  console.log("👥 Normalizando usuarios locales...");
+  const usuariosSnap = await db.collection("usuarios").get();
+  let countLocals = 0;
+  for (const doc of usuariosSnap.docs) {
+    const data = doc.data();
+    const update = {};
+    if (!data.empresaId || data.empresaId !== empresaIdDefault) update.empresaId = empresaIdDefault;
+    if (!data.rol) update.rol = "dueno";
+    if (!("activo" in data) || data.activo !== true) update.activo = true;
+
+    if (Object.keys(update).length > 0) {
+      await db.collection("usuarios").doc(doc.id).update(update);
+      countLocals++;
+    }
+  }
+  console.log(`✅ ${countLocals} usuarios locales actualizados`);
+
+  // 4️⃣ Normalizar empresas
+  console.log("🏢 Normalizando empresas...");
+  const empSnap = await db.collection("empresas").get();
+  let countEmp = 0;
+  for (const doc of empSnap.docs) {
+    const data = doc.data();
+    const update = {};
+    if (!("estado" in data) || data.estado.trim() === "") update.estado = "activo";
+    if (!("tipo" in data) || data.tipo.trim() === "") update.tipo = "enterprise";
+    if (!data.nombre) update.nombre = "Taller Los Motores";
+    if (!data.empresaId) update.empresaId = empresaIdDefault;
+
+    if (Object.keys(update).length > 0) {
+      await db.collection("empresas").doc(doc.id).update(update);
+      countEmp++;
+    }
+  }
+  console.log(`✅ ${countEmp} empresas actualizadas`);
+
+  console.log("🎯 Migración completa: Firestore lista para ERP TallerPRO360");
 }
 
-async function main() {
-  await migrarEmpresaId();
-  await migrarUsuarios();
-  await migrarPlanes();
-
-  console.log("🎯 Migración Firestore completa. Todo listo para abrir ERP.");
+// Ejecutar solo desde Node.js / Cloud
+if (typeof window === "undefined") {
+  migrarFirestore().catch(console.error);
 }
 
-main().catch(console.error);
+export { migrarFirestore };
