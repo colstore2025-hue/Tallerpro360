@@ -97,8 +97,6 @@ moduleLoader.register("contabilidad",contabilidad);
 moduleLoader.register("pagos",pagosTaller);
 moduleLoader.register("ceo",ceo);
 
-/* IA */
-
 moduleLoader.register("aiassistant",aiAssistant);
 moduleLoader.register("aiadvisor",aiAdvisor);
 
@@ -154,13 +152,10 @@ modulosPermitidos.forEach(nombre=>{
 
 const btn=document.createElement("button");
 
-/* nombre amigable */
-
 btn.textContent = nombre
 .replace(/([A-Z])/g," $1")
 .replace(/^./,c=>c.toUpperCase())
 .trim();
-
 
 btn.style.display="block";
 btn.style.width="100%";
@@ -172,10 +167,9 @@ btn.style.color="white";
 btn.style.cursor="pointer";
 btn.style.borderRadius="6px";
 
+/* CORRECCIÓN */
 
-/* cargar módulo */
-
-btn.onclick=()=>moduleLoader.load(nombre.toLowerCase(),main,userId);
+btn.onclick = () => moduleLoader.load(nombre.toLowerCase(), main);
 
 menu.appendChild(btn);
 
@@ -186,7 +180,7 @@ menu.appendChild(btn);
 CARGAR DASHBOARD INICIAL
 =============================== */
 
-await moduleLoader.load("dashboard",main,userId);
+await moduleLoader.load("dashboard", main);
 
 
 /* ===============================
@@ -202,10 +196,7 @@ location.href="/login.html";
 
 };
 
-
 console.log("✅ Panel cargado correctamente");
-
-/* diagnóstico */
 
 moduleLoader.diagnostic();
 
