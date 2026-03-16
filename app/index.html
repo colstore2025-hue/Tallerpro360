@@ -2,18 +2,43 @@
 <html lang="es">
 
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
-<title>TallerPRO360</title>
+<title>tallerpro360 erp</title>
 
 <style>
 
 body{
 margin:0;
-font-family:Arial;
+font-family:Arial, Helvetica, sans-serif;
 background:#0f172a;
 color:white;
+height:100vh;
+overflow:hidden;
+}
+
+#appContent{
+height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+.card{
+background:#020617;
+padding:20px;
+border-radius:10px;
+border:1px solid #1e293b;
+text-align:center;
+}
+
+button{
+padding:10px 20px;
+border:none;
+border-radius:6px;
+cursor:pointer;
 }
 
 </style>
@@ -22,19 +47,53 @@ color:white;
 
 <body>
 
-<div id="appContent"></div>
+<!-- contenedor principal de la app -->
+<div id="appContent">
+
+<div class="card">
+
+<h2>bienvenido a tallerpro360</h2>
+
+<p>erp inteligente para talleres automotrices</p>
+
+</div>
+
+</div>
+
+
+<!-- ===============================
+arranque del sistema
+=============================== -->
 
 <script type="module">
 
-import { iniciarApp } from "./js/core/app-init.js";
+import { iniciarapp } from "./js/core/app-init.js";
 
-document.addEventListener("DOMContentLoaded",async()=>{
+document.addEventListener("DOMContentLoaded",()=>{
 
-console.log("🚀 Iniciando TallerPRO360");
+console.log("🚀 iniciando tallerpro360");
 
-await iniciarApp();
+iniciarapp();
 
 });
+
+</script>
+
+
+<!-- ===============================
+botón salir global
+=============================== -->
+
+<script>
+
+window.salir=function(){
+
+localStorage.removeItem("uid");
+localStorage.removeItem("empresaId");
+
+location.href="/login.html";
+
+}
 
 </script>
 
