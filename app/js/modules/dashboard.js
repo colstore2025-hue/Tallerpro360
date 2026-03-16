@@ -1,8 +1,8 @@
 /*
 ================================================
 dashboard.js
-Panel Gerente TallerPRO360 ERP SaaS
-Versión Profesional Estable
+Panel gerente TallerPRO360 ERP
+Versión estable compatible con estructura actual
 ================================================
 */
 
@@ -19,6 +19,7 @@ import {
 collection,
 getDocs,
 query,
+where,
 orderBy,
 limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -34,14 +35,12 @@ const empresaId = obtenerEmpresaId();
 
 if(!empresaId){
 
-container.innerHTML=`<h2>No hay empresa activa</h2>`;
+container.innerHTML="<h2>No hay empresa activa</h2>";
 return;
 
 }
 
-/* ===============================
-UI
-=============================== */
+/* UI */
 
 container.innerHTML=`
 <h1 style="font-size:28px;margin-bottom:20px;">
@@ -60,13 +59,13 @@ container.innerHTML=`
 
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-bottom:25px;">
 
-<div class="card"><h3>Órdenes activas</h3><p id="ordenesActivas" style="font-size:28px;">0</p></div>
-<div class="card"><h3>Órdenes completadas hoy</h3><p id="ordenesCompletadas" style="font-size:28px;">0</p></div>
-<div class="card"><h3>Ingresos hoy</h3><p id="ingresosHoy" style="font-size:28px;">$0</p></div>
-<div class="card"><h3>Margen promedio</h3><p id="margenUtilidad" style="font-size:28px;">0%</p></div>
-<div class="card"><h3>Tiempo reparación</h3><p id="tiempoPromedio" style="font-size:28px;">0h</p></div>
-<div class="card"><h3>Stock crítico</h3><p id="stockCritico" style="font-size:28px;">0</p></div>
-<div class="card"><h3>Ingresos pagos hoy</h3><p id="resumenIngresosHoy" style="font-size:28px;">$0</p></div>
+<div class="card"><h3>Órdenes activas</h3><p id="ordenesActivas">0</p></div>
+<div class="card"><h3>Órdenes completadas hoy</h3><p id="ordenesCompletadas">0</p></div>
+<div class="card"><h3>Ingresos hoy</h3><p id="ingresosHoy">$0</p></div>
+<div class="card"><h3>Margen promedio</h3><p id="margenUtilidad">0%</p></div>
+<div class="card"><h3>Tiempo reparación</h3><p id="tiempoPromedio">0h</p></div>
+<div class="card"><h3>Stock crítico</h3><p id="stockCritico">0</p></div>
+<div class="card"><h3>Ingresos pagos hoy</h3><p id="resumenIngresosHoy">$0</p></div>
 
 </div>
 
@@ -77,46 +76,33 @@ container.innerHTML=`
 
 <div class="card">
 <h2>🤖 Recomendaciones IA</h2>
-<div id="recomendacionesIA"
-style="margin-top:10px;max-height:150px;overflow-y:auto;background:#111827;color:white;padding:10px;border-radius:6px;">
-Cargando sugerencias...
-</div>
+<div id="recomendacionesIA">Cargando...</div>
 </div>
 `;
 
 
-/* ===============================
-NAVEGACIÓN
-=============================== */
+/* navegación */
 
-const btnClientes=document.getElementById("btnClientes");
-const btnOrdenes=document.getElementById("btnOrdenes");
-const btnInventario=document.getElementById("btnInventario");
-const btnPagos=document.getElementById("btnPagos");
-const btnConfig=document.getElementById("btnConfiguracion");
-
-if(btnClientes) btnClientes.onclick=()=>clientes(container);
-if(btnOrdenes) btnOrdenes.onclick=()=>ordenes(container);
-if(btnInventario) btnInventario.onclick=()=>inventario(container);
-if(btnPagos) btnPagos.onclick=()=>pagosTaller(container);
-if(btnConfig) btnConfig.onclick=()=>configuracion(container);
+document.getElementById("btnClientes").onclick=()=>clientes(container);
+document.getElementById("btnOrdenes").onclick=()=>ordenes(container);
+document.getElementById("btnInventario").onclick=()=>inventario(container);
+document.getElementById("btnPagos").onclick=()=>pagosTaller(container);
+document.getElementById("btnConfiguracion").onclick=()=>configuracion(container);
 
 
-/* ===============================
-CARGAR DATOS
-=============================== */
+/* cargar datos */
 
 await cargarKPIs(empresaId);
 await cargarOrdenes(empresaId);
-await cargarRecomendacionesIA();
+await cargarIA();
 
 }
 catch(error){
 
-console.error("Error cargando dashboard:",error);
+console.error("Error dashboard:",error);
 
 container.innerHTML=`
-<h2>Error cargando Dashboard</h2>
+<h2>Error cargando dashboard</h2>
 <p>${error.message}</p>
 `;
 
@@ -126,18 +112,16 @@ container.innerHTML=`
 
 
 
-/* =====================================
-KPIs
-===================================== */
+/* KPIs */
 
 async function cargarKPIs(empresaId){
 
 try{
 
-const clientesSnap=await getDocs(collection(db,"talleres",empresaId,"clientes"));
-const ordenesSnap=await getDocs(collection(db,"talleres",empresaId,"ordenes"));
-const inventarioSnap=await getDocs(collection(db,"talleres",empresaId,"inventario"));
-const pagosSnap=await getDocs(collection(db,"talleres",empresaId,"pagos"));
+const clientesSnap=await getDocs(query(collection(db,"clientes"),where("empresaId","==",empresaId)));
+const ordenesSnap=await getDocs(query(collection(db,"ordenes"),where("empresaId","==",empresaId)));
+const inventarioSnap=await getDocs(query(collection(db,"inventario"),where("empresaId","==",empresaId)));
+const pagosSnap=await getDocs(query(collection(db,"pagos"),where("empresaId","==",empresaId)));
 
 const hoy=new Date().toDateString();
 
@@ -151,11 +135,9 @@ let ordenesCompletadasCount=0;
 
 /* ORDENES */
 
-ordenesSnap.docs.forEach(doc=>{
+ordenesSnap.forEach(doc=>{
 
 const o=doc.data();
-
-if(!o.fecha) return;
 
 const fechaOrden=o.fecha?.toDate?.()?.toDateString?.();
 
@@ -178,11 +160,9 @@ margenTotal+=o.margen || 0;
 
 /* PAGOS */
 
-pagosSnap.docs.forEach(doc=>{
+pagosSnap.forEach(doc=>{
 
 const p=doc.data();
-
-if(!p.fecha) return;
 
 const fecha=p.fecha?.toDate?.()?.toDateString?.();
 
@@ -201,31 +181,20 @@ const margenPromedio=ordenesCompletadasCount
 ? (margenTotal/ordenesCompletadasCount).toFixed(1)
 : 0;
 
-const stockCritico=inventarioSnap.docs.filter(
-p=>p.data().stock<=3
-).length;
+const stockCritico=inventarioSnap.docs.filter(p=>p.data().stock<=3).length;
 
 
-/* UI SEGURA */
+/* UI */
 
-const set=(id,val)=>{
+document.getElementById("ordenesActivas").innerText=
+ordenesSnap.docs.filter(o=>o.data().estado!=="completada").length;
 
-const el=document.getElementById(id);
-
-if(el) el.innerText=val;
-
-};
-
-set("ordenesActivas",
-ordenesSnap.docs.filter(o=>o.data().estado!=="completada").length
-);
-
-set("ordenesCompletadas",completadasHoy);
-set("ingresosHoy",`$${ingresosHoy}`);
-set("margenUtilidad",`${margenPromedio}%`);
-set("tiempoPromedio",`${tiempoPromedio}h`);
-set("stockCritico",stockCritico);
-set("resumenIngresosHoy",`$${ingresosPagosHoy}`);
+document.getElementById("ordenesCompletadas").innerText=completadasHoy;
+document.getElementById("ingresosHoy").innerText=`$${ingresosHoy}`;
+document.getElementById("margenUtilidad").innerText=`${margenPromedio}%`;
+document.getElementById("tiempoPromedio").innerText=`${tiempoPromedio}h`;
+document.getElementById("stockCritico").innerText=stockCritico;
+document.getElementById("resumenIngresosHoy").innerText=`$${ingresosPagosHoy}`;
 
 }
 catch(e){
@@ -238,31 +207,22 @@ console.error("Error KPIs:",e);
 
 
 
-/* =====================================
-ORDENES RECIENTES
-===================================== */
+/* ORDENES RECIENTES */
 
 async function cargarOrdenes(empresaId){
 
 try{
 
 const q=query(
-collection(db,"talleres",empresaId,"ordenes"),
+collection(db,"ordenes"),
+where("empresaId","==",empresaId),
 orderBy("fecha","desc"),
 limit(5)
 );
 
 const snapshot=await getDocs(q);
 
-let html=`
-<table style="width:100%;border-collapse:collapse;">
-<tr style="border-bottom:1px solid #1e293b;">
-<th>Cliente</th>
-<th>Vehículo</th>
-<th>Estado</th>
-<th>Total</th>
-</tr>
-`;
+let html="<table style='width:100%'>";
 
 snapshot.forEach(doc=>{
 
@@ -281,14 +241,12 @@ html+=`
 
 html+="</table>";
 
-const div=document.getElementById("ordenesRecientes");
-
-if(div) div.innerHTML=html;
+document.getElementById("ordenesRecientes").innerHTML=html;
 
 }
 catch(e){
 
-console.error("Error órdenes recientes:",e);
+console.error("Error ordenes:",e);
 
 }
 
@@ -296,27 +254,21 @@ console.error("Error órdenes recientes:",e);
 
 
 
-/* =====================================
-RECOMENDACIONES IA
-===================================== */
+/* IA */
 
-async function cargarRecomendacionesIA(){
+async function cargarIA(){
 
 try{
 
-const container=document.getElementById("recomendacionesIA");
-
-if(!container) return;
-
 const recomendaciones=await calcularPredicciones();
+
+const container=document.getElementById("recomendacionesIA");
 
 container.innerHTML="";
 
 recomendaciones.forEach(r=>{
 
 const div=document.createElement("div");
-
-div.style.marginBottom="6px";
 
 div.innerHTML=`• ${r}`;
 
@@ -327,7 +279,7 @@ container.appendChild(div);
 }
 catch(e){
 
-console.warn("IA no disponible:",e);
+console.warn("IA no disponible");
 
 }
 
