@@ -74,9 +74,19 @@ BOOT SYSTEM
 
 import { bootSystem } from "./js/system/bootSystem.js";
 
-document.addEventListener("DOMContentLoaded",()=>{
+window.addEventListener("DOMContentLoaded",()=>{
 
 console.log("🚀 Arrancando TallerPRO360...");
+
+const app=document.getElementById("appContent");
+
+if(!app){
+
+console.error("❌ #appContent no existe");
+
+return;
+
+}
 
 bootSystem();
 
@@ -109,7 +119,13 @@ BOTÓN SALIR
 
 <script>
 
-document.getElementById("btnSalir").onclick=()=>{
+window.addEventListener("DOMContentLoaded",()=>{
+
+const btn=document.getElementById("btnSalir");
+
+if(btn){
+
+btn.onclick=()=>{
 
 localStorage.removeItem("uid");
 localStorage.removeItem("empresaId");
@@ -117,6 +133,10 @@ localStorage.removeItem("empresaId");
 location.href="/login.html";
 
 };
+
+}
+
+});
 
 </script>
 
