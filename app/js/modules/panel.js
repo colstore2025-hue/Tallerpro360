@@ -24,9 +24,9 @@ export async function panel(container,userId){
 console.log("🚀 iniciando panel erp");
 
 
-/* ===============================
-LAYOUT
-=============================== */
+/* =========================
+layout
+========================= */
 
 container.innerHTML=`
 
@@ -57,9 +57,7 @@ border-radius:6px;
 color:white;
 cursor:pointer;
 ">
-
 salir
-
 </button>
 
 </nav>
@@ -78,20 +76,21 @@ cargando módulo...
 </main>
 
 </div>
+
 `;
 
 
-/* ===============================
-DOM
-=============================== */
+/* =========================
+dom
+========================= */
 
 const menu=document.getElementById("menu");
 const main=document.getElementById("mainPanel");
 
 
-/* ===============================
-REGISTRO MODULOS
-=============================== */
+/* =========================
+registro módulos
+========================= */
 
 moduleLoader.register("dashboard",dashboard);
 moduleLoader.register("clientes",clientes);
@@ -104,9 +103,9 @@ moduleLoader.register("configuracion",configuracion);
 moduleLoader.register("reportes",reportes);
 
 
-/* ===============================
-MENU ERP
-=============================== */
+/* =========================
+menu
+========================= */
 
 const modulos=[
 
@@ -121,7 +120,6 @@ const modulos=[
 "configuracion"
 
 ];
-
 
 menu.innerHTML="";
 
@@ -151,9 +149,9 @@ menu.appendChild(btn);
 });
 
 
-/* ===============================
-LOGOUT
-=============================== */
+/* =========================
+logout
+========================= */
 
 document.getElementById("logoutBtn").onclick=()=>{
 
@@ -164,9 +162,9 @@ window.location="/login.html";
 };
 
 
-/* ===============================
-CARGA INICIAL
-=============================== */
+/* =========================
+carga inicial
+========================= */
 
 await moduleLoader.load("dashboard",main,userId);
 
