@@ -1,8 +1,8 @@
 /*
 =====================================
 panel.js
-panel principal erp
-tallerpro360
+Panel principal ERP - TallerPRO360
+Versión final integrada
 =====================================
 */
 
@@ -18,156 +18,112 @@ import { pagosTaller } from "./pagosTaller.js";
 import { configuracion } from "./configuracion.js";
 import { reportes } from "./reportes.js";
 
+export async function panel(container, userId) {
 
-export async function panel(container,userId){
+  console.log("🚀 Iniciando panel ERP");
 
-console.log("🚀 iniciando panel erp");
+  /* =========================
+  Layout principal
+  ========================= */
+  container.innerHTML = `
+    <div style="display:flex;height:100vh">
 
+      <nav style="
+        width:240px;
+        background:#020617;
+        padding:20px;
+        color:white;
+        overflow:auto;
+      ">
+        <h2 style="margin-bottom:20px">TallerPRO360</h2>
+        <div id="menu"></div>
+        <button id="logoutBtn" style="
+          margin-top:20px;
+          width:100%;
+          padding:10px;
+          background:#dc2626;
+          border:none;
+          border-radius:6px;
+          color:white;
+          cursor:pointer;
+        ">Salir</button>
+      </nav>
 
-/* =========================
-layout
-========================= */
+      <main id="mainPanel" style="
+        flex:1;
+        padding:20px;
+        background:#1e293b;
+        color:white;
+        overflow:auto;
+      ">
+        Cargando módulo...
+      </main>
 
-container.innerHTML=`
+    </div>
+  `;
 
-<div style="display:flex;height:100vh">
+  /* =========================
+  DOM
+  ========================= */
+  const menu = document.getElementById("menu");
+  const main = document.getElementById("mainPanel");
 
-<nav style="
-width:240px;
-background:#020617;
-padding:20px;
-color:white;
-overflow:auto;
-">
+  /* =========================
+  Registro de módulos
+  ========================= */
+  moduleLoader.register("dashboard", dashboard);
+  moduleLoader.register("clientes", clientes);
+  moduleLoader.register("ordenes", ordenes);
+  moduleLoader.register("inventario", inventario);
+  moduleLoader.register("finanzas", finanzas);
+  moduleLoader.register("contabilidad", contabilidad);
+  moduleLoader.register("pagos", pagosTaller);
+  moduleLoader.register("configuracion", configuracion);
+  moduleLoader.register("reportes", reportes);
 
-<h2 style="margin-bottom:20px">
-tallerpro360
-</h2>
+  /* =========================
+  Menú lateral
+  ========================= */
+  const modulos = [
+    "dashboard",
+    "clientes",
+    "ordenes",
+    "inventario",
+    "finanzas",
+    "contabilidad",
+    "pagos",
+    "reportes",
+    "configuracion"
+  ];
 
-<div id="menu"></div>
+  menu.innerHTML = "";
+  modulos.forEach(nombre => {
+    const btn = document.createElement("button");
+    btn.textContent = nombre;
+    btn.style.display = "block";
+    btn.style.width = "100%";
+    btn.style.margin = "8px 0";
+    btn.style.padding = "10px";
+    btn.style.background = "#0f172a";
+    btn.style.border = "1px solid #1e293b";
+    btn.style.color = "white";
+    btn.style.cursor = "pointer";
+    btn.onclick = () => moduleLoader.load(nombre, main, userId);
+    menu.appendChild(btn);
+  });
 
-<button id="logoutBtn"
-style="
-margin-top:20px;
-width:100%;
-padding:10px;
-background:#dc2626;
-border:none;
-border-radius:6px;
-color:white;
-cursor:pointer;
-">
-salir
-</button>
+  /* =========================
+  Logout
+  ========================= */
+  document.getElementById("logoutBtn").onclick = () => {
+    localStorage.clear();
+    window.location = "/login.html";
+  };
 
-</nav>
+  /* =========================
+  Carga inicial
+  ========================= */
+  await moduleLoader.load("dashboard", main, userId);
 
-<main id="mainPanel"
-style="
-flex:1;
-padding:20px;
-background:#1e293b;
-color:white;
-overflow:auto;
-">
-
-cargando módulo...
-
-</main>
-
-</div>
-
-`;
-
-
-/* =========================
-dom
-========================= */
-
-const menu=document.getElementById("menu");
-const main=document.getElementById("mainPanel");
-
-
-/* =========================
-registro módulos
-========================= */
-
-moduleLoader.register("dashboard",dashboard);
-moduleLoader.register("clientes",clientes);
-moduleLoader.register("ordenes",ordenes);
-moduleLoader.register("inventario",inventario);
-moduleLoader.register("finanzas",finanzas);
-moduleLoader.register("contabilidad",contabilidad);
-moduleLoader.register("pagos",pagosTaller);
-moduleLoader.register("configuracion",configuracion);
-moduleLoader.register("reportes",reportes);
-
-
-/* =========================
-menu
-========================= */
-
-const modulos=[
-
-"dashboard",
-"clientes",
-"ordenes",
-"inventario",
-"finanzas",
-"contabilidad",
-"pagos",
-"reportes",
-"configuracion"
-
-];
-
-menu.innerHTML="";
-
-modulos.forEach(nombre=>{
-
-const btn=document.createElement("button");
-
-btn.textContent=nombre;
-
-btn.style.display="block";
-btn.style.width="100%";
-btn.style.margin="8px 0";
-btn.style.padding="10px";
-btn.style.background="#0f172a";
-btn.style.border="1px solid #1e293b";
-btn.style.color="white";
-btn.style.cursor="pointer";
-
-btn.onclick=()=>{
-
-moduleLoader.load(nombre,main,userId);
-
-};
-
-menu.appendChild(btn);
-
-});
-
-
-/* =========================
-logout
-========================= */
-
-document.getElementById("logoutBtn").onclick=()=>{
-
-localStorage.clear();
-
-window.location="/login.html";
-
-};
-
-
-/* =========================
-carga inicial
-========================= */
-
-await moduleLoader.load("dashboard",main,userId);
-
-console.log("✅ erp cargado");
-
+  console.log("✅ ERP cargado correctamente");
 }
