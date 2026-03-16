@@ -142,11 +142,12 @@ async function cargarOrdenes() {
       <tr style="border-bottom:1px solid #1e293b;"><th>Cliente</th><th>Vehículo</th><th>Estado</th><th>Fecha</th></tr>`;
     snapshot.forEach(docSnap => {
       const o = docSnap.data();
+      const fecha = o.fecha.toDate ? o.fecha.toDate().toLocaleString() : new Date(o.fecha).toLocaleString();
       html += `<tr>
         <td>${o.clientePhone || "-"}</td>
         <td>${o.vehiculo || "-"}</td>
         <td>${o.estado || "Recepción"}</td>
-        <td>${o.fecha.toDate().toLocaleString()}</td>
+        <td>${fecha}</td>
       </tr>`;
     });
     html += "</table>";
