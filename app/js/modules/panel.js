@@ -32,7 +32,7 @@ padding:20px;
 color:white;
 ">
 
-<h2>TallerPRO360</h2>
+<h2 style="margin-bottom:20px;">TallerPRO360</h2>
 
 <div id="menu"></div>
 
@@ -44,6 +44,7 @@ flex:1;
 padding:20px;
 background:#1e293b;
 color:white;
+overflow:auto;
 ">
 
 Cargando módulo...
@@ -55,11 +56,11 @@ Cargando módulo...
 
 
 /* =========================
-DOM
+DOM (usar container)
 ========================= */
 
-const menu=document.getElementById("menu");
-const main=document.getElementById("mainPanel");
+const menu = container.querySelector("#menu");
+const main = container.querySelector("#mainPanel");
 
 if(!menu || !main){
 
@@ -116,11 +117,25 @@ btn.style.border="1px solid #1e293b";
 btn.style.color="white";
 btn.style.cursor="pointer";
 
-btn.onclick=()=>{
+btn.onclick=async ()=>{
 
 console.log("Cargando módulo:",nombre);
 
-moduleLoader.load(nombre,main,userId);
+try{
+
+await moduleLoader.load(nombre,main,userId);
+
+}
+catch(e){
+
+console.error("Error cargando módulo:",e);
+
+main.innerHTML=`
+<h2>Error cargando módulo</h2>
+<p>${e.message}</p>
+`;
+
+}
 
 };
 
@@ -133,10 +148,23 @@ menu.appendChild(btn);
 CARGA INICIAL
 ========================= */
 
+try{
+
 await moduleLoader.load("dashboard",main,userId);
 
-console.log("✅ Panel cargado");
+}
+catch(e){
 
+console.error("Error cargando dashboard:",e);
+
+main.innerHTML=`
+<h2>Error cargando Dashboard</h2>
+<p>${e.message}</p>
+`;
+
+}
+
+console.log("✅ Panel cargado");
 
 }
 catch(error){
