@@ -11,7 +11,7 @@ import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, orderBy 
 
 export async function inventario(container) {
 
-  container.innerHTML = `
+container.innerHTML = `
 <h1 style="font-size:28px;margin-bottom:20px;">📦 Inventario Avanzado</h1>
 
 <div class="card">
@@ -35,18 +35,13 @@ export async function inventario(container) {
 </div>
 `;
 
-  // Eventos
-  document.getElementById("guardarProducto").onclick = guardarProducto;
-  document.getElementById("buscarProducto").oninput = filtrarInventario;
-  document.getElementById("vozProducto").onclick = dictarProductoVoz;
+document.getElementById("guardarProducto").onclick = guardarProducto;
+document.getElementById("buscarProducto").oninput = filtrarInventario;
+document.getElementById("vozProducto").onclick = dictarProductoVoz;
 
-  // Cargar inventario
-  await cargarInventario();
+await cargarInventario();
 }
 
-/* ===========================
-GUARDAR / EDITAR PRODUCTO
-=========================== */
 async function guardarProducto(editId = null) {
   const nombre = document.getElementById("productoNombre").value.trim();
   const costo = Number(document.getElementById("productoCosto").value);
@@ -78,9 +73,6 @@ async function guardarProducto(editId = null) {
   }
 }
 
-/* ===========================
-CARGAR INVENTARIO
-=========================== */
 async function cargarInventario() {
   const lista = document.getElementById("listaInventario");
   try{
@@ -110,7 +102,6 @@ async function cargarInventario() {
     html += "</table>";
     lista.innerHTML = html;
 
-    // Funciones globales
     window.editarProducto = async (id) => {
       const pSnap = await getDocs(collection(db,"inventario"));
       const p = (await getDocs(doc(db,"inventario",id))).data();
@@ -135,9 +126,6 @@ async function cargarInventario() {
   }
 }
 
-/* ===========================
-FILTRAR INVENTARIO
-=========================== */
 function filtrarInventario(){
   const input = document.getElementById("buscarProducto").value.toLowerCase();
   const rows = document.querySelectorAll("#listaInventario table tr");
@@ -147,9 +135,6 @@ function filtrarInventario(){
   });
 }
 
-/* ===========================
-LIMPIAR FORMULARIO
-=========================== */
 function limpiarFormulario(){
   document.getElementById("productoNombre").value = "";
   document.getElementById("productoCosto").value = "";
@@ -158,9 +143,6 @@ function limpiarFormulario(){
   document.getElementById("guardarProducto").onclick = guardarProducto;
 }
 
-/* ===========================
-DICTADO POR VOZ
-=========================== */
 function dictarProductoVoz(){
   const recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!recognition) return hablar("Tu navegador no soporta dictado por voz");
@@ -180,9 +162,6 @@ function dictarProductoVoz(){
   rec.start();
 }
 
-/* ===========================
-FUNCIÓN DE SÍNTESIS DE VOZ
-=========================== */
 function hablar(texto){
   if(!texto) return;
   const speech = new SpeechSynthesisUtterance(texto);
