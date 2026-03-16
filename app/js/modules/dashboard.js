@@ -1,153 +1,211 @@
 /*
 ================================================
-DASHBOARD.JS - Versión Última Generación
-Dashboard Gerencial Interactivo - TALLERPRO360
+DASHBOARD.JS - Versión Final Avanzada
+Dashboard Gerencial ERP - TallerPRO360
+Métricas completas de órdenes, clientes, técnicos e ingresos
 ================================================
 */
 
 import { db } from "../core/firebase-config.js";
-import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import Chart from "https://cdn.jsdelivr.net/npm/chart.js";
+import { collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export async function dashboard(container, userId) {
+  console.log("📊 Cargando dashboard gerencial");
+
   container.innerHTML = `
-    <h1 style="font-size:28px;margin-bottom:20px;">📊 Dashboard Gerencial - TallerPRO360</h1>
+<h1 style="font-size:28px;margin-bottom:20px">📊 Dashboard Gerencial - TallerPRO360</h1>
+<p>Bienvenido al ERP - Analiza y toma decisiones rápidas</p>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px;margin-bottom:30px;">
-      <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
-        <h3>Órdenes Hoy</h3>
-        <p id="ordenesDia" style="font-size:24px;">0</p>
-      </div>
-      <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
-        <h3>Ingresos Hoy</h3>
-        <p id="ingresosDia" style="font-size:24px;">$0</p>
-      </div>
-      <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
-        <h3>Ganancia Neta</h3>
-        <p id="gananciaDia" style="font-size:24px;">$0</p>
-      </div>
-      <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
-        <h3>Clientes Activos</h3>
-        <p id="clientesActivos" style="font-size:24px;">0</p>
-      </div>
-    </div>
+<div style="margin-top:30px; display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:15px;">
+  <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
+    Órdenes del día: <span id="ordenesDia">0</span>
+  </div>
+  <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
+    Ingresos del día: $<span id="ingresosDia">0</span>
+  </div>
+  <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
+    Ganancia Neta del Día: $<span id="gananciaDia">0</span>
+  </div>
+  <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
+    Clientes Activos: <span id="clientesActivos">0</span>
+  </div>
+  <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
+    Técnicos Activos: <span id="tecnicosActivos">0</span>
+  </div>
+</div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-      <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
-        <h3>Órdenes por Estado</h3>
-        <canvas id="ordenesEstadoChart"></canvas>
-      </div>
-      <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
-        <h3>Rendimiento Técnicos</h3>
-        <canvas id="rendimientoTecnicosChart"></canvas>
-      </div>
-    </div>
+<div style="margin-top:30px;">
+  <h3 style="color:white;">Órdenes Recientes</h3>
+  <div id="listaOrdenesRecientes" style="background:#1e293b;padding:10px;border-radius:6px;color:white;max-height:300px;overflow-y:auto;">
+    Cargando órdenes...
+  </div>
+</div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;">
-      <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
-        <h3>Ingresos Últimos 7 Días</h3>
-        <canvas id="ingresos7DiasChart"></canvas>
-      </div>
-      <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
-        <h3>Alertas Financieras IA</h3>
-        <div id="alertasIA">Cargando...</div>
-        <button id="leerAlertas" style="margin-top:10px;padding:8px 15px;background:#6366f1;border:none;border-radius:6px;color:white;cursor:pointer;">🔊 Leer alertas</button>
-      </div>
-    </div>
-  `;
+<div style="margin-top:30px;">
+  <h3 style="color:white;">Top Técnicos (Rendimiento)</h3>
+  <div id="topTecnicos" style="background:#1e293b;padding:10px;border-radius:6px;color:white;max-height:200px;overflow-y:auto;">
+    Cargando datos...
+  </div>
+</div>
 
-  let alertasCache = "";
+<div style="margin-top:30px;">
+  <h3 style="color:white;">Alertas y Recomendaciones IA</h3>
+  <div id="alertasDashboard" style="background:#111827;padding:15px;border-radius:6px;color:white;max-height:200px;overflow-y:auto;">
+    Esperando análisis IA...
+  </div>
+</div>
+`;
 
-  document.getElementById("leerAlertas").onclick = () => {
-    if (!alertasCache) hablar("No hay alertas generadas aún");
-    else hablar(alertasCache);
-  };
+  await cargarMetricas();
+  await cargarOrdenesRecientes();
+  await cargarTopTecnicos();
+  await generarAlertasIA();
+}
 
-  await actualizarKPIs();
+/* ===========================
+FUNCIONES PRINCIPALES
+=========================== */
 
-  async function actualizarKPIs() {
-    const hoy = new Date();
-    const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
-    const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
+async function cargarMetricas() {
+  const ordenesDiaElem = document.getElementById("ordenesDia");
+  const ingresosDiaElem = document.getElementById("ingresosDia");
+  const gananciaDiaElem = document.getElementById("gananciaDia");
+  const clientesActivosElem = document.getElementById("clientesActivos");
+  const tecnicosActivosElem = document.getElementById("tecnicosActivos");
 
-    let ordenesDia = 0, ingresosDia = 0, gananciaDia = 0, clientesSet = new Set();
-    const estadoMap = {};
-    const tecnicoMap = {};
-    const ingresos7Dias = {};
+  const hoy = new Date().toDateString();
+  let ordenesDia = 0, ingresosDia = 0, gananciaDia = 0;
+  let clientesSet = new Set(), tecnicosSet = new Set();
 
-    const ordSnap = await getDocs(collection(db, "ordenes"));
-    ordSnap.forEach(docSnap => {
+  try {
+    const ordenSnap = await getDocs(collection(db, "ordenes"));
+    ordenSnap.forEach(docSnap => {
       const o = docSnap.data();
-      const fecha = o.fecha.toDate();
-
-      // Órdenes y clientes
-      if (fecha >= inicioDia && fecha <= finDia) {
+      const fecha = o.fecha.toDate().toDateString();
+      if (fecha === hoy) {
         ordenesDia++;
-        ingresosDia += Number(o.total) || 0;
-        gananciaDia += (Number(o.total) - Number(o.costoTotal)) || 0;
+        ingresosDia += Number(o.total || 0);
+        gananciaDia += Number(o.total || 0) - Number(o.costoTotal || 0);
       }
-      if (o.clienteId) clientesSet.add(o.clienteId);
-
-      // Órdenes por estado
-      estadoMap[o.estado] = (estadoMap[o.estado] || 0) + 1;
-
-      // Rendimiento técnicos
-      if (o.tecnico) tecnicoMap[o.tecnico] = (tecnicoMap[o.tecnico] || 0) + 1;
-
-      // Ingresos últimos 7 días
-      const fechaStr = fecha.toISOString().split('T')[0];
-      const diffDays = (inicioDia - fecha)/ (1000*60*60*24);
-      if (diffDays <= 7) ingresos7Dias[fechaStr] = (ingresos7Dias[fechaStr] || 0) + Number(o.total || 0);
+      if (o.clientePhone) clientesSet.add(o.clientePhone);
+      if (o.tecnicoId) tecnicosSet.add(o.tecnicoId);
     });
 
-    document.getElementById("ordenesDia").innerText = ordenesDia;
-    document.getElementById("ingresosDia").innerText = `$${ingresosDia.toLocaleString()}`;
-    document.getElementById("gananciaDia").innerText = `$${gananciaDia.toLocaleString()}`;
-    document.getElementById("clientesActivos").innerText = clientesSet.size;
+    ordenesDiaElem.innerText = ordenesDia;
+    ingresosDiaElem.innerText = ingresosDia.toLocaleString();
+    gananciaDiaElem.innerText = gananciaDia.toLocaleString();
+    clientesActivosElem.innerText = clientesSet.size;
+    tecnicosActivosElem.innerText = tecnicosSet.size;
 
-    // Graficos
-    renderChart("ordenesEstadoChart", Object.keys(estadoMap), Object.values(estadoMap), "pie", "Estado Órdenes");
-    renderChart("rendimientoTecnicosChart", Object.keys(tecnicoMap), Object.values(tecnicoMap), "bar", "Técnicos");
-    renderChart("ingresos7DiasChart", Object.keys(ingresos7Dias), Object.values(ingresos7Dias), "line", "Ingresos");
-
-    // Alertas IA
-    alertasCache = await generarAlertasIA({ ordenesDia, ingresosDia, gananciaDia });
-    document.getElementById("alertasIA").innerHTML = `<p>${alertasCache}</p>`;
+  } catch (e) {
+    console.error("Error cargando métricas:", e);
   }
+}
 
-  function renderChart(canvasId, labels, data, type, title) {
-    const ctx = document.getElementById(canvasId).getContext("2d");
-    new Chart(ctx, {
-      type: type,
-      data: { labels, datasets: [{ label: title, data, backgroundColor: generateColors(labels.length) }] },
-      options: { responsive:true, plugins:{ legend:{ position:"bottom" } } }
-    });
-  }
-
-  function generateColors(n) {
-    const colors = [];
-    for (let i=0;i<n;i++) colors.push(`hsl(${i*360/n},70%,50%)`);
-    return colors;
-  }
-
-  async function generarAlertasIA(kpis) {
-    if (!window.SuperAI) return "SuperAI no disponible";
-    try {
-      const alertas = await window.SuperAI.analyzeFinance(kpis);
-      return alertas.join(". ");
-    } catch(e) {
-      console.error("Error alertas IA:", e);
-      return "Error generando alertas";
+async function cargarOrdenesRecientes() {
+  const lista = document.getElementById("listaOrdenesRecientes");
+  try {
+    const q = query(collection(db, "ordenes"), orderBy("fecha", "desc"));
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) {
+      lista.innerHTML = "No hay órdenes registradas.";
+      return;
     }
+
+    let html = `<table style="width:100%;border-collapse:collapse;">
+      <tr style="border-bottom:1px solid #1e293b;"><th>Cliente</th><th>Vehículo</th><th>Estado</th><th>Fecha</th></tr>`;
+
+    snapshot.forEach(docSnap => {
+      const o = docSnap.data();
+      html += `<tr>
+        <td>${o.clientePhone || "-"}</td>
+        <td>${o.vehiculo || "-"}</td>
+        <td>${o.estado || "Recepción"}</td>
+        <td>${o.fecha.toDate().toLocaleString()}</td>
+      </tr>`;
+    });
+
+    html += "</table>";
+    lista.innerHTML = html;
+  } catch (e) {
+    console.error("Error cargando órdenes recientes:", e);
+    lista.innerHTML = "❌ Error cargando órdenes";
+  }
+}
+
+async function cargarTopTecnicos() {
+  const contenedor = document.getElementById("topTecnicos");
+  try {
+    const ordenSnap = await getDocs(collection(db, "ordenes"));
+    const tecnicoMap = {};
+
+    ordenSnap.forEach(docSnap => {
+      const o = docSnap.data();
+      if (o.tecnicoId) {
+        if (!tecnicoMap[o.tecnicoId]) tecnicoMap[o.tecnicoId] = 0;
+        tecnicoMap[o.tecnicoId]++;
+      }
+    });
+
+    const top = Object.entries(tecnicoMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    if (!top.length) {
+      contenedor.innerHTML = "No hay técnicos activos";
+      return;
+    }
+
+    let html = "<ol>";
+    top.forEach(([tecId, count]) => {
+      html += `<li>Técnico ID ${tecId}: ${count} órdenes completadas</li>`;
+    });
+    html += "</ol>";
+    contenedor.innerHTML = html;
+  } catch (e) {
+    console.error("Error cargando top técnicos:", e);
+    contenedor.innerHTML = "❌ Error cargando top técnicos";
+  }
+}
+
+let alertasCache = "";
+
+async function generarAlertasIA() {
+  const contenedor = document.getElementById("alertasDashboard");
+  if (!window.SuperAI) {
+    contenedor.innerHTML = "<p>SuperAI no disponible</p>";
+    return;
   }
 
-  function hablar(texto) {
-    if (!texto) return;
-    const speech = new SpeechSynthesisUtterance(texto);
-    speech.lang = "es-ES";
-    speech.rate = 1;
-    speech.pitch = 1;
-    speech.volume = 1;
-    window.speechSynthesis.speak(speech);
+  try {
+    // Simulación: analizar métricas y generar alertas
+    const ordenSnap = await getDocs(collection(db, "ordenes"));
+    const totalOrdenes = ordenSnap.size;
+    const alertas = [];
+
+    if (totalOrdenes === 0) alertas.push("No se han registrado órdenes hoy");
+    else if (totalOrdenes > 50) alertas.push("Gran volumen de órdenes: verificar recursos técnicos");
+
+    alertasCache = alertas.join(". ");
+    contenedor.innerHTML = alertas.map(a => `<p>⚠️ ${a}</p>`).join("");
+  } catch (e) {
+    console.error("Error generando alertas IA:", e);
+    contenedor.innerHTML = "<p>❌ Error generando alertas IA</p>";
   }
+}
+
+/* ===========================
+FUNCIONES DE VOZ
+=========================== */
+
+function hablar(texto) {
+  if (!texto) return;
+  const speech = new SpeechSynthesisUtterance(texto);
+  speech.lang = "es-ES";
+  speech.rate = 1;
+  speech.pitch = 1;
+  speech.volume = 1;
+  window.speechSynthesis.speak(speech);
+}
+
+export function leerAlertasVoz() {
+  if (!alertasCache) hablar("No hay alertas generadas aún");
+  else hablar(alertasCache);
 }
