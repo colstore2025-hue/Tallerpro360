@@ -9,9 +9,6 @@ Ubicación: /app/js/modules/contabilidad.js
 import { db } from "../core/firebase-config.js";
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ===========================
-INICIALIZAR CONTABILIDAD
-=========================== */
 export async function contabilidad(container) {
   container.innerHTML = `
     <h1 style="font-size:28px;margin-bottom:20px;">💼 Contabilidad Avanzada - Taller</h1>
@@ -43,13 +40,9 @@ export async function contabilidad(container) {
   document.getElementById("btnGenerar").onclick = generarReporte;
   document.getElementById("vozAlertas").onclick = leerAlertasVoz;
 
-  // Cargar reporte inicial
   await generarReporte();
 }
 
-/* ===========================
-GENERAR REPORTE CONTABLE
-=========================== */
 async function generarReporte() {
   const inicioInput = document.getElementById("fechaInicio").value;
   const finInput = document.getElementById("fechaFin").value;
@@ -57,59 +50,50 @@ async function generarReporte() {
   const inicio = inicioInput ? new Date(inicioInput + "-01") : new Date(new Date().getFullYear(),0,1);
   const fin = finInput ? new Date(finInput + "-01") : new Date();
 
-  // Balance General
   const balance = await calcularBalance(inicio, fin);
   document.getElementById("balanceGeneral").innerHTML = `
-    <p>Activos: $${balance.activos}</p>
-    <p>Pasivos: $${balance.pasivos}</p>
-    <p>Patrimonio: $${balance.patrimonio}</p>
+    <p>Activos: $${balance.activos.toLocaleString()}</p>
+    <p>Pasivos: $${balance.pasivos.toLocaleString()}</p>
+    <p>Patrimonio: $${balance.patrimonio.toLocaleString()}</p>
   `;
   hablar(`Balance general actualizado. Activos: ${balance.activos}, Pasivos: ${balance.pasivos}, Patrimonio: ${balance.patrimonio}`);
 
-  // Estado de Resultados
   const resultados = await calcularEstadoResultados(inicio, fin);
   document.getElementById("estadoResultados").innerHTML = `
-    <p>Ingresos: $${resultados.ingresos}</p>
-    <p>Costos: $${resultados.costos}</p>
-    <p>Gastos: $${resultados.gastos}</p>
-    <p>Ganancia Neta: $${resultados.gananciaNeta}</p>
+    <p>Ingresos: $${resultados.ingresos.toLocaleString()}</p>
+    <p>Costos: $${resultados.costos.toLocaleString()}</p>
+    <p>Gastos: $${resultados.gastos.toLocaleString()}</p>
+    <p>Ganancia Neta: $${resultados.gananciaNeta.toLocaleString()}</p>
   `;
 
-  // Alertas IA
   const alertasHtml = await generarAlertasIA(resultados);
   document.getElementById("alertasIA").innerHTML = alertasHtml;
 }
 
-/* ===========================
-CALCULAR BALANCE
-=========================== */
 async function calcularBalance(inicio, fin){
   let activos = 0, pasivos = 0, patrimonio = 0;
 
-  // Inventario
   const invSnap = await getDocs(collection(db,"inventario"));
   invSnap.forEach(docSnap=>{
     const p = docSnap.data();
-    activos += (p.precio * p.stock) || 0;
+    activos += (Number(p.precio) * Number(p.stock)) || 0;
   });
 
-  // Ingresos de órdenes
   const ordSnap = await getDocs(collection(db,"ordenes"));
   ordSnap.forEach(docSnap=>{
     const o = docSnap.data();
     const fecha = o.fecha.toDate();
     if(fecha >= inicio && fecha <= fin){
-      activos += o.total || 0;
+      activos += Number(o.total) || 0;
     }
   });
 
-  // Pasivos
   const gastosSnap = await getDocs(collection(db,"gastos"));
   gastosSnap.forEach(docSnap=>{
     const g = docSnap.data();
     const fecha = g.fecha.toDate();
     if(fecha >= inicio && fecha <= fin){
-      pasivos += g.monto || 0;
+      pasivos += Number(g.monto) || 0;
     }
   });
 
@@ -117,9 +101,6 @@ async function calcularBalance(inicio, fin){
   return {activos,pasivos,patrimonio};
 }
 
-/* ===========================
-CALCULAR ESTADO DE RESULTADOS
-=========================== */
 async function calcularEstadoResultados(inicio, fin){
   let ingresos = 0, costos = 0, gastos = 0;
 
@@ -128,8 +109,8 @@ async function calcularEstadoResultados(inicio, fin){
     const o = docSnap.data();
     const fecha = o.fecha.toDate();
     if(fecha >= inicio && fecha <= fin){
-      ingresos += o.total || 0;
-      costos += o.costoTotal || 0;
+      ingresos += Number(o.total) || 0;
+      costos += Number(o.costoTotal) || 0;
     }
   });
 
@@ -138,7 +119,7 @@ async function calcularEstadoResultados(inicio, fin){
     const g = docSnap.data();
     const fecha = g.fecha.toDate();
     if(fecha >= inicio && fecha <= fin){
-      gastos += g.monto || 0;
+      gastos += Number(g.monto) || 0;
     }
   });
 
@@ -146,9 +127,6 @@ async function calcularEstadoResultados(inicio, fin){
   return {ingresos,costos,gastos,gananciaNeta};
 }
 
-/* ===========================
-GENERAR ALERTAS IA
-=========================== */
 let alertasCache = "";
 
 async function generarAlertasIA(resultados){
@@ -168,9 +146,6 @@ async function generarAlertasIA(resultados){
   }
 }
 
-/* ===========================
-VOZ DE IA
-=========================== */
 function hablar(texto){
   if(!texto) return;
   const speech = new SpeechSynthesisUtterance(texto);
@@ -181,9 +156,6 @@ function hablar(texto){
   window.speechSynthesis.speak(speech);
 }
 
-/* ===========================
-LEER ALERTAS POR VOZ
-=========================== */
 function leerAlertasVoz(){
   if(!alertasCache){
     hablar("No hay alertas generadas aún");
