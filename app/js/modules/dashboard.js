@@ -1,8 +1,8 @@
 /*
 ================================================
 dashboard.js
-Panel avanzado gerente TallerPRO360 ERP
-Versión Optimizada
+Panel Gerente TallerPRO360 ERP SaaS
+Versión Profesional Estable
 ================================================
 */
 
@@ -13,6 +13,7 @@ import { configuracion } from "./configuracion.js";
 import { pagosTaller } from "./pagosTaller.js";
 
 import { db } from "../core/firebase-config.js";
+import { obtenerEmpresaId } from "../core/empresa-context.js";
 
 import {
 collection,
@@ -26,6 +27,21 @@ import { calcularPredicciones } from "../ai/aiMetrics.js";
 
 
 export async function dashboard(container){
+
+try{
+
+const empresaId = obtenerEmpresaId();
+
+if(!empresaId){
+
+container.innerHTML=`<h2>No hay empresa activa</h2>`;
+return;
+
+}
+
+/* ===============================
+UI
+=============================== */
 
 container.innerHTML=`
 <h1 style="font-size:28px;margin-bottom:20px;">
@@ -73,226 +89,11 @@ Cargando sugerencias...
 NAVEGACIÓN
 =============================== */
 
-document.getElementById("btnClientes").onclick=()=>clientes(container);
-document.getElementById("btnOrdenes").onclick=()=>ordenes(container);
-document.getElementById("btnInventario").onclick=()=>inventario(container);
-document.getElementById("btnPagos").onclick=()=>pagosTaller(container);
-document.getElementById("btnConfiguracion").onclick=()=>configuracion(container);
-
-
-/* ===============================
-CARGAR DATOS
-=============================== */
-
-await cargarKPIs();
-await cargarOrdenes();
-await cargarRecomendacionesIA();
-
-}
-
-
-
-/* =====================================
-KPIs
-===================================== */
-
-async function cargarKPIs(){
-
-try{
-
-const clientesSnap=await getDocs(collection(db,"clientes"));
-const ordenesSnap=await getDocs(collection(db,"ordenes"));
-const inventarioSnap=await getDocs(collection(db,"inventario"));
-const pagosSnap=await getDocs(collection(db,"pagos"));
-
-const hoy=new Date().toDateString();
-
-let ingresosHoy=0;
-let completadasHoy=0;
-let tiempoTotal=0;
-let margenTotal=0;
-let ingresosPagosHoy=0;
-let ordenesCompletadasCount=0;
-
-
-/* ORDENES */
-
-ordenesSnap.docs.forEach(doc=>{
-
-const o=doc.data();
-
-if(!o.fecha) return;
-
-const fechaOrden=o.fecha?.toDate?.()?.toDateString?.();
-
-if(fechaOrden===hoy){
-ingresosHoy+=o.total || 0;
-}
-
-if(o.estado==="completada"){
-
-completadasHoy++;
-ordenesCompletadasCount++;
-
-tiempoTotal+=o.tiempoReparacion || 0;
-margenTotal+=o.margen || 0;
-
-}
-
-});
-
-
-/* PAGOS */
-
-pagosSnap.docs.forEach(doc=>{
-
-const p=doc.data();
-
-if(!p.fecha) return;
-
-const fecha=p.fecha?.toDate?.()?.toDateString?.();
-
-if(fecha===hoy){
-ingresosPagosHoy+=p.monto || 0;
-}
-
-});
-
-
-const tiempoPromedio=ordenesCompletadasCount
-? (tiempoTotal/ordenesCompletadasCount).toFixed(1)
-: 0;
-
-const margenPromedio=ordenesCompletadasCount
-? (margenTotal/ordenesCompletadasCount).toFixed(1)
-: 0;
-
-const stockCritico=inventarioSnap.docs.filter(
-p=>p.data().stock<=3
-).length;
-
-
-/* UI */
-
-document.getElementById("ordenesActivas").innerText=
-ordenesSnap.docs.filter(o=>o.data().estado!=="completada").length;
-
-document.getElementById("ordenesCompletadas").innerText=completadasHoy;
-
-document.getElementById("ingresosHoy").innerText=`$${ingresosHoy}`;
-
-document.getElementById("margenUtilidad").innerText=`${margenPromedio}%`;
-
-document.getElementById("tiempoPromedio").innerText=`${tiempoPromedio}h`;
-
-document.getElementById("stockCritico").innerText=stockCritico;
-
-document.getElementById("resumenIngresosHoy").innerText=`$${ingresosPagosHoy}`;
-
-}
-catch(e){
-
-console.error("Error cargando KPIs:",e);
-
-}
-
-}
-
-
-
-/* =====================================
-ORDENES RECIENTES
-===================================== */
-
-async function cargarOrdenes(){
-
-try{
-
-const q=query(
-collection(db,"ordenes"),
-orderBy("fecha","desc"),
-limit(5)
-);
-
-const snapshot=await getDocs(q);
-
-let html=`
-<table style="width:100%;border-collapse:collapse;">
-<tr style="border-bottom:1px solid #1e293b;">
-<th>Cliente</th>
-<th>Vehículo</th>
-<th>Estado</th>
-<th>Total</th>
-</tr>
-`;
-
-snapshot.forEach(doc=>{
-
-const o=doc.data();
-
-html+=`
-<tr>
-<td>${o.cliente || "-"}</td>
-<td>${o.vehiculo || "-"}</td>
-<td>${o.estado || "En proceso"}</td>
-<td>$${o.total || 0}</td>
-</tr>
-`;
-
-});
-
-html+="</table>";
-
-document.getElementById("ordenesRecientes").innerHTML=html;
-
-}
-catch(e){
-
-console.error("Error cargando órdenes recientes:",e);
-
-document.getElementById("ordenesRecientes").innerText=
-"Error cargando órdenes";
-
-}
-
-}
-
-
-
-/* =====================================
-RECOMENDACIONES IA
-===================================== */
-
-async function cargarRecomendacionesIA(){
-
-try{
-
-const recomendaciones=await calcularPredicciones();
-
-const container=document.getElementById("recomendacionesIA");
-
-container.innerHTML="";
-
-recomendaciones.forEach(r=>{
-
-const div=document.createElement("div");
-
-div.style.marginBottom="6px";
-
-div.innerHTML=`• ${r}`;
-
-container.appendChild(div);
-
-});
-
-}
-catch(e){
-
-console.error("Error IA:",e);
-
-document.getElementById("recomendacionesIA").innerText=
-"Error cargando sugerencias";
-
-}
-
-}
+const btnClientes=document.getElementById("btnClientes");
+const btnOrdenes=document.getElementById("btnOrdenes");
+const btnInventario=document.getElementById("btnInventario");
+const btnPagos=document.getElementById("btnPagos");
+const btnConfig=document.getElementById("btnConfiguracion");
+
+if(btnClientes) btnClientes.onclick=()=>clientes(container);
+if(btnOrdenes)
