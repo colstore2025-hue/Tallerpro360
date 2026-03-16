@@ -1,10 +1,9 @@
 /**
  * planManager.js
  * Control de módulos por plan
- * TallerPRO360
  */
 
-import { db } from "./js/core/firebase-config.js";
+import { db } from "./core/firebase-config.js";
 
 import {
 doc,
@@ -12,13 +11,9 @@ getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
-/* =========================================
-MÓDULOS POR PLAN
-========================================= */
-
 const PLANES = {
 
-freemium: [
+freemium:[
 "dashboard",
 "clientes",
 "ordenes",
@@ -27,7 +22,7 @@ freemium: [
 "configuracion"
 ],
 
-pro: [
+pro:[
 "dashboard",
 "clientes",
 "ordenes",
@@ -38,7 +33,7 @@ pro: [
 "configuracion"
 ],
 
-enterprise: [
+enterprise:[
 "dashboard",
 "clientes",
 "ordenes",
@@ -56,11 +51,9 @@ enterprise: [
 };
 
 
-/* =========================================
-OBTENER PLAN USUARIO
-========================================= */
+/* ========================= */
 
-export async function obtenerPlanUsuario(uid){
+export async function getModulosDisponibles(uid){
 
 try{
 
@@ -70,46 +63,25 @@ const snap = await getDoc(ref);
 
 if(!snap.exists()){
 
-console.warn("usuario no existe");
-
-return "freemium";
+return PLANES.freemium;
 
 }
 
 const data = snap.data();
 
-return data.planTipo || "freemium";
+const plan = data.planTipo || "freemium";
+
+console.log("📊 plan detectado:",plan);
+
+return PLANES[plan] || PLANES.freemium;
 
 }
-catch(e){
+catch(error){
 
-console.error("error obteniendo plan",e);
+console.error("error obteniendo plan",error);
 
-return "freemium";
-
-}
+return PLANES.freemium;
 
 }
-
-
-/* =========================================
-MÓDULOS DISPONIBLES
-========================================= */
-
-export async function getModulosDisponibles(uid){
-
-const plan = await obtenerPlanUsuario(uid);
-
-console.log("plan usuario:",plan);
-
-const modulos = PLANES[plan];
-
-if(!modulos){
-
-return PLANES["freemium"];
-
-}
-
-return modulos;
 
 }
