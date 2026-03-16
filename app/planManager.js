@@ -1,6 +1,6 @@
 /**
  * planManager.js
- * Gestor avanzado de planes SaaS
+ * Gestor ULTRA de planes SaaS
  * TallerPRO360 ERP
  */
 
@@ -13,7 +13,29 @@ getDoc
 
 
 /* =========================================
-CONFIGURACIÓN DE PLANES
+TODOS LOS MÓDULOS DEL SISTEMA
+========================================= */
+
+const TODOS_MODULOS = [
+
+"dashboard",
+"clientes",
+"ordenes",
+"inventario",
+"reportes",
+"finanzas",
+"pagos",
+"contabilidad",
+"ceo",
+"aiassistant",
+"aiadvisor",
+"configuracion"
+
+];
+
+
+/* =========================================
+PLANES DEL SISTEMA
 ========================================= */
 
 const PLANES = {
@@ -55,7 +77,6 @@ elite:[
 "clientes",
 "ordenes",
 "inventario",
-"inventario",
 "reportes",
 "finanzas",
 "pagos",
@@ -66,44 +87,24 @@ elite:[
 "configuracion"
 ],
 
-enterprise:[
-"dashboard",
-"clientes",
-"ordenes",
-"inventario",
-"reportes",
-"finanzas",
-"pagos",
-"contabilidad",
-"ceo",
-"aiassistant",
-"aiadvisor",
-"configuracion"
-]
+enterprise:TODOS_MODULOS
 
 };
 
 
+
 /* =========================================
-TODOS LOS MÓDULOS DEL SISTEMA
+UTILIDAD: limpiar lista de módulos
 ========================================= */
 
-const TODOS_MODULOS = [
+function limpiarModulos(lista){
 
-"dashboard",
-"clientes",
-"ordenes",
-"inventario",
-"reportes",
-"finanzas",
-"pagos",
-"contabilidad",
-"ceo",
-"aiassistant",
-"aiadvisor",
-"configuracion"
+if(!Array.isArray(lista)) return [];
 
-];
+return [...new Set(lista.map(m=>m.toLowerCase().trim()))];
+
+}
+
 
 
 /* =========================================
@@ -114,9 +115,9 @@ export async function getModulosDisponibles(userId){
 
 try{
 
-/* --------------------------
+/* ---------------------------
 VALIDACIÓN BÁSICA
--------------------------- */
+--------------------------- */
 
 if(!userId){
 
@@ -127,24 +128,22 @@ return PLANES.freemium;
 }
 
 
-/* --------------------------
+/* ---------------------------
 CONSULTAR FIRESTORE
--------------------------- */
+--------------------------- */
 
 const ref = doc(db,"usuariosGlobal",userId);
 
 const snap = await getDoc(ref);
 
 let plan="freemium";
-
 let rolGlobal="";
-
 let activo=true;
 
 
-/* --------------------------
-SI USUARIO EXISTE
--------------------------- */
+/* ---------------------------
+DATOS DE USUARIO
+--------------------------- */
 
 if(snap.exists()){
 
@@ -169,9 +168,9 @@ console.warn("⚠ usuario no encontrado");
 }
 
 
-/* --------------------------
+/* ---------------------------
 USUARIO DESACTIVADO
--------------------------- */
+--------------------------- */
 
 if(!activo){
 
@@ -182,42 +181,44 @@ return [];
 }
 
 
-/* --------------------------
-SUPERADMIN TIENE TODO
--------------------------- */
+/* ---------------------------
+SUPERADMIN
+--------------------------- */
 
 if(rolGlobal === "superadmin"){
 
 console.log("🧠 SuperAdmin detectado");
 
-return TODOS_MODULOS;
+return limpiarModulos(TODOS_MODULOS);
 
 }
 
 
-/* --------------------------
+/* ---------------------------
 VALIDAR PLAN
--------------------------- */
+--------------------------- */
 
 if(!PLANES[plan]){
 
-console.warn("⚠ plan desconocido:",plan);
+console.warn("⚠ plan inválido:",plan);
 
 plan="freemium";
 
 }
 
 
-/* --------------------------
-MÓDULOS DEL PLAN
--------------------------- */
+/* ---------------------------
+OBTENER MÓDULOS
+--------------------------- */
 
-const modulos = PLANES[plan];
+const modulos = limpiarModulos(PLANES[plan]);
 
 
-/* --------------------------
+/* ---------------------------
 LOGS DE DIAGNÓSTICO
--------------------------- */
+--------------------------- */
+
+console.log("──────── TallerPRO360 SaaS ────────");
 
 console.log("👤 Usuario:",userId);
 
@@ -227,17 +228,15 @@ console.log("🏢 Rol Global:",rolGlobal);
 
 console.log("🧩 Módulos:",modulos);
 
+console.log("────────────────────────────────");
 
-/* --------------------------
-RETORNAR MÓDULOS
--------------------------- */
 
 return modulos;
 
 
 }catch(e){
 
-console.error("❌ Error leyendo plan:",e);
+console.error("❌ Error planManager:",e);
 
 /* fallback seguro */
 
