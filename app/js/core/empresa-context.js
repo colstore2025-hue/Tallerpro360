@@ -4,74 +4,113 @@
  * Manejo central de empresa activa
  */
 
+const KEY_EMPRESA = "empresaId";
+
 
 /* ===============================
-   OBTENER EMPRESA ACTIVA
+OBTENER EMPRESA ACTIVA
 =============================== */
 
 export function obtenerEmpresaId(){
 
-  const empresaId = localStorage.getItem("empresaId");
+try{
 
-  if(!empresaId){
+const empresaId = localStorage.getItem(KEY_EMPRESA);
 
-    console.warn("empresaId no encontrado en localStorage");
+if(!empresaId){
 
-    return null;
+console.warn("⚠ empresaId no encontrado en localStorage");
 
-  }
+return null;
 
-  return empresaId;
+}
+
+return empresaId.trim();
+
+}
+catch(error){
+
+console.error("❌ Error obteniendo empresaId:",error);
+
+return null;
+
+}
 
 }
 
 
 /* ===============================
-   ESTABLECER EMPRESA ACTIVA
+ESTABLECER EMPRESA ACTIVA
 =============================== */
 
 export function establecerEmpresaId(empresaId){
 
-  if(!empresaId){
+try{
 
-    console.error("empresaId inválido");
+if(!empresaId || empresaId.trim()===""){
 
-    return;
+console.error("❌ empresaId inválido");
 
-  }
+return false;
 
-  localStorage.setItem("empresaId",empresaId);
+}
+
+localStorage.setItem(KEY_EMPRESA,empresaId.trim());
+
+console.log("🏢 Empresa activa:",empresaId);
+
+return true;
+
+}
+catch(error){
+
+console.error("❌ Error guardando empresaId:",error);
+
+return false;
+
+}
 
 }
 
 
 /* ===============================
-   LIMPIAR EMPRESA ACTIVA
+LIMPIAR EMPRESA ACTIVA
 =============================== */
 
 export function limpiarEmpresaId(){
 
-  localStorage.removeItem("empresaId");
+try{
+
+localStorage.removeItem(KEY_EMPRESA);
+
+console.log("🧹 empresaId eliminado");
+
+}
+catch(error){
+
+console.error("❌ Error limpiando empresaId:",error);
+
+}
 
 }
 
 
 /* ===============================
-   VALIDAR CONTEXTO DE EMPRESA
+VALIDAR CONTEXTO DE EMPRESA
 =============================== */
 
 export function validarEmpresa(){
 
-  const empresaId = obtenerEmpresaId();
+const empresaId = obtenerEmpresaId();
 
-  if(!empresaId){
+if(!empresaId){
 
-    console.warn("No hay empresa activa");
+console.warn("⚠ No hay empresa activa");
 
-    return false;
+return false;
 
-  }
+}
 
-  return true;
+return true;
 
 }
