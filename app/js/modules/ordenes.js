@@ -1,7 +1,7 @@
-/*
+/**
 ================================================
-ORDENES.JS - Versión Final
-Gestión avanzada de órdenes con dictado y voz - TallerPRO360
+ORDENES.JS - Versión Final Integrada
+Gestión de órdenes con dictado y voz de IA
 Ubicación: /app/js/modules/ordenes.js
 ================================================
 */
@@ -9,12 +9,14 @@ Ubicación: /app/js/modules/ordenes.js
 import { db } from "../core/firebase-config.js";
 import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import CustomerManager from "./customerManager.js";
-import { aiAssistant } from "./aiAssistant.js"; 
-import { iniciarAsistenteWorkshop } from "../voice/voiceAssistantWorkshop.js";  
-import { actualizarStock } from "./inventario.js"; 
+import { actualizarStock } from "./inventario.js";
+import { aiAssistant } from "./aiAssistant.js";
+import { iniciarAsistenteWorkshop } from "../voice/voiceAssistantWorkshop.js";
 
 export async function ordenes(container) {
   const customerManager = new CustomerManager();
+
+  // Iniciar asistente de voz global
   iniciarAsistenteWorkshop();
 
   container.innerHTML = `
@@ -47,16 +49,20 @@ export async function ordenes(container) {
     </div>
   `;
 
+  // ===========================
+  // Eventos
+  // ===========================
   document.getElementById("guardarOrden").onclick = async () => await guardarOrden(customerManager);
   document.getElementById("buscarOrden").oninput = filtrarOrdenes;
   document.getElementById("vozOrden").onclick = () => dictarInput("descripcionOrden");
 
   const inputAI = document.getElementById("inputAI");
   const respuestasAI = document.getElementById("respuestasAI");
+
   inputAI.addEventListener("keypress", async (e) => {
-    if(e.key === "Enter"){
+    if (e.key === "Enter") {
       const pregunta = inputAI.value.trim();
-      if(!pregunta) return;
+      if (!pregunta) return;
       const respuesta = await aiAssistant(pregunta);
       const div = document.createElement("div");
       div.style.marginBottom = "8px";
@@ -67,6 +73,9 @@ export async function ordenes(container) {
     }
   });
 
+  // ===========================
+  // Cargar órdenes al inicio
+  // ===========================
   await cargarOrdenes();
 }
 
@@ -74,27 +83,28 @@ export async function ordenes(container) {
 FUNCIONES DE ORDENES
 =========================== */
 
-async function guardarOrden(customerManager){
+async function guardarOrden(customerManager) {
   const phone = document.getElementById("clienteOrden").value.trim();
   const vehiculo = document.getElementById("vehiculoOrden").value.trim();
   const placa = document.getElementById("placaOrden").value.trim();
   const descripcion = document.getElementById("descripcionOrden").value.trim();
 
-  if(!phone || !vehiculo) {
+  if (!phone || !vehiculo) {
     hablar("Cliente y vehículo son obligatorios");
     return alert("Cliente y Vehículo son obligatorios");
   }
 
+  // Verificar o crear cliente
   let cliente = await customerManager.searchCustomer(phone);
-  if(!cliente){
-    const idCliente = await customerManager.createCustomer({phone, name:"Cliente", vehicle:vehiculo, plate:placa});
-    cliente = {id:idCliente, phone, vehicle:vehiculo, plate:placa};
+  if (!cliente) {
+    const idCliente = await customerManager.createCustomer({ phone, name: "Cliente", vehicle: vehiculo, plate: placa });
+    cliente = { id: idCliente, phone, vehicle: vehiculo, plate: placa };
   } else {
     await customerManager.updateVisit(cliente.id);
   }
 
   try {
-    await addDoc(collection(db,"ordenes"),{
+    await addDoc(collection(db, "ordenes"), {
       clienteId: cliente.id,
       clientePhone: phone,
       vehiculo,
@@ -104,31 +114,33 @@ async function guardarOrden(customerManager){
       fecha: new Date()
     });
 
+    // Actualizar inventario automáticamente (ejemplo: repuestos)
     actualizarStock(descripcion);
 
     hablar("Orden guardada correctamente");
     alert("✅ Orden guardada");
     limpiarFormularioOrden();
     await cargarOrdenes();
-  } catch(e){
-    console.error("Error guardando orden:",e);
+  } catch (e) {
+    console.error("Error guardando orden:", e);
     hablar("Error al guardar la orden");
     alert("❌ Error guardando orden");
   }
 }
 
-async function cargarOrdenes(){
+async function cargarOrdenes() {
   const lista = document.getElementById("listaOrdenes");
   try {
-    const q = query(collection(db,"ordenes"), orderBy("fecha","desc"));
+    const q = query(collection(db, "ordenes"), orderBy("fecha", "desc"));
     const snapshot = await getDocs(q);
-    if(snapshot.empty){
+    if (snapshot.empty) {
       lista.innerHTML = "No hay órdenes registradas. Usa el formulario superior para crear la primera orden.";
       return;
     }
+
     let html = `<table style="width:100%;border-collapse:collapse;">
       <tr style="border-bottom:1px solid #1e293b;"><th>Cliente</th><th>Vehículo</th><th>Estado</th><th>Fecha</th></tr>`;
-    snapshot.forEach(docSnap=>{
+    snapshot.forEach(docSnap => {
       const o = docSnap.data();
       html += `<tr>
         <td>${o.clientePhone || "-"}</td>
@@ -139,23 +151,23 @@ async function cargarOrdenes(){
     });
     html += "</table>";
     lista.innerHTML = html;
-  } catch(e){
-    console.error("Error cargando órdenes:",e);
+  } catch (e) {
+    console.error("Error cargando órdenes:", e);
     lista.innerHTML = "❌ Error cargando órdenes";
     hablar("Error cargando las órdenes");
   }
 }
 
-function filtrarOrdenes(){
+function filtrarOrdenes() {
   const input = document.getElementById("buscarOrden").value.toLowerCase();
   const rows = document.querySelectorAll("#listaOrdenes table tr");
-  rows.forEach((row,index)=>{
-    if(index===0) return;
+  rows.forEach((row, index) => {
+    if (index === 0) return;
     row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
   });
 }
 
-function limpiarFormularioOrden(){
+function limpiarFormularioOrden() {
   document.getElementById("clienteOrden").value = "";
   document.getElementById("vehiculoOrden").value = "";
   document.getElementById("placaOrden").value = "";
