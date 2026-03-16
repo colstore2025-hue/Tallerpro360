@@ -1,211 +1,67 @@
 /*
-================================================
-DASHBOARD.JS - Versión Final Avanzada
-Dashboard Gerencial ERP - TallerPRO360
-Métricas completas de órdenes, clientes, técnicos e ingresos
-================================================
+
+DASHBOARD.JS - Versión Final Integrada de Última Generación Dashboard Gerencial ERP - TallerPRO360
+
 */
 
-import { db } from "../core/firebase-config.js";
-import { collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db } from "../core/firebase-config.js"; import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"; import CustomerManager from "./customerManager.js"; import { actualizarStock } from "./inventario.js";
 
-export async function dashboard(container, userId) {
-  console.log("📊 Cargando dashboard gerencial");
+export async function dashboard(container, userId) { container.innerHTML = `
 
-  container.innerHTML = `
-<h1 style="font-size:28px;margin-bottom:20px">📊 Dashboard Gerencial - TallerPRO360</h1>
-<p>Bienvenido al ERP - Analiza y toma decisiones rápidas</p>
-
-<div style="margin-top:30px; display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:15px;">
-  <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
+<h1 style="font-size:28px;margin-bottom:20px">📊 Dashboard Gerencial - TallerPRO360</h1><div style="display:flex;flex-wrap:wrap;gap:15px;margin-bottom:20px">
+  <div class="card" style="flex:1 1 200px;background:#0f172a;padding:20px;border-radius:10px;color:white;">
     Órdenes del día: <span id="ordenesDia">0</span>
   </div>
-  <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
+  <div class="card" style="flex:1 1 200px;background:#0f172a;padding:20px;border-radius:10px;color:white;">
     Ingresos del día: $<span id="ingresosDia">0</span>
   </div>
-  <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
-    Ganancia Neta del Día: $<span id="gananciaDia">0</span>
+  <div class="card" style="flex:1 1 200px;background:#0f172a;padding:20px;border-radius:10px;color:white;">
+    Clientes activos: <span id="clientesActivos">0</span>
   </div>
-  <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
-    Clientes Activos: <span id="clientesActivos">0</span>
+  <div class="card" style="flex:1 1 200px;background:#0f172a;padding:20px;border-radius:10px;color:white;">
+    Técnicos disponibles: <span id="tecnicosActivos">0</span>
   </div>
-  <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
-    Técnicos Activos: <span id="tecnicosActivos">0</span>
+  <div class="card" style="flex:1 1 200px;background:#0f172a;padding:20px;border-radius:10px;color:white;">
+    Stock bajo: <span id="stockBajo">0</span>
   </div>
+</div><div style="display:flex;flex-wrap:wrap;gap:20px">
+  <canvas id="graficoOrdenes" style="flex:1 1 500px;background:#020617;border-radius:10px;padding:20px;"></canvas>
+  <canvas id="graficoIngresos" style="flex:1 1 500px;background:#020617;border-radius:10px;padding:20px;"></canvas>
+</div><div class="card" style="margin-top:20px;">
+  <h3>Alertas y Recomendaciones IA</h3>
+  <div id="alertasIA" style="background:#111827;color:white;padding:10px;border-radius:6px;max-height:150px;overflow-y:auto">Cargando alertas...</div>
+  <button id="vozAlertas" style="margin-top:10px;padding:8px 15px;background:#6366f1;border:none;border-radius:6px;color:white;cursor:pointer;">🔊 Leer alertas</button>
 </div>
+`;document.getElementById("vozAlertas").onclick = leerAlertasVoz;
 
-<div style="margin-top:30px;">
-  <h3 style="color:white;">Órdenes Recientes</h3>
-  <div id="listaOrdenesRecientes" style="background:#1e293b;padding:10px;border-radius:6px;color:white;max-height:300px;overflow-y:auto;">
-    Cargando órdenes...
-  </div>
-</div>
-
-<div style="margin-top:30px;">
-  <h3 style="color:white;">Top Técnicos (Rendimiento)</h3>
-  <div id="topTecnicos" style="background:#1e293b;padding:10px;border-radius:6px;color:white;max-height:200px;overflow-y:auto;">
-    Cargando datos...
-  </div>
-</div>
-
-<div style="margin-top:30px;">
-  <h3 style="color:white;">Alertas y Recomendaciones IA</h3>
-  <div id="alertasDashboard" style="background:#111827;padding:15px;border-radius:6px;color:white;max-height:200px;overflow-y:auto;">
-    Esperando análisis IA...
-  </div>
-</div>
-`;
-
-  await cargarMetricas();
-  await cargarOrdenesRecientes();
-  await cargarTopTecnicos();
-  await generarAlertasIA();
-}
-
-/* ===========================
-FUNCIONES PRINCIPALES
-=========================== */
-
-async function cargarMetricas() {
-  const ordenesDiaElem = document.getElementById("ordenesDia");
-  const ingresosDiaElem = document.getElementById("ingresosDia");
-  const gananciaDiaElem = document.getElementById("gananciaDia");
-  const clientesActivosElem = document.getElementById("clientesActivos");
-  const tecnicosActivosElem = document.getElementById("tecnicosActivos");
-
-  const hoy = new Date().toDateString();
-  let ordenesDia = 0, ingresosDia = 0, gananciaDia = 0;
-  let clientesSet = new Set(), tecnicosSet = new Set();
-
-  try {
-    const ordenSnap = await getDocs(collection(db, "ordenes"));
-    ordenSnap.forEach(docSnap => {
-      const o = docSnap.data();
-      const fecha = o.fecha.toDate().toDateString();
-      if (fecha === hoy) {
-        ordenesDia++;
-        ingresosDia += Number(o.total || 0);
-        gananciaDia += Number(o.total || 0) - Number(o.costoTotal || 0);
-      }
-      if (o.clientePhone) clientesSet.add(o.clientePhone);
-      if (o.tecnicoId) tecnicosSet.add(o.tecnicoId);
-    });
-
-    ordenesDiaElem.innerText = ordenesDia;
-    ingresosDiaElem.innerText = ingresosDia.toLocaleString();
-    gananciaDiaElem.innerText = gananciaDia.toLocaleString();
-    clientesActivosElem.innerText = clientesSet.size;
-    tecnicosActivosElem.innerText = tecnicosSet.size;
-
-  } catch (e) {
-    console.error("Error cargando métricas:", e);
-  }
-}
-
-async function cargarOrdenesRecientes() {
-  const lista = document.getElementById("listaOrdenesRecientes");
-  try {
-    const q = query(collection(db, "ordenes"), orderBy("fecha", "desc"));
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) {
-      lista.innerHTML = "No hay órdenes registradas.";
-      return;
-    }
-
-    let html = `<table style="width:100%;border-collapse:collapse;">
-      <tr style="border-bottom:1px solid #1e293b;"><th>Cliente</th><th>Vehículo</th><th>Estado</th><th>Fecha</th></tr>`;
-
-    snapshot.forEach(docSnap => {
-      const o = docSnap.data();
-      html += `<tr>
-        <td>${o.clientePhone || "-"}</td>
-        <td>${o.vehiculo || "-"}</td>
-        <td>${o.estado || "Recepción"}</td>
-        <td>${o.fecha.toDate().toLocaleString()}</td>
-      </tr>`;
-    });
-
-    html += "</table>";
-    lista.innerHTML = html;
-  } catch (e) {
-    console.error("Error cargando órdenes recientes:", e);
-    lista.innerHTML = "❌ Error cargando órdenes";
-  }
-}
-
-async function cargarTopTecnicos() {
-  const contenedor = document.getElementById("topTecnicos");
-  try {
-    const ordenSnap = await getDocs(collection(db, "ordenes"));
-    const tecnicoMap = {};
-
-    ordenSnap.forEach(docSnap => {
-      const o = docSnap.data();
-      if (o.tecnicoId) {
-        if (!tecnicoMap[o.tecnicoId]) tecnicoMap[o.tecnicoId] = 0;
-        tecnicoMap[o.tecnicoId]++;
-      }
-    });
-
-    const top = Object.entries(tecnicoMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    if (!top.length) {
-      contenedor.innerHTML = "No hay técnicos activos";
-      return;
-    }
-
-    let html = "<ol>";
-    top.forEach(([tecId, count]) => {
-      html += `<li>Técnico ID ${tecId}: ${count} órdenes completadas</li>`;
-    });
-    html += "</ol>";
-    contenedor.innerHTML = html;
-  } catch (e) {
-    console.error("Error cargando top técnicos:", e);
-    contenedor.innerHTML = "❌ Error cargando top técnicos";
-  }
-}
+// Cargar datos iniciales await actualizarDashboard(); }
 
 let alertasCache = "";
 
-async function generarAlertasIA() {
-  const contenedor = document.getElementById("alertasDashboard");
-  if (!window.SuperAI) {
-    contenedor.innerHTML = "<p>SuperAI no disponible</p>";
-    return;
-  }
+async function actualizarDashboard() { const ordenesSnap = await getDocs(collection(db, "ordenes")); const clientesSnap = await getDocs(collection(db, "clientes")); const inventarioSnap = await getDocs(collection(db, "inventario"));
 
-  try {
-    // Simulación: analizar métricas y generar alertas
-    const ordenSnap = await getDocs(collection(db, "ordenes"));
-    const totalOrdenes = ordenSnap.size;
-    const alertas = [];
+const hoy = new Date().toDateString(); let ordenesDia = 0; let ingresosDia = 0; let clientesActivos = clientesSnap.size; let stockBajo = 0;
 
-    if (totalOrdenes === 0) alertas.push("No se han registrado órdenes hoy");
-    else if (totalOrdenes > 50) alertas.push("Gran volumen de órdenes: verificar recursos técnicos");
+const tecnicoContador = {};
 
-    alertasCache = alertas.join(". ");
-    contenedor.innerHTML = alertas.map(a => `<p>⚠️ ${a}</p>`).join("");
-  } catch (e) {
-    console.error("Error generando alertas IA:", e);
-    contenedor.innerHTML = "<p>❌ Error generando alertas IA</p>";
-  }
-}
+ordenesSnap.forEach(doc => { const o = doc.data(); const fechaOrden = o.fecha.toDate().toDateString(); if (fechaOrden === hoy) { ordenesDia++; ingresosDia += Number(o.total) || 0; const tecnico = o.tecnico || "Sin asignar"; tecnicoContador[tecnico] = (tecnicoContador[tecnico] || 0) + 1; } });
 
-/* ===========================
-FUNCIONES DE VOZ
-=========================== */
+inventarioSnap.forEach(doc => { const item = doc.data(); if (Number(item.stock) <= 5) stockBajo++; });
 
-function hablar(texto) {
-  if (!texto) return;
-  const speech = new SpeechSynthesisUtterance(texto);
-  speech.lang = "es-ES";
-  speech.rate = 1;
-  speech.pitch = 1;
-  speech.volume = 1;
-  window.speechSynthesis.speak(speech);
-}
+document.getElementById("ordenesDia").innerText = ordenesDia; document.getElementById("ingresosDia").innerText = ingresosDia.toLocaleString(); document.getElementById("clientesActivos").innerText = clientesActivos; document.getElementById("tecnicosActivos").innerText = Object.keys(tecnicoContador).length; document.getElementById("stockBajo").innerText = stockBajo;
 
-export function leerAlertasVoz() {
-  if (!alertasCache) hablar("No hay alertas generadas aún");
-  else hablar(alertasCache);
-}
+generarGraficos(ordenesSnap, ingresosDia); generarAlertasIA({ordenesDia, ingresosDia, stockBajo, tecnicoContador}); }
+
+function generarGraficos(ordenesSnap, ingresosDia) { if (!window.Chart) return;
+
+const ordenesPorTecnico = {}; ordenesSnap.forEach(doc => { const o = doc.data(); const tecnico = o.tecnico || "Sin asignar"; ordenesPorTecnico[tecnico] = (ordenesPorTecnico[tecnico] || 0) + 1; });
+
+const ctxOrdenes = document.getElementById('graficoOrdenes').getContext('2d'); new Chart(ctxOrdenes, { type: 'bar', data: { labels: Object.keys(ordenesPorTecnico), datasets: [{ label: 'Órdenes por Técnico', data: Object.values(ordenesPorTecnico), backgroundColor: '#6366f1' }] }, options: { responsive:true, plugins:{ legend:{ display:false } } } });
+
+const ctxIngresos = document.getElementById('graficoIngresos').getContext('2d'); new Chart(ctxIngresos, { type: 'line', data: { labels: ['Hoy'], datasets: [{ label: 'Ingresos del Día', data: [ingresosDia], backgroundColor: '#16a34a', borderColor:'#16a34a', fill:false }] }, options: { responsive:true, plugins:{ legend:{ display:true } } } }); }
+
+async function generarAlertasIA(datos) { if(!window.SuperAI){ alertasCache = "SuperAI no disponible"; document.getElementById('alertasIA').innerHTML = alertasCache; return; } try { const alertas = await window.SuperAI.analyzeDashboard(datos); alertasCache = alertas.join('. '); document.getElementById('alertasIA').innerHTML = alertas.map(a=><p>⚠️ ${a}</p>).join(''); }catch(e){ console.error('Error alertas IA:',e); alertasCache = 'Error generando alertas'; document.getElementById('alertasIA').innerHTML = '❌ Error generando alertas'; } }
+
+function leerAlertasVoz(){ if(!alertasCache){ hablar('No hay alertas generadas aún'); }else{ hablar(alertasCache); } }
+
+function hablar(texto){ if(!texto) return; const speech = new SpeechSynthesisUtterance(texto); speech.lang = 'es-ES'; speech.rate = 1; speech.pitch = 1; speech.volume = 1; window.speechSynthesis.speak(speech); }
