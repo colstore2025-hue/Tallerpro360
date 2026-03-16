@@ -15,7 +15,7 @@ initializeApp({
 const db = getFirestore();
 
 // Cambiar por la empresaId de tu taller
-const empresaIdDefault = "ID_EMPRESA_TALLER360";
+const empresaIdDefault = "taller_001";
 
 // Colecciones a migrar
 const colecciones = ["ordenes", "repuestos", "facturas", "inventario", "gastos", "configuracion"];
