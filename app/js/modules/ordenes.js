@@ -1,7 +1,7 @@
 /**
 ================================================
-ordenes.js - Gestión avanzada de órdenes
-TallerPRO360
+ordenes.js - Gestión de Órdenes Avanzada
+TallerPRO360 ERP
 Ubicación: /app/js/modules/ordenes.js
 ================================================
 */
@@ -9,50 +9,47 @@ Ubicación: /app/js/modules/ordenes.js
 import { db } from "../core/firebase-config.js";
 import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import CustomerManager from "./customerManager.js";
-import { aiAssistant } from "./aiAssistant.js";
-import { iniciarAsistenteWorkshop } from "../voice/voiceAssistantWorkshop.js";
-import { actualizarStock } from "./inventario.js";
+import { aiAssistant } from "./aiAssistant.js"; 
+import { iniciarAsistenteWorkshop } from "../voice/voiceAssistantWorkshop.js";  
+import { actualizarStock } from "./inventario.js"; 
 
 export async function ordenes(container) {
-
   const customerManager = new CustomerManager();
 
   // Inicializar asistente de voz global
   iniciarAsistenteWorkshop();
 
   container.innerHTML = `
-<h1 style="font-size:28px;margin-bottom:20px;">🛠 Órdenes Avanzadas</h1>
+    <h1 style="font-size:28px;margin-bottom:20px;">🛠 Órdenes Avanzadas</h1>
 
-<div class="card">
-  <h3>Registrar Nueva Orden</h3>
-  <input id="clienteOrden" placeholder="Teléfono Cliente" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-  <input id="vehiculoOrden" placeholder="Vehículo" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-  <input id="placaOrden" placeholder="Placa" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-  <textarea id="descripcionOrden" placeholder="Descripción del servicio" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;"></textarea>
-  <button id="vozOrden" style="margin-top:10px;padding:10px 20px;background:#6366f1;border:none;border-radius:6px;color:white;cursor:pointer;">🎙 Dictar Orden por Voz</button>
-  <button id="guardarOrden" style="margin-top:10px;padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Guardar Orden</button>
-</div>
+    <div class="card">
+      <h3>Registrar Nueva Orden</h3>
+      <input id="clienteOrden" placeholder="Teléfono Cliente" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+      <input id="vehiculoOrden" placeholder="Vehículo" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+      <input id="placaOrden" placeholder="Placa" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+      <textarea id="descripcionOrden" placeholder="Descripción del servicio" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;"></textarea>
+      <button id="vozOrden" style="margin-top:10px;padding:10px 20px;background:#6366f1;border:none;border-radius:6px;color:white;cursor:pointer;">🎙 Dictar Orden por Voz</button>
+      <button id="guardarOrden" style="margin-top:10px;padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Guardar Orden</button>
+    </div>
 
-<div class="card">
-  <h3>Buscar Órdenes</h3>
-  <input id="buscarOrden" placeholder="Buscar por cliente, placa o vehículo..." style="width:100%;padding:10px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-</div>
+    <div class="card">
+      <h3>Buscar Órdenes</h3>
+      <input id="buscarOrden" placeholder="Buscar por cliente, placa o vehículo..." style="width:100%;padding:10px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
+    </div>
 
-<div class="card">
-  <h3>Órdenes Recientes</h3>
-  <div id="listaOrdenes">Cargando órdenes...</div>
-</div>
+    <div class="card">
+      <h3>Órdenes Recientes</h3>
+      <div id="listaOrdenes">Cargando órdenes...</div>
+    </div>
 
-<div class="card">
-  <h3>Asistente IA</h3>
-  <input id="inputAI" placeholder="Consulta sobre órdenes, diagnósticos o reparaciones..." style="width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-  <div id="respuestasAI" style="margin-top:10px;max-height:150px;overflow-y:auto;background:#111827;color:white;padding:10px;border-radius:6px;"></div>
-</div>
-`;
+    <div class="card">
+      <h3>Asistente IA</h3>
+      <input id="inputAI" placeholder="Consulta sobre órdenes, diagnósticos o reparaciones..." style="width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #333;background:#111827;color:white;">
+      <div id="respuestasAI" style="margin-top:10px;max-height:150px;overflow-y:auto;background:#111827;color:white;padding:10px;border-radius:6px;"></div>
+    </div>
+  `;
 
-  // ===========================
   // Eventos
-  // ===========================
   document.getElementById("guardarOrden").onclick = async () => await guardarOrden(customerManager);
   document.getElementById("buscarOrden").oninput = filtrarOrdenes;
   document.getElementById("vozOrden").onclick = () => dictarInput("descripcionOrden");
@@ -74,7 +71,7 @@ export async function ordenes(container) {
     }
   });
 
-  // Cargar órdenes al iniciar
+  // Cargar órdenes iniciales
   await cargarOrdenes();
 }
 
@@ -87,12 +84,12 @@ async function guardarOrden(customerManager){
   const placa = document.getElementById("placaOrden").value.trim();
   const descripcion = document.getElementById("descripcionOrden").value.trim();
 
-  if(!phone || !vehiculo) {
+  if(!phone || !vehiculo){
     hablar("Cliente y vehículo son obligatorios");
     return alert("Cliente y Vehículo son obligatorios");
   }
 
-  // Buscar o crear cliente
+  // Verificar o crear cliente
   let cliente = await customerManager.searchCustomer(phone);
   if(!cliente){
     const idCliente = await customerManager.createCustomer({phone, name:"Cliente", vehicle:vehiculo, plate:placa});
@@ -112,7 +109,7 @@ async function guardarOrden(customerManager){
       fecha: new Date()
     });
 
-    // Actualizar inventario automáticamente (si aplica)
+    // Actualizar inventario automáticamente
     actualizarStock(descripcion);
 
     hablar("Orden guardada correctamente");
@@ -138,10 +135,8 @@ async function cargarOrdenes(){
       lista.innerHTML = "No hay órdenes registradas. Usa el formulario superior para crear la primera orden.";
       return;
     }
-
     let html = `<table style="width:100%;border-collapse:collapse;">
       <tr style="border-bottom:1px solid #1e293b;"><th>Cliente</th><th>Vehículo</th><th>Estado</th><th>Fecha</th></tr>`;
-
     snapshot.forEach(docSnap=>{
       const o = docSnap.data();
       html += `<tr>
@@ -151,10 +146,8 @@ async function cargarOrdenes(){
         <td>${o.fecha.toDate().toLocaleString()}</td>
       </tr>`;
     });
-
     html += "</table>";
     lista.innerHTML = html;
-
   } catch(e){
     console.error("Error cargando órdenes:",e);
     lista.innerHTML = "❌ Error cargando órdenes";
@@ -187,12 +180,12 @@ function limpiarFormularioOrden(){
 /* ===========================
 DICTADO POR VOZ
 =========================== */
-function dictarInput(inputId) {
+function dictarInput(inputId){
   const input = document.getElementById(inputId);
-  if (!input) return;
+  if(!input) return;
 
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
+  if(!SpeechRecognition){
     hablar("Tu navegador no soporta dictado por voz");
     return;
   }
@@ -203,10 +196,7 @@ function dictarInput(inputId) {
   recognition.continuous = false;
 
   recognition.onstart = () => hablar("Comienza a dictar");
-  recognition.onerror = (e) => {
-    console.error("Error dictado:", e);
-    hablar("Error en dictado de voz");
-  };
+  recognition.onerror = (e) => { console.error("Error dictado:", e); hablar("Error en dictado de voz"); };
   recognition.onresult = (event) => {
     const texto = event.results[0][0].transcript;
     input.value += texto + " ";
@@ -216,10 +206,10 @@ function dictarInput(inputId) {
 }
 
 /* ===========================
-FUNCIÓN DE VOZ
+VOZ
 =========================== */
-function hablar(texto) {
-  if (!texto) return;
+function hablar(texto){
+  if(!texto) return;
   const speech = new SpeechSynthesisUtterance(texto);
   speech.lang = "es-ES";
   speech.rate = 1;
