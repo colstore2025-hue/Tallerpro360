@@ -1,163 +1,134 @@
-/**
- * aiAssistant.js
- * Panel del asistente IA
- * TallerPRO360 ERP
- */
+/*
+================================================
+AI ASSISTANT - Versión Estable
+Panel de asistente IA - TallerPRO360
+Ubicación: /app/js/modules/aiAssistant.js
+================================================
+*/
 
-import AICommandCenter from "../ai/aiCommandCenter.js"
+import AICommandCenter from "../ai/aiCommandCenter.js";
 
-export async function aiassistant(container){
+/* =========================================
+FUNCIÓN PRINCIPAL
+========================================= */
+export async function aiAssistant(pregunta) {
+  if (!pregunta) return "No se recibió ninguna pregunta";
 
-container.innerHTML = `
-
-<div class="card">
-
-<h2>🤖 AI Assistant</h2>
-
-<p>Escribe un comando para controlar el sistema.</p>
-
-<input
-id="aiCommandInput"
-placeholder="Ej: abrir inventario"
-style="
-width:100%;
-padding:12px;
-margin-top:10px;
-background:#020617;
-border:1px solid #1e293b;
-color:white;
-border-radius:8px;
-"
-/>
-
-<button
-id="aiRunBtn"
-style="
-margin-top:10px;
-padding:10px 16px;
-background:#16a34a;
-border:none;
-border-radius:8px;
-color:white;
-cursor:pointer;
-"
->
-Ejecutar
-</button>
-
-</div>
-
-
-<div class="card">
-
-<h3>Historial IA</h3>
-
-<div id="aiHistory"></div>
-
-</div>
-
-`
-
-initAI()
+  try {
+    // Ejecutar comando o consulta en el motor IA
+    const resultado = await AICommandCenter.execute(pregunta);
+    return resultado || "No se pudo generar respuesta";
+  } catch (e) {
+    console.error("Error en AI Assistant:", e);
+    return "Ocurrió un error procesando la consulta";
+  }
 }
 
+/* =========================================
+INTERFAZ DE PANEL (OPCIONAL)
+========================================= */
+export async function aiassistant(container) {
+  container.innerHTML = `
+<div class="card">
+  <h2>🤖 AI Assistant</h2>
+  <p>Escribe un comando o consulta sobre órdenes, inventario o diagnósticos.</p>
+  <input id="aiCommandInput" placeholder="Ej: abrir inventario" style="width:100%;padding:12px;margin-top:10px;background:#020617;border:1px solid #1e293b;color:white;border-radius:8px;">
+  <button id="aiRunBtn" style="margin-top:10px;padding:10px 16px;background:#16a34a;border:none;border-radius:8px;color:white;cursor:pointer;">Ejecutar</button>
+</div>
+
+<div class="card">
+  <h3>Historial IA</h3>
+  <div id="aiHistory"></div>
+</div>
+`;
+
+  initAI();
+}
 
 /* =========================================
 INICIALIZAR PANEL
 ========================================= */
+function initAI() {
+  const input = document.getElementById("aiCommandInput");
+  const btn = document.getElementById("aiRunBtn");
 
-function initAI(){
+  if (!btn) return;
 
-const input = document.getElementById("aiCommandInput")
-const btn = document.getElementById("aiRunBtn")
+  btn.onclick = runCommand;
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") runCommand();
+  });
 
-btn.onclick = runCommand
-
-input.addEventListener("keydown",(e)=>{
-
-if(e.key==="Enter"){
-
-runCommand()
-
+  renderHistory();
 }
-
-})
-
-renderHistory()
-
-}
-
 
 /* =========================================
 EJECUTAR COMANDO
 ========================================= */
+async function runCommand() {
+  const input = document.getElementById("aiCommandInput");
+  const text = input.value.trim();
+  if (!text) return;
 
-function runCommand(){
+  try {
+    const result = await AICommandCenter.execute(text);
+    if (!result) {
+      alert("Comando no reconocido");
+      return;
+    }
 
-const input = document.getElementById("aiCommandInput")
+    // Agregar al historial
+    AICommandCenter.addHistory({ command: text, module: result.module || "no reconocido" });
 
-const text = input.value.trim()
+    // Renderizar historial
+    renderHistory();
 
-if(!text) return
+    // Limpiar input
+    input.value = "";
 
-const result = AICommandCenter.execute(text)
+    // Reproducir voz
+    hablar(result.response || "Consulta ejecutada correctamente");
 
-input.value=""
-
-renderHistory()
-
-if(!result){
-
-alert("Comando no reconocido")
-
+  } catch (e) {
+    console.error("Error ejecutando comando IA:", e);
+    hablar("Ocurrió un error ejecutando el comando");
+  }
 }
-
-}
-
 
 /* =========================================
 RENDER HISTORIAL
 ========================================= */
+function renderHistory() {
+  const container = document.getElementById("aiHistory");
+  if (!container) return;
 
-function renderHistory(){
+  const history = AICommandCenter.getHistory();
+  if (!history.length) {
+    container.innerHTML = "<p>Sin comandos aún</p>";
+    return;
+  }
 
-const container = document.getElementById("aiHistory")
-
-if(!container) return
-
-const history = AICommandCenter.getHistory()
-
-if(!history.length){
-
-container.innerHTML="<p>Sin comandos aún</p>"
-return
-
+  container.innerHTML = history
+    .slice()
+    .reverse()
+    .map((item) => `
+      <div style="padding:8px;border-bottom:1px solid #1e293b;font-size:14px;">
+        🧠 ${item.command}<br>
+        <span style="color:#38bdf8">→ ${item.module || "no reconocido"}</span>
+      </div>
+    `)
+    .join("");
 }
 
-container.innerHTML = history
-.slice()
-.reverse()
-.map(item=>{
-
-return `
-
-<div style="
-padding:8px;
-border-bottom:1px solid #1e293b;
-font-size:14px;
-">
-
-🧠 ${item.command}
-<br>
-<span style="color:#38bdf8">
-→ ${item.module || "no reconocido"}
-</span>
-
-</div>
-
-`
-
-})
-.join("")
-
+/* =========================================
+FUNCIÓN DE SÍNTESIS DE VOZ
+========================================= */
+function hablar(texto) {
+  if (!texto) return;
+  const speech = new SpeechSynthesisUtterance(texto);
+  speech.lang = "es-ES";
+  speech.rate = 1;
+  speech.pitch = 1;
+  speech.volume = 1;
+  window.speechSynthesis.speak(speech);
 }
