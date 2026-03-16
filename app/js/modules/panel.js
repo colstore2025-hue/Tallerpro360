@@ -1,4 +1,12 @@
-import { moduleLoader } from "../system/moduleLoader.js";
+/*
+=====================================
+panel.js
+panel principal del erp
+tallerpro360
+=====================================
+*/
+
+import { moduleLoader } from "../system/moduleloader.js";
 
 import { dashboard } from "./dashboard.js";
 import { clientes } from "./clientes.js";
@@ -6,72 +14,102 @@ import { ordenes } from "./ordenes.js";
 import { inventario } from "./inventario.js";
 import { finanzas } from "./finanzas.js";
 import { contabilidad } from "./contabilidad.js";
-import { pagosTaller } from "./pagosTaller.js";
+import { pagostaller } from "./pagostaller.js";
 import { configuracion } from "./configuracion.js";
 import { reportes } from "./reportes.js";
 
-export async function panel(container,userId){
+export async function panel(container,userid){
 
 try{
 
-console.log("🚀 Panel iniciado");
+console.log("🚀 panel iniciado");
 
-container.innerHTML="Cargando ERP...";
 
-/* =========================
-CREAR LAYOUT
-========================= */
+/* =================================
+crear layout erp
+================================= */
 
 container.innerHTML=`
-<div style="display:flex;height:100vh">
 
-<nav style="
+<div style="display:flex;height:100vh;width:100%">
+
+<!-- menu lateral -->
+
+<nav
+style="
 width:240px;
 background:#020617;
 padding:20px;
+border-right:1px solid #1e293b;
+"
+>
+
+<h2 style="margin-bottom:20px">
+tallerpro360
+</h2>
+
+<div id="menuerp"></div>
+
+<div style="margin-top:30px">
+
+<button
+onclick="salir()"
+style="
+width:100%;
+padding:10px;
+background:#dc2626;
+border:none;
+border-radius:6px;
 color:white;
-">
+cursor:pointer;
+"
+>
+salir
+</button>
 
-<h2 style="margin-bottom:20px;">TallerPRO360</h2>
-
-<div id="menu"></div>
+</div>
 
 </nav>
 
-<main id="mainPanel"
+
+<!-- panel principal -->
+
+<main
+id="mainpanel"
 style="
 flex:1;
-padding:20px;
-background:#1e293b;
-color:white;
+padding:25px;
+background:#0f172a;
 overflow:auto;
-">
+"
+>
 
-Cargando módulo...
+cargando módulo...
 
 </main>
 
 </div>
+
 `;
 
 
-/* =========================
-DOM (usar container)
-========================= */
+/* =================================
+dom
+================================= */
 
-const menu = container.querySelector("#menu");
-const main = container.querySelector("#mainPanel");
+const menu=document.getElementById("menuerp");
+const main=document.getElementById("mainpanel");
 
 if(!menu || !main){
 
-throw new Error("No se pudo crear el layout");
+throw new Error("no se pudo crear el layout erp");
 
 }
 
 
-/* =========================
-REGISTRAR MÓDULOS
-========================= */
+/* =================================
+registrar módulos
+================================= */
 
 moduleLoader.register("dashboard",dashboard);
 moduleLoader.register("clientes",clientes);
@@ -79,63 +117,59 @@ moduleLoader.register("ordenes",ordenes);
 moduleLoader.register("inventario",inventario);
 moduleLoader.register("finanzas",finanzas);
 moduleLoader.register("contabilidad",contabilidad);
-moduleLoader.register("pagos",pagosTaller);
-moduleLoader.register("configuracion",configuracion);
+moduleLoader.register("pagos",pagostaller);
 moduleLoader.register("reportes",reportes);
+moduleLoader.register("configuracion",configuracion);
 
 
-/* =========================
-MENÚ
-========================= */
+/* =================================
+lista módulos
+================================= */
 
 const modulos=[
-"dashboard",
-"clientes",
-"ordenes",
-"inventario",
-"finanzas",
-"contabilidad",
-"pagos",
-"reportes",
-"configuracion"
+
+{nombre:"dashboard",icono:"📊"},
+{nombre:"clientes",icono:"👥"},
+{nombre:"ordenes",icono:"🛠"},
+{nombre:"inventario",icono:"📦"},
+{nombre:"finanzas",icono:"💰"},
+{nombre:"contabilidad",icono:"📑"},
+{nombre:"pagos",icono:"💳"},
+{nombre:"reportes",icono:"📈"},
+{nombre:"configuracion",icono:"⚙"}
+
 ];
+
+
+/* =================================
+crear menú
+================================= */
 
 menu.innerHTML="";
 
-modulos.forEach(nombre=>{
+modulos.forEach(m=>{
 
 const btn=document.createElement("button");
 
-btn.textContent=nombre;
+btn.innerHTML=`
+${m.icono} ${m.nombre}
+`;
 
 btn.style.display="block";
 btn.style.width="100%";
-btn.style.margin="8px 0";
+btn.style.marginBottom="10px";
 btn.style.padding="10px";
 btn.style.background="#0f172a";
 btn.style.border="1px solid #1e293b";
 btn.style.color="white";
+btn.style.borderRadius="6px";
 btn.style.cursor="pointer";
 
-btn.onclick=async ()=>{
+btn.onclick=()=>{
 
-console.log("Cargando módulo:",nombre);
+console.log("cargando módulo:",m.nombre);
 
-try{
-
-await moduleLoader.load(nombre,main,userId);
-
-}
-catch(e){
-
-console.error("Error cargando módulo:",e);
-
-main.innerHTML=`
-<h2>Error cargando módulo</h2>
-<p>${e.message}</p>
-`;
-
-}
+moduleLoader.load(m.nombre,main,userid);
 
 };
 
@@ -144,45 +178,44 @@ menu.appendChild(btn);
 });
 
 
-/* =========================
-CARGA INICIAL
-========================= */
+/* =================================
+cargar dashboard inicial
+================================= */
 
-try{
+await moduleLoader.load("dashboard",main,userid);
 
-await moduleLoader.load("dashboard",main,userId);
-
-}
-catch(e){
-
-console.error("Error cargando dashboard:",e);
-
-main.innerHTML=`
-<h2>Error cargando Dashboard</h2>
-<p>${e.message}</p>
-`;
-
-}
-
-console.log("✅ Panel cargado");
+console.log("✅ panel erp cargado");
 
 }
 catch(error){
 
-console.error("❌ Error en panel:",error);
+console.error("❌ error cargando panel:",error);
 
 container.innerHTML=`
+
 <div style="padding:40px">
 
-<h2>Error cargando el ERP</h2>
+<h2>error cargando erp</h2>
 
 <p>${error.message}</p>
 
-<button onclick="location.reload()">
-Reintentar
+<button onclick="location.reload()"
+style="
+padding:10px 20px;
+background:#16a34a;
+border:none;
+border-radius:6px;
+color:white;
+cursor:pointer;
+"
+>
+
+reiniciar sistema
+
 </button>
 
 </div>
+
 `;
 
 }
