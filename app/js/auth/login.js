@@ -1,69 +1,68 @@
-/**
- * login.js
- * Servicio de autenticación
- * TallerPRO360
- */
+/*
+=====================================
+login.js
+sistema de login
+tallerpro360
+=====================================
+*/
 
-import { 
-  getAuth, 
-  signInWithEmailAndPassword 
+import { auth } from "../core/firebase-config.js";
+
+import {
+signInWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-import { 
-  doc, 
-  getDoc 
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { db } from "../core/firebase-config.js";
-import { setTallerId } from "../core/tallerContext.js";
+const form=document.getElementById("loginForm");
 
-const auth = getAuth();
+if(form){
 
-/**
- * Iniciar sesión
- */
-export async function login(email, password) {
+form.addEventListener("submit",async(e)=>{
 
-  try {
+e.preventDefault();
 
-    const cred = await signInWithEmailAndPassword(auth, email, password);
+const email=document.getElementById("email").value;
+const password=document.getElementById("password").value;
 
-    const uid = cred.user.uid;
+try{
 
-    const userRef = doc(db, "usuarios", uid);
+const cred=await signInWithEmailAndPassword(
+auth,
+email,
+password
+);
 
-    const userDoc = await getDoc(userRef);
+const user=cred.user;
 
-    if (!userDoc.exists()) {
-      throw new Error("Usuario no registrado en Firestore");
-    }
+console.log("usuario autenticado:",user.uid);
 
-    const data = userDoc.data();
+/* ===============================
+guardar sesión
+=============================== */
 
-    const empresaId = data.empresaId;
+localStorage.setItem("uid",user.uid);
 
-    if (!empresaId) {
-      throw new Error("Usuario sin empresa asignada");
-    }
+/* empresa demo temporal */
 
-    // guardar empresa en contexto global
-    setTallerId(empresaId);
+if(!localStorage.getItem("empresaId")){
+localStorage.setItem("empresaId","demoEmpresa");
+}
 
-    return {
-      success: true,
-      empresaId: empresaId,
-      uid: uid
-    };
+/* ===============================
+entrar al ERP
+=============================== */
 
-  } catch (error) {
+window.location.href="/index.html";
 
-    console.error("Error login:", error);
+}
+catch(error){
 
-    return {
-      success: false,
-      error: error.message
-    };
+console.error("error login:",error);
 
-  }
+alert("error de autenticación");
+
+}
+
+});
 
 }
