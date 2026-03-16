@@ -9,9 +9,9 @@ Ubicación: /app/js/modules/ordenes.js
 import { db } from "../core/firebase-config.js";
 import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import CustomerManager from "./customerManager.js";
-import { aiAssistant } from "./aiAssistant.js"; 
-import { iniciarAsistenteWorkshop } from "../voice/voiceAssistantWorkshop.js";  
-import { actualizarStock } from "./inventario.js"; 
+import { aiassistant } from "./aiAssistant.js";
+import { iniciarAsistenteWorkshop } from "../voice/voiceAssistantWorkshop.js";
+import { actualizarStock } from "./inventario.js";
 
 export async function ordenes(container) {
   const customerManager = new CustomerManager();
@@ -50,7 +50,7 @@ export async function ordenes(container) {
   `;
 
   // ===========================
-  // Eventos
+  // Eventos botones y formularios
   // ===========================
   document.getElementById("guardarOrden").onclick = async () => await guardarOrden(customerManager);
   document.getElementById("buscarOrden").oninput = filtrarOrdenes;
@@ -63,7 +63,7 @@ export async function ordenes(container) {
     if(e.key === "Enter"){
       const pregunta = inputAI.value.trim();
       if(!pregunta) return;
-      const respuesta = await aiAssistant(pregunta);
+      const respuesta = await aiassistant(pregunta); // usa el módulo global de AI
       const div = document.createElement("div");
       div.style.marginBottom = "8px";
       div.innerHTML = `<b>Consulta:</b> ${pregunta}<br><b>Respuesta:</b> ${respuesta}`;
