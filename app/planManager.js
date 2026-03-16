@@ -1,8 +1,7 @@
 /**
  * planManager.js
- * Control de acceso a módulos según plan
+ * Gestor avanzado de planes SaaS
  * TallerPRO360 ERP
- * Versión Estable SaaS
  */
 
 import { db } from "./core/firebase-config.js";
@@ -13,9 +12,9 @@ getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
-/* ============================
-DEFINICIÓN DE PLANES
-============================ */
+/* =========================================
+CONFIGURACIÓN DE PLANES
+========================================= */
 
 const PLANES = {
 
@@ -56,6 +55,7 @@ elite:[
 "clientes",
 "ordenes",
 "inventario",
+"inventario",
 "reportes",
 "finanzas",
 "pagos",
@@ -84,27 +84,52 @@ enterprise:[
 };
 
 
+/* =========================================
+TODOS LOS MÓDULOS DEL SISTEMA
+========================================= */
 
-/* ============================
-OBTENER MÓDULOS SEGÚN PLAN
-============================ */
+const TODOS_MODULOS = [
+
+"dashboard",
+"clientes",
+"ordenes",
+"inventario",
+"reportes",
+"finanzas",
+"pagos",
+"contabilidad",
+"ceo",
+"aiassistant",
+"aiadvisor",
+"configuracion"
+
+];
+
+
+/* =========================================
+OBTENER MÓDULOS DISPONIBLES
+========================================= */
 
 export async function getModulosDisponibles(userId){
 
 try{
 
-/* seguridad básica */
+/* --------------------------
+VALIDACIÓN BÁSICA
+-------------------------- */
 
 if(!userId){
 
-console.warn("⚠ userId no recibido → freemium");
+console.warn("⚠ userId no recibido");
 
 return PLANES.freemium;
 
 }
 
 
-/* consultar usuario */
+/* --------------------------
+CONSULTAR FIRESTORE
+-------------------------- */
 
 const ref = doc(db,"usuariosGlobal",userId);
 
@@ -112,8 +137,14 @@ const snap = await getDoc(ref);
 
 let plan="freemium";
 
+let rolGlobal="";
 
-/* usuario encontrado */
+let activo=true;
+
+
+/* --------------------------
+SI USUARIO EXISTE
+-------------------------- */
 
 if(snap.exists()){
 
@@ -124,14 +155,49 @@ plan = (data.planTipo || "freemium")
 .toLowerCase()
 .trim();
 
+rolGlobal = (data.rolGlobal || "")
+.toString()
+.toLowerCase()
+.trim();
+
+activo = data.activo !== false;
+
 }else{
 
-console.warn("⚠ usuario no encontrado → freemium");
+console.warn("⚠ usuario no encontrado");
 
 }
 
 
-/* validar plan */
+/* --------------------------
+USUARIO DESACTIVADO
+-------------------------- */
+
+if(!activo){
+
+console.warn("⛔ usuario desactivado");
+
+return [];
+
+}
+
+
+/* --------------------------
+SUPERADMIN TIENE TODO
+-------------------------- */
+
+if(rolGlobal === "superadmin"){
+
+console.log("🧠 SuperAdmin detectado");
+
+return TODOS_MODULOS;
+
+}
+
+
+/* --------------------------
+VALIDAR PLAN
+-------------------------- */
 
 if(!PLANES[plan]){
 
@@ -142,11 +208,31 @@ plan="freemium";
 }
 
 
-console.log("📦 Plan usuario:",plan);
+/* --------------------------
+MÓDULOS DEL PLAN
+-------------------------- */
 
-console.log("🧩 Módulos habilitados:",PLANES[plan]);
+const modulos = PLANES[plan];
 
-return PLANES[plan];
+
+/* --------------------------
+LOGS DE DIAGNÓSTICO
+-------------------------- */
+
+console.log("👤 Usuario:",userId);
+
+console.log("📦 Plan:",plan);
+
+console.log("🏢 Rol Global:",rolGlobal);
+
+console.log("🧩 Módulos:",modulos);
+
+
+/* --------------------------
+RETORNAR MÓDULOS
+-------------------------- */
+
+return modulos;
 
 
 }catch(e){
