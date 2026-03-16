@@ -1,39 +1,27 @@
-/*
+/**
 ================================================
-AI ASSISTANT - Versión Estable
-Panel de asistente IA - TallerPRO360
+aiAssistant.js - Asistente IA
+Control inteligente de ERP - TallerPRO360
 Ubicación: /app/js/modules/aiAssistant.js
 ================================================
 */
 
 import AICommandCenter from "../ai/aiCommandCenter.js";
 
-/* =========================================
-FUNCIÓN PRINCIPAL
-========================================= */
-export async function aiAssistant(pregunta) {
-  if (!pregunta) return "No se recibió ninguna pregunta";
+/**
+ * Inicializa el panel del asistente IA
+ */
+export async function aiAssistant(container) {
 
-  try {
-    // Ejecutar comando o consulta en el motor IA
-    const resultado = await AICommandCenter.execute(pregunta);
-    return resultado || "No se pudo generar respuesta";
-  } catch (e) {
-    console.error("Error en AI Assistant:", e);
-    return "Ocurrió un error procesando la consulta";
-  }
-}
-
-/* =========================================
-INTERFAZ DE PANEL (OPCIONAL)
-========================================= */
-export async function aiassistant(container) {
   container.innerHTML = `
 <div class="card">
+
   <h2>🤖 AI Assistant</h2>
-  <p>Escribe un comando o consulta sobre órdenes, inventario o diagnósticos.</p>
+  <p>Consulta sobre órdenes, inventario o diagnósticos de vehículos.</p>
+
   <input id="aiCommandInput" placeholder="Ej: abrir inventario" style="width:100%;padding:12px;margin-top:10px;background:#020617;border:1px solid #1e293b;color:white;border-radius:8px;">
   <button id="aiRunBtn" style="margin-top:10px;padding:10px 16px;background:#16a34a;border:none;border-radius:8px;color:white;cursor:pointer;">Ejecutar</button>
+
 </div>
 
 <div class="card">
@@ -52,7 +40,7 @@ function initAI() {
   const input = document.getElementById("aiCommandInput");
   const btn = document.getElementById("aiRunBtn");
 
-  if (!btn) return;
+  if (!btn || !input) return;
 
   btn.onclick = runCommand;
   input.addEventListener("keydown", (e) => {
@@ -65,38 +53,26 @@ function initAI() {
 /* =========================================
 EJECUTAR COMANDO
 ========================================= */
-async function runCommand() {
+function runCommand() {
   const input = document.getElementById("aiCommandInput");
   const text = input.value.trim();
   if (!text) return;
 
-  try {
-    const result = await AICommandCenter.execute(text);
-    if (!result) {
-      alert("Comando no reconocido");
-      return;
-    }
+  // Ejecutar comando mediante AICommandCenter
+  const result = AICommandCenter.execute(text);
 
-    // Agregar al historial
-    AICommandCenter.addHistory({ command: text, module: result.module || "no reconocido" });
+  // Limpiar input
+  input.value = "";
 
-    // Renderizar historial
-    renderHistory();
+  renderHistory();
 
-    // Limpiar input
-    input.value = "";
-
-    // Reproducir voz
-    hablar(result.response || "Consulta ejecutada correctamente");
-
-  } catch (e) {
-    console.error("Error ejecutando comando IA:", e);
-    hablar("Ocurrió un error ejecutando el comando");
+  if (!result) {
+    alert("Comando no reconocido");
   }
 }
 
 /* =========================================
-RENDER HISTORIAL
+RENDER HISTORIAL DE COMANDOS
 ========================================= */
 function renderHistory() {
   const container = document.getElementById("aiHistory");
@@ -111,24 +87,13 @@ function renderHistory() {
   container.innerHTML = history
     .slice()
     .reverse()
-    .map((item) => `
-      <div style="padding:8px;border-bottom:1px solid #1e293b;font-size:14px;">
-        🧠 ${item.command}<br>
-        <span style="color:#38bdf8">→ ${item.module || "no reconocido"}</span>
-      </div>
-    `)
+    .map(item => {
+      return `
+<div style="padding:8px;border-bottom:1px solid #1e293b;font-size:14px;">
+🧠 ${item.command} <br>
+<span style="color:#38bdf8">→ ${item.module || "no reconocido"}</span>
+</div>
+      `;
+    })
     .join("");
-}
-
-/* =========================================
-FUNCIÓN DE SÍNTESIS DE VOZ
-========================================= */
-function hablar(texto) {
-  if (!texto) return;
-  const speech = new SpeechSynthesisUtterance(texto);
-  speech.lang = "es-ES";
-  speech.rate = 1;
-  speech.pitch = 1;
-  speech.volume = 1;
-  window.speechSynthesis.speak(speech);
 }
