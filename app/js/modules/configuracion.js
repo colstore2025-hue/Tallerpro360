@@ -1,7 +1,6 @@
 /**
  * configuracion.js
  * Módulo de Configuración de Taller y Ayuda - TallerPRO360
- * Ruta: app/js/modules/configuracion.js
  */
 
 import { db } from "../core/firebase-config.js";
@@ -34,24 +33,11 @@ export async function configuracion(container) {
     </div>
   `;
 
-  // ===========================
-  // Cargar datos guardados
-  // ===========================
   await cargarDatosTaller();
 
-  // ===========================
-  // Botón guardar datos
-  // ===========================
   document.getElementById("guardarTaller").onclick = guardarDatosTaller;
+  document.getElementById("btnManual").onclick = generarManualPDF;
 
-  // ===========================
-  // Botón manual PDF
-  // ===========================
-  document.getElementById("btnManual").onclick = () => generarManualPDF();
-
-  // ===========================
-  // Módulo de ayuda interactivo
-  // ===========================
   const inputPregunta = document.getElementById("inputPregunta");
   const respuestasContainer = document.getElementById("respuestasAyuda");
 
@@ -69,9 +55,6 @@ export async function configuracion(container) {
   });
 }
 
-/* ===========================
-GUARDAR DATOS DEL TALLER
-=========================== */
 async function guardarDatosTaller() {
   const data = {
     nombre: document.getElementById("tallerNombre").value.trim(),
@@ -90,9 +73,6 @@ async function guardarDatosTaller() {
   }
 }
 
-/* ===========================
-CARGAR DATOS DEL TALLER
-=========================== */
 async function cargarDatosTaller() {
   try {
     const docSnap = await getDoc(doc(db,"configuracion","empresa"));
@@ -109,9 +89,6 @@ async function cargarDatosTaller() {
   }
 }
 
-/* ===========================
-RESPUESTAS FAQ SIMULADAS
-=========================== */
 function generarRespuestaFAQ(pregunta) {
   pregunta = pregunta.toLowerCase();
   if(pregunta.includes("cliente")) return "Para agregar un cliente, ve al módulo Clientes y presiona 'Guardar Cliente'.";
