@@ -1,152 +1,64 @@
 /*
-===============================================
-VOICE ASSISTANT WORKSHOP - Avanzado y Mejorado
-Asistente global del taller - TallerPRO360
-Ubicación: /app/js/voice/voiceAssistantWorkshop.js
-===============================================
+================================================
+VOICEASSISTANTWORKSHOP.JS - Versión Final
+Asistente de voz global para TallerPRO360
+Ubicación: /app/js/modules/voice/voiceAssistantWorkshop.js
+================================================
 */
 
-import { iniciarVoiceMechanic } from "./voiceMechanicAI.js";
-import { procesarOrdenGlobal } from "../erp/procesarOrdenGlobal.js";
-import { buscarCliente } from "../clientes/clientesLista.js";
-import { generarFactura } from "../finanzas/generarFactura.js";
-
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-let recognition = null;
-let activo = false;
-
-/**
- * Inicia el asistente global del taller
- */
+/* ===========================
+INICIAR ASISTENTE DE VOZ
+=========================== */
 export function iniciarAsistenteWorkshop() {
-  if (!SpeechRecognition) {
-    console.warn("Reconocimiento de voz no soportado");
-    alert("⚠️ Tu navegador no soporta reconocimiento de voz");
+  
+  if (!("speechSynthesis" in window) || !(window.SpeechRecognition || window.webkitSpeechRecognition)) {
+    console.warn("🎙 Navegador no soporta voz completa");
     return;
   }
 
-  recognition = new SpeechRecognition();
+  console.log("🎤 Asistente de voz inicializado");
+
+}
+
+/* ===========================
+DICTADO GENERAL
+=========================== */
+export function dictarInput(inputId) {
+  const input = document.getElementById(inputId);
+  if(!input) return hablar("Campo no encontrado");
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRecognition) return hablar("Tu navegador no soporta dictado por voz");
+
+  const recognition = new SpeechRecognition();
   recognition.lang = "es-ES";
-  recognition.continuous = true;
   recognition.interimResults = false;
+  recognition.continuous = false;
 
-  recognition.onstart = () => {
-    activo = true;
-    console.log("🤖 Asistente del taller activo");
-    hablar("Asistente del taller activado");
-  };
-
-  recognition.onresult = async (event) => {
-    if (!activo) return;
-
-    const comando = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
-    console.log("📢 Comando detectado:", comando);
-
-    // Mostrar comandos recientes en UI si existe contenedor
-    if (document.getElementById("logComandosIA")) {
-      const log = document.getElementById("logComandosIA");
-      const div = document.createElement("div");
-      div.innerText = `> ${comando}`;
-      div.style.marginBottom = "4px";
-      log.prepend(div);
-    }
-
-    await interpretarComando(comando);
-  };
-
+  recognition.onstart = () => hablar("Comienza a dictar");
   recognition.onerror = (e) => {
-    console.error("Error en reconocimiento de voz:", e);
-    hablar("Hubo un error en el reconocimiento de voz");
+    console.error("Error dictado:", e);
+    hablar("Ocurrió un error en dictado de voz");
   };
-
-  recognition.onend = () => {
-    if (activo) recognition.start(); // reinicia automáticamente si está activo
+  recognition.onresult = (event) => {
+    const texto = event.results[0][0].transcript;
+    input.value += texto + " ";
+    hablar(`Texto agregado: ${texto}`);
   };
-
   recognition.start();
 }
 
-/**
- * Detener el asistente global
- */
-export function detenerAsistenteWorkshop() {
-  if (recognition) {
-    activo = false;
-    recognition.stop();
-    hablar("Asistente desactivado");
-    console.log("🤖 Asistente del taller detenido");
-  }
+/* ===========================
+DICTADO PARA PRODUCTOS
+=========================== */
+export function dictarProductoVoz(inputId = "productoNombre") {
+  dictarInput(inputId);
 }
 
-// ============================================
-// Interpretación de comandos
-// ============================================
-async function interpretarComando(comando) {
-  try {
-    if (!comando) return;
-
-    if (comando.includes("crear orden")) {
-      hablar("Creando nueva orden");
-      await procesarOrdenGlobal({ accion: "crear" });
-      return;
-    }
-
-    if (comando.includes("buscar cliente")) {
-      hablar("Buscando cliente");
-      await buscarCliente();
-      return;
-    }
-
-    if (comando.includes("generar factura")) {
-      hablar("Generando factura");
-      await generarFactura();
-      return;
-    }
-
-    if (comando.includes("abrir inventario")) {
-      hablar("Abriendo inventario");
-      window.location.href = "/inventario.html";
-      return;
-    }
-
-    if (comando.includes("abrir reportes")) {
-      hablar("Mostrando reportes");
-      window.location.href = "/reportes.html";
-      return;
-    }
-
-    if (comando.includes("asistente mecanico")) {
-      hablar("Activando asistente del mecánico");
-      iniciarVoiceMechanic();
-      return;
-    }
-
-    // Comando avanzado de dictado para inputs
-    if (comando.startsWith("dictar:")) {
-      const texto = comando.replace("dictar:", "").trim();
-      const focused = document.activeElement;
-      if (focused && (focused.tagName === "INPUT" || focused.tagName === "TEXTAREA")) {
-        focused.value += texto + " ";
-        hablar("Texto dictado agregado");
-      } else {
-        hablar("No hay un campo de texto seleccionado");
-      }
-      return;
-    }
-
-    // Comando no reconocido
-    hablar("No entendí el comando, por favor repite");
-  } catch (error) {
-    console.error("Error ejecutando comando de voz:", error);
-    hablar("Ocurrió un error al ejecutar el comando");
-  }
-}
-
-// ============================================
-// Función de síntesis de voz
-// ============================================
-function hablar(texto) {
+/* ===========================
+SÍNTESIS DE VOZ
+=========================== */
+export function hablar(texto) {
   if (!texto) return;
   const speech = new SpeechSynthesisUtterance(texto);
   speech.lang = "es-ES";
@@ -155,3 +67,9 @@ function hablar(texto) {
   speech.volume = 1;
   window.speechSynthesis.speak(speech);
 }
+
+/* ===========================
+UTILIDADES GLOBALES
+=========================== */
+// Se pueden agregar aquí futuras funciones de dictado inteligente,
+// lectura de órdenes, alertas de inventario o notificaciones.
