@@ -52,4 +52,175 @@ export async function ordenes(container) {
   // ===========================
   // Eventos botones y formularios
   // ===========================
-  document.getElementById("guardarOrden").onclick = async () => await guardar
+  document.getElementById("guardarOrden").onclick = async () => await guardarOrden(customerManager);
+  document.getElementById("buscarOrden").oninput = filtrarOrdenes;
+  document.getElementById("vozOrden").onclick = () => dictarInput("descripcionOrden");
+
+  // AI assistant input
+  const inputAI = document.getElementById("inputAI");
+  const respuestasAI = document.getElementById("respuestasAI");
+  inputAI.addEventListener("keypress", async (e) => {
+    if(e.key === "Enter"){
+      const pregunta = inputAI.value.trim();
+      if(!pregunta) return;
+      const respuesta = await aiAssistant(pregunta);
+      const div = document.createElement("div");
+      div.style.marginBottom = "8px";
+      div.innerHTML = `<b>Consulta:</b> ${pregunta}<br><b>Respuesta:</b> ${respuesta}`;
+      respuestasAI.prepend(div);
+      hablar(respuesta);
+      inputAI.value = "";
+    }
+  });
+
+  // ===========================
+  // Cargar órdenes
+  // ===========================
+  await cargarOrdenes();
+}
+
+/* ===========================
+FUNCIONES DE ORDENES
+=========================== */
+async function guardarOrden(customerManager){
+  const phone = document.getElementById("clienteOrden").value.trim();
+  const vehiculo = document.getElementById("vehiculoOrden").value.trim();
+  const placa = document.getElementById("placaOrden").value.trim();
+  const descripcion = document.getElementById("descripcionOrden").value.trim();
+
+  if(!phone || !vehiculo) {
+    hablar("Cliente y vehículo son obligatorios");
+    return alert("Cliente y Vehículo son obligatorios");
+  }
+
+  // Verificar o crear cliente
+  let cliente = await customerManager.searchCustomer(phone);
+  if(!cliente){
+    const idCliente = await customerManager.createCustomer({phone, name:"Cliente", vehicle:vehiculo, plate:placa});
+    cliente = {id:idCliente, phone, vehicle:vehiculo, plate:placa};
+  } else {
+    await customerManager.updateVisit(cliente.id);
+  }
+
+  try {
+    await addDoc(collection(db,"ordenes"),{
+      clienteId: cliente.id,
+      clientePhone: phone,
+      vehiculo,
+      placa,
+      descripcion,
+      estado: "Recepción",
+      fecha: new Date()
+    });
+
+    // Actualizar inventario automáticamente (ejemplo: repuestos)
+    actualizarStock(descripcion);
+
+    hablar("Orden guardada correctamente");
+    alert("✅ Orden guardada");
+    limpiarFormularioOrden();
+    await cargarOrdenes();
+  } catch(e){
+    console.error("Error guardando orden:",e);
+    hablar("Error al guardar la orden");
+    alert("❌ Error guardando orden");
+  }
+}
+
+/* ===========================
+CARGAR ORDENES
+=========================== */
+async function cargarOrdenes(){
+  const lista = document.getElementById("listaOrdenes");
+  try {
+    const q = query(collection(db,"ordenes"), orderBy("fecha","desc"));
+    const snapshot = await getDocs(q);
+    if(snapshot.empty){
+      lista.innerHTML = "No hay órdenes registradas. Usa el formulario superior para crear la primera orden.";
+      return;
+    }
+    let html = `<table style="width:100%;border-collapse:collapse;">
+      <tr style="border-bottom:1px solid #1e293b;"><th>Cliente</th><th>Vehículo</th><th>Estado</th><th>Fecha</th></tr>`;
+    snapshot.forEach(docSnap=>{
+      const o = docSnap.data();
+      html += `<tr>
+        <td>${o.clientePhone || "-"}</td>
+        <td>${o.vehiculo || "-"}</td>
+        <td>${o.estado || "Recepción"}</td>
+        <td>${o.fecha.toDate().toLocaleString()}</td>
+      </tr>`;
+    });
+    html += "</table>";
+    lista.innerHTML = html;
+  } catch(e){
+    console.error("Error cargando órdenes:",e);
+    lista.innerHTML = "❌ Error cargando órdenes";
+    hablar("Error cargando las órdenes");
+  }
+}
+
+/* ===========================
+FILTRAR ORDENES
+=========================== */
+function filtrarOrdenes(){
+  const input = document.getElementById("buscarOrden").value.toLowerCase();
+  const rows = document.querySelectorAll("#listaOrdenes table tr");
+  rows.forEach((row,index)=>{
+    if(index===0) return;
+    row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
+  });
+}
+
+/* ===========================
+LIMPIAR FORMULARIO
+=========================== */
+function limpiarFormularioOrden(){
+  document.getElementById("clienteOrden").value = "";
+  document.getElementById("vehiculoOrden").value = "";
+  document.getElementById("placaOrden").value = "";
+  document.getElementById("descripcionOrden").value = "";
+}
+
+/* ===========================
+FUNCIONES DE VOZ
+=========================== */
+function dictarInput(inputId) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    hablar("Tu navegador no soporta dictado por voz");
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = "es-ES";
+  recognition.interimResults = false;
+  recognition.continuous = false;
+
+  recognition.onstart = () => hablar("Comienza a dictar");
+  recognition.onerror = (e) => {
+    console.error("Error dictado:", e);
+    hablar("Error en dictado de voz");
+  };
+  recognition.onresult = (event) => {
+    const texto = event.results[0][0].transcript;
+    input.value += texto + " ";
+    hablar("Texto agregado");
+  };
+  recognition.start();
+}
+
+/* ===========================
+FUNCIÓN DE SÍNTESIS DE VOZ
+=========================== */
+function hablar(texto) {
+  if (!texto) return;
+  const speech = new SpeechSynthesisUtterance(texto);
+  speech.lang = "es-ES";
+  speech.rate = 1;
+  speech.pitch = 1;
+  speech.volume = 1;
+  window.speechSynthesis.speak(speech);
+}
