@@ -1,168 +1,97 @@
 /**
  * moduleLoader.js
- * Cargador inteligente de módulos
+ * Gestor central de módulos
  * TallerPRO360 ERP
  */
 
-export const moduleLoader = {
+class ModuleLoader {
 
-modules:{},
+constructor(){
 
-context:{
-userId:null,
-empresaId:null,
-sucursalId:null
-},
+this.modules = {};
 
-/* =====================================
-SET CONTEXTO GLOBAL
-===================================== */
+}
 
-setContext(ctx={}){
-
-this.context={
-...this.context,
-...ctx
-};
-
-console.log("🌐 Contexto actualizado",this.context);
-
-},
-
-/* =====================================
+/* =========================
 REGISTRAR MÓDULO
-===================================== */
+========================= */
 
-register(name,fn){
+register(name,module){
 
-if(!name){
-console.warn("⚠ Nombre de módulo inválido");
+if(!name || !module){
+
+console.warn("⚠ módulo inválido:",name);
 return;
+
 }
 
-if(typeof fn!=="function"){
-console.warn("⚠ El módulo no es función:",name);
-return;
-}
+const key = name.toLowerCase();
 
-const key=name.toLowerCase();
-
-if(this.modules[key]){
-console.warn("⚠ Módulo ya registrado:",key);
-return;
-}
-
-this.modules[key]=fn;
+this.modules[key] = module;
 
 console.log("📦 módulo registrado:",key);
 
-},
-
-/* =====================================
-LISTAR MÓDULOS
-===================================== */
-
-list(){
-
-return Object.keys(this.modules);
-
-},
-
-/* =====================================
-CARGAR MÓDULO
-===================================== */
-
-async load(name,container){
-
-if(!container){
-console.error("❌ Contenedor no válido");
-return;
 }
 
-const key=name.toLowerCase();
+/* =========================
+CARGAR MÓDULO
+========================= */
 
-container.innerHTML=`
-<div style="padding:20px">
-⏳ Cargando ${key}...
-</div>
-`;
+async load(name,container,userId){
 
-try{
+const key = name.toLowerCase();
 
-const module=this.modules[key];
+const module = this.modules[key];
 
 if(!module){
 
-console.error("❌ módulo no registrado:",key);
+console.error("❌ módulo no encontrado:",key);
 
-container.innerHTML=`
-<div style="padding:30px">
-<h3>⚠ Módulo no disponible</h3>
-<p>${key}</p>
-</div>
+container.innerHTML = `
+<h2 style="color:red">
+Módulo no disponible
+</h2>
 `;
 
 return;
 
 }
 
-/* ejecutar módulo con contexto */
+try{
 
-await module(container,this.context);
+container.innerHTML="Cargando módulo...";
+
+await module(container,userId);
 
 console.log("✅ módulo cargado:",key);
 
 }
-catch(e){
+catch(error){
 
-console.error("❌ Error cargando módulo:",key,e);
+console.error("Error cargando módulo:",error);
 
-container.innerHTML=`
-<div style="padding:30px">
-
-<h3>⚠ Error cargando módulo</h3>
-
-<p>${key}</p>
-
-<button onclick="location.reload()"
-style="
-padding:10px;
-border:none;
-background:#dc2626;
-color:white;
-border-radius:6px;
-cursor:pointer;
-">
-
-Reiniciar sistema
-
-</button>
-
-</div>
+container.innerHTML = `
+<h2 style="color:red">
+Error cargando módulo
+</h2>
 `;
 
 }
 
-},
+}
 
-/* =====================================
+/* =========================
 DIAGNÓSTICO
-===================================== */
+========================= */
 
 diagnostic(){
 
-const list=this.list();
+console.log("===== MÓDULOS REGISTRADOS =====");
 
-console.log("🧠 Diagnóstico ModuleLoader");
-
-if(list.length===0){
-console.warn("⚠ No hay módulos registrados");
-}
-
-console.table(list);
-
-return list;
+console.table(Object.keys(this.modules));
 
 }
 
-};
+}
+
+export const moduleLoader = new ModuleLoader();
