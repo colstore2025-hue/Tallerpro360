@@ -1,7 +1,6 @@
 /**
  * moduleLoader.js
- * Gestor central de módulos
- * TallerPRO360 ERP
+ * CORE ERP - Gestor de módulos
  */
 
 class ModuleLoader {
@@ -12,15 +11,15 @@ this.modules = {};
 
 }
 
-/* =========================
-REGISTRAR MÓDULO
-========================= */
+/* ==========================
+REGISTRAR
+========================== */
 
 register(name,module){
 
 if(!name || !module){
 
-console.warn("⚠ módulo inválido:",name);
+console.warn("Módulo inválido:",name);
 return;
 
 }
@@ -33,9 +32,9 @@ console.log("📦 módulo registrado:",key);
 
 }
 
-/* =========================
-CARGAR MÓDULO
-========================= */
+/* ==========================
+CARGAR
+========================== */
 
 async load(name,container,userId){
 
@@ -47,7 +46,7 @@ if(!module){
 
 console.error("❌ módulo no encontrado:",key);
 
-container.innerHTML = `
+container.innerHTML=`
 <h2 style="color:red">
 Módulo no disponible
 </h2>
@@ -68,9 +67,9 @@ console.log("✅ módulo cargado:",key);
 }
 catch(error){
 
-console.error("Error cargando módulo:",error);
+console.error("Error módulo:",error);
 
-container.innerHTML = `
+container.innerHTML=`
 <h2 style="color:red">
 Error cargando módulo
 </h2>
@@ -80,13 +79,13 @@ Error cargando módulo
 
 }
 
-/* =========================
+/* ==========================
 DIAGNÓSTICO
-========================= */
+========================== */
 
 diagnostic(){
 
-console.log("===== MÓDULOS REGISTRADOS =====");
+console.log("===== MODULOS ERP =====");
 
 console.table(Object.keys(this.modules));
 
