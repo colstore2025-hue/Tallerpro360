@@ -1,7 +1,7 @@
 /*
 =====================================
 moduleloader.js
-cargador de módulos
+cargador de módulos erp
 tallerpro360
 =====================================
 */
@@ -14,30 +14,22 @@ this.modules={};
 
 }
 
-/* ==============================
-registrar módulo
-============================== */
-
 register(name,fn){
 
 this.modules[name]=fn;
 
-console.log("módulo registrado:",name);
+console.log("📦 módulo registrado:",name);
 
 }
 
-/* ==============================
-cargar módulo
-============================== */
-
-async load(name,container,userid){
+async load(name,container,userId){
 
 const mod=this.modules[name];
 
 if(!mod){
 
 container.innerHTML=`
-<h2>módulo ${name} no encontrado</h2>
+<h2>Módulo ${name} no encontrado</h2>
 `;
 
 return;
@@ -46,15 +38,25 @@ return;
 
 try{
 
-await mod(container,userid);
+console.log("🚀 cargando módulo:",name);
+
+await mod(container,userId);
+
+console.log("✅ módulo cargado:",name);
 
 }
-catch(error){
+catch(e){
 
-console.error("error cargando módulo:",name,error);
+console.error("❌ error módulo:",name,e);
 
 container.innerHTML=`
-<h2>error cargando módulo ${name}</h2>
+
+<h2>Error cargando módulo</h2>
+
+<p>${name}</p>
+
+<p>Revisa consola del sistema</p>
+
 `;
 
 }
