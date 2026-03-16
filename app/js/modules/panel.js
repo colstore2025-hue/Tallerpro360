@@ -17,7 +17,9 @@ import { aiAdvisor } from "./aiAdvisor.js";
 import { configuracion } from "./configuracion.js";
 import { reportes } from "./reportes.js";
 
-import { getModulosDisponibles } from "../planManager.js";
+/* RUTA CORREGIDA */
+import { getModulosDisponibles } from "../../planManager.js";
+
 import { loadAICore } from "../system/aiCoreLoader.js";
 import { moduleLoader } from "../system/moduleLoader.js";
 
@@ -25,6 +27,7 @@ import { moduleLoader } from "../system/moduleLoader.js";
 export async function panel(container,userId){
 
 console.log("🧠 Iniciando Panel TallerPRO360");
+
 
 /* ===============================
 INTERFAZ PRINCIPAL
@@ -55,6 +58,7 @@ Inicializando sistema...
 
 </div>
 `;
+
 
 /* ===============================
 REFERENCIAS DOM
@@ -93,7 +97,7 @@ moduleLoader.register("contabilidad",contabilidad);
 moduleLoader.register("pagos",pagosTaller);
 moduleLoader.register("ceo",ceo);
 
-/* IA en minúsculas */
+/* IA */
 
 moduleLoader.register("aiassistant",aiAssistant);
 moduleLoader.register("aiadvisor",aiAdvisor);
@@ -111,6 +115,7 @@ let modulosPermitidos=[];
 try{
 
 modulosPermitidos = await getModulosDisponibles(userId);
+console.log("📦 módulos permitidos:",modulosPermitidos);
 
 }catch(e){
 
@@ -156,6 +161,7 @@ btn.textContent = nombre
 .replace(/^./,c=>c.toUpperCase())
 .trim();
 
+
 btn.style.display="block";
 btn.style.width="100%";
 btn.style.margin="8px 0";
@@ -166,9 +172,10 @@ btn.style.color="white";
 btn.style.cursor="pointer";
 btn.style.borderRadius="6px";
 
+
 /* cargar módulo */
 
-btn.onclick=()=>moduleLoader.load(nombre.toLowerCase(),main);
+btn.onclick=()=>moduleLoader.load(nombre.toLowerCase(),main,userId);
 
 menu.appendChild(btn);
 
@@ -179,7 +186,7 @@ menu.appendChild(btn);
 CARGAR DASHBOARD INICIAL
 =============================== */
 
-await moduleLoader.load("dashboard",main);
+await moduleLoader.load("dashboard",main,userId);
 
 
 /* ===============================
@@ -195,9 +202,10 @@ location.href="/login.html";
 
 };
 
+
 console.log("✅ Panel cargado correctamente");
 
-/* diagnóstico opcional */
+/* diagnóstico */
 
 moduleLoader.diagnostic();
 
