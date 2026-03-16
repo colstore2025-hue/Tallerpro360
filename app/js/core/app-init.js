@@ -6,118 +6,64 @@ tallerpro360
 =====================================
 */
 
-import { panel } from "../modules/panel.js";
-
-
-/* =====================================
-INICIAR APLICACIÓN
-===================================== */
+import { panel } from "/app/js/modules/panel.js";
 
 export async function iniciarApp(){
 
-console.log("🚀 iniciando erp");
+console.log("🚀 iniciando erp tallerpro360");
 
-try{
-
-/* ===============================
-CONTENEDOR PRINCIPAL
-=============================== */
-
-const container = document.getElementById("appContent");
+const container=document.getElementById("appContent");
 
 if(!container){
 
-console.error("❌ no existe #appContent en el DOM");
+console.error("❌ no existe appContent");
+
 return;
 
 }
 
 
 /* ===============================
-VERIFICAR SESIÓN
+verificar sesión
 =============================== */
 
-const uid = localStorage.getItem("uid");
+const uid=localStorage.getItem("uid");
 
 if(!uid){
 
-console.warn("⚠️ sesión no encontrada");
+console.warn("⚠️ no hay sesión");
 
-window.location.href = "/login.html";
+window.location="/login.html";
 
 return;
 
 }
 
-console.log("👤 usuario activo:", uid);
+console.log("usuario activo:",uid);
 
 
 /* ===============================
-CARGAR PANEL ERP
+cargar panel
 =============================== */
 
-await panel(container, uid);
+try{
 
-console.log("✅ panel cargado correctamente");
+await panel(container,uid);
+
+console.log("✅ panel cargado");
 
 }
 catch(error){
 
-console.error("❌ error iniciando el erp:", error);
+console.error("❌ error cargando panel",error);
 
-const container = document.getElementById("appContent");
+container.innerHTML=`
 
-if(container){
-
-container.innerHTML = `
-
-<div style="
-display:flex;
-align-items:center;
-justify-content:center;
-height:100vh;
-">
-
-<div style="
-background:#020617;
-padding:30px;
-border-radius:10px;
-border:1px solid #1e293b;
-text-align:center;
-max-width:420px;
-">
-
-<h2 style="margin-bottom:10px">
+<h1 style="padding:40px">
 error cargando el erp
-</h2>
-
-<p style="color:#94a3b8;margin-bottom:20px">
-ocurrió un problema iniciando el sistema
-</p>
-
-<button
-onclick="location.reload()"
-style="
-padding:10px 20px;
-background:#16a34a;
-border:none;
-border-radius:6px;
-color:white;
-cursor:pointer;
-"
->
-
-reiniciar sistema
-
-</button>
-
-</div>
-
-</div>
+</h1>
 
 `;
-
-}
 
 }
 
