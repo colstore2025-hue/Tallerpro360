@@ -1,19 +1,61 @@
+/*
+=====================================
+app-init.js
+inicializador del erp
+tallerpro360
+=====================================
+*/
+
 import { panel } from "../modules/panel.js";
 
-export function iniciarApp(){
+export function iniciarapp(){
 
-const uid=localStorage.getItem("uid");
+console.log("iniciando erp");
 
-if(!uid){
+/* ==============================
+contenedor principal
+============================== */
 
-location.href="/login.html";
+const container=document.getElementById("appcontent");
+
+if(!container){
+
+console.error("contenedor appcontent no encontrado");
 
 return;
 
 }
 
-const app=document.getElementById("appContent");
+/* ==============================
+verificar sesión
+============================== */
 
-panel(app,uid);
+const uid=localStorage.getItem("uid");
+
+if(!uid){
+
+container.innerHTML=`
+<div class="card">
+
+<h2>no hay sesión</h2>
+
+<p>debes iniciar sesión</p>
+
+<a href="/login.html">
+<button>ir a login</button>
+</a>
+
+</div>
+`;
+
+return;
+
+}
+
+/* ==============================
+cargar panel erp
+============================== */
+
+panel(container,uid);
 
 }
