@@ -8,51 +8,43 @@
 
 <title>TallerPRO360 ERP</title>
 
-<meta name="description" content="ERP SaaS para talleres automotrices">
-
 <style>
 
 body{
 margin:0;
-font-family:Inter,system-ui,Arial;
+font-family:Arial;
 background:#0f172a;
 color:white;
 }
 
-/* loader */
-
 #loader{
 display:flex;
+flex-direction:column;
 align-items:center;
 justify-content:center;
 height:100vh;
-flex-direction:column;
-gap:20px;
 }
 
 .spinner{
-width:40px;
-height:40px;
-border:4px solid #1e293b;
-border-top:4px solid #10b981;
+width:50px;
+height:50px;
+border:5px solid #1e293b;
+border-top:5px solid #10b981;
 border-radius:50%;
-animation:girar 1s linear infinite;
+animation:giro 1s linear infinite;
+margin-bottom:20px;
 }
 
-@keyframes girar{
-0%{transform:rotate(0)}
-100%{transform:rotate(360deg)}
+@keyframes giro{
+0%{transform:rotate(0deg);}
+100%{transform:rotate(360deg);}
 }
 
 </style>
 
 </head>
 
-
 <body>
-
-
-<!-- CONTENEDOR ERP -->
 
 <div id="appContent">
 
@@ -60,88 +52,26 @@ animation:girar 1s linear infinite;
 
 <div class="spinner"></div>
 
-<h2>Cargando TallerPRO360...</h2>
-
-<p style="color:#94a3b8;font-size:14px">
-Inicializando sistema ERP
-</p>
+<h2>Cargando TallerPRO360</h2>
+<p>Inicializando sistema ERP</p>
 
 </div>
 
 </div>
-
-
-
-<!-- ==============================
-BOOT DEL ERP
-============================== -->
 
 <script type="module">
 
-import { iniciarApp } from "./js/core/app-init.js";
+import { iniciarApp } from "/app/js/core/app-init.js";
 
+document.addEventListener("DOMContentLoaded",async()=>{
 
-/* ====================================
-ARRANQUE DEL SISTEMA
-==================================== */
-
-window.addEventListener("DOMContentLoaded", async ()=>{
-
-console.log("🚀 boot erp iniciado");
-
-try{
+console.log("🚀 iniciando sistema");
 
 await iniciarApp();
-
-}
-catch(error){
-
-console.error("❌ error iniciando sistema",error);
-
-const container=document.getElementById("appContent");
-
-container.innerHTML=`
-
-<div style="
-display:flex;
-align-items:center;
-justify-content:center;
-height:100vh;
-flex-direction:column;
-">
-
-<h2>Error iniciando el ERP</h2>
-
-<p style="color:#94a3b8">
-No se pudo cargar el sistema
-</p>
-
-<button
-onclick="location.reload()"
-style="
-margin-top:20px;
-padding:10px 20px;
-background:#10b981;
-border:none;
-border-radius:6px;
-color:white;
-cursor:pointer;
-">
-
-Reintentar
-
-</button>
-
-</div>
-
-`;
-
-}
 
 });
 
 </script>
-
 
 </body>
 </html>
