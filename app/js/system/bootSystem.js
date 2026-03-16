@@ -1,22 +1,9 @@
-/**
- * bootSystem.js
- */
-
 import { iniciarApp } from "../core/app-init.js";
 
-export async function bootSystem(){
+export function bootSystem(){
 
-console.log("🚀 Boot ERP iniciado");
+console.log("🚀 Boot TallerPRO360");
 
-const uid = localStorage.getItem("uid");
-
-if(!uid){
-
-location.href="/login.html";
-return;
-
-}
-
-await iniciarApp();
+iniciarApp();
 
 }
