@@ -1,248 +1,174 @@
 /*
-=========================================================
-dashboard.js - Dashboard Gerencial Interactivo
-TallerPRO360 - Nivel Ejecutivo / Looker Studio
-=========================================================
+================================================
+DASHBOARD.JS - Versión Última Generación
+Dashboard Ejecutivo Gerencial - TallerPRO360
+================================================
 */
 
 import { db } from "../core/firebase-config.js";
-import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const chartJsCDN = "https://cdn.jsdelivr.net/npm/chart.js";
+import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export async function dashboard(container, userId) {
+  console.log("📊 cargando dashboard gerencial última generación");
+
   container.innerHTML = `
-<h1 style="font-size:32px;color:#00ff88;margin-bottom:20px;">🚀 Dashboard Ejecutivo</h1>
+    <h1 style="font-size:28px;margin-bottom:20px;">📊 Dashboard Ejecutivo - TallerPRO360</h1>
+    
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px;margin-bottom:30px;">
+      <div class="card" id="ordenesHoyCard">Órdenes Hoy: <span id="ordenesHoy">0</span></div>
+      <div class="card" id="ingresosHoyCard">Ingresos Hoy: $<span id="ingresosHoy">0</span></div>
+      <div class="card" id="gananciaHoyCard">Ganancia Neta Hoy: $<span id="gananciaHoy">0</span></div>
+      <div class="card" id="clientesActivosCard">Clientes Activos: <span id="clientesActivos">0</span></div>
+      <div class="card" id="clientesNuevosCard">Clientes Nuevos: <span id="clientesNuevos">0</span></div>
+      <div class="card" id="ordenesPendientesCard">Órdenes Pendientes: <span id="ordenesPendientes">0</span></div>
+    </div>
 
-<div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:30px;">
-  <div class="card-neon" id="ordenesDia">Órdenes Hoy: 0</div>
-  <div class="card-neon" id="ingresosDia">Ingresos Hoy: $0</div>
-  <div class="card-neon" id="gananciaDia">Ganancia Neta Hoy: $0</div>
-  <div class="card-neon" id="clientesNuevos">Clientes Nuevos Hoy: 0</div>
-</div>
+    <div style="display:flex;flex-wrap:wrap;gap:20px;">
+      <div class="card" style="flex:1;min-width:300px;">
+        <h3>Estado Órdenes</h3>
+        <canvas id="graficoEstadoOrdenes" style="width:100%;height:200px;"></canvas>
+      </div>
+      <div class="card" style="flex:1;min-width:300px;">
+        <h3>Rendimiento Técnicos</h3>
+        <canvas id="graficoTecnicos" style="width:100%;height:200px;"></canvas>
+      </div>
+      <div class="card" style="flex:1;min-width:300px;">
+        <h3>Ingresos Últimos 7 Días</h3>
+        <canvas id="graficoIngresosSemana" style="width:100%;height:200px;"></canvas>
+      </div>
+    </div>
+  `;
 
-<div style="display:flex; gap:30px; flex-wrap:wrap; margin-bottom:30px;">
-  <canvas id="graficaEstado" class="chart-neon"></canvas>
-  <canvas id="graficaTecnicos" class="chart-neon"></canvas>
-</div>
+  await cargarKPIs();
+  await cargarGraficos();
+}
 
-<div style="margin-bottom:30px;">
-  <canvas id="graficaIngresosSemana" class="chart-neon" style="height:350px;"></canvas>
-</div>
+/* ===========================
+FUNCIONES KPI
+=========================== */
+async function cargarKPIs() {
+  const ordenesSnap = await getDocs(collection(db, "ordenes"));
+  const clientesSnap = await getDocs(collection(db, "clientes"));
 
-<div style="margin-bottom:30px;">
-  <h3 style="color:#00ff88;">Filtros Interactivos</h3>
-  <label style="margin-right:10px;color:#00ff88;">Técnico:</label>
-  <select id="filtroTecnico" style="padding:5px; border-radius:6px; background:#1e293b; color:#00ff88;"></select>
-  <label style="margin-left:20px;margin-right:10px;color:#00ff88;">Estado:</label>
-  <select id="filtroEstado" style="padding:5px; border-radius:6px; background:#1e293b; color:#00ff88;">
-    <option value="">Todos</option>
-    <option value="Recepción">Recepción</option>
-    <option value="Reparación">Reparación</option>
-    <option value="Entregado">Entregado</option>
-  </select>
-  <button id="btnActualizar" style="margin-left:20px;padding:5px 15px;background:#6366f1;border:none;border-radius:6px;color:white;cursor:pointer;">Actualizar</button>
-</div>
+  const hoy = new Date().toDateString();
+  let ordenesHoy = 0, ingresosHoy = 0, gananciaHoy = 0, clientesActivos = 0, clientesNuevos = 0, ordenesPendientes = 0;
 
-<div>
-  <h3 style="color:#00ff88;">Alertas Críticas</h3>
-  <ul id="alertasOrdenes" style="color:#ff0055;"></ul>
-</div>
+  const clientesHoySet = new Set();
 
-<style>
-  .card-neon {
-    background:#0f172a;
-    padding:25px;
-    border-radius:12px;
-    flex:1;
-    min-width:200px;
-    font-size:18px;
-    font-weight:bold;
-    color:#00ff88;
-    text-shadow: 0 0 10px #00ff88;
-    border:1px solid #00ff88;
-  }
-  .chart-neon {
-    background:#1e293b;
-    border-radius:12px;
-    padding:15px;
-    flex:1 1 400px;
-  }
-</style>
-`;
-
-  if (!window.Chart) await cargarChartJS();
-  await cargarFiltros();
-  await actualizarDashboard();
-
-  document.getElementById("btnActualizar").onclick = actualizarDashboard;
-
-  // ========================================
-  // Funciones
-  // ========================================
-
-  async function cargarFiltros() {
-    const ordenesSnap = await getDocs(query(collection(db, "ordenes"), orderBy("fecha", "desc")));
-    const tecnicoSet = new Set();
-    ordenesSnap.forEach(docSnap => {
-      const o = docSnap.data();
-      if (o.tecnico) tecnicoSet.add(o.tecnico);
-    });
-
-    const filtroTecnico = document.getElementById("filtroTecnico");
-    filtroTecnico.innerHTML = `<option value="">Todos</option>`;
-    tecnicoSet.forEach(t => {
-      filtroTecnico.innerHTML += `<option value="${t}">${t}</option>`;
-    });
-  }
-
-  async function actualizarDashboard() {
-    const hoy = new Date();
-    const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
-    const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1);
-
-    const filtroTecnico = document.getElementById("filtroTecnico").value;
-    const filtroEstado = document.getElementById("filtroEstado").value;
-
-    const ordenesSnap = await getDocs(query(collection(db, "ordenes"), orderBy("fecha", "desc")));
-    const clientesSnap = await getDocs(collection(db, "clientes"));
-
-    let ordenesDia = 0, ingresosDia = 0, costosDia = 0, clientesNuevos = 0, gananciaDia = 0;
-    const estadoConteo = { Recepción: 0, Reparación: 0, Entregado: 0 };
-    const tecnicoConteo = {};
-    const tiempoTecnico = [];
-    const alertas = [];
-
-    ordenesSnap.forEach(docSnap => {
-      const o = docSnap.data();
-      const fecha = o.fecha.toDate();
-
-      // Filtrar por técnico y estado
-      if ((filtroTecnico && o.tecnico !== filtroTecnico) || (filtroEstado && o.estado !== filtroEstado)) return;
-
-      if (fecha >= inicioDia && fecha < finDia) {
-        ordenesDia++;
-        ingresosDia += Number(o.total || 0);
-        costosDia += Number(o.costoTotal || 0);
-      }
-
-      estadoConteo[o.estado] = (estadoConteo[o.estado] || 0) + 1;
-
-      if (o.tecnico) {
-        tecnicoConteo[o.tecnico] = (tecnicoConteo[o.tecnico] || 0) + 1;
-        if (o.tiempoEstimado) tiempoTecnico.push({ tecnico: o.tecnico, tiempo: Number(o.tiempoEstimado) });
-      }
-
-      if (o.estado !== "Entregado" && (hoy - fecha) / (1000 * 60 * 60) > 48) {
-        alertas.push(`⚠️ Orden de ${o.clientePhone || o.clienteId} retrasada >48h`);
-      }
-    });
-
-    clientesSnap.forEach(docSnap => {
-      const c = docSnap.data();
-      const fechaRegistro = c.createdAt?.toDate?.() || new Date(0);
-      if (fechaRegistro >= inicioDia && fechaRegistro < finDia) clientesNuevos++;
-    });
-
-    gananciaDia = ingresosDia - costosDia;
-
-    // KPIs
-    document.getElementById("ordenesDia").innerText = `Órdenes Hoy: ${ordenesDia}`;
-    document.getElementById("ingresosDia").innerText = `Ingresos Hoy: $${ingresosDia.toLocaleString()}`;
-    document.getElementById("gananciaDia").innerText = `Ganancia Neta Hoy: $${gananciaDia.toLocaleString()}`;
-    document.getElementById("clientesNuevos").innerText = `Clientes Nuevos Hoy: ${clientesNuevos}`;
-
-    // Alertas
-    const alertasContainer = document.getElementById("alertasOrdenes");
-    alertasContainer.innerHTML = alertas.length ? alertas.map(a => `<li>${a}</li>`).join("") : "<li>No hay alertas críticas</li>";
-
-    // Gráficas
-    generarGraficaEstado(estadoConteo);
-    generarGraficaTecnicos(tecnicoConteo, tiempoTecnico);
-    generarGraficaIngresosSemana(ordenesSnap);
-  }
-
-  async function cargarChartJS() {
-    return new Promise(resolve => {
-      const script = document.createElement("script");
-      script.src = chartJsCDN;
-      script.onload = resolve;
-      document.head.appendChild(script);
-    });
-  }
-
-  function generarGraficaEstado(data) {
-    const ctx = document.getElementById("graficaEstado").getContext("2d");
-    new Chart(ctx, {
-      type: "doughnut",
-      data: {
-        labels: Object.keys(data),
-        datasets: [{ data: Object.values(data), backgroundColor: ["#00ff88", "#6366f1", "#ff00aa"] }]
-      },
-      options: { plugins: { legend: { labels: { color: "#00ff88" } } } }
-    });
-  }
-
-  function generarGraficaTecnicos(ordenesData, tiempos) {
-    const ctx = document.getElementById("graficaTecnicos").getContext("2d");
-    const labels = Object.keys(ordenesData);
-    const dataOrdenes = Object.values(ordenesData);
-    const dataTiempo = labels.map(l => {
-      const t = tiempos.filter(x => x.tecnico === l).map(x => x.tiempo);
-      return t.length ? Math.round(t.reduce((a, b) => a + b, 0) / t.length) : 0;
-    });
-
-    new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels,
-        datasets: [
-          { label: "Órdenes completadas", data: dataOrdenes, backgroundColor: "#00ff88" },
-          { label: "Tiempo promedio (h)", data: dataTiempo, backgroundColor: "#6366f1" }
-        ]
-      },
-      options: { plugins: { legend: { labels: { color: "#00ff88" } } }, scales: { x: { ticks: { color: "#00ff88" } }, y: { ticks: { color: "#00ff88" } } } }
-    });
-  }
-
-  function generarGraficaIngresosSemana(ordenesSnap) {
-    const ctx = document.getElementById("graficaIngresosSemana").getContext("2d");
-    const hoy = new Date();
-    const etiquetas = [];
-    const ingresos = [];
-    for (let i = 6; i >= 0; i--) {
-      const dia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - i);
-      etiquetas.push(`${dia.getDate()}/${dia.getMonth() + 1}`);
-      ingresos.push(0);
+  ordenesSnap.forEach(doc => {
+    const o = doc.data();
+    const fecha = o.fecha.toDate().toDateString();
+    if(fecha === hoy) {
+      ordenesHoy++;
+      ingresosHoy += Number(o.total || 0);
+      gananciaHoy += Number(o.total || 0) - Number(o.costoTotal || 0);
     }
+    if(o.estado !== "Entregado") ordenesPendientes++;
+    clientesHoySet.add(o.clienteId);
+  });
 
-    ordenesSnap.forEach(docSnap => {
-      const o = docSnap.data();
-      const fecha = o.fecha.toDate();
-      for (let i = 6; i >= 0; i--) {
-        const dia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - i);
-        if (fecha.getFullYear() === dia.getFullYear() &&
-            fecha.getMonth() === dia.getMonth() &&
-            fecha.getDate() === dia.getDate()) {
-          ingresos[6 - i] += Number(o.total || 0);
-        }
-      }
-    });
+  clientesSnap.forEach(doc => {
+    const c = doc.data();
+    if(c.lastVisit) {
+      const last = c.lastVisit.toDate().toDateString();
+      if(last === hoy) clientesActivos++;
+      const created = c.createdAt?.toDate().toDateString();
+      if(created === hoy) clientesNuevos++;
+    }
+  });
 
-    new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: etiquetas,
-        datasets: [{
-          label: "Ingresos últimos 7 días",
-          data: ingresos,
-          fill: true,
-          backgroundColor: "rgba(0,255,136,0.2)",
-          borderColor: "#00ff88",
-          tension: 0.3
-        }]
-      },
-      options: { plugins: { legend: { labels: { color: "#00ff88" } } }, scales: { x: { ticks: { color: "#00ff88" } }, y: { ticks: { color: "#00ff88" } } } }
-    });
+  document.getElementById("ordenesHoy").innerText = ordenesHoy;
+  document.getElementById("ingresosHoy").innerText = ingresosHoy.toLocaleString();
+  document.getElementById("gananciaHoy").innerText = gananciaHoy.toLocaleString();
+  document.getElementById("clientesActivos").innerText = clientesActivos;
+  document.getElementById("clientesNuevos").innerText = clientesNuevos;
+  document.getElementById("ordenesPendientes").innerText = ordenesPendientes;
+}
+
+/* ===========================
+FUNCIONES GRÁFICOS
+=========================== */
+async function cargarGraficos() {
+  if(!window.Chart) {
+    console.warn("Chart.js no cargado, gráficos no disponibles");
+    return;
   }
+
+  // =========================
+  // Estado de Órdenes
+  // =========================
+  const ordenesSnap = await getDocs(collection(db, "ordenes"));
+  const estados = { "Recepción":0, "Reparación":0, "Entregado":0 };
+  ordenesSnap.forEach(doc => {
+    const o = doc.data();
+    estados[o.estado] = (estados[o.estado] || 0) + 1;
+  });
+
+  const ctx1 = document.getElementById("graficoEstadoOrdenes").getContext("2d");
+  new Chart(ctx1, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(estados),
+      datasets:[{
+        data: Object.values(estados),
+        backgroundColor:["#6366f1","#16a34a","#facc15"]
+      }]
+    }
+  });
+
+  // =========================
+  // Rendimiento Técnicos
+  // =========================
+  const tecnicos = {};
+  ordenesSnap.forEach(doc => {
+    const o = doc.data();
+    if(o.tecnico) tecnicos[o.tecnico] = (tecnicos[o.tecnico] || 0) + 1;
+  });
+
+  const ctx2 = document.getElementById("graficoTecnicos").getContext("2d");
+  new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(tecnicos),
+      datasets:[{
+        label:"Órdenes completadas",
+        data:Object.values(tecnicos),
+        backgroundColor:"#6366f1"
+      }]
+    },
+    options: { responsive:true, plugins:{legend:{display:false}} }
+  });
+
+  // =========================
+  // Ingresos Últimos 7 Días
+  // =========================
+  const ingresosDia = {};
+  const today = new Date();
+  for(let i=6;i>=0;i--){
+    const d = new Date();
+    d.setDate(today.getDate()-i);
+    ingresosDia[d.toDateString()] = 0;
+  }
+
+  ordenesSnap.forEach(doc => {
+    const o = doc.data();
+    const fecha = o.fecha.toDate().toDateString();
+    if(fecha in ingresosDia) ingresosDia[fecha] += Number(o.total || 0);
+  });
+
+  const ctx3 = document.getElementById("graficoIngresosSemana").getContext("2d");
+  new Chart(ctx3, {
+    type:'line',
+    data:{
+      labels:Object.keys(ingresosDia),
+      datasets:[{
+        label:'Ingresos',
+        data:Object.values(ingresosDia),
+        fill:true,
+        backgroundColor:'rgba(99,102,241,0.2)',
+        borderColor:'#6366f1'
+      }]
+    },
+    options:{responsive:true,plugins:{legend:{display:false}}}
+  });
 }
