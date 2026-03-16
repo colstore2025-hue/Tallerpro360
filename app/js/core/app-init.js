@@ -1,29 +1,19 @@
 import { panel } from "../modules/panel.js";
 
-export async function iniciarApp(){
+export function iniciarApp(){
 
-console.log("🚀 iniciarApp");
+const uid=localStorage.getItem("uid");
 
-const container=document.getElementById("appContent");
+if(!uid){
 
-if(!container){
+location.href="/login.html";
 
-console.error("No existe appContent");
 return;
 
 }
 
-let uid=localStorage.getItem("uid");
+const app=document.getElementById("appContent");
 
-/* SOLO PARA PRUEBA */
-
-if(!uid){
-
-uid="demoUser";
-localStorage.setItem("uid",uid);
-
-}
-
-await panel(container,uid);
+panel(app,uid);
 
 }
