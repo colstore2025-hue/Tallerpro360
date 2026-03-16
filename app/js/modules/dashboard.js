@@ -24,7 +24,7 @@ orderBy,
 limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { calcularPredicciones } from "../ai/aiMetrics.js";
+let calcularPredicciones = async ()=>[];
 
 
 export async function dashboard(container){
