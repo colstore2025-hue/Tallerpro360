@@ -2,7 +2,6 @@
 ================================================
 CLIENTES.JS - Versión Avanzada
 Gestión de clientes con dictado y voz de IA
-Ubicación: /app/js/modules/clientes.js
 ================================================
 */
 
@@ -11,10 +10,9 @@ import { iniciarAsistenteWorkshop } from "../voice/voiceAssistantWorkshop.js";
 
 const customerManager = new CustomerManager();
 
-/**
- * Función principal de UI clientes
- */
 export async function clientes(container) {
+  iniciarAsistenteWorkshop(); // Inicializar voz global
+
   container.innerHTML = `
 <h1 style="font-size:26px;margin-bottom:20px;">👥 Clientes</h1>
 
@@ -38,20 +36,12 @@ export async function clientes(container) {
 </div>
 `;
 
-  // ===========================
-  // Eventos
-  // ===========================
   document.getElementById("guardarCliente").onclick = guardarCliente;
   document.getElementById("buscarCliente").oninput = filtrarClientes;
   document.getElementById("vozCliente").onclick = () => dictarInput("nombreCliente");
 
-  // Cargar clientes inicial
   await cargarClientes();
 }
-
-/* ===========================
-FUNCIONES
-=========================== */
 
 async function guardarCliente() {
   const nombre = document.getElementById("nombreCliente").value.trim();
@@ -77,10 +67,8 @@ async function guardarCliente() {
 
 async function cargarClientes() {
   const lista = document.getElementById("listaClientes");
-
   try {
     const customers = await customerManager.loadCustomers();
-
     if (!customers.length) {
       lista.innerHTML = "No hay clientes registrados";
       return;
@@ -122,14 +110,6 @@ function limpiarFormulario() {
   document.getElementById("emailCliente").value = "";
 }
 
-/* ===========================
-FUNCIONES DE VOZ
-=========================== */
-
-/**
- * Dictado de texto en input o textarea
- * @param {string} inputId 
- */
 function dictarInput(inputId) {
   const input = document.getElementById(inputId);
   if (!input) return;
@@ -158,10 +138,6 @@ function dictarInput(inputId) {
   recognition.start();
 }
 
-/**
- * Función de voz de IA
- * @param {string} texto
- */
 function hablar(texto) {
   if (!texto) return;
   const speech = new SpeechSynthesisUtterance(texto);
