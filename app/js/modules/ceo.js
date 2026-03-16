@@ -1,7 +1,7 @@
 /*
 ================================================
 CEO.JS - Panel Ejecutivo Avanzado
-TallerPRO360 - Versión final avanzada
+TallerPRO360 - Versión final estable
 ================================================
 */
 
@@ -43,9 +43,6 @@ export async function ceo(container) {
     </div>
   `;
 
-  // ===========================
-  // Cargar datos del panel
-  // ===========================
   await cargarDatosCEO();
 }
 
@@ -62,34 +59,31 @@ async function cargarDatosCEO(){
     const suscripciones = suscripcionesSnap.size || 0;
     const planes = planesSnap.size || 0;
 
-    // Calcular ingresos MRR (sumatoria de planes activos)
     let ingresos = 0;
     suscripcionesSnap.forEach(doc=>{
       const data = doc.data();
-      if(data.activa && data.precio) ingresos += data.precio;
+      if(data.activa && data.precio) ingresos += Number(data.precio) || 0;
     });
 
-    // Actualizar UI
     document.getElementById("ceoEmpresas").innerText = empresas;
     document.getElementById("ceoSuscripciones").innerText = suscripciones;
     document.getElementById("ceoPlanes").innerText = planes;
     document.getElementById("ceoIngresos").innerText = `$${ingresos.toLocaleString()}`;
 
-    // Alertas IA
     const alertasDiv = document.getElementById("ceoAlertas");
-    if(window.SuperAI){
+    if(window.SuperAI && typeof window.SuperAI.analyzeCEO === "function"){
       const alertas = await window.SuperAI.analyzeCEO({empresas,suscripciones,planes,ingresos});
       alertasDiv.innerHTML = alertas.map(a=>`<p>⚠️ ${a}</p>`).join("");
     } else {
       alertasDiv.innerHTML = "<p>IA de alertas no disponible</p>";
     }
 
-    // Anunciar cifras por voz
-    hablar(`Panel CEO cargado. Empresas activas: ${empresas}, Suscripciones activas: ${suscripciones}, Ingresos M R R: ${ingresos} dólares, Planes activos: ${planes}`);
+    hablar(`Panel CEO cargado. Empresas: ${empresas}, Suscripciones: ${suscripciones}, Ingresos MRR: ${ingresos} dólares, Planes: ${planes}`);
     
   } catch(e){
     console.error("Error cargando datos CEO:", e);
-    document.getElementById("ceoAlertas").innerText = "❌ Error cargando datos";
+    const alertasDiv = document.getElementById("ceoAlertas");
+    if(alertasDiv) alertasDiv.innerText = "❌ Error cargando datos";
     hablar("Error cargando datos del panel CEO");
   }
 }
