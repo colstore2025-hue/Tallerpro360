@@ -43,9 +43,6 @@ export async function finanzas(container) {
   await cargarMovimientos();
 }
 
-/* ===========================
-CARGAR MOVIMIENTOS Y CALCULAR BALANCE
-=========================== */
 let ultimoBalance = {ingresos:0, gastos:0, balance:0};
 
 async function cargarMovimientos() {
@@ -88,10 +85,7 @@ async function cargarMovimientos() {
     document.getElementById("gastosTotal").innerText = `$${gastos}`;
     document.getElementById("balanceTotal").innerText = `$${balance}`;
 
-    // Guardar último balance para voz
     ultimoBalance = {ingresos, gastos, balance};
-
-    // Aviso por voz
     hablar(`Balance actualizado. Ingresos ${ingresos} dólares. Gastos ${gastos} dólares. Balance total ${balance} dólares.`);
 
   } catch(e){
@@ -101,9 +95,6 @@ async function cargarMovimientos() {
   }
 }
 
-/* ===========================
-FILTRAR MOVIMIENTOS
-=========================== */
 function filtrarMovimientos(){
   const input = document.getElementById("buscarMovimiento").value.toLowerCase();
   const rows = document.querySelectorAll("#listaMovimientos table tr");
@@ -113,9 +104,15 @@ function filtrarMovimientos(){
   });
 }
 
-/* ===========================
-VOZ DE IA
-=========================== */
+function leerBalanceVoz(){
+  const {ingresos, gastos, balance} = ultimoBalance;
+  if(ingresos === 0 && gastos === 0){
+    hablar("No hay movimientos registrados aún");
+  } else {
+    hablar(`Resumen financiero. Ingresos: ${ingresos} dólares. Gastos: ${gastos} dólares. Balance total: ${balance} dólares.`);
+  }
+}
+
 function hablar(texto){
   if(!texto) return;
   const speech = new SpeechSynthesisUtterance(texto);
@@ -124,16 +121,4 @@ function hablar(texto){
   speech.pitch = 1;
   speech.volume = 1;
   window.speechSynthesis.speak(speech);
-}
-
-/* ===========================
-LEER BALANCE POR VOZ
-=========================== */
-function leerBalanceVoz(){
-  const {ingresos, gastos, balance} = ultimoBalance;
-  if(ingresos === 0 && gastos === 0){
-    hablar("No hay movimientos registrados aún");
-  } else {
-    hablar(`Resumen financiero. Ingresos: ${ingresos} dólares. Gastos: ${gastos} dólares. Balance total: ${balance} dólares.`);
-  }
 }
