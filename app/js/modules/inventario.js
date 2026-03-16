@@ -1,6 +1,6 @@
 /*
 ================================================
-INVENTARIO.JS - Versión Avanzada
+INVENTARIO.JS - Versión Estable
 Gestión avanzada de inventario con voz - TallerPRO360
 Ubicación: /app/js/modules/inventario.js
 ================================================
@@ -9,6 +9,9 @@ Ubicación: /app/js/modules/inventario.js
 import { db } from "../core/firebase-config.js";
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// ===========================
+// Función principal de inventario
+// ===========================
 export async function inventario(container) {
 
   container.innerHTML = `
@@ -44,9 +47,9 @@ export async function inventario(container) {
   await cargarInventario();
 }
 
-/* ===========================
-GUARDAR / EDITAR PRODUCTO
-=========================== */
+// ===========================
+// GUARDAR / EDITAR PRODUCTO
+// ===========================
 async function guardarProducto(editId = null) {
   const nombre = document.getElementById("productoNombre").value.trim();
   const costo = Number(document.getElementById("productoCosto").value);
@@ -78,9 +81,9 @@ async function guardarProducto(editId = null) {
   }
 }
 
-/* ===========================
-CARGAR INVENTARIO
-=========================== */
+// ===========================
+// CARGAR INVENTARIO
+// ===========================
 async function cargarInventario() {
   const lista = document.getElementById("listaInventario");
   try{
@@ -112,20 +115,24 @@ async function cargarInventario() {
 
     // Funciones globales
     window.editarProducto = async (id) => {
-      const docSnap = await getDocs(collection(db,"inventario"));
-      const p = (await getDocs(doc(db,"inventario",id))).data();
-      document.getElementById("productoNombre").value = p.nombre;
-      document.getElementById("productoCosto").value = p.costo;
-      document.getElementById("productoMargen").value = p.margen;
-      document.getElementById("productoStock").value = p.stock;
-      document.getElementById("guardarProducto").onclick = () => guardarProducto(id);
+      try{
+        const docSnap = await getDocs(collection(db,"inventario"));
+        const p = (await getDocs(doc(db,"inventario",id))).data();
+        document.getElementById("productoNombre").value = p.nombre;
+        document.getElementById("productoCosto").value = p.costo;
+        document.getElementById("productoMargen").value = p.margen;
+        document.getElementById("productoStock").value = p.stock;
+        document.getElementById("guardarProducto").onclick = () => guardarProducto(id);
+      }catch(e){ console.error(e); hablar("Error al editar producto"); }
     }
 
     window.eliminarProducto = async (id) => {
-      if(!confirm("¿Deseas eliminar este producto?")) return;
-      await deleteDoc(doc(db,"inventario",id));
-      hablar("Producto eliminado exitosamente");
-      await cargarInventario();
+      try{
+        if(!confirm("¿Deseas eliminar este producto?")) return;
+        await deleteDoc(doc(db,"inventario",id));
+        hablar("Producto eliminado exitosamente");
+        await cargarInventario();
+      }catch(e){ console.error(e); hablar("Error al eliminar producto"); }
     }
 
   }catch(e){
@@ -135,9 +142,9 @@ async function cargarInventario() {
   }
 }
 
-/* ===========================
-FILTRAR INVENTARIO
-=========================== */
+// ===========================
+// FILTRAR INVENTARIO
+// ===========================
 function filtrarInventario(){
   const input = document.getElementById("buscarProducto").value.toLowerCase();
   const rows = document.querySelectorAll("#listaInventario table tr");
@@ -147,9 +154,9 @@ function filtrarInventario(){
   });
 }
 
-/* ===========================
-LIMPIAR FORMULARIO
-=========================== */
+// ===========================
+// LIMPIAR FORMULARIO
+// ===========================
 function limpiarFormulario(){
   document.getElementById("productoNombre").value = "";
   document.getElementById("productoCosto").value = "";
@@ -158,9 +165,9 @@ function limpiarFormulario(){
   document.getElementById("guardarProducto").onclick = guardarProducto;
 }
 
-/* ===========================
-DICTADO POR VOZ
-=========================== */
+// ===========================
+// DICTADO POR VOZ
+// ===========================
 function dictarProductoVoz(){
   const recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!recognition) return hablar("Tu navegador no soporta dictado por voz");
@@ -180,9 +187,9 @@ function dictarProductoVoz(){
   rec.start();
 }
 
-/* ===========================
-FUNCIÓN DE SÍNTESIS DE VOZ
-=========================== */
+// ===========================
+// FUNCIÓN DE SÍNTESIS DE VOZ
+// ===========================
 function hablar(texto){
   if(!texto) return;
   const speech = new SpeechSynthesisUtterance(texto);
@@ -191,4 +198,11 @@ function hablar(texto){
   speech.pitch = 1;
   speech.volume = 1;
   window.speechSynthesis.speak(speech);
+}
+
+// ===========================
+// FUNCIÓN EXPORTADA PARA ORDENES
+// ===========================
+export function actualizarStock(descripcion){
+  console.log("Simulación de actualizar stock:", descripcion);
 }
