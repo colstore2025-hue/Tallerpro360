@@ -2,10 +2,15 @@
  * planManager.js
  * Control de acceso a módulos según plan
  * TallerPRO360 ERP
+ * Versión Estable SaaS
  */
 
 import { db } from "./core/firebase-config.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import {
+doc,
+getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
 /* ============================
@@ -56,8 +61,8 @@ elite:[
 "pagos",
 "contabilidad",
 "ceo",
-"aiAssistant",
-"aiAdvisor",
+"aiassistant",
+"aiadvisor",
 "configuracion"
 ],
 
@@ -71,8 +76,8 @@ enterprise:[
 "pagos",
 "contabilidad",
 "ceo",
-"aiAssistant",
-"aiAdvisor",
+"aiassistant",
+"aiadvisor",
 "configuracion"
 ]
 
@@ -88,29 +93,43 @@ export async function getModulosDisponibles(userId){
 
 try{
 
+/* seguridad básica */
+
 if(!userId){
 
-console.warn("⚠ userId no recibido");
+console.warn("⚠ userId no recibido → freemium");
+
 return PLANES.freemium;
 
 }
 
+
 /* consultar usuario */
 
 const ref = doc(db,"usuariosGlobal",userId);
+
 const snap = await getDoc(ref);
 
 let plan="freemium";
+
 
 /* usuario encontrado */
 
 if(snap.exists()){
 
-const data=snap.data();
+const data = snap.data() || {};
 
-plan=(data.planTipo || "freemium").toLowerCase();
+plan = (data.planTipo || "freemium")
+.toString()
+.toLowerCase()
+.trim();
+
+}else{
+
+console.warn("⚠ usuario no encontrado → freemium");
 
 }
+
 
 /* validar plan */
 
@@ -122,9 +141,13 @@ plan="freemium";
 
 }
 
+
 console.log("📦 Plan usuario:",plan);
 
+console.log("🧩 Módulos habilitados:",PLANES[plan]);
+
 return PLANES[plan];
+
 
 }catch(e){
 
