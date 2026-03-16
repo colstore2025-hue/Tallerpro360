@@ -183,7 +183,11 @@ form.addEventListener("submit",async e=>{
 
     setLocalStorage(data,uid);
 
-    redirigir(data);
+setTimeout(()=>{
+
+redirigir(data);
+
+},200);
 
   }
   catch(err){
