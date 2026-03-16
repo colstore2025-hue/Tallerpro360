@@ -1,21 +1,20 @@
 /*
 =========================================================
-dashboard.js - Dashboard Gerencial ERP TallerPRO360
-Versión Final Premium para Gerente
+dashboardAvanzado.js - Dashboard Gerencial Premium ERP
+TallerPRO360 - Versión Final Avanzada
 =========================================================
 */
 
 import { db } from "../core/firebase-config.js";
 import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Importamos Chart.js desde CDN
 const chartJsCDN = "https://cdn.jsdelivr.net/npm/chart.js";
 
-export async function dashboard(container, userId) {
-  console.log("🚀 Cargando dashboard gerencial premium");
+export async function dashboardAvanzado(container, userId) {
+  console.log("🚀 Cargando dashboard gerencial avanzado");
 
   container.innerHTML = `
-<h1 style="font-size:28px;margin-bottom:20px;">📊 Dashboard Gerencial - TallerPRO360</h1>
+<h1 style="font-size:28px;margin-bottom:20px;">📊 Dashboard Gerencial Avanzado</h1>
 
 <div style="display:flex; flex-wrap:wrap; gap:15px; margin-bottom:30px;">
   <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;flex:1;min-width:200px;">
@@ -25,30 +24,29 @@ export async function dashboard(container, userId) {
     Ingresos Hoy: $<span id="ingresosDia">0</span>
   </div>
   <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;flex:1;min-width:200px;">
-    Clientes Activos: <span id="clientesActivos">0</span>
+    Ganancia Neta Hoy: $<span id="gananciaDia">0</span>
   </div>
   <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;flex:1;min-width:200px;">
-    Nuevos Clientes Hoy: <span id="clientesNuevos">0</span>
-  </div>
-  <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;flex:1;min-width:200px;">
-    Órdenes Completadas Hoy: <span id="ordenesCompletadas">0</span>
+    Clientes Nuevos Hoy: <span id="clientesNuevos">0</span>
   </div>
 </div>
 
-<div style="display:flex; flex-wrap:wrap; gap:30px;">
+<div style="display:flex; flex-wrap:wrap; gap:30px; margin-bottom:30px;">
   <canvas id="graficaOrdenesEstado" style="background:#1e293b;border-radius:10px;padding:15px;flex:1;min-width:300px; height:300px;"></canvas>
   <canvas id="graficaTecnicos" style="background:#1e293b;border-radius:10px;padding:15px;flex:1;min-width:300px; height:300px;"></canvas>
 </div>
 
-<div style="margin-top:30px;">
+<div style="margin-bottom:30px;">
   <canvas id="graficaIngresosSemana" style="background:#1e293b;border-radius:10px;padding:15px; width:100%; height:350px;"></canvas>
+</div>
+
+<div style="margin-bottom:30px;">
+  <h3 style="color:white;">Alertas de Órdenes Retrasadas</h3>
+  <ul id="alertasOrdenes" style="color:white;"></ul>
 </div>
 `;
 
-  // Cargar Chart.js dinámicamente
-  if (!window.Chart) {
-    await cargarChartJS();
-  }
+  if (!window.Chart) await cargarChartJS();
 
   await actualizarDashboard();
 
@@ -60,25 +58,46 @@ export async function dashboard(container, userId) {
 
       const ordenesSnap = await getDocs(query(collection(db, "ordenes"), orderBy("fecha", "desc")));
       const clientesSnap = await getDocs(collection(db, "clientes"));
+      const gastosSnap = await getDocs(collection(db, "gastos"));
 
       let ordenesDia = 0;
       let ingresosDia = 0;
-      let ordenesCompletadas = 0;
+      let costosDia = 0;
       let clientesNuevos = 0;
+      let gananciaDia = 0;
+
       const estadoConteo = { Recepción: 0, Reparación: 0, Entregado: 0 };
       const tecnicoConteo = {};
+      const tiempoTecnico = {};
+
+      const alertas = [];
 
       ordenesSnap.forEach(docSnap => {
         const o = docSnap.data();
         const fecha = o.fecha.toDate();
+
+        // Órdenes del día
         if (fecha >= inicioDia && fecha < finDia) {
           ordenesDia++;
           ingresosDia += Number(o.total || 0);
-          if (o.estado === "Entregado") ordenesCompletadas++;
+          costosDia += Number(o.costoTotal || 0);
         }
 
+        // Estado de órdenes
         estadoConteo[o.estado] = (estadoConteo[o.estado] || 0) + 1;
-        if (o.tecnico) tecnicoConteo[o.tecnico] = (tecnicoConteo[o.tecnico] || 0) + 1;
+
+        // Técnico y eficiencia
+        if (o.tecnico) {
+          tecnicoConteo[o.tecnico] = (tecnicoConteo[o.tecnico] || 0) + 1;
+          const tiempo = o.tiempoEstimado ? Number(o.tiempoEstimado) : 0;
+          if (!tiempoTecnico[o.tecnico]) tiempoTecnico[o.tecnico] = [];
+          tiempoTecnico[o.tecnico].push(tiempo);
+        }
+
+        // Alertas de retraso (>48h en estado no entregado)
+        if (o.estado !== "Entregado" && (hoy - fecha) / (1000*60*60) > 48) {
+          alertas.push(`⚠️ Orden de ${o.clientePhone || o.clienteId} retrasada más de 48h`);
+        }
       });
 
       clientesSnap.forEach(docSnap => {
@@ -87,15 +106,23 @@ export async function dashboard(container, userId) {
         if (fechaRegistro >= inicioDia && fechaRegistro < finDia) clientesNuevos++;
       });
 
+      gananciaDia = ingresosDia - costosDia;
+
+      // Actualizar KPIs
       document.getElementById("ordenesDia").innerText = ordenesDia;
       document.getElementById("ingresosDia").innerText = ingresosDia.toLocaleString();
-      document.getElementById("clientesActivos").innerText = clientesSnap.size;
+      document.getElementById("gananciaDia").innerText = gananciaDia.toLocaleString();
       document.getElementById("clientesNuevos").innerText = clientesNuevos;
-      document.getElementById("ordenesCompletadas").innerText = ordenesCompletadas;
 
+      // Generar gráficas
       generarGraficaOrdenesEstado(estadoConteo);
-      generarGraficaTecnicos(tecnicoConteo);
+      generarGraficaTecnicos(tecnicoConteo, tiempoTecnico);
       generarGraficaIngresosSemana(ordenesSnap);
+
+      // Mostrar alertas
+      const alertasContainer = document.getElementById("alertasOrdenes");
+      alertasContainer.innerHTML = alertas.length ? alertas.map(a => `<li>${a}</li>`).join("") : "<li>No hay alertas</li>";
+
     } catch (e) {
       console.error("Error actualizando dashboard:", e);
     }
@@ -116,31 +143,32 @@ export async function dashboard(container, userId) {
       type: "doughnut",
       data: {
         labels: Object.keys(data),
-        datasets: [{
-          data: Object.values(data),
-          backgroundColor: ["#facc15","#6366f1","#16a34a"]
-        }]
+        datasets: [{ data: Object.values(data), backgroundColor: ["#facc15","#6366f1","#16a34a"] }]
       },
-      options: {
-        plugins: { legend: { labels: { color: "white" } } }
-      }
+      options: { plugins: { legend: { labels: { color: "white" } } } }
     });
   }
 
-  function generarGraficaTecnicos(data) {
+  function generarGraficaTecnicos(ordenesData, tiempoData) {
     const ctx = document.getElementById("graficaTecnicos").getContext("2d");
+    const labels = Object.keys(ordenesData);
+    const dataOrdenes = Object.values(ordenesData);
+    const dataTiempo = labels.map(l => {
+      const tiempos = tiempoData[l] || [0];
+      return Math.round(tiempos.reduce((a,b)=>a+b,0)/tiempos.length);
+    });
+
     new Chart(ctx, {
       type: "bar",
       data: {
-        labels: Object.keys(data),
-        datasets: [{
-          label: "Órdenes completadas",
-          data: Object.values(data),
-          backgroundColor: "#16a34a"
-        }]
+        labels,
+        datasets: [
+          { label: "Órdenes completadas", data: dataOrdenes, backgroundColor: "#16a34a" },
+          { label: "Tiempo promedio (h)", data: dataTiempo, backgroundColor: "#6366f1" }
+        ]
       },
       options: {
-        plugins: { legend: { display: false } },
+        plugins: { legend: { labels: { color: "white" } } },
         scales: {
           x: { ticks: { color: "white" } },
           y: { ticks: { color: "white" } }
