@@ -10,7 +10,6 @@ import { diagnosticarProblema } from "../js/iaMecanica.js";
 export function ia(container){
 
 container.innerHTML = `
-
 <h1 class="text-2xl font-bold mb-6">🤖 IA Mecánica</h1>
 
 <input
@@ -37,14 +36,12 @@ container.innerHTML = `
   class="mt-6 bg-white p-4 rounded shadow">
   Esperando diagnóstico...
 </div>
-
 `;
 
 const inputProblema = document.getElementById("inputProblema");
 const resultadoIA = document.getElementById("resultadoIA");
 
 document.getElementById("btnDiagnosticar").onclick = async ()=>{
-
   const texto = inputProblema.value.trim();
   if(!texto){
     hablar("Por favor ingresa el problema mecánico");
@@ -63,12 +60,8 @@ document.getElementById("btnDiagnosticar").onclick = async ()=>{
     resultadoIA.innerText = "❌ Error al diagnosticar";
     hablar("Ocurrió un error al diagnosticar");
   }
-
 };
 
-// ===========================
-// Dictado por voz
-// ===========================
 document.getElementById("btnDictar").onclick = ()=>{
   const recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!recognition){
@@ -91,9 +84,6 @@ document.getElementById("btnDictar").onclick = ()=>{
   rec.start();
 };
 
-// ===========================
-// Función de síntesis de voz
-// ===========================
 function hablar(texto){
   if(!texto) return;
   const speech = new SpeechSynthesisUtterance(texto);
