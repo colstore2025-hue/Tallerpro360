@@ -1,7 +1,7 @@
-/*
+/**
 ================================================
-INVENTARIO.JS - Versión Estable
-Gestión avanzada de inventario con voz - TallerPRO360
+inventario.js - Gestión avanzada de inventario
+TallerPRO360
 Ubicación: /app/js/modules/inventario.js
 ================================================
 */
@@ -35,12 +35,14 @@ export async function inventario(container) {
 </div>
 `;
 
+  // ===========================
   // Eventos
-  document.getElementById("guardarProducto").onclick = guardarProducto;
+  // ===========================
+  document.getElementById("guardarProducto").onclick = () => guardarProducto();
   document.getElementById("buscarProducto").oninput = filtrarInventario;
   document.getElementById("vozProducto").onclick = dictarProductoVoz;
 
-  // Cargar inventario
+  // Cargar inventario al inicio
   await cargarInventario();
 }
 
@@ -60,18 +62,17 @@ async function guardarProducto(editId = null) {
 
   const precio = costo + (costo * margen / 100);
 
-  try{
+  try {
     if(editId){
-      const ref = doc(db,"inventario",editId);
-      await updateDoc(ref,{nombre,costo,margen,precio,stock});
+      await updateDoc(doc(db,"inventario",editId), {nombre,costo,margen,precio,stock});
       hablar("Producto actualizado exitosamente");
     } else {
-      await addDoc(collection(db,"inventario"),{nombre,costo,margen,precio,stock,fecha: new Date()});
+      await addDoc(collection(db,"inventario"), {nombre,costo,margen,precio,stock,fecha: new Date()});
       hablar("Producto guardado exitosamente");
     }
     limpiarFormulario();
     await cargarInventario();
-  }catch(e){
+  } catch(e){
     console.error("Error guardando producto:", e);
     hablar("Ocurrió un error al guardar el producto");
     alert("❌ Error guardando producto");
@@ -83,7 +84,7 @@ CARGAR INVENTARIO
 =========================== */
 async function cargarInventario() {
   const lista = document.getElementById("listaInventario");
-  try{
+  try {
     const snapshot = await getDocs(query(collection(db,"inventario"), orderBy("fecha","desc")));
     if(snapshot.empty){ lista.innerHTML = "No hay productos registrados"; return; }
 
@@ -128,7 +129,7 @@ async function cargarInventario() {
       await cargarInventario();
     }
 
-  }catch(e){
+  } catch(e){
     console.error("Error cargando inventario:", e);
     lista.innerHTML = "❌ Error cargando inventario";
     hablar("Ocurrió un error al cargar el inventario");
@@ -155,17 +156,17 @@ function limpiarFormulario(){
   document.getElementById("productoCosto").value = "";
   document.getElementById("productoMargen").value = "";
   document.getElementById("productoStock").value = "";
-  document.getElementById("guardarProducto").onclick = guardarProducto;
+  document.getElementById("guardarProducto").onclick = () => guardarProducto();
 }
 
 /* ===========================
 DICTADO POR VOZ
 =========================== */
 function dictarProductoVoz(){
-  const recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!recognition) return hablar("Tu navegador no soporta dictado por voz");
-  
-  const rec = new recognition();
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRecognition) return hablar("Tu navegador no soporta dictado por voz");
+
+  const rec = new SpeechRecognition();
   rec.lang = "es-ES";
   rec.continuous = false;
   rec.interimResults = false;
@@ -181,7 +182,7 @@ function dictarProductoVoz(){
 }
 
 /* ===========================
-FUNCIÓN DE SÍNTESIS DE VOZ
+FUNCIÓN DE VOZ UNIFICADA
 =========================== */
 function hablar(texto){
   if(!texto) return;
