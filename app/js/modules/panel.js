@@ -21,12 +21,12 @@ import { reportes } from "./reportes.js";
 
 export async function panel(container,userId){
 
-console.log("🚀 panel iniciado");
+console.log("🚀 iniciando panel erp");
 
 
-/* =========================
-LAYOUT ERP
-========================= */
+/* ===============================
+LAYOUT
+=============================== */
 
 container.innerHTML=`
 
@@ -41,7 +41,7 @@ overflow:auto;
 ">
 
 <h2 style="margin-bottom:20px">
-TallerPRO360
+tallerpro360
 </h2>
 
 <div id="menu"></div>
@@ -58,7 +58,7 @@ color:white;
 cursor:pointer;
 ">
 
-Cerrar sesión
+salir
 
 </button>
 
@@ -73,35 +73,25 @@ color:white;
 overflow:auto;
 ">
 
-Cargando módulo...
+cargando módulo...
 
 </main>
 
 </div>
-
 `;
 
 
-/* =========================
+/* ===============================
 DOM
-========================= */
+=============================== */
 
 const menu=document.getElementById("menu");
 const main=document.getElementById("mainPanel");
 
 
-if(!menu || !main){
-
-console.error("error creando layout");
-
-return;
-
-}
-
-
-/* =========================
-REGISTRO DE MODULOS
-========================= */
+/* ===============================
+REGISTRO MODULOS
+=============================== */
 
 moduleLoader.register("dashboard",dashboard);
 moduleLoader.register("clientes",clientes);
@@ -114,10 +104,9 @@ moduleLoader.register("configuracion",configuracion);
 moduleLoader.register("reportes",reportes);
 
 
-
-/* =========================
+/* ===============================
 MENU ERP
-========================= */
+=============================== */
 
 const modulos=[
 
@@ -153,8 +142,6 @@ btn.style.cursor="pointer";
 
 btn.onclick=()=>{
 
-console.log("📦 cargando módulo:",nombre);
-
 moduleLoader.load(nombre,main,userId);
 
 };
@@ -164,9 +151,9 @@ menu.appendChild(btn);
 });
 
 
-/* =========================
+/* ===============================
 LOGOUT
-========================= */
+=============================== */
 
 document.getElementById("logoutBtn").onclick=()=>{
 
@@ -177,30 +164,12 @@ window.location="/login.html";
 };
 
 
-
-/* =========================
+/* ===============================
 CARGA INICIAL
-========================= */
-
-try{
+=============================== */
 
 await moduleLoader.load("dashboard",main,userId);
 
-console.log("✅ dashboard cargado");
-
-}
-catch(error){
-
-console.error("error cargando dashboard",error);
-
-main.innerHTML=`
-
-<h2>Error cargando dashboard</h2>
-
-<p>Revisa el módulo dashboard.js</p>
-
-`;
-
-}
+console.log("✅ erp cargado");
 
 }
