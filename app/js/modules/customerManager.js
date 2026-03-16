@@ -15,7 +15,6 @@ export default class CustomerManager {
     this.collectionRef = collection(db, "clientes");
   }
 
-  // Buscar cliente por teléfono
   async searchCustomer(phone){
     try {
       const q = query(this.collectionRef, where("phone","==",phone));
@@ -29,7 +28,6 @@ export default class CustomerManager {
     }
   }
 
-  // Crear nuevo cliente
   async createCustomer(data){
     try {
       const docRef = await addDoc(this.collectionRef, {
@@ -47,7 +45,6 @@ export default class CustomerManager {
     }
   }
 
-  // Actualizar última visita
   async updateVisit(customerId){
     try {
       const ref = doc(db,"clientes",customerId);
@@ -57,7 +54,6 @@ export default class CustomerManager {
     }
   }
 
-  // Obtener todos los clientes (opcional, para reportes)
   async getAllCustomers(){
     try {
       const q = query(this.collectionRef, orderBy("lastVisit","desc"));
@@ -68,5 +64,4 @@ export default class CustomerManager {
       return [];
     }
   }
-
 }
