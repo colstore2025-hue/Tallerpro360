@@ -1,25 +1,17 @@
 /**
  * autoRegisterModules.js
- * Importa todos los módulos del sistema
- * para auto-registro en moduleLoader
+ * Precarga de módulos del ERP
  * TallerPRO360
  */
 
-console.log("🚀 Auto registro de módulos iniciado");
+console.log("🚀 Sistema de módulos inicializado");
 
-/* módulos ERP */
+/*
+Este archivo existe solo para asegurar
+que el sistema de módulos está listo.
 
-import "../modules/dashboard.js";
-import "../modules/clientes.js";
-import "../modules/ordenes.js";
-import "../modules/inventario.js";
-import "../modules/finanzas.js";
-import "../modules/contabilidad.js";
-import "../modules/pagosTaller.js";
-import "../modules/ceo.js";
-import "../modules/aiAssistant.js";
-import "../modules/aiAdvisor.js";
-import "../modules/configuracion.js";
-import "../modules/reportes.js";
+El registro real ocurre en panel.js
+mediante moduleLoader.register()
+*/
 
-console.log("✅ Módulos importados correctamente");
+export {};
