@@ -108,7 +108,14 @@ Preparando ERP inteligente...
 
 
 /* =====================================
-5. INICIAR ERP
+5. PEQUEÑA PAUSA PARA ESTABILIZAR DOM
+===================================== */
+
+await new Promise(resolve => setTimeout(resolve, 100));
+
+
+/* =====================================
+6. INICIAR ERP
 ===================================== */
 
 bootStatus("Cargando panel ERP");
@@ -117,7 +124,7 @@ await iniciarApp();
 
 
 /* =====================================
-6. SISTEMA LISTO
+7. SISTEMA LISTO
 ===================================== */
 
 bootStatus("Sistema listo");
