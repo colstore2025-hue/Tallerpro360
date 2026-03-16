@@ -6,143 +6,163 @@
 
 export const moduleLoader = {
 
-  modules:{},
+modules:{},
 
-  /* =====================================
-  REGISTRAR MÓDULO
-  ===================================== */
+context:{
+userId:null,
+empresaId:null,
+sucursalId:null
+},
 
-  register(name,fn){
+/* =====================================
+SET CONTEXTO GLOBAL
+===================================== */
 
-    if(!name){
-      console.warn("⚠ Nombre de módulo inválido");
-      return;
-    }
+setContext(ctx={}){
 
-    if(typeof fn!=="function"){
-      console.warn("⚠ El módulo no es función:",name);
-      return;
-    }
+this.context={
+...this.context,
+...ctx
+};
 
-    const key = name.toLowerCase();
+console.log("🌐 Contexto actualizado",this.context);
 
-    if(this.modules[key]){
-      console.warn("⚠ Módulo ya registrado:",key);
-      return;
-    }
+},
 
-    this.modules[key] = fn;
+/* =====================================
+REGISTRAR MÓDULO
+===================================== */
 
-    console.log("📦 módulo registrado:",key);
+register(name,fn){
 
-  },
+if(!name){
+console.warn("⚠ Nombre de módulo inválido");
+return;
+}
 
+if(typeof fn!=="function"){
+console.warn("⚠ El módulo no es función:",name);
+return;
+}
 
-  /* =====================================
-  LISTAR MÓDULOS
-  ===================================== */
+const key=name.toLowerCase();
 
-  list(){
+if(this.modules[key]){
+console.warn("⚠ Módulo ya registrado:",key);
+return;
+}
 
-    return Object.keys(this.modules);
+this.modules[key]=fn;
 
-  },
+console.log("📦 módulo registrado:",key);
 
+},
 
-  /* =====================================
-  CARGAR MÓDULO
-  ===================================== */
+/* =====================================
+LISTAR MÓDULOS
+===================================== */
 
-  async load(name,container){
+list(){
 
-    if(!container){
-      console.error("❌ Contenedor no válido");
-      return;
-    }
+return Object.keys(this.modules);
 
-    const key = name.toLowerCase();
+},
 
-    container.innerHTML=`
-      <div style="padding:20px">
-      ⏳ Cargando ${key}...
-      </div>
-    `;
+/* =====================================
+CARGAR MÓDULO
+===================================== */
 
-    try{
+async load(name,container){
 
-      const module = this.modules[key];
+if(!container){
+console.error("❌ Contenedor no válido");
+return;
+}
 
-      if(!module){
+const key=name.toLowerCase();
 
-        console.error("❌ módulo no registrado:",key);
+container.innerHTML=`
+<div style="padding:20px">
+⏳ Cargando ${key}...
+</div>
+`;
 
-        container.innerHTML=`
-          <div style="padding:30px">
-          <h3>⚠ Módulo no disponible</h3>
-          <p>${key}</p>
-          </div>
-        `;
+try{
 
-        return;
+const module=this.modules[key];
 
-      }
+if(!module){
 
-      if(typeof module !== "function"){
-        throw new Error("El módulo no es ejecutable");
-      }
+console.error("❌ módulo no registrado:",key);
 
-      await module(container);
+container.innerHTML=`
+<div style="padding:30px">
+<h3>⚠ Módulo no disponible</h3>
+<p>${key}</p>
+</div>
+`;
 
-      console.log("✅ módulo cargado:",key);
+return;
 
-    }
-    catch(e){
+}
 
-      console.error("❌ Error cargando módulo:",key,e);
+/* ejecutar módulo con contexto */
 
-      container.innerHTML=`
-        <div style="padding:30px">
-        <h3>⚠ Error cargando módulo</h3>
-        <p>${key}</p>
+await module(container,this.context);
 
-        <button onclick="location.reload()"
-        style="
-        padding:10px;
-        border:none;
-        background:#dc2626;
-        color:white;
-        border-radius:6px;
-        cursor:pointer;
-        ">
-        Reiniciar sistema
-        </button>
+console.log("✅ módulo cargado:",key);
 
-        </div>
-      `;
+}
+catch(e){
 
-    }
+console.error("❌ Error cargando módulo:",key,e);
 
-  },
+container.innerHTML=`
+<div style="padding:30px">
 
+<h3>⚠ Error cargando módulo</h3>
 
-  /* =====================================
-  DIAGNÓSTICO DEL SISTEMA
-  ===================================== */
+<p>${key}</p>
 
-  diagnostic(){
+<button onclick="location.reload()"
+style="
+padding:10px;
+border:none;
+background:#dc2626;
+color:white;
+border-radius:6px;
+cursor:pointer;
+">
 
-    const list = this.list();
+Reiniciar sistema
 
-    console.log("🧠 Diagnóstico ModuleLoader");
+</button>
 
-    if(list.length===0){
-      console.warn("⚠ No hay módulos registrados");
-    }
+</div>
+`;
 
-    console.table(list);
+}
 
-    return list;
+},
 
-  }
+/* =====================================
+DIAGNÓSTICO
+===================================== */
+
+diagnostic(){
+
+const list=this.list();
+
+console.log("🧠 Diagnóstico ModuleLoader");
+
+if(list.length===0){
+console.warn("⚠ No hay módulos registrados");
+}
+
+console.table(list);
+
+return list;
+
+}
 
 };
