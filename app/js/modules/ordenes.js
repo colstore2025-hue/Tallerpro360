@@ -1,7 +1,7 @@
-/**
+/*
 ================================================
-ordenes.js - Gestión de Órdenes Avanzada
-TallerPRO360 ERP
+ORDENES.JS - Versión Final
+Gestión de órdenes con dictado y voz de IA
 Ubicación: /app/js/modules/ordenes.js
 ================================================
 */
@@ -44,12 +44,14 @@ export async function ordenes(container) {
 
     <div class="card">
       <h3>Asistente IA</h3>
-      <input id="inputAI" placeholder="Consulta sobre órdenes, diagnósticos o reparaciones..." style="width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #333;background:#111827;color:white;">
+      <input id="inputAI" placeholder="Consulta sobre órdenes, diagnósticos o reparaciones..." style="width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
       <div id="respuestasAI" style="margin-top:10px;max-height:150px;overflow-y:auto;background:#111827;color:white;padding:10px;border-radius:6px;"></div>
     </div>
   `;
 
+  // ===========================
   // Eventos
+  // ===========================
   document.getElementById("guardarOrden").onclick = async () => await guardarOrden(customerManager);
   document.getElementById("buscarOrden").oninput = filtrarOrdenes;
   document.getElementById("vozOrden").onclick = () => dictarInput("descripcionOrden");
@@ -71,20 +73,23 @@ export async function ordenes(container) {
     }
   });
 
-  // Cargar órdenes iniciales
+  // ===========================
+  // Cargar órdenes
+  // ===========================
   await cargarOrdenes();
 }
 
 /* ===========================
-GUARDAR ORDEN
+FUNCIONES DE ORDENES
 =========================== */
+
 async function guardarOrden(customerManager){
   const phone = document.getElementById("clienteOrden").value.trim();
   const vehiculo = document.getElementById("vehiculoOrden").value.trim();
   const placa = document.getElementById("placaOrden").value.trim();
   const descripcion = document.getElementById("descripcionOrden").value.trim();
 
-  if(!phone || !vehiculo){
+  if(!phone || !vehiculo) {
     hablar("Cliente y vehículo son obligatorios");
     return alert("Cliente y Vehículo son obligatorios");
   }
@@ -109,7 +114,7 @@ async function guardarOrden(customerManager){
       fecha: new Date()
     });
 
-    // Actualizar inventario automáticamente
+    // Actualizar inventario automáticamente (ejemplo: repuestos)
     actualizarStock(descripcion);
 
     hablar("Orden guardada correctamente");
@@ -123,9 +128,6 @@ async function guardarOrden(customerManager){
   }
 }
 
-/* ===========================
-CARGAR ÓRDENES
-=========================== */
 async function cargarOrdenes(){
   const lista = document.getElementById("listaOrdenes");
   try {
@@ -155,9 +157,6 @@ async function cargarOrdenes(){
   }
 }
 
-/* ===========================
-FILTRAR ÓRDENES
-=========================== */
 function filtrarOrdenes(){
   const input = document.getElementById("buscarOrden").value.toLowerCase();
   const rows = document.querySelectorAll("#listaOrdenes table tr");
@@ -167,9 +166,6 @@ function filtrarOrdenes(){
   });
 }
 
-/* ===========================
-LIMPIAR FORMULARIO
-=========================== */
 function limpiarFormularioOrden(){
   document.getElementById("clienteOrden").value = "";
   document.getElementById("vehiculoOrden").value = "";
@@ -178,14 +174,15 @@ function limpiarFormularioOrden(){
 }
 
 /* ===========================
-DICTADO POR VOZ
+FUNCIONES DE VOZ
 =========================== */
-function dictarInput(inputId){
+
+function dictarInput(inputId) {
   const input = document.getElementById(inputId);
-  if(!input) return;
+  if (!input) return;
 
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SpeechRecognition){
+  if (!SpeechRecognition) {
     hablar("Tu navegador no soporta dictado por voz");
     return;
   }
@@ -196,7 +193,10 @@ function dictarInput(inputId){
   recognition.continuous = false;
 
   recognition.onstart = () => hablar("Comienza a dictar");
-  recognition.onerror = (e) => { console.error("Error dictado:", e); hablar("Error en dictado de voz"); };
+  recognition.onerror = (e) => {
+    console.error("Error dictado:", e);
+    hablar("Error en dictado de voz");
+  };
   recognition.onresult = (event) => {
     const texto = event.results[0][0].transcript;
     input.value += texto + " ";
@@ -205,11 +205,8 @@ function dictarInput(inputId){
   recognition.start();
 }
 
-/* ===========================
-VOZ
-=========================== */
-function hablar(texto){
-  if(!texto) return;
+function hablar(texto) {
+  if (!texto) return;
   const speech = new SpeechSynthesisUtterance(texto);
   speech.lang = "es-ES";
   speech.rate = 1;
