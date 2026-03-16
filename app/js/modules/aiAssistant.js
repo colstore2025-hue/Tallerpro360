@@ -1,31 +1,51 @@
-/**
+/*
 ================================================
-aiAssistant.js - Panel del asistente IA
-TallerPRO360 ERP
+AIASSISTANT.JS - Versión Final
+Panel del asistente IA - TallerPRO360 ERP
+Ubicación: /app/js/modules/aiAssistant.js
 ================================================
 */
 
-import AICommandCenter from "../ai/aiCommandCenter.js";
+import AICommandCenter from "../ai/aiCommandCenter.js"; // Motor IA de comandos
+import { actualizarStock } from "./inventario.js"; // Integración con inventario
+import { cargarOrdenes } from "./ordenes.js"; // Integración con órdenes
 
-/**
- * Inicializa el panel del asistente IA
- * @param {HTMLElement} container - Contenedor donde se renderiza el panel
- */
-export async function aiAssistant(container) {
+// Función principal para inicializar el asistente IA
+export async function aiAssistant(pregunta){
+  if(!pregunta) return "No se proporcionó consulta";
+
+  try {
+    const respuesta = await AICommandCenter.execute(pregunta);
+
+    // Opciones de integración automática
+    if(respuesta?.acciones){
+      if(respuesta.acciones.includes("crear_orden")){
+        // Aquí se puede crear la orden en Firestore automáticamente
+        // usando los datos que provengan de la IA
+        // ejemplo: actualizarStock o cargarOrdenes
+        await actualizarStock(respuesta.repuestos || "");
+        await cargarOrdenes();
+      }
+    }
+
+    return respuesta?.mensaje || "IA procesó la consulta correctamente";
+  } catch(e){
+    console.error("Error en aiAssistant:", e);
+    return "❌ Error procesando la consulta";
+  }
+}
+
+// ===========================
+// Inicializar UI del asistente IA
+// ===========================
+export async function aiassistant(container){
 
   container.innerHTML = `
   <div class="card">
-    <h2>🤖 AI Assistant</h2>
-    <p>Escribe un comando o pregunta para interactuar con el sistema.</p>
-    <input
-      id="aiCommandInput"
-      placeholder="Ej: abrir inventario, buscar orden 123"
-      style="width:100%;padding:12px;margin-top:10px;background:#020617;border:1px solid #1e293b;color:white;border-radius:8px;"
-    />
-    <button
-      id="aiRunBtn"
-      style="margin-top:10px;padding:10px 16px;background:#16a34a;border:none;border-radius:8px;color:white;cursor:pointer;"
-    >Ejecutar</button>
+    <h2>🤖 Asistente IA</h2>
+    <p>Consulta sobre órdenes, inventario o diagnósticos.</p>
+    <input id="aiCommandInput" placeholder="Ej: generar orden para cliente X" style="width:100%;padding:12px;margin-top:10px;background:#020617;border:1px solid #1e293b;color:white;border-radius:8px;">
+    <button id="aiRunBtn" style="margin-top:10px;padding:10px 16px;background:#16a34a;border:none;border-radius:8px;color:white;cursor:pointer;">Ejecutar</button>
   </div>
 
   <div class="card">
@@ -37,65 +57,60 @@ export async function aiAssistant(container) {
   initAI();
 }
 
-/* =========================================
+/* ===========================
 INICIALIZAR PANEL
-========================================= */
-function initAI() {
-
+=========================== */
+function initAI(){
   const input = document.getElementById("aiCommandInput");
   const btn = document.getElementById("aiRunBtn");
 
-  if (!btn || !input) return;
-
   btn.onclick = runCommand;
-
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") runCommand();
+  input.addEventListener("keydown",(e)=>{
+    if(e.key==="Enter") runCommand();
   });
 
   renderHistory();
 }
 
-/* =========================================
+/* ===========================
 EJECUTAR COMANDO
-========================================= */
-function runCommand() {
+=========================== */
+async function runCommand(){
   const input = document.getElementById("aiCommandInput");
   const text = input.value.trim();
-  if (!text) return;
+  if(!text) return;
 
-  const result = AICommandCenter.execute(text); // Ejecuta el comando central de IA
+  const respuesta = await aiAssistant(text);
+
   input.value = "";
-  renderHistory();
 
-  if (!result) {
-    alert("❌ Comando no reconocido");
-  }
-}
-
-/* =========================================
-RENDERIZAR HISTORIAL DE COMANDOS
-========================================= */
-function renderHistory() {
+  // Actualizar historial
   const container = document.getElementById("aiHistory");
-  if (!container) return;
+  const div = document.createElement("div");
+  div.style.padding = "8px";
+  div.style.borderBottom = "1px solid #1e293b";
+  div.style.fontSize = "14px";
+  div.innerHTML = `<b>🧠 Consulta:</b> ${text}<br><span style="color:#38bdf8">→ ${respuesta}</span>`;
+  container.prepend(div);
 
-  const history = AICommandCenter.getHistory(); // Trae historial de comandos
-  if (!history.length) {
-    container.innerHTML = "<p>Sin comandos aún</p>";
-    return;
-  }
-
-  container.innerHTML = history
-    .slice()
-    .reverse()
-    .map((item) => {
-      return `
-      <div style="padding:8px;border-bottom:1px solid #1e293b;font-size:14px;">
-        🧠 ${item.command} <br>
-        <span style="color:#38bdf8">→ ${item.module || "no reconocido"}</span>
-      </div>
-      `;
-    })
-    .join("");
+  hablar(respuesta);
 }
+
+/* ===========================
+FUNCIÓN DE SÍNTESIS DE VOZ
+=========================== */
+function hablar(texto){
+  if(!texto) return;
+  const speech = new SpeechSynthesisUtterance(texto);
+  speech.lang = "es-ES";
+  speech.rate = 1;
+  speech.pitch = 1;
+  speech.volume = 1;
+  window.speechSynthesis.speak(speech);
+}
+
+/* ===========================
+INTEGRACIÓN AVANZADA
+=========================== */
+// Permite que otros módulos puedan enviar preguntas directamente a la IA
+window.aiAssistant = aiAssistant;
