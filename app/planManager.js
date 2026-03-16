@@ -1,10 +1,10 @@
 /**
  * planManager.js
- * Gestor ULTRA de planes SaaS
- * TallerPRO360 ERP
+ * Control de módulos por plan
+ * TallerPRO360
  */
 
-import { db } from "./core/firebase-config.js";
+import { db } from "./js/core/firebase-config.js";
 
 import {
 doc,
@@ -13,34 +13,12 @@ getDoc
 
 
 /* =========================================
-TODOS LOS MÓDULOS DEL SISTEMA
-========================================= */
-
-const TODOS_MODULOS = [
-
-"dashboard",
-"clientes",
-"ordenes",
-"inventario",
-"reportes",
-"finanzas",
-"pagos",
-"contabilidad",
-"ceo",
-"aiassistant",
-"aiadvisor",
-"configuracion"
-
-];
-
-
-/* =========================================
-PLANES DEL SISTEMA
+MÓDULOS POR PLAN
 ========================================= */
 
 const PLANES = {
 
-freemium:[
+freemium: [
 "dashboard",
 "clientes",
 "ordenes",
@@ -49,199 +27,89 @@ freemium:[
 "configuracion"
 ],
 
-basico:[
+pro: [
 "dashboard",
 "clientes",
 "ordenes",
 "inventario",
-"reportes",
 "finanzas",
 "pagos",
+"reportes",
 "configuracion"
 ],
 
-pro:[
+enterprise: [
 "dashboard",
 "clientes",
 "ordenes",
 "inventario",
-"reportes",
 "finanzas",
-"pagos",
 "contabilidad",
-"configuracion"
-],
-
-elite:[
-"dashboard",
-"clientes",
-"ordenes",
-"inventario",
-"reportes",
-"finanzas",
 "pagos",
-"contabilidad",
 "ceo",
 "aiassistant",
 "aiadvisor",
+"reportes",
 "configuracion"
-],
-
-enterprise:TODOS_MODULOS
+]
 
 };
 
 
-
 /* =========================================
-UTILIDAD: limpiar lista de módulos
+OBTENER PLAN USUARIO
 ========================================= */
 
-function limpiarModulos(lista){
-
-if(!Array.isArray(lista)) return [];
-
-return [...new Set(lista.map(m=>m.toLowerCase().trim()))];
-
-}
-
-
-
-/* =========================================
-OBTENER MÓDULOS DISPONIBLES
-========================================= */
-
-export async function getModulosDisponibles(userId){
+export async function obtenerPlanUsuario(uid){
 
 try{
 
-/* ---------------------------
-VALIDACIÓN BÁSICA
---------------------------- */
-
-if(!userId){
-
-console.warn("⚠ userId no recibido");
-
-return PLANES.freemium;
-
-}
-
-
-/* ---------------------------
-CONSULTAR FIRESTORE
---------------------------- */
-
-const ref = doc(db,"usuariosGlobal",userId);
+const ref = doc(db,"usuariosGlobal",uid);
 
 const snap = await getDoc(ref);
 
-let plan="freemium";
-let rolGlobal="";
-let activo=true;
+if(!snap.exists()){
 
+console.warn("usuario no existe");
 
-/* ---------------------------
-DATOS DE USUARIO
---------------------------- */
+return "freemium";
 
-if(snap.exists()){
+}
 
-const data = snap.data() || {};
+const data = snap.data();
 
-plan = (data.planTipo || "freemium")
-.toString()
-.toLowerCase()
-.trim();
+return data.planTipo || "freemium";
 
-rolGlobal = (data.rolGlobal || "")
-.toString()
-.toLowerCase()
-.trim();
+}
+catch(e){
 
-activo = data.activo !== false;
+console.error("error obteniendo plan",e);
 
-}else{
+return "freemium";
 
-console.warn("⚠ usuario no encontrado");
+}
 
 }
 
 
-/* ---------------------------
-USUARIO DESACTIVADO
---------------------------- */
+/* =========================================
+MÓDULOS DISPONIBLES
+========================================= */
 
-if(!activo){
+export async function getModulosDisponibles(uid){
 
-console.warn("⛔ usuario desactivado");
+const plan = await obtenerPlanUsuario(uid);
 
-return [];
+console.log("plan usuario:",plan);
 
-}
+const modulos = PLANES[plan];
 
+if(!modulos){
 
-/* ---------------------------
-SUPERADMIN
---------------------------- */
-
-if(rolGlobal === "superadmin"){
-
-console.log("🧠 SuperAdmin detectado");
-
-return limpiarModulos(TODOS_MODULOS);
+return PLANES["freemium"];
 
 }
-
-
-/* ---------------------------
-VALIDAR PLAN
---------------------------- */
-
-if(!PLANES[plan]){
-
-console.warn("⚠ plan inválido:",plan);
-
-plan="freemium";
-
-}
-
-
-/* ---------------------------
-OBTENER MÓDULOS
---------------------------- */
-
-const modulos = limpiarModulos(PLANES[plan]);
-
-
-/* ---------------------------
-LOGS DE DIAGNÓSTICO
---------------------------- */
-
-console.log("──────── TallerPRO360 SaaS ────────");
-
-console.log("👤 Usuario:",userId);
-
-console.log("📦 Plan:",plan);
-
-console.log("🏢 Rol Global:",rolGlobal);
-
-console.log("🧩 Módulos:",modulos);
-
-console.log("────────────────────────────────");
-
 
 return modulos;
-
-
-}catch(e){
-
-console.error("❌ Error planManager:",e);
-
-/* fallback seguro */
-
-return PLANES.freemium;
-
-}
 
 }
