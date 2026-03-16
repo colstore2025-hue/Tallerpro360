@@ -7,9 +7,9 @@
 import { db } from "../core/firebase-config.js";
 
 import {
-  collection,
-  addDoc,
-  serverTimestamp
+collection,
+addDoc,
+serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
@@ -21,37 +21,60 @@ import {
 
 export async function crearTaller(data){
 
-  try{
+try{
 
-    if(!data?.nombre){
-      throw new Error("Nombre del taller requerido");
-    }
+if(!data){
+throw new Error("Datos de empresa no enviados");
+}
 
-    const ref = await addDoc(
-      collection(db,"talleres"),
-      {
-        nombre: data.nombre,
-        ciudad: data.ciudad || "",
-        telefono: data.telefono || "",
+if(!data.nombre || data.nombre.trim()===""){
+throw new Error("Nombre del taller requerido");
+}
 
-        plan: "starter",
-        estado: "activo",
 
-        fechaCreacion: serverTimestamp()
-      }
-    );
+/* ==============================
+NORMALIZAR DATOS
+============================== */
 
-    console.log("Taller creado:", ref.id);
+const nombre = data.nombre.trim();
 
-    return ref.id;
+const ciudad = data.ciudad ? data.ciudad.trim() : "";
 
-  }
-  catch(error){
+const telefono = data.telefono ? data.telefono.trim() : "";
 
-    console.error("Error creando taller:", error);
+const plan = data.plan ? data.plan.toLowerCase() : "starter";
 
-    throw error;
 
-  }
+/* ==============================
+CREAR EMPRESA
+============================== */
+
+const ref = await addDoc(
+collection(db,"talleres"),
+{
+nombre,
+ciudad,
+telefono,
+
+plan,
+estado:"activo",
+
+fechaCreacion: serverTimestamp()
+}
+);
+
+
+console.log("🏭 Taller creado correctamente:", ref.id);
+
+return ref.id;
+
+}
+catch(error){
+
+console.error("❌ Error creando taller:", error);
+
+throw new Error("No fue posible crear el taller");
+
+}
 
 }
