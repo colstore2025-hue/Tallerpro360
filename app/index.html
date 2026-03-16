@@ -2,47 +2,18 @@
 <html lang="es">
 
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
-<title>TallerPRO360 ERP</title>
-
-<link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#16a34a">
+<title>TallerPRO360</title>
 
 <style>
 
 body{
 margin:0;
-font-family:Arial, Helvetica, sans-serif;
+font-family:Arial;
 background:#0f172a;
 color:white;
-display:flex;
-height:100vh;
-overflow:hidden;
-}
-
-#appContent{
-flex:1;
-display:flex;
-align-items:center;
-justify-content:center;
-}
-
-.card{
-background:#020617;
-padding:20px;
-border-radius:10px;
-border:1px solid #1e293b;
-text-align:center;
-}
-
-button{
-padding:10px 20px;
-border:none;
-border-radius:6px;
-cursor:pointer;
 }
 
 </style>
@@ -51,90 +22,17 @@ cursor:pointer;
 
 <body>
 
-<div id="appContent">
-
-<div class="card">
-<h2>Bienvenido a TallerPRO360</h2>
-<p>ERP Inteligente para talleres automotrices.</p>
-
-<button id="btnSalir" style="background:#dc2626;color:white;">
-Salir
-</button>
-
-</div>
-
-</div>
-
-
-<!-- ============================
-BOOT SYSTEM
-============================ -->
+<div id="appContent"></div>
 
 <script type="module">
 
-import { bootSystem } from "./js/system/bootSystem.js";
+import { iniciarApp } from "./js/core/app-init.js";
 
-window.addEventListener("DOMContentLoaded",()=>{
+document.addEventListener("DOMContentLoaded",async()=>{
 
-console.log("🚀 Arrancando TallerPRO360...");
+console.log("🚀 Iniciando TallerPRO360");
 
-const app=document.getElementById("appContent");
-
-if(!app){
-
-console.error("❌ #appContent no existe");
-
-return;
-
-}
-
-bootSystem();
-
-});
-
-</script>
-
-
-<!-- ============================
-SERVICE WORKER (PWA)
-============================ -->
-
-<script>
-
-if("serviceWorker" in navigator){
-
-navigator.serviceWorker
-.register("./service-worker.js")
-.then(()=>console.log("📱 PWA activa"))
-.catch(e=>console.log("SW error",e));
-
-}
-
-</script>
-
-
-<!-- ============================
-BOTÓN SALIR
-============================ -->
-
-<script>
-
-window.addEventListener("DOMContentLoaded",()=>{
-
-const btn=document.getElementById("btnSalir");
-
-if(btn){
-
-btn.onclick=()=>{
-
-localStorage.removeItem("uid");
-localStorage.removeItem("empresaId");
-
-location.href="/login.html";
-
-};
-
-}
+await iniciarApp();
 
 });
 
