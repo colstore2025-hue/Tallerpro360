@@ -1,7 +1,7 @@
 /*
 =========================================================
-dashboard.js - Dashboard Gerencial Premium Futurista
-TallerPRO360 - Última Generación
+dashboard.js - Dashboard Gerencial Interactivo
+TallerPRO360 - Nivel Ejecutivo / Looker Studio
 =========================================================
 */
 
@@ -12,22 +12,36 @@ const chartJsCDN = "https://cdn.jsdelivr.net/npm/chart.js";
 
 export async function dashboard(container, userId) {
   container.innerHTML = `
-<h1 style="font-size:32px;color:#00ff88;margin-bottom:20px;">🚀 Dashboard Gerencial</h1>
+<h1 style="font-size:32px;color:#00ff88;margin-bottom:20px;">🚀 Dashboard Ejecutivo</h1>
 
-<div style="display:flex; flex-wrap:wrap; gap:20px; margin-bottom:40px;">
+<div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:30px;">
   <div class="card-neon" id="ordenesDia">Órdenes Hoy: 0</div>
   <div class="card-neon" id="ingresosDia">Ingresos Hoy: $0</div>
   <div class="card-neon" id="gananciaDia">Ganancia Neta Hoy: $0</div>
   <div class="card-neon" id="clientesNuevos">Clientes Nuevos Hoy: 0</div>
 </div>
 
-<div style="display:flex; flex-wrap:wrap; gap:30px; margin-bottom:40px;">
+<div style="display:flex; gap:30px; flex-wrap:wrap; margin-bottom:30px;">
   <canvas id="graficaEstado" class="chart-neon"></canvas>
   <canvas id="graficaTecnicos" class="chart-neon"></canvas>
 </div>
 
-<div style="margin-bottom:40px;">
+<div style="margin-bottom:30px;">
   <canvas id="graficaIngresosSemana" class="chart-neon" style="height:350px;"></canvas>
+</div>
+
+<div style="margin-bottom:30px;">
+  <h3 style="color:#00ff88;">Filtros Interactivos</h3>
+  <label style="margin-right:10px;color:#00ff88;">Técnico:</label>
+  <select id="filtroTecnico" style="padding:5px; border-radius:6px; background:#1e293b; color:#00ff88;"></select>
+  <label style="margin-left:20px;margin-right:10px;color:#00ff88;">Estado:</label>
+  <select id="filtroEstado" style="padding:5px; border-radius:6px; background:#1e293b; color:#00ff88;">
+    <option value="">Todos</option>
+    <option value="Recepción">Recepción</option>
+    <option value="Reparación">Reparación</option>
+    <option value="Entregado">Entregado</option>
+  </select>
+  <button id="btnActualizar" style="margin-left:20px;padding:5px 15px;background:#6366f1;border:none;border-radius:6px;color:white;cursor:pointer;">Actualizar</button>
 </div>
 
 <div>
@@ -52,17 +66,43 @@ export async function dashboard(container, userId) {
     background:#1e293b;
     border-radius:12px;
     padding:15px;
+    flex:1 1 400px;
   }
 </style>
 `;
 
   if (!window.Chart) await cargarChartJS();
+  await cargarFiltros();
   await actualizarDashboard();
+
+  document.getElementById("btnActualizar").onclick = actualizarDashboard;
+
+  // ========================================
+  // Funciones
+  // ========================================
+
+  async function cargarFiltros() {
+    const ordenesSnap = await getDocs(query(collection(db, "ordenes"), orderBy("fecha", "desc")));
+    const tecnicoSet = new Set();
+    ordenesSnap.forEach(docSnap => {
+      const o = docSnap.data();
+      if (o.tecnico) tecnicoSet.add(o.tecnico);
+    });
+
+    const filtroTecnico = document.getElementById("filtroTecnico");
+    filtroTecnico.innerHTML = `<option value="">Todos</option>`;
+    tecnicoSet.forEach(t => {
+      filtroTecnico.innerHTML += `<option value="${t}">${t}</option>`;
+    });
+  }
 
   async function actualizarDashboard() {
     const hoy = new Date();
     const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
     const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1);
+
+    const filtroTecnico = document.getElementById("filtroTecnico").value;
+    const filtroEstado = document.getElementById("filtroEstado").value;
 
     const ordenesSnap = await getDocs(query(collection(db, "ordenes"), orderBy("fecha", "desc")));
     const clientesSnap = await getDocs(collection(db, "clientes"));
@@ -76,11 +116,16 @@ export async function dashboard(container, userId) {
     ordenesSnap.forEach(docSnap => {
       const o = docSnap.data();
       const fecha = o.fecha.toDate();
+
+      // Filtrar por técnico y estado
+      if ((filtroTecnico && o.tecnico !== filtroTecnico) || (filtroEstado && o.estado !== filtroEstado)) return;
+
       if (fecha >= inicioDia && fecha < finDia) {
         ordenesDia++;
         ingresosDia += Number(o.total || 0);
         costosDia += Number(o.costoTotal || 0);
       }
+
       estadoConteo[o.estado] = (estadoConteo[o.estado] || 0) + 1;
 
       if (o.tecnico) {
