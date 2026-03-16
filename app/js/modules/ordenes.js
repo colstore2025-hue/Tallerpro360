@@ -1,7 +1,7 @@
-/*
+/**
 ================================================
-ORDENES.JS - Versión Estable
-Gestión de órdenes con dictado y voz de IA
+ordenes.js - Gestión avanzada de órdenes
+TallerPRO360
 Ubicación: /app/js/modules/ordenes.js
 ================================================
 */
@@ -9,11 +9,12 @@ Ubicación: /app/js/modules/ordenes.js
 import { db } from "../core/firebase-config.js";
 import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import CustomerManager from "./customerManager.js";
-import { aiAssistant } from "./aiAssistant.js"; 
-import { iniciarAsistenteWorkshop } from "../voice/voiceAssistantWorkshop.js";  
-import { actualizarStock } from "./inventario.js"; 
+import { aiAssistant } from "./aiAssistant.js";
+import { iniciarAsistenteWorkshop } from "../voice/voiceAssistantWorkshop.js";
+import { actualizarStock } from "./inventario.js";
 
 export async function ordenes(container) {
+
   const customerManager = new CustomerManager();
 
   // Inicializar asistente de voz global
@@ -50,7 +51,7 @@ export async function ordenes(container) {
 `;
 
   // ===========================
-  // Eventos botones y formularios
+  // Eventos
   // ===========================
   document.getElementById("guardarOrden").onclick = async () => await guardarOrden(customerManager);
   document.getElementById("buscarOrden").oninput = filtrarOrdenes;
@@ -73,14 +74,12 @@ export async function ordenes(container) {
     }
   });
 
-  // ===========================
-  // Cargar órdenes
-  // ===========================
+  // Cargar órdenes al iniciar
   await cargarOrdenes();
 }
 
 /* ===========================
-FUNCIONES DE ORDENES
+GUARDAR ORDEN
 =========================== */
 async function guardarOrden(customerManager){
   const phone = document.getElementById("clienteOrden").value.trim();
@@ -93,7 +92,7 @@ async function guardarOrden(customerManager){
     return alert("Cliente y Vehículo son obligatorios");
   }
 
-  // Verificar o crear cliente
+  // Buscar o crear cliente
   let cliente = await customerManager.searchCustomer(phone);
   if(!cliente){
     const idCliente = await customerManager.createCustomer({phone, name:"Cliente", vehicle:vehiculo, plate:placa});
@@ -113,7 +112,7 @@ async function guardarOrden(customerManager){
       fecha: new Date()
     });
 
-    // Actualizar inventario automáticamente (ejemplo: repuestos)
+    // Actualizar inventario automáticamente (si aplica)
     actualizarStock(descripcion);
 
     hablar("Orden guardada correctamente");
@@ -128,7 +127,7 @@ async function guardarOrden(customerManager){
 }
 
 /* ===========================
-CARGAR ORDENES
+CARGAR ÓRDENES
 =========================== */
 async function cargarOrdenes(){
   const lista = document.getElementById("listaOrdenes");
@@ -139,8 +138,10 @@ async function cargarOrdenes(){
       lista.innerHTML = "No hay órdenes registradas. Usa el formulario superior para crear la primera orden.";
       return;
     }
+
     let html = `<table style="width:100%;border-collapse:collapse;">
       <tr style="border-bottom:1px solid #1e293b;"><th>Cliente</th><th>Vehículo</th><th>Estado</th><th>Fecha</th></tr>`;
+
     snapshot.forEach(docSnap=>{
       const o = docSnap.data();
       html += `<tr>
@@ -150,8 +151,10 @@ async function cargarOrdenes(){
         <td>${o.fecha.toDate().toLocaleString()}</td>
       </tr>`;
     });
+
     html += "</table>";
     lista.innerHTML = html;
+
   } catch(e){
     console.error("Error cargando órdenes:",e);
     lista.innerHTML = "❌ Error cargando órdenes";
@@ -160,7 +163,7 @@ async function cargarOrdenes(){
 }
 
 /* ===========================
-FILTRAR ORDENES
+FILTRAR ÓRDENES
 =========================== */
 function filtrarOrdenes(){
   const input = document.getElementById("buscarOrden").value.toLowerCase();
@@ -182,7 +185,7 @@ function limpiarFormularioOrden(){
 }
 
 /* ===========================
-FUNCIONES DE VOZ
+DICTADO POR VOZ
 =========================== */
 function dictarInput(inputId) {
   const input = document.getElementById(inputId);
@@ -213,7 +216,7 @@ function dictarInput(inputId) {
 }
 
 /* ===========================
-FUNCIÓN DE SÍNTESIS DE VOZ
+FUNCIÓN DE VOZ
 =========================== */
 function hablar(texto) {
   if (!texto) return;
