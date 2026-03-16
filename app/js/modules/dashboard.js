@@ -1,174 +1,153 @@
 /*
 ================================================
 DASHBOARD.JS - Versión Última Generación
-Dashboard Ejecutivo Gerencial - TallerPRO360
+Dashboard Gerencial Interactivo - TALLERPRO360
 ================================================
 */
 
 import { db } from "../core/firebase-config.js";
 import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import Chart from "https://cdn.jsdelivr.net/npm/chart.js";
 
 export async function dashboard(container, userId) {
-  console.log("📊 cargando dashboard gerencial última generación");
-
   container.innerHTML = `
-    <h1 style="font-size:28px;margin-bottom:20px;">📊 Dashboard Ejecutivo - TallerPRO360</h1>
-    
+    <h1 style="font-size:28px;margin-bottom:20px;">📊 Dashboard Gerencial - TallerPRO360</h1>
+
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px;margin-bottom:30px;">
-      <div class="card" id="ordenesHoyCard">Órdenes Hoy: <span id="ordenesHoy">0</span></div>
-      <div class="card" id="ingresosHoyCard">Ingresos Hoy: $<span id="ingresosHoy">0</span></div>
-      <div class="card" id="gananciaHoyCard">Ganancia Neta Hoy: $<span id="gananciaHoy">0</span></div>
-      <div class="card" id="clientesActivosCard">Clientes Activos: <span id="clientesActivos">0</span></div>
-      <div class="card" id="clientesNuevosCard">Clientes Nuevos: <span id="clientesNuevos">0</span></div>
-      <div class="card" id="ordenesPendientesCard">Órdenes Pendientes: <span id="ordenesPendientes">0</span></div>
+      <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
+        <h3>Órdenes Hoy</h3>
+        <p id="ordenesDia" style="font-size:24px;">0</p>
+      </div>
+      <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
+        <h3>Ingresos Hoy</h3>
+        <p id="ingresosDia" style="font-size:24px;">$0</p>
+      </div>
+      <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
+        <h3>Ganancia Neta</h3>
+        <p id="gananciaDia" style="font-size:24px;">$0</p>
+      </div>
+      <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
+        <h3>Clientes Activos</h3>
+        <p id="clientesActivos" style="font-size:24px;">0</p>
+      </div>
     </div>
 
-    <div style="display:flex;flex-wrap:wrap;gap:20px;">
-      <div class="card" style="flex:1;min-width:300px;">
-        <h3>Estado Órdenes</h3>
-        <canvas id="graficoEstadoOrdenes" style="width:100%;height:200px;"></canvas>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
+        <h3>Órdenes por Estado</h3>
+        <canvas id="ordenesEstadoChart"></canvas>
       </div>
-      <div class="card" style="flex:1;min-width:300px;">
+      <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
         <h3>Rendimiento Técnicos</h3>
-        <canvas id="graficoTecnicos" style="width:100%;height:200px;"></canvas>
+        <canvas id="rendimientoTecnicosChart"></canvas>
       </div>
-      <div class="card" style="flex:1;min-width:300px;">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;">
+      <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
         <h3>Ingresos Últimos 7 Días</h3>
-        <canvas id="graficoIngresosSemana" style="width:100%;height:200px;"></canvas>
+        <canvas id="ingresos7DiasChart"></canvas>
+      </div>
+      <div style="background:#0f172a;padding:20px;border-radius:10px;color:white;">
+        <h3>Alertas Financieras IA</h3>
+        <div id="alertasIA">Cargando...</div>
+        <button id="leerAlertas" style="margin-top:10px;padding:8px 15px;background:#6366f1;border:none;border-radius:6px;color:white;cursor:pointer;">🔊 Leer alertas</button>
       </div>
     </div>
   `;
 
-  await cargarKPIs();
-  await cargarGraficos();
-}
+  let alertasCache = "";
 
-/* ===========================
-FUNCIONES KPI
-=========================== */
-async function cargarKPIs() {
-  const ordenesSnap = await getDocs(collection(db, "ordenes"));
-  const clientesSnap = await getDocs(collection(db, "clientes"));
+  document.getElementById("leerAlertas").onclick = () => {
+    if (!alertasCache) hablar("No hay alertas generadas aún");
+    else hablar(alertasCache);
+  };
 
-  const hoy = new Date().toDateString();
-  let ordenesHoy = 0, ingresosHoy = 0, gananciaHoy = 0, clientesActivos = 0, clientesNuevos = 0, ordenesPendientes = 0;
+  await actualizarKPIs();
 
-  const clientesHoySet = new Set();
+  async function actualizarKPIs() {
+    const hoy = new Date();
+    const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
 
-  ordenesSnap.forEach(doc => {
-    const o = doc.data();
-    const fecha = o.fecha.toDate().toDateString();
-    if(fecha === hoy) {
-      ordenesHoy++;
-      ingresosHoy += Number(o.total || 0);
-      gananciaHoy += Number(o.total || 0) - Number(o.costoTotal || 0);
-    }
-    if(o.estado !== "Entregado") ordenesPendientes++;
-    clientesHoySet.add(o.clienteId);
-  });
+    let ordenesDia = 0, ingresosDia = 0, gananciaDia = 0, clientesSet = new Set();
+    const estadoMap = {};
+    const tecnicoMap = {};
+    const ingresos7Dias = {};
 
-  clientesSnap.forEach(doc => {
-    const c = doc.data();
-    if(c.lastVisit) {
-      const last = c.lastVisit.toDate().toDateString();
-      if(last === hoy) clientesActivos++;
-      const created = c.createdAt?.toDate().toDateString();
-      if(created === hoy) clientesNuevos++;
-    }
-  });
+    const ordSnap = await getDocs(collection(db, "ordenes"));
+    ordSnap.forEach(docSnap => {
+      const o = docSnap.data();
+      const fecha = o.fecha.toDate();
 
-  document.getElementById("ordenesHoy").innerText = ordenesHoy;
-  document.getElementById("ingresosHoy").innerText = ingresosHoy.toLocaleString();
-  document.getElementById("gananciaHoy").innerText = gananciaHoy.toLocaleString();
-  document.getElementById("clientesActivos").innerText = clientesActivos;
-  document.getElementById("clientesNuevos").innerText = clientesNuevos;
-  document.getElementById("ordenesPendientes").innerText = ordenesPendientes;
-}
+      // Órdenes y clientes
+      if (fecha >= inicioDia && fecha <= finDia) {
+        ordenesDia++;
+        ingresosDia += Number(o.total) || 0;
+        gananciaDia += (Number(o.total) - Number(o.costoTotal)) || 0;
+      }
+      if (o.clienteId) clientesSet.add(o.clienteId);
 
-/* ===========================
-FUNCIONES GRÁFICOS
-=========================== */
-async function cargarGraficos() {
-  if(!window.Chart) {
-    console.warn("Chart.js no cargado, gráficos no disponibles");
-    return;
+      // Órdenes por estado
+      estadoMap[o.estado] = (estadoMap[o.estado] || 0) + 1;
+
+      // Rendimiento técnicos
+      if (o.tecnico) tecnicoMap[o.tecnico] = (tecnicoMap[o.tecnico] || 0) + 1;
+
+      // Ingresos últimos 7 días
+      const fechaStr = fecha.toISOString().split('T')[0];
+      const diffDays = (inicioDia - fecha)/ (1000*60*60*24);
+      if (diffDays <= 7) ingresos7Dias[fechaStr] = (ingresos7Dias[fechaStr] || 0) + Number(o.total || 0);
+    });
+
+    document.getElementById("ordenesDia").innerText = ordenesDia;
+    document.getElementById("ingresosDia").innerText = `$${ingresosDia.toLocaleString()}`;
+    document.getElementById("gananciaDia").innerText = `$${gananciaDia.toLocaleString()}`;
+    document.getElementById("clientesActivos").innerText = clientesSet.size;
+
+    // Graficos
+    renderChart("ordenesEstadoChart", Object.keys(estadoMap), Object.values(estadoMap), "pie", "Estado Órdenes");
+    renderChart("rendimientoTecnicosChart", Object.keys(tecnicoMap), Object.values(tecnicoMap), "bar", "Técnicos");
+    renderChart("ingresos7DiasChart", Object.keys(ingresos7Dias), Object.values(ingresos7Dias), "line", "Ingresos");
+
+    // Alertas IA
+    alertasCache = await generarAlertasIA({ ordenesDia, ingresosDia, gananciaDia });
+    document.getElementById("alertasIA").innerHTML = `<p>${alertasCache}</p>`;
   }
 
-  // =========================
-  // Estado de Órdenes
-  // =========================
-  const ordenesSnap = await getDocs(collection(db, "ordenes"));
-  const estados = { "Recepción":0, "Reparación":0, "Entregado":0 };
-  ordenesSnap.forEach(doc => {
-    const o = doc.data();
-    estados[o.estado] = (estados[o.estado] || 0) + 1;
-  });
-
-  const ctx1 = document.getElementById("graficoEstadoOrdenes").getContext("2d");
-  new Chart(ctx1, {
-    type: 'doughnut',
-    data: {
-      labels: Object.keys(estados),
-      datasets:[{
-        data: Object.values(estados),
-        backgroundColor:["#6366f1","#16a34a","#facc15"]
-      }]
-    }
-  });
-
-  // =========================
-  // Rendimiento Técnicos
-  // =========================
-  const tecnicos = {};
-  ordenesSnap.forEach(doc => {
-    const o = doc.data();
-    if(o.tecnico) tecnicos[o.tecnico] = (tecnicos[o.tecnico] || 0) + 1;
-  });
-
-  const ctx2 = document.getElementById("graficoTecnicos").getContext("2d");
-  new Chart(ctx2, {
-    type: 'bar',
-    data: {
-      labels: Object.keys(tecnicos),
-      datasets:[{
-        label:"Órdenes completadas",
-        data:Object.values(tecnicos),
-        backgroundColor:"#6366f1"
-      }]
-    },
-    options: { responsive:true, plugins:{legend:{display:false}} }
-  });
-
-  // =========================
-  // Ingresos Últimos 7 Días
-  // =========================
-  const ingresosDia = {};
-  const today = new Date();
-  for(let i=6;i>=0;i--){
-    const d = new Date();
-    d.setDate(today.getDate()-i);
-    ingresosDia[d.toDateString()] = 0;
+  function renderChart(canvasId, labels, data, type, title) {
+    const ctx = document.getElementById(canvasId).getContext("2d");
+    new Chart(ctx, {
+      type: type,
+      data: { labels, datasets: [{ label: title, data, backgroundColor: generateColors(labels.length) }] },
+      options: { responsive:true, plugins:{ legend:{ position:"bottom" } } }
+    });
   }
 
-  ordenesSnap.forEach(doc => {
-    const o = doc.data();
-    const fecha = o.fecha.toDate().toDateString();
-    if(fecha in ingresosDia) ingresosDia[fecha] += Number(o.total || 0);
-  });
+  function generateColors(n) {
+    const colors = [];
+    for (let i=0;i<n;i++) colors.push(`hsl(${i*360/n},70%,50%)`);
+    return colors;
+  }
 
-  const ctx3 = document.getElementById("graficoIngresosSemana").getContext("2d");
-  new Chart(ctx3, {
-    type:'line',
-    data:{
-      labels:Object.keys(ingresosDia),
-      datasets:[{
-        label:'Ingresos',
-        data:Object.values(ingresosDia),
-        fill:true,
-        backgroundColor:'rgba(99,102,241,0.2)',
-        borderColor:'#6366f1'
-      }]
-    },
-    options:{responsive:true,plugins:{legend:{display:false}}}
-  });
+  async function generarAlertasIA(kpis) {
+    if (!window.SuperAI) return "SuperAI no disponible";
+    try {
+      const alertas = await window.SuperAI.analyzeFinance(kpis);
+      return alertas.join(". ");
+    } catch(e) {
+      console.error("Error alertas IA:", e);
+      return "Error generando alertas";
+    }
+  }
+
+  function hablar(texto) {
+    if (!texto) return;
+    const speech = new SpeechSynthesisUtterance(texto);
+    speech.lang = "es-ES";
+    speech.rate = 1;
+    speech.pitch = 1;
+    speech.volume = 1;
+    window.speechSynthesis.speak(speech);
+  }
 }
