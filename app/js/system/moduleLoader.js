@@ -1,4 +1,12 @@
-class ModuleLoader{
+/*
+=====================================
+moduleloader.js
+cargador de módulos
+tallerpro360
+=====================================
+*/
+
+class moduleloader{
 
 constructor(){
 
@@ -6,55 +14,30 @@ this.modules={};
 
 }
 
-/* =========================
-REGISTRAR MÓDULO
-========================= */
+/* ==============================
+registrar módulo
+============================== */
 
 register(name,fn){
 
-if(!name || typeof fn!=="function"){
-
-console.error("❌ módulo inválido:",name);
-
-return;
-
-}
-
-if(this.modules[name]){
-
-console.warn("⚠ módulo ya registrado:",name);
-
-}
-
 this.modules[name]=fn;
 
-console.log("📦 módulo registrado:",name);
+console.log("módulo registrado:",name);
 
 }
 
+/* ==============================
+cargar módulo
+============================== */
 
-/* =========================
-CARGAR MÓDULO
-========================= */
-
-async load(name,container,userId){
-
-if(!container){
-
-console.error("❌ container no definido");
-
-return;
-
-}
+async load(name,container,userid){
 
 const mod=this.modules[name];
 
 if(!mod){
 
-console.error("❌ módulo no encontrado:",name);
-
 container.innerHTML=`
-<h2>Módulo ${name} no encontrado</h2>
+<h2>módulo ${name} no encontrado</h2>
 `;
 
 return;
@@ -63,48 +46,21 @@ return;
 
 try{
 
-console.log("🚀 cargando módulo:",name);
-
-container.innerHTML="Cargando módulo...";
-
-await mod(container,userId);
-
-console.log("✅ módulo cargado:",name);
+await mod(container,userid);
 
 }
-catch(e){
+catch(error){
 
-console.error("❌ Error módulo:",name,e);
+console.error("error cargando módulo:",name,error);
 
 container.innerHTML=`
-<div style="padding:20px">
-
-<h2>Error cargando módulo</h2>
-
-<p><b>${name}</b></p>
-
-<pre style="white-space:pre-wrap">
-${e.message}
-</pre>
-
-</div>
+<h2>error cargando módulo ${name}</h2>
 `;
 
 }
 
 }
 
-
-/* =========================
-DEBUG (muy útil)
-========================= */
-
-listModules(){
-
-return Object.keys(this.modules);
-
 }
 
-}
-
-export const moduleLoader=new ModuleLoader();
+export const moduleLoader=new moduleloader();
