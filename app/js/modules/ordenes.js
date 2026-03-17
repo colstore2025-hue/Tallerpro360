@@ -1,15 +1,17 @@
-import {
-  collection,
-  addDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+/**
+ * 🧾 ÓRDENES ERP TALLERPRO360
+ * ERP + CRM + IA TOTAL
+ */
 
+import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db } from "../core/firebase-config.js";
 import { usarRepuesto } from "../services/inventarioService.js";
 import { iniciarVoz, hablar } from "../voice/voiceCore.js";
 import { generarOrdenIA } from "../ai/aiAutonomousFlow.js";
 import { aprenderDeOrden } from "../ai/aiLearningEngine.js";
 import { generarSugerencias, renderSugerencias } from "../ai/aiAdvisor.js";
 
-export default async function (container, state) {
+export default async function ordenesModulo(container, state) {
 
   let items = [];
 
@@ -36,18 +38,19 @@ export default async function (container, state) {
 
     <div id="itemsList"></div>
 
+    <div id="advisorOrdenes"></div>
+
     <br/>
     <button id="crearOrden">🚀 Crear Orden</button>
     <button id="crearConIA">🤖 Crear con IA</button>
     <button id="vozBtn">🎤 Voz</button>
   `;
 
-<div id="advisorOrdenes"></div>
-
   const itemsList = document.getElementById("itemsList");
+  const advisorPanel = document.getElementById("advisorOrdenes");
 
-  // 🔁 Render items
-  function renderItems() {
+  // 🔁 Render items y sugerencias IA
+  async function renderItems() {
     itemsList.innerHTML = items.map((i, index) => `
       <div style="background:#111;padding:10px;margin:5px;border-radius:8px;">
         ${i.nombre} (${i.tipo}) x${i.cantidad} - $${i.precio}
@@ -55,13 +58,7 @@ export default async function (container, state) {
       </div>
     `).join("");
 
-const sugerencias = await generarSugerencias({
-  ordenes: items
-});
-
-renderSugerencias("advisorOrdenes", sugerencias);
-
-    // eliminar eventos globales (mejor práctica)
+    // eliminar eventos de borrar
     document.querySelectorAll(".deleteItem").forEach(btn => {
       btn.onclick = () => {
         const index = Number(btn.dataset.index);
@@ -69,11 +66,14 @@ renderSugerencias("advisorOrdenes", sugerencias);
         renderItems();
       };
     });
+
+    // IA sugerencias
+    const sugerencias = await generarSugerencias({ ordenes: items, empresaId: state.empresaId });
+    renderSugerencias("advisorOrdenes", sugerencias);
   }
 
   // ➕ Agregar item
   document.getElementById("addItem").onclick = () => {
-
     const tipo = document.getElementById("tipo").value;
     const nombre = document.getElementById("nombre").value.trim();
     const cantidad = Number(document.getElementById("cantidad").value) || 0;
@@ -89,15 +89,11 @@ renderSugerencias("advisorOrdenes", sugerencias);
 
     renderItems();
 
-    // limpiar inputs
-    ["nombre", "cantidad", "precio", "costo"].forEach(id => {
-      document.getElementById(id).value = "";
-    });
+    ["nombre", "cantidad", "precio", "costo"].forEach(id => document.getElementById(id).value = "");
   };
 
   // 🚀 Crear orden manual
   document.getElementById("crearOrden").onclick = async () => {
-
     const clienteId = document.getElementById("cliente").value.trim();
     const vehiculoId = document.getElementById("vehiculo").value.trim();
 
@@ -106,7 +102,7 @@ renderSugerencias("advisorOrdenes", sugerencias);
       return;
     }
 
-    if (items.length === 0) {
+    if (!items.length) {
       alert("Debes agregar al menos un item");
       return;
     }
@@ -115,29 +111,16 @@ renderSugerencias("advisorOrdenes", sugerencias);
     let costoTotal = 0;
 
     try {
-
       for (let item of items) {
-
-        const cantidad = Number(item.cantidad) || 0;
-        const precio = Number(item.precio) || 0;
-        const costo = Number(item.costo) || 0;
+        const cantidad = Number(item.cantidad);
+        const precio = Number(item.precio);
+        const costo = Number(item.costo);
 
         if (item.tipo === "inventario") {
-          await usarRepuesto({
-            repuestoId: item.nombre,
-            cantidad,
-            ordenId: "temp"
-          });
-
+          await usarRepuesto({ repuestoId: item.nombre, cantidad, ordenId: "temp" });
           costoTotal += costo * cantidad;
         }
-
-        if (item.tipo === "compra") {
-          costoTotal += costo * cantidad;
-        }
-
-        // cliente trae → no suma costo
-
+        if (item.tipo === "compra") costoTotal += costo * cantidad;
         total += precio * cantidad;
       }
 
@@ -155,9 +138,8 @@ renderSugerencias("advisorOrdenes", sugerencias);
         creadoEn: new Date()
       };
 
-      await addDoc(collection(window.db, "ordenes"), orden);
+      await addDoc(collection(db, "ordenes"), orden);
 
-      // 🧠 IA aprende
       await aprenderDeOrden(orden);
 
       hablar("Orden creada correctamente");
@@ -175,14 +157,11 @@ renderSugerencias("advisorOrdenes", sugerencias);
 
   // 🤖 Crear orden con IA
   document.getElementById("crearConIA").onclick = async () => {
-
     const input = prompt("Describe la orden");
-
     if (!input) return;
 
     try {
       const ordenIA = await generarOrdenIA(input);
-
       if (!ordenIA) {
         alert("Error IA");
         return;
@@ -211,14 +190,10 @@ renderSugerencias("advisorOrdenes", sugerencias);
 
   // 🎤 VOZ
   document.getElementById("vozBtn").onclick = () => {
-
     iniciarVoz(async (texto) => {
-
-      hablar("Procesando orden");
-
+      hablar("Procesando orden por voz");
       try {
         const ordenIA = await generarOrdenIA(texto);
-
         if (!ordenIA) {
           hablar("No entendí la orden");
           return;
@@ -236,7 +211,6 @@ renderSugerencias("advisorOrdenes", sugerencias);
         }));
 
         renderItems();
-
         hablar("Orden lista para revisión");
 
       } catch (e) {
@@ -245,4 +219,7 @@ renderSugerencias("advisorOrdenes", sugerencias);
       }
     });
   };
+
+  // 🔁 Inicial render
+  renderItems();
 }
