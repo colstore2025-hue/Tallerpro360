@@ -1,129 +1,198 @@
 /*
 =====================================
 panel.js
-Panel principal ERP - TallerPRO360
-Versión final integrada
+CONTROL CENTRAL DE SESIÓN + ESTADO
+TallerPRO360 SaaS PRO
 =====================================
 */
 
-import { moduleLoader } from "../system/moduleLoader.js";
+import dashboard from "./dashboard.js";
 
-import { dashboard } from "./dashboard.js";
-import { clientes } from "./clientes.js";
-import { ordenes } from "./ordenes.js";
-import { inventario } from "./inventario.js";
-import { finanzas } from "./finanzas.js";
-import { contabilidad } from "./contabilidad.js";
-import { pagosTaller } from "./pagosTaller.js";
-import { configuracion } from "./configuracion.js";
-import { reportes } from "./reportes.js";
+/* ===============================
+PANEL PRINCIPAL
+=============================== */
 
-export async function panel(container, userId) {
+export async function panel(container, uid){
 
-  console.log("🚀 Iniciando panel ERP");
+  console.log("🧠 iniciando panel...", uid);
 
-  /* =========================
-  Layout principal
-  ========================= */
+  if(!uid){
+    container.innerHTML = "<h2>❌ Usuario no autenticado</h2>";
+    return;
+  }
+
+  /* ===============================
+  🔥 CREAR STATE GLOBAL SaaS
+  =============================== */
+
+  const state = await construirState(uid);
+
+  if(!state){
+    container.innerHTML = "<h2>❌ Error cargando empresa</h2>";
+    return;
+  }
+
+  console.log("🏢 empresa cargada:", state.empresaId);
+
+  /* ===============================
+  UI BASE (LAYOUT APP)
+  =============================== */
+
   container.innerHTML = `
-    <div style="display:flex;height:100vh">
+    <div style="display:flex;min-height:100vh;background:#0f172a;color:white;">
 
-      <nav style="
+      <!-- SIDEBAR -->
+      <div style="
         width:240px;
         background:#020617;
         padding:20px;
-        color:white;
-        overflow:auto;
+        border-right:1px solid #111;
       ">
-        <h2 style="margin-bottom:20px">TallerPRO360</h2>
-        <div id="menu"></div>
-        <button id="logoutBtn" style="
-          margin-top:20px;
-          width:100%;
-          padding:10px;
-          background:#dc2626;
-          border:none;
-          border-radius:6px;
-          color:white;
-          cursor:pointer;
-        ">Salir</button>
-      </nav>
+        <h2>🚀 TallerPRO360</h2>
 
-      <main id="mainPanel" style="
-        flex:1;
-        padding:20px;
-        background:#1e293b;
-        color:white;
-        overflow:auto;
-      ">
-        Cargando módulo...
-      </main>
+        <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px;">
+          <button onclick="window.irModulo('dashboard')">📊 Dashboard</button>
+          <button onclick="window.irModulo('ordenes')">🧾 Órdenes</button>
+          <button onclick="window.irModulo('inventario')">📦 Inventario</button>
+          <button onclick="window.irModulo('clientes')">👥 Clientes</button>
+        </div>
+
+        <hr style="margin:20px 0;border-color:#111;">
+
+        <button onclick="window.logout()">🚪 Cerrar sesión</button>
+
+      </div>
+
+      <!-- CONTENIDO -->
+      <div style="flex:1;padding:20px;">
+        <div id="moduloContainer"></div>
+      </div>
 
     </div>
   `;
 
-  /* =========================
-  DOM
-  ========================= */
-  const menu = document.getElementById("menu");
-  const main = document.getElementById("mainPanel");
+  const moduloContainer = document.getElementById("moduloContainer");
 
-  /* =========================
-  Registro de módulos
-  ========================= */
-  moduleLoader.register("dashboard", dashboard);
-  moduleLoader.register("clientes", clientes);
-  moduleLoader.register("ordenes", ordenes);
-  moduleLoader.register("inventario", inventario);
-  moduleLoader.register("finanzas", finanzas);
-  moduleLoader.register("contabilidad", contabilidad);
-  moduleLoader.register("pagos", pagosTaller);
-  moduleLoader.register("configuracion", configuracion);
-  moduleLoader.register("reportes", reportes);
+  /* ===============================
+  🔁 NAVEGACIÓN DINÁMICA
+  =============================== */
 
-  /* =========================
-  Menú lateral
-  ========================= */
-  const modulos = [
-    "dashboard",
-    "clientes",
-    "ordenes",
-    "inventario",
-    "finanzas",
-    "contabilidad",
-    "pagos",
-    "reportes",
-    "configuracion"
-  ];
+  window.irModulo = async function(nombre){
 
-  menu.innerHTML = "";
-  modulos.forEach(nombre => {
-    const btn = document.createElement("button");
-    btn.textContent = nombre;
-    btn.style.display = "block";
-    btn.style.width = "100%";
-    btn.style.margin = "8px 0";
-    btn.style.padding = "10px";
-    btn.style.background = "#0f172a";
-    btn.style.border = "1px solid #1e293b";
-    btn.style.color = "white";
-    btn.style.cursor = "pointer";
-    btn.onclick = () => moduleLoader.load(nombre, main, userId);
-    menu.appendChild(btn);
-  });
+    console.log("📦 cargando módulo:", nombre);
 
-  /* =========================
-  Logout
-  ========================= */
-  document.getElementById("logoutBtn").onclick = () => {
-    localStorage.clear();
-    window.location = "/login.html";
+    moduloContainer.innerHTML = "Cargando...";
+
+    try{
+
+      if(nombre === "dashboard"){
+        await dashboard(moduloContainer, state);
+        return;
+      }
+
+      const module = await import(`/app/js/modules/${nombre}.js`);
+
+      if(!module.default){
+        throw new Error("El módulo no exporta default");
+      }
+
+      moduloContainer.innerHTML = "";
+
+      await module.default(moduloContainer, state);
+
+      console.log("✅ módulo cargado:", nombre);
+
+    }catch(error){
+
+      console.error("❌ error módulo:", nombre, error);
+
+      moduloContainer.innerHTML = `
+        <h3 style="color:red">Error cargando módulo</h3>
+        <p>${error.message}</p>
+      `;
+
+    }
+
   };
 
-  /* =========================
-  Carga inicial
-  ========================= */
-  await moduleLoader.load("dashboard", main, userId);
+  /* ===============================
+  🚪 LOGOUT
+  =============================== */
 
-  console.log("✅ ERP cargado correctamente");
+  window.logout = function(){
+
+    localStorage.removeItem("uid");
+
+    window.location = "/login.html";
+
+  };
+
+  /* ===============================
+  🚀 CARGA INICIAL
+  =============================== */
+
+  await window.irModulo("dashboard");
+
+}
+
+
+/* ===============================
+🏢 CONSTRUIR STATE SaaS
+=============================== */
+
+async function construirState(uid){
+
+  try{
+
+    // 🔥 IMPORT DINÁMICO para evitar errores de carga
+    const {
+      doc,
+      getDoc
+    } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+
+    const { db } = await import("../core/firebase-config.js");
+
+    // 👉 buscar usuario
+    const ref = doc(db, "usuarios", uid);
+
+    const snap = await getDoc(ref);
+
+    if(!snap.exists()){
+      console.warn("⚠️ usuario no existe");
+      return null;
+    }
+
+    const userData = snap.data();
+
+    /* ===============================
+    🔥 STATE GLOBAL
+    =============================== */
+
+    const state = {
+
+      uid: uid,
+
+      empresaId: userData.empresaId || null,
+
+      rol: userData.rol || "admin",
+
+      nombre: userData.nombre || "",
+
+    };
+
+    if(!state.empresaId){
+      console.warn("⚠️ usuario sin empresaId");
+      return null;
+    }
+
+    return state;
+
+  }catch(error){
+
+    console.error("❌ error construyendo state", error);
+
+    return null;
+
+  }
+
 }
