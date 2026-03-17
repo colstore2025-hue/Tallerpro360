@@ -1,19 +1,25 @@
 /**
- * CRM CLIENTES - TALLERPRO360
- * ERP + CRM + IA SaaS
+ * clientes.js
+ * CRM Clientes + Vehículos + Órdenes
+ * TallerPRO360 ERP SaaS
  */
 
-import { collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from "../core/firebase-config.js";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  query,
+  where
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-export default async function clientesModulo(container, state) {
+export default async function clientesModule(container, state) {
 
   container.innerHTML = `
     <h1>👥 Clientes (CRM)</h1>
 
-    <div style="margin-bottom:20px;">
-      <input id="nombre" placeholder="Nombre cliente"/>
-      <input id="telefono" placeholder="Teléfono"/>
+    <div style="margin-bottom:20px; display:flex; gap:10px; flex-wrap:wrap;">
+      <input id="nombre" placeholder="Nombre cliente" style="flex:1;"/>
+      <input id="telefono" placeholder="Teléfono" style="flex:1;"/>
       <button id="crearCliente">Crear Cliente</button>
     </div>
 
@@ -32,13 +38,17 @@ export default async function clientesModulo(container, state) {
   async function cargarClientes() {
     try {
       const q = query(
-        collection(db, "clientes"),
+        collection(window.db, "clientes"),
         where("empresaId", "==", state.empresaId)
       );
 
       const snap = await getDocs(q);
 
-      clientes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      clientes = [];
+
+      snap.forEach(doc => {
+        clientes.push({ id: doc.id, ...doc.data() });
+      });
 
       renderClientes(clientes);
 
@@ -54,29 +64,37 @@ export default async function clientesModulo(container, state) {
       <div 
         data-id="${c.id}"
         class="clienteItem"
-        style="background:#111;padding:15px;margin:10px 0;border-radius:10px;cursor:pointer;"
+        style="
+          background:#111;padding:15px;margin:10px 0;
+          border-radius:10px;cursor:pointer;
+          transition:0.2s;border:1px solid #0f172a;
+        "
       >
         👤 ${c.nombre || "Sin nombre"} <br/>
         📞 ${c.telefono || "-"}
       </div>
     `).join("");
 
+    // eventos seguros
     document.querySelectorAll(".clienteItem").forEach(el => {
       el.onclick = () => verCliente(el.dataset.id);
     });
   }
 
-  // 🔍 Buscar
+  // 🔍 Buscar clientes
   document.getElementById("busqueda").oninput = (e) => {
     const texto = e.target.value.toLowerCase();
+
     const filtrados = clientes.filter(c =>
       (c.nombre || "").toLowerCase().includes(texto)
     );
+
     renderClientes(filtrados);
   };
 
-  // ➕ Crear cliente
+  // ➕ Crear cliente (SaaS)
   document.getElementById("crearCliente").onclick = async () => {
+
     const nombre = document.getElementById("nombre").value.trim();
     const telefono = document.getElementById("telefono").value.trim();
 
@@ -86,7 +104,7 @@ export default async function clientesModulo(container, state) {
     }
 
     try {
-      await addDoc(collection(db, "clientes"), {
+      await addDoc(collection(window.db, "clientes"), {
         empresaId: state.empresaId,
         nombre,
         telefono,
@@ -98,48 +116,54 @@ export default async function clientesModulo(container, state) {
       document.getElementById("telefono").value = "";
 
       await cargarClientes();
-      alert("✅ Cliente creado correctamente");
 
     } catch (e) {
       console.error(e);
-      alert("❌ Error creando cliente");
+      alert("Error creando cliente");
     }
   };
 
   // 👁️ Ver detalle cliente
   async function verCliente(clienteId) {
+
     detalle.innerHTML = "Cargando...";
 
     try {
-      // Vehículos
+
+      // 🚗 Vehículos del cliente (filtrado SaaS)
       const vehiculosSnap = await getDocs(
         query(
-          collection(db, "vehiculos"),
+          collection(window.db, "vehiculos"),
           where("clienteId", "==", clienteId),
           where("empresaId", "==", state.empresaId)
         )
       );
 
       let vehiculosHTML = "<h3>🚗 Vehículos</h3>";
+
       vehiculosSnap.forEach(doc => {
         const v = doc.data();
         vehiculosHTML += `
-          <div style="margin-bottom:10px;">
-            ${v.marca || ""} ${v.modelo || ""} (${v.placa || ""})
+          <div style="margin-bottom:10px;display:flex;justify-content:space-between;">
+            <span>${v.marca || ""} ${v.modelo || ""} (${v.placa || ""})</span>
+            <button onclick="window.location='/app/ordenes.html?cliente=${clienteId}&vehiculo=${v.placa}'" style="background:#00ff99;border:none;border-radius:6px;padding:3px 6px;cursor:pointer;">
+              🧾 Nueva Orden
+            </button>
           </div>
         `;
       });
 
-      // Órdenes
+      // 🧾 Órdenes del cliente
       const ordenesSnap = await getDocs(
         query(
-          collection(db, "ordenes"),
+          collection(window.db, "ordenes"),
           where("clienteId", "==", clienteId),
           where("empresaId", "==", state.empresaId)
         )
       );
 
       let ordenesHTML = "<h3>🧾 Órdenes</h3>";
+
       ordenesSnap.forEach(doc => {
         const o = doc.data();
         ordenesHTML += `
@@ -150,7 +174,12 @@ export default async function clientesModulo(container, state) {
       });
 
       detalle.innerHTML = `
-        <div style="background:#0f172a;padding:20px;border-radius:12px;margin-top:20px;">
+        <div style="
+          background:#0f172a;
+          padding:20px;
+          border-radius:12px;
+          margin-top:20px;
+        ">
           ${vehiculosHTML}
           ${ordenesHTML}
         </div>
