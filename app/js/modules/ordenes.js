@@ -134,7 +134,17 @@ export default async function (container, state) {
         creadoEn: new Date()
       };
 
-      await addDoc(collection(window.db, "ordenes"), orden);
+      await addDoc(collection(window.db, "ordenes"), {
+  empresaId: state.empresaId,
+  clienteId,
+  vehiculoId,
+  items,
+  total,
+  costoTotal,
+  utilidad,
+  estado: "abierta",
+  creadoEn: new Date()
+});
 
       // 🧠 IA aprende
       await aprenderDeOrden(orden);
