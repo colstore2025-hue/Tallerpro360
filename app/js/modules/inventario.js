@@ -9,6 +9,8 @@ import {
   where
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+import { generarSugerencias, renderSugerencias } from "../ai/aiAdvisor.js";
+
 export default async function (container, state) {
 
   container.innerHTML = `
@@ -27,6 +29,7 @@ export default async function (container, state) {
     <div id="lista"></div>
   `;
 
+<div id="advisorInventario"></div>
   const lista = document.getElementById("lista");
   const alertasDiv = document.getElementById("alertas");
 
@@ -176,6 +179,11 @@ export default async function (container, state) {
     }
   }
 
+const sugerencias = await generarSugerencias({
+  inventario: repuestos
+});
+
+renderSugerencias("advisorInventario", sugerencias);
   // ➖ Salida de stock
   async function usarStock(id) {
 
