@@ -2,42 +2,98 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard Test</title>
+  <title>Dashboard Demo TallerPRO360</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { background:#0b0c17; color:white; font-family:sans-serif; padding:20px; }
+    h1, h2, h3 { text-shadow:0 0 8px #00ffcc; }
+  </style>
 </head>
-<body style="background:#0b0c17;color:white;">
+<body>
   <div id="app"></div>
 
   <script type="module">
-    // 🔹 Firebase
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    // Dashboard demo sin Firebase
+    async function dashboard(container, state) {
+      container.innerHTML = `<h1>📊 Dashboard Demo</h1>
+        <div id="kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;"></div>
+        <div style="margin-top:20px;"><canvas id="graficaIngresos"></canvas></div>
+        <div id="iaPanel" style="margin-top:20px;"></div>
+      `;
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-      authDomain: "tallerpro360.firebaseapp.com",
-      projectId: "tallerpro360",
-      storageBucket: "tallerpro360.firebasestorage.app",
-      messagingSenderId: "636224778184",
-      appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
-      measurementId: "G-VEC2C0QX2G"
-    };
+      // 🔹 Datos simulados
+      const ingresos = 1200000;
+      const costos = 800000;
+      const utilidad = ingresos - costos;
+      const ordenes = 45;
 
-    const app = initializeApp(firebaseConfig);
-    window.db = getFirestore(app);
+      const ingresosPorDia = {
+        "2026-03-10": 200000,
+        "2026-03-11": 150000,
+        "2026-03-12": 180000,
+        "2026-03-13": 250000,
+        "2026-03-14": 220000
+      };
 
-    // 🔹 Dashboard
-    import { default as dashboard } from "./js/modules/dashboard.js";
+      // KPI
+      const kpis = document.getElementById("kpis");
+      kpis.innerHTML = `
+        ${crearKPI("💰 Ingresos", ingresos)}
+        ${crearKPI("📉 Costos", costos)}
+        ${crearKPI("📈 Utilidad", utilidad)}
+        ${crearKPI("🧾 Órdenes", ordenes)}
+      `;
 
-    const container = document.getElementById("app");
-    const state = { empresaId: "taller_001" };
+      // Gráfica
+      renderGrafica(ingresosPorDia);
 
-    try {
-      dashboard(container, state);
-    } catch (e) {
-      container.innerHTML = `<p style="color:red">❌ Error: ${e.message}</p>`;
-      console.error(e);
+      // IA demo
+      const iaData = {
+        resumen: {
+          ingresos, costos, utilidad, margen: Math.round(utilidad/ingresos*100), ticketPromedio: Math.round(ingresos/ordenes)
+        },
+        alertas: ["Revisar inventario crítico", "Cliente con saldo pendiente"],
+        recomendaciones: ["Optimizar compras", "Promocionar servicios"]
+      };
+      renderIA(iaData);
     }
+
+    function crearKPI(titulo, valor) {
+      return `<div style="
+        background:#111827; padding:20px; border-radius:12px; text-align:center; box-shadow:0 0 10px rgba(0,255,153,0.4);
+      ">
+        <h3>${titulo}</h3>
+        <p style="font-size:22px;">$${new Intl.NumberFormat("es-CO").format(valor)}</p>
+      </div>`;
+    }
+
+    function renderGrafica(data) {
+      const ctx = document.getElementById("graficaIngresos");
+      new Chart(ctx, {
+        type: "line",
+        data: { labels:Object.keys(data), datasets:[{label:"Ingresos por día", data:Object.values(data), borderWidth:2}] }
+      });
+    }
+
+    function renderIA(data) {
+      const panel = document.getElementById("iaPanel");
+      panel.innerHTML = `
+        <div style="background:#0f172a; padding:20px; border-radius:12px; box-shadow:0 0 15px #00ff99;">
+          <h2>🧠 IA Gerente</h2>
+          <p>💰 Ingresos: $${data.resumen.ingresos}</p>
+          <p>📉 Costos: $${data.resumen.costos}</p>
+          <p>📈 Utilidad: $${data.resumen.utilidad}</p>
+          <p>📊 Margen: ${data.resumen.margen}%</p>
+          <p>🎯 Ticket Promedio: $${data.resumen.ticketPromedio}</p>
+          <h3>⚠️ Alertas</h3>${data.alertas.map(a=>`<p>${a}</p>`).join("")}
+          <h3>🚀 Recomendaciones</h3>${data.recomendaciones.map(r=>`<p>${r}</p>`).join("")}
+        </div>
+      `;
+    }
+
+    // Iniciar demo
+    const container = document.getElementById("app");
+    dashboard(container, {empresaId:"demo_001"});
   </script>
 </body>
 </html>
