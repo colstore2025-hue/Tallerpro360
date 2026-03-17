@@ -1,11 +1,11 @@
 /**
  * configuracion.js
- * Configuración avanzada de Taller (Datos fiscales, contacto, branding)
+ * Configuración avanzada de Taller (Datos fiscales, branding, contacto, integraciones)
  * Nivel Tesla · Última generación
  * TallerPRO360 ERP SaaS
  */
 
-import { collection, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
 export default async function configuracionModule(container, state) {
@@ -21,7 +21,9 @@ export default async function configuracionModule(container, state) {
       <input id="email" placeholder="Correo oficial" type="email" />
       <input id="website" placeholder="Sitio web" />
       <input id="logoURL" placeholder="URL Logo" />
-      <textarea id="mensajePie" placeholder="Mensaje de pie de página (facturas/reporte)" style="grid-column:1 / span 2; height:60px;"></textarea>
+      <textarea id="mensajePie" placeholder="Mensaje pie de página (facturas/reporte)" style="grid-column:1 / span 2; height:60px;"></textarea>
+      <input id="colorPrincipal" type="color" placeholder="Color principal" value="#0ff" />
+      <input id="colorSecundario" type="color" placeholder="Color secundario" value="#16a34a" />
     </div>
 
     <div style="margin-top:15px;">
@@ -31,15 +33,16 @@ export default async function configuracionModule(container, state) {
 
   const mensajeDiv = document.getElementById("mensaje");
 
-  // 🔄 Cargar configuración
+  // 🔄 Cargar configuración existente
   async function cargarConfiguracion() {
     try {
       const tallerRef = doc(db, "talleres", state.empresaId);
       const snap = await getDoc(tallerRef);
+
       if (snap.exists()) {
         const data = snap.data();
-        ["nombreTaller","nit","direccion","telefono","email","website","logoURL","mensajePie"].forEach(key => {
-          document.getElementById(key).value = data[key] || "";
+        ["nombreTaller","nit","direccion","telefono","email","website","logoURL","mensajePie","colorPrincipal","colorSecundario"].forEach(key => {
+          if (data[key]) document.getElementById(key).value = data[key];
         });
       }
     } catch (e) {
@@ -48,10 +51,9 @@ export default async function configuracionModule(container, state) {
     }
   }
 
-  // 💾 Guardar configuración
+  // 💾 Guardar configuración con validaciones
   document.getElementById("guardar").onclick = async () => {
     try {
-      const tallerRef = doc(db, "talleres", state.empresaId);
       const payload = {
         nombreTaller: document.getElementById("nombreTaller").value.trim(),
         nit: document.getElementById("nit").value.trim(),
@@ -61,11 +63,20 @@ export default async function configuracionModule(container, state) {
         website: document.getElementById("website").value.trim(),
         logoURL: document.getElementById("logoURL").value.trim(),
         mensajePie: document.getElementById("mensajePie").value.trim(),
+        colorPrincipal: document.getElementById("colorPrincipal").value || "#0ff",
+        colorSecundario: document.getElementById("colorSecundario").value || "#16a34a",
         actualizadoEn: new Date()
       };
 
-      // Crear documento si no existe
+      // Validaciones básicas
+      if (!payload.nombreTaller || !payload.nit || !payload.email) {
+        mensajeDiv.innerHTML = `<p style="color:red;">❌ Nombre, NIT y Email son obligatorios</p>`;
+        return;
+      }
+
+      const tallerRef = doc(db, "talleres", state.empresaId);
       const snap = await getDoc(tallerRef);
+
       if (snap.exists()) {
         await updateDoc(tallerRef, payload);
       } else {
