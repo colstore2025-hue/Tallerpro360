@@ -1,117 +1,43 @@
-/**
- * inventarioService.js
- * Servicio de inventario - TallerPRO360
- */
-
 import {
+  doc,
+  updateDoc,
+  increment,
   addDoc,
-  serverTimestamp
+  collection,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { coleccionTaller } from "../core/dbTaller.js";
-
-
 /**
- * Crear nuevo repuesto en inventario
+ * 🔻 Descuenta stock cuando se usa en una orden
  */
-export async function crearRepuesto(data) {
+export async function usarRepuesto({ repuestoId, cantidad, ordenId }) {
 
-  try {
+  const ref = doc(window.db, "repuestos", repuestoId);
+  const snap = await getDoc(ref);
 
-    /* =========================
-       VALIDACIONES
-    ========================= */
-
-    if (!data?.nombre) {
-      throw new Error("El nombre del repuesto es obligatorio");
-    }
-
-    if (data.costoCompra === undefined || data.costoCompra === null) {
-      throw new Error("El costo de compra es obligatorio");
-    }
-
-
-    /* =========================
-       NORMALIZACIÓN DE DATOS
-    ========================= */
-
-    const costoCompra = Number(data.costoCompra);
-    const margen = Number(data.margen ?? 30);
-
-    if (isNaN(costoCompra)) {
-      throw new Error("Costo de compra inválido");
-    }
-
-
-    /* =========================
-       CÁLCULO DE PRECIO
-    ========================= */
-
-    const precioVenta = costoCompra * (1 + margen / 100);
-
-    const utilidadUnidad = precioVenta - costoCompra;
-
-
-    /* =========================
-       CREACIÓN DOCUMENTO
-    ========================= */
-
-    const docRef = await addDoc(
-      coleccionTaller("repuestos"),
-      {
-
-        /* info básica */
-
-        nombre: data.nombre.trim(),
-        codigo: data.codigo ?? "",
-
-        marca: data.marca ?? "",
-        categoria: data.categoria ?? "",
-
-
-        /* costos */
-
-        costoCompra,
-        margen,
-
-        precioVenta: Math.round(precioVenta),
-        utilidadUnidad: Math.round(utilidadUnidad),
-
-
-        /* inventario */
-
-        stock: Number(data.stock ?? 0),
-        stockMinimo: Number(data.stockMinimo ?? 1),
-
-        rotacion: 0,
-
-
-        /* proveedor */
-
-        proveedor: data.proveedor ?? "No definido",
-
-
-        /* estado */
-
-        estado: "activo",
-
-
-        /* fechas */
-
-        fechaCreacion: serverTimestamp(),
-        fechaActualizacion: serverTimestamp()
-
-      }
-    );
-
-    return docRef.id;
-
-  } catch (error) {
-
-    console.error("Error creando repuesto:", error);
-
-    throw error;
-
+  if (!snap.exists()) {
+    throw new Error("Repuesto no existe");
   }
 
+  const data = snap.data();
+
+  if (data.stock < cantidad) {
+    throw new Error("Stock insuficiente");
+  }
+
+  // 🔻 Descontar stock
+  await updateDoc(ref, {
+    stock: increment(-cantidad)
+  });
+
+  // 🧾 Registrar movimiento
+  await addDoc(collection(window.db, "movimientosInventario"), {
+    repuestoId,
+    tipo: "salida",
+    cantidad,
+    ordenId,
+    fecha: new Date()
+  });
+
+  return data;
 }
