@@ -8,6 +8,7 @@ import {
 
 import { usarRepuesto } from "../services/inventarioService.js";
 import { iniciarVoz, hablar } from "../voice/voiceCore.js";
+import { generarOrdenIA } from "../ai/aiAutonomousFlow.js";
 
 export default async function (container, state) {
 
