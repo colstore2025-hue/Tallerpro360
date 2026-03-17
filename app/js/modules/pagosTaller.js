@@ -1,7 +1,9 @@
-/**
- * pagosTaller.js
- * Módulo avanzado de Pagos y Flujo de Caja con voz - TallerPRO360
- */
+/*
+================================================
+PAGOS TALLER - Módulo avanzado de pagos y flujo de caja
+Versión: Última generación - TallerPRO360
+================================================
+*/
 
 import { db } from "../core/firebase-config.js";
 import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -146,7 +148,7 @@ function leerResumenVoz(){
   if(ingresos === 0 && efectivo === 0 && bancos === 0 && tarjeta === 0){
     hablar("No hay pagos registrados hoy");
   } else {
-    hablar(`Resumen de hoy. Ingresos: ${ingresos} dólares. Efectivo: ${efectivo}. Bancos: ${bancos}. Tarjetas: ${tarjeta}.`);
+    hablar(`Resumen de hoy. Ingresos: ${ingresos} pesos. Efectivo: ${efectivo}. Bancos: ${bancos}. Tarjetas: ${tarjeta}.`);
   }
 }
 
