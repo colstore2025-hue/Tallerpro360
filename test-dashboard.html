@@ -1,99 +1,120 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Dashboard Demo TallerPRO360</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body { background:#0b0c17; color:white; font-family:sans-serif; padding:20px; }
-    h1, h2, h3 { text-shadow:0 0 8px #00ffcc; }
-  </style>
+<meta charset="UTF-8">
+<title>TallerPRO360 Demo</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body { background:#0b0c17; color:white; font-family:sans-serif; margin:0; padding:0; }
+  h1,h2,h3 { text-shadow:0 0 8px #00ffcc; }
+  button { padding:8px 12px; margin:4px; border:none; border-radius:6px; cursor:pointer; background:#0f172a; color:#00ffcc; }
+  button:hover { background:#00ffcc; color:#000; }
+  #sidebar { width:240px; background:#111; padding:10px; }
+  #main { flex:1; padding:20px; overflow:auto; }
+  #app { display:flex; height:100vh; }
+</style>
 </head>
 <body>
-  <div id="app"></div>
+<div id="app">
+  <div id="sidebar"></div>
+  <div id="main"></div>
+</div>
 
-  <script type="module">
-    // Dashboard demo sin Firebase
-    async function dashboard(container, state) {
-      container.innerHTML = `<h1>📊 Dashboard Demo</h1>
-        <div id="kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;"></div>
-        <div style="margin-top:20px;"><canvas id="graficaIngresos"></canvas></div>
-        <div id="iaPanel" style="margin-top:20px;"></div>
-      `;
+<script>
+/* =========================
+SIDEBAR
+========================= */
+const sidebar = document.getElementById("sidebar");
+sidebar.innerHTML = `
+<h2>TallerPRO360</h2>
+<button onclick="navigate('dashboard')">📊 Dashboard</button>
+<button onclick="navigate('ordenes')">🧾 Órdenes</button>
+<button onclick="navigate('clientes')">👥 Clientes</button>
+<button onclick="navigate('inventario')">📦 Inventario</button>
+<button onclick="navigate('finanzas')">💰 Finanzas</button>
+<button onclick="navigate('reportes')">📈 Reportes</button>
+<button onclick="navigate('configuracion')">⚙️ Configuración</button>
+`;
 
-      // 🔹 Datos simulados
-      const ingresos = 1200000;
-      const costos = 800000;
-      const utilidad = ingresos - costos;
-      const ordenes = 45;
+/* =========================
+STATE GLOBAL
+========================= */
+const state = { empresaId:"demo_001" };
+const main = document.getElementById("main");
 
-      const ingresosPorDia = {
-        "2026-03-10": 200000,
-        "2026-03-11": 150000,
-        "2026-03-12": 180000,
-        "2026-03-13": 250000,
-        "2026-03-14": 220000
-      };
+/* =========================
+NAVEGACIÓN SIMULADA
+========================= */
+window.navigate = (module)=>{
+  main.innerHTML = `<h2>Cargando ${module}...</h2>`;
+  if(module==='dashboard') renderDashboard();
+  else main.innerHTML = `<h2>${module} (demo)</h2><p>Contenido simulado</p>`;
+};
 
-      // KPI
-      const kpis = document.getElementById("kpis");
-      kpis.innerHTML = `
-        ${crearKPI("💰 Ingresos", ingresos)}
-        ${crearKPI("📉 Costos", costos)}
-        ${crearKPI("📈 Utilidad", utilidad)}
-        ${crearKPI("🧾 Órdenes", ordenes)}
-      `;
+/* =========================
+DASHBOARD DEMO
+========================= */
+function renderDashboard(){
+  main.innerHTML = `
+    <h1>📊 Dashboard Demo</h1>
+    <div id="kpis" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:15px;"></div>
+    <canvas id="graficaIngresos" style="margin-top:20px;"></canvas>
+    <div id="iaPanel" style="margin-top:20px;"></div>
+  `;
 
-      // Gráfica
-      renderGrafica(ingresosPorDia);
+  // Datos demo
+  const ingresos = 1200000;
+  const costos = 800000;
+  const utilidad = ingresos - costos;
+  const ordenes = 45;
+  const ingresosPorDia = {
+    "2026-03-10": 200000,
+    "2026-03-11": 150000,
+    "2026-03-12": 180000,
+    "2026-03-13": 250000,
+    "2026-03-14": 220000
+  };
 
-      // IA demo
-      const iaData = {
-        resumen: {
-          ingresos, costos, utilidad, margen: Math.round(utilidad/ingresos*100), ticketPromedio: Math.round(ingresos/ordenes)
-        },
-        alertas: ["Revisar inventario crítico", "Cliente con saldo pendiente"],
-        recomendaciones: ["Optimizar compras", "Promocionar servicios"]
-      };
-      renderIA(iaData);
-    }
+  // KPIs
+  const kpis = document.getElementById("kpis");
+  kpis.innerHTML = [ 
+    {t:"💰 Ingresos", v:ingresos},
+    {t:"📉 Costos", v:costos},
+    {t:"📈 Utilidad", v:utilidad},
+    {t:"🧾 Órdenes", v:ordenes}
+  ].map(k => `<div style="background:#111827; padding:20px; border-radius:12px; text-align:center;">
+      <h3>${k.t}</h3>
+      <p style="font-size:22px;">$${new Intl.NumberFormat("es-CO").format(k.v)}</p>
+    </div>`).join("");
 
-    function crearKPI(titulo, valor) {
-      return `<div style="
-        background:#111827; padding:20px; border-radius:12px; text-align:center; box-shadow:0 0 10px rgba(0,255,153,0.4);
-      ">
-        <h3>${titulo}</h3>
-        <p style="font-size:22px;">$${new Intl.NumberFormat("es-CO").format(valor)}</p>
-      </div>`;
-    }
+  // Gráfica
+  const ctx = document.getElementById("graficaIngresos");
+  new Chart(ctx, { type:"line", data:{ labels:Object.keys(ingresosPorDia), datasets:[{label:"Ingresos por día", data:Object.values(ingresosPorDia), borderWidth:2}] } });
 
-    function renderGrafica(data) {
-      const ctx = document.getElementById("graficaIngresos");
-      new Chart(ctx, {
-        type: "line",
-        data: { labels:Object.keys(data), datasets:[{label:"Ingresos por día", data:Object.values(data), borderWidth:2}] }
-      });
-    }
+  // Panel IA demo
+  const iaData = {
+    resumen: { ingresos,costos,utilidad,margen:Math.round(utilidad/ingresos*100),ticketPromedio:Math.round(ingresos/ordenes) },
+    alertas: ["Revisar inventario crítico","Cliente con saldo pendiente"],
+    recomendaciones: ["Optimizar compras","Promocionar servicios"]
+  };
 
-    function renderIA(data) {
-      const panel = document.getElementById("iaPanel");
-      panel.innerHTML = `
-        <div style="background:#0f172a; padding:20px; border-radius:12px; box-shadow:0 0 15px #00ff99;">
-          <h2>🧠 IA Gerente</h2>
-          <p>💰 Ingresos: $${data.resumen.ingresos}</p>
-          <p>📉 Costos: $${data.resumen.costos}</p>
-          <p>📈 Utilidad: $${data.resumen.utilidad}</p>
-          <p>📊 Margen: ${data.resumen.margen}%</p>
-          <p>🎯 Ticket Promedio: $${data.resumen.ticketPromedio}</p>
-          <h3>⚠️ Alertas</h3>${data.alertas.map(a=>`<p>${a}</p>`).join("")}
-          <h3>🚀 Recomendaciones</h3>${data.recomendaciones.map(r=>`<p>${r}</p>`).join("")}
-        </div>
-      `;
-    }
+  const panel = document.getElementById("iaPanel");
+  panel.innerHTML = `
+    <div style="background:#0f172a; padding:20px; border-radius:12px; box-shadow:0 0 15px #00ff99;">
+      <h2>🧠 IA Gerente</h2>
+      <p>💰 Ingresos: $${iaData.resumen.ingresos}</p>
+      <p>📉 Costos: $${iaData.resumen.costos}</p>
+      <p>📈 Utilidad: $${iaData.resumen.utilidad}</p>
+      <p>📊 Margen: ${iaData.resumen.margen}%</p>
+      <p>🎯 Ticket Promedio: $${iaData.resumen.ticketPromedio}</p>
+      <h3>⚠️ Alertas</h3>${iaData.alertas.map(a=>`<p>${a}</p>`).join("")}
+      <h3>🚀 Recomendaciones</h3>${iaData.recomendaciones.map(r=>`<p>${r}</p>`).join("")}
+    </div>
+  `;
+}
 
-    // Iniciar demo
-    const container = document.getElementById("app");
-    dashboard(container, {empresaId:"demo_001"});
-  </script>
+// Inicial
+navigate('dashboard');
+</script>
 </body>
 </html>
