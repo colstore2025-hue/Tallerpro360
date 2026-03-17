@@ -1,53 +1,54 @@
 /**
- * 📊 Dashboard PRO360
- * TallerPRO360 – KPI Gerencial + IA + Gráficos
- * Estilo neón, colores brillantes, iconos ilustrativos
+ * 📊 DASHBOARD ERP PRO360
+ * Multi-módulo: Órdenes, Clientes, Inventario, Finanzas
+ * Integración total: IA, voz, KPIs dinámicos, gráficos neón
  */
 
-import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  collection,
+  getDocs,
+  query,
+  where
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
 import { db } from "../core/firebase-config.js";
-import { Advisor, actualizarAdvisor, renderSugerencias, notificarAlertas } from "./aiAdvisor.js";
-import { hablar } from "../voice/voiceCore.js";
+import { analizarNegocio, hablarResumen } from "../ai/aiManager.js";
 
 export default async function dashboard(container, state) {
-  container.innerHTML = `
-    <h1 style="color:#00ffcc; text-shadow:0 0 15px #0ff;">📊 Dashboard Gerencial PRO360</h1>
 
-    <div id="kpis" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:15px; margin-top:15px;"></div>
+  container.innerHTML = `
+    <h1 style="color:#0ff; text-shadow:0 0 12px #0ff;">📊 Dashboard PRO360</h1>
+
+    <div id="kpis" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:15px;"></div>
 
     <div style="margin-top:20px;">
-      <canvas id="graficaIngresos"></canvas>
+      <canvas id="graficaIngresos" style="background:#111; border-radius:12px; padding:10px;"></canvas>
     </div>
 
     <div id="iaPanel" style="margin-top:20px;"></div>
   `;
 
   if (!state?.empresaId) {
-    container.innerHTML = "<p style='color:red;'>❌ Error: empresa no definida</p>";
+    container.innerHTML = "❌ Error: empresa no definida";
     return;
   }
 
   try {
-    // 🔹 Cargar órdenes desde Firestore
-    const q = query(
-      collection(db, "ordenes"),
-      where("empresaId", "==", state.empresaId)
-    );
+    // 🔹 CONSULTA FIRESTORE
+    const q = query(collection(db, "ordenes"), where("empresaId", "==", state.empresaId));
     const snapshot = await getDocs(q);
 
-    const ordenes = [];
+    let ingresos = 0, costos = 0, ordenes = 0;
     let ingresosPorDia = {};
-    let ingresos = 0, costos = 0, ordenesCount = 0;
 
     snapshot.forEach(doc => {
-      const data = doc.data();
-      ordenes.push(data);
+      const data = doc.data() || {};
       const total = Number(data.total) || 0;
       const costo = Number(data.costoTotal) || 0;
 
       ingresos += total;
       costos += costo;
-      ordenesCount++;
+      ordenes++;
 
       const fecha = data.creadoEn?.toDate?.()?.toISOString()?.split("T")[0] || "sin_fecha";
       ingresosPorDia[fecha] = (ingresosPorDia[fecha] || 0) + total;
@@ -55,47 +56,54 @@ export default async function dashboard(container, state) {
 
     const utilidad = ingresos - costos;
 
-    // 🔹 Render KPIs
+    // 🔹 RENDER KPIs
     const kpis = document.getElementById("kpis");
     kpis.innerHTML = `
-      ${crearKPI("💰 Ingresos", ingresos, "Ingresos totales del taller")}
-      ${crearKPI("📉 Costos", costos, "Costos de repuestos y servicios")}
-      ${crearKPI("📈 Utilidad", utilidad, "Ganancia neta")}
-      ${crearKPI("🧾 Órdenes", ordenesCount, "Número de órdenes procesadas")}
+      ${crearKPI("💰 Ingresos", ingresos, "#0ff", "💵")}
+      ${crearKPI("📉 Costos", costos, "#f00", "📊")}
+      ${crearKPI("📈 Utilidad", utilidad, "#0f0", "📈")}
+      ${crearKPI("🧾 Órdenes", ordenes, "#ff0", "📝")}
     `;
 
-    // 🔹 Gráfica de ingresos
+    // 🔹 GRÁFICA INGRESOS
     renderGrafica(ingresosPorDia);
 
-    // 🔹 Inicializar IA Advisor
-    await initAdvisor(state.empresaId);
+    // 🔹 IA GERENTE
+    const iaData = await analizarNegocio(state);
+    if (iaData) renderIA(iaData);
 
-  } catch (e) {
-    console.error("❌ Error dashboard:", e);
-    container.innerHTML = `<p style='color:red;'>Error cargando dashboard: ${e.message}</p>`;
+  } catch (error) {
+    console.error("❌ error dashboard", error);
+    container.innerHTML = `
+      <h2 style="color:red">Error cargando dashboard</h2>
+      <p>${error.message}</p>
+    `;
   }
 }
 
+
 /* ===============================
-🎯 KPI CARD NEÓN
+🎯 KPI CARD
 =============================== */
-function crearKPI(titulo, valor, tooltip = "") {
+function crearKPI(titulo, valor, color="#0ff", icono="📊") {
   return `
     <div style="
       background:#111827;
-      color:#0ff;
       padding:20px;
       border-radius:12px;
       text-align:center;
-      box-shadow:0 0 20px #0ff;
-      cursor:pointer;"
-      title="${tooltip}"
-    >
-      <h3 style="font-size:18px;">${titulo}</h3>
-      <p style="font-size:24px; font-weight:bold;">$${formatear(valor)}</p>
+      box-shadow:0 0 15px ${color};
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+    ">
+      <span style="font-size:28px;">${icono}</span>
+      <h3 style="color:${color}; text-shadow:0 0 8px ${color}; margin:5px 0;">${titulo}</h3>
+      <p style="font-size:22px; font-weight:bold;">$${formatear(valor)}</p>
     </div>
   `;
 }
+
 
 /* ===============================
 📈 GRÁFICA INGRESOS
@@ -114,54 +122,71 @@ function renderGrafica(data) {
       datasets: [{
         label: "Ingresos por día",
         data: valores,
-        borderColor: "#00ffcc",
-        backgroundColor: "rgba(0,255,204,0.2)",
-        borderWidth: 3,
+        borderColor: "#0ff",
+        backgroundColor: "rgba(0,255,255,0.1)",
         tension: 0.4,
-        pointRadius: 5,
-        pointBackgroundColor: "#00ffcc",
+        fill: true,
+        borderWidth: 3,
+        pointBackgroundColor: "#ff0",
+        pointRadius: 5
       }]
     },
     options: {
-      responsive: true,
-      plugins: {
-        legend: { labels: { color: "#0ff" } },
-        tooltip: { mode: "index", intersect: false }
-      },
-      scales: {
-        x: { ticks: { color: "#0ff" }, grid: { color: "#0f172a" } },
-        y: { ticks: { color: "#0ff" }, grid: { color: "#0f172a" } }
+      responsive:true,
+      plugins: { legend:{ display:true, labels:{ color:"#0ff" } } },
+      scales:{
+        x:{ ticks:{ color:"#0ff" }, grid:{ color:"rgba(0,255,255,0.1)" } },
+        y:{ ticks:{ color:"#0ff" }, grid:{ color:"rgba(0,255,255,0.1)" } }
       }
     }
   });
 }
 
-/* ===============================
-🧠 PANEL IA ADVANCED
-=============================== */
-async function initAdvisor(empresaId) {
-  await Advisor.init({ empresaId });
-  await actualizarAdvisor();
-  renderSugerencias("iaPanel");
 
-  // Botón para alertas habladas
-  const iaPanel = document.getElementById("iaPanel");
-  const btnVoz = document.createElement("button");
-  btnVoz.innerHTML = "🎤 Escuchar alertas";
-  btnVoz.style = `
-    margin-top:10px;
-    padding:10px;
-    background:#00ff99;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
+/* ===============================
+🧠 PANEL IA
+=============================== */
+function renderIA(data) {
+  const panel = document.getElementById("iaPanel");
+  panel.innerHTML = `
+    <div style="
+      background:#0f172a;
+      padding:20px;
+      border-radius:12px;
+      box-shadow:0 0 15px #0ff;
+    ">
+      <h2 style="color:#0ff; text-shadow:0 0 8px #0ff;">🧠 IA Gerente</h2>
+
+      <p>💰 Ingresos: $${formatear(data.resumen.ingresos)}</p>
+      <p>📉 Costos: $${formatear(data.resumen.costos)}</p>
+      <p>📈 Utilidad: $${formatear(data.resumen.utilidad)}</p>
+      <p>📊 Margen: ${data.resumen.margen}%</p>
+      <p>🎯 Ticket Promedio: $${formatear(data.resumen.ticketPromedio)}</p>
+
+      <h3 style="color:#ff0;">⚠️ Alertas</h3>
+      ${data.alertas.map(a => `<p style="color:#f00;">${a}</p>`).join("")}
+
+      <h3 style="color:#0f0;">🚀 Recomendaciones</h3>
+      ${data.recomendaciones.map(r => `<p>${r}</p>`).join("")}
+
+      <button id="vozGerente" style="
+        margin-top:10px;
+        padding:10px;
+        background:#0ff;
+        border:none;
+        border-radius:8px;
+        cursor:pointer;
+        font-weight:bold;
+      ">🎤 Escuchar IA</button>
+    </div>
   `;
-  btnVoz.onclick = () => notificarAlertas();
-  iaPanel.appendChild(btnVoz);
+
+  document.getElementById("vozGerente").onclick = () => hablarResumen(data);
 }
 
+
 /* ===============================
-💰 FORMATEAR MONEDA
+💰 FORMATEAR DINERO
 =============================== */
 function formatear(valor) {
   return new Intl.NumberFormat("es-CO").format(valor || 0);
