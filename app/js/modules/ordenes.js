@@ -1,32 +1,30 @@
 /**
- * 🧾 ÓRDENES ERP PRO360 - Última Generación
- * Integración completa: IA, Voz, Firestore, Dashboard interactivo
- * Autor: PRO360 / Nexus-Starlink SAS
+ * órdenes.js
+ * Órdenes Inteligentes PRO360 Última Generación
+ * TallerPRO360 ERP SaaS
  */
 
-import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, addDoc, getDocs, query, where, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
-import { usarRepuesto } from "../services/inventarioService.js";
 import { generarOrdenIA } from "../ai/aiAutonomousFlow.js";
 import { aprenderDeOrden } from "../ai/aiLearningEngine.js";
 import { generarSugerencias, renderSugerencias } from "../ai/aiAdvisor.js";
 import { iniciarVoz, hablar } from "../voice/voiceCore.js";
+import { usarRepuesto } from "../services/inventarioService.js";
 
-export default async function ordenes(container, state) {
-
+export default async function ordenesModule(container, state) {
   let items = [];
 
   container.innerHTML = `
     <h1 style="color:#0ff; text-shadow:0 0 8px #0ff;">🧾 Órdenes PRO360</h1>
 
     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-      <input id="cliente" placeholder="ID Cliente" style="flex:1; padding:8px; border-radius:6px; border:none;"/>
-      <input id="vehiculo" placeholder="Placa" style="flex:1; padding:8px; border-radius:6px; border:none;"/>
+      <input id="cliente" placeholder="ID Cliente" style="flex:1; padding:8px; border-radius:6px;"/>
+      <input id="vehiculo" placeholder="Placa" style="flex:1; padding:8px; border-radius:6px;"/>
     </div>
 
     <h3 style="color:#0ff; text-shadow:0 0 5px #0ff;">Agregar Repuesto</h3>
-
     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
       <select id="tipo" style="flex:1; padding:8px; border-radius:6px;">
         <option value="inventario">Inventario</option>
@@ -41,11 +39,10 @@ export default async function ordenes(container, state) {
     </div>
 
     <div id="itemsList" style="margin-top:10px;"></div>
-
     <div id="advisorOrdenes" style="margin-top:20px;"></div>
 
     <div style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
-      <button id="crearOrden" style="flex:1; background:#16a34a;">🚀 Crear Orden</button>
+      <button id="crearOrden" style="flex:1; background:#16a34a; color:#000;">🚀 Crear Orden</button>
       <button id="crearConIA" style="flex:1; background:#0ff; color:#000;">🤖 Crear con IA</button>
       <button id="vozBtn" style="flex:1; background:#f0f; color:#000;">🎤 Voz</button>
     </div>
@@ -56,7 +53,7 @@ export default async function ordenes(container, state) {
 
   // 🔁 Render items y sugerencias IA
   async function renderItems() {
-    itemsList.innerHTML = items.map((i, index) => `
+    itemsList.innerHTML = items.map((i,index) => `
       <div style="background:#111; padding:8px; margin:5px; border-radius:6px; display:flex; justify-content:space-between; color:#0ff;">
         <span>${i.nombre} (${i.tipo}) x${i.cantidad} - $${i.precio}</span>
         <button data-index="${index}" class="deleteItem" style="background:red; border:none; border-radius:4px; color:#fff;">❌</button>
@@ -65,18 +62,14 @@ export default async function ordenes(container, state) {
 
     document.querySelectorAll(".deleteItem").forEach(btn => {
       btn.onclick = () => {
-        const index = Number(btn.dataset.index);
-        items.splice(index, 1);
+        const idx = Number(btn.dataset.index);
+        items.splice(idx,1);
         renderItems();
       };
     });
 
-    // 🧠 Generar y renderizar sugerencias IA
     const sugerencias = await generarSugerencias({ ordenes: items, empresaId: state.empresaId });
     renderSugerencias("advisorOrdenes", sugerencias);
-
-    // 🔔 Actualizar dashboard en tiempo real
-    actualizarDashboard();
   }
 
   // ➕ Agregar item
@@ -87,36 +80,27 @@ export default async function ordenes(container, state) {
     const precio = Number(document.getElementById("precio").value) || 0;
     const costo = Number(document.getElementById("costo").value) || 0;
 
-    if (!nombre || cantidad <= 0) {
-      alert("Datos incompletos");
-      return;
-    }
-
-    items.push({ tipo, nombre, cantidad, precio, costo });
+    if(!nombre || cantidad<=0){ alert("Datos incompletos"); return; }
+    items.push({ tipo,nombre,cantidad,precio,costo });
     renderItems();
-
-    ["nombre","cantidad","precio","costo"].forEach(id => document.getElementById(id).value = "");
+    ["nombre","cantidad","precio","costo"].forEach(id=>document.getElementById(id).value="");
   };
 
   // 🚀 Crear orden manual
   document.getElementById("crearOrden").onclick = async () => {
     const clienteId = document.getElementById("cliente").value.trim();
     const vehiculoId = document.getElementById("vehiculo").value.trim();
+    if(!clienteId || !vehiculoId){ alert("Cliente y vehículo obligatorios"); return; }
+    if(!items.length){ alert("Debes agregar al menos un item"); return; }
 
-    if (!clienteId || !vehiculoId) { alert("Cliente y vehículo obligatorios"); return; }
-    if (!items.length) { alert("Debes agregar al menos un item"); return; }
-
-    let total = 0;
-    let costoTotal = 0;
+    let total=0, costoTotal=0;
 
     try {
-      for (let item of items) {
-        if (item.tipo === "inventario") await usarRepuesto({ repuestoId:item.nombre, cantidad:item.cantidad, ordenId:"temp" });
-        costoTotal += item.costo * item.cantidad;
-        total += item.precio * item.cantidad;
+      for(let item of items){
+        if(item.tipo==="inventario") await usarRepuesto({ repuestoId:item.nombre, cantidad:item.cantidad, ordenId:"temp" });
+        costoTotal += item.costo*item.cantidad;
+        total += item.precio*item.cantidad;
       }
-
-      const utilidad = total - costoTotal;
 
       const orden = {
         empresaId: state.empresaId,
@@ -125,92 +109,73 @@ export default async function ordenes(container, state) {
         items,
         total,
         costoTotal,
-        utilidad,
-        estado: "abierta",
+        utilidad: total-costoTotal,
+        estado:"abierta",
         creadoEn: new Date()
       };
 
-      await addDoc(collection(db,"ordenes"), orden);
+      await addDoc(collection(db,"ordenes"),orden);
       await aprenderDeOrden(orden);
 
       hablar("✅ Orden creada correctamente");
       alert("Orden creada con éxito");
-
-      items = [];
+      items=[];
       renderItems();
-    } catch(e) {
-      console.error(e);
-      hablar("❌ Error creando la orden");
-      alert("Error: "+e.message);
-    }
+
+    } catch(e){ console.error(e); hablar("❌ Error creando orden"); alert("Error: "+e.message); }
   };
 
   // 🤖 Crear orden con IA
   document.getElementById("crearConIA").onclick = async () => {
     const input = prompt("Describe la orden");
-    if (!input) return;
+    if(!input) return;
 
     try {
       const ordenIA = await generarOrdenIA(input);
-      if (!ordenIA) { alert("Error IA"); return; }
+      if(!ordenIA){ alert("Error IA"); return; }
 
-      document.getElementById("cliente").value = ordenIA.cliente?.clienteId || "";
-      document.getElementById("vehiculo").value = ordenIA.vehiculo?.placa || "";
+      document.getElementById("cliente").value = ordenIA.cliente?.clienteId||"";
+      document.getElementById("vehiculo").value = ordenIA.vehiculo?.placa||"";
 
-      items = (ordenIA.cotizacion || []).map(i => ({
-        tipo: "compra",
-        nombre: i.pieza,
-        cantidad: Number(i.cantidad) || 1,
-        precio: Number(i.preciounitario) || 0,
-        costo: (Number(i.preciounitario) || 0) * 0.7
+      items = (ordenIA.cotizacion||[]).map(i=>({
+        tipo:"compra",
+        nombre:i.pieza,
+        cantidad:Number(i.cantidad)||1,
+        precio:Number(i.preciounitario)||0,
+        costo:(Number(i.preciounitario)||0)*0.7
       }));
 
       renderItems();
       hablar("✅ Orden generada por IA");
-    } catch(e) {
-      console.error(e);
-      hablar("❌ Error en IA");
-    }
+
+    } catch(e){ console.error(e); hablar("❌ Error IA"); }
   };
 
   // 🎤 VOZ
   document.getElementById("vozBtn").onclick = () => {
-    iniciarVoz(async (texto) => {
+    iniciarVoz(async texto => {
       hablar("Procesando orden por voz");
-      try {
+      try{
         const ordenIA = await generarOrdenIA(texto);
-        if (!ordenIA) { hablar("No entendí la orden"); return; }
+        if(!ordenIA){ hablar("No entendí la orden"); return; }
 
-        document.getElementById("cliente").value = ordenIA.cliente?.clienteId || "";
-        document.getElementById("vehiculo").value = ordenIA.vehiculo?.placa || "";
+        document.getElementById("cliente").value = ordenIA.cliente?.clienteId||"";
+        document.getElementById("vehiculo").value = ordenIA.vehiculo?.placa||"";
 
-        items = (ordenIA.cotizacion || []).map(i => ({
-          tipo: "compra",
-          nombre: i.pieza,
-          cantidad: Number(i.cantidad) || 1,
-          precio: Number(i.preciounitario) || 0,
-          costo: (Number(i.preciounitario) || 0) * 0.7
+        items = (ordenIA.cotizacion||[]).map(i=>({
+          tipo:"compra",
+          nombre:i.pieza,
+          cantidad:Number(i.cantidad)||1,
+          precio:Number(i.preciounitario)||0,
+          costo:(Number(i.preciounitario)||0)*0.7
         }));
 
         renderItems();
         hablar("✅ Orden lista para revisión");
-      } catch(e) {
-        console.error(e);
-        hablar("❌ Error procesando voz");
-      }
+
+      } catch(e){ console.error(e); hablar("❌ Error procesando voz"); }
     });
   };
-
-  // 🔔 Función para actualizar dashboard
-  function actualizarDashboard() {
-    const totalIngresos = items.reduce((sum, i) => sum + (i.precio * i.cantidad), 0);
-    const totalCostos = items.reduce((sum, i) => sum + (i.costo * i.cantidad), 0);
-    const utilidad = totalIngresos - totalCostos;
-
-    window.__dashboardState = window.__dashboardState || {};
-    window.__dashboardState.ordenes = { ingresos: totalIngresos, costos: totalCostos, utilidad, total: items.length };
-    document.dispatchEvent(new Event("dashboardUpdate"));
-  }
 
   renderItems();
 }
