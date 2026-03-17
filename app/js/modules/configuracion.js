@@ -1,108 +1,84 @@
 /**
  * configuracion.js
- * Módulo de Configuración de Taller y Ayuda - TallerPRO360
- * SaaS Ready
+ * Configuración avanzada de Taller (Datos fiscales, contacto, branding)
+ * Nivel Tesla · Última generación
+ * TallerPRO360 ERP SaaS
  */
 
+import { collection, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
-import { generarManualPDF } from "../manual/manual.js";
-import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-export async function configuracion(container) {
-
+export default async function configuracionModule(container, state) {
   container.innerHTML = `
-    <h1 style="font-size:28px;margin-bottom:20px;">⚙ Configuración del Taller</h1>
+    <h1 style="color:#0ff; text-shadow:0 0 8px #0ff;">⚙️ Configuración del Taller</h1>
+    <div id="mensaje" style="margin-bottom:15px;"></div>
 
-    <div class="card">
-      <h3>Datos de la Empresa/Taller</h3>
-      <input id="tallerNombre" placeholder="Nombre del Taller" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-      <input id="tallerNIT" placeholder="NIT / ID Fiscal" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-      <input id="tallerDireccion" placeholder="Dirección" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-      <input id="tallerTelefono" placeholder="Teléfono" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-      <input id="tallerCorreo" placeholder="Correo Electrónico" style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-      <button id="guardarTaller" style="margin-top:10px;padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Guardar Configuración</button>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+      <input id="nombreTaller" placeholder="Nombre del taller" />
+      <input id="nit" placeholder="NIT / Documento fiscal" />
+      <input id="direccion" placeholder="Dirección" />
+      <input id="telefono" placeholder="Teléfono de contacto" />
+      <input id="email" placeholder="Correo oficial" type="email" />
+      <input id="website" placeholder="Sitio web" />
+      <input id="logoURL" placeholder="URL Logo" />
+      <textarea id="mensajePie" placeholder="Mensaje de pie de página (facturas/reporte)" style="grid-column:1 / span 2; height:60px;"></textarea>
     </div>
 
-    <div class="card">
-      <h3>Manual de Usuario</h3>
-      <button id="btnManual" style="padding:10px 20px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">📄 Descargar Manual PDF</button>
-    </div>
-
-    <div class="card">
-      <h3>Ayuda Rápida IA</h3>
-      <input id="inputPregunta" placeholder="Escribe tu consulta..." style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-      <div id="respuestasAyuda" style="margin-top:10px;max-height:150px;overflow-y:auto;background:#111827;color:white;padding:10px;border-radius:6px;"></div>
+    <div style="margin-top:15px;">
+      <button id="guardar" style="background:#0ff; color:#000; font-weight:bold; padding:10px 15px; border:none; border-radius:6px;">💾 Guardar Configuración</button>
     </div>
   `;
 
-  await cargarDatosTaller();
+  const mensajeDiv = document.getElementById("mensaje");
 
-  // Guardar configuración
-  document.getElementById("guardarTaller").onclick = guardarDatosTaller;
-
-  // Descargar manual
-  document.getElementById("btnManual").onclick = generarManualPDF;
-
-  // Ayuda rápida IA
-  const inputPregunta = document.getElementById("inputPregunta");
-  const respuestasContainer = document.getElementById("respuestasAyuda");
-
-  inputPregunta.addEventListener("keypress", function(e) {
-    if(e.key === "Enter") {
-      const pregunta = inputPregunta.value.trim();
-      if(!pregunta) return;
-      const respuesta = generarRespuestaFAQ(pregunta);
-      const div = document.createElement("div");
-      div.style.marginBottom = "8px";
-      div.innerHTML = `<b>Pregunta:</b> ${pregunta}<br><b>Respuesta:</b> ${respuesta}`;
-      respuestasContainer.prepend(div);
-      inputPregunta.value = "";
+  // 🔄 Cargar configuración
+  async function cargarConfiguracion() {
+    try {
+      const tallerRef = doc(db, "talleres", state.empresaId);
+      const snap = await getDoc(tallerRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        ["nombreTaller","nit","direccion","telefono","email","website","logoURL","mensajePie"].forEach(key => {
+          document.getElementById(key).value = data[key] || "";
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      mensajeDiv.innerHTML = `<p style="color:red;">❌ Error cargando configuración</p>`;
     }
-  });
-}
+  }
 
-// Guardar datos en Firestore
-async function guardarDatosTaller() {
-  const data = {
-    nombre: document.getElementById("tallerNombre").value.trim(),
-    nit: document.getElementById("tallerNIT").value.trim(),
-    direccion: document.getElementById("tallerDireccion").value.trim(),
-    telefono: document.getElementById("tallerTelefono").value.trim(),
-    correo: document.getElementById("tallerCorreo").value.trim(),
+  // 💾 Guardar configuración
+  document.getElementById("guardar").onclick = async () => {
+    try {
+      const tallerRef = doc(db, "talleres", state.empresaId);
+      const payload = {
+        nombreTaller: document.getElementById("nombreTaller").value.trim(),
+        nit: document.getElementById("nit").value.trim(),
+        direccion: document.getElementById("direccion").value.trim(),
+        telefono: document.getElementById("telefono").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        website: document.getElementById("website").value.trim(),
+        logoURL: document.getElementById("logoURL").value.trim(),
+        mensajePie: document.getElementById("mensajePie").value.trim(),
+        actualizadoEn: new Date()
+      };
+
+      // Crear documento si no existe
+      const snap = await getDoc(tallerRef);
+      if (snap.exists()) {
+        await updateDoc(tallerRef, payload);
+      } else {
+        await setDoc(tallerRef, payload);
+      }
+
+      mensajeDiv.innerHTML = `<p style="color:#0f0;">✅ Configuración guardada correctamente</p>`;
+    } catch (e) {
+      console.error(e);
+      mensajeDiv.innerHTML = `<p style="color:red;">❌ Error guardando configuración</p>`;
+    }
   };
 
-  try {
-    await setDoc(doc(db,"configuracion","empresa"), data);
-    alert("✅ Configuración guardada correctamente");
-  } catch(e) {
-    console.error("❌ Error guardando configuración:", e);
-    alert("❌ Error al guardar la configuración");
-  }
-}
-
-// Cargar datos desde Firestore
-async function cargarDatosTaller() {
-  try {
-    const docSnap = await getDoc(doc(db,"configuracion","empresa"));
-    if(docSnap.exists()) {
-      const data = docSnap.data();
-      document.getElementById("tallerNombre").value = data.nombre || "";
-      document.getElementById("tallerNIT").value = data.nit || "";
-      document.getElementById("tallerDireccion").value = data.direccion || "";
-      document.getElementById("tallerTelefono").value = data.telefono || "";
-      document.getElementById("tallerCorreo").value = data.correo || "";
-    }
-  } catch(e) {
-    console.error("❌ Error cargando configuración:", e);
-  }
-}
-
-// Respuestas rápidas FAQ IA
-function generarRespuestaFAQ(pregunta) {
-  pregunta = pregunta.toLowerCase();
-  if(pregunta.includes("cliente")) return "Para agregar un cliente, ve al módulo Clientes y presiona 'Guardar Cliente'.";
-  if(pregunta.includes("orden")) return "Para crear una orden, completa los datos, agrega productos y presiona 'Guardar Orden'.";
-  if(pregunta.includes("inventario")) return "Agrega nuevos productos en Inventario, definiendo costo, margen y stock inicial.";
-  if(pregunta.includes("factura")) return "Cada orden genera automáticamente una factura PDF al guardarla.";
-  return "Lo sentimos, aún no tenemos información para esa consulta. Intenta otra pregunta.";
+  // INIT
+  cargarConfiguracion();
 }
