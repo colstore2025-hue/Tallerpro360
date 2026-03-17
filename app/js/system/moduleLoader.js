@@ -1,10 +1,13 @@
 /**
  * moduleLoader.js
  * Cargador central del ERP TallerPRO360
- * Versión PRO estable
+ * Versión PRO estable (Optimizada)
  */
 
 import dashboard from "../modules/dashboard.js";
+
+// 🔊 (Preparado para voz - no rompe si no existe)
+let voiceInitialized = false;
 
 // Módulos principales del ERP
 const modules = {
@@ -66,7 +69,7 @@ export async function loadModule(moduleName, container) {
 
     container.innerHTML = "";
 
-    // 🔥 SOPORTE async/await
+    // 🔥 Ejecuta módulo (soporta async)
     await module.default(container, state);
 
     state.currentModule = moduleName;
@@ -114,10 +117,13 @@ export function initApp() {
 
   // Navegación global
   window.navigate = async (moduleName) => {
+    if (state.cargando) return;
+
     try {
       if (moduleName === "dashboard") {
         showLoader(view);
         await dashboard(view, state);
+        state.currentModule = "dashboard";
       } else {
         await loadModule(moduleName, view);
       }
@@ -126,31 +132,46 @@ export function initApp() {
     }
   };
 
-  // Cargar dashboard inicial
+  // 🚀 Inicial
   window.navigate("dashboard");
 
-  // Inicializar IA en background
+  // 🤖 IA
   initAI();
+
+  // 🎤 VOZ (no bloqueante)
+  initVoice();
 }
 
 // Inicializar IA (sin bloquear UI)
 async function initAI() {
   try {
     const ai = await modules.aiAssistant();
-
-    if (ai?.init) {
-      ai.init();
-    }
+    if (ai?.init) ai.init();
 
     const advisor = await modules.aiAdvisor();
-
-    if (advisor?.init) {
-      advisor.init();
-    }
+    if (advisor?.init) advisor.init();
 
     console.log("🤖 IA inicializada correctamente");
 
   } catch (e) {
     console.warn("⚠️ IA no disponible:", e.message);
+  }
+}
+
+// 🎤 Inicializar voz (opcional y seguro)
+async function initVoice() {
+  if (voiceInitialized) return;
+
+  try {
+    const voice = await import("../voice/voiceAssistantWorkshop.js");
+
+    if (voice?.init) {
+      voice.init();
+      voiceInitialized = true;
+      console.log("🎤 Voz activada");
+    }
+
+  } catch (e) {
+    console.warn("⚠️ Voz no disponible:", e.message);
   }
 }
