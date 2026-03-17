@@ -1,6 +1,7 @@
 /**
- * 🧾 ÓRDENES ERP PRO360
+ * 🧾 ÓRDENES ERP PRO360 - Última Generación
  * Integración completa: IA, Voz, Firestore, Dashboard interactivo
+ * Autor: PRO360 / Nexus-Starlink SAS
  */
 
 import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -70,8 +71,12 @@ export default async function ordenes(container, state) {
       };
     });
 
+    // 🧠 Generar y renderizar sugerencias IA
     const sugerencias = await generarSugerencias({ ordenes: items, empresaId: state.empresaId });
     renderSugerencias("advisorOrdenes", sugerencias);
+
+    // 🔔 Actualizar dashboard en tiempo real
+    actualizarDashboard();
   }
 
   // ➕ Agregar item
@@ -195,6 +200,17 @@ export default async function ordenes(container, state) {
       }
     });
   };
+
+  // 🔔 Función para actualizar dashboard
+  function actualizarDashboard() {
+    const totalIngresos = items.reduce((sum, i) => sum + (i.precio * i.cantidad), 0);
+    const totalCostos = items.reduce((sum, i) => sum + (i.costo * i.cantidad), 0);
+    const utilidad = totalIngresos - totalCostos;
+
+    window.__dashboardState = window.__dashboardState || {};
+    window.__dashboardState.ordenes = { ingresos: totalIngresos, costos: totalCostos, utilidad, total: items.length };
+    document.dispatchEvent(new Event("dashboardUpdate"));
+  }
 
   renderItems();
 }
