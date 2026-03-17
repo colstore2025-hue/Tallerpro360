@@ -1,146 +1,163 @@
-/*
-================================================
-FINANZAS.JS - Dashboard Financiero Avanzado
-Módulo de KPIs y gráficas inteligentes
-Ubicación: /app/js/modules/finanzas.js
-================================================
-*/
+/**
+ * finanzas.js
+ * Finanzas Inteligentes + Dashboard + IA Predictiva
+ * TallerPRO360 ERP SaaS
+ */
 
 import {
   collection,
   getDocs,
   query,
-  where
+  where,
+  orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-export default async function (container, state) {
+import { analizarNegocio } from "../ai/aiManager.js";
+import { renderSugerencias, generarSugerencias } from "../ai/aiAdvisor.js";
+import { hablar } from "../voice/voiceCore.js";
+
+export default async function finanzasModule(container, state) {
 
   container.innerHTML = `
-    <h1 style="font-size:28px;margin-bottom:20px;">💰 Finanzas del Taller</h1>
+    <h1 style="color:#0ff; text-shadow:0 0 10px #0ff;">💰 Finanzas PRO360</h1>
 
-    <div id="kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:20px;"></div>
-
-    <canvas id="graficoIngresos" height="100"></canvas>
+    <div id="resumen" style="display:flex; flex-wrap:wrap; gap:20px; margin-top:20px;"></div>
+    <canvas id="graficaFlujo" style="margin-top:30px; background:#111827; border-radius:12px; padding:15px;"></canvas>
+    <div id="advisorFinanzas" style="margin-top:20px;"></div>
   `;
 
-  const kpis = document.getElementById("kpis");
-  let chartInstance = null;
+  const resumenDiv = document.getElementById("resumen");
 
-  async function cargarFinanzas() {
-    try {
-
-      // 🔐 FILTRO SaaS por empresa
-      const q = query(
+  try {
+    // 🔁 Consultar órdenes e ingresos
+    const ordenesSnap = await getDocs(
+      query(
         collection(window.db, "ordenes"),
-        where("empresaId", "==", state.empresaId)
-      );
+        where("empresaId", "==", state.empresaId),
+        orderBy("creadoEn", "asc")
+      )
+    );
 
-      const snap = await getDocs(q);
+    // 🔁 Consultar gastos contables
+    const gastosSnap = await getDocs(
+      query(
+        collection(window.db, "contabilidad"),
+        where("empresaId", "==", state.empresaId),
+        orderBy("fecha", "asc")
+      )
+    );
 
-      let totalIngresos = 0;
-      let totalCostos = 0;
-      let totalUtilidad = 0;
-      let ordenesCompletadas = 0;
+    let ingresos = 0, costos = 0, utilidad = 0;
+    let flujoPorDia = {};
 
-      const ingresosPorDia = {};
+    ordenesSnap.forEach(doc => {
+      const o = doc.data();
+      const total = Number(o.total || 0);
+      const costo = Number(o.costoTotal || 0);
+      ingresos += total;
+      costos += costo;
+      utilidad += total - costo;
 
-      snap.forEach(doc => {
-        const o = doc.data() || {};
+      const fecha = o.creadoEn?.toDate?.()?.toISOString()?.split("T")[0] || "sin_fecha";
+      flujoPorDia[fecha] = (flujoPorDia[fecha] || 0) + (total - costo);
+    });
 
-        const total = Number(o.total || o.valorTrabajo || 0);
-        const costo = Number(o.costoTotal || o.diagnosticoIA?.costoestimado || 0);
+    gastosSnap.forEach(doc => {
+      const g = doc.data();
+      if(g.tipo === "gasto"){
+        costos += Number(g.monto || 0);
+        utilidad -= Number(g.monto || 0);
 
-        totalIngresos += total;
-        totalCostos += costo;
+        const fecha = g.fecha?.toDate?.()?.toISOString()?.split("T")[0] || "sin_fecha";
+        flujoPorDia[fecha] = (flujoPorDia[fecha] || 0) - Number(g.monto || 0);
+      }
+    });
 
-        if (o.estado === "finalizada") {
-          ordenesCompletadas++;
-        }
+    // ==========================
+    // 🎯 KPI FINANCIEROS
+    // ==========================
+    resumenDiv.innerHTML = `
+      ${crearKPI("💰 Ingresos", ingresos, "#00ff99")}
+      ${crearKPI("📉 Costos", costos, "#ff0044")}
+      ${crearKPI("📈 Utilidad", utilidad, "#00ffff")}
+    `;
 
-        // 📅 Fecha segura
-        let fecha = "sin_fecha";
-        if (o.creadoEn?.toDate) {
-          fecha = o.creadoEn.toDate().toISOString().split("T")[0];
-        }
-        ingresosPorDia[fecha] = (ingresosPorDia[fecha] || 0) + total;
-      });
+    // ==========================
+    // 📈 GRÁFICA FLUJO DE CAJA
+    // ==========================
+    renderGrafica(flujoPorDia);
 
-      totalUtilidad = totalIngresos - totalCostos;
-
-      // 📊 KPIs
-      kpis.innerHTML = `
-        ${crearKPI("💵 Ingresos", totalIngresos)}
-        ${crearKPI("💸 Costos", totalCostos)}
-        ${crearKPI("📈 Utilidad", totalUtilidad)}
-        ${crearKPI("🧾 Órdenes finalizadas", ordenesCompletadas)}
-      `;
-
-      renderGrafica(ingresosPorDia);
-
-    } catch (e) {
-      console.error(e);
-      container.innerHTML = "❌ Error cargando finanzas";
+    // ==========================
+    // 🧠 PANEL IA FINANZAS
+    // ==========================
+    const iaData = await analizarNegocio(state);
+    if(iaData){
+      const sugerencias = await generarSugerencias({ finanzas: iaData });
+      renderSugerencias("advisorFinanzas", sugerencias);
+      hablar("💡 Recomendaciones financieras generadas por IA");
     }
+
+  } catch(e){
+    console.error("❌ Error cargando finanzas", e);
+    container.innerHTML = `<h2 style="color:red">Error cargando finanzas</h2><p>${e.message}</p>`;
   }
 
-  // 🎯 KPI CARD
-  function crearKPI(titulo, valor) {
+  // ==========================
+  // FUNCIONES AUXILIARES
+  // ==========================
+  function crearKPI(titulo, valor, color="#0ff"){
     return `
       <div style="
         background:#111827;
-        padding:20px;
+        border-left:6px solid ${color};
         border-radius:12px;
+        padding:20px;
         text-align:center;
-        box-shadow:0 0 10px rgba(0,255,153,0.3);
+        box-shadow:0 0 15px ${color}50;
       ">
-        <h3>${titulo}</h3>
-        <p style="font-size:20px;">$${formatear(valor)}</p>
+        <h3 style="font-size:20px;">${titulo}</h3>
+        <p style="font-size:28px; font-weight:bold; color:${color};">$${formatear(valor)}</p>
       </div>
     `;
   }
 
-  // 📈 GRÁFICA DE INGRESOS
-  function renderGrafica(data) {
+  function renderGrafica(data){
+    const ctx = document.getElementById("graficaFlujo");
+    if(!ctx || typeof Chart === "undefined") return;
 
-    const ctx = document.getElementById("graficoIngresos");
-    if (!ctx) return;
+    const labels = Object.keys(data);
+    const valores = Object.values(data);
 
-    // 🔥 Destruir gráfico anterior
-    if (chartInstance) chartInstance.destroy();
-
-    chartInstance = new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: Object.keys(data),
-        datasets: [{
-          label: "Ingresos por día",
-          data: Object.values(data),
-          borderColor: "#16a34a",
-          backgroundColor: "rgba(22,163,74,0.2)",
-          borderWidth: 2,
-          tension: 0.3,
-          fill: true
+    new Chart(ctx, {
+      type:'line',
+      data:{
+        labels,
+        datasets:[{
+          label:"Flujo de caja",
+          data: valores,
+          borderColor:"#00ffcc",
+          backgroundColor:"rgba(0,255,204,0.2)",
+          borderWidth:3,
+          tension:0.4,
+          pointBackgroundColor:"#00ff99",
+          pointRadius:6
         }]
       },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: true },
-          tooltip: { mode: 'index', intersect: false }
+      options:{
+        responsive:true,
+        plugins:{
+          legend:{ labels:{ color:"#00ffcc", font:{ size:14 } } },
+          tooltip:{ mode:'index', intersect:false }
         },
-        scales: {
-          x: { title: { display: true, text: "Fecha" } },
-          y: { title: { display: true, text: "Ingresos ($)" }, beginAtZero: true }
+        scales:{
+          x:{ ticks:{ color:"#00ffcc" }, grid:{ color:"#111" } },
+          y:{ ticks:{ color:"#00ffcc" }, grid:{ color:"#111" } }
         }
       }
     });
   }
 
-  // 💰 FORMATEAR DINERO
-  function formatear(valor) {
-    return new Intl.NumberFormat("es-CO").format(valor || 0);
+  function formatear(valor){
+    return new Intl.NumberFormat("es-CO").format(valor||0);
   }
-
-  // INIT
-  cargarFinanzas();
 }
