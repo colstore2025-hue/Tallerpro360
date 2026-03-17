@@ -1,6 +1,8 @@
 import {
   collection,
-  getDocs
+  getDocs,
+  query,
+  where
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export default async function (container, state) {
@@ -15,64 +17,114 @@ export default async function (container, state) {
 
   const kpis = document.getElementById("kpis");
 
+  let chartInstance = null;
+
   async function cargarFinanzas() {
+    try {
 
-    const snap = await getDocs(collection(window.db, "ordenes"));
+      // 🔐 FILTRO SaaS
+      const q = query(
+        collection(window.db, "ordenes"),
+        where("empresaId", "==", state.empresaId)
+      );
 
-    let totalIngresos = 0;
-    let totalCostos = 0;
-    let totalUtilidad = 0;
-    let ordenesCompletadas = 0;
+      const snap = await getDocs(q);
 
-    const ingresosPorDia = {};
+      let totalIngresos = 0;
+      let totalCostos = 0;
+      let totalUtilidad = 0;
+      let ordenesCompletadas = 0;
 
-    snap.forEach(doc => {
-      const o = doc.data();
+      const ingresosPorDia = {};
 
-      const valor = Number(o.valorTrabajo || 0);
-      const costo = Number(o.diagnosticoIA?.costoestimado || 0);
+      snap.forEach(doc => {
+        const o = doc.data() || {};
 
-      totalIngresos += valor;
-      totalCostos += costo;
+        // 🔥 CAMPOS NORMALIZADOS (compatible con todo tu sistema)
+        const total = Number(o.total || o.valorTrabajo || 0);
+        const costo = Number(o.costoTotal || o.diagnosticoIA?.costoestimado || 0);
 
-      if (o.estado === "finalizada") {
-        ordenesCompletadas++;
-      }
+        totalIngresos += total;
+        totalCostos += costo;
 
-      // Agrupar por fecha
-      if (o.creadoEn) {
-        const fecha = new Date(o.creadoEn.seconds * 1000)
-          .toISOString()
-          .split("T")[0];
+        if (o.estado === "finalizada") {
+          ordenesCompletadas++;
+        }
 
-        ingresosPorDia[fecha] = (ingresosPorDia[fecha] || 0) + valor;
-      }
-    });
+        // 📅 MANEJO SEGURO DE FECHA
+        let fecha = "sin_fecha";
 
-    totalUtilidad = totalIngresos - totalCostos;
+        if (o.creadoEn?.toDate) {
+          fecha = o.creadoEn.toDate().toISOString().split("T")[0];
+        }
 
-    // KPIs
-    kpis.innerHTML = `
-      <div class="card">💵 Ingresos: $${totalIngresos}</div>
-      <div class="card">💸 Costos: $${totalCostos}</div>
-      <div class="card">📈 Utilidad: $${totalUtilidad}</div>
-      <div class="card">🧾 Órdenes finalizadas: ${ordenesCompletadas}</div>
+        ingresosPorDia[fecha] = (ingresosPorDia[fecha] || 0) + total;
+      });
+
+      totalUtilidad = totalIngresos - totalCostos;
+
+      // 📊 KPIs
+      kpis.innerHTML = `
+        ${crearKPI("💵 Ingresos", totalIngresos)}
+        ${crearKPI("💸 Costos", totalCostos)}
+        ${crearKPI("📈 Utilidad", totalUtilidad)}
+        ${crearKPI("🧾 Órdenes finalizadas", ordenesCompletadas)}
+      `;
+
+      renderGrafica(ingresosPorDia);
+
+    } catch (e) {
+      console.error(e);
+      container.innerHTML = "❌ Error cargando finanzas";
+    }
+  }
+
+  // 🎯 KPI CARD
+  function crearKPI(titulo, valor) {
+    return `
+      <div style="
+        background:#111827;
+        padding:20px;
+        border-radius:12px;
+        text-align:center;
+        box-shadow:0 0 10px rgba(0,255,153,0.3);
+      ">
+        <h3>${titulo}</h3>
+        <p style="font-size:20px;">$${formatear(valor)}</p>
+      </div>
     `;
+  }
 
-    // Gráfico
+  // 📈 GRÁFICA
+  function renderGrafica(data) {
+
     const ctx = document.getElementById("graficoIngresos");
 
-    new Chart(ctx, {
+    if (!ctx) return;
+
+    // 🔥 destruir gráfico anterior (importante)
+    if (chartInstance) {
+      chartInstance.destroy();
+    }
+
+    chartInstance = new Chart(ctx, {
       type: "line",
       data: {
-        labels: Object.keys(ingresosPorDia),
+        labels: Object.keys(data),
         datasets: [{
           label: "Ingresos por día",
-          data: Object.values(ingresosPorDia)
+          data: Object.values(data),
+          borderWidth: 2
         }]
       }
     });
   }
 
+  // 💰 FORMATEAR DINERO
+  function formatear(valor) {
+    return new Intl.NumberFormat("es-CO").format(valor || 0);
+  }
+
+  // INIT
   cargarFinanzas();
 }
