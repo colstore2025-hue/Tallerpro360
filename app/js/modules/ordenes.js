@@ -55,6 +55,12 @@ export default async function (container, state) {
       </div>
     `).join("");
 
+const sugerencias = await generarSugerencias({
+  ordenes: items
+});
+
+renderSugerencias("advisorOrdenes", sugerencias);
+
     // eliminar eventos globales (mejor práctica)
     document.querySelectorAll(".deleteItem").forEach(btn => {
       btn.onclick = () => {
