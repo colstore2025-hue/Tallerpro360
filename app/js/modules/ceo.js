@@ -11,7 +11,7 @@ import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/
 export async function ceo(container) {
 
   container.innerHTML = `
-    <h1 class="text-2xl font-bold mb-6">👔 Panel CEO</h1>
+    <h1 class="text-2xl font-bold mb-6">👔 Panel CEO - TallerPRO360</h1>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
@@ -73,7 +73,9 @@ async function cargarDatosCEO(){
     const alertasDiv = document.getElementById("ceoAlertas");
     if(window.SuperAI && typeof window.SuperAI.analyzeCEO === "function"){
       const alertas = await window.SuperAI.analyzeCEO({empresas,suscripciones,planes,ingresos});
-      alertasDiv.innerHTML = alertas.map(a=>`<p>⚠️ ${a}</p>`).join("");
+      alertasDiv.innerHTML = alertas.length > 0 
+        ? alertas.map(a=>`<p>⚠️ ${a}</p>`).join("") 
+        : "<p>✅ Sin alertas importantes</p>";
     } else {
       alertasDiv.innerHTML = "<p>IA de alertas no disponible</p>";
     }
