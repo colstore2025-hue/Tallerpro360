@@ -7,6 +7,7 @@ import {
   doc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+import { usarRepuesto } from "../services/inventarioService.js";
 export default async function (container, state) {
 
   container.innerHTML = `
