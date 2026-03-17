@@ -1,8 +1,7 @@
 /**
  * reportes.js
- * Dashboard de reportes financieros y operativos
- * Exportación PDF/Excel + IA + KPI interactivos
- * TallerPRO360 ERP SaaS · Nivel Tesla
+ * Dashboard de reportes PRO360 · Nivel Tesla
+ * KPI dinámicos + IA + Alertas + Export PDF/Excel + Gráficos
  */
 
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -10,22 +9,29 @@ import { db } from "../core/firebase-config.js";
 import { analizarNegocio } from "../ai/aiManager.js";
 import { saveAs } from "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js";
 import XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js";
+import Chart from "https://cdn.jsdelivr.net/npm/chart.js";
 
 export default async function reportesModule(container, state) {
   container.innerHTML = `
-    <h1 style="color:#0ff; text-shadow:0 0 10px #0ff;">📊 Reportes PRO360</h1>
+    <h1 style="color:#0ff; text-shadow:0 0 12px #0ff;">📊 Reportes PRO360 · Nivel Tesla</h1>
     <div id="kpis" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; margin-top:20px;"></div>
-    <div style="margin-top:30px;">
+    <canvas id="chartIngresos" style="margin-top:30px; background:#111827; border-radius:10px; padding:10px;"></canvas>
+    <div style="margin-top:20px;">
       <button id="exportPDF" style="margin-right:10px;">📄 Exportar PDF</button>
       <button id="exportExcel">📊 Exportar Excel</button>
     </div>
     <div id="reportesTabla" style="margin-top:20px;"></div>
+    <div id="panelIA" style="margin-top:20px;"></div>
   `;
 
   const kpiDiv = document.getElementById("kpis");
   const tablaDiv = document.getElementById("reportesTabla");
+  const panelIA = document.getElementById("panelIA");
+  const chartCtx = document.getElementById("chartIngresos").getContext("2d");
 
-  // 🔄 Cargar datos
+  let chartInstance;
+
+  // 🔄 Cargar y procesar datos
   async function cargarDatos() {
     try {
       const ordenesSnap = await getDocs(
@@ -34,6 +40,7 @@ export default async function reportesModule(container, state) {
 
       let ingresos = 0, costos = 0, utilidad = 0, totalOrdenes = 0;
       let dataTabla = [];
+      let ingresosMes = {}; // Para gráfico mensual
 
       ordenesSnap.forEach(doc => {
         const o = doc.data();
@@ -43,15 +50,20 @@ export default async function reportesModule(container, state) {
         costos += c;
         utilidad += t - c;
         totalOrdenes++;
+
+        const fecha = o.creadoEn?.toDate?.() || new Date();
+        const mes = `${fecha.getFullYear()}-${(fecha.getMonth()+1).toString().padStart(2,'0')}`;
+        ingresosMes[mes] = (ingresosMes[mes] || 0) + t;
+
         dataTabla.push({
           orden: doc.id,
-          clienteId: o.clienteId,
-          vehiculoId: o.vehiculoId,
+          cliente: o.clienteId,
+          vehiculo: o.vehiculoId,
           total: t,
           costo: c,
           utilidad: t - c,
           estado: o.estado,
-          fecha: o.creadoEn?.toDate?.()?.toISOString() || ""
+          fecha: fecha.toISOString().split('T')[0]
         });
       });
 
@@ -63,23 +75,52 @@ export default async function reportesModule(container, state) {
         ${crearKPI("🧾 Órdenes", totalOrdenes, "#ffcc00")}
       `;
 
-      // 📄 Tabla detallada
+      // 📈 Gráfico de ingresos por mes
+      const meses = Object.keys(ingresosMes).sort();
+      const valores = meses.map(m => ingresosMes[m]);
+      if(chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(chartCtx, {
+        type: 'line',
+        data: {
+          labels: meses,
+          datasets: [{
+            label: 'Ingresos por mes',
+            data: valores,
+            borderColor: '#0ff',
+            backgroundColor: '#0ff33',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: { color:'#fff' } }
+          },
+          scales: {
+            x: { ticks: { color:'#0ff' }, grid:{ color:'#222' } },
+            y: { ticks: { color:'#0ff' }, grid:{ color:'#222' } }
+          }
+        }
+      });
+
       renderTabla(dataTabla);
 
       // 🧠 Panel IA
-      const iaData = await analizarNegocio(state);
-      if (iaData) renderIA(iaData);
+      const iaData = await analizarNegocio(state, dataTabla);
+      if(iaData) renderIA(iaData);
 
-      // Botones export
+      // Export buttons
       document.getElementById("exportExcel").onclick = () => exportExcel(dataTabla);
       document.getElementById("exportPDF").onclick = () => exportPDF(dataTabla);
 
-    } catch (e) {
+    } catch(e) {
       console.error(e);
       tablaDiv.innerHTML = "❌ Error cargando reportes";
     }
   }
 
+  // 📊 KPI Card
   function crearKPI(titulo, valor, color="#0ff") {
     return `
       <div style="
@@ -96,6 +137,7 @@ export default async function reportesModule(container, state) {
     `;
   }
 
+  // 📋 Tabla detallada
   function renderTabla(data) {
     tablaDiv.innerHTML = `
       <table style="width:100%; border-collapse:collapse; color:#0ff;">
@@ -115,8 +157,8 @@ export default async function reportesModule(container, state) {
           ${data.map(d => `
             <tr>
               <td style="border:1px solid #0f172a; padding:4px;">${d.orden}</td>
-              <td style="border:1px solid #0f172a; padding:4px;">${d.clienteId}</td>
-              <td style="border:1px solid #0f172a; padding:4px;">${d.vehiculoId}</td>
+              <td style="border:1px solid #0f172a; padding:4px;">${d.cliente}</td>
+              <td style="border:1px solid #0f172a; padding:4px;">${d.vehiculo}</td>
               <td style="border:1px solid #0f172a; padding:4px;">$${formatear(d.total)}</td>
               <td style="border:1px solid #0f172a; padding:4px;">$${formatear(d.costo)}</td>
               <td style="border:1px solid #0f172a; padding:4px;">$${formatear(d.utilidad)}</td>
@@ -146,11 +188,13 @@ export default async function reportesModule(container, state) {
     const { jsPDF } = await import("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
     const doc = new jsPDF.jsPDF();
     doc.setFontSize(12);
+    doc.setTextColor(15, 255, 255);
     doc.text("Reporte PRO360", 10, 10);
 
     data.forEach((d, i) => {
       const y = 20 + i * 8;
-      doc.text(`Orden: ${d.orden} | Cliente: ${d.clienteId} | Total: $${formatear(d.total)} | Estado: ${d.estado}`, 10, y);
+      if(y > 280){ doc.addPage(); y=20; }
+      doc.text(`Orden: ${d.orden} | Cliente: ${d.cliente} | Total: $${formatear(d.total)} | Estado: ${d.estado}`, 10, y);
     });
 
     doc.save("Reporte_PRO360.pdf");
@@ -160,24 +204,18 @@ export default async function reportesModule(container, state) {
   // PANEL IA
   // ==========================
   function renderIA(data) {
-    const panel = document.createElement("div");
-    panel.style.background = "#0f172a";
-    panel.style.padding = "15px";
-    panel.style.borderRadius = "10px";
-    panel.style.marginTop = "20px";
-    panel.style.boxShadow = "0 0 15px #00ffcc";
-
-    panel.innerHTML = `
-      <h2 style="color:#0ff;">🧠 IA Recomendaciones</h2>
-      <p>Ingresos estimados: $${formatear(data.resumen.ingresos)}</p>
-      <p>Costos estimados: $${formatear(data.resumen.costos)}</p>
-      <p>Utilidad: $${formatear(data.resumen.utilidad)}</p>
-      <h3 style="color:#00ff99;">⚠️ Alertas</h3>
-      ${data.alertas.map(a => `<p style="color:#ff4444;">${a}</p>`).join("")}
-      <h3 style="color:#00ffff;">🚀 Recomendaciones</h3>
-      ${data.recomendaciones.map(r => `<p style="color:#00ffcc;">${r}</p>`).join("")}
+    panelIA.innerHTML = `
+      <div style="background:#0f172a; padding:15px; border-radius:10px; box-shadow:0 0 20px #0ff;">
+        <h2 style="color:#0ff;">🧠 IA Recomendaciones</h2>
+        <p>Ingresos estimados: $${formatear(data.resumen.ingresos)}</p>
+        <p>Costos estimados: $${formatear(data.resumen.costos)}</p>
+        <p>Utilidad: $${formatear(data.resumen.utilidad)}</p>
+        <h3 style="color:#00ff99;">⚠️ Alertas</h3>
+        ${data.alertas.map(a => `<p style="color:#ff4444;">${a}</p>`).join("")}
+        <h3 style="color:#00ffff;">🚀 Recomendaciones</h3>
+        ${data.recomendaciones.map(r => `<p style="color:#00ffcc;">${r}</p>`).join("")}
+      </div>
     `;
-    container.appendChild(panel);
   }
 
   function formatear(valor) {
