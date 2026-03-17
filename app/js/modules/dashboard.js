@@ -11,9 +11,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "../core/firebase-config.js";
-
 import { analizarNegocio, hablarResumen } from "../ai/aiManager.js";
-
 
 export default async function dashboard(container, state) {
 
@@ -116,7 +114,6 @@ export default async function dashboard(container, state) {
 
 }
 
-
 /* ===============================
 🎯 KPI CARD
 =============================== */
@@ -137,7 +134,6 @@ function crearKPI(titulo, valor) {
   `;
 
 }
-
 
 /* ===============================
 📈 GRÁFICA INGRESOS
@@ -164,13 +160,25 @@ function renderGrafica(data) {
       datasets: [{
         label: "Ingresos por día",
         data: valores,
-        borderWidth: 2
+        borderWidth: 2,
+        borderColor: "#00ff99",
+        backgroundColor: "rgba(0,255,153,0.2)",
+        tension: 0.3
       }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        y: { beginAtZero: true }
+      }
     }
   });
 
 }
-
 
 /* ===============================
 🧠 PANEL IA
@@ -219,7 +227,6 @@ function renderIA(data) {
   };
 
 }
-
 
 /* ===============================
 💰 FORMATEAR DINERO
