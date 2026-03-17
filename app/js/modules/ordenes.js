@@ -48,25 +48,28 @@ export default async function (container, state) {
     itemsList.innerHTML = items.map((i, index) => `
       <div style="background:#111;padding:10px;margin:5px;border-radius:8px;">
         ${i.nombre} (${i.tipo}) x${i.cantidad} - $${i.precio}
-        <button onclick="window.eliminarItem(${index})">❌</button>
+        <button data-index="${index}" class="deleteItem">❌</button>
       </div>
     `).join("");
-  }
 
-  // 🗑️ eliminar item
-  window.eliminarItem = (index) => {
-    items.splice(index, 1);
-    renderItems();
-  };
+    // eliminar eventos globales (mejor práctica)
+    document.querySelectorAll(".deleteItem").forEach(btn => {
+      btn.onclick = () => {
+        const index = Number(btn.dataset.index);
+        items.splice(index, 1);
+        renderItems();
+      };
+    });
+  }
 
   // ➕ Agregar item
   document.getElementById("addItem").onclick = () => {
 
     const tipo = document.getElementById("tipo").value;
     const nombre = document.getElementById("nombre").value.trim();
-    const cantidad = Number(document.getElementById("cantidad").value);
-    const precio = Number(document.getElementById("precio").value);
-    const costo = Number(document.getElementById("costo").value);
+    const cantidad = Number(document.getElementById("cantidad").value) || 0;
+    const precio = Number(document.getElementById("precio").value) || 0;
+    const costo = Number(document.getElementById("costo").value) || 0;
 
     if (!nombre || cantidad <= 0) {
       alert("Datos incompletos");
@@ -78,10 +81,9 @@ export default async function (container, state) {
     renderItems();
 
     // limpiar inputs
-    document.getElementById("nombre").value = "";
-    document.getElementById("cantidad").value = "";
-    document.getElementById("precio").value = "";
-    document.getElementById("costo").value = "";
+    ["nombre", "cantidad", "precio", "costo"].forEach(id => {
+      document.getElementById(id).value = "";
+    });
   };
 
   // 🚀 Crear orden manual
@@ -95,6 +97,11 @@ export default async function (container, state) {
       return;
     }
 
+    if (items.length === 0) {
+      alert("Debes agregar al menos un item");
+      return;
+    }
+
     let total = 0;
     let costoTotal = 0;
 
@@ -102,28 +109,33 @@ export default async function (container, state) {
 
       for (let item of items) {
 
+        const cantidad = Number(item.cantidad) || 0;
+        const precio = Number(item.precio) || 0;
+        const costo = Number(item.costo) || 0;
+
         if (item.tipo === "inventario") {
           await usarRepuesto({
             repuestoId: item.nombre,
-            cantidad: item.cantidad,
+            cantidad,
             ordenId: "temp"
           });
 
-          costoTotal += item.costo * item.cantidad;
+          costoTotal += costo * cantidad;
         }
 
         if (item.tipo === "compra") {
-          costoTotal += item.costo * item.cantidad;
+          costoTotal += costo * cantidad;
         }
 
         // cliente trae → no suma costo
 
-        total += item.precio * item.cantidad;
+        total += precio * cantidad;
       }
 
       const utilidad = total - costoTotal;
 
       const orden = {
+        empresaId: state.empresaId,
         clienteId,
         vehiculoId,
         items,
@@ -134,23 +146,12 @@ export default async function (container, state) {
         creadoEn: new Date()
       };
 
-      await addDoc(collection(window.db, "ordenes"), {
-  empresaId: state.empresaId,
-  clienteId,
-  vehiculoId,
-  items,
-  total,
-  costoTotal,
-  utilidad,
-  estado: "abierta",
-  creadoEn: new Date()
-});
+      await addDoc(collection(window.db, "ordenes"), orden);
 
       // 🧠 IA aprende
       await aprenderDeOrden(orden);
 
       hablar("Orden creada correctamente");
-
       alert("✅ Orden creada");
 
       items = [];
@@ -170,59 +171,69 @@ export default async function (container, state) {
 
     if (!input) return;
 
-    const ordenIA = await generarOrdenIA(input);
-
-    if (!ordenIA) {
-      alert("Error IA");
-      return;
-    }
-
-    // precargar datos
-    document.getElementById("cliente").value = ordenIA.cliente?.clienteId || "";
-    document.getElementById("vehiculo").value = ordenIA.vehiculo?.placa || "";
-
-    items = ordenIA.cotizacion?.map(i => ({
-      tipo: "compra",
-      nombre: i.pieza,
-      cantidad: i.cantidad,
-      precio: i.preciounitario,
-      costo: i.preciounitario * 0.7 // estimado
-    })) || [];
-
-    renderItems();
-
-    hablar("Orden generada por inteligencia artificial. Puedes revisarla");
-  };
-
-  // 🎤 VOZ
-  document.getElementById("vozBtn").onclick = () => {
-
-    iniciarVoz(async (texto) => {
-      hablar("Procesando orden");
-
-      const ordenIA = await generarOrdenIA(texto);
+    try {
+      const ordenIA = await generarOrdenIA(input);
 
       if (!ordenIA) {
-        hablar("No entendí la orden");
+        alert("Error IA");
         return;
       }
 
       document.getElementById("cliente").value = ordenIA.cliente?.clienteId || "";
       document.getElementById("vehiculo").value = ordenIA.vehiculo?.placa || "";
 
-      items = ordenIA.cotizacion?.map(i => ({
+      items = (ordenIA.cotizacion || []).map(i => ({
         tipo: "compra",
         nombre: i.pieza,
-        cantidad: i.cantidad,
-        precio: i.preciounitario,
-        costo: i.preciounitario * 0.7
-      })) || [];
+        cantidad: Number(i.cantidad) || 1,
+        precio: Number(i.preciounitario) || 0,
+        costo: (Number(i.preciounitario) || 0) * 0.7
+      }));
 
       renderItems();
 
-      hablar("Orden lista para revisión");
-    });
+      hablar("Orden generada por inteligencia artificial");
 
+    } catch (e) {
+      console.error(e);
+      hablar("Error en IA");
+    }
   };
 
+  // 🎤 VOZ
+  document.getElementById("vozBtn").onclick = () => {
+
+    iniciarVoz(async (texto) => {
+
+      hablar("Procesando orden");
+
+      try {
+        const ordenIA = await generarOrdenIA(texto);
+
+        if (!ordenIA) {
+          hablar("No entendí la orden");
+          return;
+        }
+
+        document.getElementById("cliente").value = ordenIA.cliente?.clienteId || "";
+        document.getElementById("vehiculo").value = ordenIA.vehiculo?.placa || "";
+
+        items = (ordenIA.cotizacion || []).map(i => ({
+          tipo: "compra",
+          nombre: i.pieza,
+          cantidad: Number(i.cantidad) || 1,
+          precio: Number(i.preciounitario) || 0,
+          costo: (Number(i.preciounitario) || 0) * 0.7
+        }));
+
+        renderItems();
+
+        hablar("Orden lista para revisión");
+
+      } catch (e) {
+        console.error(e);
+        hablar("Error procesando voz");
+      }
+    });
+  };
 }
