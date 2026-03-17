@@ -5,22 +5,14 @@
 
 import autonomousWorkshopAI from "./autonomousWorkshopAI.js";
 import { analizarNegocio } from "./aiManager.js";
-import { generarSugerencias, renderSugerencias } from "./aiAdvisor.js";
-
 
 /* =========================================
 GENERAR SUGERENCIAS POR CONTEXTO
 ========================================= */
 export async function generarSugerencias(contexto = {}) {
-
   try {
 
-const sugerencias = await generarSugerencias({
-  ordenes: [orden]
-});
-
-renderSugerencias("aiResultado", sugerencias);
-    
+    const sugerencias = [];
 
     // 🧠 IA GERENTE
     const negocio = await analizarNegocio();
@@ -86,16 +78,16 @@ export function renderSugerencias(containerId, sugerencias = []) {
     </div>
   `;
 
-  // acciones globales (luego las mejoramos con persistencia)
+  // acciones globales (puedes luego conectar con lógica real o base de datos)
   window.aplicarSug = (i) => {
-    alert("Aplicada (aquí conectas lógica real)");
+    alert("✔ Sugerencia aplicada (conecta lógica real aquí)");
   };
 
   window.editarSug = (i) => {
-    alert("Editar sugerencia");
+    alert("✏ Editar sugerencia (implementa formulario)");
   };
 
   window.descartarSug = (i) => {
-    alert("Sugerencia ignorada");
+    alert("❌ Sugerencia ignorada");
   };
 }
