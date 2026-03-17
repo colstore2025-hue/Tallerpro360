@@ -1,3 +1,9 @@
+/**
+ * inventario.js
+ * Inventario inteligente + IA
+ * TallerPRO360 ERP SaaS
+ */
+
 import {
   collection,
   getDocs,
@@ -11,7 +17,7 @@ import {
 
 import { generarSugerencias, renderSugerencias } from "../ai/aiAdvisor.js";
 
-export default async function (container, state) {
+export default async function inventarioModule(container, state) {
 
   container.innerHTML = `
     <h1>📦 Inventario Inteligente</h1>
@@ -27,9 +33,9 @@ export default async function (container, state) {
 
     <div id="alertas"></div>
     <div id="lista"></div>
+    <div id="advisorInventario"></div>
   `;
 
-<div id="advisorInventario"></div>
   const lista = document.getElementById("lista");
   const alertasDiv = document.getElementById("alertas");
 
@@ -38,7 +44,6 @@ export default async function (container, state) {
   // 🔄 Cargar inventario (SaaS)
   async function cargarInventario() {
     try {
-
       const q = query(
         collection(window.db, "repuestos"),
         where("empresaId", "==", state.empresaId)
@@ -47,13 +52,11 @@ export default async function (container, state) {
       const snap = await getDocs(q);
 
       repuestos = [];
-
       let alertas = [];
 
       snap.forEach(docSnap => {
         const r = docSnap.data();
         const id = docSnap.id;
-
         repuestos.push({ id, ...r });
 
         const stock = Number(r.stock || 0);
@@ -67,15 +70,18 @@ export default async function (container, state) {
       renderLista(repuestos);
       renderAlertas(alertas);
 
+      // 🔮 IA sugerencias
+      const sugerencias = await generarSugerencias({ inventario: repuestos });
+      renderSugerencias("advisorInventario", sugerencias);
+
     } catch (e) {
       console.error(e);
       lista.innerHTML = "❌ Error cargando inventario";
     }
   }
 
-  // 🎨 Render lista
+  // 🎨 Render lista de repuestos
   function renderLista(data) {
-
     lista.innerHTML = data.map(r => `
       <div style="background:#111;padding:15px;margin:10px 0;border-radius:10px;">
         📦 ${r.nombre} <br/>
@@ -89,7 +95,6 @@ export default async function (container, state) {
       </div>
     `).join("");
 
-    // eventos seguros (sin window)
     document.querySelectorAll(".entrada").forEach(btn => {
       btn.onclick = () => agregarStock(btn.dataset.id);
     });
@@ -99,7 +104,7 @@ export default async function (container, state) {
     });
   }
 
-  // 🚨 Alertas
+  // 🚨 Alertas de stock
   function renderAlertas(alertas) {
     if (alertas.length > 0) {
       alertasDiv.innerHTML = `
@@ -111,9 +116,8 @@ export default async function (container, state) {
     }
   }
 
-  // ➕ Crear repuesto (SaaS)
+  // ➕ Crear repuesto
   document.getElementById("crear").onclick = async () => {
-
     const nombre = document.getElementById("nombre").value.trim();
     const stock = Number(document.getElementById("stock").value) || 0;
     const minimo = Number(document.getElementById("minimo").value) || 0;
@@ -138,24 +142,21 @@ export default async function (container, state) {
 
       limpiarInputs();
       cargarInventario();
-
     } catch (e) {
       console.error(e);
-      alert("Error creando repuesto");
+      alert("❌ Error creando repuesto");
     }
   };
 
   function limpiarInputs() {
-    ["nombre", "stock", "minimo", "compra", "venta"].forEach(id => {
+    ["nombre","stock","minimo","compra","venta"].forEach(id => {
       document.getElementById(id).value = "";
     });
   }
 
   // ➕ Entrada de stock
   async function agregarStock(id) {
-
     const cantidad = Number(prompt("Cantidad a ingresar:"));
-
     if (!cantidad || cantidad <= 0) return;
 
     try {
@@ -172,23 +173,15 @@ export default async function (container, state) {
       });
 
       cargarInventario();
-
     } catch (e) {
       console.error(e);
-      alert("Error actualizando stock");
+      alert("❌ Error actualizando stock");
     }
   }
 
-const sugerencias = await generarSugerencias({
-  inventario: repuestos
-});
-
-renderSugerencias("advisorInventario", sugerencias);
   // ➖ Salida de stock
   async function usarStock(id) {
-
     const cantidad = Number(prompt("Cantidad a usar:"));
-
     if (!cantidad || cantidad <= 0) return;
 
     try {
@@ -205,10 +198,9 @@ renderSugerencias("advisorInventario", sugerencias);
       });
 
       cargarInventario();
-
     } catch (e) {
       console.error(e);
-      alert("Error descontando stock");
+      alert("❌ Error descontando stock");
     }
   }
 
