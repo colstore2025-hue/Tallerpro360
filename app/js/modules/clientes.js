@@ -28,34 +28,48 @@ export default async function (container, state) {
 
   let clientes = [];
 
-  // 🔄 Cargar clientes
+  // 🔄 Cargar clientes (FILTRADO SaaS)
   async function cargarClientes() {
-    const snap = await getDocs(collection(window.db, "clientes"));
+    try {
+      const q = query(
+        collection(window.db, "clientes"),
+        where("empresaId", "==", state.empresaId)
+      );
 
-    clientes = [];
+      const snap = await getDocs(q);
 
-    snap.forEach(doc => {
-      clientes.push({ id: doc.id, ...doc.data() });
-    });
+      clientes = [];
 
-    renderClientes(clientes);
+      snap.forEach(doc => {
+        clientes.push({ id: doc.id, ...doc.data() });
+      });
+
+      renderClientes(clientes);
+
+    } catch (e) {
+      console.error(e);
+      lista.innerHTML = "❌ Error cargando clientes";
+    }
   }
 
   // 🎨 Render lista
   function renderClientes(data) {
-    let html = "";
 
-    data.forEach(c => {
-      html += `
-        <div style="background:#111;padding:15px;margin:10px 0;border-radius:10px;cursor:pointer;"
-          onclick="verCliente('${c.id}')">
-          👤 ${c.nombre || "Sin nombre"} <br/>
-          📞 ${c.telefono || "-"}
-        </div>
-      `;
+    lista.innerHTML = data.map(c => `
+      <div 
+        data-id="${c.id}"
+        class="clienteItem"
+        style="background:#111;padding:15px;margin:10px 0;border-radius:10px;cursor:pointer;"
+      >
+        👤 ${c.nombre || "Sin nombre"} <br/>
+        📞 ${c.telefono || "-"}
+      </div>
+    `).join("");
+
+    // eventos seguros (sin window)
+    document.querySelectorAll(".clienteItem").forEach(el => {
+      el.onclick = () => verCliente(el.dataset.id);
     });
-
-    lista.innerHTML = html;
   }
 
   // 🔍 Buscar
@@ -69,67 +83,103 @@ export default async function (container, state) {
     renderClientes(filtrados);
   };
 
-  // ➕ Crear cliente
+  // ➕ Crear cliente (SaaS)
   document.getElementById("crearCliente").onclick = async () => {
-    const nombre = document.getElementById("nombre").value;
-    const telefono = document.getElementById("telefono").value;
 
-    await addDoc(collection(window.db, "clientes"), {
-      nombre,
-      telefono,
-      creadoEn: new Date(),
-      estado: "activo"
-    });
+    const nombre = document.getElementById("nombre").value.trim();
+    const telefono = document.getElementById("telefono").value.trim();
 
-    cargarClientes();
+    if (!nombre) {
+      alert("Nombre obligatorio");
+      return;
+    }
+
+    try {
+      await addDoc(collection(window.db, "clientes"), {
+        empresaId: state.empresaId,
+        nombre,
+        telefono,
+        creadoEn: new Date(),
+        estado: "activo"
+      });
+
+      document.getElementById("nombre").value = "";
+      document.getElementById("telefono").value = "";
+
+      await cargarClientes();
+
+    } catch (e) {
+      console.error(e);
+      alert("Error creando cliente");
+    }
   };
 
-  // 👁️ Ver detalle cliente
-  window.verCliente = async (clienteId) => {
+  // 👁️ Ver detalle cliente (AISLADO SaaS)
+  async function verCliente(clienteId) {
 
     detalle.innerHTML = "Cargando...";
 
-    // 🚗 Vehículos
-    const vehiculosSnap = await getDocs(
-      query(collection(window.db, "vehiculos"), where("clienteId", "==", clienteId))
-    );
+    try {
 
-    let vehiculosHTML = "<h3>🚗 Vehículos</h3>";
+      // 🚗 Vehículos (filtrado por empresa también)
+      const vehiculosSnap = await getDocs(
+        query(
+          collection(window.db, "vehiculos"),
+          where("clienteId", "==", clienteId),
+          where("empresaId", "==", state.empresaId)
+        )
+      );
 
-    vehiculosSnap.forEach(doc => {
-      const v = doc.data();
+      let vehiculosHTML = "<h3>🚗 Vehículos</h3>";
 
-      vehiculosHTML += `
-        <div style="margin-bottom:10px;">
-          ${v.marca} ${v.modelo} (${v.placa})
+      vehiculosSnap.forEach(doc => {
+        const v = doc.data();
+
+        vehiculosHTML += `
+          <div style="margin-bottom:10px;">
+            ${v.marca || ""} ${v.modelo || ""} (${v.placa || ""})
+          </div>
+        `;
+      });
+
+      // 🧾 Órdenes (filtrado SaaS)
+      const ordenesSnap = await getDocs(
+        query(
+          collection(window.db, "ordenes"),
+          where("clienteId", "==", clienteId),
+          where("empresaId", "==", state.empresaId)
+        )
+      );
+
+      let ordenesHTML = "<h3>🧾 Órdenes</h3>";
+
+      ordenesSnap.forEach(doc => {
+        const o = doc.data();
+
+        ordenesHTML += `
+          <div style="margin-bottom:10px;">
+            ${o.numero || "ORD"} - ${o.estado || "-"} - $${formatear(o.total || o.valorTrabajo || 0)}
+          </div>
+        `;
+      });
+
+      detalle.innerHTML = `
+        <div style="background:#0f172a;padding:20px;border-radius:12px;margin-top:20px;">
+          ${vehiculosHTML}
+          ${ordenesHTML}
         </div>
       `;
-    });
 
-    // 🧾 Órdenes
-    const ordenesSnap = await getDocs(
-      query(collection(window.db, "ordenes"), where("clienteId", "==", clienteId))
-    );
+    } catch (e) {
+      console.error(e);
+      detalle.innerHTML = "❌ Error cargando detalle";
+    }
+  }
 
-    let ordenesHTML = "<h3>🧾 Órdenes</h3>";
-
-    ordenesSnap.forEach(doc => {
-      const o = doc.data();
-
-      ordenesHTML += `
-        <div style="margin-bottom:10px;">
-          ${o.numero} - ${o.estado} - $${o.valorTrabajo || 0}
-        </div>
-      `;
-    });
-
-    detalle.innerHTML = `
-      <div style="background:#0f172a;padding:20px;border-radius:12px;margin-top:20px;">
-        ${vehiculosHTML}
-        ${ordenesHTML}
-      </div>
-    `;
-  };
+  // 💰 Formatear dinero
+  function formatear(valor) {
+    return new Intl.NumberFormat("es-CO").format(valor || 0);
+  }
 
   // INIT
   cargarClientes();
