@@ -1,10 +1,10 @@
 /**
  * moduleLoader.js
  * Cargador central del ERP TallerPRO360
- * Conecta todos los módulos + Dashboard + IA
+ * Versión PRO estable
  */
 
-import { dashboard } from "../modules/dashboard.js";
+import dashboard from "../modules/dashboard.js";
 
 // Módulos principales del ERP
 const modules = {
@@ -65,7 +65,9 @@ export async function loadModule(moduleName, container) {
     }
 
     container.innerHTML = "";
-    module.default(container, state);
+
+    // 🔥 SOPORTE async/await
+    await module.default(container, state);
 
     state.currentModule = moduleName;
 
@@ -111,17 +113,21 @@ export function initApp() {
   const view = document.getElementById("view");
 
   // Navegación global
-  window.navigate = (moduleName) => {
-    if (moduleName === "dashboard") {
-      view.innerHTML = "";
-      dashboard(view, state);
-    } else {
-      loadModule(moduleName, view);
+  window.navigate = async (moduleName) => {
+    try {
+      if (moduleName === "dashboard") {
+        showLoader(view);
+        await dashboard(view, state);
+      } else {
+        await loadModule(moduleName, view);
+      }
+    } catch (error) {
+      showError(view, error);
     }
   };
 
   // Cargar dashboard inicial
-  dashboard(view, state);
+  window.navigate("dashboard");
 
   // Inicializar IA en background
   initAI();
@@ -131,17 +137,20 @@ export function initApp() {
 async function initAI() {
   try {
     const ai = await modules.aiAssistant();
-    if (ai && ai.init) {
+
+    if (ai?.init) {
       ai.init();
     }
 
     const advisor = await modules.aiAdvisor();
-    if (advisor && advisor.init) {
+
+    if (advisor?.init) {
       advisor.init();
     }
 
     console.log("🤖 IA inicializada correctamente");
+
   } catch (e) {
-    console.warn("IA no disponible:", e.message);
+    console.warn("⚠️ IA no disponible:", e.message);
   }
 }
