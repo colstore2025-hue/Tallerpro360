@@ -1,9 +1,6 @@
 import {
   collection,
-  addDoc,
-  getDocs,
-  updateDoc,
-  doc
+  addDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { usarRepuesto } from "../services/inventarioService.js";
@@ -38,52 +35,76 @@ export default async function (container, state) {
 
     <div id="itemsList"></div>
 
+    <br/>
     <button id="crearOrden">🚀 Crear Orden</button>
+    <button id="crearConIA">🤖 Crear con IA</button>
+    <button id="vozBtn">🎤 Voz</button>
   `;
 
   const itemsList = document.getElementById("itemsList");
 
+  // 🔁 Render items
   function renderItems() {
-    itemsList.innerHTML = items.map(i => `
-      <div style="background:#111;padding:10px;margin:5px;">
-        ${i.nombre} (${i.tipo}) x${i.cantidad}
+    itemsList.innerHTML = items.map((i, index) => `
+      <div style="background:#111;padding:10px;margin:5px;border-radius:8px;">
+        ${i.nombre} (${i.tipo}) x${i.cantidad} - $${i.precio}
+        <button onclick="window.eliminarItem(${index})">❌</button>
       </div>
     `).join("");
   }
+
+  // 🗑️ eliminar item
+  window.eliminarItem = (index) => {
+    items.splice(index, 1);
+    renderItems();
+  };
 
   // ➕ Agregar item
   document.getElementById("addItem").onclick = () => {
 
     const tipo = document.getElementById("tipo").value;
-    const nombre = document.getElementById("nombre").value;
+    const nombre = document.getElementById("nombre").value.trim();
     const cantidad = Number(document.getElementById("cantidad").value);
     const precio = Number(document.getElementById("precio").value);
     const costo = Number(document.getElementById("costo").value);
 
+    if (!nombre || cantidad <= 0) {
+      alert("Datos incompletos");
+      return;
+    }
+
     items.push({ tipo, nombre, cantidad, precio, costo });
 
     renderItems();
+
+    // limpiar inputs
+    document.getElementById("nombre").value = "";
+    document.getElementById("cantidad").value = "";
+    document.getElementById("precio").value = "";
+    document.getElementById("costo").value = "";
   };
 
-  // 🚀 Crear orden
+  // 🚀 Crear orden manual
   document.getElementById("crearOrden").onclick = async () => {
 
-    const clienteId = document.getElementById("cliente").value;
-    const vehiculoId = document.getElementById("vehiculo").value;
+    const clienteId = document.getElementById("cliente").value.trim();
+    const vehiculoId = document.getElementById("vehiculo").value.trim();
+
+    if (!clienteId || !vehiculoId) {
+      alert("Cliente y vehículo son obligatorios");
+      return;
+    }
 
     let total = 0;
     let costoTotal = 0;
 
     try {
 
-      // 🔥 Procesar items
       for (let item of items) {
 
-        // 🟢 INVENTARIO
         if (item.tipo === "inventario") {
-
           await usarRepuesto({
-            repuestoId: item.repuestoId || "manual",
+            repuestoId: item.nombre,
             cantidad: item.cantidad,
             ordenId: "temp"
           });
@@ -91,22 +112,18 @@ export default async function (container, state) {
           costoTotal += item.costo * item.cantidad;
         }
 
-        // 🟡 COMPRA DIRECTA
         if (item.tipo === "compra") {
           costoTotal += item.costo * item.cantidad;
         }
 
-        // 🔵 CLIENTE TRAE
-        if (item.tipo === "cliente") {
-          // no afecta costo
-        }
+        // cliente trae → no suma costo
 
         total += item.precio * item.cantidad;
       }
 
       const utilidad = total - costoTotal;
 
-      await addDoc(collection(window.db, "ordenes"), {
+      const orden = {
         clienteId,
         vehiculoId,
         items,
@@ -115,7 +132,14 @@ export default async function (container, state) {
         utilidad,
         estado: "abierta",
         creadoEn: new Date()
-      });
+      };
+
+      await addDoc(collection(window.db, "ordenes"), orden);
+
+      // 🧠 IA aprende
+      await aprenderDeOrden(orden);
+
+      hablar("Orden creada correctamente");
 
       alert("✅ Orden creada");
 
@@ -123,7 +147,72 @@ export default async function (container, state) {
       renderItems();
 
     } catch (error) {
+      console.error(error);
+      hablar("Error creando la orden");
       alert("Error: " + error.message);
     }
   };
+
+  // 🤖 Crear orden con IA
+  document.getElementById("crearConIA").onclick = async () => {
+
+    const input = prompt("Describe la orden");
+
+    if (!input) return;
+
+    const ordenIA = await generarOrdenIA(input);
+
+    if (!ordenIA) {
+      alert("Error IA");
+      return;
+    }
+
+    // precargar datos
+    document.getElementById("cliente").value = ordenIA.cliente?.clienteId || "";
+    document.getElementById("vehiculo").value = ordenIA.vehiculo?.placa || "";
+
+    items = ordenIA.cotizacion?.map(i => ({
+      tipo: "compra",
+      nombre: i.pieza,
+      cantidad: i.cantidad,
+      precio: i.preciounitario,
+      costo: i.preciounitario * 0.7 // estimado
+    })) || [];
+
+    renderItems();
+
+    hablar("Orden generada por inteligencia artificial. Puedes revisarla");
+  };
+
+  // 🎤 VOZ
+  document.getElementById("vozBtn").onclick = () => {
+
+    iniciarVoz(async (texto) => {
+      hablar("Procesando orden");
+
+      const ordenIA = await generarOrdenIA(texto);
+
+      if (!ordenIA) {
+        hablar("No entendí la orden");
+        return;
+      }
+
+      document.getElementById("cliente").value = ordenIA.cliente?.clienteId || "";
+      document.getElementById("vehiculo").value = ordenIA.vehiculo?.placa || "";
+
+      items = ordenIA.cotizacion?.map(i => ({
+        tipo: "compra",
+        nombre: i.pieza,
+        cantidad: i.cantidad,
+        precio: i.preciounitario,
+        costo: i.preciounitario * 0.7
+      })) || [];
+
+      renderItems();
+
+      hablar("Orden lista para revisión");
+    });
+
+  };
+
 }
