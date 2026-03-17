@@ -1,12 +1,12 @@
-import {
-  collection,
-  getDocs,
-  addDoc,
-  query,
-  where
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+/**
+ * CRM CLIENTES - TALLERPRO360
+ * ERP + CRM + IA SaaS
+ */
 
-export default async function (container, state) {
+import { collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db } from "../core/firebase-config.js";
+
+export default async function clientesModulo(container, state) {
 
   container.innerHTML = `
     <h1>👥 Clientes (CRM)</h1>
@@ -32,17 +32,13 @@ export default async function (container, state) {
   async function cargarClientes() {
     try {
       const q = query(
-        collection(window.db, "clientes"),
+        collection(db, "clientes"),
         where("empresaId", "==", state.empresaId)
       );
 
       const snap = await getDocs(q);
 
-      clientes = [];
-
-      snap.forEach(doc => {
-        clientes.push({ id: doc.id, ...doc.data() });
-      });
+      clientes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
       renderClientes(clientes);
 
@@ -54,7 +50,6 @@ export default async function (container, state) {
 
   // 🎨 Render lista
   function renderClientes(data) {
-
     lista.innerHTML = data.map(c => `
       <div 
         data-id="${c.id}"
@@ -66,7 +61,6 @@ export default async function (container, state) {
       </div>
     `).join("");
 
-    // eventos seguros (sin window)
     document.querySelectorAll(".clienteItem").forEach(el => {
       el.onclick = () => verCliente(el.dataset.id);
     });
@@ -75,17 +69,14 @@ export default async function (container, state) {
   // 🔍 Buscar
   document.getElementById("busqueda").oninput = (e) => {
     const texto = e.target.value.toLowerCase();
-
     const filtrados = clientes.filter(c =>
       (c.nombre || "").toLowerCase().includes(texto)
     );
-
     renderClientes(filtrados);
   };
 
-  // ➕ Crear cliente (SaaS)
+  // ➕ Crear cliente
   document.getElementById("crearCliente").onclick = async () => {
-
     const nombre = document.getElementById("nombre").value.trim();
     const telefono = document.getElementById("telefono").value.trim();
 
@@ -95,7 +86,7 @@ export default async function (container, state) {
     }
 
     try {
-      await addDoc(collection(window.db, "clientes"), {
+      await addDoc(collection(db, "clientes"), {
         empresaId: state.empresaId,
         nombre,
         telefono,
@@ -107,34 +98,31 @@ export default async function (container, state) {
       document.getElementById("telefono").value = "";
 
       await cargarClientes();
+      alert("✅ Cliente creado correctamente");
 
     } catch (e) {
       console.error(e);
-      alert("Error creando cliente");
+      alert("❌ Error creando cliente");
     }
   };
 
-  // 👁️ Ver detalle cliente (AISLADO SaaS)
+  // 👁️ Ver detalle cliente
   async function verCliente(clienteId) {
-
     detalle.innerHTML = "Cargando...";
 
     try {
-
-      // 🚗 Vehículos (filtrado por empresa también)
+      // Vehículos
       const vehiculosSnap = await getDocs(
         query(
-          collection(window.db, "vehiculos"),
+          collection(db, "vehiculos"),
           where("clienteId", "==", clienteId),
           where("empresaId", "==", state.empresaId)
         )
       );
 
       let vehiculosHTML = "<h3>🚗 Vehículos</h3>";
-
       vehiculosSnap.forEach(doc => {
         const v = doc.data();
-
         vehiculosHTML += `
           <div style="margin-bottom:10px;">
             ${v.marca || ""} ${v.modelo || ""} (${v.placa || ""})
@@ -142,20 +130,18 @@ export default async function (container, state) {
         `;
       });
 
-      // 🧾 Órdenes (filtrado SaaS)
+      // Órdenes
       const ordenesSnap = await getDocs(
         query(
-          collection(window.db, "ordenes"),
+          collection(db, "ordenes"),
           where("clienteId", "==", clienteId),
           where("empresaId", "==", state.empresaId)
         )
       );
 
       let ordenesHTML = "<h3>🧾 Órdenes</h3>";
-
       ordenesSnap.forEach(doc => {
         const o = doc.data();
-
         ordenesHTML += `
           <div style="margin-bottom:10px;">
             ${o.numero || "ORD"} - ${o.estado || "-"} - $${formatear(o.total || o.valorTrabajo || 0)}
