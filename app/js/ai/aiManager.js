@@ -21,7 +21,10 @@ export async function analizarNegocio() {
       return null;
     }
 
-    const snapshot = await getDocs(collection(db, "ordenes"));
+    const snapshot = await query(
+  collection(db, "ordenes"),
+  where("empresaId", "==", window.empresaId || "taller_001")
+)
 
     // 🧊 SIN DATOS
     if (snapshot.empty) {
