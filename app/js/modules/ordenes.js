@@ -1,7 +1,9 @@
-/**
- * 🧾 ÓRDENES ERP TALLERPRO360
- * ERP + CRM + IA TOTAL
- */
+/*
+================================================
+ÓRDENES ERP TALLERPRO360
+ERP + CRM + IA TOTAL
+================================================
+*/
 
 import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
