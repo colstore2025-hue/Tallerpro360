@@ -1,3 +1,11 @@
+/*
+================================================
+FINANZAS.JS - Dashboard Financiero Avanzado
+Módulo de KPIs y gráficas inteligentes
+Ubicación: /app/js/modules/finanzas.js
+================================================
+*/
+
 import {
   collection,
   getDocs,
@@ -8,21 +16,20 @@ import {
 export default async function (container, state) {
 
   container.innerHTML = `
-    <h1>💰 Finanzas del Taller</h1>
+    <h1 style="font-size:28px;margin-bottom:20px;">💰 Finanzas del Taller</h1>
 
-    <div id="kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;"></div>
+    <div id="kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:20px;"></div>
 
     <canvas id="graficoIngresos" height="100"></canvas>
   `;
 
   const kpis = document.getElementById("kpis");
-
   let chartInstance = null;
 
   async function cargarFinanzas() {
     try {
 
-      // 🔐 FILTRO SaaS
+      // 🔐 FILTRO SaaS por empresa
       const q = query(
         collection(window.db, "ordenes"),
         where("empresaId", "==", state.empresaId)
@@ -40,7 +47,6 @@ export default async function (container, state) {
       snap.forEach(doc => {
         const o = doc.data() || {};
 
-        // 🔥 CAMPOS NORMALIZADOS (compatible con todo tu sistema)
         const total = Number(o.total || o.valorTrabajo || 0);
         const costo = Number(o.costoTotal || o.diagnosticoIA?.costoestimado || 0);
 
@@ -51,13 +57,11 @@ export default async function (container, state) {
           ordenesCompletadas++;
         }
 
-        // 📅 MANEJO SEGURO DE FECHA
+        // 📅 Fecha segura
         let fecha = "sin_fecha";
-
         if (o.creadoEn?.toDate) {
           fecha = o.creadoEn.toDate().toISOString().split("T")[0];
         }
-
         ingresosPorDia[fecha] = (ingresosPorDia[fecha] || 0) + total;
       });
 
@@ -95,17 +99,14 @@ export default async function (container, state) {
     `;
   }
 
-  // 📈 GRÁFICA
+  // 📈 GRÁFICA DE INGRESOS
   function renderGrafica(data) {
 
     const ctx = document.getElementById("graficoIngresos");
-
     if (!ctx) return;
 
-    // 🔥 destruir gráfico anterior (importante)
-    if (chartInstance) {
-      chartInstance.destroy();
-    }
+    // 🔥 Destruir gráfico anterior
+    if (chartInstance) chartInstance.destroy();
 
     chartInstance = new Chart(ctx, {
       type: "line",
@@ -114,8 +115,23 @@ export default async function (container, state) {
         datasets: [{
           label: "Ingresos por día",
           data: Object.values(data),
-          borderWidth: 2
+          borderColor: "#16a34a",
+          backgroundColor: "rgba(22,163,74,0.2)",
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true
         }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: true },
+          tooltip: { mode: 'index', intersect: false }
+        },
+        scales: {
+          x: { title: { display: true, text: "Fecha" } },
+          y: { title: { display: true, text: "Ingresos ($)" }, beginAtZero: true }
+        }
       }
     });
   }
