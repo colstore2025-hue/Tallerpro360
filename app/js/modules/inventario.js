@@ -4,7 +4,9 @@ import {
   addDoc,
   updateDoc,
   doc,
-  increment
+  increment,
+  query,
+  where
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export default async function (container, state) {
@@ -28,38 +30,74 @@ export default async function (container, state) {
   const lista = document.getElementById("lista");
   const alertasDiv = document.getElementById("alertas");
 
+  let repuestos = [];
+
+  // 🔄 Cargar inventario (SaaS)
   async function cargarInventario() {
+    try {
 
-    const snap = await getDocs(collection(window.db, "repuestos"));
+      const q = query(
+        collection(window.db, "repuestos"),
+        where("empresaId", "==", state.empresaId)
+      );
 
-    let html = "";
-    let alertas = [];
+      const snap = await getDocs(q);
 
-    snap.forEach(docSnap => {
-      const r = docSnap.data();
-      const id = docSnap.id;
+      repuestos = [];
 
-      if (r.stock <= r.stockMinimo) {
-        alertas.push(`⚠️ Bajo stock: ${r.nombre}`);
-      }
+      let alertas = [];
 
-      html += `
-        <div style="background:#111;padding:15px;margin:10px 0;border-radius:10px;">
-          📦 ${r.nombre} <br/>
-          Stock: ${r.stock} | Min: ${r.stockMinimo} <br/>
-          💰 Compra: $${r.precioCompra} | Venta: $${r.precioVenta}
-          
-          <div style="margin-top:10px;">
-            <button onclick="window.agregarStock('${id}')">➕ Entrada</button>
-            <button onclick="window.usarStock('${id}')">➖ Salida</button>
-          </div>
+      snap.forEach(docSnap => {
+        const r = docSnap.data();
+        const id = docSnap.id;
+
+        repuestos.push({ id, ...r });
+
+        const stock = Number(r.stock || 0);
+        const minimo = Number(r.stockMinimo || 0);
+
+        if (stock <= minimo) {
+          alertas.push(`⚠️ Bajo stock: ${r.nombre}`);
+        }
+      });
+
+      renderLista(repuestos);
+      renderAlertas(alertas);
+
+    } catch (e) {
+      console.error(e);
+      lista.innerHTML = "❌ Error cargando inventario";
+    }
+  }
+
+  // 🎨 Render lista
+  function renderLista(data) {
+
+    lista.innerHTML = data.map(r => `
+      <div style="background:#111;padding:15px;margin:10px 0;border-radius:10px;">
+        📦 ${r.nombre} <br/>
+        Stock: ${r.stock || 0} | Min: ${r.stockMinimo || 0} <br/>
+        💰 Compra: $${formatear(r.precioCompra)} | Venta: $${formatear(r.precioVenta)}
+
+        <div style="margin-top:10px;">
+          <button data-id="${r.id}" class="entrada">➕ Entrada</button>
+          <button data-id="${r.id}" class="salida">➖ Salida</button>
         </div>
-      `;
+      </div>
+    `).join("");
+
+    // eventos seguros (sin window)
+    document.querySelectorAll(".entrada").forEach(btn => {
+      btn.onclick = () => agregarStock(btn.dataset.id);
     });
 
-    lista.innerHTML = html;
+    document.querySelectorAll(".salida").forEach(btn => {
+      btn.onclick = () => usarStock(btn.dataset.id);
+    });
+  }
 
-    // Alertas
+  // 🚨 Alertas
+  function renderAlertas(alertas) {
     if (alertas.length > 0) {
       alertasDiv.innerHTML = `
         <h3 style="color:#ff4d4d;">🚨 Alertas</h3>
@@ -70,69 +108,107 @@ export default async function (container, state) {
     }
   }
 
-  // Crear repuesto
+  // ➕ Crear repuesto (SaaS)
   document.getElementById("crear").onclick = async () => {
 
-    const nombre = document.getElementById("nombre").value;
-    const stock = Number(document.getElementById("stock").value);
-    const minimo = Number(document.getElementById("minimo").value);
-    const compra = Number(document.getElementById("compra").value);
-    const venta = Number(document.getElementById("venta").value);
+    const nombre = document.getElementById("nombre").value.trim();
+    const stock = Number(document.getElementById("stock").value) || 0;
+    const minimo = Number(document.getElementById("minimo").value) || 0;
+    const compra = Number(document.getElementById("compra").value) || 0;
+    const venta = Number(document.getElementById("venta").value) || 0;
 
-    await addDoc(collection(window.db, "repuestos"), {
-      nombre,
-      stock,
-      stockMinimo: minimo,
-      precioCompra: compra,
-      precioVenta: venta,
-      creadoEn: new Date()
-    });
+    if (!nombre) {
+      alert("Nombre obligatorio");
+      return;
+    }
 
-    cargarInventario();
+    try {
+      await addDoc(collection(window.db, "repuestos"), {
+        empresaId: state.empresaId,
+        nombre,
+        stock,
+        stockMinimo: minimo,
+        precioCompra: compra,
+        precioVenta: venta,
+        creadoEn: new Date()
+      });
+
+      limpiarInputs();
+      cargarInventario();
+
+    } catch (e) {
+      console.error(e);
+      alert("Error creando repuesto");
+    }
   };
 
+  function limpiarInputs() {
+    ["nombre", "stock", "minimo", "compra", "venta"].forEach(id => {
+      document.getElementById(id).value = "";
+    });
+  }
+
   // ➕ Entrada de stock
-  window.agregarStock = async (id) => {
+  async function agregarStock(id) {
 
     const cantidad = Number(prompt("Cantidad a ingresar:"));
 
-    if (!cantidad) return;
+    if (!cantidad || cantidad <= 0) return;
 
-    await updateDoc(doc(window.db, "repuestos", id), {
-      stock: increment(cantidad)
-    });
+    try {
+      await updateDoc(doc(window.db, "repuestos", id), {
+        stock: increment(cantidad)
+      });
 
-    await addDoc(collection(window.db, "movimientosInventario"), {
-      repuestoId: id,
-      tipo: "entrada",
-      cantidad,
-      fecha: new Date()
-    });
+      await addDoc(collection(window.db, "movimientosInventario"), {
+        empresaId: state.empresaId,
+        repuestoId: id,
+        tipo: "entrada",
+        cantidad,
+        fecha: new Date()
+      });
 
-    cargarInventario();
-  };
+      cargarInventario();
+
+    } catch (e) {
+      console.error(e);
+      alert("Error actualizando stock");
+    }
+  }
 
   // ➖ Salida de stock
-  window.usarStock = async (id) => {
+  async function usarStock(id) {
 
     const cantidad = Number(prompt("Cantidad a usar:"));
 
-    if (!cantidad) return;
+    if (!cantidad || cantidad <= 0) return;
 
-    await updateDoc(doc(window.db, "repuestos", id), {
-      stock: increment(-cantidad)
-    });
+    try {
+      await updateDoc(doc(window.db, "repuestos", id), {
+        stock: increment(-cantidad)
+      });
 
-    await addDoc(collection(window.db, "movimientosInventario"), {
-      repuestoId: id,
-      tipo: "salida",
-      cantidad,
-      fecha: new Date()
-    });
+      await addDoc(collection(window.db, "movimientosInventario"), {
+        empresaId: state.empresaId,
+        repuestoId: id,
+        tipo: "salida",
+        cantidad,
+        fecha: new Date()
+      });
 
-    cargarInventario();
-  };
+      cargarInventario();
+
+    } catch (e) {
+      console.error(e);
+      alert("Error descontando stock");
+    }
+  }
 
   // INIT
   cargarInventario();
+}
+
+// 💰 Formatear dinero
+function formatear(valor) {
+  return new Intl.NumberFormat("es-CO").format(valor || 0);
 }
