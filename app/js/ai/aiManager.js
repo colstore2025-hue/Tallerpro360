@@ -1,17 +1,19 @@
 /**
  * IA GERENTE TOTAL - PRO
- * Analiza el negocio completo del taller en tiempo real
+ * Analiza el negocio completo del taller (SaaS READY)
  */
 
 import {
   collection,
-  getDocs
+  getDocs,
+  query,
+  where
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { hablar } from "../voice/voiceCore.js";
 
 // 🔥 FUNCIÓN PRINCIPAL
-export async function analizarNegocio() {
+export async function analizarNegocio(state) {
   try {
 
     const db = window.db;
@@ -21,10 +23,18 @@ export async function analizarNegocio() {
       return null;
     }
 
-    const snapshot = await query(
-  collection(db, "ordenes"),
-  where("empresaId", "==", window.empresaId || "taller_001")
-)
+    if (!state?.empresaId) {
+      console.warn("⚠️ empresaId no definido");
+      return null;
+    }
+
+    // 🔐 SaaS FILTER
+    const q = query(
+      collection(db, "ordenes"),
+      where("empresaId", "==", state.empresaId)
+    );
+
+    const snapshot = await getDocs(q);
 
     // 🧊 SIN DATOS
     if (snapshot.empty) {
@@ -35,7 +45,8 @@ export async function analizarNegocio() {
           utilidad: 0,
           ordenes: 0,
           ticketPromedio: 0,
-          margen: 0
+          margen: 0,
+          serviciosFrecuentes: []
         },
         alertas: ["⚠️ No hay órdenes registradas"],
         recomendaciones: ["📌 Empieza registrando órdenes"]
@@ -49,8 +60,8 @@ export async function analizarNegocio() {
     snapshot.forEach(doc => {
       const data = doc.data() || {};
 
-      const total = Number(data.total) || 0;
-      const costo = Number(data.costoTotal) || 0;
+      const total = Number(data.total || data.valorTrabajo || 0);
+      const costo = Number(data.costoTotal || 0);
       const utilidad = total - costo;
 
       totalIngresos += total;
@@ -64,7 +75,6 @@ export async function analizarNegocio() {
 
     const totalUtilidad = totalIngresos - totalCostos;
 
-    // 📊 MÉTRICAS INTELIGENTES
     const totalOrdenes = ordenes.length;
 
     const ticketPromedio = totalOrdenes > 0
@@ -115,10 +125,8 @@ export async function analizarNegocio() {
   }
 }
 
----
-
 /**
- * ⚠️ ALERTAS INTELIGENTES
+ * ⚠️ ALERTAS
  */
 function generarAlertas(resumen, ordenes) {
 
@@ -133,7 +141,7 @@ function generarAlertas(resumen, ordenes) {
   }
 
   if (resumen.margen < 20) {
-    alertas.push("⚠️ Margen de ganancia muy bajo");
+    alertas.push("⚠️ Margen bajo");
   }
 
   const ordenesBajas = ordenes.filter(o => o.utilidad < 20000);
@@ -149,12 +157,10 @@ function generarAlertas(resumen, ordenes) {
   return alertas;
 }
 
----
-
 /**
- * 🚀 RECOMENDACIONES AUTOMÁTICAS
+ * 🚀 RECOMENDACIONES
  */
-function generarRecomendaciones(resumen, ordenes) {
+function generarRecomendaciones(resumen) {
 
   let recomendaciones = [];
 
@@ -171,55 +177,47 @@ function generarRecomendaciones(resumen, ordenes) {
   }
 
   if (resumen.margen > 30) {
-    recomendaciones.push("🚀 Buen margen, puedes escalar el negocio");
+    recomendaciones.push("🚀 Buen margen, puedes escalar");
   }
 
   if (resumen.serviciosFrecuentes.length > 0) {
-    recomendaciones.push("🔧 Potencia los servicios más frecuentes");
+    recomendaciones.push("🔧 Potencia servicios más frecuentes");
   }
 
   return recomendaciones;
 }
 
----
-
 /**
- * 🗣️ VOZ GERENCIAL
+ * 🗣️ VOZ
  */
 export function hablarResumen(data) {
   if (!data) return;
 
   const { resumen } = data;
 
-  const mensaje = `
+  hablar(`
     Atención.
-    Ingresos totales ${resumen.ingresos} pesos.
+    Ingresos ${resumen.ingresos} pesos.
     Utilidad ${resumen.utilidad}.
-    Margen del ${resumen.margen} por ciento.
-    Ticket promedio ${resumen.ticketPromedio}.
-  `;
-
-  hablar(mensaje);
+    Margen ${resumen.margen} por ciento.
+  `);
 }
 
----
-
 /**
- * 🔥 EJECUCIÓN AUTOMÁTICA (OPCIONAL)
- * IA analiza sola cada cierto tiempo
+ * 🤖 AUTO MONITOREO
  */
-export function iniciarMonitoreoIA(intervalo = 60000) {
+export function iniciarMonitoreoIA(state, intervalo = 60000) {
 
   setInterval(async () => {
 
-    const data = await analizarNegocio();
+    const data = await analizarNegocio(state);
 
     if (!data) return;
 
-    console.log("🧠 IA Gerente Auto:", data);
+    console.log("🧠 IA Gerente:", data);
 
     if (data.alertas.length > 0) {
-      hablar("Atención. Se detectaron alertas en el negocio");
+      hablar("Atención. Hay alertas en el negocio");
     }
 
   }, intervalo);
