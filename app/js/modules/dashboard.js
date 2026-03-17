@@ -1,53 +1,54 @@
 /**
- * DASHBOARD FINAL PRO360
- * TallerPRO360 – ERP+CRM+IA
- * Compatible Vercel / Firestore / Voz
+ * 📊 Dashboard PRO360
+ * TallerPRO360 – KPI Gerencial + IA + Gráficos
+ * Estilo neón, colores brillantes, iconos ilustrativos
  */
 
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { analizarNegocio, hablarResumen } from "../ai/aiManager.js";
+import { db } from "../core/firebase-config.js";
+import { Advisor, actualizarAdvisor, renderSugerencias, notificarAlertas } from "./aiAdvisor.js";
+import { hablar } from "../voice/voiceCore.js";
 
 export default async function dashboard(container, state) {
-
   container.innerHTML = `
-    <h1 style="color:#00ffcc; text-shadow:0 0 8px #00ffcc;">📊 Dashboard Gerencial PRO360</h1>
+    <h1 style="color:#00ffcc; text-shadow:0 0 15px #0ff;">📊 Dashboard Gerencial PRO360</h1>
 
-    <div id="kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;margin-top:20px;"></div>
+    <div id="kpis" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:15px; margin-top:15px;"></div>
 
     <div style="margin-top:20px;">
-      <canvas id="graficaIngresos" style="background:#111827; border-radius:12px; padding:10px;"></canvas>
+      <canvas id="graficaIngresos"></canvas>
     </div>
 
     <div id="iaPanel" style="margin-top:20px;"></div>
   `;
 
   if (!state?.empresaId) {
-    container.innerHTML = "<p style='color:red'>❌ Error: empresa no definida</p>";
+    container.innerHTML = "<p style='color:red;'>❌ Error: empresa no definida</p>";
     return;
   }
 
   try {
-
-    // 🔹 Consulta Firestore
+    // 🔹 Cargar órdenes desde Firestore
     const q = query(
-      collection(window.db, "ordenes"),
+      collection(db, "ordenes"),
       where("empresaId", "==", state.empresaId)
     );
-
     const snapshot = await getDocs(q);
 
-    let ingresos = 0;
-    let costos = 0;
-    let ordenes = 0;
+    const ordenes = [];
     let ingresosPorDia = {};
+    let ingresos = 0, costos = 0, ordenesCount = 0;
 
     snapshot.forEach(doc => {
-      const data = doc.data() || {};
+      const data = doc.data();
+      ordenes.push(data);
       const total = Number(data.total) || 0;
       const costo = Number(data.costoTotal) || 0;
+
       ingresos += total;
       costos += costo;
-      ordenes++;
+      ordenesCount++;
+
       const fecha = data.creadoEn?.toDate?.()?.toISOString()?.split("T")[0] || "sin_fecha";
       ingresosPorDia[fecha] = (ingresosPorDia[fecha] || 0) + total;
     });
@@ -57,42 +58,41 @@ export default async function dashboard(container, state) {
     // 🔹 Render KPIs
     const kpis = document.getElementById("kpis");
     kpis.innerHTML = `
-      ${crearKPI("💰 Ingresos", ingresos)}
-      ${crearKPI("📉 Costos", costos)}
-      ${crearKPI("📈 Utilidad", utilidad)}
-      ${crearKPI("🧾 Órdenes", ordenes)}
+      ${crearKPI("💰 Ingresos", ingresos, "Ingresos totales del taller")}
+      ${crearKPI("📉 Costos", costos, "Costos de repuestos y servicios")}
+      ${crearKPI("📈 Utilidad", utilidad, "Ganancia neta")}
+      ${crearKPI("🧾 Órdenes", ordenesCount, "Número de órdenes procesadas")}
     `;
 
-    // 🔹 Gráfica ingresos
+    // 🔹 Gráfica de ingresos
     renderGrafica(ingresosPorDia);
 
-    // 🔹 Panel IA
-    const iaData = await analizarNegocio(state);
-    if (iaData) renderIA(iaData);
+    // 🔹 Inicializar IA Advisor
+    await initAdvisor(state.empresaId);
 
-  } catch (error) {
-    console.error("❌ Error dashboard", error);
-    container.innerHTML = `
-      <h2 style="color:red">Error cargando dashboard</h2>
-      <p>${error.message}</p>
-    `;
+  } catch (e) {
+    console.error("❌ Error dashboard:", e);
+    container.innerHTML = `<p style='color:red;'>Error cargando dashboard: ${e.message}</p>`;
   }
 }
 
 /* ===============================
-🎯 KPI CARD
+🎯 KPI CARD NEÓN
 =============================== */
-function crearKPI(titulo, valor) {
+function crearKPI(titulo, valor, tooltip = "") {
   return `
     <div style="
       background:#111827;
+      color:#0ff;
       padding:20px;
       border-radius:12px;
       text-align:center;
-      box-shadow:0 0 10px rgba(0,255,153,0.4);
-    ">
-      <h3>${titulo}</h3>
-      <p style="font-size:22px;">$${formatear(valor)}</p>
+      box-shadow:0 0 20px #0ff;
+      cursor:pointer;"
+      title="${tooltip}"
+    >
+      <h3 style="font-size:18px;">${titulo}</h3>
+      <p style="font-size:24px; font-weight:bold;">$${formatear(valor)}</p>
     </div>
   `;
 }
@@ -114,73 +114,54 @@ function renderGrafica(data) {
       datasets: [{
         label: "Ingresos por día",
         data: valores,
-        borderColor: "#00ff99",
-        backgroundColor: "rgba(0,255,153,0.2)",
-        borderWidth: 2,
-        fill: true,
-        tension: 0.4
+        borderColor: "#00ffcc",
+        backgroundColor: "rgba(0,255,204,0.2)",
+        borderWidth: 3,
+        tension: 0.4,
+        pointRadius: 5,
+        pointBackgroundColor: "#00ffcc",
       }]
     },
     options: {
       responsive: true,
       plugins: {
-        legend: { labels: { color: "#00ffcc" } }
+        legend: { labels: { color: "#0ff" } },
+        tooltip: { mode: "index", intersect: false }
       },
       scales: {
-        x: { ticks: { color: "#00ffcc" }, grid: { color: "#334155" } },
-        y: { ticks: { color: "#00ffcc" }, grid: { color: "#334155" } }
+        x: { ticks: { color: "#0ff" }, grid: { color: "#0f172a" } },
+        y: { ticks: { color: "#0ff" }, grid: { color: "#0f172a" } }
       }
     }
   });
 }
 
 /* ===============================
-🧠 PANEL IA
+🧠 PANEL IA ADVANCED
 =============================== */
-function renderIA(data) {
-  const panel = document.getElementById("iaPanel");
+async function initAdvisor(empresaId) {
+  await Advisor.init({ empresaId });
+  await actualizarAdvisor();
+  renderSugerencias("iaPanel");
 
-  panel.innerHTML = `
-    <div style="
-      background:#0f172a;
-      padding:20px;
-      border-radius:12px;
-      box-shadow:0 0 15px #00ff99;
-    ">
-      <h2>🧠 IA Gerente PRO360</h2>
-
-      <p>💰 Ingresos: $${formatear(data.resumen.ingresos)}</p>
-      <p>📉 Costos: $${formatear(data.resumen.costos)}</p>
-      <p>📈 Utilidad: $${formatear(data.resumen.utilidad)}</p>
-      <p>📊 Margen: ${data.resumen.margen}%</p>
-      <p>🎯 Ticket Promedio: $${formatear(data.resumen.ticketPromedio)}</p>
-
-      <h3>⚠️ Alertas</h3>
-      ${data.alertas.map(a => `<p>${a}</p>`).join("")}
-
-      <h3>🚀 Recomendaciones</h3>
-      ${data.recomendaciones.map(r => `<p>${r}</p>`).join("")}
-
-      <button id="vozGerente" style="
-        margin-top:10px;
-        padding:10px;
-        background:#00ff99;
-        border:none;
-        border-radius:8px;
-        cursor:pointer;
-      ">
-        🎤 Escuchar IA
-      </button>
-    </div>
+  // Botón para alertas habladas
+  const iaPanel = document.getElementById("iaPanel");
+  const btnVoz = document.createElement("button");
+  btnVoz.innerHTML = "🎤 Escuchar alertas";
+  btnVoz.style = `
+    margin-top:10px;
+    padding:10px;
+    background:#00ff99;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
   `;
-
-  document.getElementById("vozGerente").onclick = () => {
-    hablarResumen(data);
-  };
+  btnVoz.onclick = () => notificarAlertas();
+  iaPanel.appendChild(btnVoz);
 }
 
 /* ===============================
-💰 FORMATEAR DINERO
+💰 FORMATEAR MONEDA
 =============================== */
 function formatear(valor) {
   return new Intl.NumberFormat("es-CO").format(valor || 0);
