@@ -1,21 +1,15 @@
 /**
  * moduleLoader.js
- * Cargador central del ERP TallerPRO360 PRO360
- * Compatible Vercel, Firestore global y módulos IA + Voz
+ * Cargador central PRO360
+ * Compatible Vercel, IA, voz, sidebar neón interactivo
  */
 
 import dashboard from "../modules/dashboard.js";
 
-// Estado global
-const state = {
-  currentModule: null,
-  empresaId: "taller_001",
-  cargando: false
-};
-
+// 🔊 Estado de voz
 let voiceInitialized = false;
 
-// Módulos dinámicos
+// 🔹 Módulos disponibles
 const modules = {
   ordenes: () => import("../modules/ordenes.js"),
   clientes: () => import("../modules/clientes.js"),
@@ -29,7 +23,16 @@ const modules = {
   aiAdvisor: () => import("../modules/aiAdvisor.js")
 };
 
-// 🔹 Loader UI
+// 🔹 Estado global
+const state = {
+  currentModule: null,
+  empresaId: "taller_001",
+  cargando: false
+};
+
+/* ===============================
+UI Loader
+=============================== */
 function showLoader(container) {
   container.innerHTML = `
     <div style="color:#00ffcc; font-size:18px; text-align:center; padding:40px;">
@@ -38,7 +41,6 @@ function showLoader(container) {
   `;
 }
 
-// 🔹 Error UI
 function showError(container, error) {
   container.innerHTML = `
     <div style="color:red; padding:20px;">
@@ -48,7 +50,9 @@ function showError(container, error) {
   `;
 }
 
-// 🔹 Cargar módulo dinámicamente
+/* ===============================
+Cargar módulo dinámico
+=============================== */
 export async function loadModule(moduleName, container) {
   if (state.cargando) return;
 
@@ -56,19 +60,13 @@ export async function loadModule(moduleName, container) {
     state.cargando = true;
     showLoader(container);
 
-    if (!modules[moduleName]) {
-      throw new Error(`Módulo no existe: ${moduleName}`);
-    }
+    if (!modules[moduleName]) throw new Error(`Módulo no existe: ${moduleName}`);
 
     const module = await modules[moduleName]();
 
-    if (!module || !module.default) {
-      throw new Error(`Módulo inválido: ${moduleName}`);
-    }
+    if (!module || !module.default) throw new Error(`Módulo inválido: ${moduleName}`);
 
     container.innerHTML = "";
-
-    // Ejecutar módulo (async soportado)
     await module.default(container, state);
 
     state.currentModule = moduleName;
@@ -81,29 +79,27 @@ export async function loadModule(moduleName, container) {
   }
 }
 
-// 🔹 Inicializar ERP completo
+/* ===============================
+Inicializar ERP completo
+=============================== */
 export function initApp() {
   const root = document.getElementById("app");
+  if (!root) return console.error("❌ No existe #app en index.html");
 
-  if (!root) {
-    console.error("❌ No existe #app en index.html");
-    return;
-  }
-
-  // Layout base
+  // 🔹 Layout base
   root.innerHTML = `
     <div style="display:flex; height:100vh; background:#0a0a0a; color:white;">
       
       <!-- Sidebar -->
-      <div style="width:240px; background:#111; padding:10px;">
-        <h2 style="color:#00ffcc;">TallerPRO360</h2>
-        <button onclick="window.navigate('dashboard')">📊 Dashboard</button>
-        <button onclick="window.navigate('ordenes')">🧾 Órdenes</button>
-        <button onclick="window.navigate('clientes')">👥 Clientes</button>
-        <button onclick="window.navigate('inventario')">📦 Inventario</button>
-        <button onclick="window.navigate('finanzas')">💰 Finanzas</button>
-        <button onclick="window.navigate('reportes')">📈 Reportes</button>
-        <button onclick="window.navigate('configuracion')">⚙️ Configuración</button>
+      <div style="width:260px; background:#111; padding:10px;">
+        <h2 style="color:#00ffcc; text-shadow:0 0 10px #0ff;">TallerPRO360</h2>
+        ${crearSidebarButton("📊 Dashboard", "dashboard")}
+        ${crearSidebarButton("🧾 Órdenes", "ordenes")}
+        ${crearSidebarButton("👥 Clientes", "clientes")}
+        ${crearSidebarButton("📦 Inventario", "inventario")}
+        ${crearSidebarButton("💰 Finanzas", "finanzas")}
+        ${crearSidebarButton("📈 Reportes", "reportes")}
+        ${crearSidebarButton("⚙️ Configuración", "configuracion")}
       </div>
 
       <!-- Contenido -->
@@ -116,31 +112,53 @@ export function initApp() {
   // 🔹 Navegación global
   window.navigate = async (moduleName) => {
     if (state.cargando) return;
-
-    try {
-      if (moduleName === "dashboard") {
-        showLoader(view);
-        await dashboard(view, state);
-        state.currentModule = "dashboard";
-      } else {
-        await loadModule(moduleName, view);
-      }
-    } catch (error) {
-      showError(view, error);
+    if (moduleName === "dashboard") {
+      showLoader(view);
+      await dashboard(view, state);
+      state.currentModule = "dashboard";
+    } else {
+      await loadModule(moduleName, view);
     }
   };
 
-  // 🚀 Inicial
+  // 🚀 Inicial: dashboard
   window.navigate("dashboard");
 
   // 🤖 IA
   initAI();
 
-  // 🎤 Voz (no bloqueante)
+  // 🎤 Voz
   initVoice();
 }
 
-// 🔹 Inicializar IA
+/* ===============================
+Crear botones sidebar con estilo neón
+=============================== */
+function crearSidebarButton(text, moduleName) {
+  return `
+    <button onclick="window.navigate('${moduleName}')" style="
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin:5px 0;
+      padding:10px;
+      font-size:16px;
+      border-radius:8px;
+      background:#0f172a;
+      color:#0ff;
+      box-shadow:0 0 5px #00ffcc;
+      cursor:pointer;
+      font-weight:bold;
+      transition:0.3s;
+    ">
+      <span>${text}</span>
+    </button>
+  `;
+}
+
+/* ===============================
+Inicializar IA
+=============================== */
 async function initAI() {
   try {
     const ai = await modules.aiAssistant();
@@ -150,25 +168,24 @@ async function initAI() {
     if (advisor?.init) advisor.init();
 
     console.log("🤖 IA inicializada correctamente");
-
   } catch (e) {
     console.warn("⚠️ IA no disponible:", e.message);
   }
 }
 
-// 🔹 Inicializar voz (opcional y seguro)
+/* ===============================
+Inicializar Voz
+=============================== */
 async function initVoice() {
   if (voiceInitialized) return;
 
   try {
     const voice = await import("../voice/voiceAssistantWorkshop.js");
-
     if (voice?.init) {
       voice.init();
       voiceInitialized = true;
       console.log("🎤 Voz activada");
     }
-
   } catch (e) {
     console.warn("⚠️ Voz no disponible:", e.message);
   }
