@@ -1,7 +1,7 @@
 /**
- * 📊 DASHBOARD ERP PRO360
- * Multi-módulo: Órdenes, Clientes, Inventario, Finanzas
- * Integración total: IA, voz, KPIs dinámicos, gráficos neón
+ * 🚀 DASHBOARD ERP PRO360 – FULL INTEGRADO
+ * Multi-módulo: Órdenes, Clientes, Inventario, Finanzas, Reportes
+ * IA analítica + alertas + voz gerencial
  */
 
 import {
@@ -19,13 +19,16 @@ export default async function dashboard(container, state) {
   container.innerHTML = `
     <h1 style="color:#0ff; text-shadow:0 0 12px #0ff;">📊 Dashboard PRO360</h1>
 
-    <div id="kpis" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:15px;"></div>
+    <div id="dashboardSections" style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px;">
+      <div id="kpiPanel"></div>
+      <div id="iaPanel"></div>
+    </div>
 
     <div style="margin-top:20px;">
       <canvas id="graficaIngresos" style="background:#111; border-radius:12px; padding:10px;"></canvas>
     </div>
 
-    <div id="iaPanel" style="margin-top:20px;"></div>
+    <div id="modulesPanel" style="margin-top:30px; display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:15px;"></div>
   `;
 
   if (!state?.empresaId) {
@@ -34,43 +37,49 @@ export default async function dashboard(container, state) {
   }
 
   try {
-    // 🔹 CONSULTA FIRESTORE
-    const q = query(collection(db, "ordenes"), where("empresaId", "==", state.empresaId));
-    const snapshot = await getDocs(q);
+    // 🔹 Datos Firestore
+    const ordenesData = await fetchCollection("ordenes", state.empresaId);
+    const clientesData = await fetchCollection("clientes", state.empresaId);
+    const inventarioData = await fetchCollection("inventario", state.empresaId);
+    const finanzasData = await fetchCollection("finanzas", state.empresaId);
 
-    let ingresos = 0, costos = 0, ordenes = 0;
-    let ingresosPorDia = {};
+    // 🔹 KPIs
+    const totalIngresos = ordenesData.reduce((acc,o)=>acc+(Number(o.total)||0),0);
+    const totalCostos = ordenesData.reduce((acc,o)=>acc+(Number(o.costoTotal)||0),0);
+    const totalOrdenes = ordenesData.length;
+    const totalClientes = clientesData.length;
+    const utilidad = totalIngresos - totalCostos;
 
-    snapshot.forEach(doc => {
-      const data = doc.data() || {};
-      const total = Number(data.total) || 0;
-      const costo = Number(data.costoTotal) || 0;
-
-      ingresos += total;
-      costos += costo;
-      ordenes++;
-
-      const fecha = data.creadoEn?.toDate?.()?.toISOString()?.split("T")[0] || "sin_fecha";
-      ingresosPorDia[fecha] = (ingresosPorDia[fecha] || 0) + total;
-    });
-
-    const utilidad = ingresos - costos;
-
-    // 🔹 RENDER KPIs
-    const kpis = document.getElementById("kpis");
-    kpis.innerHTML = `
-      ${crearKPI("💰 Ingresos", ingresos, "#0ff", "💵")}
-      ${crearKPI("📉 Costos", costos, "#f00", "📊")}
+    const kpiPanel = document.getElementById("kpiPanel");
+    kpiPanel.innerHTML = `
+      ${crearKPI("💰 Ingresos", totalIngresos, "#0ff", "💵")}
+      ${crearKPI("📉 Costos", totalCostos, "#f00", "📊")}
       ${crearKPI("📈 Utilidad", utilidad, "#0f0", "📈")}
-      ${crearKPI("🧾 Órdenes", ordenes, "#ff0", "📝")}
+      ${crearKPI("🧾 Órdenes", totalOrdenes, "#ff0", "📝")}
+      ${crearKPI("👥 Clientes", totalClientes, "#0ff", "🧑‍🤝‍🧑")}
+      ${crearKPI("📦 Inventario", inventarioData.length, "#ff0", "📦")}
     `;
 
-    // 🔹 GRÁFICA INGRESOS
+    // 🔹 Gráfica ingresos
+    const ingresosPorDia = ordenesData.reduce((acc,o)=>{
+      const fecha = o.creadoEn?.toDate?.()?.toISOString()?.split("T")[0] || "sin_fecha";
+      acc[fecha]=(acc[fecha]||0)+(Number(o.total)||0);
+      return acc;
+    }, {});
     renderGrafica(ingresosPorDia);
 
-    // 🔹 IA GERENTE
+    // 🔹 IA Gerente
     const iaData = await analizarNegocio(state);
     if (iaData) renderIA(iaData);
+
+    // 🔹 Módulos interactivos (mini-paneles)
+    const modulesPanel = document.getElementById("modulesPanel");
+    modulesPanel.innerHTML = `
+      ${crearModulo("Órdenes", totalOrdenes, "📝", "#0ff")}
+      ${crearModulo("Clientes", totalClientes, "👥", "#ff0")}
+      ${crearModulo("Inventario", inventarioData.length, "📦", "#0f0")}
+      ${crearModulo("Finanzas", finanzasData.length, "💰", "#ff0")}
+    `;
 
   } catch (error) {
     console.error("❌ error dashboard", error);
@@ -81,11 +90,19 @@ export default async function dashboard(container, state) {
   }
 }
 
+/* ===============================
+🔥 FUNCIONES FIRESTORE
+=============================== */
+async function fetchCollection(collectionName, empresaId){
+  const q = query(collection(db, collectionName), where("empresaId","==",empresaId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc=>doc.data());
+}
 
 /* ===============================
 🎯 KPI CARD
 =============================== */
-function crearKPI(titulo, valor, color="#0ff", icono="📊") {
+function crearKPI(titulo, valor, color="#0ff", icono="📊"){
   return `
     <div style="
       background:#111827;
@@ -93,47 +110,41 @@ function crearKPI(titulo, valor, color="#0ff", icono="📊") {
       border-radius:12px;
       text-align:center;
       box-shadow:0 0 15px ${color};
-      display:flex;
-      flex-direction:column;
-      align-items:center;
+      display:flex; flex-direction:column; align-items:center; margin-bottom:10px;
     ">
       <span style="font-size:28px;">${icono}</span>
       <h3 style="color:${color}; text-shadow:0 0 8px ${color}; margin:5px 0;">${titulo}</h3>
-      <p style="font-size:22px; font-weight:bold;">$${formatear(valor)}</p>
+      <p style="font-size:22px; font-weight:bold;">${formatear(valor)}</p>
     </div>
   `;
 }
 
-
 /* ===============================
 📈 GRÁFICA INGRESOS
 =============================== */
-function renderGrafica(data) {
-  const ctx = document.getElementById("graficaIngresos");
-  if (!ctx || typeof Chart === "undefined") return;
+function renderGrafica(data){
+  const ctx=document.getElementById("graficaIngresos");
+  if(!ctx||typeof Chart==="undefined") return;
 
-  const labels = Object.keys(data);
-  const valores = Object.values(data);
+  const labels=Object.keys(data);
+  const valores=Object.values(data);
 
-  new Chart(ctx, {
-    type: "line",
-    data: {
-      labels,
-      datasets: [{
-        label: "Ingresos por día",
-        data: valores,
-        borderColor: "#0ff",
-        backgroundColor: "rgba(0,255,255,0.1)",
-        tension: 0.4,
-        fill: true,
-        borderWidth: 3,
-        pointBackgroundColor: "#ff0",
-        pointRadius: 5
-      }]
-    },
-    options: {
+  new Chart(ctx,{
+    type:"line",
+    data:{labels,datasets:[{
+      label:"Ingresos por día",
+      data:valores,
+      borderColor:"#0ff",
+      backgroundColor:"rgba(0,255,255,0.1)",
+      tension:0.4,
+      fill:true,
+      borderWidth:3,
+      pointBackgroundColor:"#ff0",
+      pointRadius:5
+    }]},
+    options:{
       responsive:true,
-      plugins: { legend:{ display:true, labels:{ color:"#0ff" } } },
+      plugins:{ legend:{ display:true, labels:{ color:"#0ff" } } },
       scales:{
         x:{ ticks:{ color:"#0ff" }, grid:{ color:"rgba(0,255,255,0.1)" } },
         y:{ ticks:{ color:"#0ff" }, grid:{ color:"rgba(0,255,255,0.1)" } }
@@ -142,13 +153,12 @@ function renderGrafica(data) {
   });
 }
 
-
 /* ===============================
 🧠 PANEL IA
 =============================== */
-function renderIA(data) {
-  const panel = document.getElementById("iaPanel");
-  panel.innerHTML = `
+function renderIA(data){
+  const panel=document.getElementById("iaPanel");
+  panel.innerHTML=`
     <div style="
       background:#0f172a;
       padding:20px;
@@ -164,10 +174,10 @@ function renderIA(data) {
       <p>🎯 Ticket Promedio: $${formatear(data.resumen.ticketPromedio)}</p>
 
       <h3 style="color:#ff0;">⚠️ Alertas</h3>
-      ${data.alertas.map(a => `<p style="color:#f00;">${a}</p>`).join("")}
+      ${data.alertas.map(a=>`<p style="color:#f00;">${a}</p>`).join("")}
 
       <h3 style="color:#0f0;">🚀 Recomendaciones</h3>
-      ${data.recomendaciones.map(r => `<p>${r}</p>`).join("")}
+      ${data.recomendaciones.map(r=>`<p>${r}</p>`).join("")}
 
       <button id="vozGerente" style="
         margin-top:10px;
@@ -181,13 +191,33 @@ function renderIA(data) {
     </div>
   `;
 
-  document.getElementById("vozGerente").onclick = () => hablarResumen(data);
+  document.getElementById("vozGerente").onclick=()=>hablarResumen(data);
 }
 
+/* ===============================
+🟢 MÓDULOS MINI-PANEL
+=============================== */
+function crearModulo(nombre, valor, icono, color="#0ff"){
+  return `
+    <div style="
+      background:#111827;
+      border-radius:12px;
+      padding:15px;
+      text-align:center;
+      box-shadow:0 0 10px ${color};
+      cursor:pointer;
+      transition:0.3s;
+    ">
+      <span style="font-size:28px;">${icono}</span>
+      <h4 style="color:${color}; margin:5px 0;">${nombre}</h4>
+      <p style="font-weight:bold; font-size:20px;">${formatear(valor)}</p>
+    </div>
+  `;
+}
 
 /* ===============================
 💰 FORMATEAR DINERO
 =============================== */
-function formatear(valor) {
-  return new Intl.NumberFormat("es-CO").format(valor || 0);
+function formatear(valor){
+  return new Intl.NumberFormat("es-CO").format(valor||0);
 }
