@@ -10,6 +10,9 @@ import {
 
 import { analizarNegocio, hablarResumen } from "../ai/aiManager.js";
 
+import { generarSugerencias, renderSugerencias } from "../ai/aiAdvisor.js";
+import { query, where } from "firebase/firestore";
+
 export default async function dashboard(container, state) {
 
   container.innerHTML = `
