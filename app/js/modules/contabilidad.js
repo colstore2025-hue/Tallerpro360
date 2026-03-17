@@ -1,165 +1,138 @@
-/*
-================================================
-CONTABILIDAD.JS - Versión Final Avanzada
-Módulo contable con IA y alertas inteligentes
-Ubicación: /app/js/modules/contabilidad.js
-================================================
-*/
+/**
+ * contabilidad.js
+ * Contabilidad Inteligente + IA + Reportes Dinámicos
+ * TallerPRO360 ERP SaaS
+ */
 
-import { db } from "../core/firebase-config.js";
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  doc,
+  query,
+  where,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-export async function contabilidad(container) {
+import { generarSugerencias, renderSugerencias } from "../ai/aiAdvisor.js";
+import { hablar } from "../voice/voiceCore.js";
+
+export default async function contabilidadModule(container, state) {
+
   container.innerHTML = `
-    <h1 style="font-size:28px;margin-bottom:20px;">💼 Contabilidad Avanzada - Taller</h1>
+    <h1 style="color:#0ff; text-shadow:0 0 10px #0ff;">💼 Contabilidad Inteligente PRO360</h1>
 
-    <div class="card">
-      <h3>Filtrar por fecha</h3>
-      <input type="month" id="fechaInicio" style="padding:8px;margin-right:10px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-      <input type="month" id="fechaFin" style="padding:8px;border-radius:6px;border:1px solid #333;background:#020617;color:white;">
-      <button id="btnGenerar" style="padding:10px 20px;margin-left:10px;background:#16a34a;border:none;border-radius:6px;color:white;cursor:pointer;">Generar Reporte</button>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;">
+      <input id="concepto" placeholder="Concepto" style="flex:2; padding:8px; border-radius:6px;"/>
+      <input id="tipo" placeholder="Tipo (ingreso/gasto)" style="flex:1; padding:8px; border-radius:6px;"/>
+      <input id="monto" placeholder="Monto" type="number" style="flex:1; padding:8px; border-radius:6px;"/>
+      <button id="agregar" style="flex:1; background:#16a34a; border-radius:6px; font-weight:bold;">➕ Agregar</button>
     </div>
 
-    <div class="card" style="margin-top:20px;">
-      <h3>Balance General</h3>
-      <div id="balanceGeneral">Cargando...</div>
-    </div>
-
-    <div class="card" style="margin-top:20px;">
-      <h3>Estado de Resultados (P&L)</h3>
-      <div id="estadoResultados">Cargando...</div>
-    </div>
-
-    <div class="card" style="margin-top:20px;">
-      <h3>Alertas Financieras IA</h3>
-      <div id="alertasIA">Esperando generación...</div>
-      <button id="vozAlertas" style="margin-top:10px;padding:8px 15px;background:#6366f1;border:none;border-radius:6px;color:white;cursor:pointer;">🔊 Leer alertas</button>
-    </div>
+    <div id="alertas"></div>
+    <div id="lista"></div>
+    <div id="advisorContabilidad" style="margin-top:20px;"></div>
   `;
 
-  document.getElementById("btnGenerar").onclick = generarReporte;
-  document.getElementById("vozAlertas").onclick = leerAlertasVoz;
+  const lista = document.getElementById("lista");
+  const alertasDiv = document.getElementById("alertas");
 
-  await generarReporte();
-}
+  let movimientos = [];
 
-async function generarReporte() {
-  const inicioInput = document.getElementById("fechaInicio").value;
-  const finInput = document.getElementById("fechaFin").value;
+  // 🔄 Cargar movimientos contables
+  async function cargarMovimientos() {
+    try {
+      const q = query(
+        collection(window.db, "contabilidad"),
+        where("empresaId", "==", state.empresaId),
+        orderBy("fecha", "desc")
+      );
+      const snap = await getDocs(q);
+      movimientos = [];
+      let alertas = [];
 
-  const inicio = inicioInput ? new Date(inicioInput + "-01") : new Date(new Date().getFullYear(),0,1);
-  const fin = finInput ? new Date(finInput + "-01") : new Date();
+      let totalIngresos = 0;
+      let totalGastos = 0;
 
-  const balance = await calcularBalance(inicio, fin);
-  document.getElementById("balanceGeneral").innerHTML = `
-    <p>Activos: $${balance.activos.toLocaleString()}</p>
-    <p>Pasivos: $${balance.pasivos.toLocaleString()}</p>
-    <p>Patrimonio: $${balance.patrimonio.toLocaleString()}</p>
-  `;
-  hablar(`Balance general actualizado. Activos: ${balance.activos}, Pasivos: ${balance.pasivos}, Patrimonio: ${balance.patrimonio}`);
+      snap.forEach(docSnap => {
+        const m = docSnap.data();
+        movimientos.push({ id: docSnap.id, ...m });
 
-  const resultados = await calcularEstadoResultados(inicio, fin);
-  document.getElementById("estadoResultados").innerHTML = `
-    <p>Ingresos: $${resultados.ingresos.toLocaleString()}</p>
-    <p>Costos: $${resultados.costos.toLocaleString()}</p>
-    <p>Gastos: $${resultados.gastos.toLocaleString()}</p>
-    <p>Ganancia Neta: $${resultados.gananciaNeta.toLocaleString()}</p>
-  `;
+        if(m.tipo === "ingreso") totalIngresos += Number(m.monto || 0);
+        if(m.tipo === "gasto") totalGastos += Number(m.monto || 0);
+      });
 
-  const alertasHtml = await generarAlertasIA(resultados);
-  document.getElementById("alertasIA").innerHTML = alertasHtml;
-}
+      const utilidad = totalIngresos - totalGastos;
 
-async function calcularBalance(inicio, fin){
-  let activos = 0, pasivos = 0, patrimonio = 0;
+      renderLista(movimientos);
+      renderAlertas(utilidad);
 
-  const invSnap = await getDocs(collection(db,"inventario"));
-  invSnap.forEach(docSnap=>{
-    const p = docSnap.data();
-    activos += (Number(p.precio) * Number(p.stock)) || 0;
-  });
+      // 🔮 IA: recomendaciones
+      const sugerencias = await generarSugerencias({ contabilidad: movimientos, empresaId: state.empresaId });
+      renderSugerencias("advisorContabilidad", sugerencias);
 
-  const ordSnap = await getDocs(collection(db,"ordenes"));
-  ordSnap.forEach(docSnap=>{
-    const o = docSnap.data();
-    const fecha = o.fecha.toDate();
-    if(fecha >= inicio && fecha <= fin){
-      activos += Number(o.total) || 0;
+    } catch(e){
+      console.error(e);
+      lista.innerHTML = "❌ Error cargando contabilidad";
     }
-  });
-
-  const gastosSnap = await getDocs(collection(db,"gastos"));
-  gastosSnap.forEach(docSnap=>{
-    const g = docSnap.data();
-    const fecha = g.fecha.toDate();
-    if(fecha >= inicio && fecha <= fin){
-      pasivos += Number(g.monto) || 0;
-    }
-  });
-
-  patrimonio = activos - pasivos;
-  return {activos,pasivos,patrimonio};
-}
-
-async function calcularEstadoResultados(inicio, fin){
-  let ingresos = 0, costos = 0, gastos = 0;
-
-  const ordSnap = await getDocs(collection(db,"ordenes"));
-  ordSnap.forEach(docSnap=>{
-    const o = docSnap.data();
-    const fecha = o.fecha.toDate();
-    if(fecha >= inicio && fecha <= fin){
-      ingresos += Number(o.total) || 0;
-      costos += Number(o.costoTotal) || 0;
-    }
-  });
-
-  const gastosSnap = await getDocs(collection(db,"gastos"));
-  gastosSnap.forEach(docSnap=>{
-    const g = docSnap.data();
-    const fecha = g.fecha.toDate();
-    if(fecha >= inicio && fecha <= fin){
-      gastos += Number(g.monto) || 0;
-    }
-  });
-
-  const gananciaNeta = ingresos - costos - gastos;
-  return {ingresos,costos,gastos,gananciaNeta};
-}
-
-let alertasCache = "";
-
-async function generarAlertasIA(resultados){
-  if(!window.SuperAI){
-    alertasCache = "SuperAI no disponible";
-    return "<p>SuperAI no disponible</p>";
   }
 
-  try{
-    const alertas = await window.SuperAI.analyzeFinance(resultados);
-    alertasCache = alertas.join(". ");
-    return alertas.map(a=>`<p>⚠️ ${a}</p>`).join("");
-  }catch(e){
-    console.error("Error IA alertas:",e);
-    alertasCache = "Error generando alertas";
-    return "<p>❌ Error generando alertas</p>";
+  // 🎨 Render lista de movimientos
+  function renderLista(data){
+    lista.innerHTML = data.map(m => `
+      <div style="background:#111;padding:12px;margin:8px 0;border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          📝 <strong>${m.concepto}</strong> <br/>
+          Tipo: ${m.tipo} | $${formatear(m.monto)} <br/>
+          Fecha: ${m.fecha?.toDate ? m.fecha.toDate().toLocaleString() : new Date(m.fecha).toLocaleString()}
+        </div>
+      </div>
+    `).join("");
   }
-}
 
-function hablar(texto){
-  if(!texto) return;
-  const speech = new SpeechSynthesisUtterance(texto);
-  speech.lang = "es-ES";
-  speech.rate = 1;
-  speech.pitch = 1;
-  speech.volume = 1;
-  window.speechSynthesis.speak(speech);
-}
-
-function leerAlertasVoz(){
-  if(!alertasCache){
-    hablar("No hay alertas generadas aún");
-  } else {
-    hablar(alertasCache);
+  // 🚨 Alertas y resumen
+  function renderAlertas(utilidad){
+    if(utilidad < 0){
+      alertasDiv.innerHTML = `<h3 style="color:#ff4d4d;">❌ Pérdida actual: $${formatear(utilidad)}</h3>`;
+      hablar("⚠️ Atención, el balance contable está en pérdida");
+    } else {
+      alertasDiv.innerHTML = `<h3 style="color:#0ff;">✅ Utilidad actual: $${formatear(utilidad)}</h3>`;
+      hablar("✅ Balance contable positivo");
+    }
   }
+
+  // ➕ Agregar movimiento contable
+  document.getElementById("agregar").onclick = async ()=>{
+    const concepto = document.getElementById("concepto").value.trim();
+    const tipo = document.getElementById("tipo").value.trim().toLowerCase();
+    const monto = Number(document.getElementById("monto").value) || 0;
+
+    if(!concepto || !tipo || !["ingreso","gasto"].includes(tipo) || monto<=0){
+      alert("Datos incompletos o incorrectos");
+      return;
+    }
+
+    try {
+      await addDoc(collection(window.db,"contabilidad"),{
+        empresaId: state.empresaId,
+        concepto,
+        tipo,
+        monto,
+        fecha: new Date()
+      });
+
+      ["concepto","tipo","monto"].forEach(id=>document.getElementById(id).value="");
+      hablar(`✅ Movimiento contable ${tipo} agregado`);
+      cargarMovimientos();
+    } catch(e){ console.error(e); alert("❌ Error agregando movimiento"); }
+  };
+
+  // 💰 Formatear dinero
+  function formatear(valor){
+    return new Intl.NumberFormat("es-CO").format(valor||0);
+  }
+
+  // INIT
+  cargarMovimientos();
 }
