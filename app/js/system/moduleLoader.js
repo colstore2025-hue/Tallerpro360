@@ -1,68 +1,147 @@
-/*
-=====================================
-moduleloader.js
-cargador de módulos erp
-tallerpro360
-=====================================
-*/
+/**
+ * moduleLoader.js
+ * Cargador central del ERP TallerPRO360
+ * Conecta todos los módulos + Dashboard + IA
+ */
 
-class moduleloader{
+import { dashboard } from "../modules/dashboard.js";
 
-constructor(){
+// Módulos principales del ERP
+const modules = {
+  ordenes: () => import("../modules/ordenes.js"),
+  clientes: () => import("../modules/clientes.js"),
+  inventario: () => import("../modules/inventario.js"),
+  finanzas: () => import("../modules/finanzas.js"),
+  configuracion: () => import("../modules/configuracion.js"),
+  reportes: () => import("../modules/reportes.js"),
 
-this.modules={};
+  // IA
+  aiAssistant: () => import("../modules/aiAssistant.js"),
+  aiAdvisor: () => import("../modules/aiAdvisor.js")
+};
 
+// Estado global
+const state = {
+  currentModule: null,
+  empresaId: "taller_001",
+  cargando: false
+};
+
+// Loader UI
+function showLoader(container) {
+  container.innerHTML = `
+    <div style="color:#00ffcc; font-size:18px; text-align:center; padding:40px;">
+      ⚡ Cargando módulo...
+    </div>
+  `;
 }
 
-register(name,fn){
-
-this.modules[name]=fn;
-
-console.log("📦 módulo registrado:",name);
-
+// Error UI
+function showError(container, error) {
+  container.innerHTML = `
+    <div style="color:red; padding:20px;">
+      ❌ Error cargando módulo <br/>
+      ${error.message}
+    </div>
+  `;
 }
 
-async load(name,container,userId){
+// Cargar módulo dinámicamente
+export async function loadModule(moduleName, container) {
+  if (state.cargando) return;
 
-const mod=this.modules[name];
+  try {
+    state.cargando = true;
+    showLoader(container);
 
-if(!mod){
+    if (!modules[moduleName]) {
+      throw new Error(`Módulo no existe: ${moduleName}`);
+    }
 
-container.innerHTML=`
-<h2>Módulo ${name} no encontrado</h2>
-`;
+    const module = await modules[moduleName]();
 
-return;
+    if (!module || !module.default) {
+      throw new Error(`Módulo inválido: ${moduleName}`);
+    }
 
+    container.innerHTML = "";
+    module.default(container, state);
+
+    state.currentModule = moduleName;
+
+  } catch (error) {
+    console.error("Error cargando módulo:", error);
+    showError(container, error);
+  } finally {
+    state.cargando = false;
+  }
 }
 
-try{
+// Inicializar ERP completo
+export function initApp() {
+  const root = document.getElementById("app");
 
-console.log("🚀 cargando módulo:",name);
+  if (!root) {
+    console.error("❌ No existe #app en index.html");
+    return;
+  }
 
-await mod(container,userId);
+  // Layout base
+  root.innerHTML = `
+    <div style="display:flex; height:100vh; background:#0a0a0a; color:white;">
+      
+      <!-- Sidebar -->
+      <div style="width:240px; background:#111; padding:10px;">
+        <h2 style="color:#00ffcc;">TallerPRO360</h2>
 
-console.log("✅ módulo cargado:",name);
+        <button onclick="window.navigate('dashboard')">📊 Dashboard</button>
+        <button onclick="window.navigate('ordenes')">🧾 Órdenes</button>
+        <button onclick="window.navigate('clientes')">👥 Clientes</button>
+        <button onclick="window.navigate('inventario')">📦 Inventario</button>
+        <button onclick="window.navigate('finanzas')">💰 Finanzas</button>
+        <button onclick="window.navigate('reportes')">📈 Reportes</button>
+        <button onclick="window.navigate('configuracion')">⚙️ Configuración</button>
+      </div>
 
+      <!-- Contenido -->
+      <div id="view" style="flex:1; padding:20px; overflow:auto;"></div>
+    </div>
+  `;
+
+  const view = document.getElementById("view");
+
+  // Navegación global
+  window.navigate = (moduleName) => {
+    if (moduleName === "dashboard") {
+      view.innerHTML = "";
+      dashboard(view, state);
+    } else {
+      loadModule(moduleName, view);
+    }
+  };
+
+  // Cargar dashboard inicial
+  dashboard(view, state);
+
+  // Inicializar IA en background
+  initAI();
 }
-catch(e){
 
-console.error("❌ error módulo:",name,e);
+// Inicializar IA (sin bloquear UI)
+async function initAI() {
+  try {
+    const ai = await modules.aiAssistant();
+    if (ai && ai.init) {
+      ai.init();
+    }
 
-container.innerHTML=`
+    const advisor = await modules.aiAdvisor();
+    if (advisor && advisor.init) {
+      advisor.init();
+    }
 
-<h2>Error cargando módulo</h2>
-
-<p>${name}</p>
-
-<p>Revisa consola del sistema</p>
-
-`;
-
+    console.log("🤖 IA inicializada correctamente");
+  } catch (e) {
+    console.warn("IA no disponible:", e.message);
+  }
 }
-
-}
-
-}
-
-export const moduleLoader=new moduleloader();
