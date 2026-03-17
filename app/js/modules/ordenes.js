@@ -7,6 +7,7 @@ import { usarRepuesto } from "../services/inventarioService.js";
 import { iniciarVoz, hablar } from "../voice/voiceCore.js";
 import { generarOrdenIA } from "../ai/aiAutonomousFlow.js";
 import { aprenderDeOrden } from "../ai/aiLearningEngine.js";
+import { generarSugerencias, renderSugerencias } from "../ai/aiAdvisor.js";
 
 export default async function (container, state) {
 
@@ -40,6 +41,8 @@ export default async function (container, state) {
     <button id="crearConIA">🤖 Crear con IA</button>
     <button id="vozBtn">🎤 Voz</button>
   `;
+
+<div id="advisorOrdenes"></div>
 
   const itemsList = document.getElementById("itemsList");
 
