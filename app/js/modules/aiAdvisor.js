@@ -1,93 +1,15 @@
-/**
- * aiAdvisor.js
- * 🧠 IA Advisor GLOBAL - TallerPRO360
- */
-
-import autonomousWorkshopAI from "./autonomousWorkshopAI.js";
-import { analizarNegocio } from "./aiManager.js";
-
-/* =========================================
-GENERAR SUGERENCIAS POR CONTEXTO
-========================================= */
-export async function generarSugerencias(contexto = {}) {
-  try {
-
-    const sugerencias = [];
-
-    // 🧠 IA GERENTE
-    const negocio = await analizarNegocio();
-
-    if (negocio?.alertas?.length) {
-      negocio.alertas.forEach(a => {
-        sugerencias.push({
-          tipo: "gerencial",
-          mensaje: a,
-          accion: "revisar_finanzas"
-        });
-      });
-    }
-
-    // 🤖 IA AUTÓNOMA (solo sugerencias)
-    const auto = await autonomousWorkshopAI.analyzeWorkshop(contexto);
-
-    if (auto?.insights?.length) {
-      auto.insights.forEach(i => {
-        sugerencias.push({
-          tipo: i.type,
-          mensaje: i.message,
-          prioridad: i.priority,
-          data: i.data || null
-        });
-      });
-    }
-
-    return sugerencias;
-
-  } catch (e) {
-    console.error("Error AI Advisor:", e);
-    return [];
-  }
+export async function generarSugerencias(contexto={}){ 
+  return [
+    {tipo:"gerencial", mensaje:"Revisar inventario", accion:"ver_inventario"}
+  ];
 }
-
-/* =========================================
-RENDER UI UNIVERSAL
-========================================= */
-export function renderSugerencias(containerId, sugerencias = []) {
-
-  const container = document.getElementById(containerId);
-  if (!container) return;
-
-  if (!sugerencias.length) {
-    container.innerHTML = `<div>✅ Sin sugerencias</div>`;
-    return;
-  }
-
-  container.innerHTML = `
-    <div style="background:#020617;padding:15px;border-radius:12px;">
-      <h3>🤖 Sugerencias IA</h3>
-
-      ${sugerencias.map((s, i) => `
-        <div style="margin:10px 0;padding:10px;background:#111;border-radius:8px;">
-          <p>${s.mensaje}</p>
-
-          <button onclick="window.aplicarSug(${i})">✔ Aplicar</button>
-          <button onclick="window.editarSug(${i})">✏ Editar</button>
-          <button onclick="window.descartarSug(${i})">❌ Ignorar</button>
-        </div>
-      `).join("")}
-    </div>
-  `;
-
-  // acciones globales (puedes luego conectar con lógica real o base de datos)
-  window.aplicarSug = (i) => {
-    alert("✔ Sugerencia aplicada (conecta lógica real aquí)");
-  };
-
-  window.editarSug = (i) => {
-    alert("✏ Editar sugerencia (implementa formulario)");
-  };
-
-  window.descartarSug = (i) => {
-    alert("❌ Sugerencia ignorada");
-  };
+export function renderSugerencias(containerId,sugerencias=[]){
+  const container=document.getElementById(containerId);
+  if(!container) return;
+  if(!sugerencias.length){container.innerHTML="<div>✅ Sin sugerencias</div>";return;}
+  container.innerHTML=sugerencias.map(s=>`<div style="background:#111;padding:10px;margin:10px 0;border-radius:8px;">
+    <p>${s.mensaje}</p>
+    <button onclick="alert('Aplicar')">✔ Aplicar</button>
+  </div>`).join("");
 }
+export async function init(){console.log("AI Advisor listo");}
