@@ -83,192 +83,121 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-
 const form = document.getElementById("loginForm");
 const errorMsg = document.getElementById("errorMsg");
 const togglePass = document.getElementById("togglePass");
 const resetBtn = document.getElementById("resetBtn");
 
-
 /* ===============================
 MOSTRAR PASSWORD
 =============================== */
+togglePass.addEventListener("click", () => {
+  const pass = document.getElementById("password");
 
-togglePass.addEventListener("click",()=>{
-
-  const pass=document.getElementById("password");
-
-  if(pass.type==="password"){
-
-    pass.type="text";
-    togglePass.innerHTML='<i class="fa fa-eye-slash"></i>';
-
-  }else{
-
-    pass.type="password";
-    togglePass.innerHTML='<i class="fa fa-eye"></i>';
-
+  if (pass.type === "password") {
+    pass.type = "text";
+    togglePass.innerHTML = '<i class="fa fa-eye-slash"></i>';
+  } else {
+    pass.type = "password";
+    togglePass.innerHTML = '<i class="fa fa-eye"></i>';
   }
-
 });
-
 
 /* ===============================
 RESET PASSWORD
 =============================== */
+resetBtn.addEventListener("click", async () => {
 
-resetBtn.addEventListener("click",async()=>{
+  const email = document.getElementById("email").value.trim();
 
-  const email=document.getElementById("email").value.trim();
-
-  if(!email){
+  if (!email) {
     showError("Escribe tu correo para recuperar contraseña");
     return;
   }
 
-  try{
-
-    await sendPasswordResetEmail(auth,email);
-
+  try {
+    await sendPasswordResetEmail(auth, email);
     alert("Te enviamos un correo para cambiar tu contraseña");
-
-  }
-  catch(e){
-
+  } catch (e) {
     showError("No se pudo enviar el correo");
-
   }
 
 });
-
 
 /* ===============================
 LOGIN
 =============================== */
-
-form.addEventListener("submit",async e=>{
+form.addEventListener("submit", async e => {
 
   e.preventDefault();
-
   hideError();
 
-  const email=document.getElementById("email").value.trim();
-  const password=document.getElementById("password").value;
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
 
-  try{
+  try {
 
-    const cred=await signInWithEmailAndPassword(auth,email,password);
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    const uid = cred.user.uid;
 
-    const uid=cred.user.uid;
+    const snap = await getDoc(doc(db, "usuariosGlobal", uid));
 
-    const snap=await getDoc(doc(db,"usuariosGlobal",uid));
-
-    if(!snap.exists()){
-
+    if (!snap.exists()) {
       showError("Usuario no registrado");
       await signOut(auth);
       return;
-
     }
 
-    const data=snap.data();
+    const data = snap.data();
 
-    if(!data.activo){
-
+    if (!data.activo) {
       showError("Usuario desactivado");
       await signOut(auth);
       return;
-
     }
 
-    setLocalStorage(data,uid);
+    setLocalStorage(data, uid);
 
-setTimeout(()=>{
+    // 🚀 Redirección limpia
+    setTimeout(() => {
+      window.location.href = "/app/index.html";
+    }, 200);
 
-redirigir(data);
-
-},200);
-
-  }
-  catch(err){
-
+  } catch (err) {
     showError("Credenciales incorrectas");
-
   }
 
 });
 
-
 /* ===============================
-REDIRECCIÓN
+AUTO LOGIN (SESION ACTIVA)
 =============================== */
-
-function redirigir(data){
-
-  // 🚀 TODOS los usuarios del sistema van al ERP
-  // (la lógica interna del router se encarga del resto)
-
-  window.location.href = "/app/index.html";
-
-}
-
 onAuthStateChanged(auth, (user) => {
-
   if (user) {
     window.location.href = "/app/index.html";
   }
-
 });
-
-  switch(data.rol){
-
-    case "dueno":
-    case "admin":
-    case "tecnico":
-    case "asesor":
-
-      window.location="/app/index.html";
-      break;
-
-    case "cliente":
-
-      window.location="/cliente.html";
-      break;
-
-  }
-
-}
-
 
 /* ===============================
 LOCAL STORAGE
 =============================== */
-
-function setLocalStorage(data,uid){
-
-  localStorage.setItem("uid",uid);
-  localStorage.setItem("empresaId",data.empresaId||"");
-  localStorage.setItem("rol",data.rol||"");
-  localStorage.setItem("planTipo",data.planTipo||"freemium");
-
+function setLocalStorage(data, uid){
+  localStorage.setItem("uid", uid);
+  localStorage.setItem("empresaId", data.empresaId || "");
+  localStorage.setItem("rol", data.rol || "");
+  localStorage.setItem("planTipo", data.planTipo || "freemium");
 }
-
 
 /* ===============================
 ERROR
 =============================== */
-
 function showError(msg){
-
-  errorMsg.textContent=msg;
+  errorMsg.textContent = msg;
   errorMsg.classList.remove("hidden");
-
 }
 
 function hideError(){
-
   errorMsg.classList.add("hidden");
-
 }
 
 </script>
