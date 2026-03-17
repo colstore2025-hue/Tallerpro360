@@ -1,82 +1,113 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TallerPRO360 - ERP Gerencial</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TallerPRO360 - ERP + IA + CRM</title>
 
-  <!-- Estilos generales -->
+  <!-- Estilos globales -->
   <style>
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #0b0c17;
+      background: #0b0c17;
       color: #fff;
-      padding: 20px;
+      overflow: hidden;
     }
-    h1, h3 {
-      text-shadow: 0 0 6px #00ff99;
+
+    h1, h2, h3 {
+      text-shadow: 0 0 8px #00ffcc;
     }
-    .card {
-      background: #111827;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 15px;
-      box-shadow: 0 0 10px rgba(0,255,153,0.3);
-    }
-    #kpiContainer {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 15px;
-      margin-top: 30px;
-    }
-    .kpiCard {
-      text-align: center;
-      padding: 20px;
-      border-radius: 12px;
-      font-weight: bold;
-      font-size: 18px;
-      box-shadow: 0 0 10px rgba(0,255,153,0.5);
-    }
-    canvas {
-      background: #0f172a;
-      border-radius: 12px;
+
+    button {
+      width: 100%;
+      margin: 6px 0;
       padding: 10px;
-      box-shadow: 0 0 10px #00ff99;
+      border: none;
+      border-radius: 8px;
+      background: #0f172a;
+      color: #00ffcc;
+      cursor: pointer;
+      transition: 0.3s;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #00ffcc;
+      color: #000;
+      box-shadow: 0 0 10px #00ffcc;
+    }
+
+    /* Loader global */
+    #globalLoader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #0b0c17;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      color: #00ffcc;
+      font-size: 20px;
     }
   </style>
 
-  <!-- Chart.js CDN -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
 
-  <!-- Contenedor dashboard -->
-  <div id="dashboardContainer"></div>
+  <!-- Loader inicial -->
+  <div id="globalLoader">⚡ Iniciando TallerPRO360...</div>
 
-  <!-- Firebase SDK -->
+  <!-- App Root -->
+  <div id="app"></div>
+
+  <!-- Firebase INIT GLOBAL -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // const firebaseConfig = {
-  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-  authDomain: "tallerpro360.firebaseapp.com",
-  projectId: "tallerpro360",
-  storageBucket: "tallerpro360.firebasestorage.app",
-  messagingSenderId: "636224778184",
-  appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
-  measurementId: "G-VEC2C0QX2G"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+      authDomain: "tallerpro360.firebaseapp.com",
+      projectId: "tallerpro360",
+      storageBucket: "tallerpro360.firebasestorage.app",
+      messagingSenderId: "636224778184",
+      appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
+      measurementId: "G-VEC2C0QX2G"
+    };
 
     const app = initializeApp(firebaseConfig);
-    export const db = getFirestore(app);
+    const db = getFirestore(app);
+
+    // Hacer global para todos los módulos
+    window.db = db;
   </script>
 
-  <!-- Dashboard JS -->
+  <!-- APP LOADER -->
   <script type="module">
-    import { dashboard } from "./js/modules/dashboard.js";
-    dashboard(document.getElementById("dashboardContainer"));
+    import { initApp } from "./js/system/moduleLoader.js";
+
+    async function startApp() {
+      try {
+        await initApp();
+
+        // Ocultar loader
+        document.getElementById("globalLoader").style.display = "none";
+
+      } catch (error) {
+        console.error("Error iniciando app:", error);
+        document.getElementById("globalLoader").innerHTML =
+          "❌ Error cargando ERP";
+      }
+    }
+
+    startApp();
   </script>
 
 </body>
