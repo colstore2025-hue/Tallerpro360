@@ -1,80 +1,64 @@
 /**
- * 🤖 IA Assistant PRO360
- * TallerPRO360 – ERP + IA + Voz
+ * aiAssistant.js
+ * Asistente Inteligente para TallerPRO360
+ * Nivel Tesla · Última generación
  */
 
-import { analizarNegocio } from "./aiManager.js";
-import { escucharVoz, hablar } from "../voice/voiceCore.js";
+import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db } from "../core/firebase-config.js";
+import { generarResumenOrdenes, generarSugerencias } from "./aiAdvisor.js";
+import { hablar } from "../voice/voiceCore.js";
 
-export let IA = {
-  estado: "inactiva",
-  empresaId: null,
-  resumen: {},
-  alertas: [],
-  recomendaciones: []
-};
+export default async function aiAssistantModule(container, state) {
+  container.innerHTML = `
+    <h1 style="color:#0ff; text-shadow:0 0 10px #0ff;">🤖 Asistente IA PRO360</h1>
 
-// Inicializar IA operativa
-export async function init({ empresaId } = {}) {
-  if (!empresaId) {
-    console.warn("⚠️ IA no inicializada: empresaId requerido");
-    return;
-  }
+    <div style="margin-bottom:10px;">
+      <textarea id="consultaIA" placeholder="Pregunta al asistente..." style="width:100%; height:80px;"></textarea>
+      <button id="consultarIA" style="background:#0ff; color:#000; font-weight:bold; padding:10px 15px; border:none; border-radius:6px;">💬 Consultar IA</button>
+      <button id="vozIA" style="background:#16a34a; color:#fff; font-weight:bold; padding:10px 15px; border:none; border-radius:6px; margin-left:5px;">🎤 Voz</button>
+    </div>
 
-  IA.empresaId = empresaId;
-  IA.estado = "inicializando";
+    <div id="respuestaIA" style="background:#111; padding:15px; border-radius:10px; color:#0ff; min-height:80px;"></div>
+  `;
 
-  console.log("🤖 IA Assistant PRO360 inicializando para:", empresaId);
+  const consultaInput = document.getElementById("consultaIA");
+  const respuestaDiv = document.getElementById("respuestaIA");
 
-  try {
-    await actualizarIA();
+  // ➡️ Consultar IA con texto
+  document.getElementById("consultarIA").onclick = async () => {
+    const pregunta = consultaInput.value.trim();
+    if (!pregunta) return;
 
-    // Inicializar voz si está disponible
-    if ("SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
-      escucharVoz((texto) => {
-        console.log("🎤 Comando por voz detectado:", texto);
-        // Aquí puedes enviar a generarOrdenIA, generar alertas, etc.
-      });
+    respuestaDiv.innerHTML = "Procesando...";
+
+    try {
+      const sugerencias = await generarSugerencias({ pregunta, empresaId: state.empresaId });
+      const resumen = await generarResumenOrdenes(state.empresaId);
+
+      // Combinar datos y recomendaciones
+      const respuesta = `
+        <p>🧾 Resumen órdenes: Ingresos: $${resumen.ingresos}, Utilidad: $${resumen.utilidad}, Órdenes abiertas: ${resumen.ordenesAbiertas}</p>
+        <p>💡 Recomendaciones IA:</p>
+        <ul>${sugerencias.map(s => `<li>${s}</li>`).join("")}</ul>
+      `;
+
+      respuestaDiv.innerHTML = respuesta;
+      hablar("✅ Aquí están los datos y recomendaciones de tu asistente IA");
+    } catch (e) {
+      console.error(e);
+      respuestaDiv.innerHTML = `<p style="color:red;">❌ Error generando respuesta IA</p>`;
+      hablar("❌ Hubo un error procesando tu solicitud");
     }
+  };
 
-    IA.estado = "activa";
-    console.log("✅ IA Assistant PRO360 activa");
-  } catch (e) {
-    IA.estado = "error";
-    console.error("❌ Error inicializando IA:", e);
-  }
-}
-
-// Actualizar datos IA
-export async function actualizarIA() {
-  if (!IA.empresaId) return;
-
-  try {
-    const data = await analizarNegocio({ empresaId: IA.empresaId });
-
-    IA.resumen = data.resumen || {};
-    IA.alertas = data.alertas || [];
-    IA.recomendaciones = data.recomendaciones || [];
-
-    console.log("📊 IA actualizada:", IA.resumen);
-
-  } catch (e) {
-    console.error("❌ Error actualizando IA:", e);
-  }
-}
-
-// Notificar alertas por voz
-export function notificarAlertas() {
-  if (!IA.alertas.length) return;
-  IA.alertas.forEach(alerta => hablar(`🚨 Alerta: ${alerta}`));
-}
-
-// Función para obtener estado actual
-export function estadoIA() {
-  return {
-    estado: IA.estado,
-    resumen: IA.resumen,
-    alertas: IA.alertas,
-    recomendaciones: IA.recomendaciones
+  // ➡️ Consultar IA por voz
+  document.getElementById("vozIA").onclick = () => {
+    import("./voice/voiceCore.js").then(({ iniciarVoz }) => {
+      iniciarVoz(async (texto) => {
+        consultaInput.value = texto;
+        document.getElementById("consultarIA").click();
+      });
+    });
   };
 }
