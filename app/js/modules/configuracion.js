@@ -1,6 +1,7 @@
 /**
  * configuracion.js
  * Módulo de Configuración de Taller y Ayuda - TallerPRO360
+ * SaaS Ready
  */
 
 import { db } from "../core/firebase-config.js";
@@ -8,6 +9,7 @@ import { generarManualPDF } from "../manual/manual.js";
 import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export async function configuracion(container) {
+
   container.innerHTML = `
     <h1 style="font-size:28px;margin-bottom:20px;">⚙ Configuración del Taller</h1>
 
@@ -35,9 +37,13 @@ export async function configuracion(container) {
 
   await cargarDatosTaller();
 
+  // Guardar configuración
   document.getElementById("guardarTaller").onclick = guardarDatosTaller;
+
+  // Descargar manual
   document.getElementById("btnManual").onclick = generarManualPDF;
 
+  // Ayuda rápida IA
   const inputPregunta = document.getElementById("inputPregunta");
   const respuestasContainer = document.getElementById("respuestasAyuda");
 
@@ -55,6 +61,7 @@ export async function configuracion(container) {
   });
 }
 
+// Guardar datos en Firestore
 async function guardarDatosTaller() {
   const data = {
     nombre: document.getElementById("tallerNombre").value.trim(),
@@ -68,11 +75,12 @@ async function guardarDatosTaller() {
     await setDoc(doc(db,"configuracion","empresa"), data);
     alert("✅ Configuración guardada correctamente");
   } catch(e) {
-    console.error("Error guardando configuración:", e);
+    console.error("❌ Error guardando configuración:", e);
     alert("❌ Error al guardar la configuración");
   }
 }
 
+// Cargar datos desde Firestore
 async function cargarDatosTaller() {
   try {
     const docSnap = await getDoc(doc(db,"configuracion","empresa"));
@@ -85,10 +93,11 @@ async function cargarDatosTaller() {
       document.getElementById("tallerCorreo").value = data.correo || "";
     }
   } catch(e) {
-    console.error("Error cargando configuración:", e);
+    console.error("❌ Error cargando configuración:", e);
   }
 }
 
+// Respuestas rápidas FAQ IA
 function generarRespuestaFAQ(pregunta) {
   pregunta = pregunta.toLowerCase();
   if(pregunta.includes("cliente")) return "Para agregar un cliente, ve al módulo Clientes y presiona 'Guardar Cliente'.";
