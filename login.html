@@ -205,12 +205,20 @@ REDIRECCIÓN
 
 function redirigir(data){
 
-  if(data.rolGlobal==="superadmin"){
+  // 🚀 TODOS los usuarios del sistema van al ERP
+  // (la lógica interna del router se encarga del resto)
 
-   app/app/index.html";
-    return;
+  window.location.href = "/app/index.html";
 
+}
+
+onAuthStateChanged(auth, (user) => {
+
+  if (user) {
+    window.location.href = "/app/index.html";
   }
+
+});
 
   switch(data.rol){
 
