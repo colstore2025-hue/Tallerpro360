@@ -5,6 +5,8 @@
 
 import autonomousWorkshopAI from "./autonomousWorkshopAI.js";
 import { analizarNegocio } from "./aiManager.js";
+import { generarSugerencias, renderSugerencias } from "./aiAdvisor.js";
+
 
 /* =========================================
 GENERAR SUGERENCIAS POR CONTEXTO
@@ -13,7 +15,12 @@ export async function generarSugerencias(contexto = {}) {
 
   try {
 
-    const sugerencias = [];
+const sugerencias = await generarSugerencias({
+  ordenes: [orden]
+});
+
+renderSugerencias("aiResultado", sugerencias);
+    
 
     // 🧠 IA GERENTE
     const negocio = await analizarNegocio();
