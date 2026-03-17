@@ -1,93 +1,126 @@
 import {
   collection,
-  getDocs,
   addDoc,
-  serverTimestamp,
+  getDocs,
   updateDoc,
   doc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { usarRepuesto } from "../services/inventarioService.js";
+
 export default async function (container, state) {
 
+  let items = [];
+
   container.innerHTML = `
-    <h1>🧾 Órdenes del Taller</h1>
+    <h1>🧾 Órdenes PRO</h1>
 
-    <div style="margin-bottom:20px;">
-      <input id="placa" placeholder="Placa vehículo"/>
-      <input id="diagnostico" placeholder="Diagnóstico mecánico"/>
-      <button id="crearOrden">Crear Orden</button>
-    </div>
+    <input id="cliente" placeholder="ID Cliente"/>
+    <input id="vehiculo" placeholder="Placa"/>
 
-    <div id="listaOrdenes"></div>
+    <h3>Agregar repuesto</h3>
+
+    <select id="tipo">
+      <option value="inventario">Inventario</option>
+      <option value="compra">Compra directa</option>
+      <option value="cliente">Cliente trae</option>
+    </select>
+
+    <input id="nombre" placeholder="Nombre"/>
+    <input id="cantidad" type="number" placeholder="Cantidad"/>
+    <input id="precio" type="number" placeholder="Precio venta"/>
+    <input id="costo" type="number" placeholder="Costo"/>
+
+    <button id="addItem">➕ Agregar</button>
+
+    <div id="itemsList"></div>
+
+    <button id="crearOrden">🚀 Crear Orden</button>
   `;
 
-  const lista = document.getElementById("listaOrdenes");
+  const itemsList = document.getElementById("itemsList");
 
-  // 🔄 Cargar órdenes
-  async function cargarOrdenes() {
-    lista.innerHTML = "Cargando órdenes...";
-
-    const snap = await getDocs(collection(window.db, "ordenes"));
-
-    let html = "";
-
-    snap.forEach(docSnap => {
-      const o = docSnap.data();
-
-      html += `
-        <div style="background:#111; padding:15px; margin:10px 0; border-radius:10px;">
-          <b>${o.numero || "ORD"}</b> - ${o.estado} <br/>
-          🚗 ${o.vehiculoId || "-"} <br/>
-          🔧 ${o.diagnostico || "-"} <br/>
-          💰 $${o.valorTrabajo || 0}
-
-          <br/><br/>
-          <button onclick="cambiarEstado('${docSnap.id}','en_proceso')">▶ Iniciar</button>
-          <button onclick="cambiarEstado('${docSnap.id}','finalizada')">✅ Finalizar</button>
-        </div>
-      `;
-    });
-
-    lista.innerHTML = html;
+  function renderItems() {
+    itemsList.innerHTML = items.map(i => `
+      <div style="background:#111;padding:10px;margin:5px;">
+        ${i.nombre} (${i.tipo}) x${i.cantidad}
+      </div>
+    `).join("");
   }
 
-  // ➕ Crear orden
+  // ➕ Agregar item
+  document.getElementById("addItem").onclick = () => {
+
+    const tipo = document.getElementById("tipo").value;
+    const nombre = document.getElementById("nombre").value;
+    const cantidad = Number(document.getElementById("cantidad").value);
+    const precio = Number(document.getElementById("precio").value);
+    const costo = Number(document.getElementById("costo").value);
+
+    items.push({ tipo, nombre, cantidad, precio, costo });
+
+    renderItems();
+  };
+
+  // 🚀 Crear orden
   document.getElementById("crearOrden").onclick = async () => {
-    const placa = document.getElementById("placa").value;
-    const diagnostico = document.getElementById("diagnostico").value;
 
-    await addDoc(collection(window.db, "ordenes"), {
-      numero: "ORD-" + Date.now(),
-      estado: "abierta",
-      vehiculoId: placa,
-      diagnostico,
-      valorTrabajo: 0,
+    const clienteId = document.getElementById("cliente").value;
+    const vehiculoId = document.getElementById("vehiculo").value;
 
-      creadoEn: serverTimestamp(),
+    let total = 0;
+    let costoTotal = 0;
 
-      historialEstados: [
-        {
-          estado: "abierta",
-          fecha: new Date()
+    try {
+
+      // 🔥 Procesar items
+      for (let item of items) {
+
+        // 🟢 INVENTARIO
+        if (item.tipo === "inventario") {
+
+          await usarRepuesto({
+            repuestoId: item.repuestoId || "manual",
+            cantidad: item.cantidad,
+            ordenId: "temp"
+          });
+
+          costoTotal += item.costo * item.cantidad;
         }
-      ]
-    });
 
-    cargarOrdenes();
+        // 🟡 COMPRA DIRECTA
+        if (item.tipo === "compra") {
+          costoTotal += item.costo * item.cantidad;
+        }
+
+        // 🔵 CLIENTE TRAE
+        if (item.tipo === "cliente") {
+          // no afecta costo
+        }
+
+        total += item.precio * item.cantidad;
+      }
+
+      const utilidad = total - costoTotal;
+
+      await addDoc(collection(window.db, "ordenes"), {
+        clienteId,
+        vehiculoId,
+        items,
+        total,
+        costoTotal,
+        utilidad,
+        estado: "abierta",
+        creadoEn: new Date()
+      });
+
+      alert("✅ Orden creada");
+
+      items = [];
+      renderItems();
+
+    } catch (error) {
+      alert("Error: " + error.message);
+    }
   };
-
-  // 🔄 Cambiar estado
-  window.cambiarEstado = async (id, nuevoEstado) => {
-    const ref = doc(window.db, "ordenes", id);
-
-    await updateDoc(ref, {
-      estado: nuevoEstado
-    });
-
-    cargarOrdenes();
-  };
-
-  // INIT
-  cargarOrdenes();
 }
