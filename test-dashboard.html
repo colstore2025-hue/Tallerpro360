@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Test Dashboard TallerPRO360</title>
+<script type="module">
+  import dashboard from './dashboard.js'; // asegúrate de poner la ruta correcta
+
+  // Simula un estado de empresa para prueba
+  const state = {
+    empresaId: "demoEmpresa123"
+  };
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('app');
+    dashboard(container, state);
+  });
+</script>
+</head>
+<body style="background:#0f172a;color:white;font-family:sans-serif;padding:20px;">
+  <div id="app"></div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+</html>
