@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TallerPRO360 · ERP SaaS</title>
 
+  <!-- UI -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
@@ -31,34 +32,22 @@
 
 <script type="module">
 
-/* ================== FIREBASE ================== */
+/* ================== CORE ================== */
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// 🔥 USAR FIREBASE CENTRALIZADO
+import { auth, db } from "./js/core/firebase-config.js";
 
-/* 🔥 CONFIG */
-const firebaseConfig = {
-  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-  authDomain: "tallerpro360.firebaseapp.com",
-  projectId: "tallerpro360",
-  storageBucket: "tallerpro360.firebasestorage.app",
-  messagingSenderId: "636224778184",
-  appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
-  measurementId: "G-VEC2C0QX2G"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+// Firebase funciones
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ================== AUTH ================== */
 
 onAuthStateChanged(auth, async (user)=>{
 
-  console.log("🔥 Auth detectado:", user);
-
   const container = document.getElementById("appContainer");
+
+  console.log("🔥 Auth:", user);
 
   if(!user){
     window.location.href = "/login.html";
@@ -80,11 +69,11 @@ onAuthStateChanged(auth, async (user)=>{
     const userData = snap.data();
 
     if(!userData.empresaId){
-      container.innerHTML = "❌ Usuario sin empresa";
+      container.innerHTML = "❌ Usuario sin empresaId";
       return;
     }
 
-    /* 💾 SESSION */
+    /* SESSION GLOBAL */
     localStorage.setItem("uid", user.uid);
     localStorage.setItem("empresaId", userData.empresaId);
     localStorage.setItem("rolGlobal", userData.rolGlobal || "user");
@@ -92,27 +81,31 @@ onAuthStateChanged(auth, async (user)=>{
     initApp(userData);
 
   }catch(e){
-    console.error(e);
-    container.innerHTML = `<h2 style="color:red">Error inicializando</h2><pre>${e.message}</pre>`;
+    console.error("ERROR INIT:", e);
+
+    container.innerHTML = `
+      <div style="color:red">
+        <h2>❌ Error inicializando app</h2>
+        <pre>${e.message}</pre>
+      </div>
+    `;
   }
 
 });
 
-/* ================== APP ================== */
+/* ================== INIT APP ================== */
 
 function initApp(user){
 
-  console.log("🚀 App iniciada");
+  console.log("🚀 App lista");
 
   renderMenu(user);
 
-  document.getElementById("appContainer").innerHTML = `
-    <h2 class="text-xl">Bienvenido ${user.rolGlobal}</h2>
-    <p>Sistema listo</p>
-  `;
+  // Cargar dashboard por defecto
+  loadModule("dashboard");
 }
 
-/* ================== MENÚ ================== */
+/* ================== MENU ================== */
 
 function renderMenu(user){
 
@@ -145,25 +138,31 @@ window.loadModule = async function(name){
 
   try{
 
+    console.log("📦 Cargando módulo:", name);
+
     const module = await import(`./js/modules/${name}.js`);
 
     const mod = module.default || module;
 
     if(typeof mod === "function"){
+
       await mod(container, {
         uid: localStorage.getItem("uid"),
         empresaId: localStorage.getItem("empresaId"),
         rolGlobal: localStorage.getItem("rolGlobal")
       });
+
     }else{
       container.innerHTML = "❌ Módulo inválido";
     }
 
   }catch(e){
-    console.error("ERROR MODULO:", e);
+
+    console.error("❌ ERROR MODULO:", e);
+
     container.innerHTML = `
       <h2 style="color:red">❌ Error cargando módulo</h2>
-      <p>${name}</p>
+      <p><b>${name}</b></p>
       <pre>${e.message}</pre>
     `;
   }
@@ -180,6 +179,7 @@ document.getElementById("logoutBtn").onclick = async ()=>{
 
 </script>
 
+<!-- Charts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </body>
