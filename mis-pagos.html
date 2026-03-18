@@ -1,78 +1,156 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Mis Pagos</title>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { 
-      getFirestore, 
-      collection, 
-      query, 
-      where, 
-      orderBy, 
-      getDocs 
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    const firebaseConfig = {
-  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-  authDomain: "tallerpro360.firebaseapp.com",
-  projectId: "tallerpro360",
-  storageBucket: "tallerpro360.appspot.com",
-  messagingSenderId: "636224778184",
-  appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-};
+<title>Pagos · TallerPRO360</title>
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+<script src="https://cdn.tailwindcss.com"></script>
 
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        window.location.href = "login.html";
-        return;
-      }
+<style>
+body{
+  background:#0f172a;
+  font-family:Inter,system-ui;
+}
+.card{
+  background:#111827;
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:12px;
+}
+</style>
 
-      const q = query(
-        collection(db, "pagos"),
-        where("uid", "==", user.uid),
-        orderBy("creadoEn", "desc")
-      );
-
-      const snapshot = await getDocs(q);
-      const lista = document.getElementById("listaPagos");
-      lista.innerHTML = "";
-
-      snapshot.forEach((doc) => {
-        const p = doc.data();
-        const fecha = p.creadoEn?.toDate();
-
-        const div = document.createElement("div");
-        div.style.border = "1px solid #ccc";
-        div.style.margin = "10px";
-        div.style.padding = "10px";
-
-        div.innerHTML = `
-          <p><strong>Plan:</strong> ${p.plan}</p>
-          <p><strong>Monto:</strong> ${new Intl.NumberFormat("es-CO", {
-            style: "currency",
-            currency: "COP"
-          }).format(p.monto)}</p>
-          <p><strong>Estado:</strong> ${p.estado}</p>
-          <p><strong>Fecha:</strong> ${fecha ? fecha.toLocaleString() : "-"}</p>
-        `;
-
-        lista.appendChild(div);
-      });
-    });
-  </script>
 </head>
-<body>
 
-  <h2>Mis Pagos</h2>
-  <div id="listaPagos"></div>
+<body class="text-slate-200 p-4">
+
+<h1 class="text-2xl font-bold text-emerald-400 mb-6">
+💳 Mis Pagos
+</h1>
+
+<div id="loader" class="text-center">Cargando pagos...</div>
+<div id="listaPagos" class="hidden"></div>
+<div id="empty" class="hidden text-center text-slate-400 mt-10">
+No tienes pagos registrados
+</div>
+
+<script type="module">
+
+import { auth, db } from "/app/js/core/firebase-config.js";
+
+import {
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const loader = document.getElementById("loader");
+const lista = document.getElementById("listaPagos");
+const empty = document.getElementById("empty");
+
+onAuthStateChanged(auth, async (user)=>{
+
+  if(!user){
+    window.location.href="/login.html";
+    return;
+  }
+
+  try{
+
+    const q = query(
+      collection(db,"pagos"),
+      where("uid","==",user.uid),
+      orderBy("creadoEn","desc")
+    );
+
+    const snap = await getDocs(q);
+
+    loader.style.display="none";
+
+    if(snap.empty){
+      empty.classList.remove("hidden");
+      return;
+    }
+
+    lista.classList.remove("hidden");
+
+    snap.forEach(doc=>{
+
+      const p = doc.data();
+
+      const fecha = p.creadoEn?.toDate();
+
+      const estadoColor = getEstadoColor(p.estado);
+
+      const div = document.createElement("div");
+      div.className="card";
+
+      div.innerHTML = `
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="font-bold text-lg">
+            ${p.planNombre || p.planId || "Plan"}
+          </h2>
+
+          <span class="px-2 py-1 text-xs rounded ${estadoColor}">
+            ${p.estado || "pendiente"}
+          </span>
+        </div>
+
+        <p class="text-sm text-slate-400">
+          💰 ${formatCOP(p.monto || 0)}
+        </p>
+
+        <p class="text-xs text-slate-500 mt-1">
+          📅 ${fecha ? fecha.toLocaleString() : "-"}
+        </p>
+      `;
+
+      lista.appendChild(div);
+
+    });
+
+  }catch(e){
+    console.error(e);
+    loader.innerText="Error cargando pagos";
+  }
+
+});
+
+/* =========================
+UTILS
+========================= */
+
+function formatCOP(valor){
+  return new Intl.NumberFormat("es-CO",{
+    style:"currency",
+    currency:"COP"
+  }).format(valor);
+}
+
+function getEstadoColor(estado){
+
+  switch(estado){
+    case "aprobado":
+      return "bg-green-600";
+    case "pendiente":
+      return "bg-yellow-600";
+    case "rechazado":
+      return "bg-red-600";
+    default:
+      return "bg-slate-600";
+  }
+
+}
+
+</script>
 
 </body>
 </html>
