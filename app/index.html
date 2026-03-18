@@ -9,6 +9,9 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+<!-- Base URL para que los imports relativos funcionen correctamente -->
+<base href="./">
+
 <style>
   body { margin:0; font-family:Inter,system-ui; background:#0f172a; color:#cbd5e1; }
   header { background:#111827; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 0 20px #000; }
@@ -17,8 +20,8 @@
 
   /* Layout principal */
   #mainLayout { display:flex; min-height:calc(100vh - 64px); }
-  #sidebar { width:220px; background:#111827; display:flex; flex-direction:column; align-items:center; padding-top:20px; box-shadow:2px 0 20px #000; }
-  #sidebar button { width:180px; margin:10px 0; padding:14px; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; color:#0ff; background:#1f2937; transition:.3s; text-align:center; }
+  #sidebar { width:240px; background:#111827; display:flex; flex-direction:column; align-items:center; padding-top:20px; box-shadow:2px 0 20px #000; }
+  #sidebar button { width:200px; margin:10px 0; padding:14px; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; color:#0ff; background:#1f2937; transition:.3s; text-align:center; }
   #sidebar button:hover { background:#0ff; color:#111; transform:scale(1.05); }
   #appContainer { flex:1; padding:30px; overflow-y:auto; }
 </style>
@@ -47,11 +50,7 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase
 /* ================== AUTH ================== */
 onAuthStateChanged(auth, async user => {
   const container = document.getElementById("appContainer");
-
-  if(!user){
-    window.location.href = "/login.html";
-    return;
-  }
+  if(!user){ window.location.href = "/login.html"; return; }
 
   try{
     container.innerHTML = "🔄 Cargando usuario...";
@@ -99,16 +98,18 @@ function renderMenu(user){
     { id:"inventario", label:"Inventario" },
     { id:"ia", label:"IA" }
   ];
+
+  // Módulos adicionales solo para superadmin
   if(user.rolGlobal === "superadmin"){
     botones.push({ id:"ceoAI", label:"CEO AI" });
     botones.push({ id:"contabilidad", label:"Contabilidad" });
     botones.push({ id:"finanzas", label:"Finanzas" });
     botones.push({ id:"reportes", label:"Reportes" });
-    botones.push({ id:"pagosTaller", label:"Pagos" });
+    botones.push({ id:"pagosTaller", label:"Pagos Taller" });
     botones.push({ id:"vehiculos", label:"Vehículos" });
   }
 
-  sidebar.innerHTML = botones.map(b =>
+  sidebar.innerHTML = botones.map(b => 
     `<button onclick="loadModule('${b.id}')">${b.label}</button>`
   ).join("");
 }
@@ -119,6 +120,7 @@ window.loadModule = async function(name){
   container.innerHTML = "🔄 Cargando módulo...";
 
   try{
+    // IMPORT DINÁMICO RELATIVO A app/index.html
     const module = await import(`./js/modules/${name}.js`);
     const mod = module.default || module;
 
