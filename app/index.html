@@ -56,7 +56,12 @@ const db = getFirestore(app);
 
 onAuthStateChanged(auth, async (user)=>{
 
+  console.log("🔥 Auth detectado:", user);
+
+  const container = document.getElementById("appContainer");
+
   if(!user){
+    console.warn("❌ No hay usuario");
     window.location.href = "/login.html";
     return;
   }
@@ -65,115 +70,52 @@ onAuthStateChanged(auth, async (user)=>{
 
   try{
 
-    const snap = await getDoc(doc(db,"usuariosGlobal",uid));
+    container.innerHTML = "🔄 Cargando usuario...";
+
+    const ref = doc(db,"usuariosGlobal",uid);
+
+    const snap = await getDoc(ref);
+
+    console.log("📄 Snapshot:", snap.exists());
 
     if(!snap.exists()){
-      alert("❌ Usuario no autorizado");
+      container.innerHTML = "❌ Usuario no existe en Firestore";
       await signOut(auth);
       return;
     }
 
     const userData = snap.data();
 
-    console.log("👤 Usuario:", userData);
+    console.log("👤 userData:", userData);
 
-    /* 🔥 SESIÓN GLOBAL */
-    const state = {
-      uid,
-      empresaId: userData.empresaId || "",
-      rolGlobal: userData.rolGlobal || "",
-      email: userData.email || ""
-    };
+    // 🔥 VALIDACIÓN CRÍTICA
+    if(!userData.empresaId){
+      container.innerHTML = "❌ Usuario sin empresaId";
+      return;
+    }
 
-    localStorage.setItem("appState", JSON.stringify(state));
+    // 💾 SESSION
+    localStorage.setItem("uid", uid);
+    localStorage.setItem("empresaId", userData.empresaId);
+    localStorage.setItem("rolGlobal", userData.rolGlobal || "user");
 
-    initApp(state);
+    console.log("✅ INIT APP");
+
+    initApp(userData);
 
   }catch(e){
-    console.error("🔥 Error cargando usuario:", e);
-    document.getElementById("appContainer").innerHTML = `
-      <p class="text-red-400">Error cargando usuario</p>
+
+    console.error("🔥 ERROR GLOBAL:", e);
+
+    container.innerHTML = `
+      <div style="color:red">
+        <h2>Error inicializando app</h2>
+        <pre>${e.stack || e.message}</pre>
+      </div>
     `;
   }
 
 });
-
-/* ================== APP ================== */
-
-function initApp(state){
-
-  renderMenu(state);
-
-  document.getElementById("appContainer").innerHTML = `
-    <h2 class="text-xl text-cyan-400">Bienvenido</h2>
-    <p>Sistema listo 🚀</p>
-  `;
-
-  /* 🔥 AUTOLOAD DASHBOARD */
-  loadModule("dashboard");
-}
-
-/* ================== MENÚ ================== */
-
-function renderMenu(state){
-
-  const menu = document.getElementById("menu");
-
-  let botones = [
-    { id:"dashboard", label:"Dashboard" },
-    { id:"ordenes", label:"Órdenes" },
-    { id:"clientes", label:"Clientes" },
-    { id:"inventario", label:"Inventario" },
-    { id:"ia", label:"IA" }
-  ];
-
-  if(state.rolGlobal === "superadmin"){
-    botones.push({ id:"ceo", label:"CEO AI" });
-  }
-
-  menu.innerHTML = botones.map(b=>
-    `<button onclick="loadModule('${b.id}')">${b.label}</button>`
-  ).join("");
-}
-
-/* ================== LOADER DE MÓDULOS ================== */
-
-window.loadModule = async function(name){
-
-  const container = document.getElementById("appContainer");
-  container.innerHTML = `Cargando ${name}...`;
-
-  try{
-
-    const url = `/app/js/modules/${name}.js`; // 🔥 ruta absoluta segura
-
-    console.log("📦 Importando:", url);
-
-    const module = await import(url);
-
-    const mod = module.default || module;
-
-    const state = JSON.parse(localStorage.getItem("appState") || "{}");
-
-    if(typeof mod === "function"){
-      await mod(container, state);
-    } else if(module.init){
-      module.init(container, state);
-    } else {
-      container.innerHTML = "❌ Módulo inválido";
-    }
-
-  }catch(e){
-
-    console.error("🔥 ERROR REAL:", e);
-
-    container.innerHTML = `
-  <div style="color:red">
-    <h2>❌ Error cargando módulo</h2>
-    <p><b>${name}</b></p>
-    <pre>${e.stack || e.message}</pre>
-  </div>
-`;
 
 /* ================== LOGOUT ================== */
 
