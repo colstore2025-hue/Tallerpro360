@@ -1,242 +1,121 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>TallerPRO360 · Acceso</title>
-
-<meta name="description" content="Accede o crea tu cuenta en TallerPRO360">
-
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<title>Login - TallerPRO360</title>
 
 <style>
 body{
-  background:#0f172a;
-  font-family:Inter,system-ui;
-}
-
-.card{
-  background:#111827;
-  border-radius:20px;
-  padding:28px;
-  box-shadow:0 20px 50px rgba(0,0,0,.5);
-}
-
-.input{
-  width:100%;
-  padding:10px;
-  border-radius:10px;
   background:#020617;
-  border:1px solid #1e293b;
-  color:#e2e8f0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  color:white;
+  font-family:Inter;
 }
 
-.input:focus{
-  outline:none;
-  border-color:#10b981;
+.box{
+  background:#111827;
+  padding:25px;
+  border-radius:12px;
+  width:300px;
 }
 
-.btn{
+input{
   width:100%;
   padding:10px;
-  border-radius:10px;
-  font-weight:bold;
-  transition:.3s;
+  margin-top:10px;
+  border:none;
+  border-radius:6px;
+  background:#1f2937;
+  color:white;
+}
+
+button{
+  width:100%;
+  margin-top:15px;
+  padding:10px;
+  background:#00ffff;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
 }
 </style>
 
-</head>
-
-<body class="flex items-center justify-center min-h-screen">
-
-<div class="w-full max-w-md card">
-
-<!-- LOGO -->
-<div class="text-center mb-6">
-  <img src="/assets/logo-192.png" class="h-14 mx-auto mb-3">
-  <h1 class="text-2xl font-black text-emerald-400">TallerPRO360</h1>
-  <p class="text-xs text-slate-400">Acceso Inteligente al ERP</p>
-</div>
-
-<!-- TABS -->
-<div class="flex mb-6">
-  <button id="tabLogin" class="flex-1 py-2 bg-emerald-500 rounded-l-lg">Login</button>
-  <button id="tabRegister" class="flex-1 py-2 bg-slate-700 rounded-r-lg">Registro</button>
-</div>
-
-<!-- LOGIN -->
-<form id="loginForm" class="space-y-4">
-
-<input type="email" id="loginEmail" class="input" placeholder="Correo" required>
-<input type="password" id="loginPass" class="input" placeholder="Contraseña" required>
-
-<button class="btn bg-emerald-500 hover:bg-emerald-600">
-Ingresar
-</button>
-
-</form>
-
-<!-- REGISTER -->
-<form id="registerForm" class="space-y-4 hidden">
-
-<input type="text" id="nombre" class="input" placeholder="Nombre taller" required>
-<input type="email" id="regEmail" class="input" placeholder="Correo" required>
-<input type="password" id="regPass" class="input" placeholder="Contraseña" required>
-
-<button class="btn bg-blue-500 hover:bg-blue-600">
-Crear cuenta
-</button>
-
-</form>
-
-<p id="error" class="text-red-400 text-xs text-center mt-4 hidden"></p>
-
-<p class="text-center text-xs mt-3">
-<button id="resetBtn" class="text-emerald-400">¿Olvidaste tu contraseña?</button>
-</p>
-
-</div>
-
 <script type="module">
 
-import { auth, db } from "/app/js/core/firebase-config.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
+  getAuth,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-import {
-  doc,
-  getDoc,
-  setDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const loginForm = document.getElementById("loginForm");
-const registerForm = document.getElementById("registerForm");
-const tabLogin = document.getElementById("tabLogin");
-const tabRegister = document.getElementById("tabRegister");
-const errorBox = document.getElementById("error");
-
-/* TABS */
-tabLogin.onclick = () => {
-  loginForm.classList.remove("hidden");
-  registerForm.classList.add("hidden");
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "tallerpro360.firebaseapp.com",
+  projectId: "tallerpro360",
 };
 
-tabRegister.onclick = () => {
-  loginForm.classList.add("hidden");
-  registerForm.classList.remove("hidden");
-};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-/* LOGIN */
-loginForm.addEventListener("submit", async e=>{
-  e.preventDefault();
-  showError("");
-
-  try{
-    const email = loginEmail.value.trim();
-    const pass = loginPass.value;
-
-    const cred = await signInWithEmailAndPassword(auth,email,pass);
-    const uid = cred.user.uid;
-
-    const snap = await getDoc(doc(db,"usuariosGlobal",uid));
-
-    if(!snap.exists()){
-      showError("Usuario no registrado en sistema");
-      return;
-    }
-
-    const data = snap.data();
-
-    if(!data.activo){
-      showError("Usuario desactivado");
-      return;
-    }
-
-    saveSession(uid,data);
-
-    window.location.href="/app/index.html";
-
-  }catch(e){
-    showError("Credenciales incorrectas");
+/* 🔥 SI YA ESTÁ LOGUEADO → REDIRIGE */
+onAuthStateChanged(auth, (user)=>{
+  if(user){
+    window.location.href = "/app/";
   }
 });
 
-/* REGISTER */
-registerForm.addEventListener("submit", async e=>{
-  e.preventDefault();
-  showError("");
+/* 🔐 LOGIN REAL */
+window.login = async function(){
+
+  const email = document.getElementById("email").value;
+  const pass = document.getElementById("pass").value;
 
   try{
 
-    const nombre = document.getElementById("nombre").value;
-    const email = regEmail.value.trim();
-    const pass = regPass.value;
+    await signInWithEmailAndPassword(auth,email,pass);
 
-    const cred = await createUserWithEmailAndPassword(auth,email,pass);
-    const uid = cred.user.uid;
+    alert("✅ Bienvenido");
 
-    // 🔥 Crear usuario global
-    await setDoc(doc(db,"usuariosGlobal",uid),{
-      activo:true,
-      rol:"admin",
-      empresaId:uid,
-      planTipo:"freemium"
-    });
-
-    // 🔥 Crear empresa/taller
-    await setDoc(doc(db,"talleres",uid),{
-      nombre,
-      plan:"freemium",
-      estadoPlan:"ACTIVO",
-      createdAt:new Date()
-    });
-
-    window.location.href="/app/index.html";
+    window.location.href = "/app/";
 
   }catch(e){
+
     console.error(e);
-    showError("Error creando cuenta");
+
+    alert("❌ Error: " + traducirError(e.code));
   }
-});
-
-/* RESET */
-resetBtn.onclick = async ()=>{
-  const email = loginEmail.value;
-
-  if(!email){
-    showError("Escribe tu correo");
-    return;
-  }
-
-  await sendPasswordResetEmail(auth,email);
-  alert("Correo enviado");
 };
 
-/* SESSION */
-function saveSession(uid,data){
-  localStorage.setItem("uid",uid);
-  localStorage.setItem("empresaId",data.empresaId);
-  localStorage.setItem("rol",data.rol);
-}
+/* 🧠 ERRORES CLAROS */
+function traducirError(code){
 
-/* ERROR */
-function showError(msg){
-  if(!msg){
-    errorBox.classList.add("hidden");
-    return;
-  }
-  errorBox.innerText=msg;
-  errorBox.classList.remove("hidden");
+  const errores = {
+    "auth/user-not-found":"Usuario no existe",
+    "auth/wrong-password":"Contraseña incorrecta",
+    "auth/invalid-email":"Email inválido"
+  };
+
+  return errores[code] || code;
 }
 
 </script>
+</head>
+
+<body>
+
+<div class="box">
+  <h2>Login</h2>
+
+  <input id="email" placeholder="Correo">
+  <input id="pass" type="password" placeholder="Contraseña">
+
+  <button onclick="login()">Ingresar</button>
+</div>
 
 </body>
 </html>
