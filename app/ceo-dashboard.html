@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>CEO Dashboard · TallerPRO360</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+  background:#0f172a;
+  font-family:Inter,system-ui;
+}
+.card{
+  background:#111827;
+  border-radius:16px;
+  padding:16px;
+}
+</style>
+
+</head>
+
+<body class="text-slate-200 p-6">
+
+<h1 class="text-3xl font-bold text-emerald-400 mb-6">
+🚀 CEO Dashboard
+</h1>
+
+<!-- KPIs -->
+<section class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+
+<div class="card">
+<p class="text-xs text-slate-400">Ingresos Totales</p>
+<p id="kpiIngresos" class="text-2xl font-bold text-emerald-400">0</p>
+</div>
+
+<div class="card">
+<p class="text-xs text-slate-400">MRR</p>
+<p id="kpiMRR" class="text-2xl font-bold text-blue-400">0</p>
+</div>
+
+<div class="card">
+<p class="text-xs text-slate-400">Clientes Activos</p>
+<p id="kpiActivos" class="text-2xl font-bold text-green-400">0</p>
+</div>
+
+<div class="card">
+<p class="text-xs text-slate-400">Freemium</p>
+<p id="kpiFree" class="text-2xl font-bold text-yellow-400">0</p>
+</div>
+
+<div class="card">
+<p class="text-xs text-slate-400">Conversión</p>
+<p id="kpiConversion" class="text-2xl font-bold text-purple-400">0%</p>
+</div>
+
+</section>
+
+<!-- ALERTAS -->
+<div id="alertas" class="mb-6 space-y-2"></div>
+
+<!-- GRÁFICO -->
+<div class="card mb-6">
+<canvas id="chartIngresos"></canvas>
+</div>
+
+<script type="module">
+
+import { auth, db } from "/app/js/core/firebase-config.js";
+
+import {
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+let chart;
+
+/* ======================
+AUTH OWNER
+====================== */
+onAuthStateChanged(auth, async(user)=>{
+
+  if(!user){
+    window.location="/login.html";
+    return;
+  }
+
+  loadData();
+});
+
+/* ======================
+CARGAR DATA
+====================== */
+async function loadData(){
+
+  const pagosSnap = await getDocs(collection(db,"pagos"));
+  const talleresSnap = await getDocs(collection(db,"talleres"));
+
+  let ingresosTotal = 0;
+  let mrr = 0;
+
+  let activos = 0;
+  let free = 0;
+
+  const ingresosPorMes = {};
+
+  pagosSnap.forEach(doc=>{
+    const p = doc.data();
+
+    if(p.estado === "aprobado"){
+
+      const monto = Number(p.monto || 0);
+      ingresosTotal += monto;
+
+      const fecha = p.creadoEn?.toDate?.();
+
+      if(fecha){
+        const mes = `${fecha.getFullYear()}-${fecha.getMonth()+1}`;
+        ingresosPorMes[mes] = (ingresosPorMes[mes] || 0) + monto;
+      }
+
+      mrr += monto; // base simple (puedes mejorar luego)
+    }
+  });
+
+  talleresSnap.forEach(doc=>{
+    const t = doc.data();
+
+    if(t.estadoPlan === "ACTIVO"){
+      activos++;
+
+      if(t.planId === "freemium"){
+        free++;
+      }
+    }
+  });
+
+  const conversion = activos ? ((activos - free) / activos) * 100 : 0;
+
+  /* KPIs */
+  set("kpiIngresos", format(ingresosTotal));
+  set("kpiMRR", format(mrr));
+  set("kpiActivos", activos);
+  set("kpiFree", free);
+  set("kpiConversion", conversion.toFixed(1) + "%");
+
+  /* ALERTAS */
+  generarAlertas(activos, free, ingresosTotal);
+
+  /* CHART */
+  renderChart(ingresosPorMes);
+
+}
+
+/* ======================
+ALERTAS CEO
+====================== */
+function generarAlertas(activos, free, ingresos){
+
+  const box = document.getElementById("alertas");
+  box.innerHTML = "";
+
+  if(free > activos * 0.6){
+    box.innerHTML += alerta("⚠️ Muchos usuarios freemium (baja conversión)");
+  }
+
+  if(ingresos < 100000){
+    box.innerHTML += alerta("🚨 Ingresos bajos — revisar estrategia");
+  }
+
+  if(activos === 0){
+    box.innerHTML += alerta("❌ No tienes clientes activos");
+  }
+
+}
+
+function alerta(msg){
+  return `<div class="bg-red-600 p-2 rounded text-sm">${msg}</div>`;
+}
+
+/* ======================
+CHART
+====================== */
+function renderChart(data){
+
+  const labels = Object.keys(data);
+  const values = Object.values(data);
+
+  if(chart) chart.destroy();
+
+  chart = new Chart(document.getElementById("chartIngresos"),{
+    type:"line",
+    data:{
+      labels,
+      datasets:[{
+        label:"Ingresos",
+        data:values
+      }]
+    }
+  });
+
+}
+
+/* ======================
+UTILS
+====================== */
+function set(id,val){
+  document.getElementById(id).innerText = val;
+}
+
+function format(num){
+  return new Intl.NumberFormat("es-CO",{
+    style:"currency",
+    currency:"COP"
+  }).format(num);
+}
+
+</script>
+
+</body>
+</html>
