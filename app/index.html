@@ -141,11 +141,15 @@ function renderMenu(state){
 window.loadModule = async function(name){
 
   const container = document.getElementById("appContainer");
-  container.innerHTML = `<p class="text-slate-400">Cargando ${name}...</p>`;
+  container.innerHTML = `Cargando ${name}...`;
 
   try{
 
-    const module = await import(`./js/modules/${name}.js`);
+    const url = `/app/js/modules/${name}.js`; // 🔥 ruta absoluta segura
+
+    console.log("📦 Importando:", url);
+
+    const module = await import(url);
 
     const mod = module.default || module;
 
@@ -153,19 +157,22 @@ window.loadModule = async function(name){
 
     if(typeof mod === "function"){
       await mod(container, state);
-    } 
-    else if(module.init){
+    } else if(module.init){
       module.init(container, state);
-    } 
-    else {
+    } else {
       container.innerHTML = "❌ Módulo inválido";
     }
 
   }catch(e){
-    console.error("🔥 Error módulo:", name, e);
+
+    console.error("🔥 ERROR REAL:", e);
+
     container.innerHTML = `
-      <h2 class="text-red-400">❌ Error cargando módulo</h2>
-      <p>${name}</p>
+      <div style="color:red">
+        <h2>❌ Error cargando módulo</h2>
+        <p><b>${name}</b></p>
+        <pre style="white-space:pre-wrap">${e.message}</pre>
+      </div>
     `;
   }
 
