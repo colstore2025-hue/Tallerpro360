@@ -3,59 +3,71 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TallerPRO360 · ERP+IA+CRM</title>
+<title>TallerPRO360 · ERP SaaS</title>
 
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-body { margin:0; font-family:Inter,system-ui; background:#0f172a; color:#cbd5e1; }
-header { background:#111827; padding:10px 20px; display:flex; justify-content:space-between; align-items:center; }
-#logoutBtn { background:#ff4444; color:#fff; padding:8px 12px; border-radius:8px; font-weight:bold; cursor:pointer; transition:.2s; }
-#logoutBtn:hover { background:#ff0000; }
+  body { margin:0; font-family:Inter,system-ui; background:#0f172a; color:#cbd5e1; }
+  header { background:#111827; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 0 20px #000; }
+  #logoutBtn { background:#ff4444; color:#fff; padding:8px 14px; border-radius:8px; font-weight:bold; cursor:pointer; transition:.2s; }
+  #logoutBtn:hover { background:#ff0000; }
 
-/* Layout principal */
-#mainLayout { display:flex; min-height:calc(100vh - 60px); }
-#sidebar { width:220px; background:#111827; display:flex; flex-direction:column; align-items:center; padding-top:30px; }
-#sidebar button { width:180px; margin:10px 0; padding:14px; border:none; border-radius:14px; font-size:20px; font-weight:900; cursor:pointer; color:#0ff; background:#1f2937; transition:.2s; text-align:center; }
-#sidebar button:hover { background:#0ff; color:#111; }
-#appContainer { flex:1; padding:30px; }
+  /* Layout principal */
+  #mainLayout { display:flex; min-height:calc(100vh - 64px); }
+  #sidebar { width:220px; background:#111827; display:flex; flex-direction:column; align-items:center; padding-top:20px; box-shadow:2px 0 20px #000; }
+  #sidebar button { width:180px; margin:10px 0; padding:14px; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; color:#0ff; background:#1f2937; transition:.3s; text-align:center; }
+  #sidebar button:hover { background:#0ff; color:#111; transform:scale(1.05); }
+  #appContainer { flex:1; padding:30px; overflow-y:auto; }
 </style>
 </head>
 <body>
 
 <header>
-<h1 class="text-3xl font-bold text-emerald-400">TallerPRO360</h1>
-<button id="logoutBtn">Salir</button>
+  <h1 class="text-2xl font-bold text-emerald-400">TallerPRO360</h1>
+  <button id="logoutBtn">Salir</button>
 </header>
 
 <div id="mainLayout">
-<div id="sidebar"></div>
-<main id="appContainer">
-<p class="text-slate-400">Cargando sistema...</p>
-</main>
+  <div id="sidebar"></div>
+  <main id="appContainer">
+    <p class="text-slate-400 text-center mt-20">Cargando sistema...</p>
+  </main>
 </div>
 
 <script type="module">
 
 /* ================== CORE FIREBASE ================== */
-import { auth, db } from "../app/js/core/firebase-config.js";
+import { auth, db } from "./js/core/firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ================== AUTH ================== */
 onAuthStateChanged(auth, async user => {
   const container = document.getElementById("appContainer");
-  if(!user){ window.location.href = "/login.html"; return; }
 
-  try {
+  if(!user){
+    window.location.href = "/login.html";
+    return;
+  }
+
+  try{
     container.innerHTML = "🔄 Cargando usuario...";
+
     const snap = await getDoc(doc(db,"usuariosGlobal",user.uid));
-    if(!snap.exists()){ container.innerHTML = "❌ Usuario no autorizado"; await signOut(auth); return; }
+    if(!snap.exists()){
+      container.innerHTML = "❌ Usuario no autorizado";
+      await signOut(auth);
+      return;
+    }
 
     const userData = snap.data();
-    if(!userData.empresaId){ container.innerHTML = "❌ Usuario sin empresaId"; return; }
+    if(!userData.empresaId){
+      container.innerHTML = "❌ Usuario sin empresaId";
+      return;
+    }
 
     /* SESSION GLOBAL */
     localStorage.setItem("uid", user.uid);
@@ -73,25 +85,28 @@ onAuthStateChanged(auth, async user => {
 /* ================== INIT APP ================== */
 function initApp(user){
   renderMenu(user);
-  loadModule("dashboard");
+  loadModule("dashboard"); // dashboard por defecto
 }
 
 /* ================== MENÚ LATERAL ================== */
 function renderMenu(user){
   const sidebar = document.getElementById("sidebar");
+
   let botones = [
     { id:"dashboard", label:"Dashboard" },
     { id:"ordenes", label:"Órdenes" },
     { id:"clientes", label:"Clientes" },
     { id:"inventario", label:"Inventario" },
-    { id:"ia", label:"IA" },
-    { id:"contabilidad", label:"Contabilidad" },
-    { id:"finanzas", label:"Finanzas" },
-    { id:"reportes", label:"Reportes" },
-    { id:"pagosTaller", label:"Pagos Taller" },
-    { id:"vehiculos", label:"Vehículos" }
+    { id:"ia", label:"IA" }
   ];
-  if(user.rolGlobal === "superadmin"){ botones.push({ id:"ceoAI", label:"CEO AI" }); }
+  if(user.rolGlobal === "superadmin"){
+    botones.push({ id:"ceoAI", label:"CEO AI" });
+    botones.push({ id:"contabilidad", label:"Contabilidad" });
+    botones.push({ id:"finanzas", label:"Finanzas" });
+    botones.push({ id:"reportes", label:"Reportes" });
+    botones.push({ id:"pagosTaller", label:"Pagos" });
+    botones.push({ id:"vehiculos", label:"Vehículos" });
+  }
 
   sidebar.innerHTML = botones.map(b =>
     `<button onclick="loadModule('${b.id}')">${b.label}</button>`
@@ -102,31 +117,40 @@ function renderMenu(user){
 window.loadModule = async function(name){
   const container = document.getElementById("appContainer");
   container.innerHTML = "🔄 Cargando módulo...";
-  try {
-    console.log("📦 Cargando módulo:", name);
-    const module = await import(`/js/modules/${name}.js`);
+
+  try{
+    const module = await import(`./js/modules/${name}.js`);
     const mod = module.default || module;
-    if(typeof mod==="function"){
-      await mod(container,{
+
+    if(typeof mod === "function"){
+      await mod(container, {
         uid: localStorage.getItem("uid"),
         empresaId: localStorage.getItem("empresaId"),
         rolGlobal: localStorage.getItem("rolGlobal")
       });
-    } else { container.innerHTML = "❌ Módulo inválido"; }
+    } else {
+      container.innerHTML = "❌ Módulo inválido";
+    }
+
   } catch(e){
     console.error("❌ ERROR MODULO:", e);
-    container.innerHTML = `<h2 style="color:red">❌ Error cargando módulo</h2><p><b>${name}</b></p><pre>${e.message}</pre>`;
+    container.innerHTML = `
+      <h2 style="color:red">❌ Error cargando módulo</h2>
+      <p><b>${name}</b></p>
+      <pre>${e.message}</pre>
+    `;
   }
 };
 
 /* ================== LOGOUT ================== */
-document.getElementById("logoutBtn").onclick = async ()=>{
+document.getElementById("logoutBtn").onclick = async () => {
   await signOut(auth);
   localStorage.clear();
   window.location.href = "/login.html";
 };
 
 </script>
+
 <!-- Charts.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
