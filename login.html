@@ -2,124 +2,259 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Login - TallerPRO360</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>TallerPRO360 · Acceso</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
 
 <style>
 body{
   background:#020617;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-  color:white;
-  font-family:Inter;
+  font-family:Inter,system-ui;
 }
-
-.box{
+.card{
   background:#111827;
-  padding:25px;
-  border-radius:12px;
-  width:300px;
+  border-radius:20px;
+  padding:28px;
+  box-shadow:0 20px 50px rgba(0,0,0,.6);
 }
-
-input{
+.input{
   width:100%;
   padding:10px;
-  margin-top:10px;
-  border:none;
-  border-radius:6px;
-  background:#1f2937;
-  color:white;
+  border-radius:10px;
+  background:#020617;
+  border:1px solid #1e293b;
+  color:#e2e8f0;
 }
-
-button{
+.input:focus{
+  outline:none;
+  border-color:#00ffff;
+}
+.btn{
   width:100%;
-  margin-top:15px;
   padding:10px;
-  background:#00ffff;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
+  border-radius:10px;
+  font-weight:bold;
+  transition:.3s;
 }
 </style>
 
+</head>
+
+<body class="flex items-center justify-center min-h-screen">
+
+<div class="w-full max-w-md card">
+
+<div class="text-center mb-6">
+  <h1 class="text-2xl font-black text-cyan-400">🚀 TallerPRO360</h1>
+  <p class="text-xs text-slate-400">Acceso Inteligente</p>
+</div>
+
+<!-- TABS -->
+<div class="flex mb-6">
+  <button id="tabLogin" class="flex-1 py-2 bg-cyan-500 rounded-l-lg">Login</button>
+  <button id="tabRegister" class="flex-1 py-2 bg-slate-700 rounded-r-lg">Registro</button>
+</div>
+
+<!-- LOGIN -->
+<form id="loginForm" class="space-y-4">
+
+<input type="email" id="loginEmail" class="input" placeholder="Correo" required>
+
+<div class="relative">
+  <input type="password" id="loginPass" class="input pr-10" placeholder="Contraseña" required>
+  <span onclick="togglePass('loginPass')" class="absolute right-3 top-2 cursor-pointer">👁️</span>
+</div>
+
+<button class="btn bg-cyan-500 hover:bg-cyan-600">
+Ingresar
+</button>
+
+</form>
+
+<!-- REGISTER -->
+<form id="registerForm" class="space-y-4 hidden">
+
+<input type="text" id="nombre" class="input" placeholder="Nombre del taller" required>
+<input type="email" id="regEmail" class="input" placeholder="Correo" required>
+
+<div class="relative">
+  <input type="password" id="regPass" class="input pr-10" placeholder="Contraseña" required>
+  <span onclick="togglePass('regPass')" class="absolute right-3 top-2 cursor-pointer">👁️</span>
+</div>
+
+<div class="relative">
+  <input type="password" id="regPass2" class="input pr-10" placeholder="Confirmar contraseña" required>
+  <span onclick="togglePass('regPass2')" class="absolute right-3 top-2 cursor-pointer">👁️</span>
+</div>
+
+<button class="btn bg-green-500 hover:bg-green-600">
+Crear cuenta
+</button>
+
+</form>
+
+<p id="error" class="text-red-400 text-xs text-center mt-4 hidden"></p>
+
+<p class="text-center text-xs mt-3">
+<button id="resetBtn" class="text-cyan-400">¿Olvidaste tu contraseña?</button>
+</p>
+
+</div>
+
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { auth, db } from "/app/js/core/firebase-config.js";
 
 import {
-  getAuth,
   signInWithEmailAndPassword,
-  onAuthStateChanged
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-const firebaseConfig = {
-      apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-      authDomain: "tallerpro360.firebaseapp.com",
-      projectId: "tallerpro360",
-      storageBucket: "tallerpro360.firebasestorage.app",
-      messagingSenderId: "636224778184",
-      appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
-      measurementId: "G-VEC2C0QX2G"
-    };
+import {
+  doc,
+  getDoc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+/* TABS */
+tabLogin.onclick = ()=>{
+  loginForm.classList.remove("hidden");
+  registerForm.classList.add("hidden");
+};
 
-/* 🔥 SI YA ESTÁ LOGUEADO → REDIRIGE */
-onAuthStateChanged(auth, (user)=>{
-  if(user){
-    window.location.href = "/app/";
-  }
-});
+tabRegister.onclick = ()=>{
+  loginForm.classList.add("hidden");
+  registerForm.classList.remove("hidden");
+};
 
-/* 🔐 LOGIN REAL */
-window.login = async function(){
-
-  const email = document.getElementById("email").value;
-  const pass = document.getElementById("pass").value;
+/* LOGIN */
+loginForm.addEventListener("submit", async e=>{
+  e.preventDefault();
+  showError("");
 
   try{
 
-    await signInWithEmailAndPassword(auth,email,pass);
+    const email = loginEmail.value.trim();
+    const pass = loginPass.value;
 
-    alert("✅ Bienvenido");
+    const cred = await signInWithEmailAndPassword(auth,email,pass);
+    const uid = cred.user.uid;
 
-    window.location.href = "/app/";
+    const snap = await getDoc(doc(db,"talleres",uid));
+
+    if(!snap.exists()){
+      showError("Usuario no registrado");
+      return;
+    }
+
+    const data = snap.data();
+
+    // 🔥 VALIDAR PLAN
+    if(data.estadoPlan !== "ACTIVO"){
+      showError("Plan inactivo");
+      await signOut(auth);
+      return;
+    }
+
+    const hoy = new Date();
+    const vence = data.venceEn?.toDate?.() || null;
+
+    if(vence && hoy > vence){
+      showError("Plan vencido");
+      await signOut(auth);
+      return;
+    }
+
+    window.location.href="/app/";
 
   }catch(e){
-
-    console.error(e);
-
-    alert("❌ Error: " + traducirError(e.code));
+    showError(traducirError(e.code));
   }
+});
+
+/* REGISTER */
+registerForm.addEventListener("submit", async e=>{
+  e.preventDefault();
+  showError("");
+
+  const pass1 = regPass.value;
+  const pass2 = regPass2.value;
+
+  if(pass1 !== pass2){
+    showError("Las contraseñas no coinciden");
+    return;
+  }
+
+  try{
+
+    const cred = await createUserWithEmailAndPassword(auth,regEmail.value,pass1);
+    const uid = cred.user.uid;
+
+    const vence = new Date();
+    vence.setDate(vence.getDate()+30);
+
+    await setDoc(doc(db,"talleres",uid),{
+      nombre: nombre.value,
+      plan:"freemium",
+      estadoPlan:"ACTIVO",
+      createdAt:new Date(),
+      venceEn:vence
+    });
+
+    alert("✅ Cuenta creada (30 días activos)");
+
+    window.location.href="/app/";
+
+  }catch(e){
+    showError(traducirError(e.code));
+  }
+});
+
+/* RESET */
+resetBtn.onclick = async ()=>{
+  const email = loginEmail.value;
+
+  if(!email){
+    showError("Escribe tu correo");
+    return;
+  }
+
+  await sendPasswordResetEmail(auth,email);
+  alert("📩 Revisa tu correo");
 };
 
-/* 🧠 ERRORES CLAROS */
-function traducirError(code){
+/* VER CONTRASEÑA */
+window.togglePass = function(id){
+  const input = document.getElementById(id);
+  input.type = input.type === "password" ? "text" : "password";
+};
 
+/* ERRORES */
+function traducirError(code){
   const errores = {
     "auth/user-not-found":"Usuario no existe",
     "auth/wrong-password":"Contraseña incorrecta",
-    "auth/invalid-email":"Email inválido"
+    "auth/email-already-in-use":"Correo ya registrado",
+    "auth/invalid-email":"Correo inválido",
+    "auth/weak-password":"Contraseña muy débil"
   };
-
   return errores[code] || code;
 }
 
+function showError(msg){
+  if(!msg){
+    error.classList.add("hidden");
+    return;
+  }
+  error.innerText=msg;
+  error.classList.remove("hidden");
+}
+
 </script>
-</head>
-
-<body>
-
-<div class="box">
-  <h2>Login</h2>
-
-  <input id="email" placeholder="Correo">
-  <input id="pass" type="password" placeholder="Contraseña">
-
-  <button onclick="login()">Ingresar</button>
-</div>
 
 </body>
 </html>
