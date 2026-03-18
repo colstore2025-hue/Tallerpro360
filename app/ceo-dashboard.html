@@ -46,6 +46,8 @@ button{
   padding:10px;
   border-radius:8px;
   cursor:pointer;
+  margin-right:10px;
+  margin-top:10px;
 }
 </style>
 
@@ -59,6 +61,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { analizarSaaS } from "./js/ai/ceoGlobalAI.js";
+import { ejecutarGrowthEngine } from "./js/ai/growthEngine.js";
+import { enviarWhatsApp } from "./js/services/whatsappSender.js";
 
 const firebaseConfig = {
   apiKey: "TU_API_KEY",
@@ -69,6 +73,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+let pagosGlobal = [];
+let talleresGlobal = [];
+
 async function cargarDashboard(){
 
   document.getElementById("status").innerText="Cargando...";
@@ -78,6 +85,9 @@ async function cargarDashboard(){
 
   const pagos = pagosSnap.docs.map(d=>d.data());
   const talleres = talleresSnap.docs.map(d=>d.data());
+
+  pagosGlobal = pagos;
+  talleresGlobal = talleres;
 
   /* ================= KPIs ================= */
 
@@ -123,7 +133,7 @@ async function cargarDashboard(){
 
   const ia = await analizarSaaS({pagos,talleres});
 
-  const prediccion = Math.round(mrr*30*1.15); // crecimiento estimado 15%
+  const prediccion = Math.round(mrr*30*1.15);
 
   document.getElementById("ia").innerHTML=`
     <h2>🧠 CEO AI</h2>
@@ -139,6 +149,9 @@ async function cargarDashboard(){
     ${ia.recomendaciones.map(r=>`<div>💡 ${r}</div>`).join("")}
 
     <button onclick="optimizar()">⚡ Optimizar negocio</button>
+    <button onclick="growth()">🚀 Growth Engine</button>
+
+    <div id="logsIA" style="margin-top:15px;color:#0ff;"></div>
   `;
 
   window.optimizacionesIA = ia;
@@ -146,7 +159,7 @@ async function cargarDashboard(){
   document.getElementById("status").innerText="✅ Listo";
 }
 
-/* ================= MOTOR AUTOMÁTICO ================= */
+/* ================= OPTIMIZACIÓN ================= */
 
 window.optimizar = function(){
 
@@ -159,6 +172,22 @@ window.optimizar = function(){
   }
 
   alert("IA ejecutaría:\n\n"+acciones.join("\n"));
+};
+
+/* ================= GROWTH ENGINE ================= */
+
+window.growth = async function(){
+
+  document.getElementById("logsIA").innerHTML = "🚀 Ejecutando Growth Engine...";
+
+  const acciones = await ejecutarGrowthEngine(db);
+
+  await enviarWhatsApp(db);
+
+  document.getElementById("logsIA").innerHTML = `
+    <h4>📡 Acciones ejecutadas:</h4>
+    ${acciones.map(a=>`<div>⚡ ${a}</div>`).join("")}
+  `;
 };
 
 /* ================= UTIL ================= */
