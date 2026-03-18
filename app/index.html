@@ -61,61 +61,114 @@ onAuthStateChanged(auth, async (user)=>{
   const container = document.getElementById("appContainer");
 
   if(!user){
-    console.warn("❌ No hay usuario");
     window.location.href = "/login.html";
     return;
   }
-
-  const uid = user.uid;
 
   try{
 
     container.innerHTML = "🔄 Cargando usuario...";
 
-    const ref = doc(db,"usuariosGlobal",uid);
-
-    const snap = await getDoc(ref);
-
-    console.log("📄 Snapshot:", snap.exists());
+    const snap = await getDoc(doc(db,"usuariosGlobal",user.uid));
 
     if(!snap.exists()){
-      container.innerHTML = "❌ Usuario no existe en Firestore";
+      container.innerHTML = "❌ Usuario no autorizado";
       await signOut(auth);
       return;
     }
 
     const userData = snap.data();
 
-    console.log("👤 userData:", userData);
-
-    // 🔥 VALIDACIÓN CRÍTICA
     if(!userData.empresaId){
-      container.innerHTML = "❌ Usuario sin empresaId";
+      container.innerHTML = "❌ Usuario sin empresa";
       return;
     }
 
-    // 💾 SESSION
-    localStorage.setItem("uid", uid);
+    /* 💾 SESSION */
+    localStorage.setItem("uid", user.uid);
     localStorage.setItem("empresaId", userData.empresaId);
     localStorage.setItem("rolGlobal", userData.rolGlobal || "user");
-
-    console.log("✅ INIT APP");
 
     initApp(userData);
 
   }catch(e){
-
-    console.error("🔥 ERROR GLOBAL:", e);
-
-    container.innerHTML = `
-      <div style="color:red">
-        <h2>Error inicializando app</h2>
-        <pre>${e.stack || e.message}</pre>
-      </div>
-    `;
+    console.error(e);
+    container.innerHTML = `<h2 style="color:red">Error inicializando</h2><pre>${e.message}</pre>`;
   }
 
 });
+
+/* ================== APP ================== */
+
+function initApp(user){
+
+  console.log("🚀 App iniciada");
+
+  renderMenu(user);
+
+  document.getElementById("appContainer").innerHTML = `
+    <h2 class="text-xl">Bienvenido ${user.rolGlobal}</h2>
+    <p>Sistema listo</p>
+  `;
+}
+
+/* ================== MENÚ ================== */
+
+function renderMenu(user){
+
+  const menu = document.getElementById("menu");
+
+  let botones = [
+    { id:"dashboard", label:"Dashboard" },
+    { id:"ordenes", label:"Órdenes" },
+    { id:"clientes", label:"Clientes" },
+    { id:"inventario", label:"Inventario" },
+    { id:"ia", label:"IA" }
+  ];
+
+  if(user.rolGlobal === "superadmin"){
+    botones.push({ id:"ceo", label:"CEO AI" });
+  }
+
+  menu.innerHTML = botones.map(b =>
+    `<button onclick="loadModule('${b.id}')">${b.label}</button>`
+  ).join("");
+}
+
+/* ================== LOAD MODULE ================== */
+
+window.loadModule = async function(name){
+
+  const container = document.getElementById("appContainer");
+
+  container.innerHTML = "🔄 Cargando módulo...";
+
+  try{
+
+    const module = await import(`./js/modules/${name}.js`);
+
+    const mod = module.default || module;
+
+    if(typeof mod === "function"){
+      await mod(container, {
+        uid: localStorage.getItem("uid"),
+        empresaId: localStorage.getItem("empresaId"),
+        rolGlobal: localStorage.getItem("rolGlobal")
+      });
+    }else{
+      container.innerHTML = "❌ Módulo inválido";
+    }
+
+  }catch(e){
+    console.error("ERROR MODULO:", e);
+    container.innerHTML = `
+      <h2 style="color:red">❌ Error cargando módulo</h2>
+      <p>${name}</p>
+      <pre>${e.message}</pre>
+    `;
+  }
+
+};
 
 /* ================== LOGOUT ================== */
 
