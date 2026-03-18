@@ -11,7 +11,7 @@
   <style>
     body { background:#0f172a; font-family:Inter,system-ui; color:#cbd5e1; margin:0; }
     header { background:#111827; padding:10px 20px; display:flex; justify-content:space-between; align-items:center; }
-    #menu button { margin-right:5px; background:#1f2937; padding:6px 10px; border:none; border-radius:6px; cursor:pointer; color:#0ff; }
+    #menu button { margin-right:5px; background:#1f2937; padding:6px 10px; border:none; border-radius:6px; cursor:pointer; color:#0ff; transition:.2s; }
     #menu button:hover { background:#0ff; color:#111; }
     #appContainer { padding:20px; min-height:calc(100vh - 60px); }
   </style>
@@ -29,39 +29,31 @@
   <p class="text-slate-400">Cargando sistema...</p>
 </main>
 
-<!-- 🔥 SCRIPT PRINCIPAL -->
 <script type="module">
 
+/* ================== FIREBASE ================== */
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
-import {
-  getAuth,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-import {
-  getFirestore,
-  doc,
-  getDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* 🔥 CONFIG */
 const firebaseConfig = {
-      apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-      authDomain: "tallerpro360.firebaseapp.com",
-      projectId: "tallerpro360",
-      storageBucket: "tallerpro360.firebasestorage.app",
-      messagingSenderId: "636224778184",
-      appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
-      measurementId: "G-VEC2C0QX2G"
-    };
+  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+  authDomain: "tallerpro360.firebaseapp.com",
+  projectId: "tallerpro360",
+  storageBucket: "tallerpro360.firebasestorage.app",
+  messagingSenderId: "636224778184",
+  appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
+  measurementId: "G-VEC2C0QX2G"
+};
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* 🔐 PROTEGER APP */
+/* ================== AUTH ================== */
+
 onAuthStateChanged(auth, async (user)=>{
 
   if(!user){
@@ -73,11 +65,10 @@ onAuthStateChanged(auth, async (user)=>{
 
   try{
 
-    /* 🔥 USUARIO GLOBAL */
     const snap = await getDoc(doc(db,"usuariosGlobal",uid));
 
     if(!snap.exists()){
-      alert("Usuario no autorizado");
+      alert("❌ Usuario no autorizado");
       await signOut(auth);
       return;
     }
@@ -86,33 +77,45 @@ onAuthStateChanged(auth, async (user)=>{
 
     console.log("👤 Usuario:", userData);
 
-    /* 🔥 GUARDAR SESIÓN */
-    localStorage.setItem("uid", uid);
-    localStorage.setItem("empresaId", userData.empresaId || "");
-    localStorage.setItem("rolGlobal", userData.rolGlobal || "");
+    /* 🔥 SESIÓN GLOBAL */
+    const state = {
+      uid,
+      empresaId: userData.empresaId || "",
+      rolGlobal: userData.rolGlobal || "",
+      email: userData.email || ""
+    };
 
-    /* 🚀 INICIAR APP */
-    initApp(userData);
+    localStorage.setItem("appState", JSON.stringify(state));
+
+    initApp(state);
 
   }catch(e){
-    console.error(e);
+    console.error("🔥 Error cargando usuario:", e);
+    document.getElementById("appContainer").innerHTML = `
+      <p class="text-red-400">Error cargando usuario</p>
+    `;
   }
 
 });
 
-/* 🚀 APP */
-function initApp(user){
+/* ================== APP ================== */
 
-  renderMenu(user);
+function initApp(state){
+
+  renderMenu(state);
 
   document.getElementById("appContainer").innerHTML = `
-    <h2 class="text-xl">Bienvenido ${user.rolGlobal}</h2>
-    <p>Sistema listo</p>
+    <h2 class="text-xl text-cyan-400">Bienvenido</h2>
+    <p>Sistema listo 🚀</p>
   `;
+
+  /* 🔥 AUTOLOAD DASHBOARD */
+  loadModule("dashboard");
 }
 
-/* 📦 MENÚ DINÁMICO */
-function renderMenu(user){
+/* ================== MENÚ ================== */
+
+function renderMenu(state){
 
   const menu = document.getElementById("menu");
 
@@ -124,8 +127,7 @@ function renderMenu(user){
     { id:"ia", label:"IA" }
   ];
 
-  /* 👑 SUPERADMIN VE TODO */
-  if(user.rolGlobal === "superadmin"){
+  if(state.rolGlobal === "superadmin"){
     botones.push({ id:"ceo", label:"CEO AI" });
   }
 
@@ -134,12 +136,12 @@ function renderMenu(user){
   ).join("");
 }
 
-/* 🧠 CARGADOR DE MÓDULOS (CLAVE) */
+/* ================== LOADER DE MÓDULOS ================== */
+
 window.loadModule = async function(name){
 
   const container = document.getElementById("appContainer");
-
-  container.innerHTML = "Cargando módulo...";
+  container.innerHTML = `<p class="text-slate-400">Cargando ${name}...</p>`;
 
   try{
 
@@ -147,28 +149,33 @@ window.loadModule = async function(name){
 
     const mod = module.default || module;
 
-if(typeof mod === "function"){
-  await mod(container, {
-    uid: localStorage.getItem("uid"),
-    empresaId: localStorage.getItem("empresaId"),
-    rolGlobal: localStorage.getItem("rolGlobal")
-  });
-}else if(module.init){
-  module.init(container);
-}else{
-  container.innerHTML = "❌ Módulo inválido";
-}
+    const state = JSON.parse(localStorage.getItem("appState") || "{}");
+
+    if(typeof mod === "function"){
+      await mod(container, state);
+    } 
+    else if(module.init){
+      module.init(container, state);
+    } 
+    else {
+      container.innerHTML = "❌ Módulo inválido";
+    }
 
   }catch(e){
-    console.error(e);
-    container.innerHTML = "Error cargando módulo";
+    console.error("🔥 Error módulo:", name, e);
+    container.innerHTML = `
+      <h2 class="text-red-400">❌ Error cargando módulo</h2>
+      <p>${name}</p>
+    `;
   }
 
 };
 
-/* 🚪 LOGOUT */
+/* ================== LOGOUT ================== */
+
 document.getElementById("logoutBtn").onclick = async ()=>{
   await signOut(auth);
+  localStorage.clear();
   window.location.href = "/login.html";
 };
 
