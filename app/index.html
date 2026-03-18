@@ -4,44 +4,169 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TallerPRO360 · ERP SaaS</title>
-  <meta name="description" content="ERP SaaS para talleres automotrices · Dashboard, Órdenes, Clientes, Inventario, IA">
-  
-  <!-- Tailwind CSS -->
+
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  
+
   <style>
     body { background:#0f172a; font-family:Inter,system-ui; color:#cbd5e1; margin:0; }
     header { background:#111827; padding:10px 20px; display:flex; justify-content:space-between; align-items:center; }
-    #menu button { margin-right:5px; background:#1f2937; padding:6px 10px; border:none; border-radius:6px; cursor:pointer; color:#0ff; transition:0.2s; }
+    #menu button { margin-right:5px; background:#1f2937; padding:6px 10px; border:none; border-radius:6px; cursor:pointer; color:#0ff; }
     #menu button:hover { background:#0ff; color:#111; }
     #appContainer { padding:20px; min-height:calc(100vh - 60px); }
   </style>
 </head>
+
 <body>
 
-  <!-- HEADER + MENÚ -->
-  <header>
-    <div>
-      <h1 class="text-2xl font-bold text-emerald-400">TallerPRO360 · ERP SaaS</h1>
-    </div>
-    <div id="menu"></div>
-    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">Cerrar sesión</button>
-  </header>
+<header>
+  <h1 class="text-2xl font-bold text-emerald-400">TallerPRO360</h1>
+  <div id="menu"></div>
+  <button id="logoutBtn" class="bg-red-500 px-3 py-1 rounded">Salir</button>
+</header>
 
-  <!-- CONTENEDOR PRINCIPAL -->
-  <main id="appContainer"></main>
+<main id="appContainer">
+  <p class="text-slate-400">Cargando sistema...</p>
+</main>
 
-  <!-- FIREBASE CORE -->
-  <script type="module" src="./js/core/firebase-config.js"></script>
+<!-- 🔥 SCRIPT PRINCIPAL -->
+<script type="module">
 
-  <!-- APP INIT -->
-  <script type="module" src="./js/core/app-init.js"></script>
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-  <!-- CHARTS -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+  getFirestore,
+  doc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* 🔥 CONFIG */
+const firebaseConfig = {
+      apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+      authDomain: "tallerpro360.firebaseapp.com",
+      projectId: "tallerpro360",
+      storageBucket: "tallerpro360.firebasestorage.app",
+      messagingSenderId: "636224778184",
+      appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
+      measurementId: "G-VEC2C0QX2G"
+    };
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* 🔐 PROTEGER APP */
+onAuthStateChanged(auth, async (user)=>{
+
+  if(!user){
+    window.location.href = "/login.html";
+    return;
+  }
+
+  const uid = user.uid;
+
+  try{
+
+    /* 🔥 USUARIO GLOBAL */
+    const snap = await getDoc(doc(db,"usuariosGlobal",uid));
+
+    if(!snap.exists()){
+      alert("Usuario no autorizado");
+      await signOut(auth);
+      return;
+    }
+
+    const userData = snap.data();
+
+    console.log("👤 Usuario:", userData);
+
+    /* 🔥 GUARDAR SESIÓN */
+    localStorage.setItem("uid", uid);
+    localStorage.setItem("empresaId", userData.empresaId || "");
+    localStorage.setItem("rolGlobal", userData.rolGlobal || "");
+
+    /* 🚀 INICIAR APP */
+    initApp(userData);
+
+  }catch(e){
+    console.error(e);
+  }
+
+});
+
+/* 🚀 APP */
+function initApp(user){
+
+  renderMenu(user);
+
+  document.getElementById("appContainer").innerHTML = `
+    <h2 class="text-xl">Bienvenido ${user.rolGlobal}</h2>
+    <p>Sistema listo</p>
+  `;
+}
+
+/* 📦 MENÚ DINÁMICO */
+function renderMenu(user){
+
+  const menu = document.getElementById("menu");
+
+  let botones = [
+    { id:"dashboard", label:"Dashboard" },
+    { id:"ordenes", label:"Órdenes" },
+    { id:"clientes", label:"Clientes" },
+    { id:"inventario", label:"Inventario" },
+    { id:"ia", label:"IA" }
+  ];
+
+  /* 👑 SUPERADMIN VE TODO */
+  if(user.rolGlobal === "superadmin"){
+    botones.push({ id:"ceo", label:"CEO AI" });
+  }
+
+  menu.innerHTML = botones.map(b=>
+    `<button onclick="loadModule('${b.id}')">${b.label}</button>`
+  ).join("");
+}
+
+/* 🧠 CARGADOR DE MÓDULOS (CLAVE) */
+window.loadModule = async function(name){
+
+  const container = document.getElementById("appContainer");
+
+  container.innerHTML = "Cargando módulo...";
+
+  try{
+
+    const module = await import(`./js/modules/${name}.js`);
+
+    if(module.init){
+      module.init(container);
+    }else{
+      container.innerHTML = "Módulo sin init()";
+    }
+
+  }catch(e){
+    console.error(e);
+    container.innerHTML = "Error cargando módulo";
+  }
+
+};
+
+/* 🚪 LOGOUT */
+document.getElementById("logoutBtn").onclick = async ()=>{
+  await signOut(auth);
+  window.location.href = "/login.html";
+};
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </body>
 </html>
