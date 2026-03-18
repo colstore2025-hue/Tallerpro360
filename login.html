@@ -36,7 +36,6 @@ body{
   padding:10px;
   border-radius:10px;
   font-weight:bold;
-  transition:.3s;
 }
 </style>
 
@@ -64,7 +63,7 @@ body{
 
 <div class="relative">
   <input type="password" id="loginPass" class="input pr-10" placeholder="Contraseña" required>
-  <span onclick="togglePass('loginPass')" class="absolute right-3 top-2 cursor-pointer">👁️</span>
+  <span onclick="window.togglePass('loginPass')" class="absolute right-3 top-2 cursor-pointer">👁️</span>
 </div>
 
 <button class="btn bg-cyan-500 hover:bg-cyan-600">
@@ -81,12 +80,12 @@ Ingresar
 
 <div class="relative">
   <input type="password" id="regPass" class="input pr-10" placeholder="Contraseña" required>
-  <span onclick="togglePass('regPass')" class="absolute right-3 top-2 cursor-pointer">👁️</span>
+  <span onclick="window.togglePass('regPass')" class="absolute right-3 top-2 cursor-pointer">👁️</span>
 </div>
 
 <div class="relative">
   <input type="password" id="regPass2" class="input pr-10" placeholder="Confirmar contraseña" required>
-  <span onclick="togglePass('regPass2')" class="absolute right-3 top-2 cursor-pointer">👁️</span>
+  <span onclick="window.togglePass('regPass2')" class="absolute right-3 top-2 cursor-pointer">👁️</span>
 </div>
 
 <button class="btn bg-green-500 hover:bg-green-600">
@@ -120,7 +119,7 @@ import {
   setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* TABS */
+/* ================= TABS ================= */
 tabLogin.onclick = ()=>{
   loginForm.classList.remove("hidden");
   registerForm.classList.add("hidden");
@@ -131,7 +130,7 @@ tabRegister.onclick = ()=>{
   registerForm.classList.remove("hidden");
 };
 
-/* LOGIN */
+/* ================= LOGIN ================= */
 loginForm.addEventListener("submit", async e=>{
   e.preventDefault();
   showError("");
@@ -144,16 +143,47 @@ loginForm.addEventListener("submit", async e=>{
     const cred = await signInWithEmailAndPassword(auth,email,pass);
     const uid = cred.user.uid;
 
-    const snap = await getDoc(doc(db,"talleres",uid));
+    /* 🔥 VALIDAR USUARIO GLOBAL */
+    const userSnap = await getDoc(doc(db,"usuariosGlobal",uid));
 
-    if(!snap.exists()){
-      showError("Usuario no registrado");
+    if(!userSnap.exists()){
+      showError("Usuario no autorizado");
+      await signOut(auth);
       return;
     }
 
-    const data = snap.data();
+    const userData = userSnap.data();
 
-    // 🔥 VALIDAR PLAN
+    /* 👑 SUPERADMIN */
+    if(userData.rolGlobal === "superadmin"){
+      console.log("👑 Superadmin");
+      window.location.href="/app/";
+      return;
+    }
+
+    /* 👨‍🔧 USUARIO NORMAL */
+    const ref = doc(db,"talleres",uid);
+    const snap = await getDoc(ref);
+
+    let data;
+
+    if(!snap.exists()){
+      const vence = new Date();
+      vence.setDate(vence.getDate()+30);
+
+      data = {
+        planId:"freemium",
+        estadoPlan:"ACTIVO",
+        createdAt:new Date(),
+        venceEn:vence
+      };
+
+      await setDoc(ref,data);
+    }else{
+      data = snap.data();
+    }
+
+    /* 🔐 VALIDAR PLAN */
     if(data.estadoPlan !== "ACTIVO"){
       showError("Plan inactivo");
       await signOut(auth);
@@ -161,7 +191,7 @@ loginForm.addEventListener("submit", async e=>{
     }
 
     const hoy = new Date();
-    const vence = data.venceEn?.toDate?.() || null;
+    const vence = data.venceEn?.toDate?.();
 
     if(vence && hoy > vence){
       showError("Plan vencido");
@@ -172,11 +202,12 @@ loginForm.addEventListener("submit", async e=>{
     window.location.href="/app/";
 
   }catch(e){
+    console.error(e);
     showError(traducirError(e.code));
   }
 });
 
-/* REGISTER */
+/* ================= REGISTER ================= */
 registerForm.addEventListener("submit", async e=>{
   e.preventDefault();
   showError("");
@@ -197,15 +228,21 @@ registerForm.addEventListener("submit", async e=>{
     const vence = new Date();
     vence.setDate(vence.getDate()+30);
 
+    await setDoc(doc(db,"usuariosGlobal",uid),{
+      rol:"dueno",
+      rolGlobal:"cliente",
+      activo:true
+    });
+
     await setDoc(doc(db,"talleres",uid),{
       nombre: nombre.value,
-      plan:"freemium",
+      planId:"freemium",
       estadoPlan:"ACTIVO",
       createdAt:new Date(),
       venceEn:vence
     });
 
-    alert("✅ Cuenta creada (30 días activos)");
+    alert("✅ Cuenta creada");
 
     window.location.href="/app/";
 
@@ -214,7 +251,7 @@ registerForm.addEventListener("submit", async e=>{
   }
 });
 
-/* RESET */
+/* ================= RESET ================= */
 resetBtn.onclick = async ()=>{
   const email = loginEmail.value;
 
@@ -227,13 +264,13 @@ resetBtn.onclick = async ()=>{
   alert("📩 Revisa tu correo");
 };
 
-/* VER CONTRASEÑA */
+/* ================= TOGGLE PASS ================= */
 window.togglePass = function(id){
   const input = document.getElementById(id);
   input.type = input.type === "password" ? "text" : "password";
 };
 
-/* ERRORES */
+/* ================= ERRORES ================= */
 function traducirError(code){
   const errores = {
     "auth/user-not-found":"Usuario no existe",
