@@ -18,13 +18,23 @@ export default async function handler(req, res) {
 
   try {
 
-    const { uid, planId } = req.body;
+    // 🔐 VALIDAR TOKEN FIREBASE
+    const token = req.headers.authorization?.split("Bearer ")[1];
 
-    if (!uid || !planId) {
-      return res.status(400).json({ error: "uid o planId faltante" });
+    if (!token) {
+      return res.status(401).json({ error: "No autorizado" });
     }
 
-    // Buscar plan en Firestore
+    const decoded = await admin.auth().verifyIdToken(token);
+    const uid = decoded.uid;
+
+    const { planId } = req.body;
+
+    if (!planId) {
+      return res.status(400).json({ error: "planId faltante" });
+    }
+
+    // 🔍 Buscar plan
     const planSnap = await db.collection("planes").doc(planId).get();
 
     if (!planSnap.exists) {
@@ -33,7 +43,9 @@ export default async function handler(req, res) {
 
     const plan = planSnap.data();
 
-    // Crear preferencia de pago
+    // 🔥 ID único para evitar duplicados
+    const externalRef = `pago_${uid}_${Date.now()}`;
+
     const preference = {
       items: [
         {
@@ -44,9 +56,12 @@ export default async function handler(req, res) {
         }
       ],
 
+      external_reference: externalRef,
+
       metadata: {
-        uid: uid,
-        planId: planId
+        uid,
+        planId,
+        precio: plan.precio
       },
 
       back_urls: {
@@ -63,7 +78,7 @@ export default async function handler(req, res) {
       statement_descriptor: "TallerPRO360"
     };
 
-    const response = await fetch(
+    const mpResp = await fetch(
       "https://api.mercadopago.com/checkout/preferences",
       {
         method: "POST",
@@ -75,27 +90,27 @@ export default async function handler(req, res) {
       }
     );
 
-    const data = await response.json();
+    const data = await mpResp.json();
 
     if (!data.init_point) {
-      console.error("Error creando preferencia:", data);
-      return res.status(500).json({
-        error: "No se pudo crear el pago"
-      });
+      console.error(data);
+      return res.status(500).json({ error: "Error MercadoPago" });
     }
+
+    // 💾 Guardar intento de pago
+    await db.collection("pagos").doc(externalRef).set({
+      uid,
+      planId,
+      estado: "pendiente",
+      creadoEn: admin.firestore.FieldValue.serverTimestamp()
+    });
 
     return res.status(200).json({
       init_point: data.init_point
     });
 
   } catch (error) {
-
-    console.error("crearPago error:", error);
-
-    return res.status(500).json({
-      error: "Error interno"
-    });
-
+    console.error(error);
+    return res.status(500).json({ error: "Error interno" });
   }
-
 }
