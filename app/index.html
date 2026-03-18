@@ -145,11 +145,19 @@ window.loadModule = async function(name){
 
     const module = await import(`./js/modules/${name}.js`);
 
-    if(module.init){
-      module.init(container);
-    }else{
-      container.innerHTML = "Módulo sin init()";
-    }
+    const mod = module.default || module;
+
+if(typeof mod === "function"){
+  await mod(container, {
+    uid: localStorage.getItem("uid"),
+    empresaId: localStorage.getItem("empresaId"),
+    rolGlobal: localStorage.getItem("rolGlobal")
+  });
+}else if(module.init){
+  module.init(container);
+}else{
+  container.innerHTML = "❌ Módulo inválido";
+}
 
   }catch(e){
     console.error(e);
