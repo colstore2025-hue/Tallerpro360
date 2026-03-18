@@ -1,32 +1,37 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TallerPRO360 · ERP SaaS</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TallerPRO360 · ERP SaaS</title>
 
-  <!-- Tailwind & FontAwesome -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-  <style>
-    body { background:#0f172a; font-family:Inter,system-ui; color:#cbd5e1; margin:0; display:flex; height:100vh; }
-    header { background:#111827; padding:10px 20px; display:flex; justify-content:space-between; align-items:center; width:100%; }
-    #menu { background:#111827; width:200px; display:flex; flex-direction:column; align-items:center; padding-top:20px; gap:15px; }
-    #menu button { width:160px; padding:12px; border:none; border-radius:8px; cursor:pointer; font-size:18px; font-weight:bold; color:#0ff; text-align:center; transition:.2s; }
-    #menu button:hover { background:#0ff; color:#111; }
-    #appContainer { flex:1; padding:20px; overflow-y:auto; }
-    .menu-wrapper { display:flex; height:100%; width:100%; }
-  </style>
+<style>
+  body { margin:0; font-family:Inter,system-ui; background:#0f172a; color:#cbd5e1; }
+  header { background:#111827; padding:10px 20px; display:flex; justify-content:space-between; align-items:center; }
+  #logoutBtn { background:#ff4444; color:#fff; padding:8px 12px; border-radius:8px; font-weight:bold; cursor:pointer; transition:.2s; }
+  #logoutBtn:hover { background:#ff0000; }
+
+  /* Layout principal */
+  #mainLayout { display:flex; min-height:calc(100vh - 60px); }
+  #sidebar { width:200px; background:#111827; display:flex; flex-direction:column; align-items:center; padding-top:20px; }
+  #sidebar button { width:160px; margin:8px 0; padding:12px; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; color:#0ff; background:#1f2937; transition:.2s; text-align:center; }
+  #sidebar button:hover { background:#0ff; color:#111; }
+  #appContainer { flex:1; padding:25px; }
+</style>
 </head>
-
 <body>
 
-<div class="menu-wrapper">
-  <div id="menu">
-    <!-- Menú lateral -->
-  </div>
+<header>
+  <h1 class="text-2xl font-bold text-emerald-400">TallerPRO360</h1>
+  <button id="logoutBtn">Salir</button>
+</header>
 
+<div id="mainLayout">
+  <div id="sidebar"></div>
   <main id="appContainer">
     <p class="text-slate-400">Cargando sistema...</p>
   </main>
@@ -34,22 +39,23 @@
 
 <script type="module">
 
-/* ================== FIREBASE ================== */
-// Usamos firebase centralizado en core/firebase-config.js
+/* ================== CORE FIREBASE ================== */
 import { auth, db } from "./js/core/firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ================== AUTH ================== */
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, async user => {
+
   const container = document.getElementById("appContainer");
+  const sidebar = document.getElementById("sidebar");
 
   if(!user){
     window.location.href = "/login.html";
     return;
   }
 
-  try {
+  try{
     container.innerHTML = "🔄 Cargando usuario...";
 
     const snap = await getDoc(doc(db,"usuariosGlobal",user.uid));
@@ -72,23 +78,22 @@ onAuthStateChanged(auth, async (user) => {
 
     initApp(userData);
 
-  } catch(e) {
+  } catch(e){
     console.error("ERROR INIT:", e);
-    container.innerHTML = `<div style="color:red"><h2>❌ Error inicializando app</h2><pre>${e.message}</pre></div>`;
+    container.innerHTML = `<h2 style="color:red">❌ Error inicializando app</h2><pre>${e.message}</pre>`;
   }
 });
 
 /* ================== INIT APP ================== */
 function initApp(user){
+  console.log("🚀 App lista");
   renderMenu(user);
-
-  // Cargar dashboard por defecto
-  loadModule("dashboard");
+  loadModule("dashboard"); // dashboard por defecto
 }
 
-/* ================== MENU LATERAL ================== */
+/* ================== MENÚ LATERAL ================== */
 function renderMenu(user){
-  const menu = document.getElementById("menu");
+  const sidebar = document.getElementById("sidebar");
 
   let botones = [
     { id:"dashboard", label:"Dashboard" },
@@ -97,12 +102,11 @@ function renderMenu(user){
     { id:"inventario", label:"Inventario" },
     { id:"ia", label:"IA" }
   ];
-
   if(user.rolGlobal === "superadmin"){
     botones.push({ id:"ceo", label:"CEO AI" });
   }
 
-  menu.innerHTML = botones.map(b =>
+  sidebar.innerHTML = botones.map(b =>
     `<button onclick="loadModule('${b.id}')">${b.label}</button>`
   ).join("");
 }
@@ -112,10 +116,8 @@ window.loadModule = async function(name){
   const container = document.getElementById("appContainer");
   container.innerHTML = "🔄 Cargando módulo...";
 
-  try {
+  try{
     console.log("📦 Cargando módulo:", name);
-
-    // IMPORT CORRECTO según estructura: app/js/modules
     const module = await import(`./js/modules/${name}.js`);
     const mod = module.default || module;
 
@@ -129,7 +131,7 @@ window.loadModule = async function(name){
       container.innerHTML = "❌ Módulo inválido";
     }
 
-  } catch(e) {
+  } catch(e){
     console.error("❌ ERROR MODULO:", e);
     container.innerHTML = `
       <h2 style="color:red">❌ Error cargando módulo</h2>
@@ -140,7 +142,7 @@ window.loadModule = async function(name){
 };
 
 /* ================== LOGOUT ================== */
-document.getElementById("logoutBtn").onclick = async ()=>{
+document.getElementById("logoutBtn").onclick = async () => {
   await signOut(auth);
   localStorage.clear();
   window.location.href = "/login.html";
@@ -148,8 +150,7 @@ document.getElementById("logoutBtn").onclick = async ()=>{
 
 </script>
 
-<!-- Charts -->
+<!-- Charts.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 </body>
 </html>
