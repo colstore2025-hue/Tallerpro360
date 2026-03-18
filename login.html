@@ -104,9 +104,10 @@ Crear cuenta
 
 <script type="module">
 
-import { auth, db } from "/app/js/core/firebase-config.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
+  getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -114,12 +115,28 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
+  getFirestore,
   doc,
   getDoc,
   setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ================= TABS ================= */
+/* 🔥 CONFIG REAL (PON TU API KEY) */
+const firebaseConfig = {
+      apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+      authDomain: "tallerpro360.firebaseapp.com",
+      projectId: "tallerpro360",
+      storageBucket: "tallerpro360.firebasestorage.app",
+      messagingSenderId: "636224778184",
+      appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
+      measurementId: "G-VEC2C0QX2G"
+    };
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* TABS */
 tabLogin.onclick = ()=>{
   loginForm.classList.remove("hidden");
   registerForm.classList.add("hidden");
@@ -130,24 +147,25 @@ tabRegister.onclick = ()=>{
   registerForm.classList.remove("hidden");
 };
 
-/* ================= LOGIN ================= */
+/* LOGIN */
 loginForm.addEventListener("submit", async e=>{
   e.preventDefault();
   showError("");
 
   try{
 
-    const email = loginEmail.value.trim();
-    const pass = loginPass.value;
+    const cred = await signInWithEmailAndPassword(
+      auth,
+      loginEmail.value.trim(),
+      loginPass.value
+    );
 
-    const cred = await signInWithEmailAndPassword(auth,email,pass);
     const uid = cred.user.uid;
 
-    /* 🔥 VALIDAR USUARIO GLOBAL */
     const userSnap = await getDoc(doc(db,"usuariosGlobal",uid));
 
     if(!userSnap.exists()){
-      showError("Usuario no autorizado");
+      showError("No autorizado");
       await signOut(auth);
       return;
     }
@@ -156,12 +174,11 @@ loginForm.addEventListener("submit", async e=>{
 
     /* 👑 SUPERADMIN */
     if(userData.rolGlobal === "superadmin"){
-      console.log("👑 Superadmin");
       window.location.href="/app/";
       return;
     }
 
-    /* 👨‍🔧 USUARIO NORMAL */
+    /* 👨‍🔧 CLIENTE */
     const ref = doc(db,"talleres",uid);
     const snap = await getDoc(ref);
 
@@ -183,18 +200,8 @@ loginForm.addEventListener("submit", async e=>{
       data = snap.data();
     }
 
-    /* 🔐 VALIDAR PLAN */
     if(data.estadoPlan !== "ACTIVO"){
       showError("Plan inactivo");
-      await signOut(auth);
-      return;
-    }
-
-    const hoy = new Date();
-    const vence = data.venceEn?.toDate?.();
-
-    if(vence && hoy > vence){
-      showError("Plan vencido");
       await signOut(auth);
       return;
     }
@@ -203,30 +210,28 @@ loginForm.addEventListener("submit", async e=>{
 
   }catch(e){
     console.error(e);
-    showError(traducirError(e.code));
+    showError(e.message);
   }
 });
 
-/* ================= REGISTER ================= */
+/* REGISTER */
 registerForm.addEventListener("submit", async e=>{
   e.preventDefault();
-  showError("");
 
-  const pass1 = regPass.value;
-  const pass2 = regPass2.value;
-
-  if(pass1 !== pass2){
-    showError("Las contraseñas no coinciden");
+  if(regPass.value !== regPass2.value){
+    showError("Contraseñas no coinciden");
     return;
   }
 
   try{
 
-    const cred = await createUserWithEmailAndPassword(auth,regEmail.value,pass1);
-    const uid = cred.user.uid;
+    const cred = await createUserWithEmailAndPassword(
+      auth,
+      regEmail.value,
+      regPass.value
+    );
 
-    const vence = new Date();
-    vence.setDate(vence.getDate()+30);
+    const uid = cred.user.uid;
 
     await setDoc(doc(db,"usuariosGlobal",uid),{
       rol:"dueno",
@@ -235,59 +240,38 @@ registerForm.addEventListener("submit", async e=>{
     });
 
     await setDoc(doc(db,"talleres",uid),{
-      nombre: nombre.value,
+      nombre:nombre.value,
       planId:"freemium",
       estadoPlan:"ACTIVO",
-      createdAt:new Date(),
-      venceEn:vence
+      createdAt:new Date()
     });
 
-    alert("✅ Cuenta creada");
-
-    window.location.href="/app/";
+    alert("Cuenta creada");
 
   }catch(e){
-    showError(traducirError(e.code));
+    showError(e.message);
   }
 });
 
-/* ================= RESET ================= */
+/* RESET */
 resetBtn.onclick = async ()=>{
-  const email = loginEmail.value;
-
-  if(!email){
+  if(!loginEmail.value){
     showError("Escribe tu correo");
     return;
   }
 
-  await sendPasswordResetEmail(auth,email);
-  alert("📩 Revisa tu correo");
+  await sendPasswordResetEmail(auth,loginEmail.value);
+  alert("Correo enviado");
 };
 
-/* ================= TOGGLE PASS ================= */
+/* UI */
 window.togglePass = function(id){
-  const input = document.getElementById(id);
-  input.type = input.type === "password" ? "text" : "password";
+  const i = document.getElementById(id);
+  i.type = i.type === "password" ? "text" : "password";
 };
-
-/* ================= ERRORES ================= */
-function traducirError(code){
-  const errores = {
-    "auth/user-not-found":"Usuario no existe",
-    "auth/wrong-password":"Contraseña incorrecta",
-    "auth/email-already-in-use":"Correo ya registrado",
-    "auth/invalid-email":"Correo inválido",
-    "auth/weak-password":"Contraseña muy débil"
-  };
-  return errores[code] || code;
-}
 
 function showError(msg){
-  if(!msg){
-    error.classList.add("hidden");
-    return;
-  }
-  error.innerText=msg;
+  error.innerText = msg;
   error.classList.remove("hidden");
 }
 
