@@ -168,15 +168,12 @@ window.loadModule = async function(name){
     console.error("🔥 ERROR REAL:", e);
 
     container.innerHTML = `
-      <div style="color:red">
-        <h2>❌ Error cargando módulo</h2>
-        <p><b>${name}</b></p>
-        <pre style="white-space:pre-wrap">${e.message}</pre>
-      </div>
-    `;
-  }
-
-};
+  <div style="color:red">
+    <h2>❌ Error cargando módulo</h2>
+    <p><b>${name}</b></p>
+    <pre>${e.stack || e.message}</pre>
+  </div>
+`;
 
 /* ================== LOGOUT ================== */
 
