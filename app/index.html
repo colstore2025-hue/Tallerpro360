@@ -5,92 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TallerPRO360 · ERP SaaS</title>
 
-  <!-- Tailwind CSS -->
+  <!-- Tailwind & FontAwesome -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
-    body { 
-      background:#0f172a; 
-      font-family:Inter,system-ui; 
-      color:#cbd5e1; 
-      margin:0; 
-    }
-    header { 
-      background:#111827; 
-      padding:10px 20px; 
-      display:flex; 
-      justify-content:space-between; 
-      align-items:center; 
-    }
-    #logoutBtn { 
-      background:#ef4444; 
-      padding:6px 12px; 
-      border-radius:6px; 
-      font-weight:bold; 
-      cursor:pointer; 
-      transition:.2s; 
-    }
-    #logoutBtn:hover { background:#dc2626; }
-
-    /* Layout lateral */
-    #appWrapper {
-      display:flex;
-      height:calc(100vh - 60px);
-    }
-
-    #menu {
-      width:220px;
-      background:#111827;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      padding-top:20px;
-      gap:20px;
-    }
-
-    #menu button {
-      background:#1f2937; 
-      padding:12px 20px; 
-      border:none; 
-      border-radius:10px; 
-      cursor:pointer; 
-      color:#0ff; 
-      font-size:18px;
-      font-weight:bold;
-      width:90%;
-      text-align:center;
-      transition:.2s;
-    }
-
-    #menu button:hover { 
-      background:#0ff; 
-      color:#111; 
-      transform:scale(1.05);
-    }
-
-    #appContainer {
-      flex:1;
-      padding:30px;
-      overflow-y:auto;
-    }
+    body { background:#0f172a; font-family:Inter,system-ui; color:#cbd5e1; margin:0; display:flex; height:100vh; }
+    header { background:#111827; padding:10px 20px; display:flex; justify-content:space-between; align-items:center; width:100%; }
+    #menu { background:#111827; width:200px; display:flex; flex-direction:column; align-items:center; padding-top:20px; gap:15px; }
+    #menu button { width:160px; padding:12px; border:none; border-radius:8px; cursor:pointer; font-size:18px; font-weight:bold; color:#0ff; text-align:center; transition:.2s; }
+    #menu button:hover { background:#0ff; color:#111; }
+    #appContainer { flex:1; padding:20px; overflow-y:auto; }
+    .menu-wrapper { display:flex; height:100%; width:100%; }
   </style>
 </head>
 
 <body>
 
-<header>
-  <h1 class="text-2xl font-bold text-emerald-400">TallerPRO360</h1>
-  <button id="logoutBtn">Salir</button>
-</header>
-
-<div id="appWrapper">
-  <!-- MENÚ LATERAL -->
+<div class="menu-wrapper">
   <div id="menu">
-    <p class="text-slate-400">Cargando menú...</p>
+    <!-- Menú lateral -->
   </div>
 
-  <!-- CONTENEDOR DE MÓDULOS -->
   <main id="appContainer">
     <p class="text-slate-400">Cargando sistema...</p>
   </main>
@@ -98,27 +34,25 @@
 
 <script type="module">
 
-/* ================== CORE FIREBASE ================== */
+/* ================== FIREBASE ================== */
+// Usamos firebase centralizado en core/firebase-config.js
 import { auth, db } from "./js/core/firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ================== AUTH ================== */
-onAuthStateChanged(auth, async (user)=>{
-
+onAuthStateChanged(auth, async (user) => {
   const container = document.getElementById("appContainer");
-  console.log("🔥 Auth:", user);
 
   if(!user){
     window.location.href = "/login.html";
     return;
   }
 
-  try{
+  try {
     container.innerHTML = "🔄 Cargando usuario...";
 
     const snap = await getDoc(doc(db,"usuariosGlobal",user.uid));
-
     if(!snap.exists()){
       container.innerHTML = "❌ Usuario no autorizado";
       await signOut(auth);
@@ -126,45 +60,33 @@ onAuthStateChanged(auth, async (user)=>{
     }
 
     const userData = snap.data();
-
     if(!userData.empresaId){
       container.innerHTML = "❌ Usuario sin empresaId";
       return;
     }
 
-    // Guardar sesión
+    /* SESSION GLOBAL */
     localStorage.setItem("uid", user.uid);
     localStorage.setItem("empresaId", userData.empresaId);
     localStorage.setItem("rolGlobal", userData.rolGlobal || "user");
 
-    // Iniciar app
     initApp(userData);
 
-  }catch(e){
+  } catch(e) {
     console.error("ERROR INIT:", e);
     container.innerHTML = `<div style="color:red"><h2>❌ Error inicializando app</h2><pre>${e.message}</pre></div>`;
   }
-
 });
-
-/* ================== LOGOUT ================== */
-document.getElementById("logoutBtn").onclick = async ()=>{
-  await signOut(auth);
-  localStorage.clear();
-  window.location.href = "/login.html";
-};
 
 /* ================== INIT APP ================== */
 function initApp(user){
-  console.log("🚀 App lista");
-
   renderMenu(user);
 
   // Cargar dashboard por defecto
   loadModule("dashboard");
 }
 
-/* ================== MENÚ LATERAL ================== */
+/* ================== MENU LATERAL ================== */
 function renderMenu(user){
   const menu = document.getElementById("menu");
 
@@ -185,15 +107,15 @@ function renderMenu(user){
   ).join("");
 }
 
-/* ================== LOAD MODULE ================== */
+/* ================== CARGADOR DE MÓDULOS ================== */
 window.loadModule = async function(name){
   const container = document.getElementById("appContainer");
   container.innerHTML = "🔄 Cargando módulo...";
 
-  try{
+  try {
     console.log("📦 Cargando módulo:", name);
 
-    // Ruta correcta relativa a index.html
+    // IMPORT CORRECTO según estructura: app/js/modules
     const module = await import(`./js/modules/${name}.js`);
     const mod = module.default || module;
 
@@ -203,11 +125,11 @@ window.loadModule = async function(name){
         empresaId: localStorage.getItem("empresaId"),
         rolGlobal: localStorage.getItem("rolGlobal")
       });
-    }else{
+    } else {
       container.innerHTML = "❌ Módulo inválido";
     }
 
-  }catch(e){
+  } catch(e) {
     console.error("❌ ERROR MODULO:", e);
     container.innerHTML = `
       <h2 style="color:red">❌ Error cargando módulo</h2>
@@ -215,6 +137,13 @@ window.loadModule = async function(name){
       <pre>${e.message}</pre>
     `;
   }
+};
+
+/* ================== LOGOUT ================== */
+document.getElementById("logoutBtn").onclick = async ()=>{
+  await signOut(auth);
+  localStorage.clear();
+  window.location.href = "/login.html";
 };
 
 </script>
