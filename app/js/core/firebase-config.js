@@ -1,13 +1,14 @@
 /**
  * firebase-config.js
- * Configuración global Firebase v10 para TallerPRO360 PRO360
- * Global Firestore accesible en window.db
+ * Núcleo Firebase centralizado - TallerPRO360
+ * Compatible con módulos ES6 + fallback global opcional
  */
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// 🔹 Configuración Firebase (PRO360 - Nexus-Starlink SAS)
+/* 🔹 CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
   authDomain: "tallerpro360.firebaseapp.com",
@@ -18,11 +19,18 @@ const firebaseConfig = {
   measurementId: "G-VEC2C0QX2G"
 };
 
-// Inicializar app Firebase
-const app = initializeApp(firebaseConfig);
+/* 🔥 INIT SEGURO (evita doble inicialización) */
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
-// Firestore global
+/* 🔥 SERVICIOS */
+const auth = getAuth(app);
 const db = getFirestore(app);
-window.db = db; // global para todos los módulos
 
-console.log("✅ Firebase inicializado y db disponible globalmente");
+/* ✅ EXPORTS (CRÍTICO) */
+export { app, auth, db };
+
+/* 🧠 OPCIONAL (compatibilidad legacy) */
+window.db = db;
+window.auth = auth;
+
+console.log("✅ Firebase PRO360 listo (auth + db)");
