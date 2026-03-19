@@ -1,149 +1,171 @@
 /**
  * firestoreGuardianAI.js
- * 🧠 IA Guardiana de Firestore
- * Auto-diagnóstico + auto-reparación ligera
- * TallerPRO360
+ * IA AUTÓNOMA DE SANIDAD FIRESTORE
+ * TallerPRO360 · Nivel Tesla
  */
 
 import {
   collection,
   getDocs,
+  updateDoc,
   doc,
-  updateDoc
+  addDoc,
+  Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ================= CORE ================= */
+/* 🔥 DB GLOBAL */
+const db = window.db;
 
-export async function ejecutarGuardianIA({ empresaId }) {
+/* ================= GUARDIAN PRINCIPAL ================= */
+
+export async function runFirestoreGuardian(empresaId) {
 
   if (!empresaId) {
-    console.warn("⚠️ GuardianIA: empresaId requerido");
+    console.warn("⚠️ Guardian: empresaId requerido");
     return;
   }
 
-  console.log("🧠 Guardian IA iniciando...");
+  console.log("🧠 Guardian IA iniciado...");
 
   const base = `empresas/${empresaId}`;
 
   try {
 
     await repararOrdenes(base);
-    await repararRepuestos(base);
+    await repararClientes(base);
+    await repararInventario(base);
 
-    console.log("✅ Guardian IA finalizado");
+    console.log("✅ Guardian completado");
 
   } catch (e) {
-    console.error("❌ Guardian IA error:", e);
+
+    console.error("🔥 Guardian error:", e);
+
+    await logIA(base, {
+      tipo: "error",
+      modulo: "guardian",
+      mensaje: e.message
+    });
   }
 }
 
-/* ================= ORDENES ================= */
+/* ================= REPARAR ÓRDENES ================= */
 
 async function repararOrdenes(base) {
 
-  console.log("🔍 Analizando órdenes...");
+  const snap = await getDocs(collection(db, `${base}/ordenes`));
 
-  const snap = await getDocs(collection(window.db, `${base}/ordenes`));
+  for (const d of snap.docs) {
 
-  for (const docSnap of snap.docs) {
-
-    const data = docSnap.data();
-    const ref = doc(window.db, `${base}/ordenes`, docSnap.id);
-
+    const data = d.data();
     const update = {};
 
-    // 🔧 empresaId faltante
-    if (!data.empresaId) {
-      update.empresaId = base.split("/")[1];
-    }
+    // 🧠 Normalizar arrays
+    if (!Array.isArray(data.alertasIA)) update.alertasIA = [];
+    if (!Array.isArray(data.cotizacion)) update.cotizacion = [];
+    if (!Array.isArray(data.historialEstados)) update.historialEstados = [];
 
-    // 🔧 valorTrabajo string → number
-    if (typeof data.valorTrabajo === "string") {
-      update.valorTrabajo = Number(data.valorTrabajo) || 0;
-    }
+    // 🔢 Tipos numéricos
+    if (typeof data.total === "string") update.total = Number(data.total);
+    if (typeof data.costoTotal === "string") update.costoTotal = Number(data.costoTotal);
 
-    // 🔧 alertasIA debe ser array
-    if (!Array.isArray(data.alertasIA)) {
-      try {
-        update.alertasIA = JSON.parse(data.alertasIA || "[]");
-      } catch {
-        update.alertasIA = [];
-      }
-    }
+    // 📅 Timestamp seguro
+    if (!data.creadoEn) update.creadoEn = Timestamp.now();
 
-    // 🔧 recomendaciones IA
-    if (!Array.isArray(data?.diagnosticoIA?.recomendaciones)) {
-      try {
-        update["diagnosticoIA.recomendaciones"] =
-          JSON.parse(data?.diagnosticoIA?.recomendaciones || "[]");
-      } catch {
-        update["diagnosticoIA.recomendaciones"] = [];
-      }
-    }
-
-    // 🔧 fecha faltante
-    if (!data.creadoEn) {
-      update.creadoEn = new Date();
-    }
+    // 🧾 Defaults
+    if (!data.estado) update.estado = "abierta";
 
     if (Object.keys(update).length > 0) {
 
-      await updateDoc(ref, update);
+      await updateDoc(doc(db, `${base}/ordenes`, d.id), update);
 
-      console.log("🛠 Orden reparada:", docSnap.id, update);
-
+      await logIA(base, {
+        tipo: "fix",
+        modulo: "ordenes",
+        docId: d.id,
+        cambios: update
+      });
     }
-
   }
-
 }
 
-/* ================= INVENTARIO ================= */
+/* ================= REPARAR CLIENTES ================= */
 
-async function repararRepuestos(base) {
+async function repararClientes(base) {
 
-  console.log("🔍 Analizando inventario...");
+  const snap = await getDocs(collection(db, `${base}/clientes`));
 
-  const snap = await getDocs(collection(window.db, `${base}/repuestos`));
+  for (const d of snap.docs) {
 
-  for (const docSnap of snap.docs) {
-
-    const data = docSnap.data();
-    const ref = doc(window.db, `${base}/repuestos`, docSnap.id);
-
+    const data = d.data();
     const update = {};
 
-    // 🔧 stock inválido
-    if (typeof data.stock !== "number") {
-      update.stock = Number(data.stock) || 0;
-    }
-
-    // 🔧 stock mínimo
-    if (typeof data.stockMinimo !== "number") {
-      update.stockMinimo = Number(data.stockMinimo) || 0;
-    }
-
-    // 🔧 precios
-    if (typeof data.precioCompra === "string") {
-      update.precioCompra = Number(data.precioCompra) || 0;
-    }
-
-    if (typeof data.precioVenta === "string") {
-      update.precioVenta = Number(data.precioVenta) || 0;
-    }
-
-    if (!data.creadoEn) {
-      update.creadoEn = new Date();
-    }
+    if (!data.nombre) update.nombre = "Cliente sin nombre";
+    if (!data.estado) update.estado = "activo";
+    if (!data.creadoEn) update.creadoEn = Timestamp.now();
 
     if (Object.keys(update).length > 0) {
 
-      await updateDoc(ref, update);
+      await updateDoc(doc(db, `${base}/clientes`, d.id), update);
 
-      console.log("🛠 Repuesto reparado:", docSnap.id, update);
-
+      await logIA(base, {
+        tipo: "fix",
+        modulo: "clientes",
+        docId: d.id,
+        cambios: update
+      });
     }
-
   }
+}
 
+/* ================= REPARAR INVENTARIO ================= */
+
+async function repararInventario(base) {
+
+  const snap = await getDocs(collection(db, `${base}/repuestos`));
+
+  for (const d of snap.docs) {
+
+    const data = d.data();
+    const update = {};
+
+    if (typeof data.stock !== "number") update.stock = Number(data.stock) || 0;
+    if (typeof data.stockMinimo !== "number") update.stockMinimo = Number(data.stockMinimo) || 0;
+
+    if (typeof data.precioCompra !== "number") update.precioCompra = Number(data.precioCompra) || 0;
+    if (typeof data.precioVenta !== "number") update.precioVenta = Number(data.precioVenta) || 0;
+
+    if (!data.creadoEn) update.creadoEn = Timestamp.now();
+
+    if (Object.keys(update).length > 0) {
+
+      await updateDoc(doc(db, `${base}/repuestos`, d.id), update);
+
+      await logIA(base, {
+        tipo: "fix",
+        modulo: "inventario",
+        docId: d.id,
+        cambios: update
+      });
+    }
+  }
+}
+
+/* ================= LOG IA ================= */
+
+async function logIA(base, data) {
+
+  try {
+
+    await addDoc(
+      collection(db, `${base}/ia_logs`),
+      {
+        ...data,
+        fecha: new Date()
+      }
+    );
+
+  } catch (e) {
+    console.warn("⚠️ Error guardando log IA");
+  }
 }
