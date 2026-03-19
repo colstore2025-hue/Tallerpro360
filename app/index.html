@@ -182,8 +182,8 @@ function renderMenu(user) {
   ).join("");
 }
 
-/* ================= LOAD MODULE ULTRA SAFE ================= */
-window.loadModule = async function(name) {
+/* ================= LOAD MODULE DEFINITIVO ================= */
+window.loadModule = function(name) {
 
   const container = document.getElementById("appContainer");
 
@@ -193,50 +193,43 @@ window.loadModule = async function(name) {
     </div>
   `;
 
-  try {
+  const cleanName = name.replace(".js","").trim();
+  const scriptURL = `/app/js/modules/${cleanName}.js?v=${Date.now()}`;
 
-    // 🔥 LIMPIEZA FORENSE DEL NOMBRE
-    let cleanName = name
-      .replace(".js", "")
-      .replace(/\.+$/, "") // elimina puntos al final
-      .trim();
+  console.log("📦 Cargando:", scriptURL);
 
-    console.log("🧠 Módulo limpio:", cleanName);
+  // eliminar script previo
+  const old = document.getElementById("dynamicModule");
+  if(old) old.remove();
 
-    const moduleURL = `${window.location.origin}/app/js/modules/${cleanName}.js`;
+  const script = document.createElement("script");
+  script.type = "module";
+  script.src = scriptURL;
+  script.id = "dynamicModule";
 
-    console.log("📦 URL FINAL:", moduleURL);
+  script.onload = () => {
 
-    const module = await import(moduleURL);
+    console.log("✅ Script cargado");
 
-    const mod = module.default || module;
+    if (window[cleanName]) {
 
-    if (typeof mod === "function") {
-
-      await mod(container, {
+      window[cleanName](container, {
         uid: localStorage.getItem("uid"),
         empresaId: localStorage.getItem("empresaId"),
         rolGlobal: localStorage.getItem("rolGlobal")
       });
 
     } else {
-
-      container.innerHTML = "❌ Módulo inválido";
-
+      container.innerHTML = "❌ El módulo no está expuesto en window";
     }
 
-  } catch (e) {
+  };
 
-    console.error("❌ ERROR MODULO:", e);
+  script.onerror = () => {
+    container.innerHTML = "❌ Error cargando script (network)";
+  };
 
-    container.innerHTML = `
-      <div style="color:red;text-align:center;">
-        <h2>❌ Error cargando módulo</h2>
-        <p>${name}</p>
-        <pre>${e.message}</pre>
-      </div>
-    `;
-  }
+  document.body.appendChild(script);
 };
 
 /* ================= LOGOUT ================= */
