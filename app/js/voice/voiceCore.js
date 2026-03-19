@@ -11,13 +11,17 @@ export function hablar(texto) {
 }
 
 export function iniciarVoz(callback) {
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = "es-CO";
+  try {
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = "es-CO";
 
-  recognition.onresult = e => {
-    const texto = e.results[0][0].transcript;
-    callback(texto);
-  };
+    recognition.onresult = e => {
+      const texto = e.results[0][0].transcript;
+      callback(texto);
+    };
 
-  recognition.start();
+    recognition.start();
+  } catch (e) {
+    console.warn("Voice recognition error:", e);
+  }
 }
