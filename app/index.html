@@ -194,7 +194,7 @@ window.loadModule = function(name) {
   `;
 
   const cleanName = name.replace(".js","").trim();
-  const scriptURL = `/app/js/modules/${cleanName}.js?v=${Date.now()}`;
+  const scriptURL = `js/modules/${cleanName}.js?v=${Date.now()}`;
 
   console.log("📦 Cargando:", scriptURL);
 
