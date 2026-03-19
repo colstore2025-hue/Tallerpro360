@@ -182,8 +182,8 @@ function renderMenu(user) {
   ).join("");
 }
 
-/* ================= LOAD MODULE DEFINITIVO ================= */
-window.loadModule = function(name) {
+/* ================= LOAD MODULE PRO ================= */
+window.loadModule = async function(name) {
 
   const container = document.getElementById("appContainer");
 
@@ -193,43 +193,38 @@ window.loadModule = function(name) {
     </div>
   `;
 
-  const cleanName = name.replace(".js","").trim();
-  const scriptURL = `js/modules/${cleanName}.js?v=${Date.now()}`;
+  try {
 
-  console.log("📦 Cargando:", scriptURL);
+    console.log("📦 Intentando cargar módulo:", name);
 
-  // eliminar script previo
-  const old = document.getElementById("dynamicModule");
-  if(old) old.remove();
+    const moduleURL = `/app/js/modules/${name}.js?v=${Date.now()}`;
 
-  const script = document.createElement("script");
-  script.type = "module";
-  script.src = scriptURL;
-  script.id = "dynamicModule";
+    const module = await import(moduleURL);
 
-  script.onload = () => {
-
-    console.log("✅ Script cargado");
-
-    if (window[cleanName]) {
-
-      window[cleanName](container, {
-        uid: localStorage.getItem("uid"),
-        empresaId: localStorage.getItem("empresaId"),
-        rolGlobal: localStorage.getItem("rolGlobal")
-      });
-
-    } else {
-      container.innerHTML = "❌ El módulo no está expuesto en window";
+    if (!module || !module.default) {
+      throw new Error("El módulo no exporta default");
     }
 
-  };
+    await module.default(container, {
+      uid: localStorage.getItem("uid"),
+      empresaId: localStorage.getItem("empresaId"),
+      rolGlobal: localStorage.getItem("rolGlobal")
+    });
 
-  script.onerror = () => {
-    container.innerHTML = "❌ Error cargando script (network)";
-  };
+    console.log("✅ Módulo cargado:", name);
 
-  document.body.appendChild(script);
+  } catch (e) {
+
+    console.error("🔥 ERROR MODULO:", e);
+
+    container.innerHTML = `
+      <div style="color:red;text-align:center;">
+        ❌ Error cargando módulo<br>
+        <b>${name}</b><br><br>
+        <small>${e.message}</small>
+      </div>
+    `;
+  }
 };
 
 /* ================= LOGOUT ================= */
