@@ -5,10 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TallerPRO360 · ERP SaaS</title>
 
-<!-- Base FIX CLAVE -->
 <base href="/app/">
 
-<!-- UI -->
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
@@ -31,14 +29,10 @@
     border-radius:10px;
     font-weight:bold;
     cursor:pointer;
-    transition:.3s;
   }
-
-  #logoutBtn:hover { background:#dc2626; }
 
   #mainLayout { display:flex; min-height:calc(100vh - 70px); }
 
-  /* SIDEBAR TESLA STYLE */
   #sidebar {
     width:260px;
     background:#0f172a;
@@ -46,7 +40,6 @@
     flex-direction:column;
     align-items:center;
     padding-top:25px;
-    box-shadow:2px 0 30px #000;
   }
 
   #sidebar button {
@@ -60,19 +53,16 @@
     cursor:pointer;
     color:#00ffff;
     background:#1e293b;
-    transition:.3s;
   }
 
   #sidebar button:hover {
     background:#00ffff;
     color:#000;
-    transform:scale(1.06);
   }
 
   #appContainer {
     flex:1;
     padding:30px;
-    overflow-y:auto;
   }
 </style>
 </head>
@@ -88,21 +78,34 @@
   <div id="sidebar"></div>
 
   <main id="appContainer">
-    <p class="text-center mt-20 text-slate-400">Inicializando sistema...</p>
+    <div style="text-align:center;margin-top:80px;">
+      <p style="font-size:22px;">🚀 Inicializando PRO360...</p>
+      <p style="opacity:.6;">Conectando con Firebase...</p>
+    </div>
   </main>
 </div>
 
 <script type="module">
 
-/* ================= FIREBASE CORE ================= */
 import { auth, db } from "./js/core/firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+const container = document.getElementById("appContainer");
+
+/* ================= TIMEOUT PRO ================= */
+let authTimeout = setTimeout(()=>{
+  container.innerHTML = `
+    <div style="text-align:center;margin-top:80px;color:orange;">
+      ⚠️ Conexión lenta...
+    </div>
+  `;
+}, 4000);
+
 /* ================= AUTH ================= */
 onAuthStateChanged(auth, async (user) => {
 
-  const container = document.getElementById("appContainer");
+  clearTimeout(authTimeout);
 
   if (!user) {
     window.location.href = "/login.html";
@@ -128,7 +131,6 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
 
-    /* SESSION GLOBAL */
     localStorage.setItem("uid", user.uid);
     localStorage.setItem("empresaId", userData.empresaId);
     localStorage.setItem("rolGlobal", userData.rolGlobal || "user");
@@ -156,7 +158,7 @@ function renderMenu(user) {
 
   const sidebar = document.getElementById("sidebar");
 
-  const baseModules = [
+  const modules = [
     { id:"dashboard", label:"📊 Dashboard" },
     { id:"ordenes", label:"🧾 Órdenes" },
     { id:"clientes", label:"👥 Clientes" },
@@ -164,58 +166,44 @@ function renderMenu(user) {
     { id:"ia", label:"🧠 IA" }
   ];
 
-  const adminModules = [
-    { id:"ceoAI", label:"👑 CEO AI" },
-    { id:"contabilidad", label:"📊 Contabilidad" },
-    { id:"finanzas", label:"💰 Finanzas" },
-    { id:"reportes", label:"📈 Reportes" },
-    { id:"pagosTaller", label:"💳 Pagos" },
-    { id:"vehiculos", label:"🚗 Vehículos" }
-  ];
-
-  const modules = user.rolGlobal === "superadmin"
-    ? [...baseModules, ...adminModules]
-    : baseModules;
+  if(user.rolGlobal === "superadmin"){
+    modules.push(
+      { id:"ceoAI", label:"👑 CEO AI" },
+      { id:"contabilidad", label:"📊 Contabilidad" },
+      { id:"finanzas", label:"💰 Finanzas" },
+      { id:"reportes", label:"📈 Reportes" },
+      { id:"pagosTaller", label:"💳 Pagos" },
+      { id:"vehiculos", label:"🚗 Vehículos" }
+    );
+  }
 
   sidebar.innerHTML = modules.map(m =>
     `<button onclick="loadModule('${m.id}')">${m.label}</button>`
   ).join("");
-
 }
 
-/* ================= LOADER PRO ================= */
+/* ================= LOAD MODULE ================= */
 window.loadModule = async function(name) {
 
-  const container = document.getElementById("appContainer");
-
   container.innerHTML = `
-    <div style="text-align:center; margin-top:60px;">
-      <p style="font-size:20px;">🔄 Cargando ${name}...</p>
+    <div style="text-align:center;margin-top:60px;">
+      🔄 Cargando ${name}...
     </div>
   `;
 
   try {
 
-    console.log("📦 Loading:", name);
-
-    const BASE = "/app/js/modules/";
-
-const module = await import(BASE + name + ".js");
-
+    const module = await import(`/app/js/modules/${name}.js`);
     const mod = module.default || module;
 
     if (typeof mod === "function") {
-
       await mod(container, {
         uid: localStorage.getItem("uid"),
         empresaId: localStorage.getItem("empresaId"),
         rolGlobal: localStorage.getItem("rolGlobal")
       });
-
     } else {
-
       container.innerHTML = "❌ Módulo inválido";
-
     }
 
   } catch (e) {
@@ -223,14 +211,13 @@ const module = await import(BASE + name + ".js");
     console.error("ERROR MODULO:", e);
 
     container.innerHTML = `
-      <div style="color:red; text-align:center;">
-        <h2>❌ Error cargando módulo</h2>
-        <p>${name}</p>
-        <pre>${e.message}</pre>
+      <div style="color:red;text-align:center;">
+        ❌ Error cargando módulo<br>
+        ${name}<br>
+        <small>${e.message}</small>
       </div>
     `;
   }
-
 };
 
 /* ================= LOGOUT ================= */
@@ -242,7 +229,6 @@ document.getElementById("logoutBtn").onclick = async () => {
 
 </script>
 
-<!-- Charts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </body>
