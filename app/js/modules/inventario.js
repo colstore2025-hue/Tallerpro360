@@ -1,7 +1,7 @@
 /**
  * inventario.js
- * Módulo Inventario PRO360 · ULTRA NASA/TESLA 🔥
- * Integración completa con Guardian Dios y Orquestador Supremo
+ * Inventario Inteligente PRO360 · PRODUCCIÓN ULTRA ESTABLE 🔥
+ * Integrado Guardian IA + Modo Dios + Orquestador Supremo
  */
 
 import {
@@ -10,22 +10,28 @@ import {
   addDoc,
   updateDoc,
   doc,
+  increment,
   query,
-  where
+  orderBy,
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const db = window.db;
-
+import { generarSugerencias, renderSugerencias } from "../ai/aiAdvisor.js";
 import { hablar } from "../voice/voiceCore.js";
 import { activarModoDiosGuardian } from "../ai/firestoreGuardianGod.js";
 
+/* 🔥 DB GLOBAL */
+const db = window.db;
+
 export default async function inventarioModule(container, state) {
+
+  /* 🔒 VALIDACIÓN CRÍTICA */
   if (!state?.empresaId) {
-    container.innerHTML = `<h2 style="color:red;text-align:center;">❌ empresaId no definido</h2>`;
+    container.innerHTML = `<h2 style="color:red;text-align:center;">❌ Empresa no definida</h2>`;
     return;
   }
 
-  let repuestos = [];
+  const base = `empresas/${state.empresaId}`;
 
   container.innerHTML = `
     <h1 style="color:#00ffff;font-size:34px;font-weight:900;">
@@ -33,136 +39,167 @@ export default async function inventarioModule(container, state) {
     </h1>
 
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
-      <input id="nombreRepuesto" placeholder="Nombre repuesto"
-        style="flex:2;padding:10px;border-radius:8px;"/>
-      <input id="precioCompra" placeholder="Precio compra"
-        style="flex:1;padding:10px;border-radius:8px;"/>
-      <input id="precioVenta" placeholder="Precio venta"
-        style="flex:1;padding:10px;border-radius:8px;"/>
-      <input id="stockMinimo" placeholder="Stock mínimo"
-        style="flex:1;padding:10px;border-radius:8px;"/>
-      <button id="crearRepuesto"
-        style="flex:1;background:#22c55e;color:#000;border-radius:8px;">
-        ➕ Crear
-      </button>
+      <input id="nombre" placeholder="Nombre repuesto" style="flex:2;padding:10px;border-radius:8px;"/>
+      <input id="stock" type="number" placeholder="Stock" style="flex:1;padding:10px;border-radius:8px;"/>
+      <input id="minimo" type="number" placeholder="Mínimo" style="flex:1;padding:10px;border-radius:8px;"/>
+      <input id="compra" type="number" placeholder="Compra" style="flex:1;padding:10px;border-radius:8px;"/>
+      <input id="venta" type="number" placeholder="Venta" style="flex:1;padding:10px;border-radius:8px;"/>
+      <button id="crear" style="flex:1;background:#22c55e;color:#000;border-radius:8px;">➕ Crear</button>
     </div>
 
-    <input id="busquedaRepuesto"
-      placeholder="Buscar repuesto..."
-      style="width:100%;padding:12px;margin-bottom:15px;border-radius:8px;"/>
-
-    <div id="listaRepuestos"></div>
+    <div id="alertas"></div>
+    <div id="lista"></div>
+    <div id="advisorInventario" style="margin-top:20px;"></div>
   `;
 
-  const lista = document.getElementById("listaRepuestos");
+  const lista = document.getElementById("lista");
+  const alertasDiv = document.getElementById("alertas");
+  let repuestos = [];
 
-  /* ================= CARGAR ================= */
-  async function cargarRepuestos() {
-    lista.innerHTML = "🔄 Cargando repuestos...";
+  /* ================= WATCHER Firestore 🔥 ================= */
+  onSnapshot(collection(db, `${base}/repuestos`), snapshot => {
+    snapshot.docChanges().forEach(change => {
+      if (!["added","modified"].includes(change.type)) return;
+      cargarInventario(); // Auto-refresh en tiempo real
+    });
+  });
 
+  /* ================= CARGAR INVENTARIO ================= */
+  async function cargarInventario() {
+    lista.innerHTML = "🔄 Cargando inventario...";
     try {
-      const snap = await getDocs(
-        collection(db, `empresas/${state.empresaId}/repuestos`)
-      );
+      const snap = await getDocs(query(collection(db, `${base}/repuestos`), orderBy("creadoEn", "desc")));
+      repuestos = [];
+      let alertas = [];
+      snap.forEach(docSnap => {
+        const r = docSnap.data();
+        const id = docSnap.id;
+        repuestos.push({ id, ...r });
 
-      repuestos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      repuestos.sort((a,b) => (a.nombre || "").localeCompare(b.nombre));
+        const stock = Number(r.stock || 0);
+        const minimo = Number(r.stockMinimo || 0);
+        if (stock <= minimo) alertas.push(`⚠️ Bajo stock: ${r.nombre}`);
+      });
 
-      renderRepuestos(repuestos);
+      renderLista(repuestos);
+      renderAlertas(alertas);
 
-      // 🔹 Activar modo Dios sobre este módulo
-      activarModoDiosGuardian(state.empresaId);
+      // 🤖 IA: sugerencias inteligentes
+      try {
+        const sugerencias = await generarSugerencias({ inventario: repuestos, empresaId: state.empresaId });
+        renderSugerencias("advisorInventario", sugerencias);
+      } catch (e) {
+        console.warn("IA inventario error:", e);
+      }
 
-    } catch(e) {
-      console.error("🔥 ERROR REPUESTOS:", e);
-      lista.innerHTML = `<p style="color:red;text-align:center;">❌ Error cargando repuestos</p>`;
+    } catch (e) {
+      console.error(e);
+      lista.innerHTML = `<p style="color:red;text-align:center;">❌ Error cargando inventario</p>`;
     }
   }
 
-  /* ================= RENDER ================= */
-  function renderRepuestos(data) {
+  /* ================= RENDER LISTA ================= */
+  function renderLista(data) {
     if (!data.length) {
       lista.innerHTML = `<p style="text-align:center;">📭 Sin repuestos</p>`;
       return;
     }
 
     lista.innerHTML = data.map(r => `
-      <div class="repuestoItem" data-id="${r.id}"
-        style="background:#111827;padding:12px;margin:8px 0;border-radius:12px;display:flex;justify-content:space-between;align-items:center;border:1px solid #1f2937;cursor:pointer;">
-        <span>${r.nombre || "Sin nombre"} | 💰 ${fmt(r.precioVenta)} | 📦 ${r.stock || 0}</span>
-        <button class="editarBtn" style="background:#00ffff;border:none;border-radius:6px;padding:4px 8px;">✏️ Editar</button>
+      <div style="
+        background:#111827;
+        padding:15px;
+        margin:10px 0;
+        border-radius:12px;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+      ">
+        <div>
+          📦 <strong>${r.nombre}</strong><br/>
+          Stock: ${r.stock || 0} | Min: ${r.stockMinimo || 0}<br/>
+          💰 Compra: $${fmt(r.precioCompra)} | Venta: $${fmt(r.precioVenta)}
+        </div>
+        <div style="display:flex;gap:5px;">
+          <button data-id="${r.id}" class="entrada"
+            style="background:#00ffff;border:none;border-radius:6px;padding:6px;">➕</button>
+          <button data-id="${r.id}" class="salida"
+            style="background:#ef4444;border:none;border-radius:6px;padding:6px;">➖</button>
+        </div>
       </div>
     `).join("");
 
-    document.querySelectorAll(".editarBtn").forEach(btn => {
-      btn.onclick = e => {
-        const id = btn.parentElement.dataset.id;
-        editarRepuesto(id);
-        e.stopPropagation();
-      };
-    });
+    document.querySelectorAll(".entrada").forEach(btn => { btn.onclick = () => agregarStock(btn.dataset.id); });
+    document.querySelectorAll(".salida").forEach(btn => { btn.onclick = () => usarStock(btn.dataset.id); });
   }
 
-  /* ================= BUSCAR ================= */
-  document.getElementById("busquedaRepuesto").oninput = e => {
-    const texto = e.target.value.toLowerCase();
-    const filtrados = repuestos.filter(r => (r.nombre || "").toLowerCase().includes(texto));
-    renderRepuestos(filtrados);
-  };
+  /* ================= ALERTAS ================= */
+  function renderAlertas(alertas) {
+    if (alertas.length) {
+      alertasDiv.innerHTML = `<h3 style="color:#ef4444;">🚨 Alertas</h3>` + alertas.map(a => `<div>${a}</div>`).join("");
+      hablar("Hay repuestos con bajo stock");
+    } else {
+      alertasDiv.innerHTML = `<h3>✅ Stock OK</h3>`;
+    }
+  }
 
-  /* ================= CREAR ================= */
-  document.getElementById("crearRepuesto").onclick = async () => {
-    const nombre = document.getElementById("nombreRepuesto").value.trim();
-    const precioCompra = parseFloat(document.getElementById("precioCompra").value) || 0;
-    const precioVenta = parseFloat(document.getElementById("precioVenta").value) || 0;
-    const stockMinimo = parseInt(document.getElementById("stockMinimo").value) || 0;
+  /* ================= CREAR REPUESTO ================= */
+  document.getElementById("crear").onclick = async () => {
+    const nombre = document.getElementById("nombre").value.trim();
+    const stock = Number(document.getElementById("stock").value) || 0;
+    const minimo = Number(document.getElementById("minimo").value) || 0;
+    const compra = Number(document.getElementById("compra").value) || 0;
+    const venta = Number(document.getElementById("venta").value) || 0;
 
-    if (!nombre) return alert("Nombre obligatorio");
+    if (!nombre) { alert("Nombre obligatorio"); return; }
 
     try {
-      await addDoc(collection(db, `empresas/${state.empresaId}/repuestos`), {
-        nombre,
-        precioCompra,
-        precioVenta,
-        stockMinimo,
-        stock: 0,
-        creadoEn: new Date()
-      });
-
+      await addDoc(collection(db, `${base}/repuestos`), { nombre, stock, stockMinimo: minimo, precioCompra: compra, precioVenta: venta, creadoEn: new Date() });
       hablar("Repuesto creado");
-
-      ["nombreRepuesto","precioCompra","precioVenta","stockMinimo"].forEach(id => document.getElementById(id).value = "");
-
-      cargarRepuestos();
-    } catch(e) {
+      ["nombre","stock","minimo","compra","venta"].forEach(id => document.getElementById(id).value = "");
+      cargarInventario();
+    } catch (e) {
       console.error(e);
       alert("Error creando repuesto");
     }
   };
 
-  /* ================= EDITAR ================= */
-  async function editarRepuesto(id) {
-    const r = repuestos.find(x => x.id === id);
-    if (!r) return;
+  /* ================= AGREGAR STOCK ================= */
+  async function agregarStock(id) {
+    const cantidad = Number(prompt("Cantidad a ingresar:"));
+    if (!cantidad || cantidad <= 0) return;
+    try {
+      await updateDoc(doc(db, `${base}/repuestos`, id), { stock: increment(cantidad) });
+      await addDoc(collection(db, `${base}/movimientosInventario`), { repuestoId: id, tipo: "entrada", cantidad, fecha: new Date() });
+      hablar(`Se agregaron ${cantidad} unidades`);
+      cargarInventario();
+    } catch (e) {
+      console.error(e);
+      alert("Error actualizando stock");
+    }
+  }
 
-    const nombre = prompt("Nombre:", r.nombre) || r.nombre;
-    const precioCompra = parseFloat(prompt("Precio compra:", r.precioCompra)) || r.precioCompra;
-    const precioVenta = parseFloat(prompt("Precio venta:", r.precioVenta)) || r.precioVenta;
-    const stockMinimo = parseInt(prompt("Stock mínimo:", r.stockMinimo)) || r.stockMinimo;
-
-    await updateDoc(doc(db, `empresas/${state.empresaId}/repuestos`, id), {
-      nombre, precioCompra, precioVenta, stockMinimo
-    });
-
-    hablar("Repuesto actualizado");
-    cargarRepuestos();
+  /* ================= USAR STOCK ================= */
+  async function usarStock(id) {
+    const cantidad = Number(prompt("Cantidad a usar:"));
+    if (!cantidad || cantidad <= 0) return;
+    try {
+      await updateDoc(doc(db, `${base}/repuestos`, id), { stock: increment(-cantidad) });
+      await addDoc(collection(db, `${base}/movimientosInventario`), { repuestoId: id, tipo: "salida", cantidad, fecha: new Date() });
+      hablar(`Se descontaron ${cantidad}`);
+      cargarInventario();
+    } catch (e) {
+      console.error(e);
+      alert("Error descontando stock");
+    }
   }
 
   /* ================= UTILS ================= */
-  function fmt(v) {
-    return new Intl.NumberFormat("es-CO").format(v || 0);
-  }
+  function fmt(v) { return new Intl.NumberFormat("es-CO").format(v || 0); }
 
-  /* ================= INIT ================= */
-  cargarRepuestos();
+  /* ================= MODO DIOS ================= */
+  activarModoDiosGuardian(state.empresaId);
+
+  /* INIT */
+  cargarInventario();
 }
