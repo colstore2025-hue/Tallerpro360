@@ -6,7 +6,6 @@
 import { collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const db = window.db;
 
-import { hablarResumen } from "../ai/aiAssistant.js";
 
 export default async function dashboard(container, state) {
 
@@ -191,8 +190,9 @@ function renderIA(data) {
     </div>
   `;
 
-  document.getElementById("vozGerente").onclick = () => hablarResumen(data);
-}
+  document.getElementById("vozGerente").onclick = () => {
+  alert("IA en proceso 🚀");
+};
 
 /* ================= UTILS ================= */
 
