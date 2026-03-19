@@ -182,7 +182,7 @@ function renderMenu(user) {
   ).join("");
 }
 
-/* ================= LOAD MODULE PRO FIX ================= */
+/* ================= LOAD MODULE ULTRA SAFE ================= */
 window.loadModule = async function(name) {
 
   const container = document.getElementById("appContainer");
@@ -195,10 +195,17 @@ window.loadModule = async function(name) {
 
   try {
 
-    // 🔥 URL ABSOLUTA REAL (NO FALLA EN VERCEL)
-    const moduleURL = `${window.location.origin}/app/js/modules/${name}.js`;
+    // 🔥 LIMPIEZA FORENSE DEL NOMBRE
+    let cleanName = name
+      .replace(".js", "")
+      .replace(/\.+$/, "") // elimina puntos al final
+      .trim();
 
-    console.log("📦 Importando módulo desde:", moduleURL);
+    console.log("🧠 Módulo limpio:", cleanName);
+
+    const moduleURL = `${window.location.origin}/app/js/modules/${cleanName}.js`;
+
+    console.log("📦 URL FINAL:", moduleURL);
 
     const module = await import(moduleURL);
 
