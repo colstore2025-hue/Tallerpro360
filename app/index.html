@@ -182,23 +182,25 @@ function renderMenu(user) {
   ).join("");
 }
 
-/* ================= LOAD MODULE ================= */
+/* ================= LOAD MODULE PRO FIX ================= */
 window.loadModule = async function(name) {
 
   const container = document.getElementById("appContainer");
 
   container.innerHTML = `
-    <div style="text-align:center; margin-top:60px; font-size:20px;">
+    <div style="text-align:center;margin-top:60px;">
       🔄 Cargando ${name}...
     </div>
   `;
 
   try {
 
-    console.log("📦 Cargando módulo:", name);
+    // 🔥 URL ABSOLUTA REAL (NO FALLA EN VERCEL)
+    const moduleURL = `${window.location.origin}/app/js/modules/${name}.js`;
 
-    // 🔥 RUTA CORRECTA (respeta <base href="/app/">)
-    const module = await import(`./js/modules/${name}.js`);
+    console.log("📦 Importando módulo desde:", moduleURL);
+
+    const module = await import(moduleURL);
 
     const mod = module.default || module;
 
@@ -221,10 +223,10 @@ window.loadModule = async function(name) {
     console.error("❌ ERROR MODULO:", e);
 
     container.innerHTML = `
-      <div style="color:red; text-align:center; margin-top:60px;">
+      <div style="color:red;text-align:center;">
         <h2>❌ Error cargando módulo</h2>
-        <p><b>${name}</b></p>
-        <pre style="white-space:pre-wrap;">${e.message}</pre>
+        <p>${name}</p>
+        <pre>${e.message}</pre>
       </div>
     `;
   }
