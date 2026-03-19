@@ -1,10 +1,10 @@
 /**
  * app-init.js
  * Core Loader PRO360 · ERP SaaS
- * Autor: PRO360 / Nexus-Starlink SAS
- * Última generación: Tesla Nivel PRO360
+ * Versión PRODUCCIÓN ESTABLE + Guardian IA
  */
 
+// ================= IMPORTS =================
 import dashboardModule from "../modules/dashboard.js";
 import ordenesModule from "../modules/ordenes.js";
 import clientesModule from "../modules/clientes.js";
@@ -15,12 +15,12 @@ import pagosTallerModule from "../modules/pagosTaller.js";
 import reportesModule from "../modules/reportes.js";
 import configuracionModule from "../modules/configuracion.js";
 
+import { ejecutarGuardianIA } from "../ai/firestoreGuardianAI.js";
+
 import { auth } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// ---------------------------
-// GLOBAL STATE
-// ---------------------------
+// ================= STATE GLOBAL =================
 const state = {
   uid: localStorage.getItem("uid") || null,
   empresaId: localStorage.getItem("empresaId") || null,
@@ -28,29 +28,35 @@ const state = {
   planTipo: localStorage.getItem("planTipo") || "freemium"
 };
 
-// ---------------------------
-// ELEMENTOS DEL LAYOUT
-// ---------------------------
+// ================= DOM =================
 const container = document.getElementById("appContainer");
 const menu = document.getElementById("menu");
 const logoutBtn = document.getElementById("logoutBtn");
 
-// ---------------------------
-// AUTENTICACIÓN
-// ---------------------------
+// ================= AUTH =================
 onAuthStateChanged(auth, user => {
+
   if (!user) {
+    console.warn("🔒 Usuario no autenticado");
     localStorage.clear();
     window.location.href = "/login.html";
-  } else {
-    state.uid = user.uid;
-    initApp();
+    return;
   }
+
+  state.uid = user.uid;
+
+  // 🔐 Validación crítica
+  if (!state.empresaId) {
+    console.error("❌ empresaId no definido");
+    container.innerHTML = `<h2 style="color:red;text-align:center;">Empresa no configurada</h2>`;
+    return;
+  }
+
+  initApp();
+
 });
 
-// ---------------------------
-// LOGOUT
-// ---------------------------
+// ================= LOGOUT =================
 if (logoutBtn) {
   logoutBtn.onclick = async () => {
     await signOut(auth);
@@ -59,18 +65,50 @@ if (logoutBtn) {
   };
 }
 
-// ---------------------------
-// INICIALIZAR APP
-// ---------------------------
+// ================= INIT =================
 function initApp() {
+
   renderMenu();
+
+  // 🚀 Carga inicial
   loadModule("dashboard");
+
+  // 🧠 Guardian IA (modo inteligente)
+  activarGuardian();
+
 }
 
-// ---------------------------
-// RENDER MENÚ
-// ---------------------------
+// ================= GUARDIAN IA =================
+function activarGuardian() {
+
+  setTimeout(() => {
+
+    const empresaId = state.empresaId;
+
+    if (!empresaId) return;
+
+    const lastRun = localStorage.getItem("guardian_last_run");
+    const now = Date.now();
+
+    // ⏱ Ejecutar cada 6 horas
+    if (lastRun && (now - Number(lastRun)) < (6 * 60 * 60 * 1000)) {
+      console.log("🧠 Guardian IA ya ejecutado recientemente");
+      return;
+    }
+
+    console.log("🧠 Ejecutando Guardian IA...");
+
+    ejecutarGuardianIA({ empresaId });
+
+    localStorage.setItem("guardian_last_run", now);
+
+  }, 4000); // ⏳ espera a que cargue UI
+
+}
+
+// ================= MENU =================
 function renderMenu() {
+
   if (!menu) return;
 
   menu.innerHTML = `
@@ -88,55 +126,57 @@ function renderMenu() {
   menu.querySelectorAll("button").forEach(btn => {
     btn.onclick = () => loadModule(btn.dataset.module);
   });
+
 }
 
-// ---------------------------
-// CARGAR MÓDULO
-// ---------------------------
+// ================= LOADER =================
 async function loadModule(name) {
+
   if (!container) return;
 
-  container.innerHTML = `<p style="color:#0ff; text-align:center;">Cargando ${name}...</p>`;
+  container.innerHTML = `
+    <div style="text-align:center;margin-top:50px;">
+      <p style="color:#0ff;font-size:18px;">🔄 Cargando ${name}...</p>
+    </div>
+  `;
 
   try {
-    switch(name) {
-      case "dashboard":
-        await dashboardModule(container, state);
-        break;
-      case "ordenes":
-        await ordenesModule(container, state);
-        break;
-      case "clientes":
-        await clientesModule(container, state);
-        break;
-      case "inventario":
-        await inventarioModule(container, state);
-        break;
-      case "finanzas":
-        await finanzasModule(container, state);
-        break;
-      case "contabilidad":
-        await contabilidadModule(container, state);
-        break;
-      case "pagosTaller":
-        await pagosTallerModule(container, state);
-        break;
-      case "reportes":
-        await reportesModule(container, state);
-        break;
-      case "configuracion":
-        await configuracionModule(container, state);
-        break;
-      default:
-        container.innerHTML = `<p style="color:red;">❌ Módulo no encontrado</p>`;
+
+    const modules = {
+      dashboard: dashboardModule,
+      ordenes: ordenesModule,
+      clientes: clientesModule,
+      inventario: inventarioModule,
+      finanzas: finanzasModule,
+      contabilidad: contabilidadModule,
+      pagosTaller: pagosTallerModule,
+      reportes: reportesModule,
+      configuracion: configuracionModule
+    };
+
+    const mod = modules[name];
+
+    if (!mod) {
+      throw new Error("Módulo no registrado");
     }
+
+    await mod(container, state);
+
   } catch (e) {
-    console.error(e);
-    container.innerHTML = `<p style="color:red;">Error cargando módulo: ${e.message}</p>`;
+
+    console.error("❌ ERROR MODULO:", name, e);
+
+    container.innerHTML = `
+      <div style="color:red;text-align:center;">
+        <h2>❌ Error cargando módulo</h2>
+        <p>${name}</p>
+        <small>${e.message}</small>
+      </div>
+    `;
+
   }
+
 }
 
-// ---------------------------
-// EXPORT (opcional)
-// ---------------------------
+// ================= EXPORT =================
 export { loadModule, state };
