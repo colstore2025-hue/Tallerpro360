@@ -1,7 +1,7 @@
 /**
  * app-init.js
  * Core Loader PRO360 · ERP SaaS
- * Versión PRODUCCIÓN ESTABLE + Guardian IA
+ * 🔥 Versión ULTRA ESTABLE + Guardian IA + Modo Dios
  */
 
 // ================= IMPORTS =================
@@ -14,8 +14,10 @@ import finanzasModule from "../modules/finanzas.js";
 import pagosTallerModule from "../modules/pagosTaller.js";
 import reportesModule from "../modules/reportes.js";
 import configuracionModule from "../modules/configuracion.js";
+import ceoAIModule from "../modules/ceoAI.js"; // 👑 IMPORTANTE
 
 import { ejecutarGuardianIA } from "../ai/firestoreGuardianAI.js";
+import { activarModoDiosGuardian } from "../ai/firestoreGuardianGod.js";
 
 import { auth } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -45,15 +47,17 @@ onAuthStateChanged(auth, user => {
 
   state.uid = user.uid;
 
-  // 🔐 Validación crítica
   if (!state.empresaId) {
     console.error("❌ empresaId no definido");
-    container.innerHTML = `<h2 style="color:red;text-align:center;">Empresa no configurada</h2>`;
+    container.innerHTML = `
+      <h2 style="color:red;text-align:center;">
+        Empresa no configurada
+      </h2>
+    `;
     return;
   }
 
   initApp();
-
 });
 
 // ================= LOGOUT =================
@@ -70,40 +74,36 @@ function initApp() {
 
   renderMenu();
 
-  // 🚀 Carga inicial
-  loadModule("dashboard");
+  // 🚀 carga inicial segura
+  safeLoad("dashboard");
 
-  // 🧠 Guardian IA (modo inteligente)
+  // 🧠 IA automática
   activarGuardian();
-
 }
 
-// ================= GUARDIAN IA =================
+// ================= GUARDIAN + DIOS =================
 function activarGuardian() {
 
   setTimeout(() => {
 
     const empresaId = state.empresaId;
-
     if (!empresaId) return;
 
     const lastRun = localStorage.getItem("guardian_last_run");
     const now = Date.now();
 
-    // ⏱ Ejecutar cada 6 horas
-    if (lastRun && (now - Number(lastRun)) < (6 * 60 * 60 * 1000)) {
-      console.log("🧠 Guardian IA ya ejecutado recientemente");
-      return;
+    if (!lastRun || (now - Number(lastRun)) > (6 * 60 * 60 * 1000)) {
+
+      console.log("🧠 Ejecutando Guardian IA...");
+      ejecutarGuardianIA({ empresaId });
+
+      localStorage.setItem("guardian_last_run", now);
     }
 
-    console.log("🧠 Ejecutando Guardian IA...");
+    // 😈 MODO DIOS (tiempo real)
+    activarModoDiosGuardian(empresaId);
 
-    ejecutarGuardianIA({ empresaId });
-
-    localStorage.setItem("guardian_last_run", now);
-
-  }, 4000); // ⏳ espera a que cargue UI
-
+  }, 3000);
 }
 
 // ================= MENU =================
@@ -120,23 +120,23 @@ function renderMenu() {
     <button data-module="contabilidad">📑 Contabilidad</button>
     <button data-module="pagosTaller">💳 Pagos</button>
     <button data-module="reportes">📋 Reportes</button>
+    <button data-module="ceoAI">👑 CEO AI</button>
     <button data-module="configuracion">⚙️ Configuración</button>
   `;
 
   menu.querySelectorAll("button").forEach(btn => {
-    btn.onclick = () => loadModule(btn.dataset.module);
+    btn.onclick = () => safeLoad(btn.dataset.module);
   });
-
 }
 
-// ================= LOADER =================
-async function loadModule(name) {
+// ================= LOADER SEGURO =================
+async function safeLoad(name) {
 
   if (!container) return;
 
   container.innerHTML = `
     <div style="text-align:center;margin-top:50px;">
-      <p style="color:#0ff;font-size:18px;">🔄 Cargando ${name}...</p>
+      <p style="color:#0ff;">🔄 Cargando ${name}...</p>
     </div>
   `;
 
@@ -151,14 +151,13 @@ async function loadModule(name) {
       contabilidad: contabilidadModule,
       pagosTaller: pagosTallerModule,
       reportes: reportesModule,
-      configuracion: configuracionModule
+      configuracion: configuracionModule,
+      ceoAI: ceoAIModule
     };
 
     const mod = modules[name];
 
-    if (!mod) {
-      throw new Error("Módulo no registrado");
-    }
+    if (!mod) throw new Error("Módulo no registrado");
 
     await mod(container, state);
 
@@ -166,17 +165,22 @@ async function loadModule(name) {
 
     console.error("❌ ERROR MODULO:", name, e);
 
+    // 🔥 FALLBACK AUTOMÁTICO
     container.innerHTML = `
-      <div style="color:red;text-align:center;">
+      <div style="text-align:center;color:red;">
         <h2>❌ Error cargando módulo</h2>
         <p>${name}</p>
         <small>${e.message}</small>
+
+        <br/><br/>
+        <button onclick="location.reload()"
+          style="padding:10px;background:#00ffff;border:none;border-radius:8px;">
+          🔄 Reiniciar sistema
+        </button>
       </div>
     `;
-
   }
-
 }
 
 // ================= EXPORT =================
-export { loadModule, state };
+export { state };
