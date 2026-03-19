@@ -1,7 +1,6 @@
 /**
  * clientes.js
- * CRM PRO360 · Producción SaaS
- * Clientes + Vehículos + Órdenes + Feedback
+ * CRM PRO360 · Producción SaaS (VERSIÓN NASA 🔥)
  */
 
 import {
@@ -13,12 +12,21 @@ import {
   orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* 🔥 DB GLOBAL UNIFICADA */
+/* 🔥 DB GLOBAL */
 const db = window.db;
 
 import { hablar } from "../voice/voiceCore.js";
 
 export default async function clientesModule(container, state) {
+
+  if (!state?.empresaId) {
+    container.innerHTML = `
+      <h2 style="color:red;text-align:center;">
+        ❌ empresaId no definido
+      </h2>
+    `;
+    return;
+  }
 
   let clientes = [];
 
@@ -27,7 +35,6 @@ export default async function clientesModule(container, state) {
       👥 Clientes PRO360
     </h1>
 
-    <!-- CREAR -->
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
       <input id="nombre" placeholder="Nombre cliente"
         style="flex:2;padding:10px;border-radius:8px;"/>
@@ -41,21 +48,18 @@ export default async function clientesModule(container, state) {
       </button>
     </div>
 
-    <!-- BUSCADOR -->
     <input id="busqueda"
       placeholder="Buscar cliente..."
       style="width:100%;padding:12px;margin-bottom:15px;border-radius:8px;"/>
 
     <div id="listaClientes"></div>
-
-    <div id="detalleCliente"
-      style="margin-top:25px;"></div>
+    <div id="detalleCliente" style="margin-top:25px;"></div>
   `;
 
   const lista = document.getElementById("listaClientes");
   const detalle = document.getElementById("detalleCliente");
 
-  /* ================= LOAD CLIENTES ================= */
+  /* ================= LOAD ================= */
 
   async function cargarClientes() {
 
@@ -63,11 +67,9 @@ export default async function clientesModule(container, state) {
 
     try {
 
+      // ⚠️ SIN orderBy para evitar errores de índice
       const snap = await getDocs(
-        query(
-          collection(db, `empresas/${state.empresaId}/clientes`),
-          orderBy("creadoEn", "desc")
-        )
+        collection(db, `empresas/${state.empresaId}/clientes`)
       );
 
       clientes = snap.docs.map(d => ({
@@ -75,11 +77,16 @@ export default async function clientesModule(container, state) {
         ...d.data()
       }));
 
+      // Ordenar en frontend (NUNCA falla)
+      clientes.sort((a, b) =>
+        new Date(b.creadoEn || 0) - new Date(a.creadoEn || 0)
+      );
+
       renderClientes(clientes);
 
     } catch (e) {
 
-      console.error(e);
+      console.error("🔥 ERROR CLIENTES:", e);
 
       lista.innerHTML = `
         <p style="color:red;text-align:center;">
@@ -89,7 +96,7 @@ export default async function clientesModule(container, state) {
     }
   }
 
-  /* ================= RENDER LIST ================= */
+  /* ================= RENDER ================= */
 
   function renderClientes(data) {
 
@@ -107,7 +114,6 @@ export default async function clientesModule(container, state) {
           margin:10px 0;
           border-radius:12px;
           cursor:pointer;
-          transition:.2s;
           border:1px solid #1f2937;
         "
       >
@@ -201,7 +207,7 @@ export default async function clientesModule(container, state) {
               (${v.placa || ""})
             </span>
 
-            <button onclick="loadModule('ordenes')"
+            <button class="crearOrdenBtn"
               style="background:#00ffff;border:none;border-radius:6px;padding:5px 10px;">
               🧾 Orden
             </button>
@@ -213,16 +219,19 @@ export default async function clientesModule(container, state) {
       const ordenesSnap = await getDocs(
         query(
           collection(db, `empresas/${state.empresaId}/ordenes`),
-          where("clienteId", "==", clienteId),
-          orderBy("creadoEn", "desc")
+          where("clienteId", "==", clienteId)
         )
+      );
+
+      let ordenes = ordenesSnap.docs.map(d => d.data());
+
+      ordenes.sort((a, b) =>
+        new Date(b.creadoEn || 0) - new Date(a.creadoEn || 0)
       );
 
       let ordenesHTML = "<h3>🧾 Órdenes</h3>";
 
-      ordenesSnap.forEach(doc => {
-
-        const o = doc.data();
+      ordenes.forEach(o => {
 
         const color =
           o.estado === "abierta" ? "#00ffff" :
@@ -242,8 +251,7 @@ export default async function clientesModule(container, state) {
       const feedbackSnap = await getDocs(
         query(
           collection(db, `empresas/${state.empresaId}/feedback`),
-          where("clienteId", "==", clienteId),
-          orderBy("fecha", "desc")
+          where("clienteId", "==", clienteId)
         )
       );
 
@@ -254,7 +262,9 @@ export default async function clientesModule(container, state) {
 
         let fecha = "";
         try {
-          fecha = new Date(f.fecha.seconds * 1000).toLocaleString();
+          fecha = f.fecha?.toDate
+            ? f.fecha.toDate().toLocaleString()
+            : "";
         } catch {}
 
         feedbackHTML += `
@@ -274,9 +284,20 @@ export default async function clientesModule(container, state) {
         </div>
       `;
 
+      // 🔥 FIX GLOBAL NAV
+      document.querySelectorAll(".crearOrdenBtn").forEach(btn => {
+        btn.onclick = () => {
+          if (window.loadModule) {
+            window.loadModule("ordenes");
+          } else {
+            console.error("loadModule no está en window");
+          }
+        };
+      });
+
     } catch (e) {
 
-      console.error(e);
+      console.error("🔥 ERROR DETALLE:", e);
 
       detalle.innerHTML = `
         <p style="color:red;text-align:center;">
