@@ -1,6 +1,6 @@
 /**
  * ordenes.js
- * Órdenes Inteligentes PRO360 · Producción
+ * Órdenes Inteligentes PRO360 · Producción ESTABLE
  */
 
 import {
@@ -8,7 +8,7 @@ import {
   addDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* 🔥 IMPORTANTE: UNIFICAMOS DB GLOBAL */
+/* 🔥 DB GLOBAL */
 const db = window.db;
 
 /* IA + VOZ + SERVICES */
@@ -21,6 +21,16 @@ import { usarRepuesto } from "../services/inventarioService.js";
 /* ================= MODULE ================= */
 
 export default async function ordenesModule(container, state) {
+
+  /* 🔒 VALIDACIÓN CRÍTICA */
+  if (!state?.empresaId) {
+    container.innerHTML = `
+      <h2 style="color:red;text-align:center;">
+        ❌ Empresa no definida
+      </h2>
+    `;
+    return;
+  }
 
   let items = [];
 
@@ -105,7 +115,7 @@ export default async function ordenesModule(container, state) {
       ">
         <span>
           ${i.nombre} (${i.tipo}) x${i.cantidad}
-          → $${i.precio}
+          → $${fmt(i.precio)}
         </span>
 
         <button data-index="${index}" class="deleteItem"
@@ -122,7 +132,7 @@ export default async function ordenesModule(container, state) {
       };
     });
 
-    /* IA SUGERENCIAS SEGURAS */
+    /* 🤖 IA SUGERENCIAS SEGURAS */
     try {
       const sugerencias = await generarSugerencias({
         ordenes: items,
@@ -130,7 +140,7 @@ export default async function ordenesModule(container, state) {
       });
 
       renderSugerencias("advisorOrdenes", sugerencias);
-    } catch(e) {
+    } catch (e) {
       console.warn("IA sugerencias error:", e);
     }
   }
@@ -150,7 +160,13 @@ export default async function ordenesModule(container, state) {
       return;
     }
 
-    items.push({ tipo, nombre, cantidad, precio, costo });
+    items.push({
+      tipo,
+      nombre,
+      cantidad,
+      precio: precio || 0,
+      costo: costo || 0
+    });
 
     ["nombre","cantidad","precio","costo"].forEach(id => {
       document.getElementById(id).value = "";
@@ -186,7 +202,8 @@ export default async function ordenesModule(container, state) {
         if (item.tipo === "inventario") {
           await usarRepuesto({
             repuestoId: item.nombre,
-            cantidad: item.cantidad
+            cantidad: item.cantidad,
+            empresaId: state.empresaId
           });
         }
 
@@ -203,19 +220,20 @@ export default async function ordenesModule(container, state) {
         costoTotal,
         utilidad: total - costoTotal,
         estado: "abierta",
-        creadoEn: new Date()
+        creadoEn: new Date(),
+        alertasIA: [],
+        diagnosticoIA: { recomendaciones: [] }
       };
 
-      /* 🔥 CORREGIDO: estructura por empresa */
       await addDoc(
         collection(db, `empresas/${state.empresaId}/ordenes`),
         orden
       );
 
-      /* IA APRENDIZAJE */
+      /* 🧠 IA aprendizaje */
       try { await aprenderDeOrden(orden); } catch {}
 
-      hablar("Orden creada");
+      hablar("Orden creada correctamente");
       alert("✅ Orden creada");
 
       items = [];
@@ -233,7 +251,6 @@ export default async function ordenesModule(container, state) {
   document.getElementById("crearConIA").onclick = async () => {
 
     const input = prompt("Describe la orden");
-
     if (!input) return;
 
     try {
@@ -256,11 +273,11 @@ export default async function ordenesModule(container, state) {
         nombre: i.pieza,
         cantidad: Number(i.cantidad) || 1,
         precio: Number(i.preciounitario) || 0,
-        costo: Number(i.preciounitario) * 0.7
+        costo: Number(i.preciounitario || 0) * 0.7
       }));
 
       renderItems();
-      hablar("Orden generada");
+      hablar("Orden generada por IA");
 
     } catch (e) {
       console.error(e);
@@ -279,7 +296,7 @@ export default async function ordenesModule(container, state) {
         const ordenIA = await generarOrdenIA(texto);
 
         if (!ordenIA) {
-          hablar("No entendí");
+          hablar("No entendí la orden");
           return;
         }
 
@@ -294,19 +311,25 @@ export default async function ordenesModule(container, state) {
           nombre: i.pieza,
           cantidad: Number(i.cantidad) || 1,
           precio: Number(i.preciounitario) || 0,
-          costo: Number(i.preciounitario) * 0.7
+          costo: Number(i.preciounitario || 0) * 0.7
         }));
 
         renderItems();
-        hablar("Orden lista");
+        hablar("Orden lista para revisión");
 
       } catch (e) {
         console.error(e);
-        hablar("Error voz");
+        hablar("Error procesando voz");
       }
 
     });
   };
+
+  /* ================= UTILS ================= */
+
+  function fmt(v) {
+    return new Intl.NumberFormat("es-CO").format(v || 0);
+  }
 
   /* INIT */
   renderItems();
