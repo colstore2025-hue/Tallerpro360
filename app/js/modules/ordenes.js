@@ -1,357 +1,232 @@
 /**
  * ordenes.js
- * Órdenes Inteligentes PRO360 · Producción ESTABLE
+ * Órdenes Inteligentes PRO360 · MODO DIOS GUARDIAN
  */
 
 import {
   collection,
-  addDoc
+  addDoc,
+  getDocs,
+  query,
+  orderBy,
+  doc,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* 🔥 DB GLOBAL */
 const db = window.db;
 
-/* IA + VOZ + SERVICES */
 import { generarOrdenIA } from "../ai/aiAutonomousFlow.js";
 import { aprenderDeOrden } from "../ai/aiLearningEngine.js";
 import { generarSugerencias, renderSugerencias } from "../ai/aiAdvisor.js";
 import { iniciarVoz, hablar } from "../voice/voiceCore.js";
 import { usarRepuesto } from "../services/inventarioService.js";
 
-/* ================= MODULE ================= */
-
 export default async function ordenesModule(container, state) {
 
-  /* 🔒 VALIDACIÓN CRÍTICA */
   if (!state?.empresaId) {
-    container.innerHTML = `
-      <h2 style="color:red;text-align:center;">
-        ❌ Empresa no definida
-      </h2>
-    `;
+    container.innerHTML = `❌ Empresa no definida`;
     return;
   }
 
   let items = [];
 
   container.innerHTML = `
-    <h1 style="color:#00ffff;font-size:34px;font-weight:900;">
-      🧾 Órdenes PRO360
-    </h1>
+    <h1 style="color:#00ffff;">🧾 Órdenes PRO360</h1>
 
-    <!-- CLIENTE -->
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px;">
-      <input id="cliente" placeholder="ID Cliente"
-        style="flex:1;padding:10px;border-radius:8px;"/>
-      <input id="vehiculo" placeholder="Placa"
-        style="flex:1;padding:10px;border-radius:8px;"/>
-    </div>
+    <input id="cliente" placeholder="ID Cliente"/>
+    <input id="vehiculo" placeholder="Placa"/>
 
-    <!-- ITEMS -->
-    <h3 style="color:#00ffff;">Agregar Repuesto</h3>
+    <h3>Agregar Item</h3>
 
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-      <select id="tipo" style="flex:1;padding:10px;border-radius:8px;">
-        <option value="inventario">Inventario</option>
-        <option value="compra">Compra directa</option>
-        <option value="cliente">Cliente trae</option>
-      </select>
+    <select id="tipo">
+      <option value="inventario">Inventario</option>
+      <option value="compra">Compra</option>
+    </select>
 
-      <input id="nombre" placeholder="Nombre"
-        style="flex:2;padding:10px;border-radius:8px;"/>
+    <input id="nombre" placeholder="Nombre"/>
+    <input id="cantidad" type="number" placeholder="Cantidad"/>
+    <input id="precio" type="number" placeholder="Precio"/>
+    <input id="costo" type="number" placeholder="Costo"/>
 
-      <input id="cantidad" type="number" placeholder="Cantidad"
-        style="flex:1;padding:10px;border-radius:8px;"/>
-
-      <input id="precio" type="number" placeholder="Precio"
-        style="flex:1;padding:10px;border-radius:8px;"/>
-
-      <input id="costo" type="number" placeholder="Costo"
-        style="flex:1;padding:10px;border-radius:8px;"/>
-
-      <button id="addItem"
-        style="flex:1;background:#00ffff;color:#000;font-weight:bold;border-radius:8px;">
-        ➕
-      </button>
-    </div>
+    <button id="addItem">➕</button>
 
     <div id="itemsList"></div>
-    <div id="advisorOrdenes" style="margin-top:20px;"></div>
+    <div id="advisorOrdenes"></div>
 
-    <!-- ACTIONS -->
-    <div style="display:flex;gap:10px;margin-top:25px;flex-wrap:wrap;">
-      <button id="crearOrden"
-        style="flex:1;background:#22c55e;color:#000;">
-        🚀 Crear Orden
-      </button>
+    <button id="crearOrden">🚀 Crear Orden</button>
 
-      <button id="crearConIA"
-        style="flex:1;background:#00ffff;color:#000;">
-        🤖 IA
-      </button>
-
-      <button id="vozBtn"
-        style="flex:1;background:#f0f;color:#000;">
-        🎤 Voz
-      </button>
-    </div>
+    <hr/>
+    <h2>📋 Órdenes existentes</h2>
+    <div id="listaOrdenes"></div>
   `;
 
   const itemsList = document.getElementById("itemsList");
+  const listaOrdenes = document.getElementById("listaOrdenes");
 
-  /* ================= RENDER ================= */
+  /* ================= ITEMS ================= */
 
-  async function renderItems() {
-
+  function renderItems() {
     itemsList.innerHTML = items.map((i, index) => `
-      <div style="
-        background:#111827;
-        padding:10px;
-        margin:6px 0;
-        border-radius:8px;
-        display:flex;
-        justify-content:space-between;
-        color:#00ffff;
-      ">
-        <span>
-          ${i.nombre} (${i.tipo}) x${i.cantidad}
-          → $${fmt(i.precio)}
-        </span>
-
-        <button data-index="${index}" class="deleteItem"
-          style="background:#ef4444;border:none;border-radius:6px;color:#fff;">
-          ❌
-        </button>
+      <div>
+        ${i.nombre} x${i.cantidad} → $${fmt(i.precio)}
+        <button data-index="${index}" class="del">❌</button>
       </div>
     `).join("");
 
-    document.querySelectorAll(".deleteItem").forEach(btn => {
-      btn.onclick = () => {
-        items.splice(Number(btn.dataset.index), 1);
+    document.querySelectorAll(".del").forEach(btn=>{
+      btn.onclick = ()=>{
+        items.splice(btn.dataset.index,1);
         renderItems();
-      };
+      }
     });
-
-    /* 🤖 IA SUGERENCIAS SEGURAS */
-    try {
-      const sugerencias = await generarSugerencias({
-        ordenes: items,
-        empresaId: state.empresaId
-      });
-
-      renderSugerencias("advisorOrdenes", sugerencias);
-    } catch (e) {
-      console.warn("IA sugerencias error:", e);
-    }
   }
-
-  /* ================= ADD ITEM ================= */
 
   document.getElementById("addItem").onclick = () => {
 
-    const tipo = document.getElementById("tipo").value;
-    const nombre = document.getElementById("nombre").value.trim();
-    const cantidad = Number(document.getElementById("cantidad").value);
-    const precio = Number(document.getElementById("precio").value);
-    const costo = Number(document.getElementById("costo").value);
+    const item = {
+      tipo: document.getElementById("tipo").value,
+      nombre: document.getElementById("nombre").value,
+      cantidad: Number(document.getElementById("cantidad").value),
+      precio: Number(document.getElementById("precio").value),
+      costo: Number(document.getElementById("costo").value)
+    };
 
-    if (!nombre || cantidad <= 0) {
-      alert("Datos incompletos");
-      return;
-    }
+    if (!item.nombre || item.cantidad <= 0) return alert("Datos inválidos");
 
-    items.push({
-      tipo,
-      nombre,
-      cantidad,
-      precio: precio || 0,
-      costo: costo || 0
-    });
-
-    ["nombre","cantidad","precio","costo"].forEach(id => {
-      document.getElementById(id).value = "";
-    });
-
+    items.push(item);
     renderItems();
   };
 
-  /* ================= CREAR ORDEN ================= */
+  /* ================= CREAR ================= */
 
   document.getElementById("crearOrden").onclick = async () => {
 
-    const clienteId = document.getElementById("cliente").value.trim();
-    const vehiculoId = document.getElementById("vehiculo").value.trim();
-
-    if (!clienteId || !vehiculoId) {
-      alert("Cliente y vehículo obligatorios");
-      return;
-    }
-
-    if (!items.length) {
-      alert("Agrega items");
-      return;
-    }
+    const clienteId = document.getElementById("cliente").value;
+    const vehiculoId = document.getElementById("vehiculo").value;
 
     let total = 0;
     let costoTotal = 0;
 
-    try {
+    for (let item of items) {
 
-      for (let item of items) {
-
-        if (item.tipo === "inventario") {
-          await usarRepuesto({
-            repuestoId: item.nombre,
-            cantidad: item.cantidad,
-            empresaId: state.empresaId
-          });
-        }
-
-        total += item.precio * item.cantidad;
-        costoTotal += item.costo * item.cantidad;
+      if (item.tipo === "inventario") {
+        await usarRepuesto({
+          repuestoId: item.nombre,
+          cantidad: item.cantidad,
+          empresaId: state.empresaId
+        });
       }
 
-      const orden = {
-        empresaId: state.empresaId,
-        clienteId,
-        vehiculoId,
-        items,
-        total,
-        costoTotal,
-        utilidad: total - costoTotal,
-        estado: "abierta",
-        creadoEn: new Date(),
-        alertasIA: [],
-        diagnosticoIA: { recomendaciones: [] }
-      };
+      total += item.precio * item.cantidad;
+      costoTotal += item.costo * item.cantidad;
+    }
 
-      await addDoc(
+    const orden = {
+      empresaId: state.empresaId,
+      clienteId,
+      vehiculoId,
+      items,
+      total,
+      costoTotal,
+      utilidad: total - costoTotal,
+
+      estado: "pendiente_aprobacion", // 🔥 CLAVE
+      editable: true,
+
+      creadoEn: new Date()
+    };
+
+    const ref = await addDoc(
+      collection(db, `empresas/${state.empresaId}/ordenes`),
+      orden
+    );
+
+    hablar("Orden creada, pendiente de aprobación");
+
+    items = [];
+    renderItems();
+
+    cargarOrdenes();
+  };
+
+  /* ================= LISTAR ORDENES ================= */
+
+  async function cargarOrdenes() {
+
+    const snap = await getDocs(
+      query(
         collection(db, `empresas/${state.empresaId}/ordenes`),
-        orden
-      );
+        orderBy("creadoEn", "desc")
+      )
+    );
 
-      /* 🧠 IA aprendizaje */
-      try { await aprenderDeOrden(orden); } catch {}
+    listaOrdenes.innerHTML = snap.docs.map(d => {
 
-      hablar("Orden creada correctamente");
-      alert("✅ Orden creada");
+      const o = d.data();
+      const id = d.id;
 
-      items = [];
-      renderItems();
+      return `
+        <div style="border:1px solid #333;padding:10px;margin:10px;">
+          <strong>${id}</strong><br/>
+          Estado: ${o.estado} <br/>
+          Total: $${fmt(o.total)}
 
-    } catch (e) {
-      console.error(e);
-      hablar("Error creando orden");
-      alert(e.message);
-    }
+          ${renderAprobacion(id, o)}
+        </div>
+      `;
+    }).join("");
+  }
+
+  /* ================= APROBACION ================= */
+
+  function renderAprobacion(id, o) {
+
+    if (o.estado !== "pendiente_aprobacion") return "";
+
+    return `
+      <button onclick="aprobarOrden('${id}')">✅ Aprobar</button>
+      <button onclick="rechazarOrden('${id}')">❌ Rechazar</button>
+    `;
+  }
+
+  /* ================= GLOBAL ACTIONS ================= */
+
+  window.aprobarOrden = async function(id) {
+
+    await updateDoc(
+      doc(db, `empresas/${state.empresaId}/ordenes`, id),
+      {
+        estado: "aprobada",
+        editable: false,
+        aprobadaPor: state.uid
+      }
+    );
+
+    hablar("Orden aprobada");
+    cargarOrdenes();
   };
 
-  /* ================= IA ================= */
+  window.rechazarOrden = async function(id) {
 
-  document.getElementById("crearConIA").onclick = async () => {
-
-    const input = prompt("Describe la orden");
-    if (!input) return;
-
-    try {
-
-      const ordenIA = await generarOrdenIA(input);
-
-      if (!ordenIA) {
-        alert("IA no generó orden");
-        return;
+    await updateDoc(
+      doc(db, `empresas/${state.empresaId}/ordenes`, id),
+      {
+        estado: "rechazada",
+        editable: true
       }
+    );
 
-      document.getElementById("cliente").value =
-        ordenIA.cliente?.clienteId || "";
-
-      document.getElementById("vehiculo").value =
-        ordenIA.vehiculo?.placa || "";
-
-      items = (ordenIA.cotizacion || []).map(i => ({
-        tipo: "compra",
-        nombre: i.pieza,
-        cantidad: Number(i.cantidad) || 1,
-        precio: Number(i.preciounitario) || 0,
-        costo: Number(i.preciounitario || 0) * 0.7
-      }));
-
-      renderItems();
-      hablar("Orden generada por IA");
-
-    } catch (e) {
-      console.error(e);
-      hablar("Error IA");
-    }
-  };
-
-/* ================= APROBACIÓN ================= */
-
-function renderAprobacion(ordenId, orden) {
-
-  if (orden.estado !== "pendiente_aprobacion") return "";
-
-  return `
-    <div style="margin-top:10px;display:flex;gap:10px;">
-      <button onclick="aprobarOrden('${ordenId}')"
-        style="background:#22c55e;color:#000;border-radius:6px;padding:6px;">
-        ✅ Aprobar
-      </button>
-
-      <button onclick="rechazarOrden('${ordenId}')"
-        style="background:#ef4444;color:#fff;border-radius:6px;padding:6px;">
-        ❌ Rechazar
-      </button>
-    </div>
-  `;
-}
-
-  /* ================= VOZ ================= */
-
-  document.getElementById("vozBtn").onclick = () => {
-
-    iniciarVoz(async texto => {
-
-      try {
-
-        const ordenIA = await generarOrdenIA(texto);
-
-        if (!ordenIA) {
-          hablar("No entendí la orden");
-          return;
-        }
-
-        document.getElementById("cliente").value =
-          ordenIA.cliente?.clienteId || "";
-
-        document.getElementById("vehiculo").value =
-          ordenIA.vehiculo?.placa || "";
-
-        items = (ordenIA.cotizacion || []).map(i => ({
-          tipo: "compra",
-          nombre: i.pieza,
-          cantidad: Number(i.cantidad) || 1,
-          precio: Number(i.preciounitario) || 0,
-          costo: Number(i.preciounitario || 0) * 0.7
-        }));
-
-        renderItems();
-        hablar("Orden lista para revisión");
-
-      } catch (e) {
-        console.error(e);
-        hablar("Error procesando voz");
-      }
-
-    });
+    hablar("Orden rechazada");
+    cargarOrdenes();
   };
 
   /* ================= UTILS ================= */
 
-  function fmt(v) {
+  function fmt(v){
     return new Intl.NumberFormat("es-CO").format(v || 0);
   }
 
   /* INIT */
   renderItems();
+  cargarOrdenes();
 }
