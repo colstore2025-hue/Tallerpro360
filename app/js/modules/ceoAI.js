@@ -1,8 +1,6 @@
 /**
 ================================================
-CEO-AI.JS - Módulo IA Gerente / CEO
-Ruta: /app/js/modules/ceoAI.js
-TallerPRO360 - Nivel Tesla PRO360 ULTRA
+CEO-AI.JS - Módulo IA Gerente PRO360 ULTRA
 ================================================
 */
 
@@ -13,17 +11,15 @@ import {
   collection,
   getDocs,
   query,
-  where
+  orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const db = window.db;
 
 export default async function CEOAIModule(container, state) {
 
   if (!state?.empresaId) {
-    container.innerHTML = `
-      <div style="color:#ef4444;">
-        ❌ Error: empresaId no definido
-      </div>
-    `;
+    container.innerHTML = `❌ empresaId no definido`;
     return;
   }
 
@@ -34,31 +30,68 @@ export default async function CEOAIModule(container, state) {
   const btnVoz = container.querySelector("#voz");
 
   /* =========================
-  DATA
+  DATA REAL (NUEVA ESTRUCTURA)
   ========================= */
   async function obtenerDatos() {
+
+    const base = `empresas/${state.empresaId}`;
 
     const [ordenesSnap, invSnap] = await Promise.all([
 
       getDocs(
         query(
-          collection(window.db, "ordenes"),
-          where("empresaId", "==", state.empresaId)
+          collection(db, `${base}/ordenes`),
+          orderBy("creadoEn", "desc")
         )
       ),
 
       getDocs(
         query(
-          collection(window.db, "repuestos"),
-          where("empresaId", "==", state.empresaId)
+          collection(db, `${base}/repuestos`),
+          orderBy("creadoEn", "desc")
         )
       )
 
     ]);
 
+    let ordenes = ordenesSnap.docs.map(d => ({
+      id: d.id,
+      ...d.data()
+    }));
+
+    let inventario = invSnap.docs.map(d => ({
+      id: d.id,
+      ...d.data()
+    }));
+
+    /* 🔥 FILTRO CEO (solo negocio real) */
+    ordenes = ordenes.filter(o =>
+      o.estado === "aprobada" || o.estado === "cerrada"
+    );
+
+    return { ordenes, inventario };
+  }
+
+  /* =========================
+  KPIs REALES
+  ========================= */
+  function calcularKPIs(ordenes) {
+
+    const totalIngresos = ordenes.reduce((a, o) => a + (o.total || 0), 0);
+    const totalCostos = ordenes.reduce((a, o) => a + (o.costoTotal || 0), 0);
+    const utilidad = totalIngresos - totalCostos;
+
+    const ordenesCount = ordenes.length;
+    const ticketPromedio = ordenesCount
+      ? totalIngresos / ordenesCount
+      : 0;
+
     return {
-      ordenes: ordenesSnap.docs.map(d => ({ id: d.id, ...d.data() })),
-      inventario: invSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+      ingresos: totalIngresos,
+      utilidad,
+      margen: totalIngresos ? (utilidad / totalIngresos) * 100 : 0,
+      ordenes: ordenesCount,
+      ticketPromedio
     };
   }
 
@@ -78,30 +111,29 @@ export default async function CEOAIModule(container, state) {
         return;
       }
 
-      const { sugerencias, resumen } =
-        await generarSugerencias({
-          ordenes,
-          inventario,
-          empresaId: state.empresaId
-        });
+      const kpis = calcularKPIs(ordenes);
+
+      const { sugerencias } = await generarSugerencias({
+        ordenes,
+        inventario,
+        empresaId: state.empresaId
+      });
 
       const data = await analizarNegocio({
         ordenes,
         inventario,
         empresaId: state.empresaId,
-        resumen,
+        resumen: kpis,
         sugerencias
       });
 
-      renderResultado(resultado, data, sugerencias);
+      renderResultado(resultado, data, sugerencias, kpis);
 
-      // 🔊 Voz automática estilo Tesla
       hablarResumen(data);
 
     } catch (error) {
 
       console.error("CEO AI Error:", error);
-
       resultado.innerHTML = renderError(error);
 
     }
@@ -114,10 +146,9 @@ export default async function CEOAIModule(container, state) {
 
     try {
       const { hablar } = await import("../voice/voiceCore.js");
-      const texto = resultado.innerText || "No hay datos aún";
-      hablar(texto);
+      hablar(resultado.innerText || "No hay datos");
     } catch (e) {
-      console.warn("Voice error:", e);
+      console.warn(e);
     }
 
   };
@@ -129,119 +160,71 @@ UI
 
 function renderUI() {
   return `
-    <div style="font-family:Inter,sans-serif; color:#e5e7eb;">
+    <h1 style="color:#00ffff;">🧠 CEO AI PRO360</h1>
 
-      <h1 style="font-size:28px;font-weight:800;color:#00ffff;margin-bottom:20px;">
-        🧠 CEO AI · TallerPRO360
-      </h1>
+    <button id="analizar">🚀 Analizar</button>
+    <button id="voz">🎤 Voz</button>
 
-      <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
-        
-        <button id="analizar" style="${btn('#16a34a')}">
-          🚀 Analizar Empresa
-        </button>
-
-        <button id="voz" style="${btn('#06b6d4','#000')}">
-          🎤 Escuchar
-        </button>
-
-      </div>
-
-      <div id="resultado" style="
-        background:#020617;
-        border:1px solid #1e293b;
-        padding:20px;
-        border-radius:12px;
-        min-height:180px;
-      ">
-        <p style="color:#64748b;">Ejecuta el análisis para ver resultados...</p>
-      </div>
-
-    </div>
-  `;
-}
-
-function btn(bg, color="#fff") {
-  return `
-    padding:10px 18px;
-    background:${bg};
-    color:${color};
-    border:none;
-    border-radius:8px;
-    font-weight:600;
-    cursor:pointer;
+    <div id="resultado" style="margin-top:20px;"></div>
   `;
 }
 
 /* =====================================================
-RENDER STATES
+RENDER
 ===================================================== */
 
-function setLoading(el) {
-  el.innerHTML = `🤖 Analizando con IA...`;
+function setLoading(el){
+  el.innerHTML = "🤖 Analizando negocio...";
 }
 
-function renderEmpty() {
-  return `⚠️ No hay datos suficientes para análisis`;
+function renderEmpty(){
+  return "⚠️ No hay órdenes aprobadas aún";
 }
 
-function renderError(e) {
-  return `
-    <div style="color:#ef4444;">
-      ❌ Error IA<br/>
-      <small>${e.message}</small>
-    </div>
-  `;
+function renderError(e){
+  return `❌ ${e.message}`;
 }
 
 /* =====================================================
 RESULTADO
 ===================================================== */
 
-function renderResultado(el, data, sugerencias) {
+function renderResultado(el, data, sugerencias, kpis) {
 
   el.innerHTML = `
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;">
+    <h2>📊 KPIs CEO</h2>
 
-      ${card("Ingresos", format(data.resumen.ingresos), "#10b981")}
-      ${card("Utilidad", format(data.resumen.utilidad), "#facc15")}
-      ${card("Margen", data.resumen.margen.toFixed(2)+"%", "#38bdf8")}
+    ${card("Ingresos", money(kpis.ingresos))}
+    ${card("Utilidad", money(kpis.utilidad))}
+    ${card("Margen", kpis.margen.toFixed(2)+"%")}
+    ${card("Órdenes", kpis.ordenes)}
+    ${card("Ticket Promedio", money(kpis.ticketPromedio))}
 
-    </div>
+    <h3>🚨 Alertas</h3>
+    ${list(data.alertas)}
 
-    <h3 style="color:#f87171;">🚨 Alertas</h3>
-    ${list(data.alertas, "Sin alertas")}
+    <h3>💡 Recomendaciones CEO</h3>
+    ${list(data.recomendaciones)}
 
-    <h3 style="color:#22d3ee;margin-top:10px;">💡 Recomendaciones</h3>
-    ${list(data.recomendaciones, "Sin recomendaciones")}
-
-    <h3 style="color:#4ade80;margin-top:10px;">📊 Sugerencias</h3>
+    <h3>🤖 Sugerencias IA</h3>
     ${list(sugerencias)}
 
   `;
 }
 
-function card(title, value, color) {
-  return `
-    <div style="background:#111827;padding:12px;border-radius:10px;">
-      <div style="font-size:12px;color:#9ca3af;">${title}</div>
-      <div style="font-size:20px;font-weight:800;color:${color};">${value}</div>
-    </div>
-  `;
+function card(t,v){
+  return `<div><strong>${t}:</strong> ${v}</div>`;
 }
 
-function list(arr, empty="") {
-  if (!arr || arr.length === 0) {
-    return `<p style="color:#64748b;">${empty}</p>`;
-  }
-
-  return arr.map(i => `<div>• ${i}</div>`).join("");
+function list(arr){
+  if(!arr || !arr.length) return "Sin datos";
+  return arr.map(i=>`• ${i}`).join("<br>");
 }
 
-function format(num) {
-  return new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP"
-  }).format(num || 0);
+function money(v){
+  return new Intl.NumberFormat("es-CO",{
+    style:"currency",
+    currency:"COP"
+  }).format(v||0);
 }
