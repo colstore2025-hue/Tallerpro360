@@ -5,27 +5,78 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TallerPRO360 · ERP SaaS</title>
 
-<!-- Tailwind CSS -->
+<!-- Base FIX CLAVE -->
+<base href="/app/">
+
+<!-- UI -->
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<!-- Base URL para que los imports relativos funcionen correctamente -->
-<base href="./">
-
 <style>
-  body { margin:0; font-family:Inter,system-ui; background:#0f172a; color:#cbd5e1; }
-  header { background:#111827; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 0 20px #000; }
-  #logoutBtn { background:#ff4444; color:#fff; padding:8px 14px; border-radius:8px; font-weight:bold; cursor:pointer; transition:.2s; }
-  #logoutBtn:hover { background:#ff0000; }
+  body { margin:0; font-family:Inter,system-ui; background:#0b1220; color:#cbd5e1; }
 
-  /* Layout principal */
-  #mainLayout { display:flex; min-height:calc(100vh - 64px); }
-  #sidebar { width:240px; background:#111827; display:flex; flex-direction:column; align-items:center; padding-top:20px; box-shadow:2px 0 20px #000; }
-  #sidebar button { width:200px; margin:10px 0; padding:14px; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; color:#0ff; background:#1f2937; transition:.3s; text-align:center; }
-  #sidebar button:hover { background:#0ff; color:#111; transform:scale(1.05); }
-  #appContainer { flex:1; padding:30px; overflow-y:auto; }
+  header {
+    background:#0f172a;
+    padding:14px 24px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow:0 0 25px #000;
+  }
+
+  #logoutBtn {
+    background:#ef4444;
+    color:#fff;
+    padding:8px 16px;
+    border-radius:10px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:.3s;
+  }
+
+  #logoutBtn:hover { background:#dc2626; }
+
+  #mainLayout { display:flex; min-height:calc(100vh - 70px); }
+
+  /* SIDEBAR TESLA STYLE */
+  #sidebar {
+    width:260px;
+    background:#0f172a;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding-top:25px;
+    box-shadow:2px 0 30px #000;
+  }
+
+  #sidebar button {
+    width:200px;
+    margin:12px 0;
+    padding:16px;
+    border:none;
+    border-radius:14px;
+    font-size:18px;
+    font-weight:700;
+    cursor:pointer;
+    color:#00ffff;
+    background:#1e293b;
+    transition:.3s;
+  }
+
+  #sidebar button:hover {
+    background:#00ffff;
+    color:#000;
+    transform:scale(1.06);
+  }
+
+  #appContainer {
+    flex:1;
+    padding:30px;
+    overflow-y:auto;
+  }
 </style>
 </head>
+
 <body>
 
 <header>
@@ -35,35 +86,44 @@
 
 <div id="mainLayout">
   <div id="sidebar"></div>
+
   <main id="appContainer">
-    <p class="text-slate-400 text-center mt-20">Cargando sistema...</p>
+    <p class="text-center mt-20 text-slate-400">Inicializando sistema...</p>
   </main>
 </div>
 
 <script type="module">
 
-/* ================== CORE FIREBASE ================== */
+/* ================= FIREBASE CORE ================= */
 import { auth, db } from "./js/core/firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ================== AUTH ================== */
-onAuthStateChanged(auth, async user => {
-  const container = document.getElementById("appContainer");
-  if(!user){ window.location.href = "/login.html"; return; }
+/* ================= AUTH ================= */
+onAuthStateChanged(auth, async (user) => {
 
-  try{
+  const container = document.getElementById("appContainer");
+
+  if (!user) {
+    window.location.href = "/login.html";
+    return;
+  }
+
+  try {
+
     container.innerHTML = "🔄 Cargando usuario...";
 
-    const snap = await getDoc(doc(db,"usuariosGlobal",user.uid));
-    if(!snap.exists()){
+    const snap = await getDoc(doc(db, "usuariosGlobal", user.uid));
+
+    if (!snap.exists()) {
       container.innerHTML = "❌ Usuario no autorizado";
       await signOut(auth);
       return;
     }
 
     const userData = snap.data();
-    if(!userData.empresaId){
+
+    if (!userData.empresaId) {
       container.innerHTML = "❌ Usuario sin empresaId";
       return;
     }
@@ -75,76 +135,103 @@ onAuthStateChanged(auth, async user => {
 
     initApp(userData);
 
-  } catch(e){
-    console.error("ERROR INIT:", e);
-    container.innerHTML = `<h2 style="color:red">❌ Error inicializando app</h2><pre>${e.message}</pre>`;
+  } catch (e) {
+    console.error(e);
+    container.innerHTML = `
+      <h2 style="color:red">❌ Error inicializando</h2>
+      <pre>${e.message}</pre>
+    `;
   }
+
 });
 
-/* ================== INIT APP ================== */
-function initApp(user){
+/* ================= INIT ================= */
+function initApp(user) {
   renderMenu(user);
-  loadModule("dashboard"); // dashboard por defecto
+  loadModule("dashboard");
 }
 
-/* ================== MENÚ LATERAL ================== */
-function renderMenu(user){
+/* ================= MENU ================= */
+function renderMenu(user) {
+
   const sidebar = document.getElementById("sidebar");
 
-  let botones = [
-    { id:"dashboard", label:"Dashboard" },
-    { id:"ordenes", label:"Órdenes" },
-    { id:"clientes", label:"Clientes" },
-    { id:"inventario", label:"Inventario" },
-    { id:"ia", label:"IA" }
+  const baseModules = [
+    { id:"dashboard", label:"📊 Dashboard" },
+    { id:"ordenes", label:"🧾 Órdenes" },
+    { id:"clientes", label:"👥 Clientes" },
+    { id:"inventario", label:"📦 Inventario" },
+    { id:"ia", label:"🧠 IA" }
   ];
 
-  // Módulos adicionales solo para superadmin
-  if(user.rolGlobal === "superadmin"){
-    botones.push({ id:"ceoAI", label:"CEO AI" });
-    botones.push({ id:"contabilidad", label:"Contabilidad" });
-    botones.push({ id:"finanzas", label:"Finanzas" });
-    botones.push({ id:"reportes", label:"Reportes" });
-    botones.push({ id:"pagosTaller", label:"Pagos Taller" });
-    botones.push({ id:"vehiculos", label:"Vehículos" });
-  }
+  const adminModules = [
+    { id:"ceoAI", label:"👑 CEO AI" },
+    { id:"contabilidad", label:"📊 Contabilidad" },
+    { id:"finanzas", label:"💰 Finanzas" },
+    { id:"reportes", label:"📈 Reportes" },
+    { id:"pagosTaller", label:"💳 Pagos" },
+    { id:"vehiculos", label:"🚗 Vehículos" }
+  ];
 
-  sidebar.innerHTML = botones.map(b => 
-    `<button onclick="loadModule('${b.id}')">${b.label}</button>`
+  const modules = user.rolGlobal === "superadmin"
+    ? [...baseModules, ...adminModules]
+    : baseModules;
+
+  sidebar.innerHTML = modules.map(m =>
+    `<button onclick="loadModule('${m.id}')">${m.label}</button>`
   ).join("");
+
 }
 
-/* ================== CARGADOR DE MÓDULOS ================== */
-window.loadModule = async function(name){
-  const container = document.getElementById("appContainer");
-  container.innerHTML = "🔄 Cargando módulo...";
+/* ================= LOADER PRO ================= */
+window.loadModule = async function(name) {
 
-  try{
-    // IMPORT DINÁMICO RELATIVO A app/index.html
+  const container = document.getElementById("appContainer");
+
+  container.innerHTML = `
+    <div style="text-align:center; margin-top:60px;">
+      <p style="font-size:20px;">🔄 Cargando ${name}...</p>
+    </div>
+  `;
+
+  try {
+
+    console.log("📦 Loading:", name);
+
     const module = await import(`./js/modules/${name}.js`);
+
     const mod = module.default || module;
 
-    if(typeof mod === "function"){
+    if (typeof mod === "function") {
+
       await mod(container, {
         uid: localStorage.getItem("uid"),
         empresaId: localStorage.getItem("empresaId"),
         rolGlobal: localStorage.getItem("rolGlobal")
       });
+
     } else {
+
       container.innerHTML = "❌ Módulo inválido";
+
     }
 
-  } catch(e){
-    console.error("❌ ERROR MODULO:", e);
+  } catch (e) {
+
+    console.error("ERROR MODULO:", e);
+
     container.innerHTML = `
-      <h2 style="color:red">❌ Error cargando módulo</h2>
-      <p><b>${name}</b></p>
-      <pre>${e.message}</pre>
+      <div style="color:red; text-align:center;">
+        <h2>❌ Error cargando módulo</h2>
+        <p>${name}</p>
+        <pre>${e.message}</pre>
+      </div>
     `;
   }
+
 };
 
-/* ================== LOGOUT ================== */
+/* ================= LOGOUT ================= */
 document.getElementById("logoutBtn").onclick = async () => {
   await signOut(auth);
   localStorage.clear();
@@ -153,7 +240,8 @@ document.getElementById("logoutBtn").onclick = async () => {
 
 </script>
 
-<!-- Charts.js -->
+<!-- Charts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </body>
 </html>
