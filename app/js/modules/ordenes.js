@@ -1,6 +1,7 @@
 /**
  * ordenes.js
  * Órdenes Inteligentes PRO360 · MODO DIOS GUARDIAN
+ * Integración completa con Orquestador Supremo y Firestore Guardian IA
  */
 
 import {
@@ -10,7 +11,8 @@ import {
   query,
   orderBy,
   doc,
-  updateDoc
+  updateDoc,
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const db = window.db;
@@ -20,6 +22,7 @@ import { aprenderDeOrden } from "../ai/aiLearningEngine.js";
 import { generarSugerencias, renderSugerencias } from "../ai/aiAdvisor.js";
 import { iniciarVoz, hablar } from "../voice/voiceCore.js";
 import { usarRepuesto } from "../services/inventarioService.js";
+import { activarModoDiosGuardian } from "../ai/firestoreGuardianGod.js";
 
 export default async function ordenesModule(container, state) {
 
@@ -28,6 +31,7 @@ export default async function ordenesModule(container, state) {
     return;
   }
 
+  const base = `empresas/${state.empresaId}`;
   let items = [];
 
   container.innerHTML = `
@@ -51,7 +55,7 @@ export default async function ordenesModule(container, state) {
     <button id="addItem">➕</button>
 
     <div id="itemsList"></div>
-    <div id="advisorOrdenes"></div>
+    <div id="advisorOrdenes" style="margin-top:15px;"></div>
 
     <button id="crearOrden">🚀 Crear Orden</button>
 
@@ -63,10 +67,17 @@ export default async function ordenesModule(container, state) {
   const itemsList = document.getElementById("itemsList");
   const listaOrdenes = document.getElementById("listaOrdenes");
 
-  /* ================= ITEMS ================= */
+  /* ================= WATCHER Firestore 🔥 ================= */
+  onSnapshot(collection(db, `${base}/ordenes`), snapshot => {
+    snapshot.docChanges().forEach(change => {
+      if (!["added","modified"].includes(change.type)) return;
+      cargarOrdenes(); // Auto-refresh en tiempo real
+    });
+  });
 
+  /* ================= ITEMS ================= */
   function renderItems() {
-    itemsList.innerHTML = items.map((i, index) => `
+    itemsList.innerHTML = items.map((i,index)=>`
       <div>
         ${i.nombre} x${i.cantidad} → $${fmt(i.precio)}
         <button data-index="${index}" class="del">❌</button>
@@ -77,12 +88,11 @@ export default async function ordenesModule(container, state) {
       btn.onclick = ()=>{
         items.splice(btn.dataset.index,1);
         renderItems();
-      }
+      };
     });
   }
 
   document.getElementById("addItem").onclick = () => {
-
     const item = {
       tipo: document.getElementById("tipo").value,
       nombre: document.getElementById("nombre").value,
@@ -92,15 +102,12 @@ export default async function ordenesModule(container, state) {
     };
 
     if (!item.nombre || item.cantidad <= 0) return alert("Datos inválidos");
-
     items.push(item);
     renderItems();
   };
 
-  /* ================= CREAR ================= */
-
+  /* ================= CREAR ORDEN ================= */
   document.getElementById("crearOrden").onclick = async () => {
-
     const clienteId = document.getElementById("cliente").value;
     const vehiculoId = document.getElementById("vehiculo").value;
 
@@ -108,7 +115,6 @@ export default async function ordenesModule(container, state) {
     let costoTotal = 0;
 
     for (let item of items) {
-
       if (item.tipo === "inventario") {
         await usarRepuesto({
           repuestoId: item.nombre,
@@ -116,7 +122,6 @@ export default async function ordenesModule(container, state) {
           empresaId: state.empresaId
         });
       }
-
       total += item.precio * item.cantidad;
       costoTotal += item.costo * item.cantidad;
     }
@@ -129,17 +134,12 @@ export default async function ordenesModule(container, state) {
       total,
       costoTotal,
       utilidad: total - costoTotal,
-
-      estado: "pendiente_aprobacion", // 🔥 CLAVE
+      estado: "pendiente_aprobacion",
       editable: true,
-
       creadoEn: new Date()
     };
 
-    const ref = await addDoc(
-      collection(db, `empresas/${state.empresaId}/ordenes`),
-      orden
-    );
+    await addDoc(collection(db, `${base}/ordenes`), orden);
 
     hablar("Orden creada, pendiente de aprobación");
 
@@ -150,18 +150,10 @@ export default async function ordenesModule(container, state) {
   };
 
   /* ================= LISTAR ORDENES ================= */
-
   async function cargarOrdenes() {
-
-    const snap = await getDocs(
-      query(
-        collection(db, `empresas/${state.empresaId}/ordenes`),
-        orderBy("creadoEn", "desc")
-      )
-    );
+    const snap = await getDocs(query(collection(db, `${base}/ordenes`), orderBy("creadoEn","desc")));
 
     listaOrdenes.innerHTML = snap.docs.map(d => {
-
       const o = d.data();
       const id = d.id;
 
@@ -170,19 +162,21 @@ export default async function ordenesModule(container, state) {
           <strong>${id}</strong><br/>
           Estado: ${o.estado} <br/>
           Total: $${fmt(o.total)}
-
-          ${renderAprobacion(id, o)}
+          ${renderAprobacion(id,o)}
         </div>
       `;
     }).join("");
+
+    // IA Advisor
+    try {
+      const sugerencias = await generarSugerencias({ ordenes: snap.docs.map(d=>d.data()), empresaId: state.empresaId });
+      renderSugerencias("advisorOrdenes", sugerencias);
+    } catch(e){ console.warn("IA ordenes error:", e); }
   }
 
   /* ================= APROBACION ================= */
-
-  function renderAprobacion(id, o) {
-
-    if (o.estado !== "pendiente_aprobacion") return "";
-
+  function renderAprobacion(id,o){
+    if(o.estado!=="pendiente_aprobacion") return "";
     return `
       <button onclick="aprobarOrden('${id}')">✅ Aprobar</button>
       <button onclick="rechazarOrden('${id}')">❌ Rechazar</button>
@@ -190,41 +184,30 @@ export default async function ordenesModule(container, state) {
   }
 
   /* ================= GLOBAL ACTIONS ================= */
-
-  window.aprobarOrden = async function(id) {
-
-    await updateDoc(
-      doc(db, `empresas/${state.empresaId}/ordenes`, id),
-      {
-        estado: "aprobada",
-        editable: false,
-        aprobadaPor: state.uid
-      }
-    );
-
+  window.aprobarOrden = async function(id){
+    await updateDoc(doc(db, `${base}/ordenes`, id), {
+      estado: "aprobada",
+      editable: false,
+      aprobadaPor: state.uid
+    });
     hablar("Orden aprobada");
     cargarOrdenes();
   };
 
-  window.rechazarOrden = async function(id) {
-
-    await updateDoc(
-      doc(db, `empresas/${state.empresaId}/ordenes`, id),
-      {
-        estado: "rechazada",
-        editable: true
-      }
-    );
-
+  window.rechazarOrden = async function(id){
+    await updateDoc(doc(db, `${base}/ordenes`, id), {
+      estado: "rechazada",
+      editable: true
+    });
     hablar("Orden rechazada");
     cargarOrdenes();
   };
 
   /* ================= UTILS ================= */
+  function fmt(v){ return new Intl.NumberFormat("es-CO").format(v || 0); }
 
-  function fmt(v){
-    return new Intl.NumberFormat("es-CO").format(v || 0);
-  }
+  /* ================= MODO DIOS ================= */
+  activarModoDiosGuardian(state.empresaId);
 
   /* INIT */
   renderItems();
