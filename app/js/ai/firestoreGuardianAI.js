@@ -1,159 +1,157 @@
 /**
- * firestoreGuardianAI.js
- * IA AUTÓNOMA DE SANIDAD FIRESTORE
- * TallerPRO360 · Nivel Tesla
+ * firestoreGuardianGod.js
+ * MODO DIOS 🔥
+ * Watcher + Corrección + Detección Inteligente
  */
 
 import {
   collection,
-  getDocs,
+  onSnapshot,
   updateDoc,
   doc,
-  addDoc,
-  Timestamp
+  addDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* 🔥 DB GLOBAL */
 const db = window.db;
 
-/* ================= GUARDIAN PRINCIPAL ================= */
+/* ================= INIT ================= */
 
-export async function runFirestoreGuardian(empresaId) {
+export function activarModoDiosGuardian(empresaId) {
 
   if (!empresaId) {
-    console.warn("⚠️ Guardian: empresaId requerido");
+    console.warn("⚠️ Guardian Dios: empresaId requerido");
     return;
   }
 
-  console.log("🧠 Guardian IA iniciado...");
+  console.log("😈 MODO DIOS ACTIVADO");
 
   const base = `empresas/${empresaId}`;
 
-  try {
+  escucharOrdenes(base);
+  escucharInventario(base);
+}
 
-    await repararOrdenes(base);
-    await repararClientes(base);
-    await repararInventario(base);
+/* ================= ÓRDENES WATCHER ================= */
 
-    console.log("✅ Guardian completado");
+function escucharOrdenes(base) {
 
-  } catch (e) {
+  onSnapshot(collection(db, `${base}/ordenes`), snapshot => {
 
-    console.error("🔥 Guardian error:", e);
+    snapshot.docChanges().forEach(async change => {
 
-    await logIA(base, {
-      tipo: "error",
-      modulo: "guardian",
-      mensaje: e.message
+      if (change.type !== "added" && change.type !== "modified") return;
+
+      const data = change.doc.data();
+      const id = change.doc.id;
+
+      const update = {};
+
+      /* 🔥 VALIDACIONES AUTOMÁTICAS */
+
+      if (data.total < 0) update.total = 0;
+
+      if (data.costoTotal > data.total) {
+        update.utilidad = 0;
+      }
+
+      if (!data.estado) update.estado = "abierta";
+
+      /* 💰 DETECCIÓN DE ANOMALÍAS */
+
+      if (data.total > 10000000) {
+        await log(base, {
+          tipo: "alerta",
+          modulo: "ordenes",
+          mensaje: "Orden sospechosamente alta",
+          ordenId: id
+        });
+      }
+
+      if (Object.keys(update).length > 0) {
+
+        await updateDoc(
+          doc(db, `${base}/ordenes`, id),
+          update
+        );
+
+        await log(base, {
+          tipo: "fix",
+          modulo: "ordenes",
+          ordenId: id,
+          cambios: update
+        });
+      }
+
     });
-  }
+
+  });
 }
 
-/* ================= REPARAR ÓRDENES ================= */
+/* ================= INVENTARIO WATCHER ================= */
 
-async function repararOrdenes(base) {
+function escucharInventario(base) {
 
-  const snap = await getDocs(collection(db, `${base}/ordenes`));
+  onSnapshot(collection(db, `${base}/repuestos`), snapshot => {
 
-  for (const d of snap.docs) {
+    snapshot.docChanges().forEach(async change => {
 
-    const data = d.data();
-    const update = {};
+      if (change.type !== "modified") return;
 
-    // 🧠 Normalizar arrays
-    if (!Array.isArray(data.alertasIA)) update.alertasIA = [];
-    if (!Array.isArray(data.cotizacion)) update.cotizacion = [];
-    if (!Array.isArray(data.historialEstados)) update.historialEstados = [];
+      const data = change.doc.data();
+      const id = change.doc.id;
 
-    // 🔢 Tipos numéricos
-    if (typeof data.total === "string") update.total = Number(data.total);
-    if (typeof data.costoTotal === "string") update.costoTotal = Number(data.costoTotal);
+      const update = {};
 
-    // 📅 Timestamp seguro
-    if (!data.creadoEn) update.creadoEn = Timestamp.now();
+      /* 🔥 STOCK NEGATIVO */
+      if (data.stock < 0) {
+        update.stock = 0;
 
-    // 🧾 Defaults
-    if (!data.estado) update.estado = "abierta";
+        await log(base, {
+          tipo: "alerta",
+          modulo: "inventario",
+          mensaje: "Stock negativo corregido",
+          repuestoId: id
+        });
+      }
 
-    if (Object.keys(update).length > 0) {
+      /* 🚨 STOCK CRÍTICO */
+      if (data.stock <= data.stockMinimo) {
+        await log(base, {
+          tipo: "alerta",
+          modulo: "inventario",
+          mensaje: `Stock bajo: ${data.nombre}`,
+          repuestoId: id
+        });
+      }
 
-      await updateDoc(doc(db, `${base}/ordenes`, d.id), update);
+      /* 💰 PRECIOS ILEGALES */
+      if (data.precioVenta < data.precioCompra) {
+        update.precioVenta = data.precioCompra * 1.3;
 
-      await logIA(base, {
-        tipo: "fix",
-        modulo: "ordenes",
-        docId: d.id,
-        cambios: update
-      });
-    }
-  }
+        await log(base, {
+          tipo: "fix",
+          modulo: "inventario",
+          mensaje: "Precio corregido automáticamente",
+          repuestoId: id
+        });
+      }
+
+      if (Object.keys(update).length > 0) {
+
+        await updateDoc(
+          doc(db, `${base}/repuestos`, id),
+          update
+        );
+      }
+
+    });
+
+  });
 }
 
-/* ================= REPARAR CLIENTES ================= */
+/* ================= LOG CENTRAL ================= */
 
-async function repararClientes(base) {
-
-  const snap = await getDocs(collection(db, `${base}/clientes`));
-
-  for (const d of snap.docs) {
-
-    const data = d.data();
-    const update = {};
-
-    if (!data.nombre) update.nombre = "Cliente sin nombre";
-    if (!data.estado) update.estado = "activo";
-    if (!data.creadoEn) update.creadoEn = Timestamp.now();
-
-    if (Object.keys(update).length > 0) {
-
-      await updateDoc(doc(db, `${base}/clientes`, d.id), update);
-
-      await logIA(base, {
-        tipo: "fix",
-        modulo: "clientes",
-        docId: d.id,
-        cambios: update
-      });
-    }
-  }
-}
-
-/* ================= REPARAR INVENTARIO ================= */
-
-async function repararInventario(base) {
-
-  const snap = await getDocs(collection(db, `${base}/repuestos`));
-
-  for (const d of snap.docs) {
-
-    const data = d.data();
-    const update = {};
-
-    if (typeof data.stock !== "number") update.stock = Number(data.stock) || 0;
-    if (typeof data.stockMinimo !== "number") update.stockMinimo = Number(data.stockMinimo) || 0;
-
-    if (typeof data.precioCompra !== "number") update.precioCompra = Number(data.precioCompra) || 0;
-    if (typeof data.precioVenta !== "number") update.precioVenta = Number(data.precioVenta) || 0;
-
-    if (!data.creadoEn) update.creadoEn = Timestamp.now();
-
-    if (Object.keys(update).length > 0) {
-
-      await updateDoc(doc(db, `${base}/repuestos`, d.id), update);
-
-      await logIA(base, {
-        tipo: "fix",
-        modulo: "inventario",
-        docId: d.id,
-        cambios: update
-      });
-    }
-  }
-}
-
-/* ================= LOG IA ================= */
-
-async function logIA(base, data) {
+async function log(base, data) {
 
   try {
 
@@ -166,6 +164,6 @@ async function logIA(base, data) {
     );
 
   } catch (e) {
-    console.warn("⚠️ Error guardando log IA");
+    console.warn("Error log guardian dios");
   }
 }
