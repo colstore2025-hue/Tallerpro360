@@ -185,36 +185,46 @@ function renderMenu(user) {
 /* ================= LOAD MODULE ================= */
 window.loadModule = async function(name) {
 
+  const container = document.getElementById("appContainer");
+
   container.innerHTML = `
-    <div style="text-align:center;margin-top:60px;">
+    <div style="text-align:center; margin-top:60px; font-size:20px;">
       🔄 Cargando ${name}...
     </div>
   `;
 
   try {
 
-    const module = await import(`/app/js/modules/${name}.js`);
+    console.log("📦 Cargando módulo:", name);
+
+    // 🔥 RUTA CORRECTA (respeta <base href="/app/">)
+    const module = await import(`./js/modules/${name}.js`);
+
     const mod = module.default || module;
 
     if (typeof mod === "function") {
+
       await mod(container, {
         uid: localStorage.getItem("uid"),
         empresaId: localStorage.getItem("empresaId"),
         rolGlobal: localStorage.getItem("rolGlobal")
       });
+
     } else {
+
       container.innerHTML = "❌ Módulo inválido";
+
     }
 
   } catch (e) {
 
-    console.error("ERROR MODULO:", e);
+    console.error("❌ ERROR MODULO:", e);
 
     container.innerHTML = `
-      <div style="color:red;text-align:center;">
-        ❌ Error cargando módulo<br>
-        ${name}<br>
-        <small>${e.message}</small>
+      <div style="color:red; text-align:center; margin-top:60px;">
+        <h2>❌ Error cargando módulo</h2>
+        <p><b>${name}</b></p>
+        <pre style="white-space:pre-wrap;">${e.message}</pre>
       </div>
     `;
   }
