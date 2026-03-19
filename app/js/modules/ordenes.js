@@ -285,6 +285,27 @@ export default async function ordenesModule(container, state) {
     }
   };
 
+/* ================= APROBACIÓN ================= */
+
+function renderAprobacion(ordenId, orden) {
+
+  if (orden.estado !== "pendiente_aprobacion") return "";
+
+  return `
+    <div style="margin-top:10px;display:flex;gap:10px;">
+      <button onclick="aprobarOrden('${ordenId}')"
+        style="background:#22c55e;color:#000;border-radius:6px;padding:6px;">
+        ✅ Aprobar
+      </button>
+
+      <button onclick="rechazarOrden('${ordenId}')"
+        style="background:#ef4444;color:#fff;border-radius:6px;padding:6px;">
+        ❌ Rechazar
+      </button>
+    </div>
+  `;
+}
+
   /* ================= VOZ ================= */
 
   document.getElementById("vozBtn").onclick = () => {
