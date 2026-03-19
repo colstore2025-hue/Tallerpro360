@@ -198,7 +198,9 @@ window.loadModule = async function(name) {
 
     console.log("📦 Loading:", name);
 
-    const module = await import(`/js/modules/${name}.js`);
+    const BASE = "/app/js/modules/";
+
+const module = await import(BASE + name + ".js");
 
     const mod = module.default || module;
 
