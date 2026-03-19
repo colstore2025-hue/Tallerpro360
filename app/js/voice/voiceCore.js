@@ -1,25 +1,21 @@
-// voiceCore.js
-
-export function iniciarVoz(onResult) {
-
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    alert("❌ Navegador no soporta voz");
-    return;
+export function hablar(texto) {
+  try {
+    const speech = new SpeechSynthesisUtterance(texto);
+    speech.lang = "es-CO";
+    window.speechSynthesis.speak(speech);
+  } catch (e) {
+    console.warn("Error voz:", e);
   }
+}
 
-  const recognition = new SpeechRecognition();
+export function iniciarVoz(callback) {
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
   recognition.lang = "es-CO";
-  recognition.continuous = true;
 
   recognition.onresult = (event) => {
-    const texto = event.results[event.results.length - 1][0].transcript;
-    console.log("🎤 Voz:", texto);
-    onResult(texto);
+    const texto = event.results[0][0].transcript;
+    callback(texto);
   };
 
   recognition.start();
-
-  return recognition;
 }
