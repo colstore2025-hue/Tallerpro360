@@ -18,6 +18,7 @@ import ceoAIModule from "../modules/ceoAI.js"; // 👑 IMPORTANTE
 
 import { ejecutarGuardianIA } from "../ai/firestoreGuardianAI.js";
 import { activarModoDiosGuardian } from "../ai/firestoreGuardianGod.js";
+import orquestadorSupremo from "./orquestadorSupremo.js";
 
 import { auth } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -59,6 +60,7 @@ onAuthStateChanged(auth, user => {
 
   initApp();
 });
+orquestadorSupremo.activarOrquestadorSupremo();
 
 // ================= LOGOUT =================
 if (logoutBtn) {
