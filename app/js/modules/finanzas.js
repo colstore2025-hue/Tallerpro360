@@ -1,111 +1,153 @@
 /**
  * finanzas.js
- * Finanzas Inteligentes + Dashboard + IA Predictiva
- * TallerPRO360 ERP SaaS
+ * Finanzas PRO360 · Producción estable (Modo SaaS limpio 🚀)
  */
 
 import {
   collection,
   getDocs,
   query,
-  where,
   orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { analizarNegocio } from "../ai/aiManager.js";
-import { renderSugerencias, generarSugerencias } from "../ai/aiAdvisor.js";
-import { hablar } from "../voice/voiceCore.js";
+/* 🔥 DB GLOBAL */
+const db = window.db;
 
 export default async function finanzasModule(container, state) {
 
-  container.innerHTML = `
-    <h1 style="color:#0ff; text-shadow:0 0 10px #0ff;">💰 Finanzas PRO360</h1>
+  /* ===== VALIDACIÓN ===== */
+  if (!state?.empresaId) {
+    container.innerHTML = `
+      <h2 style="color:red;text-align:center;">
+        ❌ Empresa no definida
+      </h2>
+    `;
+    return;
+  }
 
-    <div id="resumen" style="display:flex; flex-wrap:wrap; gap:20px; margin-top:20px;"></div>
-    <canvas id="graficaFlujo" style="margin-top:30px; background:#111827; border-radius:12px; padding:15px;"></canvas>
-    <div id="advisorFinanzas" style="margin-top:20px;"></div>
+  const base = `empresas/${state.empresaId}`;
+
+  container.innerHTML = `
+    <h1 style="color:#0ff; text-shadow:0 0 10px #0ff;">
+      💰 Finanzas PRO360
+    </h1>
+
+    <div id="resumen"
+      style="display:flex;flex-wrap:wrap;gap:20px;margin-top:20px;">
+    </div>
+
+    <canvas id="graficaFlujo"
+      style="margin-top:30px;background:#111827;border-radius:12px;padding:15px;">
+    </canvas>
   `;
 
   const resumenDiv = document.getElementById("resumen");
 
   try {
-    // 🔁 Consultar órdenes e ingresos
+
+    /* ================= ORDENES ================= */
+
     const ordenesSnap = await getDocs(
       query(
-        collection(window.db, "ordenes"),
-        where("empresaId", "==", state.empresaId),
+        collection(db, `${base}/ordenes`),
         orderBy("creadoEn", "asc")
       )
     );
 
-    // 🔁 Consultar gastos contables
+    /* ================= GASTOS ================= */
+
     const gastosSnap = await getDocs(
       query(
-        collection(window.db, "contabilidad"),
-        where("empresaId", "==", state.empresaId),
+        collection(db, `${base}/finanzas`),
         orderBy("fecha", "asc")
       )
     );
 
-    let ingresos = 0, costos = 0, utilidad = 0;
+    let ingresos = 0;
+    let costos = 0;
+    let utilidad = 0;
     let flujoPorDia = {};
 
+    /* ================= PROCESAR ORDENES ================= */
+
     ordenesSnap.forEach(doc => {
-      const o = doc.data();
+
+      const o = doc.data() || {};
+
       const total = Number(o.total || 0);
       const costo = Number(o.costoTotal || 0);
+
       ingresos += total;
       costos += costo;
       utilidad += total - costo;
 
-      const fecha = o.creadoEn?.toDate?.()?.toISOString()?.split("T")[0] || "sin_fecha";
-      flujoPorDia[fecha] = (flujoPorDia[fecha] || 0) + (total - costo);
+      let fecha = "sin_fecha";
+
+      try {
+        if (o.creadoEn?.toDate) {
+          fecha = o.creadoEn.toDate().toISOString().split("T")[0];
+        }
+      } catch {}
+
+      flujoPorDia[fecha] =
+        (flujoPorDia[fecha] || 0) + (total - costo);
+
     });
+
+    /* ================= PROCESAR GASTOS ================= */
 
     gastosSnap.forEach(doc => {
-      const g = doc.data();
-      if(g.tipo === "gasto"){
-        costos += Number(g.monto || 0);
-        utilidad -= Number(g.monto || 0);
 
-        const fecha = g.fecha?.toDate?.()?.toISOString()?.split("T")[0] || "sin_fecha";
-        flujoPorDia[fecha] = (flujoPorDia[fecha] || 0) - Number(g.monto || 0);
+      const g = doc.data() || {};
+
+      if (g.tipo === "gasto") {
+
+        const monto = Number(g.monto || 0);
+
+        costos += monto;
+        utilidad -= monto;
+
+        let fecha = "sin_fecha";
+
+        try {
+          if (g.fecha?.toDate) {
+            fecha = g.fecha.toDate().toISOString().split("T")[0];
+          }
+        } catch {}
+
+        flujoPorDia[fecha] =
+          (flujoPorDia[fecha] || 0) - monto;
       }
+
     });
 
-    // ==========================
-    // 🎯 KPI FINANCIEROS
-    // ==========================
+    /* ================= KPIs ================= */
+
     resumenDiv.innerHTML = `
       ${crearKPI("💰 Ingresos", ingresos, "#00ff99")}
       ${crearKPI("📉 Costos", costos, "#ff0044")}
       ${crearKPI("📈 Utilidad", utilidad, "#00ffff")}
     `;
 
-    // ==========================
-    // 📈 GRÁFICA FLUJO DE CAJA
-    // ==========================
-    renderGrafica(flujoPorDia);
+    /* ================= GRAFICA ================= */
 
-    // ==========================
-    // 🧠 PANEL IA FINANZAS
-    // ==========================
-    const iaData = await analizarNegocio(state);
-    if(iaData){
-      const sugerencias = await generarSugerencias({ finanzas: iaData });
-      renderSugerencias("advisorFinanzas", sugerencias);
-      hablar("💡 Recomendaciones financieras generadas por IA");
-    }
+    renderGrafica(ordenarDatos(flujoPorDia));
 
-  } catch(e){
-    console.error("❌ Error cargando finanzas", e);
-    container.innerHTML = `<h2 style="color:red">Error cargando finanzas</h2><p>${e.message}</p>`;
+  } catch (e) {
+
+    console.error("🔥 ERROR FINANZAS:", e);
+
+    container.innerHTML = `
+      <h2 style="color:red;text-align:center;">
+        ❌ Error cargando finanzas
+      </h2>
+      <pre>${e.message}</pre>
+    `;
   }
 
-  // ==========================
-  // FUNCIONES AUXILIARES
-  // ==========================
-  function crearKPI(titulo, valor, color="#0ff"){
+  /* ================= KPI ================= */
+
+  function crearKPI(titulo, valor, color) {
     return `
       <div style="
         background:#111827;
@@ -116,48 +158,60 @@ export default async function finanzasModule(container, state) {
         box-shadow:0 0 15px ${color}50;
       ">
         <h3 style="font-size:20px;">${titulo}</h3>
-        <p style="font-size:28px; font-weight:bold; color:${color};">$${formatear(valor)}</p>
+        <p style="
+          font-size:28px;
+          font-weight:bold;
+          color:${color};
+        ">
+          $${fmt(valor)}
+        </p>
       </div>
     `;
   }
 
-  function renderGrafica(data){
-    const ctx = document.getElementById("graficaFlujo");
-    if(!ctx || typeof Chart === "undefined") return;
+  /* ================= GRAFICA ================= */
 
-    const labels = Object.keys(data);
-    const valores = Object.values(data);
+  function renderGrafica(data) {
+
+    const ctx = document.getElementById("graficaFlujo");
+
+    if (!ctx || typeof Chart === "undefined") return;
 
     new Chart(ctx, {
-      type:'line',
-      data:{
-        labels,
-        datasets:[{
-          label:"Flujo de caja",
-          data: valores,
-          borderColor:"#00ffcc",
-          backgroundColor:"rgba(0,255,204,0.2)",
-          borderWidth:3,
-          tension:0.4,
-          pointBackgroundColor:"#00ff99",
-          pointRadius:6
+      type: "line",
+      data: {
+        labels: Object.keys(data),
+        datasets: [{
+          label: "Flujo de caja",
+          data: Object.values(data),
+          borderColor: "#00ffcc",
+          backgroundColor: "rgba(0,255,204,0.2)",
+          borderWidth: 3,
+          tension: 0.4
         }]
       },
-      options:{
-        responsive:true,
-        plugins:{
-          legend:{ labels:{ color:"#00ffcc", font:{ size:14 } } },
-          tooltip:{ mode:'index', intersect:false }
-        },
-        scales:{
-          x:{ ticks:{ color:"#00ffcc" }, grid:{ color:"#111" } },
-          y:{ ticks:{ color:"#00ffcc" }, grid:{ color:"#111" } }
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            labels: { color: "#00ffcc" }
+          }
         }
       }
     });
   }
 
-  function formatear(valor){
-    return new Intl.NumberFormat("es-CO").format(valor||0);
+  /* ================= UTILS ================= */
+
+  function fmt(v) {
+    return new Intl.NumberFormat("es-CO").format(v || 0);
+  }
+
+  function ordenarDatos(obj) {
+    return Object.fromEntries(
+      Object.entries(obj).sort(
+        ([a], [b]) => new Date(a) - new Date(b)
+      )
+    );
   }
 }
