@@ -35,6 +35,14 @@ const modules = {
   // 🔥 CEO AI (case-sensitive FIX)
   ceoai: () => import("../modules/ceoAI.js"),
 };
+// 👑 CEO AUTÓNOMO
+try {
+  const ceo = await import("../ai/ceoAutonomo.js");
+  ceo.default.iniciar(state);
+  console.log("👑 CEO Autónomo ACTIVADO");
+} catch(e){
+  console.warn("⚠️ CEO no disponible");
+}
 
 /* ================= UI HELPERS ================= */
 
