@@ -1,11 +1,14 @@
 /**
  * dashboard.js
- * PRO360 Dashboard · Producción estable (Modo NASA 🚀)
+ * PRO360 Dashboard · Producción estable (Modo NASA 🚀 FIX)
  */
 
 import { collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import Chart from "https://cdn.jsdelivr.net/npm/chart.js";
 
 const db = window.db;
+
+let chartInstance = null;
 
 /* ================= EXPORT ================= */
 
@@ -79,16 +82,24 @@ export default async function dashboard(container, state) {
 
       ingresosPorDia[fecha] = (ingresosPorDia[fecha] || 0) + total;
 
-      /* ===== ALERTAS ===== */
+      /* ===== ALERTAS SEGURAS ===== */
       try {
-        const a = JSON.parse(d.alertasIA || "[]");
+        const a = typeof d.alertasIA === "string"
+          ? JSON.parse(d.alertasIA)
+          : d.alertasIA;
+
         if (Array.isArray(a)) alertas.push(...a);
+
       } catch {}
 
-      /* ===== RECOMENDACIONES ===== */
+      /* ===== RECOMENDACIONES SEGURAS ===== */
       try {
-        const r = JSON.parse(d.diagnosticoIA?.recomendaciones || "[]");
+        const r = typeof d.diagnosticoIA?.recomendaciones === "string"
+          ? JSON.parse(d.diagnosticoIA.recomendaciones)
+          : d.diagnosticoIA?.recomendaciones;
+
         if (Array.isArray(r)) recomendaciones.push(...r);
+
       } catch {}
 
     });
@@ -124,7 +135,6 @@ export default async function dashboard(container, state) {
 function renderKPIs(ingresos, costos, utilidad, ordenes) {
 
   const kpis = document.getElementById("kpis");
-
   if (!kpis) return;
 
   kpis.innerHTML = `
@@ -144,15 +154,13 @@ function card(titulo, valor, color) {
       padding:25px;
       text-align:center;
       box-shadow:0 0 25px ${color}40;
-      transition:.3s;
     ">
-      <h3 style="font-size:20px;">${titulo}</h3>
+      <h3>${titulo}</h3>
 
       <p style="
         font-size:30px;
         font-weight:900;
         color:${color};
-        margin-top:10px;
       ">
         ${titulo.includes("Órdenes") ? valor : "$" + fmt(valor)}
       </p>
@@ -166,9 +174,14 @@ function renderGrafica(data) {
 
   const ctx = document.getElementById("graficaIngresos");
 
-  if (!ctx || typeof Chart === "undefined") return;
+  if (!ctx) return;
 
-  new Chart(ctx, {
+  /* 🔥 destruir gráfico anterior */
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+
+  chartInstance = new Chart(ctx, {
     type: "line",
     data: {
       labels: Object.keys(data),
@@ -215,9 +228,7 @@ function renderIA(data) {
       box-shadow:0 0 30px #00ff99;
     ">
 
-      <h2 style="color:#00ffcc;font-size:26px;">
-        🧠 IA Gerente
-      </h2>
+      <h2 style="color:#00ffcc;">🧠 IA Gerente</h2>
 
       <p>💰 Ingresos: $${fmt(data.ingresos)}</p>
       <p>📉 Costos: $${fmt(data.costos)}</p>
@@ -225,22 +236,16 @@ function renderIA(data) {
       <p>📊 Margen: ${margen}%</p>
       <p>🎯 Ticket: $${fmt(ticket)}</p>
 
-      <h3 style="color:#ff4444;margin-top:20px;">
-        ⚠️ Alertas
-      </h3>
-
+      <h3 style="color:#ff4444;">⚠️ Alertas</h3>
       ${
-        data.alertas.length
+        data.alertas?.length
           ? data.alertas.map(a => `<p style="color:#ff4444;">${a}</p>`).join("")
           : "<p>Sin alertas</p>"
       }
 
-      <h3 style="color:#00ffcc;margin-top:20px;">
-        🚀 Recomendaciones
-      </h3>
-
+      <h3 style="color:#00ffcc;">🚀 Recomendaciones</h3>
       ${
-        data.recomendaciones.length
+        data.recomendaciones?.length
           ? data.recomendaciones.map(r => `<p style="color:#00ff99;">${r}</p>`).join("")
           : "<p>Sin recomendaciones</p>"
       }
@@ -261,8 +266,23 @@ function renderIA(data) {
     </div>
   `;
 
-  document.getElementById("vozGerente").onclick = () => {
-    alert("IA en proceso 🚀");
+  /* 🔊 VOZ REAL */
+  document.getElementById("vozGerente").onclick = async () => {
+
+    try {
+
+      const { hablar } = await import("../voice/voiceCore.js");
+
+      hablar(`
+        Ingresos ${fmt(data.ingresos)},
+        utilidad ${fmt(data.utilidad)},
+        margen ${margen} por ciento
+      `);
+
+    } catch {
+      alert("🎤 Voz no disponible");
+    }
+
   };
 }
 
