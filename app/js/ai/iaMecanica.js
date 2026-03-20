@@ -1,33 +1,56 @@
 /**
  * iaMecanica.js
  * Motor de diagnóstico IA
- * TallerPRO360 ERP
+ * PRO360 · Versión estable compatible
  */
 
-export async function detectarRepuestos(descripcion){
-
 /* ===============================
-VALIDACIÓN
+FUNCIÓN PRINCIPAL COMPATIBLE
 =============================== */
 
-if(!descripcion || descripcion.trim().length < 5){
+export async function diagnosticarProblema(descripcion){
 
-console.warn("⚠️ Descripción inválida para diagnóstico IA");
+  const res = await detectarRepuestos(descripcion);
 
-return {
-diagnostico:"Descripción insuficiente para análisis",
-repuestos:[],
-acciones:[]
-};
+  // 🔥 Convertir a texto usable por UI
+  let texto = `🔧 ${res.diagnostico}\n\n`;
 
+  if(res.repuestos?.length){
+    texto += "🧩 Repuestos sugeridos:\n";
+    res.repuestos.forEach(r=>{
+      texto += `- ${r.nombre} (${r.prioridad})\n`;
+    });
+    texto += "\n";
+  }
+
+  if(res.acciones?.length){
+    texto += "⚙️ Acciones recomendadas:\n";
+    res.acciones.forEach(a=>{
+      texto += `- ${a}\n`;
+    });
+  }
+
+  return texto;
 }
 
 
 /* ===============================
-PROMPT IA
+FUNCIÓN ORIGINAL (NO SE TOCA)
 =============================== */
 
-const prompt = `
+export async function detectarRepuestos(descripcion){
+
+  if(!descripcion || descripcion.trim().length < 5){
+    console.warn("⚠️ Descripción inválida para diagnóstico IA");
+
+    return {
+      diagnostico:"Descripción insuficiente para análisis",
+      repuestos:[],
+      acciones:[]
+    };
+  }
+
+  const prompt = `
 Eres un mecánico experto en diagnóstico automotriz.
 
 Analiza la siguiente descripción de falla:
@@ -51,67 +74,38 @@ Devuelve SOLO JSON válido con esta estructura:
 No agregues texto fuera del JSON.
 `;
 
+  try{
 
-/* ===============================
-LLAMADA API IA
-=============================== */
+    const respuesta = await fetch("/api/diagnosticoIA",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({prompt})
+    });
 
-try{
+    if(!respuesta.ok){
+      throw new Error(`API IA respondió ${respuesta.status}`);
+    }
 
-const respuesta = await fetch("/api/diagnosticoIA",{
+    const data = await respuesta.json();
 
-method:"POST",
+    if(!data || typeof data !== "object"){
+      throw new Error("Respuesta IA inválida");
+    }
 
-headers:{
-"Content-Type":"application/json"
-},
+    return {
+      diagnostico:data.diagnostico || "Diagnóstico no disponible",
+      repuestos:data.repuestos || [],
+      acciones:data.acciones || []
+    };
 
-body:JSON.stringify({prompt})
+  } catch(error){
 
-});
+    console.error("❌ Error IA repuestos:",error);
 
-
-if(!respuesta.ok){
-
-throw new Error(`API IA respondió ${respuesta.status}`);
-
-}
-
-
-/* ===============================
-PARSEAR RESPUESTA
-=============================== */
-
-const data = await respuesta.json();
-
-
-/* ===============================
-VALIDAR JSON
-=============================== */
-
-if(!data || typeof data !== "object"){
-
-throw new Error("Respuesta IA inválida");
-
-}
-
-return {
-diagnostico:data.diagnostico || "Diagnóstico no disponible",
-repuestos:data.repuestos || [],
-acciones:data.acciones || []
-};
-
-
-}catch(error){
-
-console.error("❌ Error IA repuestos:",error);
-
-return {
-diagnostico:"No se pudo generar diagnóstico IA",
-repuestos:[],
-acciones:[]
-};
-
-}
-
+    return {
+      diagnostico:"No se pudo generar diagnóstico IA",
+      repuestos:[],
+      acciones:[]
+    };
+  }
 }
