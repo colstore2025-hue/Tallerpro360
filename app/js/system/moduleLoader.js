@@ -1,10 +1,8 @@
 /**
  * moduleLoader.js
  * Cargador central del ERP TallerPRO360
- * Versión FINAL ULTRA PRO 🔥
+ * Versión ULTRA PRO 🔥 · Soporte planes Freemium → Enterprise
  */
-
-import dashboard from "../modules/dashboard.js";
 
 let voiceInitialized = false;
 const state = {
@@ -12,6 +10,7 @@ const state = {
   empresaId: null,
   uid: null,
   rolGlobal: null,
+  plan: null,
   cargando: false,
 };
 
@@ -25,17 +24,21 @@ const modules = {
   contabilidad: () => import("../modules/contabilidad.js"),
   reportes: () => import("../modules/reportes.js"),
   configuracion: () => import("../modules/configuracion.js"),
-  aiassistant: () => import("../modules/aiAssistant.js"),
+  aiasistant: () => import("../modules/aiAssistant.js"),
   aiadvisor: () => import("../modules/aiAdvisor.js"),
   gerenteai: () => import("../modules/gerenteAI.js"),
 };
 
 /* ================= CEO AUTÓNOMO ================= */
-try {
-  const ceo = await import("../ai/ceoAutonomo.js");
-  if (ceo.default?.iniciar) ceo.default.iniciar(state);
-  console.log("👑 CEO Autónomo ACTIVADO");
-} catch(e){ console.warn("⚠️ CEO no disponible", e.message); }
+async function initCEO(){
+  try {
+    const ceo = await import("../ai/ceoAutonomo.js");
+    if(ceo.default?.iniciar) ceo.default.iniciar(state);
+    console.log("👑 CEO Autónomo ACTIVADO");
+  } catch(e){
+    console.warn("⚠️ CEO no disponible", e.message);
+  }
+}
 
 /* ================= UI HELPERS ================= */
 function showLoader(container, text="⚡ Cargando módulo..."){
@@ -90,9 +93,12 @@ export async function initApp(){
       state.uid = user.uid;
       state.empresaId = u.empresaId;
       state.rolGlobal = u.rolGlobal || "user";
+      state.plan = u.plan || "Freemium";
 
-      renderSidebar(sidebar,state.rolGlobal);
+      renderSidebar(sidebar,state.rolGlobal,state.plan);
       await loadModule("dashboard");
+
+      initCEO();
       initAI();
       initVoice();
     });
@@ -110,29 +116,35 @@ export async function initApp(){
 }
 
 /* ================= SIDEBAR ================= */
-function renderSidebar(sidebar,rol){
-  const modulesList = [
+function renderSidebar(sidebar,rol,plan){
+  // Módulos básicos por plan
+  const baseModules = [
     { id:"dashboard", label:"📊 Dashboard" },
     { id:"ordenes", label:"🧾 Órdenes" },
-    { id:"clientes", label:"👥 Clientes" },
-    { id:"inventario", label:"📦 Inventario" },
-    { id:"finanzas", label:"💰 Finanzas" }
+    { id:"clientes", label:"👥 Clientes" }
   ];
-  if(rol==="superadmin"){
-    modulesList.push(
+
+  if(["Pro","Elite","Enterprise"].includes(plan)){
+    baseModules.push({ id:"inventario", label:"📦 Inventario" });
+    baseModules.push({ id:"finanzas", label:"💰 Finanzas" });
+  }
+
+  if(rol==="superadmin" || plan==="Enterprise"){
+    baseModules.push(
       { id:"contabilidad", label:"📊 Contabilidad" },
       { id:"gerenteai", label:"🧠 Gerente AI" },
       { id:"reportes", label:"📈 Reportes" },
       { id:"configuracion", label:"⚙️ Configuración" }
     );
   }
-  sidebar.innerHTML = modulesList.map(m=>`<button onclick="window.loadModule('${m.id}')">${m.label}</button>`).join("");
+
+  sidebar.innerHTML = baseModules.map(m=>`<button onclick="window.loadModule('${m.id}')">${m.label}</button>`).join("");
 }
 
 /* ================= IA ================= */
 async function initAI(){
   try{
-    const ai = await modules.aiassistant();
+    const ai = await modules.aiasistant();
     if(ai?.init) ai.init();
     const advisor = await modules.aiadvisor();
     if(advisor?.init) advisor.init();
