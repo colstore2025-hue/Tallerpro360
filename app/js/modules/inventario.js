@@ -30,7 +30,6 @@ export default async function inventarioModule(container, state) {
   }
 
   const base = `empresas/${state.empresaId}`;
-
   let repuestos = [];
 
   container.innerHTML = `
@@ -78,7 +77,7 @@ export default async function inventarioModule(container, state) {
 
       const snap = await getDocs(
         query(
-          collection(db, `${base}/inventario`)
+          collection(db, `${base}/inventario`),
           orderBy("creadoEn", "desc")
         )
       );
@@ -200,7 +199,7 @@ export default async function inventarioModule(container, state) {
     try {
 
       await addDoc(
-        collection(db, `${base}/repuestos`),
+        collection(db, `${base}/inventario`),
         {
           nombre,
           stock,
@@ -233,7 +232,7 @@ export default async function inventarioModule(container, state) {
     try {
 
       await updateDoc(
-        doc(db, `${base}/repuestos`, id),
+        doc(db, `${base}/inventario`, id),
         { stock: increment(cantidad) }
       );
 
@@ -266,7 +265,7 @@ export default async function inventarioModule(container, state) {
     try {
 
       await updateDoc(
-        doc(db, `${base}/repuestos`, id),
+        doc(db, `${base}/inventario`, id),
         { stock: increment(-cantidad) }
       );
 
