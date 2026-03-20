@@ -1,7 +1,6 @@
 /**
- * dashboardPro360Ultra.js
- * 🚀 PRO360 ULTRA GOD CORE · POWER BI NASA STYLE + CEO AUTÓNOMO INTERACTIVO
- * KPIs animados, charts animados, alertas en color, decisiones inteligentes
+ * dashboardPro360UltraV2.js
+ * 🔥 PRO360 ULTRA V2 · Letras blancas brillantes + charts claros e interactivos
  */
 
 import { collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -16,7 +15,7 @@ export default async function dashboard(container, state) {
 
   if (!state?.empresaId) return renderError("❌ Empresa no definida");
 
-  const cacheKey = `dashboard_ultra_${state.empresaId}`;
+  const cacheKey = `dashboard_ultra_v2_${state.empresaId}`;
   const cache = loadCache(cacheKey);
 
   if (cache) renderAll(cache, true);
@@ -40,17 +39,17 @@ export default async function dashboard(container, state) {
 }
 
 /* =========================
-UI BASE ULTRA INTERACTIVA
+UI BASE ULTRA CLARA
 ========================= */
 function renderBaseUI(container) {
   container.innerHTML = `
-    <div style="padding:20px;background:#0a0f1a;color:white;font-family:Segoe UI, sans-serif;">
-      <h1 style="font-size:38px;font-weight:900;color:#00f0ff;margin-bottom:20px;text-shadow:0 0 12px #00f0ff;">
+    <div style="padding:20px;background:#0a0f1a;color:#ffffff;font-family:Segoe UI, sans-serif;">
+      <h1 style="font-size:38px;font-weight:900;color:#ffffff;margin-bottom:20px;text-shadow:0 0 15px #ffffff;">
         🧠 DASHBOARD PRO360 ULTRA
       </h1>
       <div id="kpis" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:18px;"></div>
 
-      <div style="margin-top:30px; background:#0f172a; padding:20px; border-radius:14px; box-shadow:0 0 35px #00f0ff33;">
+      <div style="margin-top:30px; background:#0f172a; padding:20px; border-radius:14px; box-shadow:0 0 35px #ffffff33;">
         <canvas id="lineChart"></canvas>
       </div>
 
@@ -74,10 +73,9 @@ FETCH INTEGRAL DE DATOS
 async function fetchAllData(empresaId) {
   const data = {
     ingresos:0, costos:0, ordenes:0, clientes:0, stockTotal:0,
-    ingresosPorDia:{}, ventasPorCliente:{}, inventario:{}, alertas:[], decisiones:[]
+    ingresosPorDia:{}, ventasPorCliente:{}, inventario:{}, alertas:[], decisions:[]
   };
 
-  // Órdenes
   const snapOrd = await getDocs(query(collection(db, `empresas/${empresaId}/ordenes`)));
   snapOrd.forEach(doc=>{
     const d = doc.data();
@@ -91,7 +89,6 @@ async function fetchAllData(empresaId) {
     if(total<costo) data.alertas.push({msg:`⚠️ Orden con pérdida: $${total-costo}`, nivel:"alto"});
   });
 
-  // Clientes
   const snapCli = await getDocs(query(collection(db, `empresas/${empresaId}/clientes`)));
   data.clientes = snapCli.size;
   snapCli.forEach(doc=>{
@@ -100,7 +97,6 @@ async function fetchAllData(empresaId) {
     data.ventasPorCliente[nombre] = (data.ventasPorCliente[nombre]||0) + Number(d.totalCompras||0);
   });
 
-  // Inventario
   const snapInv = await getDocs(query(collection(db, `empresas/${empresaId}/inventario`)));
   snapInv.forEach(doc=>{
     const d = doc.data();
@@ -113,7 +109,7 @@ async function fetchAllData(empresaId) {
 }
 
 /* =========================
-RENDER GLOBAL ULTRA
+RENDER GLOBAL ULTRA V2
 ========================= */
 async function renderAll(data, fromCache){
   const utilidad = data.ingresos - data.costos;
@@ -128,23 +124,22 @@ async function renderAll(data, fromCache){
 }
 
 /* =========================
-KPIS ULTRA ANIMADOS
+KPIS BLANCAS BRILLANTES + ANIMADAS
 ========================= */
 function renderKPIs(d, utilidad, margen, ticket, cache){
   const el = document.getElementById("kpis");
   el.innerHTML = `
     ${cache?'<div style="color:#facc15;margin-bottom:10px;">⚡ Datos desde cache</div>':''}
-    ${kpiCard("Ingresos",$d(d.ingresos),"#00ffcc")}
+    ${kpiCard("Ingresos",$d(d.ingresos))}
     ${kpiCard("Costos",$d(d.costos),"#ff4d4d")}
-    ${kpiCard("Utilidad",$d(utilidad),"#00ff99")}
-    ${kpiCard("Margen",margen.toFixed(2)+"%","#00f0ff")}
-    ${kpiCard("Órdenes",d.ordenes,"#facc15")}
-    ${kpiCard("Ticket Prom.","$"+$d(ticket),"#a78bfa")}
-    ${kpiCard("Clientes",d.clientes,"#ff80ff")}
-    ${kpiCard("Stock Total",d.stockTotal,"#ffaa33")}
+    ${kpiCard("Utilidad",$d(utilidad))}
+    ${kpiCard("Margen",margen.toFixed(2)+"%")}
+    ${kpiCard("Órdenes",d.ordenes)}
+    ${kpiCard("Ticket Prom.","$"+$d(ticket))}
+    ${kpiCard("Clientes",d.clientes)}
+    ${kpiCard("Stock Total",d.stockTotal)}
   `;
 
-  // Animación contador para cada KPI
   el.querySelectorAll("h2").forEach(h=>{
     const end = parseInt(h.innerText.replace(/\D/g,''))||0;
     h.innerText = "0";
@@ -152,7 +147,7 @@ function renderKPIs(d, utilidad, margen, ticket, cache){
   });
 }
 
-function kpiCard(title,value,color){
+function kpiCard(title,value,color="#ffffff"){
   return `
     <div style="
       background:#0f172a;
@@ -164,7 +159,7 @@ function kpiCard(title,value,color){
       cursor:pointer;
     " onmouseenter="this.style.transform='translateY(-5px)';this.style.boxShadow='0 15px 35px ${color}88';"
       onmouseleave="this.style.transform='translateY(0)';this.style.boxShadow='0 5px 25px ${color}44';">
-      <p style="color:#94a3b8;font-size:13px;">${title}</p>
+      <p style="color:#ffffff;font-size:13px;">${title}</p>
       <h2 style="color:${color};font-size:22px;margin-top:5px;">${typeof value==="number"?"$"+$d(value):value}</h2>
     </div>
   `;
@@ -173,7 +168,7 @@ function kpiCard(title,value,color){
 function animateCounter(el, end){
   let start = 0;
   const duration = 1200;
-  const stepTime = Math.abs(Math.floor(duration/end));
+  const stepTime = Math.abs(Math.floor(duration/end))||10;
   const timer = setInterval(()=>{
     start += Math.ceil(end/30);
     if(start>=end){ start=end; clearInterval(timer); }
@@ -182,7 +177,7 @@ function animateCounter(el, end){
 }
 
 /* =========================
-CHARTS ULTRA
+CHARTS CLAROS E INTERACTIVOS
 ========================= */
 async function renderCharts(d){
   const lineCtx = document.getElementById("lineChart");
@@ -202,14 +197,22 @@ async function renderCharts(d){
       datasets:[{
         label:"Ingresos",
         data:Object.values(d.ingresosPorDia),
-        borderColor:"#00f0ff",
-        backgroundColor:"#00f0ff44",
+        borderColor:"#ffffff",
+        backgroundColor:"#ffffff33",
         fill:true,
-        tension:0.4,
+        tension:0.3,
         borderWidth:3,
+        pointHoverRadius:8,
+        pointBackgroundColor:"#00f0ff"
       }]
     },
-    options:{responsive:true, animation:{duration:1500}, plugins:{legend:{display:true}}}
+    options:{
+      responsive:true,
+      interaction:{mode:'nearest',intersect:false},
+      plugins:{legend:{labels:{color:"#ffffff"}}},
+      scales:{x:{ticks:{color:"#ffffff"}},y:{ticks:{color:"#ffffff"}}},
+      animation:{duration:1500}
+    }
   });
 
   // BAR CHART: ventas por cliente
@@ -221,10 +224,15 @@ async function renderCharts(d){
       datasets:[{
         label:"Ventas",
         data:Object.values(d.ventasPorCliente),
-        backgroundColor:"#ff80ff88"
+        backgroundColor:"#00f0ff88"
       }]
     },
-    options:{responsive:true, plugins:{legend:{display:false}}, animation:{duration:1200}}
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false}, tooltip:{enabled:true, mode:'index'}},
+      scales:{x:{ticks:{color:"#ffffff"}},y:{ticks:{color:"#ffffff"}}},
+      animation:{duration:1200}
+    }
   });
 
   // RADAR CHART: KPIs integrados
@@ -236,12 +244,17 @@ async function renderCharts(d){
       datasets:[{
         label:"KPIs",
         data:[d.ingresos,d.costos,d.ingresos-d.costos,d.clientes,d.ordenes,d.stockTotal],
-        backgroundColor:"#00ffcc33",
-        borderColor:"#00ffcc",
+        backgroundColor:"#ffffff33",
+        borderColor:"#ffffff",
         borderWidth:2
       }]
     },
-    options:{responsive:true, scales:{r:{beginAtZero:true}}}
+    options:{
+      responsive:true,
+      scales:{r:{angleLines:{color:'#ffffff55'},grid:{color:'#ffffff33'}, pointLabels:{color:'#ffffff'}}},
+      plugins:{legend:{labels:{color:'#ffffff'}}},
+      animation:{duration:1200}
+    }
   });
 }
 
@@ -257,7 +270,7 @@ function renderIA(d){
       padding:14px;
       border-radius:10px;
       margin-top:8px;
-      box-shadow:0 0 20px #00f0ff33;
+      box-shadow:0 0 20px #ffffff33;
       transition:0.3s;
     ">
       ⚡ <strong>${x.accion}</strong> (${x.impacto})
@@ -271,11 +284,11 @@ function renderIA(d){
 
   el.innerHTML = `
     <div style="background:#0f172a;padding:22px;border-radius:14px;border:1px solid #1e293b;">
-      <h2 style="color:#00f0ff;text-shadow:0 0 10px #00f0ff;">👑 CEO AUTÓNOMO ULTRA</h2>
+      <h2 style="color:#ffffff;text-shadow:0 0 12px #ffffff;">👑 CEO AUTÓNOMO ULTRA</h2>
       <p>Margen: <strong>${d.ingresos?(((d.ingresos-d.costos)/d.ingresos)*100).toFixed(2)+"%" : 0}</strong></p>
       <h3 style="color:#ff4d4d;">⚠️ Alertas</h3>
       ${alertasHTML || "Sin alertas"}
-      <h3 style="color:#00ffcc;margin-top:12px;">🧠 Decisiones recomendadas</h3>
+      <h3 style="color:#00ffff;margin-top:12px;">🧠 Decisiones recomendadas</h3>
       ${decisionesHTML||"Sin decisiones"}
     </div>
   `;
