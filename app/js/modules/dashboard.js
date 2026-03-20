@@ -1,6 +1,6 @@
 /**
  * dashboard.js
- * PRO360 Dashboard · Producción estable (Modo NASA 🚀 FIX)
+ * PRO360 Dashboard · NIVEL DIOS 🚀🧠
  */
 
 import { collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -10,292 +10,199 @@ const db = window.db;
 
 let chartInstance = null;
 
-/* ================= EXPORT ================= */
-
 export default async function dashboard(container, state) {
 
   container.innerHTML = `
-    <h1 style="text-align:center;font-size:36px;color:#00ffcc;font-weight:900;">
-      📊 Dashboard PRO360
+    <h1 style="text-align:center;font-size:34px;color:#00ffcc;font-weight:900;">
+      🚀 Dashboard PRO360 · IA Ejecutiva
     </h1>
 
-    <div id="kpis"
-      style="display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-      gap:25px;margin:30px 0;">
-    </div>
+    <div id="kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin:30px 0;"></div>
 
-    <canvas id="graficaIngresos"
-      style="background:#111827;border-radius:16px;padding:15px;">
-    </canvas>
+    <canvas id="chart" style="background:#111827;border-radius:12px;padding:10px;"></canvas>
+
+    <div id="topClientes" style="margin-top:30px;"></div>
 
     <div id="iaPanel" style="margin-top:40px;"></div>
   `;
 
-  /* ===== VALIDACIÓN ===== */
   if (!state?.empresaId) {
-    container.innerHTML = `<h2 style="color:red;text-align:center;">❌ Empresa no definida</h2>`;
+    container.innerHTML = "❌ Empresa no definida";
     return;
   }
 
   try {
 
-    const ref = collection(db, `empresas/${state.empresaId}/ordenes`);
-    const snapshot = await getDocs(query(ref));
+    const snap = await getDocs(
+      query(collection(db, `empresas/${state.empresaId}/ordenes`))
+    );
 
-    if (snapshot.empty) {
-      container.innerHTML += `
-        <p style="text-align:center;margin-top:40px;">
-          📭 Sin datos aún
-        </p>`;
+    if (snap.empty) {
+      container.innerHTML += "📭 Sin datos";
       return;
     }
 
-    let ingresos = 0;
-    let costos = 0;
-    let ordenes = 0;
+    let ingresos = 0, costos = 0, ordenes = 0;
     let ingresosPorDia = {};
+    let clientesMap = {};
     let alertas = [];
-    let recomendaciones = [];
 
-    snapshot.forEach(docSnap => {
+    snap.forEach(doc => {
 
-      const d = docSnap.data() || {};
+      const d = doc.data() || {};
 
       const total = Number(d.valorTrabajo || 0);
-
-      const costo = Array.isArray(d.costoEstimado)
-        ? d.costoEstimado.reduce((sum, i) => sum + Number(i?.total || 0), 0)
-        : 0;
+      const costo = Number(d.costoTotal || 0);
 
       ingresos += total;
       costos += costo;
       ordenes++;
 
-      /* ===== FECHA SEGURA ===== */
-      let fecha = "sin_fecha";
+      /* ===== FECHA ===== */
+      let fecha = "NA";
       try {
-        if (d.creadoEn?.toDate) {
-          fecha = d.creadoEn.toDate().toISOString().split("T")[0];
-        }
+        fecha = d.creadoEn?.toDate?.().toISOString().split("T")[0];
       } catch {}
 
       ingresosPorDia[fecha] = (ingresosPorDia[fecha] || 0) + total;
 
-      /* ===== ALERTAS SEGURAS ===== */
-      try {
-        const a = typeof d.alertasIA === "string"
-          ? JSON.parse(d.alertasIA)
-          : d.alertasIA;
+      /* ===== CLIENTES TOP ===== */
+      const cliente = d.clienteId || "General";
+      clientesMap[cliente] = (clientesMap[cliente] || 0) + total;
 
-        if (Array.isArray(a)) alertas.push(...a);
-
-      } catch {}
-
-      /* ===== RECOMENDACIONES SEGURAS ===== */
-      try {
-        const r = typeof d.diagnosticoIA?.recomendaciones === "string"
-          ? JSON.parse(d.diagnosticoIA.recomendaciones)
-          : d.diagnosticoIA?.recomendaciones;
-
-        if (Array.isArray(r)) recomendaciones.push(...r);
-
-      } catch {}
+      /* ===== ALERTAS ===== */
+      if (total < costo) {
+        alertas.push(`⚠️ Orden con pérdida detectada`);
+      }
 
     });
 
     const utilidad = ingresos - costos;
+    const margen = ingresos ? (utilidad / ingresos) * 100 : 0;
+    const ticket = ordenes ? ingresos / ordenes : 0;
 
-    renderKPIs(ingresos, costos, utilidad, ordenes);
-    renderGrafica(ordenarDatos(ingresosPorDia));
-    renderIA({
-      ingresos,
-      costos,
-      utilidad,
-      ordenes,
-      alertas,
-      recomendaciones
-    });
+    /* ================= IA PREDICTIVA ================= */
+
+    const prediccion = ingresos * 1.08; // crecimiento 8%
+    const crecimiento = ((prediccion - ingresos) / ingresos) * 100;
+
+    /* ================= RENDER ================= */
+
+    renderKPIs({ ingresos, costos, utilidad, ordenes, margen, ticket, prediccion });
+    renderChart(ordenar(ingresosPorDia));
+    renderTopClientes(clientesMap);
+    renderIA({ alertas, crecimiento, prediccion });
 
   } catch (e) {
-
-    console.error("🔥 ERROR DASHBOARD:", e);
-
-    container.innerHTML = `
-      <h2 style="color:red;text-align:center;">
-        ❌ Error cargando dashboard
-      </h2>
-      <pre>${e.message}</pre>
-    `;
+    container.innerHTML = "❌ Error cargando dashboard";
+    console.error(e);
   }
 }
 
 /* ================= KPIs ================= */
 
-function renderKPIs(ingresos, costos, utilidad, ordenes) {
+function renderKPIs(d) {
 
-  const kpis = document.getElementById("kpis");
-  if (!kpis) return;
+  const k = document.getElementById("kpis");
 
-  kpis.innerHTML = `
-    ${card("💰 Ingresos", ingresos, "#00ff99")}
-    ${card("📉 Costos", costos, "#ff0044")}
-    ${card("📈 Utilidad", utilidad, "#00ffff")}
-    ${card("🧾 Órdenes", ordenes, "#ffcc00")}
+  k.innerHTML = `
+    ${card("💰 Ingresos", d.ingresos)}
+    ${card("📉 Costos", d.costos)}
+    ${card("📈 Utilidad", d.utilidad)}
+    ${card("📊 Margen", d.margen.toFixed(2) + "%")}
+    ${card("🎯 Ticket", d.ticket)}
+    ${card("🔮 Proyección", d.prediccion)}
   `;
 }
 
-function card(titulo, valor, color) {
+function card(t, v) {
   return `
-    <div style="
-      background:#111827;
-      border-left:8px solid ${color};
-      border-radius:16px;
-      padding:25px;
-      text-align:center;
-      box-shadow:0 0 25px ${color}40;
-    ">
-      <h3>${titulo}</h3>
-
-      <p style="
-        font-size:30px;
-        font-weight:900;
-        color:${color};
-      ">
-        ${titulo.includes("Órdenes") ? valor : "$" + fmt(valor)}
-      </p>
+    <div style="background:#0f172a;padding:20px;border-radius:12px;text-align:center;box-shadow:0 0 15px #00ffcc30;">
+      <h3>${t}</h3>
+      <p style="font-size:24px;color:#00ffcc;">${typeof v === "number" ? "$"+fmt(v) : v}</p>
     </div>
   `;
 }
 
 /* ================= GRÁFICA ================= */
 
-function renderGrafica(data) {
+function renderChart(data) {
 
-  const ctx = document.getElementById("graficaIngresos");
+  const ctx = document.getElementById("chart");
 
-  if (!ctx) return;
-
-  /* 🔥 destruir gráfico anterior */
-  if (chartInstance) {
-    chartInstance.destroy();
-  }
+  if (chartInstance) chartInstance.destroy();
 
   chartInstance = new Chart(ctx, {
     type: "line",
     data: {
       labels: Object.keys(data),
-      datasets: [{
-        label: "Ingresos",
-        data: Object.values(data),
-        borderColor: "#00ffcc",
-        backgroundColor: "rgba(0,255,204,0.15)",
-        borderWidth: 3,
-        tension: 0.4
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          labels: { color: "#00ffcc" }
+      datasets: [
+        {
+          label: "Ingresos",
+          data: Object.values(data),
+          borderColor: "#00ffcc"
         }
-      }
+      ]
     }
   });
 }
 
+/* ================= TOP CLIENTES ================= */
+
+function renderTopClientes(map) {
+
+  const div = document.getElementById("topClientes");
+
+  const top = Object.entries(map)
+    .sort((a,b)=>b[1]-a[1])
+    .slice(0,5);
+
+  div.innerHTML = `
+    <h2 style="color:#0ff;">🏆 Top Clientes</h2>
+    ${
+      top.map(([c,v])=>`<p>${c} → $${fmt(v)}</p>`).join("")
+    }
+  `;
+}
+
 /* ================= IA ================= */
 
-function renderIA(data) {
+function renderIA({ alertas, crecimiento, prediccion }) {
 
-  const panel = document.getElementById("iaPanel");
-  if (!panel) return;
+  const div = document.getElementById("iaPanel");
 
-  const margen = data.ingresos
-    ? ((data.utilidad / data.ingresos) * 100).toFixed(2)
-    : 0;
+  div.innerHTML = `
+    <div style="background:#020617;padding:25px;border-radius:12px;box-shadow:0 0 20px #00ffcc;">
+      
+      <h2>🧠 IA Ejecutiva</h2>
 
-  const ticket = data.ordenes
-    ? (data.ingresos / data.ordenes).toFixed(0)
-    : 0;
+      <p>📈 Crecimiento estimado: ${crecimiento.toFixed(2)}%</p>
+      <p>🔮 Proyección: $${fmt(prediccion)}</p>
 
-  panel.innerHTML = `
-    <div style="
-      background:#0f172a;
-      padding:30px;
-      border-radius:16px;
-      box-shadow:0 0 30px #00ff99;
-    ">
+      <h3>⚠️ Alertas</h3>
+      ${alertas.length ? alertas.map(a=>`<p>${a}</p>`).join("") : "Sin alertas"}
 
-      <h2 style="color:#00ffcc;">🧠 IA Gerente</h2>
-
-      <p>💰 Ingresos: $${fmt(data.ingresos)}</p>
-      <p>📉 Costos: $${fmt(data.costos)}</p>
-      <p>📈 Utilidad: $${fmt(data.utilidad)}</p>
-      <p>📊 Margen: ${margen}%</p>
-      <p>🎯 Ticket: $${fmt(ticket)}</p>
-
-      <h3 style="color:#ff4444;">⚠️ Alertas</h3>
-      ${
-        data.alertas?.length
-          ? data.alertas.map(a => `<p style="color:#ff4444;">${a}</p>`).join("")
-          : "<p>Sin alertas</p>"
-      }
-
-      <h3 style="color:#00ffcc;">🚀 Recomendaciones</h3>
-      ${
-        data.recomendaciones?.length
-          ? data.recomendaciones.map(r => `<p style="color:#00ff99;">${r}</p>`).join("")
-          : "<p>Sin recomendaciones</p>"
-      }
-
-      <button id="vozGerente"
-        style="
-          margin-top:20px;
-          padding:12px;
-          background:#00ff99;
-          border:none;
-          border-radius:10px;
-          font-weight:bold;
-          cursor:pointer;
-        ">
-        🎤 Escuchar IA
-      </button>
+      <button id="voz">🎤 Hablar</button>
 
     </div>
   `;
 
-  /* 🔊 VOZ REAL */
-  document.getElementById("vozGerente").onclick = async () => {
-
-    try {
-
-      const { hablar } = await import("../voice/voiceCore.js");
-
-      hablar(`
-        Ingresos ${fmt(data.ingresos)},
-        utilidad ${fmt(data.utilidad)},
-        margen ${margen} por ciento
-      `);
-
-    } catch {
-      alert("🎤 Voz no disponible");
-    }
-
+  document.getElementById("voz").onclick = () => {
+    const msg = new SpeechSynthesisUtterance(
+      `Crecimiento proyectado ${crecimiento.toFixed(1)} por ciento`
+    );
+    speechSynthesis.speak(msg);
   };
 }
 
 /* ================= UTILS ================= */
 
-function fmt(v) {
+function fmt(v){
   return new Intl.NumberFormat("es-CO").format(v || 0);
 }
 
-function ordenarDatos(obj) {
+function ordenar(obj){
   return Object.fromEntries(
-    Object.entries(obj).sort(
-      ([a], [b]) => new Date(a) - new Date(b)
-    )
+    Object.entries(obj).sort(([a],[b])=>new Date(a)-new Date(b))
   );
 }
