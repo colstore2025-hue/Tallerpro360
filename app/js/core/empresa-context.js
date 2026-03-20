@@ -1,116 +1,93 @@
 /**
  * empresa-context.js
  * TallerPRO360 SaaS
- * Manejo central de empresa activa
+ * Manejo central de empresa activa (VERSIÓN PRO ESTABLE)
  */
 
 const KEY_EMPRESA = "empresaId";
 
-
 /* ===============================
 OBTENER EMPRESA ACTIVA
 =============================== */
-
 export function obtenerEmpresaId(){
+  try{
+    const empresaId = localStorage.getItem(KEY_EMPRESA);
 
-try{
+    if(!empresaId || typeof empresaId !== "string"){
+      console.warn("⚠ empresaId no encontrado o inválido en localStorage");
+      return null;
+    }
 
-const empresaId = localStorage.getItem(KEY_EMPRESA);
+    return empresaId.trim();
 
-if(!empresaId){
-
-console.warn("⚠ empresaId no encontrado en localStorage");
-
-return null;
-
+  } catch(error){
+    console.error("❌ Error obteniendo empresaId:", error);
+    return null;
+  }
 }
-
-return empresaId.trim();
-
-}
-catch(error){
-
-console.error("❌ Error obteniendo empresaId:",error);
-
-return null;
-
-}
-
-}
-
 
 /* ===============================
 ESTABLECER EMPRESA ACTIVA
 =============================== */
-
 export function establecerEmpresaId(empresaId){
+  try{
 
-try{
+    if(!empresaId || typeof empresaId !== "string" || empresaId.trim() === ""){
+      console.error("❌ empresaId inválido");
+      return false;
+    }
 
-if(!empresaId || empresaId.trim()===""){
+    const cleanId = empresaId.trim();
 
-console.error("❌ empresaId inválido");
+    localStorage.setItem(KEY_EMPRESA, cleanId);
 
-return false;
+    console.log("🏢 Empresa activa:", cleanId);
 
+    return true;
+
+  } catch(error){
+    console.error("❌ Error guardando empresaId:", error);
+    return false;
+  }
 }
-
-localStorage.setItem(KEY_EMPRESA,empresaId.trim());
-
-console.log("🏢 Empresa activa:",empresaId);
-
-return true;
-
-}
-catch(error){
-
-console.error("❌ Error guardando empresaId:",error);
-
-return false;
-
-}
-
-}
-
 
 /* ===============================
 LIMPIAR EMPRESA ACTIVA
 =============================== */
-
 export function limpiarEmpresaId(){
-
-try{
-
-localStorage.removeItem(KEY_EMPRESA);
-
-console.log("🧹 empresaId eliminado");
-
+  try{
+    localStorage.removeItem(KEY_EMPRESA);
+    console.log("🧹 empresaId eliminado");
+  } catch(error){
+    console.error("❌ Error limpiando empresaId:", error);
+  }
 }
-catch(error){
-
-console.error("❌ Error limpiando empresaId:",error);
-
-}
-
-}
-
 
 /* ===============================
 VALIDAR CONTEXTO DE EMPRESA
 =============================== */
-
 export function validarEmpresa(){
 
-const empresaId = obtenerEmpresaId();
+  const empresaId = obtenerEmpresaId();
 
-if(!empresaId){
+  if(!empresaId){
+    console.warn("⚠ No hay empresa activa");
+    return false;
+  }
 
-console.warn("⚠ No hay empresa activa");
-
-return false;
-
+  return true;
 }
 
-return true;
+/* ===============================
+OBTENER EMPRESA (OBLIGATORIO)
+🔥 Evita errores silenciosos en módulos críticos
+=============================== */
+export function getEmpresaIdOrThrow(){
+  const empresaId = obtenerEmpresaId();
 
+  if(!empresaId){
+    throw new Error("empresaId no definido. Debes iniciar sesión o seleccionar empresa.");
+  }
+
+  return empresaId;
 }
