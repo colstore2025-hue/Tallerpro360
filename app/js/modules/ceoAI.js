@@ -1,6 +1,7 @@
 /**
 ================================================
-CEOAI.JS - Módulo IA Gerente PRO360 ULTRA FINAL
+CEOAI.JS - PRO360 GOD CORE 👑🧠 FINAL
+Ubicación: /app/js/modules/ceoAI.js
 ================================================
 */
 
@@ -19,14 +20,12 @@ const db = window.db;
 
 export default async function CEOAIModule(container, state) {
 
-  /* ===== VALIDACIÓN ===== */
   if (!state?.empresaId) {
-    container.innerHTML = `❌ empresaId no definido`;
+    container.innerHTML = renderError("❌ empresaId no definido");
     return;
   }
 
   const base = `empresas/${state.empresaId}`;
-
   container.innerHTML = renderUI();
 
   const resultado = container.querySelector("#resultado");
@@ -34,41 +33,20 @@ export default async function CEOAIModule(container, state) {
   const btnVoz = container.querySelector("#voz");
 
   /* =========================
-  OBTENER DATA REAL
+  DATA REAL
   ========================= */
   async function obtenerDatos() {
 
     try {
 
       const [ordenesSnap, invSnap] = await Promise.all([
-
-        getDocs(
-          query(
-            collection(db, `${base}/ordenes`),
-            orderBy("creadoEn", "desc")
-          )
-        ),
-
-        getDocs(
-          query(
-            collection(db, `${base}/repuestos`),
-            orderBy("creadoEn", "desc")
-          )
-        )
-
+        getDocs(query(collection(db, `${base}/ordenes`), orderBy("creadoEn", "desc"))),
+        getDocs(query(collection(db, `${base}/repuestos`), orderBy("creadoEn", "desc")))
       ]);
 
-      let ordenes = ordenesSnap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
+      let ordenes = ordenesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      let inventario = invSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      let inventario = invSnap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
-
-      /* 🔥 FILTRO NEGOCIO REAL */
       ordenes = ordenes.filter(o =>
         o.estado === "aprobada" || o.estado === "cerrada"
       );
@@ -76,33 +54,33 @@ export default async function CEOAIModule(container, state) {
       return { ordenes, inventario };
 
     } catch (e) {
-      console.error("❌ Error obteniendo datos CEO:", e);
+      console.error("❌ Error datos CEO:", e);
       return { ordenes: [], inventario: [] };
     }
   }
 
   /* =========================
-  KPIs BASE
+  KPIs
   ========================= */
   function calcularKPIs(ordenes) {
 
-    const ingresos = ordenes.reduce((a, o) => a + Number(o.total || 0), 0);
-    const costos = ordenes.reduce((a, o) => a + Number(o.costoTotal || 0), 0);
+    const ingresos = ordenes.reduce((a,o)=>a + Number(o.total || 0),0);
+    const costos = ordenes.reduce((a,o)=>a + Number(o.costoTotal || 0),0);
     const utilidad = ingresos - costos;
 
-    const ordenesCount = ordenes.length;
+    const count = ordenes.length;
 
     return {
       ingresos,
       utilidad,
       margen: ingresos ? (utilidad / ingresos) * 100 : 0,
-      ordenes: ordenesCount,
-      ticketPromedio: ordenesCount ? ingresos / ordenesCount : 0
+      ordenes: count,
+      ticketPromedio: count ? ingresos / count : 0
     };
   }
 
   /* =========================
-  ANALIZAR (NIVEL DIOS)
+  ANALIZAR
   ========================= */
   btnAnalizar.onclick = async () => {
 
@@ -119,9 +97,7 @@ export default async function CEOAIModule(container, state) {
 
       const kpis = calcularKPIs(ordenes);
 
-      /* =========================
-      IA SUGERENCIAS
-      ========================= */
+      /* IA SUGERENCIAS */
       let sugerencias = [];
       try {
         const res = await generarSugerencias({
@@ -130,15 +106,10 @@ export default async function CEOAIModule(container, state) {
           empresaId: state.empresaId
         });
         sugerencias = res?.sugerencias || [];
-      } catch (e) {
-        console.warn("⚠️ Error IA sugerencias:", e);
-      }
+      } catch {}
 
-      /* =========================
-      IA CEO CLÁSICA
-      ========================= */
+      /* IA CLÁSICA */
       let data = { alertas: [], recomendaciones: [] };
-
       try {
         data = await analizarNegocio({
           ordenes,
@@ -147,35 +118,37 @@ export default async function CEOAIModule(container, state) {
           resumen: kpis,
           sugerencias
         });
-      } catch (e) {
-        console.warn("⚠️ Error IA análisis:", e);
-      }
+      } catch {}
 
-      /* =========================
-      🧠 IA NIVEL DIOS
-      ========================= */
-      const analisisPro = analizarEmpresaAvanzado({
-        ordenes,
-        inventario
-      });
+      /* 🧠 IA AVANZADA */
+      let analisisPro = {
+        riesgo:"medio",
+        alertas:[],
+        decisiones:[],
+        proyecciones:{ proyeccion7dias:0, proyeccion30dias:0 }
+      };
+
+      try {
+        analisisPro = analizarEmpresaAvanzado({ ordenes, inventario });
+      } catch(e){
+        console.warn("⚠️ IA avanzada fallback");
+      }
 
       renderResultado(resultado, data, sugerencias, kpis, analisisPro);
 
-      /* =========================
-      🎤 VOZ CEO
-      ========================= */
+      /* VOZ CEO */
       try {
         hablarResumen(`
           Ingresos ${kpis.ingresos}.
           Utilidad ${kpis.utilidad}.
           Riesgo ${analisisPro.riesgo}.
         `);
-      } catch (e) {}
+      } catch {}
 
     } catch (error) {
 
       console.error("❌ CEO AI Error:", error);
-      resultado.innerHTML = renderError(error);
+      resultado.innerHTML = renderError(error.message);
 
     }
   };
@@ -184,89 +157,88 @@ export default async function CEOAIModule(container, state) {
   VOZ MANUAL
   ========================= */
   btnVoz.onclick = async () => {
-
     try {
       const { hablar } = await import("../voice/voiceCore.js");
-      hablar(resultado.innerText || "No hay datos");
-    } catch (e) {
-      console.warn("⚠️ Voz no disponible:", e);
-    }
-
+      hablar(resultado.innerText || "Sin datos");
+    } catch {}
   };
 }
 
 /* =========================
-UI
+UI POWER BI STYLE
 ========================= */
 
 function renderUI() {
   return `
-    <h1 style="color:#00ffff;">🧠 CEO AI PRO360</h1>
+    <div style="padding:20px;background:#020617;color:white;">
 
-    <button id="analizar">🚀 Analizar Negocio</button>
-    <button id="voz">🎤 Escuchar</button>
+      <h1 style="color:#00f0ff;font-size:28px;">
+        👑 CEO AI PRO360
+      </h1>
 
-    <div id="resultado" style="margin-top:20px;"></div>
+      <div style="margin:15px 0;">
+        <button id="analizar" style="${btnStyle("#00ffcc")}">🚀 Analizar</button>
+        <button id="voz" style="${btnStyle("#6366f1")}">🎤 Voz</button>
+      </div>
+
+      <div id="resultado"></div>
+
+    </div>
   `;
 }
 
 /* =========================
-RENDER
+RENDER RESULTADO PRO
 ========================= */
 
-function setLoading(el){
-  el.innerHTML = "🤖 Analizando negocio...";
-}
-
-function renderEmpty(){
-  return "⚠️ No hay órdenes aprobadas aún";
-}
-
-function renderError(e){
-  return `❌ ${e.message}`;
-}
-
-/* =========================
-RESULTADO NIVEL DIOS
-========================= */
-
-function renderResultado(el, data, sugerencias, kpis, analisisPro) {
+function renderResultado(el, data, sugerencias, kpis, pro) {
 
   el.innerHTML = `
 
-    <h2>🧠 Estado del Negocio</h2>
-    <div style="font-size:18px;">
-      Riesgo: <strong>${analisisPro.riesgo.toUpperCase()}</strong>
+    <div style="${cardBox()}">
+
+      <h2>🧠 Estado del negocio</h2>
+      <p>Riesgo: <strong style="color:${colorRiesgo(pro.riesgo)}">
+        ${pro.riesgo.toUpperCase()}
+      </strong></p>
+
+      <h2>📊 KPIs</h2>
+      ${kpi("Ingresos", kpis.ingresos)}
+      ${kpi("Utilidad", kpis.utilidad)}
+      ${kpi("Margen", kpis.margen.toFixed(2)+"%")}
+      ${kpi("Órdenes", kpis.ordenes)}
+      ${kpi("Ticket", kpis.ticketPromedio)}
+
+      <h2>🔮 Proyección</h2>
+      ${kpi("7 días", pro.proyecciones.proyeccion7dias)}
+      ${kpi("30 días", pro.proyecciones.proyeccion30dias)}
+
+      <h2>🚨 Alertas</h2>
+      ${list(pro.alertas)}
+
+      <h2>⚡ Decisiones CEO</h2>
+      ${list(pro.decisiones)}
+
+      <h2>💡 Recomendaciones</h2>
+      ${list(data.recomendaciones)}
+
+      <h2>🤖 Sugerencias IA</h2>
+      ${list(sugerencias)}
+
     </div>
-
-    <h2>📊 KPIs</h2>
-    ${card("Ingresos", money(kpis.ingresos))}
-    ${card("Utilidad", money(kpis.utilidad))}
-    ${card("Margen", kpis.margen.toFixed(2)+"%")}
-    ${card("Órdenes", kpis.ordenes)}
-    ${card("Ticket Promedio", money(kpis.ticketPromedio))}
-
-    <h2>🔮 Proyecciones</h2>
-    ${card("7 días", money(analisisPro.proyecciones.proyeccion7dias))}
-    ${card("30 días", money(analisisPro.proyecciones.proyeccion30dias))}
-
-    <h2>🚨 Alertas Inteligentes</h2>
-    ${list(analisisPro.alertas)}
-
-    <h2>🧠 Decisiones Automáticas</h2>
-    ${list(analisisPro.decisiones)}
-
-    <h2>💡 Recomendaciones IA</h2>
-    ${list(data.recomendaciones)}
-
-    <h2>🤖 Sugerencias IA</h2>
-    ${list(sugerencias)}
-
   `;
 }
 
-function card(t,v){
-  return `<div><strong>${t}:</strong> ${v}</div>`;
+/* =========================
+COMPONENTES UI
+========================= */
+
+function kpi(t,v){
+  return `
+    <div style="margin:6px 0;">
+      <strong>${t}:</strong> ${typeof v === "number" ? money(v) : v}
+    </div>
+  `;
 }
 
 function list(arr){
@@ -279,4 +251,47 @@ function money(v){
     style:"currency",
     currency:"COP"
   }).format(v || 0);
+}
+
+function colorRiesgo(r){
+  if(r==="alto") return "#ff4d4d";
+  if(r==="medio") return "#facc15";
+  return "#00ffcc";
+}
+
+function btnStyle(color){
+  return `
+    background:${color};
+    border:none;
+    padding:10px 15px;
+    border-radius:8px;
+    margin-right:10px;
+    cursor:pointer;
+    font-weight:bold;
+  `;
+}
+
+function cardBox(){
+  return `
+    background:#0f172a;
+    padding:20px;
+    border-radius:12px;
+    border:1px solid #1e293b;
+  `;
+}
+
+/* =========================
+ESTADOS
+========================= */
+
+function setLoading(el){
+  el.innerHTML = "🤖 Analizando negocio...";
+}
+
+function renderEmpty(){
+  return "⚠️ No hay órdenes aún";
+}
+
+function renderError(msg){
+  return `<div style="color:red;">${msg}</div>`;
 }
