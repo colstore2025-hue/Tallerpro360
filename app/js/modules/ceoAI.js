@@ -1,11 +1,8 @@
 /**
 ================================================
-CEO-AI.JS - Módulo IA Gerente PRO360 ULTRA
+CEO-AI.JS - Módulo IA Gerente PRO360 ULTRA (FIX)
 ================================================
 */
-
-import { analizarNegocio, hablarResumen } from "../ai/aiManager.js";
-import { generarSugerencias } from "../ai/aiAdvisor.js";
 
 import {
   collection,
@@ -14,14 +11,20 @@ import {
   orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+import { analizarNegocio, hablarResumen } from "../ai/aiManager.js";
+import { generarSugerencias } from "../ai/aiAdvisor.js";
+
 const db = window.db;
 
 export default async function CEOAIModule(container, state) {
 
+  /* ===== VALIDACIÓN ===== */
   if (!state?.empresaId) {
     container.innerHTML = `❌ empresaId no definido`;
     return;
   }
+
+  const base = `empresas/${state.empresaId}`;
 
   container.innerHTML = renderUI();
 
@@ -30,73 +33,75 @@ export default async function CEOAIModule(container, state) {
   const btnVoz = container.querySelector("#voz");
 
   /* =========================
-  DATA REAL (NUEVA ESTRUCTURA)
+  OBTENER DATA REAL (OK)
   ========================= */
   async function obtenerDatos() {
 
-    const base = `empresas/${state.empresaId}`;
+    try {
 
-    const [ordenesSnap, invSnap] = await Promise.all([
+      const [ordenesSnap, invSnap] = await Promise.all([
 
-      getDocs(
-        query(
-          collection(db, `${base}/ordenes`),
-          orderBy("creadoEn", "desc")
+        getDocs(
+          query(
+            collection(db, `${base}/ordenes`),
+            orderBy("creadoEn", "desc")
+          )
+        ),
+
+        getDocs(
+          query(
+            collection(db, `${base}/repuestos`),
+            orderBy("creadoEn", "desc")
+          )
         )
-      ),
 
-      getDocs(
-        query(
-          collection(db, `${base}/repuestos`),
-          orderBy("creadoEn", "desc")
-        )
-      )
+      ]);
 
-    ]);
+      let ordenes = ordenesSnap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
 
-    let ordenes = ordenesSnap.docs.map(d => ({
-      id: d.id,
-      ...d.data()
-    }));
+      let inventario = invSnap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
 
-    let inventario = invSnap.docs.map(d => ({
-      id: d.id,
-      ...d.data()
-    }));
+      /* 🔥 FILTRO NEGOCIO REAL */
+      ordenes = ordenes.filter(o =>
+        o.estado === "aprobada" || o.estado === "cerrada"
+      );
 
-    /* 🔥 FILTRO CEO (solo negocio real) */
-    ordenes = ordenes.filter(o =>
-      o.estado === "aprobada" || o.estado === "cerrada"
-    );
+      return { ordenes, inventario };
 
-    return { ordenes, inventario };
+    } catch (e) {
+      console.error("❌ Error obteniendo datos CEO:", e);
+      return { ordenes: [], inventario: [] };
+    }
   }
 
   /* =========================
-  KPIs REALES
+  KPIs
   ========================= */
   function calcularKPIs(ordenes) {
 
-    const totalIngresos = ordenes.reduce((a, o) => a + (o.total || 0), 0);
-    const totalCostos = ordenes.reduce((a, o) => a + (o.costoTotal || 0), 0);
-    const utilidad = totalIngresos - totalCostos;
+    const ingresos = ordenes.reduce((a, o) => a + Number(o.total || 0), 0);
+    const costos = ordenes.reduce((a, o) => a + Number(o.costoTotal || 0), 0);
+    const utilidad = ingresos - costos;
 
     const ordenesCount = ordenes.length;
-    const ticketPromedio = ordenesCount
-      ? totalIngresos / ordenesCount
-      : 0;
 
     return {
-      ingresos: totalIngresos,
+      ingresos,
       utilidad,
-      margen: totalIngresos ? (utilidad / totalIngresos) * 100 : 0,
+      margen: ingresos ? (utilidad / ingresos) * 100 : 0,
       ordenes: ordenesCount,
-      ticketPromedio
+      ticketPromedio: ordenesCount ? ingresos / ordenesCount : 0
     };
   }
 
   /* =========================
-  ANALIZAR IA
+  ANALIZAR
   ========================= */
   btnAnalizar.onclick = async () => {
 
@@ -113,27 +118,41 @@ export default async function CEOAIModule(container, state) {
 
       const kpis = calcularKPIs(ordenes);
 
-      const { sugerencias } = await generarSugerencias({
-        ordenes,
-        inventario,
-        empresaId: state.empresaId
-      });
+      let sugerencias = [];
+      try {
+        const res = await generarSugerencias({
+          ordenes,
+          inventario,
+          empresaId: state.empresaId
+        });
+        sugerencias = Array.isArray(res) ? res : (res?.sugerencias || []);
+      } catch (e) {
+        console.warn("⚠️ Error IA sugerencias:", e);
+      }
 
-      const data = await analizarNegocio({
-        ordenes,
-        inventario,
-        empresaId: state.empresaId,
-        resumen: kpis,
-        sugerencias
-      });
+      let data = { alertas: [], recomendaciones: [] };
+
+      try {
+        data = await analizarNegocio({
+          ordenes,
+          inventario,
+          empresaId: state.empresaId,
+          resumen: kpis,
+          sugerencias
+        });
+      } catch (e) {
+        console.warn("⚠️ Error IA análisis:", e);
+      }
 
       renderResultado(resultado, data, sugerencias, kpis);
 
-      hablarResumen(data);
+      try {
+        hablarResumen(data);
+      } catch (e) {}
 
     } catch (error) {
 
-      console.error("CEO AI Error:", error);
+      console.error("❌ CEO AI Error:", error);
       resultado.innerHTML = renderError(error);
 
     }
@@ -148,15 +167,15 @@ export default async function CEOAIModule(container, state) {
       const { hablar } = await import("../voice/voiceCore.js");
       hablar(resultado.innerText || "No hay datos");
     } catch (e) {
-      console.warn(e);
+      console.warn("⚠️ Voz no disponible:", e);
     }
 
   };
 }
 
-/* =====================================================
+/* =========================
 UI
-===================================================== */
+========================= */
 
 function renderUI() {
   return `
@@ -169,9 +188,9 @@ function renderUI() {
   `;
 }
 
-/* =====================================================
+/* =========================
 RENDER
-===================================================== */
+========================= */
 
 function setLoading(el){
   el.innerHTML = "🤖 Analizando negocio...";
@@ -184,10 +203,6 @@ function renderEmpty(){
 function renderError(e){
   return `❌ ${e.message}`;
 }
-
-/* =====================================================
-RESULTADO
-===================================================== */
 
 function renderResultado(el, data, sugerencias, kpis) {
 
@@ -226,5 +241,5 @@ function money(v){
   return new Intl.NumberFormat("es-CO",{
     style:"currency",
     currency:"COP"
-  }).format(v||0);
+  }).format(v || 0);
 }
