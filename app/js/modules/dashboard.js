@@ -4,8 +4,7 @@
  */
 
 import { collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import Chart from "https://cdn.jsdelivr.net/npm/chart.js";
-
+import Chart from "https://cdn.jsdelivr.net/npm/chart.js/auto/+esm";
 const db = window.db;
 
 let chartInstance = null;
