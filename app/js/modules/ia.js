@@ -1,39 +1,50 @@
-/*
-================================================
-IA.JS - Asistente Mecánico Avanzado con Voz
-TallerPRO360 - Versión final avanzada
-================================================
-*/
+/**
+ * ia.js
+ * IA Mecánica PRO360 · Producción estable (Modo SaaS limpio 🚀)
+ */
 
-import { diagnosticarProblema } from "../js/iaMecanica.js";
+import { diagnosticarProblema } from "../ai/iaMecanica.js";
+import { hablar } from "../voice/voiceCore.js";
 
-export function ia(container){
+/* ================= EXPORT ================= */
+
+export default async function iaModule(container, state) {
+
+  /* ===== VALIDACIÓN ===== */
+  if (!state?.empresaId) {
+    container.innerHTML = `
+      <h2 style="color:red;text-align:center;">
+        ❌ Empresa no definida
+      </h2>
+    `;
+    return;
+  }
 
   container.innerHTML = `
-    <h1 class="text-2xl font-bold mb-6">🤖 IA Mecánica</h1>
+    <h1 style="color:#00ffff;font-size:34px;font-weight:900;">
+      🤖 IA Mecánica PRO360
+    </h1>
 
     <input
       id="inputProblema"
-      class="border p-2 w-full mb-4"
       placeholder="Ej: ruido en motor Toyota Hilux"
+      style="width:100%;padding:12px;margin:15px 0;border-radius:8px;"
     />
 
-    <div style="display:flex;gap:10px;margin-bottom:10px;">
-      <button
-        id="btnDictar"
-        class="bg-purple-600 text-white px-4 py-2 rounded flex-1">
-        🎙 Dictar Problema
+    <div style="display:flex;gap:10px;margin-bottom:15px;">
+      <button id="btnDictar"
+        style="flex:1;background:#9333ea;color:#fff;padding:10px;border-radius:8px;">
+        🎙 Dictar
       </button>
-      <button
-        id="btnDiagnosticar"
-        class="bg-blue-600 text-white px-4 py-2 rounded flex-1">
-        Diagnosticar
+
+      <button id="btnDiagnosticar"
+        style="flex:1;background:#2563eb;color:#fff;padding:10px;border-radius:8px;">
+        🔍 Diagnosticar
       </button>
     </div>
 
-    <div
-      id="resultadoIA"
-      class="mt-6 bg-white p-4 rounded shadow">
+    <div id="resultadoIA"
+      style="margin-top:20px;background:#111827;color:#fff;padding:15px;border-radius:12px;">
       Esperando diagnóstico...
     </div>
   `;
@@ -41,66 +52,70 @@ export function ia(container){
   const inputProblema = document.getElementById("inputProblema");
   const resultadoIA = document.getElementById("resultadoIA");
 
-  /* ===========================
-  DIAGNOSTICAR PROBLEMA
-  ============================ */
-  document.getElementById("btnDiagnosticar").onclick = async ()=>{
+  /* ================= DIAGNOSTICAR ================= */
+
+  document.getElementById("btnDiagnosticar").onclick = async () => {
+
     const texto = inputProblema.value.trim();
-    if(!texto){
+
+    if (!texto) {
       hablar("Por favor ingresa el problema mecánico");
       return;
     }
 
     resultadoIA.innerText = "⏳ Analizando...";
-    hablar("Analizando el problema, por favor espera");
+    hablar("Analizando el problema");
 
-    try{
+    try {
+
       const respuesta = await diagnosticarProblema(texto);
-      resultadoIA.innerText = respuesta;
-      hablar("Diagnóstico completado. " + respuesta);
-    } catch(e){
-      console.error("Error IA:", e);
+
+      resultadoIA.innerText = respuesta || "Sin diagnóstico disponible";
+      hablar("Diagnóstico completado");
+
+    } catch (e) {
+
+      console.error("🔥 ERROR IA:", e);
+
       resultadoIA.innerText = "❌ Error al diagnosticar";
-      hablar("Ocurrió un error al diagnosticar");
+      hablar("Ocurrió un error en el diagnóstico");
     }
   };
 
-  /* ===========================
-  DICTADO POR VOZ
-  ============================ */
-  document.getElementById("btnDictar").onclick = ()=>{
-    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if(!Recognition){
-      hablar("Tu navegador no soporta dictado por voz");
+  /* ================= VOZ ================= */
+
+  document.getElementById("btnDictar").onclick = () => {
+
+    const Recognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!Recognition) {
+      hablar("Tu dispositivo no soporta dictado por voz");
       return;
     }
 
     const rec = new Recognition();
+
     rec.lang = "es-ES";
     rec.continuous = false;
     rec.interimResults = false;
 
-    rec.onstart = ()=> hablar("Dictando problema, por favor hable ahora");
-    rec.onresult = (e)=>{
-      const texto = e.results[0][0].transcript.trim();
-      inputProblema.value += texto + " ";
-      hablar("Se ingresó el problema: " + texto);
+    rec.onstart = () => {
+      hablar("Puedes hablar ahora");
     };
-    rec.onerror = ()=> hablar("Ocurrió un error durante el dictado");
+
+    rec.onresult = (e) => {
+
+      const texto = e.results[0][0].transcript.trim();
+
+      inputProblema.value += texto + " ";
+      hablar("Texto capturado");
+    };
+
+    rec.onerror = () => {
+      hablar("Error en el dictado");
+    };
+
     rec.start();
   };
-
-  /* ===========================
-  SÍNTESIS DE VOZ
-  ============================ */
-  function hablar(texto){
-    if(!texto) return;
-    const speech = new SpeechSynthesisUtterance(texto);
-    speech.lang = "es-ES";
-    speech.rate = 1;
-    speech.pitch = 1;
-    speech.volume = 1;
-    window.speechSynthesis.speak(speech);
-  }
-
 }
