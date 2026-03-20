@@ -33,7 +33,7 @@ const modules = {
   aiadvisor: () => import("../modules/aiAdvisor.js"),
 
   // 🔥 CEO AI (corregido)
-  ceoai: () => import("../modules/ceoai.js"),
+  ceoai: () => import("../modules/ceoAI.js"),
 };
 
 /* ================= UI HELPERS ================= */
