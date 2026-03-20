@@ -1,11 +1,11 @@
 /**
  * moduleLoader.js
- * Cargador central ULTRA PRO · TallerPRO360 🚀
- * Soporte total: Freemium → Enterprise
- * Módulos escalables e integrados con IA y voz
+ * ULTRA PRO · TallerPRO360 🚀
+ * CORE integrado + Autoregulación Firestore + Watchers + Heartbeat + IA + Voz
  */
 
 import { hablar } from "../voice/voiceCore.js";
+import { activarModoDiosGuardian, fixTotalInicial } from "../system/firestoreGuardianGod.js";
 
 let voiceInitialized = false;
 
@@ -17,6 +17,13 @@ const state = {
   plan: null,
   planFechaInicio: null,
   cargando: false,
+};
+
+const CORE = {
+  modulosFallidos: [],
+  intentos: {},
+  estado: "inicializando",
+  errores: [],
 };
 
 /* ================= MAPA DE MÓDULOS ================= */
@@ -36,25 +43,6 @@ const modules = {
   gerenteai: () => import("../modules/gerenteAI.js"),
   ia: () => import("../modules/ia.js"),
 };
-
-/* ================= CEO AUTÓNOMO ================= */
-async function initCEO() {
-  try {
-    const ceo = await import("../ai/ceoAutonomo.js");
-    if (ceo.default?.iniciar) ceo.default.iniciar(state);
-    console.log("👑 CEO Autónomo ACTIVADO");
-  } catch (e) {
-    console.warn("⚠️ CEO no disponible", e.message);
-  }
-}
-
-/* ================= UI HELPERS ================= */
-function showLoader(container, text = "⚡ Cargando módulo...") {
-  container.innerHTML = `<div style="color:#00ffcc;font-size:18px;text-align:center;padding:40px;">${text}</div>`;
-}
-function showError(container, error) {
-  container.innerHTML = `<div style="color:red;padding:20px;">❌ Error cargando módulo<br/>${error.message}</div>`;
-}
 
 /* ================= PERMISOS POR PLAN ================= */
 function verificarPermisoModulo(modulo) {
@@ -85,36 +73,22 @@ function verificarPermisoModulo(modulo) {
   return true;
 }
 
-/* ================= LOAD MODULE ================= */
-export async function loadModule(moduleName) {
-  const container = document.getElementById("appContainer");
-  if (state.cargando) return;
-
-  if (!verificarPermisoModulo(moduleName)) {
-    container.innerHTML = `<div style="color:#facc15;text-align:center;padding:40px;">❌ No tienes acceso a este módulo con tu plan actual (${state.plan})</div>`;
-    hablar("No tienes acceso a este módulo con tu plan actual");
-    return;
-  }
-
+/* ================= LOAD MODULE CON AUTOREINTENTOS ================= */
+export async function ejecutarModuloSeguro(nombre, state, container) {
   try {
-    state.cargando = true;
-    showLoader(container);
-
-    const key = moduleName.toLowerCase().trim();
-    if (!modules[key]) throw new Error(`Módulo no existe: ${moduleName}`);
-
-    const module = await modules[key]();
-    if (!module?.default) throw new Error(`Módulo inválido: ${moduleName}`);
-
-    container.innerHTML = "";
-    await module.default(container, state);
-    state.currentModule = key;
-
+    const mod = await import(`../modules/${nombre}.js?v=${Date.now()}`);
+    if (!mod?.default) throw new Error(`Módulo inválido: ${nombre}`);
+    await mod.default(container, state);
   } catch (e) {
-    console.error("❌ Error cargando módulo:", moduleName, e);
-    showError(container, e);
-  } finally {
-    state.cargando = false;
+    console.error(`❌ Falló módulo ${nombre}`, e);
+    CORE.modulosFallidos.push(nombre);
+    CORE.intentos[nombre] = (CORE.intentos[nombre] || 0) + 1;
+
+    if (CORE.intentos[nombre] < 5) {
+      setTimeout(() => ejecutarModuloSeguro(nombre, state, container), 2000);
+    } else {
+      console.error(`💀 Módulo ${nombre} muerto tras 5 intentos`);
+    }
   }
 }
 
@@ -141,12 +115,31 @@ export async function initApp() {
       state.plan = u.plan || "Freemium";
       state.planFechaInicio = u.planFechaInicio?.toDate ? u.planFechaInicio.toDate() : new Date();
 
-      renderSidebar(sidebar, state.rolGlobal, state.plan);
-      await loadModule("dashboard");
+      // 🔹 CORE ACTIVADO
+      CORE.estado = "activo";
 
+      await fixTotalInicial(state.empresaId);
+      activarModoDiosGuardian(state.empresaId);
+
+      renderSidebar(sidebar, state.rolGlobal, state.plan);
+      await ejecutarModuloSeguro("dashboard", state, container);
+
+      // 🔹 CEO y IA
       initCEO();
       initIA();
       initVoice();
+
+      // 🔹 Heartbeat para reintentos
+      setInterval(() => {
+        if (CORE.modulosFallidos.length > 0) {
+          const pendientes = [...CORE.modulosFallidos];
+          CORE.modulosFallidos = [];
+          pendientes.forEach(nombre => {
+            console.log("🔁 Reintentando módulo:", nombre);
+            ejecutarModuloSeguro(nombre, state, container);
+          });
+        }
+      }, 15000);
     });
 
     document.getElementById("logoutBtn").onclick = async () => {
@@ -170,13 +163,13 @@ function renderSidebar(sidebar, rol, plan) {
     { id: "vehiculos", label: "🚗 Vehículos" }
   ];
 
-  if (["Pro", "Elite", "Enterprise"].includes(plan)) {
+  if (["Pro","Elite","Enterprise"].includes(plan)) {
     baseModules.push({ id: "inventario", label: "📦 Inventario" });
     baseModules.push({ id: "finanzas", label: "💰 Finanzas" });
     baseModules.push({ id: "pagos", label: "💳 Pagos" });
   }
 
-  if (rol === "superadmin" || plan === "Elite" || plan === "Enterprise") {
+  if (rol === "superadmin" || ["Elite","Enterprise"].includes(plan)) {
     baseModules.push({ id: "contabilidad", label: "📊 Contabilidad" });
     baseModules.push({ id: "gerenteai", label: "🧠 Gerente AI" });
     baseModules.push({ id: "reportes", label: "📈 Reportes" });
@@ -184,7 +177,7 @@ function renderSidebar(sidebar, rol, plan) {
   }
 
   sidebar.innerHTML = baseModules
-    .map(m => `<button onclick="window.loadModule('${m.id}')">${m.label}</button>`)
+    .map(m => `<button onclick="window.PRO360?.ejecutarModuloSeguro('${m.id}', window.state, document.getElementById('appContainer'))">${m.label}</button>`)
     .join("");
 }
 
@@ -206,7 +199,7 @@ async function initIA() {
   }
 }
 
-/* ================= VOZ ================= */
+/* ================= VOICE ================= */
 async function initVoice() {
   if (voiceInitialized) return;
   try {
@@ -216,3 +209,22 @@ async function initVoice() {
     console.warn("⚠️ Voz no disponible:", e.message);
   }
 }
+
+/* ================= CEO AUTÓNOMO ================= */
+async function initCEO() {
+  try {
+    const ceo = await import("../ai/ceoAutonomo.js");
+    if (ceo.default?.iniciar) ceo.default.iniciar(state);
+    console.log("👑 CEO Autónomo ACTIVADO");
+  } catch (e) {
+    console.warn("⚠️ CEO no disponible:", e.message);
+  }
+}
+
+/* ================= GLOBAL ================= */
+window.PRO360 = {
+  core: CORE,
+  ejecutarModuloSeguro,
+  estado: () => CORE.estado,
+  errores: () => CORE.errores
+};
