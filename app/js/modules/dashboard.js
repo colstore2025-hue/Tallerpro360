@@ -1,7 +1,7 @@
 /**
- * dashboardPro360.js
- * 🚀 PRO360 GOD CORE v4 · POWER BI NASA STYLE + CEO AUTÓNOMO INTERACTIVO
- * Totalmente integrado con todos los módulos del ERP
+ * dashboardPro360Ultra.js
+ * 🚀 PRO360 ULTRA GOD CORE · POWER BI NASA STYLE + CEO AUTÓNOMO INTERACTIVO
+ * KPIs animados, charts animados, alertas en color, decisiones inteligentes
  */
 
 import { collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -14,11 +14,9 @@ export default async function dashboard(container, state) {
 
   renderBaseUI(container);
 
-  if (!state?.empresaId) {
-    return renderError("❌ Empresa no definida");
-  }
+  if (!state?.empresaId) return renderError("❌ Empresa no definida");
 
-  const cacheKey = `dashboard_pro360_${state.empresaId}`;
+  const cacheKey = `dashboard_ultra_${state.empresaId}`;
   const cache = loadCache(cacheKey);
 
   if (cache) renderAll(cache, true);
@@ -28,7 +26,6 @@ export default async function dashboard(container, state) {
     saveCache(cacheKey, data);
     renderAll(data, false);
 
-    // Auto-refresh cada 2 minutos
     if (refreshInterval) clearInterval(refreshInterval);
     refreshInterval = setInterval(async () => {
       const fresh = await fetchAllData(state.empresaId);
@@ -43,15 +40,14 @@ export default async function dashboard(container, state) {
 }
 
 /* =========================
-UI BASE INTERACTIVA
+UI BASE ULTRA INTERACTIVA
 ========================= */
 function renderBaseUI(container) {
   container.innerHTML = `
     <div style="padding:20px;background:#0a0f1a;color:white;font-family:Segoe UI, sans-serif;">
-      <h1 style="font-size:36px;font-weight:900;color:#00f0ff;margin-bottom:20px; text-shadow:0 0 10px #00f0ff;">
-        🧠 DASHBOARD PRO360
+      <h1 style="font-size:38px;font-weight:900;color:#00f0ff;margin-bottom:20px;text-shadow:0 0 12px #00f0ff;">
+        🧠 DASHBOARD PRO360 ULTRA
       </h1>
-
       <div id="kpis" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:18px;"></div>
 
       <div style="margin-top:30px; background:#0f172a; padding:20px; border-radius:14px; box-shadow:0 0 35px #00f0ff33;">
@@ -73,7 +69,7 @@ function renderBaseUI(container) {
 }
 
 /* =========================
-FETCH TODOS LOS DATOS
+FETCH INTEGRAL DE DATOS
 ========================= */
 async function fetchAllData(empresaId) {
   const data = {
@@ -92,7 +88,7 @@ async function fetchAllData(empresaId) {
     data.ordenes++;
     const fecha = d.creadoEn?.toDate?.().toISOString().split("T")[0]||"NA";
     data.ingresosPorDia[fecha] = (data.ingresosPorDia[fecha]||0)+total;
-    if(total<costo) data.alertas.push(`⚠️ Orden con pérdida: $${total-costo}`);
+    if(total<costo) data.alertas.push({msg:`⚠️ Orden con pérdida: $${total-costo}`, nivel:"alto"});
   });
 
   // Clientes
@@ -110,16 +106,14 @@ async function fetchAllData(empresaId) {
     const d = doc.data();
     data.stockTotal += Number(d.cantidad||0);
     data.inventario[d.nombre] = Number(d.cantidad||0);
-    if(Number(d.cantidad||0)<5) data.alertas.push(`⚠️ Stock bajo: ${d.nombre}`);
+    if(Number(d.cantidad||0)<5) data.alertas.push({msg:`⚠️ Stock bajo: ${d.nombre}`, nivel:"medio"});
   });
-
-  // Finanzas y otros módulos pueden agregarse aquí...
 
   return data;
 }
 
 /* =========================
-RENDER GLOBAL
+RENDER GLOBAL ULTRA
 ========================= */
 async function renderAll(data, fromCache){
   const utilidad = data.ingresos - data.costos;
@@ -134,7 +128,7 @@ async function renderAll(data, fromCache){
 }
 
 /* =========================
-KPIS ANIMADOS
+KPIS ULTRA ANIMADOS
 ========================= */
 function renderKPIs(d, utilidad, margen, ticket, cache){
   const el = document.getElementById("kpis");
@@ -149,17 +143,25 @@ function renderKPIs(d, utilidad, margen, ticket, cache){
     ${kpiCard("Clientes",d.clientes,"#ff80ff")}
     ${kpiCard("Stock Total",d.stockTotal,"#ffaa33")}
   `;
+
+  // Animación contador para cada KPI
+  el.querySelectorAll("h2").forEach(h=>{
+    const end = parseInt(h.innerText.replace(/\D/g,''))||0;
+    h.innerText = "0";
+    animateCounter(h,end);
+  });
 }
 
 function kpiCard(title,value,color){
   return `
     <div style="
       background:#0f172a;
-      padding:15px;
+      padding:18px;
       border-radius:12px;
       box-shadow:0 5px 25px ${color}44;
       border:1px solid #1e293b;
       transition:0.35s;
+      cursor:pointer;
     " onmouseenter="this.style.transform='translateY(-5px)';this.style.boxShadow='0 15px 35px ${color}88';"
       onmouseleave="this.style.transform='translateY(0)';this.style.boxShadow='0 5px 25px ${color}44';">
       <p style="color:#94a3b8;font-size:13px;">${title}</p>
@@ -168,8 +170,19 @@ function kpiCard(title,value,color){
   `;
 }
 
+function animateCounter(el, end){
+  let start = 0;
+  const duration = 1200;
+  const stepTime = Math.abs(Math.floor(duration/end));
+  const timer = setInterval(()=>{
+    start += Math.ceil(end/30);
+    if(start>=end){ start=end; clearInterval(timer); }
+    el.innerText = "$"+$d(start);
+  },stepTime);
+}
+
 /* =========================
-CHARTS AVANZADOS
+CHARTS ULTRA
 ========================= */
 async function renderCharts(d){
   const lineCtx = document.getElementById("lineChart");
@@ -180,66 +193,96 @@ async function renderCharts(d){
   try { ChartLib = (await import("https://cdn.jsdelivr.net/npm/chart.js/auto/+esm")).default; }
   catch{return fallbackChart(d);}
 
-  // LINEA: Ingresos por día
+  // LINE CHART: ingresos por día
   if(charts.line) charts.line.destroy();
   charts.line = new ChartLib(lineCtx,{
     type:"line",
     data:{
       labels:Object.keys(d.ingresosPorDia),
-      datasets:[{label:"Ingresos", data:Object.values(d.ingresosPorDia), borderColor:"#00f0ff", backgroundColor:"#00f0ff33", fill:true, tension:0.4}]
+      datasets:[{
+        label:"Ingresos",
+        data:Object.values(d.ingresosPorDia),
+        borderColor:"#00f0ff",
+        backgroundColor:"#00f0ff44",
+        fill:true,
+        tension:0.4,
+        borderWidth:3,
+      }]
     },
-    options:{responsive:true, plugins:{legend:{display:true}}}
+    options:{responsive:true, animation:{duration:1500}, plugins:{legend:{display:true}}}
   });
 
-  // BARRAS: Ventas por cliente
+  // BAR CHART: ventas por cliente
   if(charts.bar) charts.bar.destroy();
   charts.bar = new ChartLib(barCtx,{
     type:"bar",
     data:{
       labels:Object.keys(d.ventasPorCliente),
-      datasets:[{label:"Ventas", data:Object.values(d.ventasPorCliente), backgroundColor:"#ff80ffcc"}]
+      datasets:[{
+        label:"Ventas",
+        data:Object.values(d.ventasPorCliente),
+        backgroundColor:"#ff80ff88"
+      }]
     },
     options:{responsive:true, plugins:{legend:{display:false}}, animation:{duration:1200}}
   });
 
-  // RADAR: KPIs integrados
+  // RADAR CHART: KPIs integrados
   if(charts.radar) charts.radar.destroy();
   charts.radar = new ChartLib(radarCtx,{
     type:"radar",
     data:{
       labels:["Ingresos","Costos","Utilidad","Clientes","Órdenes","Stock"],
-      datasets:[{label:"KPIs", data:[d.ingresos,d.costos,d.ingresos-d.costos,d.clientes,d.ordenes,d.stockTotal], backgroundColor:"#00ffcc22", borderColor:"#00ffcc"}]
+      datasets:[{
+        label:"KPIs",
+        data:[d.ingresos,d.costos,d.ingresos-d.costos,d.clientes,d.ordenes,d.stockTotal],
+        backgroundColor:"#00ffcc33",
+        borderColor:"#00ffcc",
+        borderWidth:2
+      }]
     },
     options:{responsive:true, scales:{r:{beginAtZero:true}}}
   });
 }
 
 /* =========================
-CEO AUTÓNOMO INTERACTIVO
+CEO AUTÓNOMO ULTRA
 ========================= */
 function renderIA(d){
   const el = document.getElementById("iaPanel");
 
   const decisionesHTML = d.decisions.map(x=>`
-    <div style="background:#020617;padding:12px;border-radius:10px;margin-top:6px; transition:0.3s; box-shadow:0 0 15px #00f0ff33;">
-      ⚡ ${x.accion} (${x.impacto})
+    <div style="
+      background:#020617;
+      padding:14px;
+      border-radius:10px;
+      margin-top:8px;
+      box-shadow:0 0 20px #00f0ff33;
+      transition:0.3s;
+    ">
+      ⚡ <strong>${x.accion}</strong> (${x.impacto})
     </div>
   `).join("");
 
+  const alertasHTML = d.alertas.map(a=>{
+    const color = a.nivel==="alto"?"#ff4d4d":"#facc15";
+    return `<div style="color:${color};margin-top:4px;">${a.msg}</div>`;
+  }).join("");
+
   el.innerHTML = `
-    <div style="background:#0f172a;padding:20px;border-radius:14px;border:1px solid #1e293b;">
-      <h2 style="color:#00f0ff;text-shadow:0 0 8px #00f0ff;">👑 CEO AUTÓNOMO</h2>
+    <div style="background:#0f172a;padding:22px;border-radius:14px;border:1px solid #1e293b;">
+      <h2 style="color:#00f0ff;text-shadow:0 0 10px #00f0ff;">👑 CEO AUTÓNOMO ULTRA</h2>
       <p>Margen: <strong>${d.ingresos?(((d.ingresos-d.costos)/d.ingresos)*100).toFixed(2)+"%" : 0}</strong></p>
       <h3 style="color:#ff4d4d;">⚠️ Alertas</h3>
-      ${d.alertas.length?d.alertas.join("<br>"):"Sin alertas"}
-      <h3 style="color:#00ffcc;margin-top:10px;">🧠 Decisiones recomendadas</h3>
+      ${alertasHTML || "Sin alertas"}
+      <h3 style="color:#00ffcc;margin-top:12px;">🧠 Decisiones recomendadas</h3>
       ${decisionesHTML||"Sin decisiones"}
     </div>
   `;
 }
 
 /* =========================
-DECISIONES INTELIGENTES
+DECISIONES INTELIGENTES ULTRA
 ========================= */
 function generarDecisiones(kpis, alertas, clientes, stock){
   const dec = [];
@@ -252,11 +295,9 @@ function generarDecisiones(kpis, alertas, clientes, stock){
 }
 
 /* =========================
-UTILS
+UTILS ULTRA
 ========================= */
-function fallbackChart(d){
-  return alert("⚠️ Chart.js no disponible, mostrando datos simplificados");
-}
+function fallbackChart(d){alert("⚠️ Chart.js no disponible, mostrando datos simplificados");}
 function saveCache(k,d){try{localStorage.setItem(k,JSON.stringify(d))}catch{}}
 function loadCache(k){try{return JSON.parse(localStorage.getItem(k))}catch{return null}}
 function $d(v){return new Intl.NumberFormat("es-CO").format(v||0)}
