@@ -1,6 +1,6 @@
 /**
  * dashboard.js
- * PRO360 GOD CORE v2 🧠🚀
+ * PRO360 GOD CORE v3 🧠👑 (Power BI Style + CEO Autónomo)
  */
 
 import { collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -16,20 +16,13 @@ export default async function dashboard(container, state) {
     return renderError("❌ Empresa no definida");
   }
 
-  /* =========================
-  1. CARGAR CACHE INSTANTÁNEO
-  ========================= */
   const cacheKey = `dashboard_${state.empresaId}`;
   const cache = loadCache(cacheKey);
 
   if (cache) {
-    console.log("⚡ Cargando desde cache");
     renderAll(cache, true);
   }
 
-  /* =========================
-  2. CARGAR DATOS REALES
-  ========================= */
   try {
 
     const data = await fetchData(state.empresaId);
@@ -50,21 +43,46 @@ export default async function dashboard(container, state) {
 }
 
 /* =========================
-UI BASE
+UI BASE (POWER BI STYLE)
 ========================= */
 
 function renderBaseUI(container) {
   container.innerHTML = `
-    <h1 style="text-align:center;color:#00ffcc;">🚀 PRO360 GOD CORE</h1>
+    <div style="padding:20px;background:#020617;color:white;font-family:Segoe UI;">
 
-    <div id="kpis"></div>
-    <canvas id="chart"></canvas>
-    <div id="iaPanel"></div>
+      <h1 style="
+        font-size:32px;
+        font-weight:800;
+        color:#00f0ff;
+        margin-bottom:20px;
+      ">
+        🧠 Dashboard CEO PRO360
+      </h1>
+
+      <div id="kpis" style="
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+        gap:15px;
+      "></div>
+
+      <div style="
+        margin-top:25px;
+        background:#0f172a;
+        padding:15px;
+        border-radius:12px;
+        box-shadow:0 0 25px #00f0ff22;
+      ">
+        <canvas id="chart"></canvas>
+      </div>
+
+      <div id="iaPanel" style="margin-top:25px;"></div>
+
+    </div>
   `;
 }
 
 /* =========================
-FETCH DATA SEGURO
+FETCH DATA
 ========================= */
 
 async function fetchData(empresaId) {
@@ -78,7 +96,8 @@ async function fetchData(empresaId) {
     costos: 0,
     ordenes: 0,
     ingresosPorDia: {},
-    alertas: []
+    alertas: [],
+    decisiones: []
   };
 
   snap.forEach(doc => {
@@ -97,9 +116,8 @@ async function fetchData(empresaId) {
     data.ingresosPorDia[fecha] =
       (data.ingresosPorDia[fecha] || 0) + total;
 
-    /* IA ALERTA */
     if (total < costo) {
-      data.alertas.push("⚠️ Orden con pérdida detectada");
+      data.alertas.push("⚠️ Orden con pérdida");
     }
 
   });
@@ -115,48 +133,60 @@ async function renderAll(data, fromCache) {
 
   const utilidad = data.ingresos - data.costos;
   const margen = data.ingresos ? (utilidad / data.ingresos) * 100 : 0;
+  const ticket = data.ordenes ? data.ingresos / data.ordenes : 0;
 
-  renderKPIs(data, utilidad, margen, fromCache);
+  const decisiones = generarDecisiones({ margen, ticket }, data.alertas);
+
+  renderKPIs(data, utilidad, margen, ticket, fromCache);
   await renderChart(data.ingresosPorDia);
-  renderIA(margen, data.alertas);
+  renderIA({ margen, alertas: data.alertas, decisiones });
 }
 
 /* =========================
-KPIs
+KPIs POWER BI
 ========================= */
 
-function renderKPIs(d, utilidad, margen, cache) {
+function renderKPIs(d, utilidad, margen, ticket, cache) {
 
   const el = document.getElementById("kpis");
 
   el.innerHTML = `
     ${badge(cache)}
 
-    ${card("💰 Ingresos", d.ingresos)}
-    ${card("📉 Costos", d.costos)}
-    ${card("📈 Utilidad", utilidad)}
-    ${card("📊 Margen", margen.toFixed(2)+"%")}
-    ${card("🧾 Órdenes", d.ordenes)}
+    ${kpiCard("Ingresos", d.ingresos, "#00ffcc")}
+    ${kpiCard("Costos", d.costos, "#ff4d4d")}
+    ${kpiCard("Utilidad", utilidad, "#00ff99")}
+    ${kpiCard("Margen", margen.toFixed(2)+"%", "#00f0ff")}
+    ${kpiCard("Órdenes", d.ordenes, "#facc15")}
+    ${kpiCard("Ticket Prom.", "$"+fmt(ticket), "#a78bfa")}
+  `;
+}
+
+function kpiCard(title, value, color) {
+  return `
+    <div style="
+      background:#0f172a;
+      padding:15px;
+      border-radius:12px;
+      box-shadow:0 4px 20px ${color}22;
+      border:1px solid #1e293b;
+    ">
+      <p style="color:#94a3b8;font-size:13px;">${title}</p>
+      <h2 style="color:${color};font-size:22px;margin-top:5px;">
+        ${typeof value === "number" ? "$"+fmt(value) : value}
+      </h2>
+    </div>
   `;
 }
 
 function badge(cache) {
   return cache
-    ? `<div style="color:#ffcc00;">⚡ Modo cache</div>`
+    ? `<div style="color:#facc15;margin-bottom:10px;">⚡ Datos desde cache</div>`
     : "";
 }
 
-function card(t, v) {
-  return `
-    <div style="background:#0f172a;padding:12px;margin:10px;border-radius:8px;">
-      <strong>${t}</strong><br>
-      ${typeof v === "number" ? "$"+fmt(v) : v}
-    </div>
-  `;
-}
-
 /* =========================
-CHART SEGURO + FALLBACK
+CHART
 ========================= */
 
 async function renderChart(data) {
@@ -171,25 +201,103 @@ async function renderChart(data) {
     return fallbackChart(data);
   }
 
-  try {
+  if (chartInstance) chartInstance.destroy();
 
-    if (chartInstance) chartInstance.destroy();
-
-    chartInstance = new ChartLib(ctx, {
-      type: "line",
-      data: {
-        labels: Object.keys(data),
-        datasets: [{
-          label: "Ingresos",
-          data: Object.values(data)
-        }]
-      }
-    });
-
-  } catch {
-    fallbackChart(data);
-  }
+  chartInstance = new ChartLib(ctx, {
+    type: "line",
+    data: {
+      labels: Object.keys(data),
+      datasets: [{
+        label: "Ingresos",
+        data: Object.values(data),
+        borderWidth: 2,
+        tension: 0.4
+      }]
+    }
+  });
 }
+
+/* =========================
+CEO AI PANEL
+========================= */
+
+function renderIA({ margen, alertas, decisiones }) {
+
+  const el = document.getElementById("iaPanel");
+
+  el.innerHTML = `
+    <div style="
+      background:#0f172a;
+      padding:20px;
+      border-radius:12px;
+      border:1px solid #1e293b;
+    ">
+
+      <h2 style="color:#00f0ff;">👑 CEO AI</h2>
+
+      <p>Margen actual: <strong>${margen.toFixed(2)}%</strong></p>
+
+      <h3 style="color:#ff4d4d;">⚠️ Alertas</h3>
+      ${alertas.length ? alertas.join("<br>") : "Sin alertas"}
+
+      <h3 style="color:#00ffcc;margin-top:10px;">🧠 Decisiones</h3>
+      ${renderDecisiones(decisiones)}
+
+    </div>
+  `;
+}
+
+/* =========================
+DECISIONES CEO
+========================= */
+
+function generarDecisiones(kpis, alertas){
+
+  const decisiones = [];
+
+  if(kpis.margen < 25){
+    decisiones.push({
+      accion:"subir precios",
+      impacto:"alto"
+    });
+  }
+
+  if(alertas.length){
+    decisiones.push({
+      accion:"revisar pérdidas",
+      impacto:"alto"
+    });
+  }
+
+  if(kpis.ticket < 70000){
+    decisiones.push({
+      accion:"crear combos",
+      impacto:"medio"
+    });
+  }
+
+  return decisiones;
+}
+
+function renderDecisiones(decisiones){
+
+  if(!decisiones.length) return "Sin decisiones";
+
+  return decisiones.map(d=>`
+    <div style="
+      background:#020617;
+      padding:10px;
+      border-radius:8px;
+      margin-top:5px;
+    ">
+      ⚡ ${d.accion} (${d.impacto})
+    </div>
+  `).join("");
+}
+
+/* =========================
+UTILS
+========================= */
 
 function fallbackChart(data) {
   const ctx = document.getElementById("chart");
@@ -201,55 +309,14 @@ function fallbackChart(data) {
   `;
 }
 
-/* =========================
-IA PANEL
-========================= */
-
-function renderIA(margen, alertas) {
-
-  const el = document.getElementById("iaPanel");
-
-  el.innerHTML = `
-    <div style="background:#020617;padding:15px;">
-      <h2>🧠 IA</h2>
-
-      <p>Margen: ${margen.toFixed(2)}%</p>
-
-      <h3>⚠️ Alertas</h3>
-      ${alertas.length ? alertas.join("<br>") : "Sin alertas"}
-
-      <button id="voz">🎤 Hablar</button>
-    </div>
-  `;
-
-  document.getElementById("voz").onclick = () => {
-    speechSynthesis.speak(
-      new SpeechSynthesisUtterance(`Margen ${margen.toFixed(1)} por ciento`)
-    );
-  };
-}
-
-/* =========================
-CACHE
-========================= */
-
 function saveCache(key, data) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch {}
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch {}
 }
 
 function loadCache(key) {
-  try {
-    return JSON.parse(localStorage.getItem(key));
-  } catch {
-    return null;
-  }
+  try { return JSON.parse(localStorage.getItem(key)); }
+  catch { return null; }
 }
-
-/* =========================
-UTILS
-========================= */
 
 function safeNum(v){ return Number(v || 0); }
 
