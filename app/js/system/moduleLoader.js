@@ -1,23 +1,22 @@
 /**
  * moduleLoader.js
  * Cargador central del ERP TallerPRO360
- * Versión PRO ULTRA ROBUSTA 🔥 (FINAL)
+ * Versión PRO ULTRA FINAL 🔥
  */
 
 import dashboard from "../modules/dashboard.js";
 
 /* ================= ESTADO GLOBAL ================= */
-
 let voiceInitialized = false;
-
 const state = {
   currentModule: null,
-  empresaId: "taller_001",
+  empresaId: null,
+  uid: null,
+  rolGlobal: null,
   cargando: false,
 };
 
 /* ================= MAPA DE MÓDULOS ================= */
-
 const modules = {
   dashboard: () => import("../modules/dashboard.js"),
   ordenes: () => import("../modules/ordenes.js"),
@@ -27,17 +26,14 @@ const modules = {
   contabilidad: () => import("../modules/contabilidad.js"),
   reportes: () => import("../modules/reportes.js"),
   configuracion: () => import("../modules/configuracion.js"),
-
   // IA
   aiassistant: () => import("../modules/aiAssistant.js"),
   aiadvisor: () => import("../modules/aiAdvisor.js"),
-
-  // 🔥 Nuevo módulo Gerente AI
+  // NUEVO: Gerente AI
   gerenteai: () => import("../modules/gerenteAI.js"),
 };
 
 /* ================= CEO AUTÓNOMO ================= */
-
 try {
   const ceo = await import("../ai/ceoAutonomo.js");
   if (ceo.default?.iniciar) {
@@ -49,159 +45,127 @@ try {
 }
 
 /* ================= UI HELPERS ================= */
-
 function showLoader(container, text = "⚡ Cargando módulo...") {
-  container.innerHTML = `
-    <div style="color:#00ffcc; font-size:18px; text-align:center; padding:40px;">
-      ${text}
-    </div>
-  `;
+  container.innerHTML = `<div style="color:#00ffcc; font-size:18px; text-align:center; padding:40px;">${text}</div>`;
 }
-
 function showError(container, error) {
-  container.innerHTML = `
-    <div style="color:red; padding:20px;">
-      ❌ Error cargando módulo <br/>
-      ${error.message}
-    </div>
-  `;
+  container.innerHTML = `<div style="color:red; padding:20px;">❌ Error cargando módulo <br/> ${error.message}</div>`;
 }
 
 /* ================= LOADER ================= */
-
-export async function loadModule(moduleName, container) {
+export async function loadModule(moduleName) {
+  const container = document.getElementById("appContainer");
   if (state.cargando) return;
 
   try {
     state.cargando = true;
     showLoader(container);
+    const key = moduleName.toLowerCase().trim();
 
-    const key = moduleName.toLowerCase().trim(); // 🔥 robusto
-
-    if (!modules[key]) {
-      throw new Error(`Módulo no existe: ${moduleName}`);
-    }
-
+    if (!modules[key]) throw new Error(`Módulo no existe: ${moduleName}`);
     const module = await modules[key]();
-
-    if (!module || typeof module.default !== "function") {
-      throw new Error(`Módulo inválido: ${moduleName}`);
-    }
+    if (!module || typeof module.default !== "function") throw new Error(`Módulo inválido: ${moduleName}`);
 
     container.innerHTML = "";
     await module.default(container, state);
-
     state.currentModule = key;
-
   } catch (error) {
-
     console.error("❌ Error cargando módulo:", moduleName, error);
-
-    if (error.message.includes("Failed to fetch")) {
-      showError(container, new Error(
-        `No se encontró el archivo del módulo (${moduleName}). Verifica nombre EXACTO y despliegue en Vercel.`
-      ));
-    } else {
-      showError(container, error);
-    }
-
+    showError(container, error);
   } finally {
     state.cargando = false;
   }
 }
 
 /* ================= INIT APP ================= */
+export async function initApp() {
+  const container = document.getElementById("appContainer");
+  const sidebar = document.getElementById("sidebar");
 
-export function initApp() {
+  try {
+    // ================= AUTENTICACIÓN =================
+    const { auth, db } = await import("./firebase-config.js");
+    const { onAuthStateChanged, signOut } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+    const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
 
-  const root = document.getElementById("app");
-  if (!root) {
-    console.error("❌ No existe #app en index.html");
-    return;
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "/login.html";
+        return;
+      }
+
+      const snap = await getDoc(doc(db, "usuariosGlobal", user.uid));
+      if (!snap.exists()) return window.location.href = "/login.html";
+
+      const u = snap.data();
+      state.uid = user.uid;
+      state.empresaId = u.empresaId;
+      state.rolGlobal = u.rolGlobal || "user";
+
+      renderSidebar(sidebar, state.rolGlobal);
+      await loadModule("dashboard");
+      initAI();
+      initVoice();
+    });
+
+    document.getElementById("logoutBtn").onclick = async () => {
+      const { auth } = await import("./firebase-config.js");
+      const { signOut } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+      await signOut(auth);
+      localStorage.clear();
+      window.location.href = "/login.html";
+    };
+
+  } catch (e) {
+    container.innerHTML = `<div style="color:red;">❌ Error inicializando APP<br>${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+/* ================= SIDEBAR ================= */
+function renderSidebar(sidebar, rol) {
+  const modulesList = [
+    { id:"dashboard", label:"📊 Dashboard" },
+    { id:"ordenes", label:"🧾 Órdenes" },
+    { id:"clientes", label:"👥 Clientes" },
+    { id:"inventario", label:"📦 Inventario" },
+    { id:"finanzas", label:"💰 Finanzas" },
+  ];
+
+  if(rol === "superadmin"){
+    modulesList.push(
+      { id:"contabilidad", label:"📊 Contabilidad" },
+      { id:"gerenteai", label:"🧠 Gerente AI" },
+      { id:"reportes", label:"📈 Reportes" },
+      { id:"configuracion", label:"⚙️ Configuración" }
+    );
   }
 
-  root.innerHTML = `
-    <div style="display:flex; height:100vh; background:#0a0a0a; color:white;">
-      
-      <!-- Sidebar -->
-      <div style="width:260px; background:#111; padding:15px; display:flex; flex-direction:column; gap:10px;">
-        
-        <h2 style="color:#00ffcc;">TallerPRO360</h2>
-
-        <button onclick="window.navigate('dashboard')">📊 Dashboard</button>
-        <button onclick="window.navigate('ordenes')">🧾 Órdenes</button>
-        <button onclick="window.navigate('clientes')">👥 Clientes</button>
-        <button onclick="window.navigate('inventario')">📦 Inventario</button>
-        <button onclick="window.navigate('finanzas')">💰 Finanzas</button>
-        <button onclick="window.navigate('contabilidad')">💼 Contabilidad</button>
-        <button onclick="window.navigate('gerenteai')">🧠 Gerente AI</button>
-        <button onclick="window.navigate('reportes')">📈 Reportes</button>
-        <button onclick="window.navigate('configuracion')">⚙️ Configuración</button>
-
-      </div>
-
-      <!-- Vista -->
-      <div id="view" style="flex:1; padding:20px; overflow:auto;"></div>
-    </div>
-  `;
-
-  const view = document.getElementById("view");
-
-  /* ================= NAVEGACIÓN ================= */
-
-  window.navigate = async (moduleName) => {
-    if (state.cargando) return;
-
-    try {
-      if (moduleName.toLowerCase() === "dashboard") {
-        showLoader(view);
-        await dashboard(view, state);
-        state.currentModule = "dashboard";
-      } else {
-        await loadModule(moduleName, view);
-      }
-    } catch (error) {
-      console.error("❌ Error navegación:", error);
-      showError(view, error);
-    }
-  };
-
-  /* ================= INIT ================= */
-
-  window.navigate("dashboard");
-  initAI();
-  initVoice();
+  sidebar.innerHTML = modulesList.map(m =>
+    `<button onclick="window.loadModule('${m.id}')">${m.label}</button>`
+  ).join("");
 }
 
 /* ================= IA ================= */
-
 async function initAI() {
   try {
     const ai = await modules.aiassistant();
     if (ai?.init) ai.init();
-
     const advisor = await modules.aiadvisor();
     if (advisor?.init) advisor.init();
-
     console.log("🤖 IA inicializada");
-  } catch (e) {
+  } catch(e) {
     console.warn("⚠️ IA no disponible:", e.message);
   }
 }
 
 /* ================= VOZ ================= */
-
 async function initVoice() {
   if (voiceInitialized) return;
-
   try {
     const voice = await import("../voice/voiceAssistantWorkshop.js");
-    if (voice?.init) {
-      voice.init();
-      voiceInitialized = true;
-      console.log("🎤 Voz activada");
-    }
-  } catch (e) {
+    if (voice?.init) { voice.init(); voiceInitialized = true; console.log("🎤 Voz activada"); }
+  } catch(e) {
     console.warn("⚠️ Voz no disponible:", e.message);
   }
 }
