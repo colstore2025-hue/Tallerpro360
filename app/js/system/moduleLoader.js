@@ -24,24 +24,28 @@ const modules = {
   clientes: () => import("../modules/clientes.js"),
   inventario: () => import("../modules/inventario.js"),
   finanzas: () => import("../modules/finanzas.js"),
+  contabilidad: () => import("../modules/contabilidad.js"),
   reportes: () => import("../modules/reportes.js"),
   configuracion: () => import("../modules/configuracion.js"),
-  contabilidad: () => import("../modules/contabilidad.js"),
 
   // IA
   aiassistant: () => import("../modules/aiAssistant.js"),
   aiadvisor: () => import("../modules/aiAdvisor.js"),
 
-  // 🔥 CEO AI (case-sensitive FIX)
-  ceoai: () => import("../modules/ceoAI.js"),
+  // 🔥 Nuevo módulo Gerente AI
+  gerenteai: () => import("../modules/gerenteAI.js"),
 };
-// 👑 CEO AUTÓNOMO
+
+/* ================= CEO AUTÓNOMO ================= */
+
 try {
   const ceo = await import("../ai/ceoAutonomo.js");
-  ceo.default.iniciar(state);
-  console.log("👑 CEO Autónomo ACTIVADO");
-} catch(e){
-  console.warn("⚠️ CEO no disponible");
+  if (ceo.default?.iniciar) {
+    ceo.default.iniciar(state);
+    console.log("👑 CEO Autónomo ACTIVADO");
+  }
+} catch (e) {
+  console.warn("⚠️ CEO no disponible", e.message);
 }
 
 /* ================= UI HELPERS ================= */
@@ -85,7 +89,6 @@ export async function loadModule(moduleName, container) {
     }
 
     container.innerHTML = "";
-
     await module.default(container, state);
 
     state.currentModule = key;
@@ -131,7 +134,7 @@ export function initApp() {
         <button onclick="window.navigate('inventario')">📦 Inventario</button>
         <button onclick="window.navigate('finanzas')">💰 Finanzas</button>
         <button onclick="window.navigate('contabilidad')">💼 Contabilidad</button>
-        <button onclick="window.navigate('ceoai')">🧠 CEO AI</button>
+        <button onclick="window.navigate('gerenteai')">🧠 Gerente AI</button>
         <button onclick="window.navigate('reportes')">📈 Reportes</button>
         <button onclick="window.navigate('configuracion')">⚙️ Configuración</button>
 
@@ -150,33 +153,22 @@ export function initApp() {
     if (state.cargando) return;
 
     try {
-
       if (moduleName.toLowerCase() === "dashboard") {
-
         showLoader(view);
-
         await dashboard(view, state);
-
         state.currentModule = "dashboard";
-
       } else {
-
         await loadModule(moduleName, view);
-
       }
-
     } catch (error) {
-
       console.error("❌ Error navegación:", error);
       showError(view, error);
-
     }
   };
 
   /* ================= INIT ================= */
 
   window.navigate("dashboard");
-
   initAI();
   initVoice();
 }
@@ -184,9 +176,7 @@ export function initApp() {
 /* ================= IA ================= */
 
 async function initAI() {
-
   try {
-
     const ai = await modules.aiassistant();
     if (ai?.init) ai.init();
 
@@ -194,33 +184,24 @@ async function initAI() {
     if (advisor?.init) advisor.init();
 
     console.log("🤖 IA inicializada");
-
   } catch (e) {
-
     console.warn("⚠️ IA no disponible:", e.message);
-
   }
 }
 
 /* ================= VOZ ================= */
 
 async function initVoice() {
-
   if (voiceInitialized) return;
 
   try {
-
     const voice = await import("../voice/voiceAssistantWorkshop.js");
-
     if (voice?.init) {
       voice.init();
       voiceInitialized = true;
       console.log("🎤 Voz activada");
     }
-
   } catch (e) {
-
     console.warn("⚠️ Voz no disponible:", e.message);
-
   }
 }
