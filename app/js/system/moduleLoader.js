@@ -5,7 +5,7 @@
  * Módulos escalables e integrados con IA y voz
  */
 
-import { hablar, iniciarVoz } from "../voice/voiceCore.js";
+import { hablar } from "../voice/voiceCore.js";
 
 let voiceInitialized = false;
 
@@ -66,10 +66,8 @@ function verificarPermisoModulo(modulo) {
   const moduloReportes = ["reportes","contabilidad"];
   const moduloFacturacion = ["configuracion","pagos"];
 
-  // Freemium caduca 15 días
   if(plan === "Freemium" && state.planFechaInicio){
-    const ahora = new Date();
-    const diffDias = Math.floor((ahora - state.planFechaInicio) / (1000*60*60*24));
+    const diffDias = Math.floor((new Date() - state.planFechaInicio) / (1000*60*60*24));
     if(diffDias > 15){
       alert("⏳ Tu plan Freemium ha expirado. Actualiza para continuar.");
       return false;
@@ -78,14 +76,7 @@ function verificarPermisoModulo(modulo) {
 
   if(superadmin) return true;
 
-  // Restricciones por plan
-  if(plan === "Freemium"){
-    if(moduloReportes.includes(modulo) || moduloFacturacion.includes(modulo)) return false;
-  }
-  if(plan === "Básico"){
-    if(moduloReportes.includes(modulo) || moduloFacturacion.includes(modulo)) return false;
-  }
-  if(plan === "Pro"){
+  if(plan === "Freemium" || plan === "Básico" || plan === "Pro"){
     if(moduloReportes.includes(modulo) || moduloFacturacion.includes(modulo)) return false;
   }
   if(plan === "Elite"){
