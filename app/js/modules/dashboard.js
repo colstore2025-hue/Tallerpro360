@@ -1,28 +1,77 @@
 /**
  * dashboard.js
- * PRO360 Dashboard · MODO INDESTRUCTIBLE 🛡️
+ * PRO360 GOD CORE v2 🧠🚀
  */
 
 import { collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const db = window.db;
-
 let chartInstance = null;
-
-/* ================= EXPORT ================= */
 
 export default async function dashboard(container, state) {
 
-  safeRender(container, `
-    <h1 style="text-align:center;color:#00ffcc;">🛡️ Dashboard PRO360</h1>
+  renderBaseUI(container);
+
+  if (!state?.empresaId) {
+    return renderError("❌ Empresa no definida");
+  }
+
+  /* =========================
+  1. CARGAR CACHE INSTANTÁNEO
+  ========================= */
+  const cacheKey = `dashboard_${state.empresaId}`;
+  const cache = loadCache(cacheKey);
+
+  if (cache) {
+    console.log("⚡ Cargando desde cache");
+    renderAll(cache, true);
+  }
+
+  /* =========================
+  2. CARGAR DATOS REALES
+  ========================= */
+  try {
+
+    const data = await fetchData(state.empresaId);
+
+    saveCache(cacheKey, data);
+
+    renderAll(data, false);
+
+  } catch (e) {
+
+    console.error("🔥 Error backend:", e);
+
+    if (!cache) {
+      renderError("⚠️ Sin conexión y sin datos");
+    }
+
+  }
+}
+
+/* =========================
+UI BASE
+========================= */
+
+function renderBaseUI(container) {
+  container.innerHTML = `
+    <h1 style="text-align:center;color:#00ffcc;">🚀 PRO360 GOD CORE</h1>
+
     <div id="kpis"></div>
     <canvas id="chart"></canvas>
     <div id="iaPanel"></div>
-  `);
+  `;
+}
 
-  if (!state?.empresaId) {
-    return safeRender(container, "❌ Empresa no definida");
-  }
+/* =========================
+FETCH DATA SEGURO
+========================= */
+
+async function fetchData(empresaId) {
+
+  const snap = await getDocs(
+    query(collection(db, `empresas/${empresaId}/ordenes`))
+  );
 
   let data = {
     ingresos: 0,
@@ -32,105 +81,94 @@ export default async function dashboard(container, state) {
     alertas: []
   };
 
-  /* ================= FIRESTORE SEGURO ================= */
+  snap.forEach(doc => {
 
-  try {
+    const d = doc.data() || {};
 
-    const snap = await getDocs(
-      query(collection(db, `empresas/${state.empresaId}/ordenes`))
-    );
+    const total = safeNum(d.valorTrabajo);
+    const costo = safeNum(d.costoTotal);
 
-    snap.forEach(doc => {
+    data.ingresos += total;
+    data.costos += costo;
+    data.ordenes++;
 
-      const d = doc.data() || {};
+    const fecha = safeDate(d.creadoEn);
 
-      const total = safeNumber(d.valorTrabajo);
-      const costo = safeNumber(d.costoTotal);
+    data.ingresosPorDia[fecha] =
+      (data.ingresosPorDia[fecha] || 0) + total;
 
-      data.ingresos += total;
-      data.costos += costo;
-      data.ordenes++;
+    /* IA ALERTA */
+    if (total < costo) {
+      data.alertas.push("⚠️ Orden con pérdida detectada");
+    }
 
-      const fecha = safeFecha(d.creadoEn);
+  });
 
-      data.ingresosPorDia[fecha] =
-        (data.ingresosPorDia[fecha] || 0) + total;
+  return data;
+}
 
-      if (total < costo) {
-        data.alertas.push("⚠️ Orden con pérdida");
-      }
+/* =========================
+RENDER GLOBAL
+========================= */
 
-    });
-
-  } catch (e) {
-    console.error("🔥 Firestore falló:", e);
-  }
-
-  /* ================= CALCULOS ================= */
+async function renderAll(data, fromCache) {
 
   const utilidad = data.ingresos - data.costos;
   const margen = data.ingresos ? (utilidad / data.ingresos) * 100 : 0;
 
-  renderKPIs({
-    ingresos: data.ingresos,
-    costos: data.costos,
-    utilidad,
-    ordenes: data.ordenes,
-    margen
-  });
-
-  await renderChartSeguro(data.ingresosPorDia);
-
-  renderIA({
-    margen,
-    alertas: data.alertas
-  });
+  renderKPIs(data, utilidad, margen, fromCache);
+  await renderChart(data.ingresosPorDia);
+  renderIA(margen, data.alertas);
 }
 
-/* ================= KPIs ================= */
+/* =========================
+KPIs
+========================= */
 
-function renderKPIs(d) {
+function renderKPIs(d, utilidad, margen, cache) {
 
   const el = document.getElementById("kpis");
-  if (!el) return;
 
   el.innerHTML = `
+    ${badge(cache)}
+
     ${card("💰 Ingresos", d.ingresos)}
     ${card("📉 Costos", d.costos)}
-    ${card("📈 Utilidad", d.utilidad)}
-    ${card("📊 Margen", d.margen.toFixed(2)+"%")}
+    ${card("📈 Utilidad", utilidad)}
+    ${card("📊 Margen", margen.toFixed(2)+"%")}
     ${card("🧾 Órdenes", d.ordenes)}
   `;
 }
 
+function badge(cache) {
+  return cache
+    ? `<div style="color:#ffcc00;">⚡ Modo cache</div>`
+    : "";
+}
+
 function card(t, v) {
   return `
-    <div style="background:#0f172a;padding:15px;margin:10px;border-radius:10px;">
+    <div style="background:#0f172a;padding:12px;margin:10px;border-radius:8px;">
       <strong>${t}</strong><br>
       ${typeof v === "number" ? "$"+fmt(v) : v}
     </div>
   `;
 }
 
-/* ================= CHART INDESTRUCTIBLE ================= */
+/* =========================
+CHART SEGURO + FALLBACK
+========================= */
 
-async function renderChartSeguro(data) {
+async function renderChart(data) {
 
   const ctx = document.getElementById("chart");
-  if (!ctx) return;
 
-  let ChartLib = null;
+  let ChartLib;
 
   try {
     ChartLib = (await import("https://cdn.jsdelivr.net/npm/chart.js/auto/+esm")).default;
-  } catch (e) {
-    console.warn("⚠️ Chart CDN falló");
-  }
-
-  /* ===== FALLBACK SIN CHART ===== */
-  if (!ChartLib) {
-    ctx.outerHTML = renderFallbackChart(data);
-    return;
+  } catch {
+    return fallbackChart(data);
   }
 
   try {
@@ -148,87 +186,82 @@ async function renderChartSeguro(data) {
       }
     });
 
-  } catch (e) {
-    console.error("🔥 Error render chart:", e);
-    ctx.outerHTML = renderFallbackChart(data);
+  } catch {
+    fallbackChart(data);
   }
 }
 
-/* ===== FALLBACK VISUAL ===== */
+function fallbackChart(data) {
+  const ctx = document.getElementById("chart");
 
-function renderFallbackChart(data) {
-
-  const items = Object.entries(data)
-    .map(([k,v]) => `<div>${k}: $${fmt(v)}</div>`)
-    .join("");
-
-  return `
-    <div style="background:#111;padding:15px;border-radius:10px;">
-      <h3>📊 Datos (modo fallback)</h3>
-      ${items || "Sin datos"}
+  ctx.outerHTML = `
+    <div style="background:#111;padding:10px;">
+      ${Object.entries(data).map(([k,v])=>`${k}: $${fmt(v)}`).join("<br>")}
     </div>
   `;
 }
 
-/* ================= IA ================= */
+/* =========================
+IA PANEL
+========================= */
 
-function renderIA({ margen, alertas }) {
+function renderIA(margen, alertas) {
 
   const el = document.getElementById("iaPanel");
-  if (!el) return;
 
   el.innerHTML = `
-    <div style="background:#020617;padding:20px;border-radius:10px;">
+    <div style="background:#020617;padding:15px;">
       <h2>🧠 IA</h2>
+
       <p>Margen: ${margen.toFixed(2)}%</p>
 
       <h3>⚠️ Alertas</h3>
-      ${
-        alertas.length
-          ? alertas.map(a => `<p>${a}</p>`).join("")
-          : "Sin alertas"
-      }
+      ${alertas.length ? alertas.join("<br>") : "Sin alertas"}
 
-      <button id="voz">🎤 Voz</button>
+      <button id="voz">🎤 Hablar</button>
     </div>
   `;
 
   document.getElementById("voz").onclick = () => {
-
-    try {
-      const msg = new SpeechSynthesisUtterance(
-        `Margen actual ${margen.toFixed(1)} por ciento`
-      );
-      speechSynthesis.speak(msg);
-    } catch {
-      alert("Voz no disponible");
-    }
-
+    speechSynthesis.speak(
+      new SpeechSynthesisUtterance(`Margen ${margen.toFixed(1)} por ciento`)
+    );
   };
 }
 
-/* ================= HELPERS ================= */
+/* =========================
+CACHE
+========================= */
 
-function safeRender(container, html) {
+function saveCache(key, data) {
   try {
-    container.innerHTML = html;
-  } catch (e) {
-    console.error("Render error", e);
-  }
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch {}
 }
 
-function safeNumber(v) {
-  return Number(v || 0);
-}
-
-function safeFecha(f) {
+function loadCache(key) {
   try {
-    return f?.toDate?.().toISOString().split("T")[0];
+    return JSON.parse(localStorage.getItem(key));
   } catch {
-    return "NA";
+    return null;
   }
 }
 
-function fmt(v) {
+/* =========================
+UTILS
+========================= */
+
+function safeNum(v){ return Number(v || 0); }
+
+function safeDate(f){
+  try { return f?.toDate?.().toISOString().split("T")[0]; }
+  catch { return "NA"; }
+}
+
+function fmt(v){
   return new Intl.NumberFormat("es-CO").format(v || 0);
+}
+
+function renderError(msg){
+  document.getElementById("kpis").innerHTML = msg;
 }
