@@ -1,7 +1,6 @@
 /**
  * workshopBrain.js
- * Motor central de diagnóstico IA
- * TallerPRO360 ERP
+ * Motor central de diagnóstico IA PRO360 · ULTRA
  */
 
 import { detectarRepuestos } from "./iaMecanica.js";
@@ -10,147 +9,189 @@ import { PredictiveMaintenanceAI } from "./predictiveMaintenanceAI.js";
 
 class WorkshopBrain {
 
-constructor(){
+  constructor(){
 
-this.scanner = new VehicleScanner();
-this.predictiveAI = new PredictiveMaintenanceAI();
+    this.scanner = new VehicleScanner();
+    this.predictiveAI = new PredictiveMaintenanceAI();
 
-console.log("🧠 WorkshopBrain iniciado");
+    console.log("🧠 WorkshopBrain iniciado");
+  }
 
-}
+  /* ===============================
+  NORMALIZAR REPUESTOS
+  ============================== */
+  normalizeParts(repuestos){
+    if(!Array.isArray(repuestos)) return [];
 
+    return repuestos.map(r=>{
+      if(typeof r === "string") return r;
+      if(typeof r === "object") return r.nombre || "";
+      return "";
+    }).filter(Boolean);
+  }
 
-/* ===============================
-DIAGNOSTICO COMPLETO
-=============================== */
+  /* ===============================
+  CALCULAR HORAS INTELIGENTE
+  ============================== */
+  calcularHoras(technical, parts){
 
-async runDiagnosis(vehicleData){
+    let horas = 1;
 
-try{
+    if(parts.length > 3) horas += 1;
+    if(parts.length > 6) horas += 1;
 
-console.log("🔧 Iniciando diagnóstico completo...");
+    if(technical?.length > 2) horas += 1;
 
-/* ===============================
-1 ESCANEO TECNICO
-=============================== */
+    return horas;
+  }
 
-const technicalDiagnosis = this.scanner.scanVehicle(
-vehicleData?.obd || {},
-vehicleData?.symptoms || []
-);
+  /* ===============================
+  DIAGNÓSTICO COMPLETO
+  ============================== */
+  async runDiagnosis(vehicleData){
 
+    try{
 
-/* ===============================
-2 IA MECANICA
-=============================== */
+      console.log("🔧 Iniciando diagnóstico completo...");
 
-const descripcion = vehicleData?.problem || "";
+      /* ===============================
+      1 ESCANEO TECNICO
+      ============================== */
 
-let ia = null;
+      const technicalDiagnosis = await Promise.resolve(
+        this.scanner.scanVehicle(
+          vehicleData?.obd || {},
+          vehicleData?.symptoms || []
+        )
+      );
 
-if(descripcion){
+      /* ===============================
+      2 IA MECÁNICA
+      ============================== */
 
-ia = await detectarRepuestos(descripcion);
+      const descripcion = vehicleData?.problem || "";
 
-}
+      let ia = null;
 
+      if(descripcion && descripcion.length > 5){
+        try{
+          ia = await detectarRepuestos(descripcion);
+        } catch(e){
+          console.warn("⚠️ IA mecánica falló");
+        }
+      }
 
-/* ===============================
-3 REPUESTOS IA
-=============================== */
+      /* ===============================
+      3 REPUESTOS NORMALIZADOS
+      ============================== */
 
-const partsNeeded = (ia?.repuestos || []).map(r =>
+      const partsNeeded = this.normalizeParts(ia?.repuestos);
 
-typeof r === "string"
-? r
-: r.nombre
+      /* ===============================
+      4 PREDICTIVO
+      ============================== */
 
-);
+      let predictiveAlerts = [];
 
+      try{
+        predictiveAlerts = this.predictiveAI.predict(
+          vehicleData?.history || {}
+        );
+      } catch(e){
+        console.warn("⚠️ Predictive AI falló");
+      }
 
-/* ===============================
-4 MANTENIMIENTO PREDICTIVO
-=============================== */
+      /* ===============================
+      5 HORAS INTELIGENTES
+      ============================== */
 
-const predictiveAlerts = this.predictiveAI.predict(
-vehicleData?.history || {}
-);
+      const estimatedLaborHours = this.calcularHoras(
+        technicalDiagnosis,
+        partsNeeded
+      );
 
+      /* ===============================
+      6 RESULTADO FINAL
+      ============================== */
 
-/* ===============================
-5 RESULTADO FINAL
-=============================== */
+      const result = {
 
-return {
+        diagnosis: ia?.diagnostico || "Diagnóstico generado por IA",
 
-diagnosis: ia?.diagnostico || "Diagnóstico generado por IA",
+        technicalFindings: technicalDiagnosis,
 
-technicalFindings: technicalDiagnosis,
+        predictiveAlerts,
 
-predictiveAlerts: predictiveAlerts,
+        partsNeeded,
 
-partsNeeded: partsNeeded,
+        estimatedLaborHours
 
-estimatedLaborHours: 2
+      };
 
-};
+      console.log("🧠 Diagnóstico completo generado");
 
-}
-catch(error){
+      /* 🔥 LOG IA */
+      this.logDiagnosis(result, vehicleData);
 
-console.error("❌ Error en diagnóstico IA:",error);
+      return result;
 
-return {
+    } catch(error){
 
-diagnosis:"No se pudo generar diagnóstico",
+      console.error("❌ Error en diagnóstico IA:",error);
 
-technicalFindings:[],
+      return {
+        diagnosis:"No se pudo generar diagnóstico",
+        technicalFindings:[],
+        predictiveAlerts:[],
+        partsNeeded:[],
+        estimatedLaborHours:1
+      };
+    }
+  }
 
-predictiveAlerts:[],
+  /* ===============================
+  LOG IA
+  ============================== */
+  async logDiagnosis(result, input){
 
-partsNeeded:[],
+    try{
 
-estimatedLaborHours:1
+      const { guardarConsultaIA } = await import("./motorIAglobal.js");
 
-};
+      await guardarConsultaIA({
+        tipo:"diagnostico",
+        input,
+        output: result
+      });
 
-}
+    } catch(e){
+      console.warn("⚠️ No se pudo guardar diagnóstico IA");
+    }
+  }
 
-}
+  /* ===============================
+  APRENDIZAJE IA
+  ============================== */
+  async trainModel(repairData){
 
+    try{
 
-/* ===============================
-APRENDIZAJE IA
-=============================== */
+      console.log("📚 IA aprendiendo reparación",repairData);
 
-async trainModel(repairData){
+      /*
+      FUTURO:
+      - guardar dataset real
+      - mejorar precisión
+      */
 
-try{
+      return true;
 
-console.log("📚 IA aprendiendo reparación",repairData);
+    } catch(error){
 
-/*
-FUTURO:
-
-guardar historial de:
-- falla
-- repuestos usados
-- tiempo reparación
-- vehículo
-*/
-
-return true;
-
-}
-catch(error){
-
-console.error("Error entrenamiento IA:",error);
-
-return false;
-
-}
-
-}
+      console.error("❌ Error entrenamiento IA:",error);
+      return false;
+    }
+  }
 
 }
 
