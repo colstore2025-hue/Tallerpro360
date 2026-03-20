@@ -1,6 +1,6 @@
 /**
 ================================================
-CEOAI.JS - Módulo IA Gerente PRO360 ULTRA (FIX)
+CEOAI.JS - Módulo IA Gerente PRO360 ULTRA FINAL
 ================================================
 */
 
@@ -13,6 +13,7 @@ import {
 
 import { analizarNegocio, hablarResumen } from "../ai/aiManager.js";
 import { generarSugerencias } from "../ai/aiAdvisor.js";
+import { analizarEmpresaAvanzado } from "../ai/ceoIntelligence.js";
 
 const db = window.db;
 
@@ -33,7 +34,7 @@ export default async function CEOAIModule(container, state) {
   const btnVoz = container.querySelector("#voz");
 
   /* =========================
-  OBTENER DATA REAL (OK)
+  OBTENER DATA REAL
   ========================= */
   async function obtenerDatos() {
 
@@ -81,7 +82,7 @@ export default async function CEOAIModule(container, state) {
   }
 
   /* =========================
-  KPIs
+  KPIs BASE
   ========================= */
   function calcularKPIs(ordenes) {
 
@@ -101,7 +102,7 @@ export default async function CEOAIModule(container, state) {
   }
 
   /* =========================
-  ANALIZAR
+  ANALIZAR (NIVEL DIOS)
   ========================= */
   btnAnalizar.onclick = async () => {
 
@@ -118,6 +119,9 @@ export default async function CEOAIModule(container, state) {
 
       const kpis = calcularKPIs(ordenes);
 
+      /* =========================
+      IA SUGERENCIAS
+      ========================= */
       let sugerencias = [];
       try {
         const res = await generarSugerencias({
@@ -125,11 +129,14 @@ export default async function CEOAIModule(container, state) {
           inventario,
           empresaId: state.empresaId
         });
-        sugerencias = Array.isArray(res) ? res : (res?.sugerencias || []);
+        sugerencias = res?.sugerencias || [];
       } catch (e) {
         console.warn("⚠️ Error IA sugerencias:", e);
       }
 
+      /* =========================
+      IA CEO CLÁSICA
+      ========================= */
       let data = { alertas: [], recomendaciones: [] };
 
       try {
@@ -144,10 +151,25 @@ export default async function CEOAIModule(container, state) {
         console.warn("⚠️ Error IA análisis:", e);
       }
 
-      renderResultado(resultado, data, sugerencias, kpis);
+      /* =========================
+      🧠 IA NIVEL DIOS
+      ========================= */
+      const analisisPro = analizarEmpresaAvanzado({
+        ordenes,
+        inventario
+      });
 
+      renderResultado(resultado, data, sugerencias, kpis, analisisPro);
+
+      /* =========================
+      🎤 VOZ CEO
+      ========================= */
       try {
-        hablarResumen(data);
+        hablarResumen(`
+          Ingresos ${kpis.ingresos}.
+          Utilidad ${kpis.utilidad}.
+          Riesgo ${analisisPro.riesgo}.
+        `);
       } catch (e) {}
 
     } catch (error) {
@@ -159,7 +181,7 @@ export default async function CEOAIModule(container, state) {
   };
 
   /* =========================
-  VOZ
+  VOZ MANUAL
   ========================= */
   btnVoz.onclick = async () => {
 
@@ -181,8 +203,8 @@ function renderUI() {
   return `
     <h1 style="color:#00ffff;">🧠 CEO AI PRO360</h1>
 
-    <button id="analizar">🚀 Analizar</button>
-    <button id="voz">🎤 Voz</button>
+    <button id="analizar">🚀 Analizar Negocio</button>
+    <button id="voz">🎤 Escuchar</button>
 
     <div id="resultado" style="margin-top:20px;"></div>
   `;
@@ -204,25 +226,40 @@ function renderError(e){
   return `❌ ${e.message}`;
 }
 
-function renderResultado(el, data, sugerencias, kpis) {
+/* =========================
+RESULTADO NIVEL DIOS
+========================= */
+
+function renderResultado(el, data, sugerencias, kpis, analisisPro) {
 
   el.innerHTML = `
 
-    <h2>📊 KPIs CEO</h2>
+    <h2>🧠 Estado del Negocio</h2>
+    <div style="font-size:18px;">
+      Riesgo: <strong>${analisisPro.riesgo.toUpperCase()}</strong>
+    </div>
 
+    <h2>📊 KPIs</h2>
     ${card("Ingresos", money(kpis.ingresos))}
     ${card("Utilidad", money(kpis.utilidad))}
     ${card("Margen", kpis.margen.toFixed(2)+"%")}
     ${card("Órdenes", kpis.ordenes)}
     ${card("Ticket Promedio", money(kpis.ticketPromedio))}
 
-    <h3>🚨 Alertas</h3>
-    ${list(data.alertas)}
+    <h2>🔮 Proyecciones</h2>
+    ${card("7 días", money(analisisPro.proyecciones.proyeccion7dias))}
+    ${card("30 días", money(analisisPro.proyecciones.proyeccion30dias))}
 
-    <h3>💡 Recomendaciones CEO</h3>
+    <h2>🚨 Alertas Inteligentes</h2>
+    ${list(analisisPro.alertas)}
+
+    <h2>🧠 Decisiones Automáticas</h2>
+    ${list(analisisPro.decisiones)}
+
+    <h2>💡 Recomendaciones IA</h2>
     ${list(data.recomendaciones)}
 
-    <h3>🤖 Sugerencias IA</h3>
+    <h2>🤖 Sugerencias IA</h2>
     ${list(sugerencias)}
 
   `;
