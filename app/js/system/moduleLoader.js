@@ -1,16 +1,20 @@
 /**
  * moduleLoader.js
  * Cargador central del ERP TallerPRO360
- * Versión ULTRA PRO 🔥 · Soporte planes Freemium → Enterprise
+ * ULTRA PRO 🔥 · Soporte planes Freemium → Enterprise
  */
 
+import { hablar, iniciarVoz } from "../voice/voiceCore.js";
+
 let voiceInitialized = false;
+
 const state = {
   currentModule: null,
   empresaId: null,
   uid: null,
   rolGlobal: null,
   plan: null,
+  planFechaInicio: null,
   cargando: false,
 };
 
@@ -30,72 +34,119 @@ const modules = {
 };
 
 /* ================= CEO AUTÓNOMO ================= */
-async function initCEO(){
+async function initCEO() {
   try {
     const ceo = await import("../ai/ceoAutonomo.js");
-    if(ceo.default?.iniciar) ceo.default.iniciar(state);
+    if (ceo.default?.iniciar) ceo.default.iniciar(state);
     console.log("👑 CEO Autónomo ACTIVADO");
-  } catch(e){
+  } catch (e) {
     console.warn("⚠️ CEO no disponible", e.message);
   }
 }
 
 /* ================= UI HELPERS ================= */
-function showLoader(container, text="⚡ Cargando módulo..."){
+function showLoader(container, text = "⚡ Cargando módulo...") {
   container.innerHTML = `<div style="color:#00ffcc;font-size:18px;text-align:center;padding:40px;">${text}</div>`;
 }
-function showError(container,error){
+function showError(container, error) {
   container.innerHTML = `<div style="color:red;padding:20px;">❌ Error cargando módulo<br/>${error.message}</div>`;
 }
 
-/* ================= LOAD MODULE ================= */
-export async function loadModule(moduleName){
-  const container = document.getElementById("appContainer");
-  if(state.cargando) return;
+/* ================= PERMISOS POR PLAN ================= */
+function verificarPermisoModulo(modulo) {
+  const plan = state.plan;
+  const superadmin = state.rolGlobal === "superadmin";
 
-  try{
+  const moduloPremium = ["inventario","finanzas","contabilidad","reportes","configuracion","gerenteai"];
+  const moduloERP = ["ordenes","clientes","dashboard"];
+  const moduloReportes = ["reportes","contabilidad"];
+  const moduloFacturacion = ["configuracion"]; // aquí configuramos Facturación Electrónica
+
+  // Chequeo Freemium caduca 15 días
+  if(plan === "Freemium" && state.planFechaInicio){
+    const ahora = new Date();
+    const diffDias = Math.floor((ahora - state.planFechaInicio) / (1000*60*60*24));
+    if(diffDias > 15){
+      alert("⏳ Tu plan Freemium ha expirado. Actualiza para continuar.");
+      return false;
+    }
+  }
+
+  if(superadmin) return true;
+
+  // Restricciones por plan
+  if(plan === "Freemium"){
+    if(moduloReportes.includes(modulo) || moduloFacturacion.includes(modulo)) return false;
+  }
+  if(plan === "Básico"){
+    if(moduloReportes.includes(modulo) || moduloFacturacion.includes(modulo)) return false;
+  }
+  if(plan === "Pro"){
+    if(moduloReportes.includes(modulo) || moduloFacturacion.includes(modulo)) return false;
+  }
+  if(plan === "Elite"){
+    if(moduloFacturacion.includes(modulo)) return false;
+  }
+  return true;
+}
+
+/* ================= LOAD MODULE ================= */
+export async function loadModule(moduleName) {
+  const container = document.getElementById("appContainer");
+  if (state.cargando) return;
+
+  if (!verificarPermisoModulo(moduleName)) {
+    container.innerHTML = `<div style="color:#facc15;text-align:center;padding:40px;">❌ No tienes acceso a este módulo con tu plan actual (${state.plan})</div>`;
+    hablar("No tienes acceso a este módulo con tu plan actual");
+    return;
+  }
+
+  try {
     state.cargando = true;
     showLoader(container);
 
     const key = moduleName.toLowerCase().trim();
-    if(!modules[key]) throw new Error(`Módulo no existe: ${moduleName}`);
+    if (!modules[key]) throw new Error(`Módulo no existe: ${moduleName}`);
 
     const module = await modules[key]();
-    if(!module?.default) throw new Error(`Módulo inválido: ${moduleName}`);
+    if (!module?.default) throw new Error(`Módulo inválido: ${moduleName}`);
 
     container.innerHTML = "";
-    await module.default(container,state);
+    await module.default(container, state);
     state.currentModule = key;
 
-  }catch(e){
-    console.error("❌ Error cargando módulo:", moduleName,e);
-    showError(container,e);
-  }finally{ state.cargando = false; }
+  } catch (e) {
+    console.error("❌ Error cargando módulo:", moduleName, e);
+    showError(container, e);
+  } finally {
+    state.cargando = false;
+  }
 }
 
 /* ================= INIT APP ================= */
-export async function initApp(){
+export async function initApp() {
   const container = document.getElementById("appContainer");
   const sidebar = document.getElementById("sidebar");
 
-  try{
+  try {
     const { auth, db } = await import("../core/firebase-config.js");
     const { onAuthStateChanged, signOut } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
     const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
 
-    onAuthStateChanged(auth, async(user)=>{
-      if(!user) return window.location.href="/login.html";
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return window.location.href = "/login.html";
 
-      const snap = await getDoc(doc(db,"usuariosGlobal",user.uid));
-      if(!snap.exists()) return window.location.href="/login.html";
+      const snap = await getDoc(doc(db, "usuariosGlobal", user.uid));
+      if (!snap.exists()) return window.location.href = "/login.html";
 
       const u = snap.data();
       state.uid = user.uid;
       state.empresaId = u.empresaId;
       state.rolGlobal = u.rolGlobal || "user";
       state.plan = u.plan || "Freemium";
+      state.planFechaInicio = u.planFechaInicio?.toDate ? u.planFechaInicio.toDate() : new Date();
 
-      renderSidebar(sidebar,state.rolGlobal,state.plan);
+      renderSidebar(sidebar, state.rolGlobal, state.plan);
       await loadModule("dashboard");
 
       initCEO();
@@ -103,60 +154,66 @@ export async function initApp(){
       initVoice();
     });
 
-    document.getElementById("logoutBtn").onclick = async ()=>{
+    document.getElementById("logoutBtn").onclick = async () => {
       await signOut(auth);
       localStorage.clear();
-      window.location.href="/login.html";
+      window.location.href = "/login.html";
     };
 
-  }catch(e){
-    container.innerHTML=`<div style="color:red;">❌ Error inicializando APP<br>${e.message}</div>`;
+  } catch (e) {
+    container.innerHTML = `<div style="color:red;">❌ Error inicializando APP<br>${e.message}</div>`;
     console.error(e);
   }
 }
 
 /* ================= SIDEBAR ================= */
-function renderSidebar(sidebar,rol,plan){
-  // Módulos básicos por plan
+function renderSidebar(sidebar, rol, plan) {
   const baseModules = [
-    { id:"dashboard", label:"📊 Dashboard" },
-    { id:"ordenes", label:"🧾 Órdenes" },
-    { id:"clientes", label:"👥 Clientes" }
+    { id: "dashboard", label: "📊 Dashboard" },
+    { id: "ordenes", label: "🧾 Órdenes" },
+    { id: "clientes", label: "👥 Clientes" }
   ];
 
-  if(["Pro","Elite","Enterprise"].includes(plan)){
-    baseModules.push({ id:"inventario", label:"📦 Inventario" });
-    baseModules.push({ id:"finanzas", label:"💰 Finanzas" });
+  if (["Pro", "Elite", "Enterprise"].includes(plan)) {
+    baseModules.push({ id: "inventario", label: "📦 Inventario" });
+    baseModules.push({ id: "finanzas", label: "💰 Finanzas" });
   }
 
-  if(rol==="superadmin" || plan==="Enterprise"){
-    baseModules.push(
-      { id:"contabilidad", label:"📊 Contabilidad" },
-      { id:"gerenteai", label:"🧠 Gerente AI" },
-      { id:"reportes", label:"📈 Reportes" },
-      { id:"configuracion", label:"⚙️ Configuración" }
-    );
+  if (rol === "superadmin" || plan === "Elite" || plan === "Enterprise") {
+    baseModules.push({ id: "contabilidad", label: "📊 Contabilidad" });
+    baseModules.push({ id: "gerenteai", label: "🧠 Gerente AI" });
   }
 
-  sidebar.innerHTML = baseModules.map(m=>`<button onclick="window.loadModule('${m.id}')">${m.label}</button>`).join("");
+  if (rol === "superadmin" || plan === "Elite" || plan === "Enterprise") {
+    baseModules.push({ id: "reportes", label: "📈 Reportes" });
+    baseModules.push({ id: "configuracion", label: "⚙️ Configuración" });
+  }
+
+  sidebar.innerHTML = baseModules
+    .map(m => `<button onclick="window.loadModule('${m.id}')">${m.label}</button>`)
+    .join("");
 }
 
 /* ================= IA ================= */
-async function initAI(){
-  try{
+async function initAI() {
+  try {
     const ai = await modules.aiasistant();
-    if(ai?.init) ai.init();
+    if (ai?.init) ai.init();
     const advisor = await modules.aiadvisor();
-    if(advisor?.init) advisor.init();
+    if (advisor?.init) advisor.init();
     console.log("🤖 IA inicializada");
-  }catch(e){ console.warn("⚠️ IA no disponible:", e.message); }
+  } catch (e) {
+    console.warn("⚠️ IA no disponible:", e.message);
+  }
 }
 
 /* ================= VOZ ================= */
-async function initVoice(){
-  if(voiceInitialized) return;
-  try{
+async function initVoice() {
+  if (voiceInitialized) return;
+  try {
     const voice = await import("../voice/voiceAssistantWorkshop.js");
-    if(voice?.init){ voice.init(); voiceInitialized=true; console.log("🎤 Voz activada"); }
-  }catch(e){ console.warn("⚠️ Voz no disponible:", e.message); }
+    if (voice?.init) { voice.init(); voiceInitialized = true; console.log("🎤 Voz activada"); }
+  } catch (e) {
+    console.warn("⚠️ Voz no disponible:", e.message);
+  }
 }
