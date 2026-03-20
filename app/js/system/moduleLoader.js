@@ -1,7 +1,7 @@
 /**
  * moduleLoader.js
  * Cargador central del ERP TallerPRO360
- * Versión PRO ULTRA ROBUSTA 🔥
+ * Versión PRO ULTRA ROBUSTA 🔥 (FINAL)
  */
 
 import dashboard from "../modules/dashboard.js";
@@ -32,7 +32,7 @@ const modules = {
   aiassistant: () => import("../modules/aiAssistant.js"),
   aiadvisor: () => import("../modules/aiAdvisor.js"),
 
-  // 🔥 CEO AI (corregido)
+  // 🔥 CEO AI (case-sensitive FIX)
   ceoai: () => import("../modules/ceoAI.js"),
 };
 
@@ -64,7 +64,7 @@ export async function loadModule(moduleName, container) {
     state.cargando = true;
     showLoader(container);
 
-    const key = moduleName.toLowerCase(); // 🔥 normaliza nombre
+    const key = moduleName.toLowerCase().trim(); // 🔥 robusto
 
     if (!modules[key]) {
       throw new Error(`Módulo no existe: ${moduleName}`);
@@ -72,7 +72,7 @@ export async function loadModule(moduleName, container) {
 
     const module = await modules[key]();
 
-    if (!module || !module.default) {
+    if (!module || typeof module.default !== "function") {
       throw new Error(`Módulo inválido: ${moduleName}`);
     }
 
@@ -87,7 +87,9 @@ export async function loadModule(moduleName, container) {
     console.error("❌ Error cargando módulo:", moduleName, error);
 
     if (error.message.includes("Failed to fetch")) {
-      showError(container, new Error(`No se encontró el archivo del módulo (${moduleName}). Verifica nombre y ruta.`));
+      showError(container, new Error(
+        `No se encontró el archivo del módulo (${moduleName}). Verifica nombre EXACTO y despliegue en Vercel.`
+      ));
     } else {
       showError(container, error);
     }
@@ -102,7 +104,10 @@ export async function loadModule(moduleName, container) {
 export function initApp() {
 
   const root = document.getElementById("app");
-  if (!root) return console.error("❌ No existe #app en index.html");
+  if (!root) {
+    console.error("❌ No existe #app en index.html");
+    return;
+  }
 
   root.innerHTML = `
     <div style="display:flex; height:100vh; background:#0a0a0a; color:white;">
@@ -138,7 +143,7 @@ export function initApp() {
 
     try {
 
-      if (moduleName === "dashboard") {
+      if (moduleName.toLowerCase() === "dashboard") {
 
         showLoader(view);
 
@@ -154,6 +159,7 @@ export function initApp() {
 
     } catch (error) {
 
+      console.error("❌ Error navegación:", error);
       showError(view, error);
 
     }
