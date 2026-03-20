@@ -12,58 +12,13 @@
 
 <style>
   body { margin:0; font-family:Inter,system-ui; background:#0b1220; color:#cbd5e1; }
-
-  header {
-    background:#0f172a;
-    padding:14px 24px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    box-shadow:0 0 25px #000;
-  }
-
-  #logoutBtn {
-    background:#ef4444;
-    color:#fff;
-    padding:8px 16px;
-    border-radius:10px;
-    font-weight:bold;
-    cursor:pointer;
-  }
-
+  header { background:#0f172a; padding:14px 24px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 0 25px #000; }
+  #logoutBtn { background:#ef4444; color:#fff; padding:8px 16px; border-radius:10px; font-weight:bold; cursor:pointer; }
   #mainLayout { display:flex; min-height:calc(100vh - 70px); }
-
-  #sidebar {
-    width:260px;
-    background:#0f172a;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    padding-top:25px;
-  }
-
-  #sidebar button {
-    width:200px;
-    margin:12px 0;
-    padding:16px;
-    border:none;
-    border-radius:14px;
-    font-size:18px;
-    font-weight:700;
-    cursor:pointer;
-    color:#00ffff;
-    background:#1e293b;
-  }
-
-  #sidebar button:hover {
-    background:#00ffff;
-    color:#000;
-  }
-
-  #appContainer {
-    flex:1;
-    padding:30px;
-  }
+  #sidebar { width:260px; background:#0f172a; display:flex; flex-direction:column; align-items:center; padding-top:25px; }
+  #sidebar button { width:200px; margin:12px 0; padding:16px; border:none; border-radius:14px; font-size:18px; font-weight:700; cursor:pointer; color:#00ffff; background:#1e293b; transition:.2s; }
+  #sidebar button:hover { background:#00ffff; color:#000; }
+  #appContainer { flex:1; padding:30px; overflow:auto; }
 </style>
 </head>
 
@@ -76,7 +31,6 @@
 
 <div id="mainLayout">
   <div id="sidebar"></div>
-
   <main id="appContainer">
     <div style="text-align:center;margin-top:80px;">
       <p style="font-size:22px;">🚀 Inicializando PRO360...</p>
@@ -86,23 +40,19 @@
 </div>
 
 <script type="module">
-
 import { auth, db } from "./js/core/firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initApp as initERP } from "./js/core/moduleLoader.js";
 
-const container = document.getElementById("appContainer");
-
-/* ================= TIMEOUT PRO ================= */
 let authTimeout = setTimeout(()=>{
-  container.innerHTML = `
+  document.getElementById("appContainer").innerHTML = `
     <div style="text-align:center;margin-top:80px;color:orange;">
       ⚠️ Conexión lenta...
     </div>
   `;
 }, 4000);
 
-/* ================= AUTH ================= */
 onAuthStateChanged(auth, async (user) => {
 
   clearTimeout(authTimeout);
@@ -114,20 +64,18 @@ onAuthStateChanged(auth, async (user) => {
 
   try {
 
-    container.innerHTML = "🔄 Cargando usuario...";
-
     const snap = await getDoc(doc(db, "usuariosGlobal", user.uid));
 
     if (!snap.exists()) {
-      container.innerHTML = "❌ Usuario no autorizado";
       await signOut(auth);
+      document.getElementById("appContainer").innerHTML = "❌ Usuario no autorizado";
       return;
     }
 
     const userData = snap.data();
 
     if (!userData.empresaId) {
-      container.innerHTML = "❌ Usuario sin empresaId";
+      document.getElementById("appContainer").innerHTML = "❌ Usuario sin empresaId";
       return;
     }
 
@@ -135,97 +83,16 @@ onAuthStateChanged(auth, async (user) => {
     localStorage.setItem("empresaId", userData.empresaId);
     localStorage.setItem("rolGlobal", userData.rolGlobal || "user");
 
-    initApp(userData);
+    initERP();
 
   } catch (e) {
     console.error(e);
-    container.innerHTML = `
+    document.getElementById("appContainer").innerHTML = `
       <h2 style="color:red">❌ Error inicializando</h2>
       <pre>${e.message}</pre>
     `;
   }
-
 });
-
-/* ================= INIT ================= */
-function initApp(user) {
-  renderMenu(user);
-  loadModule("dashboard");
-}
-
-/* ================= MENU ================= */
-function renderMenu(user) {
-
-  const sidebar = document.getElementById("sidebar");
-
-  const modules = [
-    { id:"dashboard", label:"📊 Dashboard" },
-    { id:"ordenes", label:"🧾 Órdenes" },
-    { id:"clientes", label:"👥 Clientes" },
-    { id:"inventario", label:"📦 Inventario" },
-    { id:"ia", label:"🧠 IA" }
-  ];
-
-  if(user.rolGlobal === "superadmin"){
-    modules.push(
-      { id:"ceoAI", label:"👑 CEO AI" },
-      { id:"contabilidad", label:"📊 Contabilidad" },
-      { id:"finanzas", label:"💰 Finanzas" },
-      { id:"reportes", label:"📈 Reportes" },
-      { id:"pagosTaller", label:"💳 Pagos" },
-      { id:"vehiculos", label:"🚗 Vehículos" }
-    );
-  }
-
-  sidebar.innerHTML = modules.map(m =>
-    `<button onclick="loadModule('${m.id}')">${m.label}</button>`
-  ).join("");
-}
-
-/* ================= LOAD MODULE PRO ================= */
-window.loadModule = async function(name) {
-
-  const container = document.getElementById("appContainer");
-
-  container.innerHTML = `
-    <div style="text-align:center;margin-top:60px;">
-      🔄 Cargando ${name}...
-    </div>
-  `;
-
-  try {
-
-    console.log("📦 Intentando cargar módulo:", name);
-
-    const moduleURL = `/app/js/modules/${name}.js?v=${Date.now()}`;
-
-    const module = await import(moduleURL);
-
-    if (!module || !module.default) {
-      throw new Error("El módulo no exporta default");
-    }
-
-    await module.default(container, {
-      uid: localStorage.getItem("uid"),
-      empresaId: localStorage.getItem("empresaId"),
-      rolGlobal: localStorage.getItem("rolGlobal")
-    });
-
-    console.log("✅ Módulo cargado:", name);
-
-  } catch (e) {
-
-    console.error("🔥 ERROR MODULO:", e);
-
-    container.innerHTML = `
-      <div style="color:red;text-align:center;">
-        ❌ Error cargando módulo<br>
-        <b>${name}</b><br><br>
-        <small>${e.message}</small>
-      </div>
-    `;
-  }
-};
 
 /* ================= LOGOUT ================= */
 document.getElementById("logoutBtn").onclick = async () => {
@@ -233,10 +100,7 @@ document.getElementById("logoutBtn").onclick = async () => {
   localStorage.clear();
   window.location.href = "/login.html";
 };
-
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </body>
 </html>
