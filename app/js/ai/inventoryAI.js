@@ -1,137 +1,174 @@
 /**
  * inventoryAI.js
- * IA de inventario para talleres
+ * IA de inventario PRO360 · ULTRA
  */
 
 import { db } from "../core/firebase-config.js";
 import { obtenerEmpresaId } from "../core/empresa-context.js";
 
 import {
-collection,
-getDocs,
-updateDoc,
-doc
+  collection,
+  getDocs,
+  updateDoc,
+  doc,
+  increment
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 class InventoryAI {
 
-constructor(){
-this.parts = [];
-}
+  constructor(){
+    this.parts = [];
+  }
 
-/* ===============================
-CARGAR INVENTARIO
-=============================== */
+  /* ===============================
+  NORMALIZAR
+  ============================== */
+  normalize(text){
+    if(!text) return "";
+    return text.toLowerCase().trim();
+  }
 
-async loadInventory(){
+  /* ===============================
+  CARGAR INVENTARIO
+  ============================== */
+  async loadInventory(){
 
-const empresaId = obtenerEmpresaId();
+    try{
 
-if(!empresaId){
+      const empresaId = obtenerEmpresaId();
 
-console.warn("Empresa no definida");
-return [];
+      if(!empresaId){
+        console.warn("⚠️ Empresa no definida");
+        return [];
+      }
 
-}
+      const snapshot = await getDocs(
+        collection(db, "empresas", empresaId, "repuestos") // 🔥 UNIFICADO
+      );
 
-const snapshot = await getDocs(
-collection(db,"empresas",empresaId,"inventario")
-);
+      this.parts = snapshot.docs.map(docSnap => ({
 
-this.parts = snapshot.docs.map(docSnap=>({
+        id: docSnap.id,
+        nombre: docSnap.data().nombre || docSnap.data().name || "",
+        stock: Number(docSnap.data().stock || 0),
+        stockMinimo: Number(docSnap.data().stockMinimo || docSnap.data().minStock || 0),
+        precio: Number(docSnap.data().precioVenta || docSnap.data().price || 0),
+        ...docSnap.data()
 
-id: docSnap.id,
-...docSnap.data()
+      }));
 
-}));
+      return this.parts;
 
-return this.parts;
+    } catch(e){
 
-}
+      console.error("❌ Error cargando inventario IA:", e);
+      return [];
 
-/* ===============================
-STOCK BAJO
-=============================== */
+    }
+  }
 
-detectLowStock(){
+  /* ===============================
+  STOCK BAJO
+  ============================== */
+  detectLowStock(){
 
-return this.parts.filter(
+    return this.parts.filter(part =>
+      part.stock <= part.stockMinimo
+    );
+  }
 
-part => (part.stock || 0) <= (part.minStock || 0)
+  /* ===============================
+  PREDECIR DEMANDA (MEJORADO)
+  ============================== */
+  predictDemand(part){
 
-);
+    if(!part || !Array.isArray(part.usageHistory) || !part.usageHistory.length){
+      return { nivel:"sin_datos", valor:0 };
+    }
 
-}
+    const historial = part.usageHistory;
 
-/* ===============================
-PREDECIR DEMANDA
-=============================== */
+    const total = historial.reduce((a,b)=>a+b,0);
+    const promedio = total / historial.length;
 
-predictDemand(part){
+    let nivel = "baja";
 
-if(!part.usageHistory || part.usageHistory.length === 0)
-return "Sin datos";
+    if(promedio > 20) nivel = "alta";
+    else if(promedio > 10) nivel = "media";
 
-const avg =
-part.usageHistory.reduce((a,b)=>a+b,0)
-/ part.usageHistory.length;
+    return {
+      nivel,
+      promedio: Math.round(promedio)
+    };
+  }
 
-if(avg > 20) return "Alta demanda";
-if(avg > 10) return "Demanda media";
+  /* ===============================
+  ACTUALIZAR STOCK (SEGURO)
+  ============================== */
+  async updateStock(partId, cantidad){
 
-return "Demanda baja";
+    try{
 
-}
+      const empresaId = obtenerEmpresaId();
 
-/* ===============================
-ACTUALIZAR STOCK
-=============================== */
+      if(!empresaId) return;
 
-async updateStock(partId,newStock){
+      const ref = doc(
+        db,
+        "empresas",
+        empresaId,
+        "repuestos",
+        partId
+      );
 
-const empresaId = obtenerEmpresaId();
+      await updateDoc(ref, {
+        stock: increment(cantidad)
+      });
 
-const ref = doc(
-db,
-"empresas",
-empresaId,
-"inventario",
-partId
-);
+    } catch(e){
 
-await updateDoc(ref,{
-stock:newStock
-});
+      console.error("❌ Error actualizando stock IA:", e);
 
-}
+    }
+  }
 
-/* ===============================
-PLAN REABASTECIMIENTO
-=============================== */
+  /* ===============================
+  BUSCAR REPUESTO (🔥 NUEVO)
+  ============================== */
+  findPart(nombre){
 
-generateRestockPlan(){
+    const n = this.normalize(nombre);
 
-return this.parts
-.map(part => {
+    return this.parts.find(p =>
+      this.normalize(p.nombre).includes(n)
+    );
+  }
 
-if((part.stock || 0) <= (part.minStock || 0)){
+  /* ===============================
+  PLAN REABASTECIMIENTO
+  ============================== */
+  generateRestockPlan(){
 
-return {
+    return this.parts
+      .map(part => {
 
-part: part.name || part.nombre,
-action: "Reordenar",
-suggestedQty: (part.minStock || 5) * 2
+        if(part.stock <= part.stockMinimo){
 
-};
+          return {
 
-}
+            part: part.nombre,
+            action: "Reordenar",
+            suggestedQty: (part.stockMinimo || 5) * 2,
+            prioridad: part.stock === 0 ? "urgente" : "media"
 
-return null;
+          };
+        }
 
-})
-.filter(x=>x!==null);
+        return null;
 
-}
+      })
+      .filter(Boolean);
+  }
 
 }
 
