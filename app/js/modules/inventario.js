@@ -78,7 +78,7 @@ export default async function inventarioModule(container, state) {
 
       const snap = await getDocs(
         query(
-          collection(db, `${base}/repuestos`),
+          collection(db, `${base}/inventario`)
           orderBy("creadoEn", "desc")
         )
       );
