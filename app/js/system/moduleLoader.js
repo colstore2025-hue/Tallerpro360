@@ -1,7 +1,8 @@
 /**
  * moduleLoader.js
- * Cargador central del ERP TallerPRO360
- * ULTRA PRO 🔥 · Soporte planes Freemium → Enterprise
+ * Cargador central ULTRA PRO · TallerPRO360 🚀
+ * Soporte total: Freemium → Enterprise
+ * Módulos escalables e integrados con IA y voz
  */
 
 import { hablar, iniciarVoz } from "../voice/voiceCore.js";
@@ -21,16 +22,19 @@ const state = {
 /* ================= MAPA DE MÓDULOS ================= */
 const modules = {
   dashboard: () => import("../modules/dashboard.js"),
-  ordenes: () => import("../modules/ordenes.js"),
+  ordenes: () => import("../modules/ordenesUltra.js"),
   clientes: () => import("../modules/clientes.js"),
   inventario: () => import("../modules/inventario.js"),
   finanzas: () => import("../modules/finanzas.js"),
   contabilidad: () => import("../modules/contabilidad.js"),
   reportes: () => import("../modules/reportes.js"),
   configuracion: () => import("../modules/configuracion.js"),
+  pagos: () => import("../modules/pagosTaller.js"),
+  vehiculos: () => import("../modules/vehículos.js"),
   aiasistant: () => import("../modules/aiAssistant.js"),
   aiadvisor: () => import("../modules/aiAdvisor.js"),
   gerenteai: () => import("../modules/gerenteAI.js"),
+  ia: () => import("../modules/ia.js"),
 };
 
 /* ================= CEO AUTÓNOMO ================= */
@@ -57,12 +61,12 @@ function verificarPermisoModulo(modulo) {
   const plan = state.plan;
   const superadmin = state.rolGlobal === "superadmin";
 
-  const moduloPremium = ["inventario","finanzas","contabilidad","reportes","configuracion","gerenteai"];
-  const moduloERP = ["ordenes","clientes","dashboard"];
+  const moduloPremium = ["inventario","finanzas","contabilidad","reportes","configuracion","gerenteai","pagos"];
+  const moduloERP = ["ordenes","clientes","dashboard","vehiculos"];
   const moduloReportes = ["reportes","contabilidad"];
-  const moduloFacturacion = ["configuracion"]; // aquí configuramos Facturación Electrónica
+  const moduloFacturacion = ["configuracion","pagos"];
 
-  // Chequeo Freemium caduca 15 días
+  // Freemium caduca 15 días
   if(plan === "Freemium" && state.planFechaInicio){
     const ahora = new Date();
     const diffDias = Math.floor((ahora - state.planFechaInicio) / (1000*60*60*24));
@@ -150,7 +154,7 @@ export async function initApp() {
       await loadModule("dashboard");
 
       initCEO();
-      initAI();
+      initIA();
       initVoice();
     });
 
@@ -171,20 +175,19 @@ function renderSidebar(sidebar, rol, plan) {
   const baseModules = [
     { id: "dashboard", label: "📊 Dashboard" },
     { id: "ordenes", label: "🧾 Órdenes" },
-    { id: "clientes", label: "👥 Clientes" }
+    { id: "clientes", label: "👥 Clientes" },
+    { id: "vehiculos", label: "🚗 Vehículos" }
   ];
 
   if (["Pro", "Elite", "Enterprise"].includes(plan)) {
     baseModules.push({ id: "inventario", label: "📦 Inventario" });
     baseModules.push({ id: "finanzas", label: "💰 Finanzas" });
+    baseModules.push({ id: "pagos", label: "💳 Pagos" });
   }
 
   if (rol === "superadmin" || plan === "Elite" || plan === "Enterprise") {
     baseModules.push({ id: "contabilidad", label: "📊 Contabilidad" });
     baseModules.push({ id: "gerenteai", label: "🧠 Gerente AI" });
-  }
-
-  if (rol === "superadmin" || plan === "Elite" || plan === "Enterprise") {
     baseModules.push({ id: "reportes", label: "📈 Reportes" });
     baseModules.push({ id: "configuracion", label: "⚙️ Configuración" });
   }
@@ -195,12 +198,17 @@ function renderSidebar(sidebar, rol, plan) {
 }
 
 /* ================= IA ================= */
-async function initAI() {
+async function initIA() {
   try {
+    const ia = await modules.ia();
+    if (ia?.init) ia.init();
+
     const ai = await modules.aiasistant();
     if (ai?.init) ai.init();
+
     const advisor = await modules.aiadvisor();
     if (advisor?.init) advisor.init();
+
     console.log("🤖 IA inicializada");
   } catch (e) {
     console.warn("⚠️ IA no disponible:", e.message);
