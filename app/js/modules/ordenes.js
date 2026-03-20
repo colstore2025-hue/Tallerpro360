@@ -1,7 +1,7 @@
 /**
- * ordenes.js
- * Órdenes PRO360 · Producción estable (Modo NASA 🚀)
- * Adaptado a ModuleLoader.js y voz 🔊
+ * ordenesUltra.js
+ * Órdenes PRO360 · ULTRA V2 🚀👑
+ * Integración total con Dashboard, Reportes y AI
  */
 
 import {
@@ -14,66 +14,65 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const db = window.db; // 🔥 DB GLOBAL
+const db = window.db;
 import { hablar } from "../voice/voiceCore.js";
 
-export default async function ordenesModule(container, state) {
+export default async function ordenesUltra(container, state) {
 
   if (!state?.empresaId) {
-    container.innerHTML = `❌ Empresa no definida`;
+    container.innerHTML = `<p style="color:red;">❌ Empresa no definida</p>`;
     hablar("Error: empresa no definida");
     return;
   }
 
   let items = [];
 
-  /* ================= HTML BASE ================= */
+  /* ================== HTML BASE ================== */
   container.innerHTML = `
-    <h1 style="color:#00ffff;">🧾 Órdenes PRO360</h1>
+    <h1 style="color:#00ffff;font-weight:900;text-shadow:0 0 15px #00ffff;">🧾 Órdenes PRO360</h1>
 
     <div style="display:flex;gap:10px;margin-bottom:15px;">
-      <input id="cliente" placeholder="ID Cliente" style="flex:1;padding:8px;border-radius:6px;"/>
-      <input id="vehiculo" placeholder="Placa" style="flex:1;padding:8px;border-radius:6px;"/>
+      <input id="cliente" placeholder="ID Cliente" style="flex:1;padding:10px;border-radius:8px;border:2px solid #00ffff;background:#0b1220;color:#fff;"/>
+      <input id="vehiculo" placeholder="Placa" style="flex:1;padding:10px;border-radius:8px;border:2px solid #00ffff;background:#0b1220;color:#fff;"/>
     </div>
 
-    <h3>Agregar Item</h3>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-      <select id="tipo" style="padding:8px;border-radius:6px;">
+    <h3 style="color:#00ffcc;">Agregar Item</h3>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px;">
+      <select id="tipo" style="padding:10px;border-radius:8px;border:2px solid #00ffcc;background:#0b1220;color:#fff;">
         <option value="inventario">Inventario</option>
         <option value="manual">Manual</option>
       </select>
-      <input id="nombre" placeholder="Nombre" style="flex:2;padding:8px;border-radius:6px;"/>
-      <input id="cantidad" type="number" placeholder="Cantidad" style="width:80px;padding:8px;border-radius:6px;"/>
-      <input id="precio" type="number" placeholder="Precio" style="width:100px;padding:8px;border-radius:6px;"/>
-      <input id="costo" type="number" placeholder="Costo" style="width:100px;padding:8px;border-radius:6px;"/>
-      <button id="addItem" style="background:#22c55e;color:#000;padding:8px;border-radius:6px;">➕ Agregar</button>
+      <input id="nombre" placeholder="Nombre" style="flex:2;padding:10px;border-radius:8px;border:2px solid #00ffcc;background:#0b1220;color:#fff;"/>
+      <input id="cantidad" type="number" placeholder="Cantidad" style="width:90px;padding:10px;border-radius:8px;border:2px solid #00ffcc;background:#0b1220;color:#fff;"/>
+      <input id="precio" type="number" placeholder="Precio" style="width:120px;padding:10px;border-radius:8px;border:2px solid #00ffcc;background:#0b1220;color:#fff;"/>
+      <input id="costo" type="number" placeholder="Costo" style="width:120px;padding:10px;border-radius:8px;border:2px solid #00ffcc;background:#0b1220;color:#fff;"/>
+      <button id="addItem" style="background:#22c55e;color:#000;padding:10px;border-radius:8px;transition:0.3s;cursor:pointer;">➕ Agregar</button>
     </div>
 
     <div id="itemsList" style="margin-bottom:20px;"></div>
 
-    <button id="crearOrden" style="margin-bottom:20px;background:#22c55e;padding:10px;border:none;border-radius:8px;">
-      🚀 Crear Orden
-    </button>
+    <button id="crearOrden" style="margin-bottom:20px;background:#22c55e;padding:12px 20px;border:none;border-radius:10px;font-weight:700;cursor:pointer;transition:0.3s;">🚀 Crear Orden</button>
 
-    <hr/>
-    <h2>📋 Órdenes existentes</h2>
+    <hr style="border-color:#00ffff22;"/>
+
+    <h2 style="color:#00ffff;">📋 Órdenes existentes</h2>
     <div id="listaOrdenes"></div>
   `;
 
   const itemsList = document.getElementById("itemsList");
   const listaOrdenes = document.getElementById("listaOrdenes");
 
-  /* ================= ITEMS ================= */
+  /* ================== FUNCIONES ITEMS ================== */
   function renderItems() {
     if (!items.length) {
-      itemsList.innerHTML = `<p>Sin items</p>`;
+      itemsList.innerHTML = `<p style="color:#ccc;">Sin items</p>`;
       return;
     }
 
     itemsList.innerHTML = items.map((i, idx) => `
-      <div style="margin-bottom:5px;">
-        ${i.nombre} x${i.cantidad} → $${fmt(i.precio)}
-        <button data-index="${idx}" class="del">❌</button>
+      <div style="margin-bottom:5px;background:#0f172a;padding:8px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 0 10px #00ffff33;transition:0.3s;">
+        <span>${i.nombre} x${i.cantidad} → $${fmt(i.precio)}</span>
+        <button data-index="${idx}" class="del" style="background:#ef4444;color:#fff;padding:4px 8px;border-radius:6px;cursor:pointer;">❌</button>
       </div>
     `).join("");
 
@@ -104,55 +103,42 @@ export default async function ordenesModule(container, state) {
     items.push(item);
     renderItems();
 
-    ["nombre","cantidad","precio","costo"].forEach(id => {
-      document.getElementById(id).value = "";
-    });
+    ["nombre","cantidad","precio","costo"].forEach(id => document.getElementById(id).value = "");
 
     hablar("Item agregado");
   };
 
-  /* ================= CREAR ORDEN ================= */
+  /* ================== CREAR ORDEN ================== */
   document.getElementById("crearOrden").onclick = async () => {
-
     const clienteId = document.getElementById("cliente").value.trim();
     const vehiculoId = document.getElementById("vehiculo").value.trim();
 
-    if (!clienteId) {
-      alert("Cliente requerido");
-      hablar("Cliente requerido");
-      return;
-    }
-
-    if (!items.length) {
-      alert("No hay items en la orden");
-      hablar("No hay items en la orden");
-      return;
-    }
+    if (!clienteId) { alert("Cliente requerido"); hablar("Cliente requerido"); return; }
+    if (!items.length) { alert("No hay items en la orden"); hablar("No hay items en la orden"); return; }
 
     let total = 0, costoTotal = 0;
     items.forEach(i => { total += i.precio*i.cantidad; costoTotal += i.costo*i.cantidad; });
 
     try {
-      await addDoc(
-        collection(db, `empresas/${state.empresaId}/ordenes`),
-        {
-          clienteId,
-          vehiculoId,
-          items,
-          total,
-          costoTotal,
-          utilidad: total-costoTotal,
-          estado: "pendiente",
-          creadoEn: new Date()
-        }
-      );
+      await addDoc(collection(db, `empresas/${state.empresaId}/ordenes`), {
+        clienteId,
+        vehiculoId,
+        items,
+        total,
+        costoTotal,
+        utilidad: total-costoTotal,
+        estado: "pendiente",
+        creadoEn: new Date()
+      });
 
       hablar("Orden creada exitosamente");
-      alert("✅ Orden creada");
-
       items = [];
       renderItems();
       cargarOrdenes();
+
+      // 🎯 Actualizar dashboard y reportes en tiempo real
+      if(window.updateDashboard) window.updateDashboard();
+      if(window.updateReportes) window.updateReportes();
 
     } catch(e) {
       console.error(e);
@@ -161,20 +147,18 @@ export default async function ordenesModule(container, state) {
     }
   };
 
-  /* ================= LISTAR ÓRDENES ================= */
+  /* ================== LISTAR ÓRDENES ================== */
   async function cargarOrdenes() {
     listaOrdenes.innerHTML = "🔄 Cargando...";
 
     try {
-      const snap = await getDocs(
-        query(
-          collection(db, `empresas/${state.empresaId}/ordenes`),
-          orderBy("creadoEn","desc")
-        )
-      );
+      const snap = await getDocs(query(
+        collection(db, `empresas/${state.empresaId}/ordenes`),
+        orderBy("creadoEn","desc")
+      ));
 
       if (snap.empty) {
-        listaOrdenes.innerHTML = `<p>📭 Sin órdenes</p>`;
+        listaOrdenes.innerHTML = `<p style="color:#ccc;">📭 Sin órdenes</p>`;
         return;
       }
 
@@ -182,10 +166,10 @@ export default async function ordenesModule(container, state) {
         const o = d.data();
         const id = d.id;
         return `
-          <div style="border:1px solid #333;padding:10px;margin:10px;border-radius:8px;">
-            <strong>${id}</strong><br/>
-            Estado: ${o.estado}<br/>
-            Total: $${fmt(o.total)}
+          <div style="border:1px solid #00ffff55;padding:12px;margin:10px;border-radius:10px;background:#0b1220;box-shadow:0 0 15px #00ffff22;transition:0.3s;">
+            <strong style="color:#00ffcc;">${id}</strong><br/>
+            Estado: <span style="color:${estadoColor(o.estado)}">${o.estado}</span><br/>
+            Total: <strong style="color:#00ffcc;">$${fmt(o.total)}</strong>
             ${renderAcciones(id,o)}
           </div>
         `;
@@ -198,12 +182,12 @@ export default async function ordenesModule(container, state) {
     }
   }
 
-  /* ================= ACCIONES ================= */
+  /* ================== ACCIONES ================== */
   function renderAcciones(id,o) {
     if (o.estado !== "pendiente") return "";
     return `
-      <button onclick="aprobarOrden('${id}')" style="margin-right:5px;">✅ Aprobar</button>
-      <button onclick="cancelarOrden('${id}')">❌ Cancelar</button>
+      <button onclick="aprobarOrden('${id}')" style="margin-right:5px;background:#22c55e;color:#000;padding:6px;border-radius:6px;cursor:pointer;">✅ Aprobar</button>
+      <button onclick="cancelarOrden('${id}')" style="background:#ef4444;color:#fff;padding:6px;border-radius:6px;cursor:pointer;">❌ Cancelar</button>
     `;
   }
 
@@ -211,18 +195,26 @@ export default async function ordenesModule(container, state) {
     await updateDoc(doc(db, `empresas/${state.empresaId}/ordenes`, id), { estado: "aprobada" });
     hablar("Orden aprobada");
     cargarOrdenes();
+    if(window.updateDashboard) window.updateDashboard();
   };
 
   window.cancelarOrden = async id => {
     await updateDoc(doc(db, `empresas/${state.empresaId}/ordenes`, id), { estado: "cancelada" });
     hablar("Orden cancelada");
     cargarOrdenes();
+    if(window.updateDashboard) window.updateDashboard();
   };
 
-  /* ================= UTILS ================= */
+  /* ================== UTIL ================== */
   function fmt(v) { return new Intl.NumberFormat("es-CO").format(v||0); }
+  function estadoColor(e) {
+    if(e==="pendiente") return "#facc15";
+    if(e==="aprobada") return "#22c55e";
+    if(e==="cancelada") return "#ef4444";
+    return "#fff";
+  }
 
-  /* ================= INIT ================= */
+  /* ================== INIT ================== */
   renderItems();
   cargarOrdenes();
 }
