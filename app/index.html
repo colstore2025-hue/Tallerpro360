@@ -16,7 +16,7 @@
   #logoutBtn { background:#ef4444; color:#fff; padding:8px 16px; border-radius:10px; font-weight:bold; cursor:pointer; }
   #mainLayout { display:flex; min-height:calc(100vh - 70px); }
   #sidebar { width:260px; background:#0f172a; display:flex; flex-direction:column; align-items:center; padding-top:25px; }
-  #sidebar button { width:200px; margin:12px 0; padding:16px; border:none; border-radius:14px; font-size:18px; font-weight:700; cursor:pointer; color:#00ffff; background:#1e293b; transition:.2s; }
+  #sidebar button { width:200px; margin:12px 0; padding:16px; border:none; border-radius:14px; font-size:18px; font-weight:700; cursor:pointer; color:#00ffff; background:#1e293b; }
   #sidebar button:hover { background:#00ffff; color:#000; }
   #appContainer { flex:1; padding:30px; overflow:auto; }
 </style>
@@ -34,72 +34,15 @@
   <main id="appContainer">
     <div style="text-align:center;margin-top:80px;">
       <p style="font-size:22px;">🚀 Inicializando PRO360...</p>
-      <p style="opacity:.6;">Conectando con Firebase...</p>
+      <p style="opacity:.6;">Cargando sistema...</p>
     </div>
   </main>
 </div>
 
+<!-- ================= INIT MODULE LOADER ================= -->
 <script type="module">
-import { auth, db } from "./js/core/firebase-config.js";
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { initApp as initERP } from "./js/core/moduleLoader.js";
-
-let authTimeout = setTimeout(()=>{
-  document.getElementById("appContainer").innerHTML = `
-    <div style="text-align:center;margin-top:80px;color:orange;">
-      ⚠️ Conexión lenta...
-    </div>
-  `;
-}, 4000);
-
-onAuthStateChanged(auth, async (user) => {
-
-  clearTimeout(authTimeout);
-
-  if (!user) {
-    window.location.href = "/login.html";
-    return;
-  }
-
-  try {
-
-    const snap = await getDoc(doc(db, "usuariosGlobal", user.uid));
-
-    if (!snap.exists()) {
-      await signOut(auth);
-      document.getElementById("appContainer").innerHTML = "❌ Usuario no autorizado";
-      return;
-    }
-
-    const userData = snap.data();
-
-    if (!userData.empresaId) {
-      document.getElementById("appContainer").innerHTML = "❌ Usuario sin empresaId";
-      return;
-    }
-
-    localStorage.setItem("uid", user.uid);
-    localStorage.setItem("empresaId", userData.empresaId);
-    localStorage.setItem("rolGlobal", userData.rolGlobal || "user");
-
-    initERP();
-
-  } catch (e) {
-    console.error(e);
-    document.getElementById("appContainer").innerHTML = `
-      <h2 style="color:red">❌ Error inicializando</h2>
-      <pre>${e.message}</pre>
-    `;
-  }
-});
-
-/* ================= LOGOUT ================= */
-document.getElementById("logoutBtn").onclick = async () => {
-  await signOut(auth);
-  localStorage.clear();
-  window.location.href = "/login.html";
-};
+import { initApp } from "./js/core/moduleLoader.js";
+initApp();
 </script>
 
 </body>
