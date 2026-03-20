@@ -22,7 +22,7 @@ const state = {
 /* ================= MAPA DE MÓDULOS ================= */
 const modules = {
   dashboard: () => import("../modules/dashboard.js"),
-  ordenes: () => import("../modules/ordenesUltra.js"),
+  ordenes: () => import("../modules/ordenes.js"),
   clientes: () => import("../modules/clientes.js"),
   inventario: () => import("../modules/inventario.js"),
   finanzas: () => import("../modules/finanzas.js"),
