@@ -1,213 +1,139 @@
 /**
  * clientes.js
- * CRM PRO360 · Producción SaaS
- * Clientes + Vehículos + Órdenes + Feedback
- * Adaptado a ModuleLoader.js y estado global con voz 🔊
+ * 👥 CRM PRO360 · Edición Estabilizada V3
  */
 
 import { 
-  collection, getDocs, addDoc, query, where, orderBy 
+  collection, getDocs, addDoc, query, where, orderBy, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const db = window.db; // 🔥 DB GLOBAL UNIFICADA
+// ✅ IMPORTACIÓN MODULAR (Adiós window.db)
+import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 
 export default async function clientesModule(container, state) {
-
+  const empresaId = state?.empresaId || localStorage.getItem("empresaId");
   let clientes = [];
 
-  /* ================= HTML BASE ================= */
+  if (!empresaId) {
+    container.innerHTML = `<div style="padding:20px;color:red;">❌ Error: ID de empresa no detectado.</div>`;
+    return;
+  }
+
+  /* ================= RENDER ESTRUCTURA ================= */
   container.innerHTML = `
-    <h1 style="color:#00ffff;font-size:34px;font-weight:900;">
-      👥 Clientes PRO360
-    </h1>
+    <div style="padding:20px; background:#0a0f1a; color:white; min-height:100vh; font-family:sans-serif;">
+      <h1 style="color:#00ffff; font-size:28px; font-weight:900; margin-bottom:20px;">👥 Clientes</h1>
 
-    <!-- CREAR -->
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
-      <input id="nombre" placeholder="Nombre cliente" style="flex:2;padding:10px;border-radius:8px;"/>
-      <input id="telefono" placeholder="Teléfono" style="flex:1;padding:10px;border-radius:8px;"/>
-      <button id="crearCliente" style="flex:1;background:#22c55e;color:#000;border-radius:8px;">
-        ➕ Crear
-      </button>
+      <div style="background:#0f172a; padding:15px; border-radius:12px; border:1px solid #1e293b; margin-bottom:20px;">
+        <input id="nombreCli" placeholder="Nombre completo" style="width:100%; padding:12px; margin-bottom:10px; background:#050a14; border:1px solid #1e293b; color:white; border-radius:8px;"/>
+        <input id="telCli" type="tel" placeholder="Teléfono" style="width:100%; padding:12px; margin-bottom:10px; background:#050a14; border:1px solid #1e293b; color:white; border-radius:8px;"/>
+        <button id="btnCrear" style="width:100%; background:#22c55e; color:#000; font-weight:bold; padding:12px; border:none; border-radius:8px;">➕ REGISTRAR CLIENTE</button>
+      </div>
+
+      <input id="busqueda" placeholder="🔍 Buscar cliente..." 
+        style="width:100%; padding:12px; margin-bottom:15px; background:#0f172a; border:1px solid #00ffff44; color:white; border-radius:8px;"/>
+      
+      <div id="listaClientes"></div>
+      <div id="detalleCliente" style="margin-top:25px;"></div>
     </div>
-
-    <!-- BUSCADOR -->
-    <input id="busqueda" placeholder="Buscar cliente..." 
-      style="width:100%;padding:12px;margin-bottom:15px;border-radius:8px;"/>
-    <div id="listaClientes"></div>
-    <div id="detalleCliente" style="margin-top:25px;"></div>
   `;
 
-  const lista = document.getElementById("listaClientes");
-  const detalle = document.getElementById("detalleCliente");
+  const listaContainer = document.getElementById("listaClientes");
+  const detalleContainer = document.getElementById("detalleCliente");
 
-  /* ================= CARGAR CLIENTES ================= */
+  /* ================= LÓGICA DE DATOS ================= */
+
   async function cargarClientes() {
-    lista.innerHTML = "🔄 Cargando clientes...";
-
+    listaContainer.innerHTML = "<p style='color:#64748b;'>Cargando base de datos...</p>";
     try {
-      const snap = await getDocs(
-        query(
-          collection(db, `empresas/${state.empresaId}/clientes`),
-          orderBy("creadoEn", "desc")
-        )
-      );
-
+      // Nota: Si esto falla, recuerda crear el índice en Firestore
+      const q = query(collection(db, `empresas/${empresaId}/clientes`), orderBy("creadoEn", "desc"));
+      const snap = await getDocs(q);
       clientes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderClientes(clientes);
-
+      renderLista(clientes);
     } catch(e) {
       console.error(e);
-      lista.innerHTML = `<p style="color:red;text-align:center;">❌ Error cargando clientes</p>`;
-      hablar("Error cargando clientes");
+      listaContainer.innerHTML = "❌ Error al conectar con Firestore.";
     }
   }
 
-  /* ================= RENDER LISTA ================= */
-  function renderClientes(data) {
+  function renderLista(data) {
     if (!data.length) {
-      lista.innerHTML = `<p style="text-align:center;">📭 Sin clientes</p>`;
+      listaContainer.innerHTML = "<p style='text-align:center; color:#64748b;'>No hay clientes registrados.</p>";
       return;
     }
 
-    lista.innerHTML = data.map(c => `
-      <div class="clienteItem" data-id="${c.id}" style="
-        background:#111827;padding:15px;margin:10px 0;border-radius:12px;cursor:pointer;transition:.2s;border:1px solid #1f2937;">
-        <strong>👤 ${c.nombre || "Sin nombre"}</strong><br/>
-        <span style="color:#94a3b8;">📞 ${c.telefono || "-"}</span>
+    listaContainer.innerHTML = data.map(c => `
+      <div class="cli-card" data-id="${c.id}" style="background:#111827; padding:15px; margin-bottom:10px; border-radius:10px; border-left:4px solid #00ffff; cursor:pointer;">
+        <div style="font-weight:bold; color:#fff;">${c.nombre || "Sin Nombre"}</div>
+        <div style="font-size:13px; color:#94a3b8;">📞 ${c.telefono || "Sin teléfono"}</div>
       </div>
     `).join("");
 
-    document.querySelectorAll(".clienteItem").forEach(el => {
-      el.onclick = () => verCliente(el.dataset.id);
+    document.querySelectorAll(".cli-card").forEach(card => {
+      card.onclick = () => verDetalle(card.dataset.id);
     });
   }
 
-  /* ================= BUSQUEDA ================= */
-  document.getElementById("busqueda").oninput = e => {
-    const texto = e.target.value.toLowerCase();
-    const filtrados = clientes.filter(c => (c.nombre || "").toLowerCase().includes(texto));
-    renderClientes(filtrados);
+  /* ================= ACCIONES ================= */
+
+  document.getElementById("busqueda").oninput = (e) => {
+    const term = e.target.value.toLowerCase();
+    const filtrados = clientes.filter(c => c.nombre?.toLowerCase().includes(term));
+    renderLista(filtrados);
   };
 
-  /* ================= CREAR CLIENTE ================= */
-  document.getElementById("crearCliente").onclick = async () => {
-    const nombre = document.getElementById("nombre").value.trim();
-    const telefono = document.getElementById("telefono").value.trim();
+  document.getElementById("btnCrear").onclick = async () => {
+    const nombre = document.getElementById("nombreCli").value.trim();
+    const telefono = document.getElementById("telCli").value.trim();
 
-    if (!nombre) {
-      hablar("Debe ingresar un nombre");
-      alert("Nombre obligatorio");
-      return;
-    }
+    if (!nombre) return alert("El nombre es obligatorio");
 
     try {
-      await addDoc(collection(db, `empresas/${state.empresaId}/clientes`), {
+      await addDoc(collection(db, `empresas/${empresaId}/clientes`), {
         nombre,
         telefono,
-        estado: "activo",
-        creadoEn: new Date()
+        creadoEn: serverTimestamp()
       });
-
-      hablar(`Cliente ${nombre} creado`);
-      ["nombre","telefono"].forEach(id => document.getElementById(id).value = "");
+      hablar("Cliente guardado");
+      document.getElementById("nombreCli").value = "";
+      document.getElementById("telCli").value = "";
       cargarClientes();
-
     } catch(e) {
-      console.error(e);
-      alert("Error creando cliente");
-      hablar("Error creando cliente");
+      alert("Error al guardar");
     }
   };
 
-  /* ================= DETALLE CLIENTE ================= */
-  async function verCliente(clienteId) {
-    detalle.innerHTML = "🔄 Cargando cliente...";
-    hablar("Cargando información del cliente");
-
+  async function verDetalle(id) {
+    detalleContainer.innerHTML = "<div style='padding:20px; background:#0f172a; border-radius:12px;'>⌛ Cargando historial...</div>";
+    
     try {
-      /* 🚗 VEHÍCULOS */
-      const vehiculosSnap = await getDocs(
-        query(
-          collection(db, `empresas/${state.empresaId}/vehiculos`),
-          where("clienteId", "==", clienteId)
-        )
-      );
-
-      let vehiculosHTML = "<h3>🚗 Vehículos</h3>";
-      vehiculosSnap.forEach(doc => {
+      // Buscamos vehículos asociados
+      const vSnap = await getDocs(query(collection(db, `empresas/${empresaId}/vehiculos`), where("clienteId", "==", id)));
+      
+      let htmlVeh = "<h3 style='color:#facc15; font-size:16px;'>🚗 Vehículos</h3>";
+      if (vSnap.empty) htmlVeh += "<p style='font-size:12px; color:#64748b;'>No tiene vehículos registrados.</p>";
+      
+      vSnap.forEach(doc => {
         const v = doc.data();
-        vehiculosHTML += `
-          <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
-            <span>${v.marca || ""} ${v.modelo || ""} (${v.placa || ""})</span>
-            <button onclick="window.loadModule('ordenes')" 
-              style="background:#00ffff;border:none;border-radius:6px;padding:5px 10px;">🧾 Orden</button>
-          </div>
-        `;
-      });
-
-      /* 🧾 ÓRDENES */
-      const ordenesSnap = await getDocs(
-        query(
-          collection(db, `empresas/${state.empresaId}/ordenes`),
-          where("clienteId", "==", clienteId),
-          orderBy("creadoEn", "desc")
-        )
-      );
-
-      let ordenesHTML = "<h3>🧾 Órdenes</h3>";
-      ordenesSnap.forEach(doc => {
-        const o = doc.data();
-        const color = o.estado === "abierta" ? "#00ffff" : o.estado === "cerrada" ? "#22c55e" : "#ef4444";
-        ordenesHTML += `<div style="display:flex;justify-content:space-between;margin-bottom:6px;color:${color}">
-          <span>${o.numero || "ORD"} - $${fmt(o.total)}</span>
+        htmlVeh += `<div style="background:#050a14; padding:8px; margin-bottom:5px; border-radius:5px; font-size:13px;">
+          ${v.placa} - ${v.marca} ${v.modelo}
         </div>`;
       });
 
-      /* 💬 FEEDBACK */
-      const feedbackSnap = await getDocs(
-        query(
-          collection(db, `empresas/${state.empresaId}/feedback`),
-          where("clienteId", "==", clienteId),
-          orderBy("fecha", "desc")
-        )
-      );
-
-      let feedbackHTML = "<h3>💬 Feedback</h3>";
-      feedbackSnap.forEach(doc => {
-        const f = doc.data();
-        let fecha = "";
-        try { fecha = new Date(f.fecha.seconds*1000).toLocaleString(); } catch {}
-        feedbackHTML += `
-          <div style="margin-bottom:6px;padding:8px;background:#111827;border-radius:8px;">
-            ${f.mensaje || ""}<br/>
-            <small style="color:#94a3b8;">${fecha}</small>
-          </div>
-        `;
-      });
-
-      detalle.innerHTML = `
-        <div style="background:#0f172a;padding:20px;border-radius:16px;">
-          ${vehiculosHTML}
-          ${ordenesHTML}
-          ${feedbackHTML}
+      detalleContainer.innerHTML = `
+        <div style="background:#0f172a; padding:20px; border-radius:12px; border:1px solid #00ffff44;">
+          ${htmlVeh}
+          <button onclick="location.reload()" style="margin-top:15px; width:100%; background:none; border:1px solid #94a3b8; color:#94a3b8; padding:8px; border-radius:6px; font-size:12px;">CERRAR DETALLE</button>
         </div>
       `;
-
-      hablar("Cliente cargado correctamente");
-
+      hablar("Mostrando perfil del cliente");
     } catch(e) {
-      console.error(e);
-      detalle.innerHTML = `<p style="color:red;text-align:center;">❌ Error cargando cliente</p>`;
-      hablar("Error cargando cliente");
+      detalleContainer.innerHTML = "❌ Error al cargar detalle.";
     }
   }
 
-  /* ================= UTILS ================= */
-  function fmt(v) {
-    return new Intl.NumberFormat("es-CO").format(v || 0);
-  }
-
-  /* ================= INIT ================= */
+  // Inicialización
   cargarClientes();
 }
