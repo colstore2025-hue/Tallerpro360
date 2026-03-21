@@ -37,6 +37,21 @@ export async function initApp(state) {
   // 🔹 Renderizar Sidebar
   renderSidebar(sidebar, state.rolGlobal, state.plan);
 
+// Dentro de ejecutarModuloSeguro, en el bloque else (tras 5 intentos):
+if (CORE.intentos[nombre] >= 5) {
+    console.error(`💀 Módulo ${nombre} muerto`);
+    // Reportar a la base de datos para análisis de la IA
+    import("../services/dataService.js").then(m => {
+        // Asumiendo que tienes una función addDoc en tu dataService
+        m.saveLog("error_sistema", {
+            modulo: nombre,
+            error: e.message,
+            fecha: new Date().toISOString(),
+            contexto: "Heartbeat Failure"
+        });
+    });
+}
+
   // 🔹 Inicializar módulos críticos
   await ejecutarModuloSeguro("dashboard", state, container);
 
