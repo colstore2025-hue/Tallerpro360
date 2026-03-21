@@ -1,106 +1,26 @@
 /**
- * whatsappService.js
- * Servicio de notificación por WhatsApp
- * TallerPRO360 ERP
+ * whatsappService.js - Segmentación por Taller
  */
 
+export async function encolarMensaje(telefono, mensaje) {
+  // 1. Recuperamos las credenciales del taller actual
+  const wsToken = localStorage.getItem("ws_api_token"); 
+  const wsInstance = localStorage.getItem("ws_instance");
 
-/* ======================================
-   ENVIAR MENSAJE WHATSAPP
-====================================== */
+  if (!wsToken || !wsInstance) {
+    console.warn("⚠️ Taller sin API de WhatsApp configurada. Usando fallback manual.");
+    return lanzarWhatsAppManual(telefono, mensaje);
+  }
 
-export function enviarWhatsApp(telefono, mensaje){
-
-try{
-
-if(!telefono){
-console.warn("⚠️ Número de teléfono vacío");
-return;
-}
-
-telefono = telefono.replace(/\D/g,"");
-
-if(telefono.length < 8){
-console.warn("⚠️ Teléfono inválido");
-return;
-}
-
-if(!telefono.startsWith("57")){
-telefono = "57" + telefono;
-}
-
-const mensajeCodificado =
-encodeURIComponent(mensaje);
-
-const url =
-`https://wa.me/${telefono}?text=${mensajeCodificado}`;
-
-window.open(url,"_blank");
-
-}catch(error){
-
-console.error("❌ Error enviando WhatsApp:",error);
-
-}
-
-}
-
-
-
-/* ======================================
-   NOTIFICACIÓN AUTOMÁTICA CLIENTE
-====================================== */
-
-export function notificarCliente(telefono, cliente, estado, vehiculo){
-
-try{
-
-const estadoEmoji = obtenerEmojiEstado(estado);
-
-const mensaje = `
-Hola ${cliente}
-
-Le informamos el estado de su vehículo:
-
-🚗 Vehículo: ${vehiculo}
-
-📊 Estado actual:
-${estadoEmoji} ${estado}
-
-Gracias por confiar en nosotros.
-
-TallerPRO360
-Servicio automotriz
-`;
-
-enviarWhatsApp(telefono, mensaje.trim());
-
-}catch(error){
-
-console.error("❌ Error notificando cliente:",error);
-
-}
-
-}
-
-
-
-/* ======================================
-   EMOJI SEGÚN ESTADO
-====================================== */
-
-function obtenerEmojiEstado(estado){
-
-if(!estado) return "ℹ️";
-
-const e = estado.toLowerCase();
-
-if(e.includes("activa")) return "📋";
-if(e.includes("proceso")) return "🔧";
-if(e.includes("diagnostico")) return "🧠";
-if(e.includes("listo")) return "✅";
-if(e.includes("entregado")) return "🚘";
-
-return "ℹ️";
-
+  // 2. Guardamos en la cola incluyendo las credenciales del taller
+  await addDoc(collection(db, "cola_whatsapp"), {
+    telefono: formatearTelefono(telefono),
+    mensaje: mensaje.trim(),
+    estado: "pendiente",
+    fecha: serverTimestamp(),
+    // IMPORTANTE: Esto le dice a tu Bridge de quién es este mensaje
+    token: wsToken, 
+    instance: wsInstance,
+    empresaId: localStorage.getItem("empresaId")
+  });
 }
