@@ -4,8 +4,9 @@
  */
 
 import { collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db as firestoreDB } from "../core/firebase-config.js";
+window.db = firestoreDB;
 
-const db = window.db;
 let charts = {};
 let refreshInterval = null;
 
@@ -184,9 +185,9 @@ async function renderCharts(d){
   const barCtx = document.getElementById("barChart");
   const radarCtx = document.getElementById("radarChart");
 
-  let ChartLib;
-  try { ChartLib = (await import("https://cdn.jsdelivr.net/npm/chart.js/auto/+esm")).default; }
-  catch{return fallbackChart(d);}
+  // Usar Chart.js desde window.Chart
+  const ChartLib = window.Chart;
+  if(!ChartLib) return fallbackChart(d);
 
   if(charts.line) charts.line.destroy();
   charts.line = new ChartLib(lineCtx,{
