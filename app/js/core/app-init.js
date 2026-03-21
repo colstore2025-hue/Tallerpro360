@@ -1,6 +1,6 @@
 /**
  * app-init.js - TallerPRO360 ULTRA
- * 🔥 Versión Estabilizada: Sin dependencias circulares y rutas corregidas.
+ * 🔥 Versión de Desbloqueo Inmediato
  */
 import dashboard from "../modules/dashboard.js";
 import ordenes from "../modules/ordenes.js";
@@ -11,28 +11,33 @@ import { auth } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import orquestador from "./orquestadorSupremo.js";
 
-// --- ESTADO GLOBAL ---
 const state = {
   uid: localStorage.getItem("uid"),
   empresaId: localStorage.getItem("empresaId"),
-  rol: localStorage.getItem("rol"),
   rolGlobal: localStorage.getItem("rolGlobal"),
-  nombre: localStorage.getItem("nombre") || "Usuario",
-  planTipo: localStorage.getItem("planTipo") || "pro"
+  nombre: localStorage.getItem("nombre") || "Usuario"
 };
 
-// --- SELECTORES (Alineados con index.html) ---
 const container = document.getElementById("appContainer");
-const menuArea = document.getElementById("menuItems"); // ✅ Corregido: ID exacto del sidebar
+const menuArea = document.getElementById("sidebar"); // Cambiado para asegurar que encuentre el contenedor del menú
 
-/**
- * MOTOR DE ARRANQUE (Llamado desde index.html)
- */
 export async function initApp() {
-  return new Promise((resolve) => {
-    onAuthStateChanged(auth, user => {
+  return new Promise((resolve, reject) => {
+    
+    // Timer de seguridad: Si en 5 segundos Firebase no responde, forzamos lectura local
+    const safetyTimer = setTimeout(() => {
+      if (state.uid && state.empresaId) {
+        console.warn("⏳ Firebase lento, arrancando con cache local...");
+        renderMenu();
+        loadModule("dashboard");
+        resolve(true);
+      }
+    }, 5000);
+
+    onAuthStateChanged(auth, (user) => {
+      clearTimeout(safetyTimer); // Cancelar el timer si Firebase responde
+      
       if (!user) {
-        localStorage.clear();
         window.location.href = "login.html";
         return;
       }
@@ -43,107 +48,72 @@ export async function initApp() {
       if (state.empresaId || state.rolGlobal === 'superadmin') {
         renderMenu();
         loadModule("dashboard");
-        
-        // Iniciar protección en segundo plano
         orquestador.activarOrquestadorSupremo(state);
-        resolve(true);
+        resolve(true); // 🔥 ESTO ELIMINA EL "INICIALIZANDO..."
       } else {
-        console.error("❌ Error: empresaId no encontrado");
-        container.innerHTML = `<div style="color:white; text-align:center;">Perfil incompleto. Contacte a soporte.</div>`;
-        resolve(false);
+        reject(new Error("No se encontró empresaId vinculado al usuario."));
       }
+    }, (error) => {
+      clearTimeout(safetyTimer);
+      reject(error);
     });
   });
 }
 
-/**
- * CARGADOR DE MÓDULOS
- */
 export async function loadModule(name) {
   if (!container) return;
+  
+  // Limpiar el loader de inicialización si existe
+  const bootLoader = document.getElementById("boot-loader");
+  if (bootLoader) bootLoader.remove();
 
-  // Feedback visual de carga
-  container.innerHTML = `
-    <div style="text-align:center;margin-top:50px;">
-      <div style="display:inline-block; width:30px; height:30px; border:3px solid #0ff2; border-top-color:#00ffff; border-radius:50%; animation: spin 1s linear infinite;"></div>
-      <p style="color:#0ff; margin-top:15px; font-size:14px;">Abriendo ${name}...</p>
-    </div>
-  `;
-
-  const modules = {
-    dashboard, 
-    ordenes, 
-    clientes, 
-    inventario,
-    gerenteAI
-  };
+  const modules = { dashboard, ordenes, clientes, inventario, gerenteAI };
 
   try {
     const mod = modules[name];
-    if (!mod) throw new Error(`Módulo [${name}] no existe en el registro.`);
-    
-    // Ejecutar el módulo
+    if (!mod) throw new Error(`Módulo ${name} no registrado`);
     await mod(container, state);
-
-    // Actualizar estado visual del menú
     actualizarEstadoMenu(name);
-
   } catch (e) {
-    console.error(`❌ Error Crítico en módulo ${name}:`, e);
-    container.innerHTML = `
-      <div style="background:rgba(255,0,0,0.1); border:1px solid red; padding:20px; border-radius:10px; color:#ff4444;">
-        <h3 style="margin-top:0;">⚠️ Error al cargar componente</h3>
-        <p>${e.message}</p>
-        <button onclick="location.reload()" style="background:red; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">Reiniciar</button>
-      </div>
-    `;
+    console.error("❌ Error cargando módulo:", e);
+    container.innerHTML = `<div class="p-10 text-red-500">Error: ${e.message}</div>`;
   }
 }
 
-/**
- * RENDERIZADO DEL MENÚ (Sidebar)
- */
 function renderMenu() {
-  if (!menuArea) return;
+  const menuDiv = document.getElementById("menuItems") || menuArea;
+  if (!menuDiv) return;
 
   const items = [
-    { id: "dashboard", n: "📊 Dashboard", icon: "fa-chart-pie" },
+    { id: "dashboard", n: "📊 Dashboard", icon: "fa-chart-line" },
     { id: "ordenes",   n: "🧾 Órdenes",   icon: "fa-file-invoice" },
     { id: "clientes",  n: "👥 Clientes",  icon: "fa-users" },
     { id: "inventario",n: "📦 Inventario",icon: "fa-boxes-stacked" },
     { id: "gerenteAI", n: "👑 Gerente AI",icon: "fa-brain" }
   ];
 
-  menuArea.innerHTML = items.map(i => `
-    <button data-module="${i.id}" class="nav-btn">
-      <i class="fas ${i.icon}" style="width:20px; margin-right:10px; opacity:0.7;"></i>
-      ${i.n}
+  menuDiv.innerHTML = `<p class="text-xs font-bold text-slate-500 mb-4 px-4 uppercase tracking-widest">Menú Principal</p>` + 
+    items.map(i => `
+    <button data-module="${i.id}" class="w-full text-left p-3 rounded-xl mb-1 text-slate-400 hover:bg-cyan-500/10 hover:text-cyan-400 transition-all flex items-center gap-3">
+      <i class="fas ${i.icon} w-5"></i>
+      <span class="font-semibold text-sm">${i.n}</span>
     </button>
   `).join("");
 
-  menuArea.querySelectorAll("button").forEach(btn => {
+  menuDiv.querySelectorAll("button").forEach(btn => {
     btn.onclick = () => loadModule(btn.dataset.module);
   });
 }
 
-/**
- * Feedback visual de botón activo
- */
 function actualizarEstadoMenu(name) {
-  menuArea?.querySelectorAll("button").forEach(btn => {
+  const btns = document.querySelectorAll("#menuItems button");
+  btns.forEach(btn => {
     if (btn.dataset.module === name) {
-      btn.classList.add("active");
-      btn.style.background = "rgba(0, 255, 255, 0.1)";
       btn.style.color = "#00ffff";
+      btn.style.background = "rgba(0, 255, 255, 0.1)";
     } else {
-      btn.classList.remove("active");
-      btn.style.background = "transparent";
-      btn.style.color = "#94a3b8";
+      btn.style.color = "";
+      btn.style.background = "";
     }
   });
 }
-
-// Estilo de rotación para el loader
-const style = document.createElement('style');
-style.innerHTML = `@keyframes spin { to { transform: rotate(360deg); } }`;
-document.head.appendChild(style);
