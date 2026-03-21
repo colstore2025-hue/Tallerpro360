@@ -1,7 +1,6 @@
 /**
  * ordenes.js
- * Órdenes PRO360 · Estable, autoregulado y compatible ULTRA 🔥
- * Incluye: AutoForm Firestore, voz, compatibilidad alias
+ * 🧾 Gestión de Órdenes TallerPRO360
  */
 
 import {
@@ -11,234 +10,178 @@ import {
   query,
   orderBy,
   doc,
-  updateDoc
+  updateDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const db = window.db; // 🔥 DB GLOBAL
+// IMPORTACIÓN CORRECTA: Ya no usamos window.db
+import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 
-/* ================= AUTOFORM FIRESTORE ================= */
-async function autoForm(state) {
-  try {
-    const path = `empresas/${state.empresaId}/ordenes`;
-    const snap = await getDocs(collection(db, path));
-    if(snap.empty) {
-      console.log(`Colección '${path}' lista para crearse automáticamente`);
-    }
-  } catch(e) {
-    console.error("❌ AutoForm fallo:", e);
-    hablar("Error al inicializar Firestore para órdenes");
-  }
-}
-
 export default async function ordenesModule(container, state) {
+  const empresaId = state?.empresaId || localStorage.getItem("empresaId");
 
-  if (!state?.empresaId) {
-    container.innerHTML = `❌ Empresa no definida`;
-    hablar("Error: empresa no definida");
+  if (!empresaId) {
+    container.innerHTML = `<div style="padding:20px;color:red;">❌ Error: Identificador de empresa no encontrado.</div>`;
     return;
   }
 
   let items = [];
 
-  await autoForm(state); // Auto-regulación Firestore
+  // 1. Renderizado Estructural Inmediato
+  renderLayout(container);
 
-  /* ================= HTML BASE ================= */
-  container.innerHTML = `
-    <h1 style="color:#00ffff;">🧾 Órdenes PRO360</h1>
-
-    <div style="display:flex;gap:10px;margin-bottom:15px;">
-      <input id="cliente" placeholder="ID Cliente" style="flex:1;padding:8px;border-radius:6px;"/>
-      <input id="vehiculo" placeholder="Placa" style="flex:1;padding:8px;border-radius:6px;"/>
-    </div>
-
-    <h3>Agregar Item</h3>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-      <select id="tipo" style="padding:8px;border-radius:6px;">
-        <option value="inventario">Inventario</option>
-        <option value="manual">Manual</option>
-      </select>
-      <input id="nombre" placeholder="Nombre" style="flex:2;padding:8px;border-radius:6px;"/>
-      <input id="cantidad" type="number" placeholder="Cantidad" style="width:80px;padding:8px;border-radius:6px;"/>
-      <input id="precio" type="number" placeholder="Precio" style="width:100px;padding:8px;border-radius:6px;"/>
-      <input id="costo" type="number" placeholder="Costo" style="width:100px;padding:8px;border-radius:6px;"/>
-      <button id="addItem" style="background:#22c55e;color:#000;padding:8px;border-radius:6px;">➕ Agregar</button>
-    </div>
-
-    <div id="itemsList" style="margin-bottom:20px;"></div>
-
-    <button id="crearOrden" style="margin-bottom:20px;background:#22c55e;padding:10px;border:none;border-radius:8px;">
-      🚀 Crear Orden
-    </button>
-
-    <hr/>
-    <h2>📋 Órdenes existentes</h2>
-    <div id="listaOrdenes"></div>
-  `;
-
+  // 2. Referencias a elementos del DOM
   const itemsList = document.getElementById("itemsList");
   const listaOrdenes = document.getElementById("listaOrdenes");
+  const btnCrear = document.getElementById("crearOrden");
+  const btnAdd = document.getElementById("addItem");
 
-  /* ================= ITEMS ================= */
+  /* ================= FUNCIONES DE RENDER ================= */
+  
+  function renderLayout(cont) {
+    cont.innerHTML = `
+      <div style="padding:20px; background:#0a0f1a; color:white; min-height:100vh;">
+        <h1 style="color:#00ffff; font-size:24px; margin-bottom:20px;">🧾 Gestión de Órdenes</h1>
+
+        <div style="background:#0f172a; padding:20px; border-radius:12px; border:1px solid #1e293b; margin-bottom:20px;">
+          <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <input id="cliente" placeholder="Nombre o ID Cliente" style="flex:1; padding:10px; background:#050a14; border:1px solid #1e293b; color:white; border-radius:6px;"/>
+            <input id="vehiculo" placeholder="Placa Vehículo" style="flex:1; padding:10px; background:#050a14; border:1px solid #1e293b; color:white; border-radius:6px;"/>
+          </div>
+
+          <p style="color:#00ffff; font-size:12px; font-weight:bold;">AÑADIR SERVICIO / REPUESTO</p>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+            <input id="nombre" placeholder="Descripción" style="grid-column: span 2; padding:10px; background:#050a14; border:1px solid #1e293b; color:white; border-radius:6px;"/>
+            <input id="cantidad" type="number" placeholder="Cant" style="padding:10px; background:#050a14; border:1px solid #1e293b; color:white; border-radius:6px;"/>
+            <input id="precio" type="number" placeholder="Precio Venta" style="padding:10px; background:#050a14; border:1px solid #1e293b; color:white; border-radius:6px;"/>
+          </div>
+          <button id="addItem" style="width:100%; background:#00ffff; color:#000; font-weight:bold; padding:12px; border:none; border-radius:8px; cursor:pointer;">
+            ➕ AÑADIR A LA LISTA
+          </button>
+        </div>
+
+        <div id="itemsList" style="margin-bottom:20px; background:rgba(0,255,255,0.05); border-radius:8px;"></div>
+
+        <button id="crearOrden" style="width:100%; background:#22c55e; color:#000; font-weight:bold; padding:15px; border:none; border-radius:8px; display:none; margin-bottom:30px;">
+          🚀 GUARDAR ORDEN DE TRABAJO
+        </button>
+
+        <h2 style="color:#facc15; font-size:18px;">📋 Historial Reciente</h2>
+        <div id="listaOrdenes"></div>
+      </div>
+    `;
+  }
+
   function renderItems() {
-    if (!items.length) {
-      itemsList.innerHTML = `<p>Sin items</p>`;
+    if (items.length === 0) {
+      itemsList.innerHTML = "";
+      btnCrear.style.display = "none";
       return;
     }
-
+    
+    btnCrear.style.display = "block";
     itemsList.innerHTML = items.map((i, idx) => `
-      <div style="margin-bottom:5px;">
-        ${i.nombre} x${i.cantidad} → $${fmt(i.precio)}
-        <button data-index="${idx}" class="del">❌</button>
+      <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #1e293b;">
+        <span>${i.nombre} (x${i.cantidad})</span>
+        <span style="color:#00ffff;">$${(i.precio * i.cantidad).toLocaleString()} 
+          <button class="del-btn" data-idx="${idx}" style="background:none; border:none; color:#ff4d4d; margin-left:10px;">✕</button>
+        </span>
       </div>
     `).join("");
 
-    document.querySelectorAll(".del").forEach(btn => {
-      btn.onclick = () => {
-        items.splice(btn.dataset.index, 1);
+    // Eventos para borrar
+    document.querySelectorAll(".del-btn").forEach(b => {
+      b.onclick = () => {
+        items.splice(b.dataset.idx, 1);
         renderItems();
-        hablar("Item eliminado");
       };
     });
   }
 
-  document.getElementById("addItem").onclick = () => {
-    const item = {
-      tipo: document.getElementById("tipo").value,
-      nombre: document.getElementById("nombre").value.trim(),
-      cantidad: Number(document.getElementById("cantidad").value),
-      precio: Number(document.getElementById("precio").value),
-      costo: Number(document.getElementById("costo").value)
-    };
+  /* ================= LÓGICA DE NEGOCIO ================= */
 
-    if (!item.nombre || item.cantidad <= 0) {
-      alert("Datos inválidos");
-      hablar("Error: datos inválidos");
-      return;
-    }
+  btnAdd.onclick = () => {
+    const nombre = document.getElementById("nombre").value;
+    const cant = Number(document.getElementById("cantidad").value);
+    const precio = Number(document.getElementById("precio").value);
 
-    items.push(item);
+    if (!nombre || cant <= 0) return alert("Completa los datos del item");
+
+    items.push({ nombre, cantidad: cant, precio });
     renderItems();
-
-    ["nombre","cantidad","precio","costo"].forEach(id => {
-      document.getElementById(id).value = "";
-    });
-
-    hablar("Item agregado");
+    
+    // Limpiar campos
+    document.getElementById("nombre").value = "";
+    document.getElementById("cantidad").value = "";
+    document.getElementById("precio").value = "";
+    hablar("Agregado");
   };
 
-  /* ================= CREAR ORDEN ================= */
-  document.getElementById("crearOrden").onclick = async () => {
+  btnCrear.onclick = async () => {
+    const cli = document.getElementById("cliente").value;
+    const veh = document.getElementById("vehiculo").value;
 
-    const clienteId = document.getElementById("cliente").value.trim();
-    const vehiculoId = document.getElementById("vehiculo").value.trim();
-
-    if (!clienteId) {
-      alert("Cliente requerido");
-      hablar("Cliente requerido");
-      return;
-    }
-
-    if (!items.length) {
-      alert("No hay items en la orden");
-      hablar("No hay items en la orden");
-      return;
-    }
-
-    let total = 0, costoTotal = 0;
-    items.forEach(i => { total += i.precio*i.cantidad; costoTotal += i.costo*i.cantidad; });
+    if (!cli || !veh) return alert("Cliente y Vehículo son obligatorios");
 
     try {
-      await addDoc(
-        collection(db, `empresas/${state.empresaId}/ordenes`),
-        {
-          clienteId,
-          vehiculoId,
-          items,
-          total,
-          costoTotal,
-          utilidad: total-costoTotal,
-          estado: "pendiente",
-          creadoEn: new Date()
-        }
-      );
+      btnCrear.disabled = true;
+      btnCrear.innerText = "⏳ GUARDANDO...";
+      
+      let total = items.reduce((acc, curr) => acc + (curr.precio * curr.cantidad), 0);
 
-      hablar("Orden creada exitosamente");
-      alert("✅ Orden creada");
+      await addDoc(collection(db, `empresas/${empresaId}/ordenes`), {
+        clienteId: cli,
+        vehiculoId: veh,
+        items,
+        total,
+        estado: "pendiente",
+        creadoEn: serverTimestamp()
+      });
 
+      hablar("Orden guardada exitosamente");
       items = [];
       renderItems();
+      document.getElementById("cliente").value = "";
+      document.getElementById("vehiculo").value = "";
       cargarOrdenes();
-
-    } catch(e) {
+      
+      btnCrear.disabled = false;
+      btnCrear.innerText = "🚀 GUARDAR ORDEN DE TRABAJO";
+    } catch (e) {
       console.error(e);
-      alert("❌ Error creando orden");
-      hablar("Error creando orden");
+      alert("Error al guardar");
     }
   };
 
-  /* ================= LISTAR ÓRDENES ================= */
   async function cargarOrdenes() {
-    listaOrdenes.innerHTML = "🔄 Cargando...";
-
+    listaOrdenes.innerHTML = `<p style="color:#64748b;">Cargando historial...</p>`;
     try {
-      const snap = await getDocs(
-        query(
-          collection(db, `empresas/${state.empresaId}/ordenes`),
-          orderBy("creadoEn","desc")
-        )
-      );
-
+      const q = query(collection(db, `empresas/${empresaId}/ordenes`), orderBy("creadoEn", "desc"));
+      const snap = await getDocs(q);
+      
       if (snap.empty) {
-        listaOrdenes.innerHTML = `<p>📭 Sin órdenes</p>`;
+        listaOrdenes.innerHTML = "<p>No hay órdenes registradas.</p>";
         return;
       }
 
       listaOrdenes.innerHTML = snap.docs.map(d => {
         const o = d.data();
-        const id = d.id;
         return `
-          <div style="border:1px solid #333;padding:10px;margin:10px;border-radius:8px;">
-            <strong>${id}</strong><br/>
-            Estado: ${o.estado}<br/>
-            Total: $${fmt(o.total)}
-            ${renderAcciones(id,o)}
+          <div style="background:#0f172a; padding:15px; border-radius:10px; border-left:4px solid #facc15; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between;">
+              <span style="font-weight:bold;">${o.vehiculoId}</span>
+              <span style="color:#22c55e;">$${(o.total || 0).toLocaleString()}</span>
+            </div>
+            <div style="font-size:12px; color:#94a3b8;">Cliente: ${o.clienteId}</div>
           </div>
         `;
       }).join("");
-
-    } catch(e) {
-      console.error(e);
-      listaOrdenes.innerHTML = `<p style="color:red;">❌ Error cargando órdenes</p>`;
-      hablar("Error cargando órdenes");
+    } catch (e) {
+      listaOrdenes.innerHTML = "<p>Error al cargar historial.</p>";
     }
   }
 
-  /* ================= ACCIONES ================= */
-  function renderAcciones(id,o) {
-    if (o.estado !== "pendiente") return "";
-    return `
-      <button onclick="aprobarOrden('${id}')" style="margin-right:5px;">✅ Aprobar</button>
-      <button onclick="cancelarOrden('${id}')">❌ Cancelar</button>
-    `;
-  }
-
-  window.aprobarOrden = async id => {
-    await updateDoc(doc(db, `empresas/${state.empresaId}/ordenes`, id), { estado: "aprobada" });
-    hablar("Orden aprobada");
-    cargarOrdenes();
-  };
-
-  window.cancelarOrden = async id => {
-    await updateDoc(doc(db, `empresas/${state.empresaId}/ordenes`, id), { estado: "cancelada" });
-    hablar("Orden cancelada");
-    cargarOrdenes();
-  };
-
-  /* ================= UTILS ================= */
-  function fmt(v) { return new Intl.NumberFormat("es-CO").format(v||0); }
-
-  /* ================= INIT ================= */
-  renderItems();
+  // Inicializar
   cargarOrdenes();
 }
