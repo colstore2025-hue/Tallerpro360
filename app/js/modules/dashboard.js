@@ -1,6 +1,6 @@
 /**
  * dashboardPro360UltraV2.js
- * 🔥 PRO360 ULTRA V2 · Letras blancas brillantes + charts claros e interactivos
+ * 🔥 PRO360 ULTRA V2 · Neon Dashboard con KPIs y charts claros
  */
 
 import { collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -10,7 +10,6 @@ let charts = {};
 let refreshInterval = null;
 
 export default async function dashboard(container, state) {
-
   renderBaseUI(container);
 
   if (!state?.empresaId) return renderError("❌ Empresa no definida");
@@ -39,17 +38,17 @@ export default async function dashboard(container, state) {
 }
 
 /* =========================
-UI BASE ULTRA CLARA
+UI BASE ULTRA NEON
 ========================= */
 function renderBaseUI(container) {
   container.innerHTML = `
     <div style="padding:20px;background:#0a0f1a;color:#ffffff;font-family:Segoe UI, sans-serif;">
-      <h1 style="font-size:38px;font-weight:900;color:#ffffff;margin-bottom:20px;text-shadow:0 0 15px #ffffff;">
+      <h1 style="font-size:38px;font-weight:900;color:#00ffff;margin-bottom:20px;text-shadow:0 0 15px #00ffff;">
         🧠 DASHBOARD PRO360 ULTRA
       </h1>
       <div id="kpis" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:18px;"></div>
 
-      <div style="margin-top:30px; background:#0f172a; padding:20px; border-radius:14px; box-shadow:0 0 35px #ffffff33;">
+      <div style="margin-top:30px; background:#0f172a; padding:20px; border-radius:14px; box-shadow:0 0 35px #00ffff33;">
         <canvas id="lineChart"></canvas>
       </div>
 
@@ -68,7 +67,7 @@ function renderBaseUI(container) {
 }
 
 /* =========================
-FETCH INTEGRAL DE DATOS
+FETCH DE DATOS
 ========================= */
 async function fetchAllData(empresaId) {
   const data = {
@@ -77,7 +76,7 @@ async function fetchAllData(empresaId) {
   };
 
   const snapOrd = await getDocs(query(collection(db, `empresas/${empresaId}/ordenes`)));
-  snapOrd.forEach(doc=>{
+  snapOrd.forEach(doc => {
     const d = doc.data();
     const total = Number(d.valorTrabajo||0);
     const costo = Number(d.costoTotal||0);
@@ -91,30 +90,31 @@ async function fetchAllData(empresaId) {
 
   const snapCli = await getDocs(query(collection(db, `empresas/${empresaId}/clientes`)));
   data.clientes = snapCli.size;
-  snapCli.forEach(doc=>{
+  snapCli.forEach(doc => {
     const d = doc.data();
     const nombre = d.nombre||"Anon";
     data.ventasPorCliente[nombre] = (data.ventasPorCliente[nombre]||0) + Number(d.totalCompras||0);
   });
 
   const snapInv = await getDocs(query(collection(db, `empresas/${empresaId}/inventario`)));
-  snapInv.forEach(doc=>{
+  snapInv.forEach(doc => {
     const d = doc.data();
-    data.stockTotal += Number(d.cantidad||0);
-    data.inventario[d.nombre] = Number(d.cantidad||0);
-    if(Number(d.cantidad||0)<5) data.alertas.push({msg:`⚠️ Stock bajo: ${d.nombre}`, nivel:"medio"});
+    const cantidad = Number(d.cantidad||0);
+    data.stockTotal += cantidad;
+    data.inventario[d.nombre] = cantidad;
+    if(cantidad<5) data.alertas.push({msg:`⚠️ Stock bajo: ${d.nombre}`, nivel:"medio"});
   });
 
   return data;
 }
 
 /* =========================
-RENDER GLOBAL ULTRA V2
+RENDER GENERAL
 ========================= */
 async function renderAll(data, fromCache){
   const utilidad = data.ingresos - data.costos;
-  const margen = data.ingresos? (utilidad/data.ingresos)*100 :0;
-  const ticket = data.ordenes? data.ingresos/data.ordenes :0;
+  const margen = data.ingresos ? (utilidad/data.ingresos)*100 : 0;
+  const ticket = data.ordenes ? data.ingresos/data.ordenes : 0;
 
   data.decisions = generarDecisiones({margen, ticket}, data.alertas, data.clientes, data.stockTotal);
 
@@ -124,20 +124,20 @@ async function renderAll(data, fromCache){
 }
 
 /* =========================
-KPIS BLANCAS BRILLANTES + ANIMADAS
+KPIS NEON + ANIMADOS
 ========================= */
 function renderKPIs(d, utilidad, margen, ticket, cache){
   const el = document.getElementById("kpis");
   el.innerHTML = `
     ${cache?'<div style="color:#facc15;margin-bottom:10px;">⚡ Datos desde cache</div>':''}
-    ${kpiCard("Ingresos",$d(d.ingresos))}
+    ${kpiCard("Ingresos",$d(d.ingresos),"#00ffff")}
     ${kpiCard("Costos",$d(d.costos),"#ff4d4d")}
-    ${kpiCard("Utilidad",$d(utilidad))}
-    ${kpiCard("Margen",margen.toFixed(2)+"%")}
-    ${kpiCard("Órdenes",d.ordenes)}
-    ${kpiCard("Ticket Prom.","$"+$d(ticket))}
-    ${kpiCard("Clientes",d.clientes)}
-    ${kpiCard("Stock Total",d.stockTotal)}
+    ${kpiCard("Utilidad",$d(utilidad),"#22c55e")}
+    ${kpiCard("Margen",margen.toFixed(2)+"%","#facc15")}
+    ${kpiCard("Órdenes",d.ordenes,"#00ffff")}
+    ${kpiCard("Ticket Prom.","$"+$d(ticket),"#00ffff")}
+    ${kpiCard("Clientes",d.clientes,"#22c55e")}
+    ${kpiCard("Stock Total",d.stockTotal,"#facc15")}
   `;
 
   el.querySelectorAll("h2").forEach(h=>{
@@ -177,7 +177,7 @@ function animateCounter(el, end){
 }
 
 /* =========================
-CHARTS CLAROS E INTERACTIVOS
+CHARTS NEON
 ========================= */
 async function renderCharts(d){
   const lineCtx = document.getElementById("lineChart");
@@ -188,7 +188,6 @@ async function renderCharts(d){
   try { ChartLib = (await import("https://cdn.jsdelivr.net/npm/chart.js/auto/+esm")).default; }
   catch{return fallbackChart(d);}
 
-  // LINE CHART: ingresos por día
   if(charts.line) charts.line.destroy();
   charts.line = new ChartLib(lineCtx,{
     type:"line",
@@ -197,13 +196,13 @@ async function renderCharts(d){
       datasets:[{
         label:"Ingresos",
         data:Object.values(d.ingresosPorDia),
-        borderColor:"#ffffff",
-        backgroundColor:"#ffffff33",
+        borderColor:"#00ffff",
+        backgroundColor:"#00ffff33",
         fill:true,
         tension:0.3,
         borderWidth:3,
         pointHoverRadius:8,
-        pointBackgroundColor:"#00f0ff"
+        pointBackgroundColor:"#facc15"
       }]
     },
     options:{
@@ -215,7 +214,6 @@ async function renderCharts(d){
     }
   });
 
-  // BAR CHART: ventas por cliente
   if(charts.bar) charts.bar.destroy();
   charts.bar = new ChartLib(barCtx,{
     type:"bar",
@@ -224,7 +222,7 @@ async function renderCharts(d){
       datasets:[{
         label:"Ventas",
         data:Object.values(d.ventasPorCliente),
-        backgroundColor:"#00f0ff88"
+        backgroundColor:"#00ffff88"
       }]
     },
     options:{
@@ -235,7 +233,6 @@ async function renderCharts(d){
     }
   });
 
-  // RADAR CHART: KPIs integrados
   if(charts.radar) charts.radar.destroy();
   charts.radar = new ChartLib(radarCtx,{
     type:"radar",
@@ -244,14 +241,14 @@ async function renderCharts(d){
       datasets:[{
         label:"KPIs",
         data:[d.ingresos,d.costos,d.ingresos-d.costos,d.clientes,d.ordenes,d.stockTotal],
-        backgroundColor:"#ffffff33",
-        borderColor:"#ffffff",
+        backgroundColor:"#00ffff33",
+        borderColor:"#00ffff",
         borderWidth:2
       }]
     },
     options:{
       responsive:true,
-      scales:{r:{angleLines:{color:'#ffffff55'},grid:{color:'#ffffff33'}, pointLabels:{color:'#ffffff'}}},
+      scales:{r:{angleLines:{color:'#00ffff55'},grid:{color:'#00ffff33'}, pointLabels:{color:'#ffffff'}}},
       plugins:{legend:{labels:{color:'#ffffff'}}},
       animation:{duration:1200}
     }
@@ -270,7 +267,7 @@ function renderIA(d){
       padding:14px;
       border-radius:10px;
       margin-top:8px;
-      box-shadow:0 0 20px #ffffff33;
+      box-shadow:0 0 20px #00ffff33;
       transition:0.3s;
     ">
       ⚡ <strong>${x.accion}</strong> (${x.impacto})
@@ -284,7 +281,7 @@ function renderIA(d){
 
   el.innerHTML = `
     <div style="background:#0f172a;padding:22px;border-radius:14px;border:1px solid #1e293b;">
-      <h2 style="color:#ffffff;text-shadow:0 0 12px #ffffff;">👑 CEO AUTÓNOMO ULTRA</h2>
+      <h2 style="color:#00ffff;text-shadow:0 0 12px #00ffff;">👑 CEO AUTÓNOMO ULTRA</h2>
       <p>Margen: <strong>${d.ingresos?(((d.ingresos-d.costos)/d.ingresos)*100).toFixed(2)+"%" : 0}</strong></p>
       <h3 style="color:#ff4d4d;">⚠️ Alertas</h3>
       ${alertasHTML || "Sin alertas"}
