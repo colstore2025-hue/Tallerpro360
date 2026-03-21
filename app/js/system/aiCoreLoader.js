@@ -1,33 +1,23 @@
 /**
- * aiCoreLoader.js
- * AI Core Loader
- * TallerPRO360 ERP - Versión Final Integrada
- * Ruta: app/js/system/aiCoreLoader.js
+ * aiCoreLoader.js - TallerPRO360 AI Engine
  */
-
-console.log("🧠 AI Core Loader iniciado");
-
-/* =====================================
-   SISTEMAS A CARGAR
-===================================== */
 const coreSystems = [
-  "/js/ai/predictiveMaintenanceAI.js",
-  "/js/ai/autoRepairLearningAI.js",
-  "/js/ai/autonomousWorkshopAI.js"
+  "../ai/predictiveMaintenanceAI.js",
+  "../ai/autoRepairLearningAI.js",
+  "../ai/autonomousWorkshopAI.js"
 ];
 
-/* =====================================
-   CARGAR SISTEMAS IA
-===================================== */
 export async function loadAICore() {
-  console.log("⚙️ Cargando núcleo de IA...");
-  for (const path of coreSystems) {
+  console.log("🧠 Iniciando IA Core...");
+  const promises = coreSystems.map(async (path) => {
     try {
       await import(path);
-      console.log("✅ IA cargada:", path);
-    } catch (error) {
-      console.warn("⚠️ IA no cargada:", path, error);
+      console.log(`✅ ${path.split('/').pop()} cargado`);
+    } catch (err) {
+      console.warn(`⚠️ Módulo IA omitido: ${path}`);
     }
-  }
-  console.log("🧠 Núcleo IA activo");
+  });
+  
+  await Promise.all(promises);
+  console.log("🧠 Núcleo IA en espera de datos.");
 }
