@@ -5,6 +5,29 @@
  * Ruta: app/js/core/router.js
  */
 
+/* ===============================
+   CENTINELA DE ACTUALIZACIONES
+   =============================== */
+async function checkForUpdates() {
+  const CURRENT_VERSION = "v10"; // Cambia esto cada vez que hagas un gran cambio
+  const savedVersion = localStorage.getItem("app_version");
+
+  if (savedVersion !== CURRENT_VERSION) {
+    console.log("🔄 Nueva versión detectada. Limpiando sistemas...");
+    
+    // Limpiar cachés viejas de Service Worker
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (let reg of registrations) await reg.unregister();
+    }
+    
+    localStorage.setItem("app_version", CURRENT_VERSION);
+    // Recarga suave para aplicar cambios
+    location.reload();
+  }
+}
+checkForUpdates();
+
 const routes = {
   dashboard:     () => import("../modules/dashboard.js"),
   ordenes:       () => import("../modules/ordenes.js"),
