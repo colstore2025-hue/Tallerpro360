@@ -9,27 +9,42 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
-        body { margin:0; font-family:'Inter', system-ui, sans-serif; background:#0b1220; color:#cbd5e1; overflow: hidden; }
-        header { background:#0f172a; padding:14px 24px; display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #1e293b; z-index: 100; position: relative; }
+        :root { --neon-cyan: #00ffff; --dark-bg: #0b1220; --sidebar-bg: #0f172a; }
+        body { margin:0; font-family:'Inter', system-ui, sans-serif; background: var(--dark-bg); color:#cbd5e1; overflow: hidden; }
+        
+        header { 
+            background: var(--sidebar-bg); padding:14px 24px; display:flex; justify-content:space-between; 
+            align-items:center; border-bottom: 1px solid #1e293b; z-index: 100; position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
         #mainLayout { display:flex; height:calc(100vh - 70px); }
         
-        /* Sidebar Estilo Neón */
-        #sidebar { width:260px; background:#0f172a; display:flex; flex-direction:column; padding:20px 15px; border-right: 1px solid #1e293b; overflow-y: auto; }
-        #sidebar button { 
-            width:100%; margin:8px 0; padding:12px 15px; border:none; border-radius:12px; 
+        /* Sidebar Neón Profesional */
+        #sidebar { width:260px; background: var(--sidebar-bg); display:flex; flex-direction:column; padding:20px 15px; border-right: 1px solid #1e293b; overflow-y: auto; }
+        #menuItems button { 
+            width:100%; margin:4px 0; padding:12px 15px; border:none; border-radius:12px; 
             font-size:14px; font-weight:600; cursor:pointer; text-align: left;
-            transition: all 0.3s; color:#94a3b8; background:transparent;
+            transition: all 0.2s ease; color:#94a3b8; background:transparent;
+            display: flex; align-items: center; gap: 12px;
         }
-        #sidebar button:hover { background: rgba(0, 255, 255, 0.1); color:#00ffff; }
-        #sidebar button.active { background:#1e293b; color:#00ffff; box-shadow: inset 4px 0 0 #00ffff; }
+        #menuItems button i { width: 20px; text-align: center; font-size: 16px; opacity: 0.7; }
+        #menuItems button:hover { background: rgba(0, 255, 255, 0.08); color: var(--neon-cyan); }
+        #menuItems button.active { background: #1e293b; color: var(--neon-cyan); box-shadow: inset 3px 0 0 var(--neon-cyan); }
         
-        /* Contenedor Principal */
-        #appContainer { flex:1; padding:25px; overflow-y:auto; background: radial-gradient(circle at top right, #111827, #0b1220); }
+        /* Contenedor Principal con Gradiente de Profundidad */
+        #appContainer { flex:1; padding:25px; overflow-y:auto; background: radial-gradient(circle at 50% 0%, #161e2e, #0b1220); }
         
-        /* Scrollbar Personalizado */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--sidebar-bg); }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--neon-cyan); }
+
+        /* Animaciones */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .animate-spin-custom { animation: spin 1s linear infinite; }
+        .fade-out { opacity: 0; transition: opacity 0.5s ease; pointer-events: none; }
     </style>
 </head>
 
@@ -37,101 +52,97 @@
 
 <header>
     <div style="display:flex; align-items:center; gap:12px;">
-        <div style="width:35px; height:35px; background:#10b981; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+        <div style="width:38px; height:38px; background: linear-gradient(135deg, #10b981, #059669); border-radius:10px; display:flex; align-items:center; justify-content:center; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);">
             <i class="fas fa-car-wrench text-white"></i>
         </div>
-        <h1 class="text-xl font-bold text-white tracking-tight">TallerPRO360 <span class="text-emerald-400 text-xs">SaaS</span></h1>
+        <div>
+            <h1 class="text-lg font-bold text-white leading-none">TallerPRO360</h1>
+            <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Enterprise Cloud</span>
+        </div>
     </div>
-    <div style="display:flex; align-items:center; gap:20px;">
-        <span id="userName" style="font-size:13px; color:#94a3b8;"></span>
-        <button id="logoutBtn" class="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-all">
-            <i class="fas fa-sign-out-alt mr-2"></i> Salir
+    
+    <div style="display:flex; align-items:center; gap:24px;">
+        <div style="text-align: right;">
+            <p id="userName" style="font-size:13px; font-weight:700; color:white; margin:0;"></p>
+            <p id="userRole" style="font-size:10px; color:#64748b; margin:0; text-transform: uppercase;"></p>
+        </div>
+        <button id="logoutBtn" class="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all border border-red-500/20">
+            <i class="fas fa-power-off mr-2"></i> Salir
         </button>
     </div>
 </header>
 
 <div id="mainLayout">
     <nav id="sidebar">
-        <p style="color:#475569; font-size:10px; font-weight:bold; margin-bottom:10px; padding-left:15px; letter-spacing:1px;">MENÚ PRINCIPAL</p>
-        <div id="menuItems"></div>
+        <p style="color:#475569; font-size:10px; font-weight:bold; margin-bottom:15px; padding-left:15px; letter-spacing:2px; text-transform: uppercase;">Módulos</p>
+        <div id="menuItems">
+            </div>
     </nav>
 
     <main id="appContainer">
-        <div id="boot-loader" style="text-align:center; margin-top:15vh;">
-            <div style="display:inline-block; width:50px; height:50px; border:3px solid rgba(0,255,255,0.2); border-top-color:#00ffff; border-radius:50%; animation: spin 1s linear infinite; margin-bottom:20px;"></div>
-            <p id="boot-text" style="font-size:18px; color:#00ffff; font-weight:500;">🚀 Inicializando Núcleo...</p>
-            <p id="boot-subtext" style="opacity:.5; font-size:12px;">Estabilizando servicios de IA y Datos</p>
+        <div id="boot-loader" style="text-align:center; margin-top:20vh;">
+            <div class="inline-block w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin-custom mb-6"></div>
+            <h2 id="boot-text" style="font-size:20px; color:white; font-weight:600; letter-spacing: -0.5px;">🚀 Inicializando Sistema...</h2>
+            <p id="boot-subtext" style="color:#64748b; font-size:13px; margin-top:8px;">Validando credenciales y escudo App Check</p>
         </div>
     </main>
 </div>
 
-<style> @keyframes spin { to { transform: rotate(360deg); } } </style>
-
 <script type="module">
-    // Importamos el inicializador desde la ruta corregida
     import { initApp } from "./js/core/app-init.js";
 
-    async function bootstrap() {
+    async function startSystem() {
         const loader = document.getElementById("boot-loader");
         const loaderText = document.getElementById("boot-text");
         const container = document.getElementById("appContainer");
         
         try {
-            // 1. Captura de datos de sesión desde el almacenamiento local
+            // 1. Verificación de Estado Local
             const state = {
                 uid: localStorage.getItem("uid"),
                 empresaId: localStorage.getItem("empresaId"),
-                rol: localStorage.getItem("rol"),
+                rol: localStorage.getItem("rol") || "Usuario",
                 rolGlobal: localStorage.getItem("rolGlobal"),
-                nombre: localStorage.getItem("nombre") || "Usuario"
+                nombre: localStorage.getItem("nombre") || "Operador"
             };
 
-            // 2. Validación de Seguridad Previa al Arranque
-            // Nota: Si es Superadmin, puede entrar sin empresaId asignado inicialmente
+            // 2. Seguridad Inmediata
             if (!state.uid || (!state.empresaId && state.rolGlobal !== 'superadmin')) {
-                console.warn("🔐 Sesión incompleta o inválida, redirigiendo a login...");
-                window.location.href = "login.html";
+                console.warn("🔐 Acceso no autorizado. Redirigiendo...");
+                window.location.replace("login.html");
                 return;
             }
 
-            // UI Feedback: Mostrar nombre del usuario en el header
-            const userDisplay = document.getElementById("userName");
-            if (userDisplay) userDisplay.innerText = state.nombre;
+            // Inyectar info de usuario en el UI
+            document.getElementById("userName").innerText = state.nombre;
+            document.getElementById("userRole").innerText = state.rol;
             
-            if (loaderText) loaderText.innerText = "🔌 Sincronizando Núcleo...";
+            // 3. Lanzar el motor CORE
+            // El motor se encarga de conectar Firebase y App Check
+            if (loaderText) loaderText.innerText = "🔌 Sincronizando con la Nube...";
+            
+            const ready = await initApp();
 
-            // 3. Ejecutar el arranque del motor (App-Init)
-            // Este proceso resuelve la promesa cuando onAuthStateChanged responde
-            const success = await initApp(); 
-
-            if (success) {
-                console.log("✅ TallerPRO360: Motor iniciado.");
-                
-                // 4. LIMPIEZA FORZADA: Eliminar loader de inicialización si sigue presente
+            if (ready) {
+                console.log("✅ TallerPRO360 ONLINE");
+                // Transición suave de salida del loader
                 if (loader) {
-                    loader.style.transition = "opacity 0.5s ease";
-                    loader.style.opacity = "0";
+                    loader.classList.add('fade-out');
                     setTimeout(() => loader.remove(), 500);
                 }
             }
 
-        } catch (error) {
-            console.error("🔥 FALLO CRÍTICO EN BOOTSTRAP:", error);
-            
-            // Render de Error en pantalla para diagnóstico rápido
+        } catch (err) {
+            console.error("🔥 CRASH:", err);
             if (container) {
                 container.innerHTML = `
-                    <div style="text-align:center; margin-top:10vh; background:rgba(239, 68, 68, 0.05); padding:40px; border-radius:20px; border:1px solid #ef444455; max-width:600px; margin-left:auto; margin-right:auto;">
-                        <i class="fas fa-engine-warning text-red-500" style="font-size:40px; margin-bottom:20px;"></i>
-                        <h2 style="color:#ef4444; font-size:20px; font-weight:bold; letter-spacing:1px;">ERROR DE ARRANQUE</h2>
-                        <p style="color:#94a3b8; margin:15px 0; font-family:monospace; font-size:13px;">${error.message}</p>
-                        <div style="display:flex; gap:10px; justify-content:center; margin-top:25px;">
-                            <button onclick="location.reload()" style="background:#1e293b; color:white; padding:10px 20px; border-radius:10px; font-weight:bold; font-size:12px; cursor:pointer; border:1px solid #334155;">
-                                <i class="fas fa-sync-alt mr-2"></i> REINTENTAR
-                            </button>
-                            <button onclick="localStorage.clear(); location.href='login.html';" style="background:#ef4444; color:white; padding:10px 20px; border-radius:10px; font-weight:bold; font-size:12px; cursor:pointer; border:none;">
-                                <i class="fas fa-sign-out-alt mr-2"></i> LIMPIAR SESIÓN
-                            </button>
+                    <div class="max-w-md mx-auto mt-20 p-8 bg-red-500/5 border border-red-500/20 rounded-3xl text-center">
+                        <i class="fas fa-triangle-exclamation text-red-500 text-4xl mb-4"></i>
+                        <h3 class="text-white font-bold text-xl">Error de Conectividad</h3>
+                        <p class="text-slate-400 text-sm my-4">${err.message || 'No se pudo establecer conexión con el servidor.'}</p>
+                        <div class="flex gap-3 justify-center">
+                            <button onclick="location.reload()" class="bg-slate-800 text-white px-6 py-2 rounded-xl font-bold text-xs hover:bg-slate-700">Reintentar</button>
+                            <button onclick="localStorage.clear(); location.href='login.html'" class="bg-red-500 text-white px-6 py-2 rounded-xl font-bold text-xs">Limpiar Caché</button>
                         </div>
                     </div>
                 `;
@@ -139,21 +150,22 @@
         }
     }
 
-    // Encender el sistema
-    bootstrap();
+    // Ejecución inicial
+    startSystem();
 
-    // Configuración global del botón de salida
+    // Botón Salir con limpieza total
     document.getElementById("logoutBtn")?.addEventListener("click", async () => {
+        if (!confirm("¿Cerrar sesión en TallerPRO360?")) return;
+        
         try {
-            // Intentamos cerrar sesión en Firebase si el SDK está disponible
             const { auth } = await import("./js/core/firebase-config.js");
             const { signOut } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
             await signOut(auth);
         } catch (e) {
-            console.log("Cierre de sesión local");
+            console.warn("Cierre forzado");
         } finally {
             localStorage.clear();
-            window.location.href = "login.html";
+            window.location.replace("login.html");
         }
     });
 </script>
