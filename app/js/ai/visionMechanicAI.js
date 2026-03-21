@@ -1,99 +1,51 @@
 /**
- * visionMechanicAI.js
- * IA de visión para diagnóstico mecánico
- * TallerPRO360
+ * visionMechanicAI.js - TallerPRO360 V3
+ * IA de visión para diagnóstico mecánico (Móvil-Optimizado)
  */
 
-/* ===============================
-   ANALIZAR MOTOR CON IA
-=============================== */
+export async function analizarMotor(base64Image) {
+  if (!base64Image) return { error: "No se capturó imagen." };
 
-export async function analizarMotor(base64Image, apiKey){
+  try {
+    console.log("👁️ Enviando imagen al cerebro Nexus-X...");
 
-  if(!base64Image){
-    console.warn("Imagen no enviada");
-    return null;
-  }
-
-  if(!apiKey){
-    console.error("API Key de OpenAI no definida");
-    return null;
-  }
-
-  const prompt = `
-Analiza esta imagen de un motor automotriz.
-
-Detecta:
-
-- fugas de aceite
-- piezas desgastadas
-- mangueras dañadas
-- corrosión
-
-Devuelve SOLO JSON con esta estructura:
-
-{
-  "problemas":[
-    {"tipo":"","descripcion":"","gravedad":""}
-  ]
-}
-`;
-
-  try{
-
-    const response = await fetch(
-      "https://api.openai.com/v1/chat/completions",
-      {
-        method:"POST",
-
-        headers:{
-          "Content-Type":"application/json",
-          "Authorization":"Bearer " + apiKey
-        },
-
-        body:JSON.stringify({
-
-          model:"gpt-4.1",
-
-          messages:[
-            {
-              role:"user",
-              content:[
-                { type:"text", text: prompt },
-                { type:"image_url", image_url:{ url: base64Image } }
-              ]
-            }
-          ],
-
-          max_tokens:500
-
-        })
-      }
-    );
+    // LLAMADA SEGURA: Usamos tu API interna para proteger la Key
+    const response = await fetch("/api/vision-motor", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        image: base64Image,
+        prompt: "Analiza el compartimento del motor: detecta fugas, corrosión, mangueras sueltas o cables pelados. Sé técnico y breve."
+      })
+    });
 
     const data = await response.json();
-
-    if(!data.choices){
-      console.error("Respuesta inesperada IA:", data);
-      return null;
+    
+    // Limpiador de formato (Regex para extraer solo el JSON si la IA se pone habladora)
+    if (typeof data.content === "string") {
+      const jsonMatch = data.content.match(/\{[\s\S]*\}/);
+      return jsonMatch ? JSON.parse(jsonMatch[0]) : { raw: data.content };
     }
 
-    const content = data.choices[0].message.content;
+    return data;
 
-    try{
-      return JSON.parse(content);
-    }
-    catch(e){
-      console.warn("Respuesta no es JSON puro:", content);
-      return { raw: content };
-    }
-
+  } catch (error) {
+    console.error("❌ Fallo en Visión IA:", error);
+    return { error: "Error de conexión con el satélite Nexus-X." };
   }
-  catch(error){
+}
 
-    console.error("Error analizando motor:", error);
-    return null;
-
-  }
-
+/**
+ * PRO-TIP: Integra esto con el orquestador
+ */
+export async function procesarEvidencia(file, empresaId) {
+  // 1. Convertir a Base64 (Optimizado para móvil)
+  const reader = new FileReader();
+  return new Promise((resolve) => {
+    reader.onloadend = async () => {
+      const resultado = await analizarMotor(reader.result);
+      resolve(resultado);
+    };
+    reader.readAsDataURL(file);
+  });
 }
