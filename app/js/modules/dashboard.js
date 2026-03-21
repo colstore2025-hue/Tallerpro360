@@ -4,8 +4,10 @@
  */
 
 import { collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db as firestoreDB } from "../core/firebase-config.js";
+window.db = firestoreDB;
+await loadModule("dashboard");
 
-const db = window.db;
 let charts = {};
 let refreshInterval = null;
 
