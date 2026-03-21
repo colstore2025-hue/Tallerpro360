@@ -1,14 +1,11 @@
 /**
  * moduleLoader.js
- * 🔥 Loader central para TallerPRO360
+ * Loader central para TallerPRO360
  * Arranca dashboard y otros módulos dinámicamente
  */
 
 import { bootStatus } from "./bootDiagnostic.js";
 
-// ------------------------
-// Inicialización principal
-// ------------------------
 export async function initApp() {
   bootStatus("DOM cargado, iniciando sistema...");
 
@@ -22,32 +19,25 @@ export async function initApp() {
   bootStatus("Usuario autenticado, cargando módulos...");
 
   try {
-    // Contenedor principal
     const container = document.getElementById("appContainer");
+    if (!container) throw new Error("Contenedor appContainer no encontrado");
 
-    // ------------------------
-    // 🚀 Importar dashboard
-    // ------------------------
     bootStatus("Importando dashboard...");
     const { default: dashboard } = await import("../modules/dashboard.js");
 
     bootStatus("Inicializando dashboard...");
-    await dashboard(container, { empresaId: uid });
+    await dashboard(container, { empresaId: localStorage.getItem("empresaId") });
 
     bootStatus("Dashboard cargado correctamente ✅");
-
-    // ------------------------
-    // Opcional: otros módulos
-    // ------------------------
-    // Ejemplo:
-    // const { default: clientesModule } = await import("../modules/clientes.js");
-    // clientesModule(container, { empresaId: uid });
 
   } catch (e) {
     console.error("❌ Error cargando módulos:", e);
     bootStatus("Error cargando módulos");
-    container.innerHTML = `<p style="color:red;text-align:center;margin-top:50px;">
-      ⚠️ Error cargando el sistema. Revisa consola.
-    </p>`;
+    const container = document.getElementById("appContainer");
+    if (container) {
+      container.innerHTML = `<p style="color:red;text-align:center;margin-top:50px;">
+        ⚠️ Error cargando el sistema. Revisa consola.
+      </p>`;
+    }
   }
 }
