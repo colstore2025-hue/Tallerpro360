@@ -39,10 +39,38 @@ header { background:#0f172a; padding:14px 24px; display:flex; justify-content:sp
 
 <!-- ================= INIT MODULE LOADER ================= -->
 <script type="module">
-import { initApp } from "./js/system/moduleLoader.js";
-initApp();
+  import { initApp } from "./js/system/moduleLoader.js";
+  import { setStore } from "./js/core/store.js";
+
+  // 1. Recuperar datos del almacenamiento local
+  const state = {
+    uid: localStorage.getItem("uid"),
+    empresaId: localStorage.getItem("empresaId"),
+    rolGlobal: localStorage.getItem("rol"),
+    plan: localStorage.getItem("plan")
+  };
+
+  // 2. Si no hay sesión, abortar antes de cargar el CORE
+  if (!state.uid || !state.empresaId) {
+    window.location.href = "login.html";
+  } else {
+    // 3. Sincronizar con el Store global
+    setStore("user", { uid: state.uid, rol: state.rolGlobal });
+    setStore("empresa", { id: state.empresaId });
+    
+    // 4. Inyectar en ventana global para que el Sidebar funcione
+    window.state = state; 
+
+    // 5. Arrancar el motor ULTRA PRO360
+    initApp(state);
+  }
+
+  // 6. Configurar botón de salida
+  document.getElementById("logoutBtn")?.addEventListener("click", () => {
+    localStorage.clear();
+    window.location.href = "login.html";
+  });
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
