@@ -1,42 +1,79 @@
 /**
  * dashboard.js - TallerPRO360 ULTRA V3
- * Sincronizado con NexusAI Orchestrator 🧠
+ * Sincronizado con NexusAI Orchestrator & Business Coach 🧠🎙️
  */
 import { getClientes, getOrdenes, getInventario } from "../services/dataService.js";
-import { NexusAI } from "../ai/NexusOrchestratorAI.js"; // 🔥 El nuevo motor unificado
+import { NexusAI } from "../ai/NexusOrchestratorAI.js";
 import { store } from "../core/store.js";
+import { hablar } from "../voice/voiceCore.js"; // Asegúrate de que esta ruta sea correcta
 
 let charts = {};
 
 export default async function dashboard(container, state) {
     const empresaId = state?.empresaId || localStorage.getItem("empresaId");
     
-    // 1. Render Base Inmediato (UX de alta velocidad)
+    // 1. Render Base UI (UX de carga inmediata)
     renderBaseUI(container);
 
     if (!empresaId) return renderError(container, "❌ Error: Identidad de Taller no detectada");
 
     try {
-        // 2. Carga Paralela (Data + Inteligencia)
-        // Usamos Promise.all para que la App no "espere" una cosa tras otra
+        // 2. Carga Paralela (Data Real + Cerebro IA)
         const [rawData, aiAnalysis] = await Promise.all([
             loadFullData(empresaId),
             NexusAI.analizarTodo(empresaId).catch(() => null)
         ]);
 
-        // 3. Procesamiento y Render Final
+        // 3. Procesamiento de Métricas
         const metrics = calculateMetrics(rawData);
+
+        // 4. Renderizado de Componentes
         renderKPIs(metrics);
         renderCharts(metrics);
         renderCEO(metrics, aiAnalysis);
+
+        // 5. INICIALIZAR BUSINESS COACH (Cereza del pastel)
+        initBusinessCoach(metrics, aiAnalysis);
 
     } catch (e) {
         console.error("🔥 Dashboard Crash:", e);
     }
 }
 
+/** * LÓGICA DEL COACH DE NEGOCIOS
+ * Transforma datos en consejos de voz
+ */
+function initBusinessCoach(metrics, aiAnalysis) {
+    const btnCoach = document.getElementById("btnNexusCoach");
+    if (!btnCoach) return;
+
+    btnCoach.onclick = () => {
+        const nombre = localStorage.getItem("userName") || "Gerente";
+        const fmt = new Intl.NumberFormat('es-CO').format(metrics.utilidad);
+        
+        let speech = `Hola ${nombre}. He analizado el estado de tu taller. `;
+        
+        // Diagnóstico financiero
+        if (metrics.margen < 20) {
+            speech += `Nuestra rentabilidad está baja, apenas un ${metrics.margen.toFixed(1)}%. Tenemos que revisar los costos. `;
+        } else {
+            speech += `Llevamos una utilidad de ${fmt} pesos con un margen del ${metrics.margen.toFixed(1)}%. Vamos por buen camino. `;
+        }
+
+        // Diagnóstico operativo
+        if (metrics.alertas.length > 0) {
+            speech += `Atención. Detecto ${metrics.alertas.length} alertas críticas, incluyendo stock bajo. `;
+        }
+
+        // Recomendación del CEO IA
+        const consejo = aiAnalysis?.sugerencias[0]?.msg || "Sigue monitoreando los ingresos diarios.";
+        speech += `Mi consejo estratégico: ${consejo}.`;
+
+        hablar(speech);
+    };
+}
+
 async function loadFullData(empresaId) {
-    // Si tenemos cache fresco, lo usamos (Store Pattern)
     if (store.cache?.ordenes?.length > 0) return store.cache;
 
     const [clientes, ordenes, inventario] = await Promise.all([
@@ -46,7 +83,7 @@ async function loadFullData(empresaId) {
     ]);
 
     const data = { clientes, ordenes, inventario };
-    store.cache = data; // Guardamos en el "cerebro" global de la App
+    store.cache = data; 
     return data;
 }
 
@@ -60,7 +97,6 @@ function calculateMetrics(data) {
         ingresos += val;
         costos += Number(o.costoTotal || 0);
 
-        // Agrupación para gráfica
         let fecha = "S/F";
         try {
             const d = o.creadoEn?.toDate ? o.creadoEn.toDate() : new Date(o.creadoEn);
@@ -69,7 +105,6 @@ function calculateMetrics(data) {
         ingresosPorDia[fecha] = (ingresosPorDia[fecha] || 0) + val;
     });
 
-    // Alertas de Inventario (Sincronizado con inventario.js)
     inventario.forEach(item => {
         if (Number(item.cantidad || 0) < 5) {
             alertas.push({ msg: `Stock bajo: ${item.nombre}`, nivel: "medio" });
@@ -89,7 +124,7 @@ function calculateMetrics(data) {
 
 function renderBaseUI(container) {
     container.innerHTML = `
-    <div class="p-6 bg-[#050a14] min-h-screen text-white font-sans">
+    <div class="p-6 bg-[#050a14] min-h-screen text-white font-sans relative pb-24">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-black italic tracking-tighter text-cyan-400">
                 PRO360 <span class="text-white font-light underline decoration-yellow-500">ULTRA V3</span>
@@ -113,6 +148,11 @@ function renderBaseUI(container) {
                 <div class="h-64 bg-[#0f172a] rounded-[40px] animate-pulse border border-cyan-500/20"></div>
             </div>
         </div>
+
+        <button id="btnNexusCoach" class="fixed bottom-24 right-6 w-16 h-16 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.5)] flex items-center justify-center border-2 border-white/20 active:scale-90 transition-all z-50 animate-bounce">
+            <i class="fas fa-brain text-white text-xl"></i>
+            <span class="absolute -top-2 -right-1 bg-yellow-500 text-[8px] font-black px-2 py-1 rounded-full text-black uppercase">Coach</span>
+        </button>
     </div>`;
 }
 
@@ -128,7 +168,7 @@ function renderKPIs(m) {
     ];
 
     grid.innerHTML = kpis.map(k => `
-        <div class="bg-[#0f172a] p-5 rounded-3xl border border-slate-800 shadow-lg">
+        <div class="bg-[#0f172a] p-5 rounded-3xl border border-slate-800 shadow-lg transition hover:border-slate-600">
             <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mb-1">${k.lab}</p>
             <h2 class="${k.col} text-xl font-black">${k.val}</h2>
         </div>
@@ -141,13 +181,13 @@ function renderCEO(m, ai) {
 
     panel.innerHTML = `
         <div class="bg-gradient-to-br from-[#0f172a] to-[#1e293b] p-6 rounded-[40px] border border-cyan-500/30 shadow-2xl relative overflow-hidden">
-            <div class="absolute -top-4 -right-4 text-cyan-500/10 text-8xl"><i class="fas fa-brain"></i></div>
-            <h3 class="text-cyan-400 font-black text-sm mb-4 italic tracking-widest">👑 CEO ESTRATEGA</h3>
+            <div class="absolute -top-4 -right-4 text-cyan-500/10 text-8xl"><i class="fas fa-robot"></i></div>
+            <h3 class="text-cyan-400 font-black text-sm mb-4 italic tracking-widest uppercase">👑 CEO ESTRATEGA</h3>
             
             <div class="space-y-4 relative z-10">
                 <div>
                     <p class="text-[9px] text-yellow-500 font-black uppercase mb-2">Alertas de Operación</p>
-                    ${m.alertas.length ? m.alertas.map(a => `
+                    ${m.alertas.length ? m.alertas.slice(0, 3).map(a => `
                         <div class="flex items-center gap-2 text-[11px] text-red-400 font-bold mb-1">
                             <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></span>
                             ${a.msg}
@@ -157,11 +197,11 @@ function renderCEO(m, ai) {
 
                 <div>
                     <p class="text-[9px] text-cyan-500 font-black uppercase mb-2">NexusAI Insight</p>
-                    ${ai?.sugerencias?.map(s => `
-                        <p class="text-[11px] text-slate-200 leading-tight mb-2 border-l border-cyan-500/50 pl-2 italic">
+                    ${ai?.sugerencias?.slice(0, 2).map(s => `
+                        <p class="text-[11px] text-slate-200 leading-tight mb-2 border-l-2 border-cyan-500/50 pl-2 italic">
                             "${s.msg}"
                         </p>
-                    `).join("") || '<p class="text-[11px] text-slate-500">Calculando estrategias...</p>'}
+                    `).join("") || '<p class="text-[11px] text-slate-500 italic font-light">Analizando patrones del mercado...</p>'}
                 </div>
             </div>
         </div>
@@ -209,5 +249,5 @@ function renderCharts(m) {
 }
 
 function renderError(container, msg) {
-    container.innerHTML = `<div class="p-20 text-center text-red-500 font-bold uppercase tracking-widest animate-bounce">${msg}</div>`;
+    container.innerHTML = `<div class="p-20 text-center text-red-500 font-bold uppercase tracking-widest">${msg}</div>`;
 }
