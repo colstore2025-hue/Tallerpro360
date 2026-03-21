@@ -1,217 +1,103 @@
 /**
- * finanzas.js
- * Finanzas PRO360 · Producción estable (Modo SaaS limpio 🚀)
+ * finanzas.js - V3 ULTRA
+ * Dashboard Financiero Predictivo
  */
-
-import {
-  collection,
-  getDocs,
-  query,
-  orderBy
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-/* 🔥 DB GLOBAL */
-const db = window.db;
+import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db } from "../core/firebase-config.js";
+import { RevenueForecastAI } from "../ai/revenueForecastAI.js";
 
 export default async function finanzasModule(container, state) {
-
-  /* ===== VALIDACIÓN ===== */
-  if (!state?.empresaId) {
-    container.innerHTML = `
-      <h2 style="color:red;text-align:center;">
-        ❌ Empresa no definida
-      </h2>
-    `;
-    return;
-  }
-
-  const base = `empresas/${state.empresaId}`;
+  const empresaId = state?.empresaId || localStorage.getItem("empresaId");
+  const base = `empresas/${empresaId}`;
+  const ia = new RevenueForecastAI();
 
   container.innerHTML = `
-    <h1 style="color:#0ff; text-shadow:0 0 10px #0ff;">
-      💰 Finanzas PRO360
-    </h1>
+    <div class="p-4 bg-[#050a14] min-h-screen pb-24 text-white">
+      <div class="mb-6">
+        <h1 class="text-2xl font-black italic">CONTROL / <span class="text-cyan-400">FINANZAS</span></h1>
+        <p class="text-[10px] text-slate-500 uppercase tracking-widest">Métrica de Rendimiento Real</p>
+      </div>
 
-    <div id="resumen"
-      style="display:flex;flex-wrap:wrap;gap:20px;margin-top:20px;">
+      <div id="iaForecast" class="bg-gradient-to-br from-blue-600 to-purple-700 p-6 rounded-3xl shadow-2xl mb-6 relative overflow-hidden">
+         <div class="absolute top-0 right-0 p-4 opacity-20 text-6xl"><i class="fas fa-brain"></i></div>
+         <h4 class="text-xs font-bold uppercase opacity-80 mb-1">Predicción Fin de Mes</h4>
+         <div id="txtProyeccion" class="text-3xl font-black">$0</div>
+         <p id="txtSaludIA" class="text-[10px] mt-2 font-bold bg-black/20 inline-block px-2 py-1 rounded-lg">Analizando tendencia...</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <div class="bg-[#0f172a] p-4 rounded-2xl border border-slate-800">
+           <span class="text-[9px] text-slate-500 font-bold uppercase">Ingresos Reales</span>
+           <div id="kpiIngresos" class="text-lg font-bold text-emerald-400">$0</div>
+        </div>
+        <div id="kpiAbiertoCard" class="bg-[#0f172a] p-4 rounded-2xl border border-slate-800">
+           <span class="text-[9px] text-slate-500 font-bold uppercase">En el Taller (Potencial)</span>
+           <div id="kpiAbierto" class="text-lg font-bold text-cyan-400">$0</div>
+        </div>
+      </div>
+
+      <div class="bg-[#0f172a] p-4 rounded-3xl border border-slate-800">
+        <h3 class="text-xs font-bold text-slate-500 mb-4 uppercase">Flujo de Caja Mensual</h3>
+        <canvas id="graficaFlujo" class="w-full h-48"></canvas>
+      </div>
     </div>
-
-    <canvas id="graficaFlujo"
-      style="margin-top:30px;background:#111827;border-radius:12px;padding:15px;">
-    </canvas>
   `;
 
-  const resumenDiv = document.getElementById("resumen");
+  async function render() {
+    try {
+      // 1. Obtener Datos
+      const ordenesSnap = await getDocs(query(collection(db, `${base}/ordenes`), orderBy("creadoEn", "asc")));
+      const ordenes = ordenesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  try {
+      // 2. Ejecutar IA
+      ia.setData(ordenes);
+      const reporte = ia.calcularProyeccionFinDeMes();
+      const salud = ia.analizarSalud();
 
-    /* ================= ORDENES ================= */
+      // 3. Actualizar Interfaz
+      document.getElementById("txtProyeccion").innerText = `$${fmt(reporte.proyeccionFinalMes)}`;
+      document.getElementById("txtSaludIA").innerText = salud;
+      document.getElementById("kpiIngresos").innerText = `$${fmt(reporte.ingresosActuales)}`;
+      document.getElementById("kpiAbierto").innerText = `$${fmt(reporte.potencialEnTaller)}`;
 
-    const ordenesSnap = await getDocs(
-      query(
-        collection(db, `${base}/ordenes`),
-        orderBy("creadoEn", "asc")
-      )
-    );
+      // 4. Lógica de Gráfica (Simplificada para el ejemplo)
+      renderGrafica(ordenes);
 
-    /* ================= GASTOS ================= */
-
-    const gastosSnap = await getDocs(
-      query(
-        collection(db, `${base}/finanzas`),
-        orderBy("fecha", "asc")
-      )
-    );
-
-    let ingresos = 0;
-    let costos = 0;
-    let utilidad = 0;
-    let flujoPorDia = {};
-
-    /* ================= PROCESAR ORDENES ================= */
-
-    ordenesSnap.forEach(doc => {
-
-      const o = doc.data() || {};
-
-      const total = Number(o.total || 0);
-      const costo = Number(o.costoTotal || 0);
-
-      ingresos += total;
-      costos += costo;
-      utilidad += total - costo;
-
-      let fecha = "sin_fecha";
-
-      try {
-        if (o.creadoEn?.toDate) {
-          fecha = o.creadoEn.toDate().toISOString().split("T")[0];
-        }
-      } catch {}
-
-      flujoPorDia[fecha] =
-        (flujoPorDia[fecha] || 0) + (total - costo);
-
-    });
-
-    /* ================= PROCESAR GASTOS ================= */
-
-    gastosSnap.forEach(doc => {
-
-      const g = doc.data() || {};
-
-      if (g.tipo === "gasto") {
-
-        const monto = Number(g.monto || 0);
-
-        costos += monto;
-        utilidad -= monto;
-
-        let fecha = "sin_fecha";
-
-        try {
-          if (g.fecha?.toDate) {
-            fecha = g.fecha.toDate().toISOString().split("T")[0];
-          }
-        } catch {}
-
-        flujoPorDia[fecha] =
-          (flujoPorDia[fecha] || 0) - monto;
-      }
-
-    });
-
-    /* ================= KPIs ================= */
-
-    resumenDiv.innerHTML = `
-      ${crearKPI("💰 Ingresos", ingresos, "#00ff99")}
-      ${crearKPI("📉 Costos", costos, "#ff0044")}
-      ${crearKPI("📈 Utilidad", utilidad, "#00ffff")}
-    `;
-
-    /* ================= GRAFICA ================= */
-
-    renderGrafica(ordenarDatos(flujoPorDia));
-
-  } catch (e) {
-
-    console.error("🔥 ERROR FINANZAS:", e);
-
-    container.innerHTML = `
-      <h2 style="color:red;text-align:center;">
-        ❌ Error cargando finanzas
-      </h2>
-      <pre>${e.message}</pre>
-    `;
+    } catch (e) {
+      console.error(e);
+      container.innerHTML += `<p class="text-red-500 text-xs">Error de sincronización financiera.</p>`;
+    }
   }
 
-  /* ================= KPI ================= */
+  function fmt(v) { return new Intl.NumberFormat("es-CO").format(v || 0); }
 
-  function crearKPI(titulo, valor, color) {
-    return `
-      <div style="
-        background:#111827;
-        border-left:6px solid ${color};
-        border-radius:12px;
-        padding:20px;
-        text-align:center;
-        box-shadow:0 0 15px ${color}50;
-      ">
-        <h3 style="font-size:20px;">${titulo}</h3>
-        <p style="
-          font-size:28px;
-          font-weight:bold;
-          color:${color};
-        ">
-          $${fmt(valor)}
-        </p>
-      </div>
-    `;
-  }
-
-  /* ================= GRAFICA ================= */
-
-  function renderGrafica(data) {
-
+  function renderGrafica(ordenes) {
     const ctx = document.getElementById("graficaFlujo");
-
     if (!ctx || typeof Chart === "undefined") return;
+    
+    // Agrupamos por día para la gráfica
+    const dias = {};
+    ordenes.forEach(o => {
+      const fecha = o.creadoEn?.toDate ? o.creadoEn.toDate().getDate() : 'S/F';
+      dias[fecha] = (dias[fecha] || 0) + Number(o.total || 0);
+    });
 
     new Chart(ctx, {
       type: "line",
       data: {
-        labels: Object.keys(data),
+        labels: Object.keys(dias),
         datasets: [{
-          label: "Flujo de caja",
-          data: Object.values(data),
-          borderColor: "#00ffcc",
-          backgroundColor: "rgba(0,255,204,0.2)",
-          borderWidth: 3,
-          tension: 0.4
+          label: "Ingresos Diarios",
+          data: Object.values(dias),
+          borderColor: "#06b6d4",
+          borderWidth: 2,
+          tension: 0.4,
+          pointRadius: 0
         }]
       },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            labels: { color: "#00ffcc" }
-          }
-        }
-      }
+      options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
     });
   }
 
-  /* ================= UTILS ================= */
-
-  function fmt(v) {
-    return new Intl.NumberFormat("es-CO").format(v || 0);
-  }
-
-  function ordenarDatos(obj) {
-    return Object.fromEntries(
-      Object.entries(obj).sort(
-        ([a], [b]) => new Date(a) - new Date(b)
-      )
-    );
-  }
+  render();
 }
