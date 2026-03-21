@@ -1,85 +1,75 @@
 /**
- * dashboard.js 
- * 🔥 TallerPRO360 ULTRA V3 - Edición Certificada
+ * dashboard.js - TallerPRO360 ULTRA V3
+ * Sincronizado con NexusAI Orchestrator 🧠
  */
 import { getClientes, getOrdenes, getInventario } from "../services/dataService.js";
-import { AI_Engine } from "../ai/aiAutonomousFlow.js";
+import { NexusAI } from "../ai/NexusOrchestratorAI.js"; // 🔥 El nuevo motor unificado
 import { store } from "../core/store.js";
 
 let charts = {};
 
 export default async function dashboard(container, state) {
-    // 1. Render inicial inmediato (UX First)
+    const empresaId = state?.empresaId || localStorage.getItem("empresaId");
+    
+    // 1. Render Base Inmediato (UX de alta velocidad)
     renderBaseUI(container);
 
-    const empresaId = state?.empresaId || localStorage.getItem("empresaId");
-    if (!empresaId) return renderError(container, "❌ Identificador de empresa no encontrado");
+    if (!empresaId) return renderError(container, "❌ Error: Identidad de Taller no detectada");
 
     try {
-        // 2. Intentar cargar desde Store para velocidad instantánea
-        if (store.cache?.ordenes?.length > 0) {
-            processAndRender(container, store.cache, state);
-        }
-
-        // 3. Sincronización asíncrona con Firebase
-        const [clientes, ordenes, inventario] = await Promise.all([
-            getClientes(empresaId).catch(() => []),
-            getOrdenes(empresaId).catch(() => []),
-            getInventario(empresaId).catch(() => [])
+        // 2. Carga Paralela (Data + Inteligencia)
+        // Usamos Promise.all para que la App no "espere" una cosa tras otra
+        const [rawData, aiAnalysis] = await Promise.all([
+            loadFullData(empresaId),
+            NexusAI.analizarTodo(empresaId).catch(() => null)
         ]);
 
-        const freshData = { clientes, ordenes, inventario };
-        store.cache = freshData; 
-
-        await processAndRender(container, freshData, state);
+        // 3. Procesamiento y Render Final
+        const metrics = calculateMetrics(rawData);
+        renderKPIs(metrics);
+        renderCharts(metrics);
+        renderCEO(metrics, aiAnalysis);
 
     } catch (e) {
-        console.error("🔥 Error crítico en Dashboard:", e);
-        // No bloqueamos la pantalla, mostramos lo que tengamos
+        console.error("🔥 Dashboard Crash:", e);
     }
 }
 
-async function processAndRender(container, rawData, state) {
-    const metrics = calculateMetrics(rawData);
-    
-    // Renderizamos KPIs y Gráficos primero (No esperamos a la IA)
-    renderKPIs(metrics);
-    renderCharts(metrics);
+async function loadFullData(empresaId) {
+    // Si tenemos cache fresco, lo usamos (Store Pattern)
+    if (store.cache?.ordenes?.length > 0) return store.cache;
 
-    // Luego, de forma asíncrona, cargamos el panel CEO
-    AI_Engine.analizarNegocio(state.empresaId)
-        .then(aiAnalysis => renderCEO(metrics, aiAnalysis, state))
-        .catch(() => renderCEO(metrics, null, state));
+    const [clientes, ordenes, inventario] = await Promise.all([
+        getClientes(empresaId).catch(() => []),
+        getOrdenes(empresaId).catch(() => []),
+        getInventario(empresaId).catch(() => [])
+    ]);
+
+    const data = { clientes, ordenes, inventario };
+    store.cache = data; // Guardamos en el "cerebro" global de la App
+    return data;
 }
 
 function calculateMetrics(data) {
-    const clientes = data.clientes || [];
-    const ordenes = data.ordenes || [];
-    const inventario = data.inventario || [];
-    
-    let ingresos = 0, costos = 0, alertas = [];
-    let ingresosPorDia = {};
+    const { ordenes, inventario, clientes } = data;
+    let ingresos = 0, costos = 0, ingresosPorDia = {};
+    const alertas = [];
 
     ordenes.forEach(o => {
-        const total = Number(o.total || o.valorTrabajo || 0);
-        const costo = Number(o.costoTotal || 0);
-        ingresos += total;
-        costos += costo;
+        const val = Number(o.total || 0);
+        ingresos += val;
+        costos += Number(o.costoTotal || 0);
 
-        // SAFE DATE: Evita el error .toDate()
-        let fecha = "Sin Fecha";
+        // Agrupación para gráfica
+        let fecha = "S/F";
         try {
-            if (o.creadoEn?.toDate) fecha = o.creadoEn.toDate().toISOString().split("T")[0];
-            else if (o.creadoEn) fecha = new Date(o.creadoEn).toISOString().split("T")[0];
-        } catch(e) { fecha = "Error Fecha"; }
-        
-        ingresosPorDia[fecha] = (ingresosPorDia[fecha] || 0) + total;
-
-        if (total < costo && total > 0) {
-            alertas.push({ msg: `Orden #${o.id?.slice(-4) || '??'} con pérdida`, nivel: "alto" });
-        }
+            const d = o.creadoEn?.toDate ? o.creadoEn.toDate() : new Date(o.creadoEn);
+            fecha = d.toISOString().split("T")[0];
+        } catch(e) {}
+        ingresosPorDia[fecha] = (ingresosPorDia[fecha] || 0) + val;
     });
 
+    // Alertas de Inventario (Sincronizado con inventario.js)
     inventario.forEach(item => {
         if (Number(item.cantidad || 0) < 5) {
             alertas.push({ msg: `Stock bajo: ${item.nombre}`, nivel: "medio" });
@@ -90,9 +80,8 @@ function calculateMetrics(data) {
         ingresos, costos, 
         utilidad: ingresos - costos,
         margen: ingresos ? ((ingresos - costos) / ingresos) * 100 : 0,
-        totalClientes: clientes.length,
         totalOrdenes: ordenes.length,
-        totalStock: inventario.length,
+        totalClientes: clientes.length,
         ingresosPorDia,
         alertas
     };
@@ -100,50 +89,87 @@ function calculateMetrics(data) {
 
 function renderBaseUI(container) {
     container.innerHTML = `
-    <div style="padding:20px; background:#0a0f1a; min-height:100vh; font-family:sans-serif;">
-        <h1 style="font-size:28px; font-weight:900; color:#00ffff; margin-bottom:20px;">
-            🧠 DASHBOARD PRO360 <span style="font-size:12px; color:#facc15;">ULTRA V3</span>
-        </h1>
-        <div id="kpiGrid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:15px; margin-bottom:30px;">
-             <div style="height:100px; background:#0f172a; border-radius:12px; border:1px solid #1e293b; animate: pulse 2s infinite;"></div>
-        </div>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
-            <div style="background:#0f172a; padding:20px; border-radius:15px; border:1px solid #1e293b;">
-                <h3 style="color:#00ffff; margin-bottom:15px; font-size:16px;">Flujo de Ingresos</h3>
-                <canvas id="mainChart" style="max-height:300px;"></canvas>
+    <div class="p-6 bg-[#050a14] min-h-screen text-white font-sans">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-black italic tracking-tighter text-cyan-400">
+                PRO360 <span class="text-white font-light underline decoration-yellow-500">ULTRA V3</span>
+            </h1>
+            <div class="text-[10px] bg-slate-800 px-3 py-1 rounded-full text-slate-400 font-bold uppercase tracking-widest">
+                Nexus-X Live
             </div>
-            <div id="ceoPanel"></div>
+        </div>
+
+        <div id="kpiGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+             ${[1,2,3,4].map(() => `<div class="h-24 bg-[#0f172a] rounded-3xl animate-pulse border border-slate-800"></div>`).join("")}
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-[#0f172a] p-6 rounded-[40px] border border-slate-800 shadow-2xl">
+                <h3 class="text-xs font-black text-slate-500 uppercase mb-4 tracking-widest text-center">Flujo de Caja</h3>
+                <canvas id="mainChart" class="max-h-64 w-full"></canvas>
+            </div>
+            
+            <div id="ceoPanel" class="space-y-4">
+                <div class="h-64 bg-[#0f172a] rounded-[40px] animate-pulse border border-cyan-500/20"></div>
+            </div>
         </div>
     </div>`;
 }
 
 function renderKPIs(m) {
     const grid = document.getElementById("kpiGrid");
-    if (!grid) return;
     const fmt = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
     
-    const cards = [
-        { lab: "Ingresos", val: fmt.format(m.ingresos), col: "#00ffff" },
-        { lab: "Utilidad", val: fmt.format(m.utilidad), col: "#22c55e" },
-        { lab: "Margen", val: m.margen.toFixed(1) + "%", col: "#facc15" },
-        { lab: "Órdenes", val: m.totalOrdenes, col: "#a855f7" }
+    const kpis = [
+        { lab: "Ingresos", val: fmt.format(m.ingresos), col: "text-emerald-400" },
+        { lab: "Utilidad", val: fmt.format(m.utilidad), col: "text-cyan-400" },
+        { lab: "Margen", val: m.margen.toFixed(1) + "%", col: "text-yellow-400" },
+        { lab: "Órdenes", val: m.totalOrdenes, col: "text-purple-400" }
     ];
 
-    grid.innerHTML = cards.map(c => `
-        <div style="background:#0f172a; padding:18px; border-radius:12px; border:1px solid #1e293b;">
-            <p style="font-size:11px; color:#94a3b8; margin:0; text-transform:uppercase;">${c.lab}</p>
-            <h2 style="color:${c.col}; font-size:24px; margin:5px 0 0 0; font-weight:800;">${c.val}</h2>
+    grid.innerHTML = kpis.map(k => `
+        <div class="bg-[#0f172a] p-5 rounded-3xl border border-slate-800 shadow-lg">
+            <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mb-1">${k.lab}</p>
+            <h2 class="${k.col} text-xl font-black">${k.val}</h2>
         </div>
     `).join("");
 }
 
-async function renderCharts(m) {
-    // Si Chart.js no está en el index.html, lo cargamos dinámicamente
-    if (!window.Chart) {
-        console.warn("Chart.js no detectado, esperando...");
-        return;
-    }
+function renderCEO(m, ai) {
+    const panel = document.getElementById("ceoPanel");
+    if (!panel) return;
 
+    panel.innerHTML = `
+        <div class="bg-gradient-to-br from-[#0f172a] to-[#1e293b] p-6 rounded-[40px] border border-cyan-500/30 shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-4 -right-4 text-cyan-500/10 text-8xl"><i class="fas fa-brain"></i></div>
+            <h3 class="text-cyan-400 font-black text-sm mb-4 italic tracking-widest">👑 CEO ESTRATEGA</h3>
+            
+            <div class="space-y-4 relative z-10">
+                <div>
+                    <p class="text-[9px] text-yellow-500 font-black uppercase mb-2">Alertas de Operación</p>
+                    ${m.alertas.length ? m.alertas.map(a => `
+                        <div class="flex items-center gap-2 text-[11px] text-red-400 font-bold mb-1">
+                            <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></span>
+                            ${a.msg}
+                        </div>
+                    `).join("") : '<p class="text-[11px] text-emerald-400 font-bold italic">Sistema estable.</p>'}
+                </div>
+
+                <div>
+                    <p class="text-[9px] text-cyan-500 font-black uppercase mb-2">NexusAI Insight</p>
+                    ${ai?.sugerencias?.map(s => `
+                        <p class="text-[11px] text-slate-200 leading-tight mb-2 border-l border-cyan-500/50 pl-2 italic">
+                            "${s.msg}"
+                        </p>
+                    `).join("") || '<p class="text-[11px] text-slate-500">Calculando estrategias...</p>'}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderCharts(m) {
+    if (!window.Chart) return;
     const ctx = document.getElementById("mainChart")?.getContext("2d");
     if (!ctx) return;
 
@@ -158,36 +184,30 @@ async function renderCharts(m) {
             labels: dates,
             datasets: [{
                 data: values,
-                borderColor: '#00ffff',
+                borderColor: '#06b6d4',
+                borderWidth: 3,
                 tension: 0.4,
+                pointRadius: 0,
                 fill: true,
-                backgroundColor: 'rgba(0, 255, 255, 0.05)'
+                backgroundColor: (context) => {
+                    const gradient = context.chart.ctx.createLinearGradient(0, 0, 0, 300);
+                    gradient.addColorStop(0, 'rgba(6, 182, 212, 0.2)');
+                    gradient.addColorStop(1, 'transparent');
+                    return gradient;
+                }
             }]
         },
-        options: { responsive: true, plugins: { legend: { display: false } } }
+        options: { 
+            responsive: true, 
+            plugins: { legend: { display: false } },
+            scales: { 
+                y: { display: false },
+                x: { grid: { display: false }, ticks: { color: '#475569', font: { size: 9 } } } 
+            }
+        }
     });
 }
 
-function renderCEO(m, ai, state) {
-    const panel = document.getElementById("ceoPanel");
-    if (!panel) return;
-
-    panel.innerHTML = `
-        <div style="background:#0f172a; padding:20px; border-radius:15px; border:1px solid #00ffff44;">
-            <h3 style="color:#00ffff; margin-top:0;">👑 CEO AUTÓNOMO</h3>
-            <div style="margin-bottom:15px;">
-                <p style="color:#facc15; font-size:11px; font-weight:bold;">ALERTAS ACTIVAS</p>
-                ${m.alertas.length ? m.alertas.map(a => `<p style="color:#ef4444; font-size:12px; margin:4px 0;">● ${a.msg}</p>`).join("") : '<p style="color:#22c55e; font-size:12px;">Operación Estable</p>'}
-            </div>
-            <div style="margin-bottom:15px;">
-                <p style="color:#00ffff; font-size:11px; font-weight:bold;">IA SUGERENCIAS</p>
-                ${ai?.sugerencias?.map(s => `<p style="color:#fff; font-size:12px;">→ ${s.msg}</p>`).join("") || '<p style="color:#64748b; font-size:12px;">Analizando datos...</p>'}
-            </div>
-        </div>
-    `;
-    window.AI_Engine = AI_Engine;
-}
-
 function renderError(container, msg) {
-    container.innerHTML = `<div style="color:red; padding:50px; text-align:center;">${msg}</div>`;
+    container.innerHTML = `<div class="p-20 text-center text-red-500 font-bold uppercase tracking-widest animate-bounce">${msg}</div>`;
 }
