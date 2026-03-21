@@ -1,58 +1,25 @@
-/*
-=====================================
-login.js
-Sistema de login · TallerPRO360
-=====================================
-*/
+// ... (tus imports de Firebase)
+try {
+  bootStatus?.("🔑 Autenticando...");
+  const cred = await signInWithEmailAndPassword(auth, email, password);
+  const uid = cred.user.uid;
 
-import { auth } from "../core/firebase-config.js";
-import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { bootStatus } from "../system/bootDiagnostic.js";
+  // NUEVO: Obtener el perfil global para saber su empresaId y Rol
+  const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+  const { db } = await import("../core/firebase-config.js");
+  
+  const userDoc = await getDoc(doc(db, "usuariosGlobal", uid));
 
-const form = document.getElementById("loginForm");
+  if (userDoc.exists()) {
+    const userData = userDoc.data();
+    localStorage.setItem("uid", uid);
+    localStorage.setItem("empresaId", userData.empresaId); // <--- El de verdad
+    localStorage.setItem("rol", userData.rolGlobal || "usuario");
+    localStorage.setItem("plan", userData.plan || "Basico"); // Para el Sidebar
+    
+    window.location.href = "/index.html";
+  } else {
+    throw new Error("El usuario no tiene un perfil configurado.");
+  }
 
-if (form) {
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
-
-    if (!email || !password) {
-      alert("Por favor ingresa email y contraseña");
-      bootStatus?.("⚠ Email o contraseña vacíos");
-      return;
-    }
-
-    try {
-      bootStatus?.("🔑 Intentando autenticar usuario...");
-      const cred = await signInWithEmailAndPassword(auth, email, password);
-      const user = cred.user;
-
-      console.log("Usuario autenticado:", user.uid);
-      bootStatus?.(`✔ Usuario autenticado: ${user.uid}`);
-
-      localStorage.setItem("uid", user.uid);
-
-      if (!localStorage.getItem("empresaId")) {
-        localStorage.setItem("empresaId", "demoEmpresa");
-        bootStatus?.("⚡ Empresa demo cargada");
-      }
-
-      window.location.href = "/index.html";
-
-    } catch (error) {
-      console.error("Error login:", error);
-
-      let mensaje = "Error de autenticación";
-      switch (error.code) {
-        case "auth/user-not-found": mensaje = "Usuario no encontrado"; break;
-        case "auth/wrong-password": mensaje = "Contraseña incorrecta"; break;
-        case "auth/invalid-email": mensaje = "Email inválido"; break;
-      }
-
-      alert(mensaje);
-      bootStatus?.(`❌ ${mensaje}`);
-    }
-  });
-}
+} catch (error) { /* ... manejo de errores */ }
