@@ -1,188 +1,119 @@
 /**
- * firestoreGuardianGod.js
- * MODO DIOS 🔥 ULTRA PRO360
- * Watcher + Fix Total Inicial + Corrección Inteligente
- * Integración completa con Orquestador Supremo
+ * firestoreGuardianGod.js - V3 ULTRA
+ * El Centinela de Datos de Nexus-X Starlink SAS
  */
-
-import {
-  collection,
-  onSnapshot,
-  updateDoc,
-  doc,
-  addDoc,
-  getDocs
+import { 
+  collection, onSnapshot, updateDoc, doc, addDoc, getDocs, query, limit 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db } from "../core/firebase-config.js";
 
-const db = window.db;
-
-/* ================= INIT MODO DIOS ================= */
 export function activarModoDiosGuardian(empresaId) {
-  if (!empresaId) {
-    console.warn("⚠️ Guardian Dios: empresaId requerido");
-    return;
-  }
+  if (!empresaId) return;
 
-  console.log("😈 MODO DIOS ACTIVADO");
-
+  console.log("🔥 NEXUS-X: GUARDIAN GOD ACTIVADO");
   const base = `empresas/${empresaId}`;
 
-  // 🔹 Fix inicial
-  fixTotalInicial(empresaId).then(() => {
-    console.log("✅ Fix inicial completado, iniciando Watchers");
-  });
+  // Ejecutar limpieza inicial de forma silenciosa
+  fixTotalInicial(empresaId);
 
-  // 🔹 Watchers en tiempo real
+  // Iniciar vigilancia activa
   escucharOrdenes(base);
   escucharInventario(base);
 }
 
-/* ================= FIX TOTAL INICIAL ================= */
-export async function fixTotalInicial(empresaId) {
-  if (!empresaId) return;
+async function fixTotalInicial(empresaId) {
   const base = `empresas/${empresaId}`;
-
-  console.log("🔥 Ejecutando Fix Total Inicial...");
-
-  // 🔹 Órdenes
-  const ordenesSnap = await getDocs(collection(db, `${base}/ordenes`));
-  for (const docSnap of ordenesSnap.docs) {
-    const data = docSnap.data();
-    const id = docSnap.id;
-    const update = {};
-    if (data.total < 0) update.total = 0;
-    if (data.costoTotal > data.total) update.utilidad = 0;
-    if (!data.estado) update.estado = "abierta";
-    if (Object.keys(update).length > 0) {
-      await updateDoc(doc(db, `${base}/ordenes`, id), update);
-      await log(base, {
-        tipo: "fix",
-        modulo: "ordenes",
-        ordenId: id,
-        cambios: update
-      });
+  try {
+    const ordenesSnap = await getDocs(collection(db, `${base}/ordenes`));
+    for (const d of ordenesSnap.docs) {
+      validarYCorregirOrden(base, d.id, d.data());
     }
-  }
-
-  // 🔹 Inventario
-  const repuestosSnap = await getDocs(collection(db, `${base}/repuestos`));
-  for (const docSnap of repuestosSnap.docs) {
-    const data = docSnap.data();
-    const id = docSnap.id;
-    const update = {};
-    if (data.stock < 0) update.stock = 0;
-    if (data.precioVenta < data.precioCompra) update.precioVenta = data.precioCompra * 1.3;
-    if (Object.keys(update).length > 0) {
-      await updateDoc(doc(db, `${base}/repuestos`, id), update);
-      await log(base, {
-        tipo: "fix",
-        modulo: "inventario",
-        repuestoId: id,
-        cambios: update
-      });
-    }
-  }
-
-  console.log("✅ Fix Total Inicial completado");
+  } catch (e) { console.error("❌ Fallo en barrido inicial:", e); }
 }
 
-/* ================= ÓRDENES WATCHER ================= */
 function escucharOrdenes(base) {
   onSnapshot(collection(db, `${base}/ordenes`), snapshot => {
-    snapshot.docChanges().forEach(async change => {
-      if (!["added","modified"].includes(change.type)) return;
-
-      const data = change.doc.data();
-      const id = change.doc.id;
-      const update = {};
-
-      // 🔹 Validaciones automáticas
-      if (data.total < 0) update.total = 0;
-      if (data.costoTotal > data.total) update.utilidad = 0;
-      if (!data.estado) update.estado = "abierta";
-
-      // 🔹 Alertas
-      if (data.total > 10000000) {
-        await log(base, {
-          tipo: "alerta",
-          modulo: "ordenes",
-          mensaje: "Orden sospechosamente alta",
-          ordenId: id
-        });
-      }
-
-      // 🔹 Correcciones automáticas
-      if (Object.keys(update).length > 0) {
-        await updateDoc(doc(db, `${base}/ordenes`, id), update);
-        await log(base, {
-          tipo: "fix",
-          modulo: "ordenes",
-          ordenId: id,
-          cambios: update
-        });
+    snapshot.docChanges().forEach(change => {
+      // Solo actuar si es una adición o modificación externa
+      if (["added", "modified"].includes(change.type)) {
+        const data = change.doc.data();
+        // Evitar bucle: Si el cambio ya viene con la firma del Guardian, ignorar
+        if (data.lastFixBy === "GuardianGod") return;
+        validarYCorregirOrden(base, change.doc.id, data);
       }
     });
   });
 }
 
-/* ================= INVENTARIO WATCHER ================= */
+async function validarYCorregirOrden(base, id, data) {
+  const update = {};
+
+  // 1. Reglas Financieras de Oro
+  if (data.total < 0) update.total = 0;
+  
+  // Si el costo es mayor al total, la utilidad no puede ser negativa en el sistema
+  const costo = data.costoTotal || 0;
+  const total = data.total || 0;
+  if (costo > total) {
+    update.utilidad = 0;
+    update.alertaIA = "Costo excede al total";
+  } else {
+    update.utilidad = total - costo;
+  }
+
+  // 2. Integridad de Proceso
+  if (!data.estado) update.estado = "diagnostico";
+  if (!data.fechaPromesa && data.estado === "abierta") {
+     update.alertaIA = "Sin fecha de entrega definida";
+  }
+
+  // APLICAR CORRECCIÓN CON FIRMA (Para evitar bucles)
+  if (Object.keys(update).length > 0) {
+    update.lastFixBy = "GuardianGod";
+    update.updatedAt = new Date();
+    await updateDoc(doc(db, `${base}/ordenes`, id), update);
+    registrarEvento(base, "FIX_ORDEN", id, update);
+  }
+}
+
 function escucharInventario(base) {
   onSnapshot(collection(db, `${base}/repuestos`), snapshot => {
-    snapshot.docChanges().forEach(async change => {
-      if (change.type !== "modified") return;
-
-      const data = change.doc.data();
-      const id = change.doc.id;
-      const update = {};
-
-      // 🔹 Stock negativo
-      if (data.stock < 0) {
-        update.stock = 0;
-        await log(base, {
-          tipo: "alerta",
-          modulo: "inventario",
-          mensaje: "Stock negativo corregido",
-          repuestoId: id
-        });
-      }
-
-      // 🔹 Stock crítico
-      if (data.stock <= data.stockMinimo) {
-        await log(base, {
-          tipo: "alerta",
-          modulo: "inventario",
-          mensaje: `Stock bajo: ${data.nombre}`,
-          repuestoId: id
-        });
-      }
-
-      // 🔹 Precios ilegales
-      if (data.precioVenta < data.precioCompra) {
-        update.precioVenta = data.precioCompra * 1.3;
-        await log(base, {
-          tipo: "fix",
-          modulo: "inventario",
-          mensaje: "Precio corregido automáticamente",
-          repuestoId: id
-        });
-      }
-
-      // 🔹 Aplicar corrección
-      if (Object.keys(update).length > 0) {
-        await updateDoc(doc(db, `${base}/repuestos`, id), update);
+    snapshot.docChanges().forEach(change => {
+      if (change.type === "modified") {
+        const data = change.doc.data();
+        if (data.lastFixBy === "GuardianGod") return;
+        validarYCorregirStock(base, change.doc.id, data);
       }
     });
   });
 }
 
-/* ================= LOG CENTRAL ================= */
-async function log(base, data) {
+async function validarYCorregirStock(base, id, data) {
+  const update = {};
+  
+  // 1. Regla de Margen: Mínimo 30% de ganancia si el precio es absurdo
+  if (data.precioVenta <= data.precioCompra) {
+    update.precioVenta = Math.round((data.precioCompra * 1.30));
+    update.alertaIA = "Margen de ganancia corregido al 30%";
+  }
+
+  if (data.stock < 0) update.stock = 0;
+
+  if (Object.keys(update).length > 0) {
+    update.lastFixBy = "GuardianGod";
+    await updateDoc(doc(db, `${base}/repuestos`, id), update);
+    registrarEvento(base, "FIX_STOCK", id, update);
+  }
+}
+
+async function registrarEvento(base, tipo, refId, cambios) {
   try {
     await addDoc(collection(db, `${base}/ia_logs`), {
-      ...data,
-      fecha: new Date()
+      tipo,
+      refId,
+      cambios,
+      fecha: new Date(),
+      emisor: "Nexus-X Guardian"
     });
-  } catch (e) {
-    console.warn("Error log guardian dios", e);
-  }
+  } catch (e) { /* Silencioso */ }
 }
