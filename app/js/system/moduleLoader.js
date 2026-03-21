@@ -1,43 +1,47 @@
-/**
- * moduleLoader.js
- * Loader central para TallerPRO360
- * Arranca dashboard y otros módulos dinámicamente
- */
-
+import { store, setStore } from "../core/store.js";
+import { dataService } from "../services/dataService.js";
 import { bootStatus } from "./bootDiagnostic.js";
+import { fixTotalInicial, activarModoDiosGuardian } from "./firestoreGuardianGod.js";
 
 export async function initApp() {
-  bootStatus("DOM cargado, iniciando sistema...");
+  bootStatus("🚀 Iniciando Motor TallerPRO360...");
 
+  // 1. Recuperar sesión (Prioridad Alta)
   const uid = localStorage.getItem("uid");
-  if (!uid) {
-    bootStatus("Usuario no autenticado, redirigiendo...");
+  const empresaId = localStorage.getItem("empresaId");
+
+  if (!uid || !empresaId) {
     location.href = "/login.html";
     return;
   }
 
-  bootStatus("Usuario autenticado, cargando módulos...");
+  // 2. Hydrate Store (Llenar el estado inicial)
+  setStore('user', { uid, rol: localStorage.getItem("rol") });
+  setStore('empresa', { id: empresaId });
 
   try {
+    // 3. Activar Guardian y Fixes de DB
+    bootStatus("🛡️ Activando Guardian de Datos...");
+    await fixTotalInicial(empresaId);
+    activarModoDiosGuardian(empresaId);
+
+    // 4. Iniciar suscripciones críticas (Background)
+    // Esto hace que la app se sienta instantánea
+    dataService.subscribeTo("ordenes");
+    dataService.subscribeTo("clientes");
+    dataService.subscribeTo("inventario");
+
+    // 5. Cargar Dashboard inicial
     const container = document.getElementById("appContainer");
-    if (!container) throw new Error("Contenedor appContainer no encontrado");
+    bootStatus("📦 Cargando módulo Dashboard...");
+    
+    // Usamos tu lógica de Ejecución Segura
+    await window.PRO360.ejecutarModuloSeguro("dashboard", store, container);
 
-    bootStatus("Importando dashboard...");
-    const { default: dashboard } = await import("../modules/dashboard.js");
-
-    bootStatus("Inicializando dashboard...");
-    await dashboard(container, { empresaId: localStorage.getItem("empresaId") });
-
-    bootStatus("Dashboard cargado correctamente ✅");
+    bootStatus("✅ Sistema Estable.");
 
   } catch (e) {
-    console.error("❌ Error cargando módulos:", e);
-    bootStatus("Error cargando módulos");
-    const container = document.getElementById("appContainer");
-    if (container) {
-      container.innerHTML = `<p style="color:red;text-align:center;margin-top:50px;">
-        ⚠️ Error cargando el sistema. Revisa consola.
-      </p>`;
-    }
+    bootStatus("❌ Fallo Crítico en el Boot.");
+    console.error(e);
   }
 }
