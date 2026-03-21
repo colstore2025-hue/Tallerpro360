@@ -1,12 +1,9 @@
 /**
  * bootSystem.js
  * Boot del ERP · TallerPRO360
- * Inicializa módulos principales y dashboard
  */
 
 import { bootStatus } from "./bootDiagnostic.js";
-
-// 🚀 Módulos principales
 import clientesModule from "../modules/clientes.js";
 import dashboardModule from "../modules/dashboard.js";
 
@@ -14,54 +11,34 @@ export async function bootSystem() {
   bootStatus("🧠 Iniciando sistema...");
 
   try {
-    // ===============================
-    // Verificar sesión
-    // ===============================
     const uid = localStorage.getItem("uid");
-    const empresaId = localStorage.getItem("empresaId");
+    let empresaId = localStorage.getItem("empresaId");
 
-    if (!uid) {
-      bootStatus("❌ Usuario no autenticado");
-      throw new Error("Usuario no autenticado");
-    }
-
+    if (!uid) throw new Error("Usuario no autenticado");
     if (!empresaId) {
-      bootStatus("⚠ Empresa no definida, cargando demo...");
-      localStorage.setItem("empresaId", "demoEmpresa");
+      empresaId = "demoEmpresa";
+      localStorage.setItem("empresaId", empresaId);
+      bootStatus("⚡ Empresa demo cargada");
     }
 
-    // ===============================
-    // Inicializar layout y contenedor
-    // ===============================
     const appContainer = document.getElementById("appContainer");
     const sidebar = document.getElementById("sidebar");
 
-    if (!appContainer || !sidebar) {
-      throw new Error("Contenedores principales no encontrados");
-    }
+    if (!appContainer || !sidebar) throw new Error("Contenedores principales no encontrados");
 
-    // ===============================
-    // Configurar sidebar
-    // ===============================
+    // Sidebar dinámico
     sidebar.innerHTML = `
       <button id="btnDashboard">Dashboard</button>
       <button id="btnClientes">Clientes</button>
     `;
 
-    document.getElementById("btnDashboard").onclick = () => {
-      loadDashboard();
-    };
-
-    document.getElementById("btnClientes").onclick = () => {
-      loadClientes();
-    };
+    document.getElementById("btnDashboard").onclick = () => loadModule(dashboardModule);
+    document.getElementById("btnClientes").onclick = () => loadModule(clientesModule);
 
     bootStatus("✅ Sidebar cargada");
 
-    // ===============================
-    // Cargar módulo inicial
-    // ===============================
-    await loadDashboard();
+    // Cargar módulo inicial (Dashboard)
+    await loadModule(dashboardModule);
 
     bootStatus("🚀 Sistema inicializado correctamente");
 
@@ -72,31 +49,14 @@ export async function bootSystem() {
   }
 }
 
-// ===============================
-// Funciones de carga de módulos
-// ===============================
-async function loadDashboard() {
+// Función genérica para cargar módulos
+async function loadModule(moduleFunc) {
   const container = document.getElementById("appContainer");
-  container.innerHTML = `<p style="text-align:center;margin-top:50px;">🔄 Cargando dashboard...</p>`;
-
-  const empresaId = localStorage.getItem("empresaId");
+  container.innerHTML = `<p style="text-align:center;margin-top:50px;">🔄 Cargando módulo...</p>`;
   try {
-    await dashboardModule(container, { empresaId });
+    await moduleFunc(container, { empresaId: localStorage.getItem("empresaId") });
   } catch (e) {
-    console.error("Error cargando dashboard:", e);
-    container.innerHTML = `<p style="color:red;text-align:center;">❌ Error cargando dashboard</p>`;
-  }
-}
-
-async function loadClientes() {
-  const container = document.getElementById("appContainer");
-  container.innerHTML = `<p style="text-align:center;margin-top:50px;">🔄 Cargando clientes...</p>`;
-
-  const empresaId = localStorage.getItem("empresaId");
-  try {
-    await clientesModule(container, { empresaId });
-  } catch (e) {
-    console.error("Error cargando clientes:", e);
-    container.innerHTML = `<p style="color:red;text-align:center;">❌ Error cargando clientes</p>`;
+    console.error("Error cargando módulo:", e);
+    container.innerHTML = `<p style="color:red;text-align:center;">❌ Error cargando módulo</p>`;
   }
 }
