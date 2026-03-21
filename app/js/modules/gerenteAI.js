@@ -1,46 +1,80 @@
 /**
- * gerenteAI.js
- * 👑 El cerebro estratega de TallerPRO360
+ * gerenteAI.js - Edición Rey de TallerPRO360
  */
-import { AI_Engine } from "../ai/aiAutonomousFlow.js";
+import { NexusAI } from "../ai/NexusOrchestratorAI.js";
+import { hablar } from "../voice/voiceCore.js";
 
 export default async function gerenteAI(container, state) {
+    const empresaId = state?.empresaId || localStorage.getItem("empresaId");
+
     container.innerHTML = `
-        <div style="padding:20px; color:#fff;">
-            <h2 style="color:#0ff; text-shadow: 0 0 10px #0ff;">👑 Gerente Inteligente</h2>
-            <div id="aiAnalysisResults" style="margin-top:20px; background:#1e293b; padding:20px; border-radius:15px; border:1px solid #00ffff44;">
-                <p>🤖 Analizando datos del taller en tiempo real...</p>
+        <div class="p-6 text-white min-h-screen bg-[#050a14]">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-black text-cyan-400 italic underline decoration-white/20">👑 GERENTE ESTRATEGA</h2>
+                <button id="btnVozIA" class="w-12 h-12 bg-cyan-500 rounded-full flex items-center justify-center text-black shadow-lg shadow-cyan-500/20">
+                   <i class="fas fa-volume-up"></i>
+                </button>
+            </div>
+
+            <div id="panelIA" class="space-y-6">
+                <div class="animate-pulse flex flex-col items-center py-20">
+                    <div class="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p class="mt-4 text-slate-500 font-bold uppercase tracking-tighter">Nexus-X analizando flujo de caja...</p>
+                </div>
             </div>
         </div>
     `;
 
     try {
-        const analisis = await AI_Engine.analizarNegocio(state.empresaId);
-        renderAnalisis(analisis);
+        const data = await NexusAI.analizarTodo(empresaId);
+        renderAnalisis(data);
+        
+        document.getElementById("btnVozIA").onclick = () => {
+          hablar(`Gerente, la utilidad actual es de ${data.kpis.utilidad} pesos. Tenemos ${data.kpis.stockCritico} productos en falta.`);
+        };
     } catch (e) {
-        document.getElementById("aiAnalysisResults").innerHTML = "<p>⚠️ Error al procesar datos de inteligencia.</p>";
+        console.error(e);
+        document.getElementById("panelIA").innerHTML = "❌ Fallo en la matriz de inteligencia.";
     }
 }
 
 function renderAnalisis(data) {
-    const res = document.getElementById("aiAnalysisResults");
-    if (!data) return;
-    
-    res.innerHTML = `
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-            <div style="border-left:4px solid #22c55e; padding-left:15px;">
-                <h4 style="color:#22c55e;">ESTADO FINANCIERO</h4>
-                <p>Utilidad: ${data.resumen.utilidad}</p>
-                <p>Margen: ${data.resumen.margen}%</p>
+    const { kpis, sugerencias } = data;
+    const panel = document.getElementById("panelIA");
+
+    panel.innerHTML = `
+        <div class="grid grid-cols-2 gap-4">
+            <div class="bg-[#0f172a] p-4 rounded-3xl border border-slate-800">
+                <p class="text-[9px] text-slate-500 font-bold uppercase">Utilidad Real</p>
+                <h3 class="text-xl font-black text-emerald-400">$${new Intl.NumberFormat().format(kpis.utilidad)}</h3>
             </div>
-            <div style="border-left:4px solid #facc15; padding-left:15px;">
-                <h4 style="color:#facc15;">ALERTAS</h4>
-                ${data.alertas.map(a => `<p style="font-size:12px;">• ${a}</p>`).join("")}
+            <div class="bg-[#0f172a] p-4 rounded-3xl border border-slate-800">
+                <p class="text-[9px] text-slate-500 font-bold uppercase">Margen de Operación</p>
+                <h3 class="text-xl font-black text-cyan-400">${kpis.margen}%</h3>
             </div>
         </div>
-        <div style="margin-top:20px; padding:15px; background:#0f172a; border-radius:10px;">
-            <h4 style="color:#00ffff;">ACCIONES RECOMENDADAS</h4>
-            ${data.sugerencias.map(s => `<p style="color:#fff;">✅ ${s.msg} (Impacto: ${s.impact})</p>`).join("")}
+
+        <div class="bg-[#0f172a] p-6 rounded-3xl border border-cyan-500/20 shadow-xl">
+            <h4 class="text-xs font-black text-cyan-500 mb-4 uppercase tracking-widest">🧠 Recomendaciones de Nexus-X</h4>
+            <div class="space-y-4">
+                ${sugerencias.map(s => `
+                    <div class="flex items-start gap-3 border-l-2 border-cyan-500 pl-3">
+                        <div>
+                            <p class="text-sm font-bold text-white">${s.msg}</p>
+                            <span class="text-[8px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full font-black">IMPACTO ${s.impact}</span>
+                        </div>
+                    </div>
+                `).join("")}
+            </div>
         </div>
+        
+        <button id="btnActivarGrowth" class="w-full bg-white text-black p-4 rounded-2xl font-black text-xs uppercase shadow-xl active:scale-95 transition">
+            🚀 Ejecutar Motor de Crecimiento (Leads)
+        </button>
     `;
+
+    document.getElementById("btnActivarGrowth").onclick = async () => {
+        const num = await NexusAI.ejecutarGrowth(localStorage.getItem("empresaId"));
+        alert(`Nexus-X ha contactado a ${num} nuevos clientes potenciales.`);
+    };
 }
