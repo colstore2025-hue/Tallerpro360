@@ -1,134 +1,213 @@
 /**
- * dashboard.js
- * Dashboard PRO360 modular · ULTRA CORE
- * KPIs neon + gráficos dinámicos
+ * dashboard.js 
+ * 🔥 TallerPRO360 ULTRA V3 - Edición Estabilizada
+ * Dashboard Modular + CEO Autónomo + Gráficos Neón
  */
 
 import { getClientes, getOrdenes, getInventario } from "../services/dataService.js";
+import { store } from "../core/store.js";
 
 let charts = {};
 
 /**
- * Inicializa el dashboard
- * @param {HTMLElement} container 
- * @param {Object} state 
+ * Punto de entrada principal
  */
 export default async function dashboard(container, state) {
-  container.innerHTML = `
-    <div style="text-align:center;color:#00ffff;margin-top:50px;">
-      🔄 Cargando Dashboard...
-    </div>
-  `;
+    // 1. Render inicial (Esqueleto Neón)
+    renderBaseUI(container);
 
-  const empresaId = state?.empresaId;
-  if (!empresaId) {
-    container.innerHTML = `<p style="color:red;text-align:center;">❌ Empresa no definida</p>`;
-    return;
-  }
+    const empresaId = state?.empresaId || localStorage.getItem("empresaId");
+    if (!empresaId) return renderError(container, "❌ Identificador de empresa no encontrado");
 
-  try {
-    // =========================
-    // Obtener datos
-    // =========================
-    const [clientes, ordenes, inventario] = await Promise.all([
-      getClientes(empresaId),
-      getOrdenes(empresaId),
-      getInventario(empresaId)
-    ]);
+    try {
+        // 2. Carga inteligente (Prioriza Cache del Store para velocidad instantánea)
+        if (store.cache.ordenes?.length > 0) {
+            processAndRender(container, store.cache);
+        }
 
-    renderDashboard(container, { clientes, ordenes, inventario });
+        // 3. Sync en vivo con Firebase
+        const [clientes, ordenes, inventario] = await Promise.all([
+            getClientes(empresaId),
+            getOrdenes(empresaId),
+            getInventario(empresaId)
+        ]);
 
-  } catch (e) {
-    console.error("Error dashboard:", e);
-    container.innerHTML = `<p style="color:red;text-align:center;">❌ Error cargando dashboard</p>`;
-  }
+        const freshData = { clientes, ordenes, inventario };
+        processAndRender(container, freshData);
+
+    } catch (e) {
+        console.error("🔥 Error en Dashboard Core:", e);
+        renderError(container, "⚠️ Error de conexión con los servicios de datos.");
+    }
 }
 
 /**
- * Renderiza el dashboard principal con KPIs neon
+ * Procesa la lógica de negocio y dispara el renderizado
  */
-function renderDashboard(container, data) {
-  const { clientes, ordenes, inventario } = data;
-
-  container.innerHTML = `
-    <div style="padding:20px;background:#0a0f1a;color:#ffffff;font-family:Segoe UI, sans-serif;">
-      <h1 style="font-size:36px;font-weight:900;color:#00ffff;margin-bottom:20px;text-shadow:0 0 15px #00ffff;">
-        🧠 Dashboard PRO360
-      </h1>
-
-      <div id="kpis" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:18px;margin-bottom:30px;">
-        ${kpiCard("Clientes", clientes.length, "#22c55e")}
-        ${kpiCard("Órdenes", ordenes.length, "#00ffff")}
-        ${kpiCard("Items Inventario", inventario.length, "#facc15")}
-      </div>
-
-      <div style="background:#0f172a;padding:20px;border-radius:14px;box-shadow:0 0 25px #00ffff33;">
-        <canvas id="lineChart"></canvas>
-      </div>
-    </div>
-  `;
-
-  renderCharts(clientes, ordenes, inventario);
+function processAndRender(container, rawData) {
+    const processed = calculateMetrics(rawData);
+    renderKPIs(processed);
+    renderCharts(processed);
+    renderCEO(processed);
 }
 
 /**
- * Crea un KPI Card neon
+ * Lógica de negocio: Cálculos y KPI's
  */
-function kpiCard(title, value, color="#00ffff") {
-  return `
-    <div style="
-      background:#0f172a;
-      padding:18px;
-      border-radius:12px;
-      box-shadow:0 5px 25px ${color}44;
-      border:1px solid #1e293b;
-      transition:0.35s;
-    ">
-      <p style="color:#ffffff;font-size:14px;">${title}</p>
-      <h2 style="color:${color};font-size:22px;margin-top:5px;">${value}</h2>
-    </div>
-  `;
-}
+function calculateMetrics(data) {
+    const { clientes, ordenes, inventario } = data;
+    
+    let ingresos = 0, costos = 0, alertas = [];
+    let ingresosPorDia = {};
 
-/**
- * Renderiza los gráficos neon con Chart.js
- */
-async function renderCharts(clientes, ordenes, inventario) {
-  try {
-    const ChartLib = (await import("https://cdn.jsdelivr.net/npm/chart.js/auto/+esm")).default;
+    ordenes.forEach(o => {
+        const total = Number(o.valorTrabajo || 0);
+        const costo = Number(o.costoTotal || 0);
+        ingresos += total;
+        costos += costo;
 
-    const ctx = document.getElementById("lineChart");
+        // Agrupación por fecha para el gráfico
+        const fecha = o.creadoEn?.toDate?.().toISOString().split("T")[0] || "Sin Fecha";
+        ingresosPorDia[fecha] = (ingresosPorDia[fecha] || 0) + total;
 
-    if (charts.line) charts.line.destroy();
-
-    charts.line = new ChartLib(ctx, {
-      type: "line",
-      data: {
-        labels: ["Clientes", "Órdenes", "Inventario"],
-        datasets: [{
-          label: "Cantidad",
-          data: [clientes.length, ordenes.length, inventario.length],
-          borderColor: "#00ffff",
-          backgroundColor: "#00ffff33",
-          fill: true,
-          tension: 0.3,
-          borderWidth: 3,
-          pointBackgroundColor: "#facc15",
-          pointHoverRadius: 8
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { labels: { color: "#ffffff" } } },
-        scales: {
-          x: { ticks: { color: "#ffffff" } },
-          y: { ticks: { color: "#ffffff" } }
-        },
-        animation: { duration: 1200 }
-      }
+        if (total < costo && total > 0) {
+            alertas.push({ msg: `Orden #${o.id.slice(-4)} con pérdida`, nivel: "alto" });
+        }
     });
 
-  } catch (e) {
-    console.warn("⚠️ Chart.js no disponible:", e.message);
-  }
+    inventario.forEach(item => {
+        if (Number(item.cantidad) < 5) {
+            alertas.push({ msg: `Stock bajo: ${item.nombre}`, nivel: "medio" });
+        }
+    });
+
+    const utilidad = ingresos - costos;
+    const margen = ingresos ? (utilidad / ingresos) * 100 : 0;
+
+    return {
+        ingresos, costos, utilidad, margen,
+        totalClientes: clientes.length,
+        totalOrdenes: ordenes.length,
+        totalStock: inventario.length,
+        ingresosPorDia,
+        alertas,
+        rawData
+    };
+}
+
+/* ========================================================================
+   RENDERERS (UI & CHARTS)
+   ======================================================================== */
+
+function renderBaseUI(container) {
+    container.innerHTML = `
+    <div style="padding:20px; background:#0a0f1a; min-height:100vh; font-family:'Segoe UI',Roboto,sans-serif;">
+        <h1 style="font-size:32px; font-weight:900; color:#00ffff; margin-bottom:25px; text-shadow:0 0 15px #00ffff66;">
+            🧠 DASHBOARD PRO360 <span style="font-size:14px; color:#facc15; text-shadow:none;">ULTRA V3</span>
+        </h1>
+        
+        <div id="kpiGrid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:15px; margin-bottom:30px;">
+            <div class="skeleton-kpi" style="height:100px; background:#0f172a; border-radius:12px; animate:pulse 2s infinite;"></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; flex-wrap:wrap;">
+            <div style="background:#0f172a; padding:20px; border-radius:15px; border:1px solid #1e293b; box-shadow:0 10px 30px #000;">
+                <h3 style="color:#00ffff; margin-bottom:15px;">Flujo de Ingresos</h3>
+                <canvas id="mainChart" style="max-height:350px;"></canvas>
+            </div>
+            
+            <div id="ceoPanel"></div>
+        </div>
+    </div>`;
+}
+
+function renderKPIs(m) {
+    const grid = document.getElementById("kpiGrid");
+    const cards = [
+        { lab: "Ingresos", val: m.ingresos, col: "#00ffff", cur: true },
+        { lab: "Utilidad", val: m.utilidad, col: "#22c55e", cur: true },
+        { lab: "Margen", val: m.margen.toFixed(1) + "%", col: "#facc15", cur: false },
+        { lab: "Órdenes", val: m.totalOrdenes, col: "#00ffff", cur: false },
+        { lab: "Clientes", val: m.totalClientes, col: "#a855f7", cur: false }
+    ];
+
+    grid.innerHTML = cards.map(c => `
+        <div style="background:#0f172a; padding:18px; border-radius:12px; border:1px solid #1e293b; box-shadow:0 4px 20px ${c.col}22;">
+            <p style="font-size:12px; color:#94a3b8; margin:0;">${c.lab}</p>
+            <h2 style="color:${c.col}; font-size:24px; margin:5px 0 0 0;">
+                ${c.cur ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(c.val) : c.val}
+            </h2>
+        </div>
+    `).join("");
+}
+
+async function renderCharts(m) {
+    const ChartLib = window.Chart;
+    if (!ChartLib) return;
+
+    const ctx = document.getElementById("mainChart").getContext("2d");
+    if (charts.main) charts.main.destroy();
+
+    const dates = Object.keys(m.ingresosPorDia).sort();
+    const values = dates.map(d => m.ingresosPorDia[d]);
+
+    charts.main = new ChartLib(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Ingresos Diarios',
+                data: values,
+                borderColor: '#00ffff',
+                backgroundColor: 'rgba(0, 255, 255, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointBackgroundColor: '#facc15'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+                x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+            }
+        }
+    });
+}
+
+function renderCEO(m) {
+    const panel = document.getElementById("ceoPanel");
+    
+    const decisiones = [];
+    if (m.margen < 20) decisiones.push("Subir precios de mano de obra");
+    if (m.totalStock < 10) decisiones.push("Reponer stock de alta rotación");
+    if (m.totalOrdenes > 0 && m.ingresos / m.totalOrdenes < 50000) decisiones.push("Promover servicios preventivos");
+
+    panel.innerHTML = `
+        <div style="background:linear-gradient(145deg, #0f172a, #1e293b); padding:20px; border-radius:15px; border:1px solid #00ffff44; height:100%;">
+            <h3 style="color:#00ffff; display:flex; align-items:center; gap:10px;">
+                <span style="font-size:24px;">👑</span> CEO AUTÓNOMO
+            </h3>
+            
+            <div style="margin-top:15px;">
+                <p style="color:#facc15; font-size:13px; font-weight:bold;">⚠️ ALERTAS CRÍTICAS</p>
+                ${m.alertas.length ? m.alertas.map(a => `<p style="font-size:12px; color:${a.nivel === 'alto' ? '#ef4444' : '#fbbf24'}; margin:4px 0;">• ${a.msg}</p>`).join("") : '<p style="color:#22c55e; font-size:12px;">Sistema saludable</p>'}
+            </div>
+
+            <div style="margin-top:20px;">
+                <p style="color:#00ffff; font-size:13px; font-weight:bold;">🧠 SUGERENCIAS IA</p>
+                ${decisiones.map(d => `
+                    <div style="background:#0a0f1a; padding:10px; border-radius:8px; margin-top:8px; font-size:12px; border-left:3px solid #00ffff;">
+                        ${d}
+                    </div>
+                `).join("")}
+            </div>
+        </div>
+    `;
+}
+
+function renderError(container, msg) {
+    container.innerHTML = `<div style="text-align:center; padding:50px; color:#ef4444;">${msg}</div>`;
 }
