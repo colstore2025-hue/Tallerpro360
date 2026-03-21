@@ -23,7 +23,7 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
 /* 🛡️ CONFIGURACIÓN DE APP CHECK PARA CELULAR */
 // Activamos el modo debug para que Firebase nos genere un código en la consola
-self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; 
+self.FIREBASE_APPCHECK_DEBUG_TOKEN ='f47ac10b-58cc-4372-a567-0e02b2c3d479'; 
 
 const appCheck = initializeAppCheck(app, {
   provider: new ReCaptchaEnterpriseProvider('6LdgH5lsAAAAAHftoo-5Y6RKpQDrBpoA18IpGJuV'),
