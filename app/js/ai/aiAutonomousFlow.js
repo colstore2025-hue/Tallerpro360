@@ -1,122 +1,111 @@
 /**
  * aiAutonomousFlow.js 🤖
- * MOTOR DE IA AUTÓNOMA: Autocuración + Generación de Órdenes
+ * ULTRA CORE IA: Autocuración + Generación + Gerencia Estratégica
  */
 import { store } from "../core/store.js";
-import { saveLog, getRecentLogs, createDocument } from "../services/dataService.js";
+import { saveLog, getRecentLogs, getOrdenes } from "../services/dataService.js";
+import { hablar } from "../voice/voiceCore.js";
 
 export const AI_Engine = {
 
     // ==========================================
-    // 1. MÓDULO DE AUTOCURACIÓN (Self-Healing)
+    // 1. GERENCIA ESTRATÉGICA (Análisis de Negocio)
     // ==========================================
-    async checkSystemHealth(empresaId) {
-        console.log("🧠 IA Guardián: Escaneando logs de error...");
-        const logs = await getRecentLogs(empresaId, 10);
-        
-        for (const log of logs) {
-            if (log.tipo === "error_sistema" && !log.reparado) {
-                await this.applyAutoFix(log, empresaId);
-            }
-        }
-    },
-
-    async applyAutoFix(log, empresaId) {
-        console.warn(`🛠️ Intentando reparación automática para: ${log.modulo}`);
-        let fixed = false;
-
-        // Diccionario de soluciones según el mensaje de error
-        if (log.mensaje.includes("permission-denied") || log.mensaje.includes("quota")) {
-            const { activarModoDiosGuardian } = await import("../system/firestoreGuardianGod.js");
-            activarModoDiosGuardian(empresaId);
-            fixed = true;
-        }
-
-        if (log.mensaje.includes("not found") || log.mensaje.includes("undefined")) {
-            const { fixTotalInicial } = await import("../system/firestoreGuardianGod.js");
-            await fixTotalInicial(empresaId);
-            fixed = true;
-        }
-
-        if (fixed) {
-            await saveLog("ia_fix_success", {
-                modulo: log.modulo,
-                detalle: "Estructura de DB o permisos refrescados",
-                fecha: new Date().toISOString()
-            });
-        }
-    },
-
-    // ==========================================
-    // 2. MÓDULO DE GENERACIÓN DE ÓRDENES
-    // ==========================================
-    async generarOrdenInteligente(input, empresaId) {
+    async analizarNegocio(empresaId) {
         try {
-            console.log("🤖 IA Analizando entrada de voz/texto:", input);
+            const ordenes = await getOrdenes(empresaId);
+            if (!ordenes || ordenes.length === 0) return this.construirRespuestaVacia();
 
-            const ordenBorrador = {
-                cliente: {
-                    nombre: "Cliente por identificar",
-                    clienteId: "pendiente"
-                },
-                vehiculo: {
-                    marca: this.detectarMarca(input),
-                    modelo: this.detectarModelo(input),
-                    placa: this.detectarPlaca(input)
-                },
-                diagnostico: this.detectarDiagnostico(input),
-                items: this.detectarRepuestos(input),
-                valorTrabajo: 300000,
-                estado: "borrador_ia",
-                creadoEn: new Date(),
-                fuente: "AI_Autonomous_Flow"
+            let totalIngresos = 0, totalCostos = 0, dataProcesada = [];
+
+            ordenes.forEach(o => {
+                const total = Number(o.total || o.valorTrabajo || 0);
+                const costo = Number(o.costoTotal || 0);
+                totalIngresos += total;
+                totalCostos += costo;
+                dataProcesada.push({ ...o, utilidad: total - costo });
+            });
+
+            const resumen = {
+                ingresos: Math.round(totalIngresos),
+                costos: Math.round(totalCostos),
+                utilidad: Math.round(totalIngresos - totalCostos),
+                ordenes: ordenes.length,
+                ticketPromedio: Math.round(totalIngresos / ordenes.length),
+                margen: Math.round(( (totalIngresos - totalCostos) / totalIngresos) * 100) || 0
             };
 
-            ordenBorrador.total = this.calcularTotal(ordenBorrador);
-
-            // Guardar automáticamente en ia_logs para que el usuario la apruebe en el Dashboard
-            await saveLog("ia_order_suggestion", {
-                orden: ordenBorrador,
-                input_original: input,
-                empresaId: empresaId
-            });
-
-            return ordenBorrador;
-
+            return {
+                resumen,
+                alertas: this.generarAlertas(resumen, dataProcesada),
+                sugerencias: this.generarSugerenciasAccionables(resumen)
+            };
         } catch (e) {
-            console.error("Error en Generador IA:", e);
+            console.error("❌ Error en IA Gerente:", e);
             return null;
         }
     },
 
-    // HELPERS DE DETECCIÓN (Tu lógica mejorada)
-    detectarMarca: (t) => t.toLowerCase().includes("toyota") ? "Toyota" : 
-                         t.toLowerCase().includes("chevrolet") ? "Chevrolet" : 
-                         t.toLowerCase().includes("nissan") ? "Nissan" : "Genérico",
-
-    detectarModelo: (t) => t.toLowerCase().includes("corolla") ? "Corolla" : 
-                          t.toLowerCase().includes("hilux") ? "Hilux" : "",
-
-    detectarPlaca: (t) => {
-        const match = t.match(/[A-Z]{3}[0-9]{3}/i);
-        return match ? match[0].toUpperCase() : "POR ASIGNAR";
+    generarAlertas(res, ordenes) {
+        const a = [];
+        if (res.utilidad < 0) a.push("❌ Pérdida financiera detectada");
+        if (res.margen < 20) a.push("⚠️ Margen de ganancia crítico");
+        if (res.costos > res.ingresos * 0.8) a.push("💸 Fuga de capital en costos");
+        return a;
     },
 
-    detectarDiagnostico: (t) => {
-        if (t.includes("freno")) return "Revisión Sistema de Frenos";
-        if (t.includes("aceite") || t.includes("mantenimiento")) return "Mantenimiento Preventivo";
-        return "Diagnóstico General";
+    generarSugerenciasAccionables(res) {
+        const s = [];
+        if (res.ticketPromedio < 100000) s.push({ tipo: "PRECIO", msg: "Ajustar tarifas servicios base", impact: "ALTO" });
+        if (res.ordenes < 10) s.push({ tipo: "MARKETING", msg: "Lanzar campaña recordatorio preventivo", impact: "MEDIO" });
+        return s;
     },
 
-    detectarRepuestos: (t) => {
-        const piezas = [];
-        if (t.includes("freno")) piezas.push({ pieza: "Pastillas de freno", cant: 1, precio: 120000 });
-        if (t.includes("aceite")) piezas.push({ pieza: "Filtro de aceite", cant: 1, precio: 45000 });
-        return piezas;
+    // ==========================================
+    // 2. GENERACIÓN DE ÓRDENES (Voz/Texto a Data)
+    // ==========================================
+    async procesarEntradaIA(input, empresaId) {
+        const ordenIA = {
+            vehiculo: {
+                marca: input.toLowerCase().includes("toyota") ? "Toyota" : "Genérico",
+                placa: (input.match(/[A-Z]{3}[0-9]{3}/i) || ["POR ASIGNAR"])[0].toUpperCase(),
+            },
+            diagnostico: input.includes("freno") ? "Revisión Sistema Frenos" : "Diagnóstico General",
+            valorTrabajo: 300000,
+            estado: "borrador_ia"
+        };
+
+        // Guardar como sugerencia para el Dashboard
+        await saveLog("ia_order_suggestion", { ordenIA, input, empresaId });
+        return ordenIA;
     },
 
-    calcularTotal: (o) => {
-        let total = o.items.reduce((sum, i) => sum + (i.cant * i.precio), 0);
-        return total + Number(o.valorTrabajo || 0);
-    }
+    // ==========================================
+    // 3. AUTOCURACIÓN (Health Check)
+    // ==========================================
+    async systemSelfHealing(empresaId) {
+        const logs = await getRecentLogs(empresaId, 5);
+        for (const log of logs) {
+            if (log.tipo === "error_sistema" && !log.reparado) {
+                // Lógica de reparación (permisos/estructuras)
+                const { fixTotalInicial } = await import("../system/firestoreGuardianGod.js");
+                await fixTotalInicial(empresaId);
+                await saveLog("ia_fix_success", { modulo: log.modulo, fecha: new Date() });
+            }
+        }
+    },
+
+    // ==========================================
+    // 4. VOZ & MONITOREO
+    // ==========================================
+    notificarEstado(data) {
+        if (!data) return;
+        hablar(`Reporte: Ingresos ${data.resumen.ingresos}. Utilidad ${data.resumen.utilidad}.`);
+    },
+
+    construirRespuestaVacia: () => ({
+        resumen: { ingresos: 0, costos: 0, utilidad: 0, ordenes: 0, ticketPromedio: 0, margen: 0 },
+        alertas: ["📌 Sin datos operativos suficientes"],
+        sugerencias: []
+    })
 };
