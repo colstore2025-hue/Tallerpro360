@@ -1,68 +1,71 @@
 /*
 =====================================
 login.js
-sistema de login
-tallerpro360
+Sistema de login · TallerPRO360
+Versión robusta y enfocada
 =====================================
 */
 
 import { auth } from "../core/firebase-config.js";
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { bootStatus } from "../system/bootDiagnostic.js"; // Opcional, para mensajes de boot
 
-import {
-signInWithEmailAndPassword
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+const form = document.getElementById("loginForm");
 
+if (form) {
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-const form=document.getElementById("loginForm");
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
 
-if(form){
+    // ===============================
+    // Validaciones básicas
+    // ===============================
+    if (!email || !password) {
+      alert("Por favor ingresa email y contraseña");
+      bootStatus?.("⚠ Email o contraseña vacíos");
+      return;
+    }
 
-form.addEventListener("submit",async(e)=>{
+    try {
+      bootStatus?.("🔑 Intentando autenticar usuario...");
 
-e.preventDefault();
+      // ===============================
+      // Autenticación Firebase
+      // ===============================
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      const user = cred.user;
 
-const email=document.getElementById("email").value;
-const password=document.getElementById("password").value;
+      console.log("Usuario autenticado:", user.uid);
+      bootStatus?.(`✔ Usuario autenticado: ${user.uid}`);
 
-try{
+      // ===============================
+      // Guardar sesión en localStorage
+      // ===============================
+      localStorage.setItem("uid", user.uid);
 
-const cred=await signInWithEmailAndPassword(
-auth,
-email,
-password
-);
+      // Empresa demo temporal (si no existe)
+      if (!localStorage.getItem("empresaId")) {
+        localStorage.setItem("empresaId", "demoEmpresa");
+        bootStatus?.("⚡ Empresa demo cargada");
+      }
 
-const user=cred.user;
+      // ===============================
+      // Redirigir al ERP
+      // ===============================
+      window.location.href = "/index.html";
 
-console.log("usuario autenticado:",user.uid);
+    } catch (error) {
+      console.error("Error login:", error);
 
-/* ===============================
-guardar sesión
-=============================== */
+      let mensaje = "Error de autenticación";
+      if (error.code === "auth/user-not-found") mensaje = "Usuario no encontrado";
+      if (error.code === "auth/wrong-password") mensaje = "Contraseña incorrecta";
+      if (error.code === "auth/invalid-email") mensaje = "Email inválido";
 
-localStorage.setItem("uid",user.uid);
-
-/* empresa demo temporal */
-
-if(!localStorage.getItem("empresaId")){
-localStorage.setItem("empresaId","demoEmpresa");
-}
-
-/* ===============================
-entrar al ERP
-=============================== */
-
-window.location.href="/index.html";
-
-}
-catch(error){
-
-console.error("error login:",error);
-
-alert("error de autenticación");
-
-}
-
-});
-
+      alert(mensaje);
+      bootStatus?.(`❌ ${mensaje}`);
+    }
+  });
 }
