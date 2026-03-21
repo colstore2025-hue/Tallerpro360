@@ -46,12 +46,23 @@ const routes = {
 NAVEGACIÓN PRINCIPAL
 =============================== */
 export async function navigate(moduleName) {
-  const container = document.getElementById("appContent");
+  const container = document.getElementById("appContainer"); // Unificamos ID
+  if (!container) return;
 
-  if (!container) {
-    console.error("❌ Contenedor principal no encontrado");
-    return;
+  try {
+    const module = await routes[moduleName]();
+    // IMPORTANTE: Algunos módulos exportan una función directamente, otros un objeto
+    const renderFunc = module.default || module[moduleName]; 
+    
+    container.innerHTML = ""; // Limpiar antes de inyectar
+    await renderFunc(container, window.appState);
+    
+    document.getElementById("boot-loader")?.remove(); // Matar el loader al cargar
+  } catch (error) {
+    console.error("❌ Error en Router:", error);
   }
+}
+
 
   if (!routes[moduleName]) {
     console.warn("⚠️ Módulo no existe:", moduleName);
