@@ -1,43 +1,102 @@
 /**
  * bootSystem.js
- * Sistema de arranque principal
+ * Boot del ERP · TallerPRO360
+ * Inicializa módulos principales y dashboard
  */
 
 import { bootStatus } from "./bootDiagnostic.js";
 
-// 🚀 Importar dashboard PRO360
-import dashboard from "../modules/dashboard.js";
+// 🚀 Módulos principales
+import clientesModule from "../modules/clientes.js";
+import dashboardModule from "../modules/dashboard.js";
 
 export async function bootSystem() {
-  bootStatus("Inicializando PRO360...");
+  bootStatus("🧠 Iniciando sistema...");
 
-  const container = document.getElementById("app") || document.body;
-  const empresaId = localStorage.getItem("empresaId");
-  const uid = localStorage.getItem("uid");
-
-  if (!uid) {
-    bootStatus("Usuario no autenticado. Redirigiendo...");
-    setTimeout(() => { window.location.href = "/login.html"; }, 1000);
-    return;
-  }
-
-  bootStatus("Cargando datos del sistema...");
-
-  const state = {
-    uid,
-    empresaId,
-    rolGlobal: localStorage.getItem("rolGlobal") || "user",
-    plan: localStorage.getItem("plan") || "Freemium",
-    planFechaInicio: new Date(localStorage.getItem("planFechaInicio") || Date.now()),
-  };
-
-  // Cargar dashboard
-  bootStatus("Cargando módulo Dashboard...");
   try {
-    await dashboard(container, state);
-    bootStatus("✅ Dashboard cargado correctamente");
+    // ===============================
+    // Verificar sesión
+    // ===============================
+    const uid = localStorage.getItem("uid");
+    const empresaId = localStorage.getItem("empresaId");
+
+    if (!uid) {
+      bootStatus("❌ Usuario no autenticado");
+      throw new Error("Usuario no autenticado");
+    }
+
+    if (!empresaId) {
+      bootStatus("⚠ Empresa no definida, cargando demo...");
+      localStorage.setItem("empresaId", "demoEmpresa");
+    }
+
+    // ===============================
+    // Inicializar layout y contenedor
+    // ===============================
+    const appContainer = document.getElementById("appContainer");
+    const sidebar = document.getElementById("sidebar");
+
+    if (!appContainer || !sidebar) {
+      throw new Error("Contenedores principales no encontrados");
+    }
+
+    // ===============================
+    // Configurar sidebar
+    // ===============================
+    sidebar.innerHTML = `
+      <button id="btnDashboard">Dashboard</button>
+      <button id="btnClientes">Clientes</button>
+    `;
+
+    document.getElementById("btnDashboard").onclick = () => {
+      loadDashboard();
+    };
+
+    document.getElementById("btnClientes").onclick = () => {
+      loadClientes();
+    };
+
+    bootStatus("✅ Sidebar cargada");
+
+    // ===============================
+    // Cargar módulo inicial
+    // ===============================
+    await loadDashboard();
+
+    bootStatus("🚀 Sistema inicializado correctamente");
+
+  } catch (error) {
+    console.error("❌ Error bootSystem:", error);
+    bootStatus(`❌ Error bootSystem: ${error.message}`);
+    alert("Error inicializando sistema, revisa consola");
+  }
+}
+
+// ===============================
+// Funciones de carga de módulos
+// ===============================
+async function loadDashboard() {
+  const container = document.getElementById("appContainer");
+  container.innerHTML = `<p style="text-align:center;margin-top:50px;">🔄 Cargando dashboard...</p>`;
+
+  const empresaId = localStorage.getItem("empresaId");
+  try {
+    await dashboardModule(container, { empresaId });
   } catch (e) {
-    console.error("❌ Error cargando Dashboard:", e);
-    bootStatus("❌ Error cargando Dashboard");
+    console.error("Error cargando dashboard:", e);
+    container.innerHTML = `<p style="color:red;text-align:center;">❌ Error cargando dashboard</p>`;
+  }
+}
+
+async function loadClientes() {
+  const container = document.getElementById("appContainer");
+  container.innerHTML = `<p style="text-align:center;margin-top:50px;">🔄 Cargando clientes...</p>`;
+
+  const empresaId = localStorage.getItem("empresaId");
+  try {
+    await clientesModule(container, { empresaId });
+  } catch (e) {
+    console.error("Error cargando clientes:", e);
+    container.innerHTML = `<p style="color:red;text-align:center;">❌ Error cargando clientes</p>`;
   }
 }
