@@ -1,85 +1,122 @@
 /**
- * IA AUTÓNOMA - Genera órdenes editables
+ * aiAutonomousFlow.js 🤖
+ * MOTOR DE IA AUTÓNOMA: Autocuración + Generación de Órdenes
  */
+import { store } from "../core/store.js";
+import { saveLog, getRecentLogs, createDocument } from "../services/dataService.js";
 
-export async function generarOrdenIA(input) {
-  try {
-    console.log("🤖 IA procesando:", input);
+export const AI_Engine = {
 
-    // 🔥 Simulación IA (luego conectas OpenAI o tu AI)
-    const orden = {
-      cliente: {
-        nombre: "Cliente pendiente",
-        clienteId: "cliente_001"
-      },
-      vehiculo: {
-        marca: detectarMarca(input),
-        modelo: detectarModelo(input),
-        placa: detectarPlaca(input)
-      },
-      diagnostico: detectarDiagnostico(input),
-      cotizacion: detectarRepuestos(input),
-      valorTrabajo: 300000,
-      total: 0,
-      estado: "borrador_ia",
-      editable: true
-    };
+    // ==========================================
+    // 1. MÓDULO DE AUTOCURACIÓN (Self-Healing)
+    // ==========================================
+    async checkSystemHealth(empresaId) {
+        console.log("🧠 IA Guardián: Escaneando logs de error...");
+        const logs = await getRecentLogs(empresaId, 10);
+        
+        for (const log of logs) {
+            if (log.tipo === "error_sistema" && !log.reparado) {
+                await this.applyAutoFix(log, empresaId);
+            }
+        }
+    },
 
-    orden.total = calcularTotal(orden);
+    async applyAutoFix(log, empresaId) {
+        console.warn(`🛠️ Intentando reparación automática para: ${log.modulo}`);
+        let fixed = false;
 
-    return orden;
+        // Diccionario de soluciones según el mensaje de error
+        if (log.mensaje.includes("permission-denied") || log.mensaje.includes("quota")) {
+            const { activarModoDiosGuardian } = await import("../system/firestoreGuardianGod.js");
+            activarModoDiosGuardian(empresaId);
+            fixed = true;
+        }
 
-  } catch (e) {
-    console.error("Error IA:", e);
-    return null;
-  }
-}
+        if (log.mensaje.includes("not found") || log.mensaje.includes("undefined")) {
+            const { fixTotalInicial } = await import("../system/firestoreGuardianGod.js");
+            await fixTotalInicial(empresaId);
+            fixed = true;
+        }
 
-// ----------------------
-// Helpers simples (mejorables)
-// ----------------------
+        if (fixed) {
+            await saveLog("ia_fix_success", {
+                modulo: log.modulo,
+                detalle: "Estructura de DB o permisos refrescados",
+                fecha: new Date().toISOString()
+            });
+        }
+    },
 
-function detectarMarca(texto) {
-  if (texto.toLowerCase().includes("toyota")) return "Toyota";
-  return "";
-}
+    // ==========================================
+    // 2. MÓDULO DE GENERACIÓN DE ÓRDENES
+    // ==========================================
+    async generarOrdenInteligente(input, empresaId) {
+        try {
+            console.log("🤖 IA Analizando entrada de voz/texto:", input);
 
-function detectarModelo(texto) {
-  if (texto.toLowerCase().includes("corolla")) return "Corolla";
-  return "";
-}
+            const ordenBorrador = {
+                cliente: {
+                    nombre: "Cliente por identificar",
+                    clienteId: "pendiente"
+                },
+                vehiculo: {
+                    marca: this.detectarMarca(input),
+                    modelo: this.detectarModelo(input),
+                    placa: this.detectarPlaca(input)
+                },
+                diagnostico: this.detectarDiagnostico(input),
+                items: this.detectarRepuestos(input),
+                valorTrabajo: 300000,
+                estado: "borrador_ia",
+                creadoEn: new Date(),
+                fuente: "AI_Autonomous_Flow"
+            };
 
-function detectarPlaca(texto) {
-  const match = texto.match(/[A-Z]{3}[0-9]{3}/);
-  return match ? match[0] : "";
-}
+            ordenBorrador.total = this.calcularTotal(ordenBorrador);
 
-function detectarDiagnostico(texto) {
-  if (texto.includes("freno")) return "Cambio de pastillas de freno";
-  return "Diagnóstico general";
-}
+            // Guardar automáticamente en ia_logs para que el usuario la apruebe en el Dashboard
+            await saveLog("ia_order_suggestion", {
+                orden: ordenBorrador,
+                input_original: input,
+                empresaId: empresaId
+            });
 
-function detectarRepuestos(texto) {
-  if (texto.includes("freno")) {
-    return [
-      {
-        pieza: "Pastillas de freno",
-        cantidad: 1,
-        preciounitario: 120000
-      }
-    ];
-  }
-  return [];
-}
+            return ordenBorrador;
 
-function calcularTotal(orden) {
-  let total = 0;
+        } catch (e) {
+            console.error("Error en Generador IA:", e);
+            return null;
+        }
+    },
 
-  orden.cotizacion.forEach(i => {
-    total += i.cantidad * i.preciounitario;
-  });
+    // HELPERS DE DETECCIÓN (Tu lógica mejorada)
+    detectarMarca: (t) => t.toLowerCase().includes("toyota") ? "Toyota" : 
+                         t.toLowerCase().includes("chevrolet") ? "Chevrolet" : 
+                         t.toLowerCase().includes("nissan") ? "Nissan" : "Genérico",
 
-  total += Number(orden.valorTrabajo || 0);
+    detectarModelo: (t) => t.toLowerCase().includes("corolla") ? "Corolla" : 
+                          t.toLowerCase().includes("hilux") ? "Hilux" : "",
 
-  return total;
-}
+    detectarPlaca: (t) => {
+        const match = t.match(/[A-Z]{3}[0-9]{3}/i);
+        return match ? match[0].toUpperCase() : "POR ASIGNAR";
+    },
+
+    detectarDiagnostico: (t) => {
+        if (t.includes("freno")) return "Revisión Sistema de Frenos";
+        if (t.includes("aceite") || t.includes("mantenimiento")) return "Mantenimiento Preventivo";
+        return "Diagnóstico General";
+    },
+
+    detectarRepuestos: (t) => {
+        const piezas = [];
+        if (t.includes("freno")) piezas.push({ pieza: "Pastillas de freno", cant: 1, precio: 120000 });
+        if (t.includes("aceite")) piezas.push({ pieza: "Filtro de aceite", cant: 1, precio: 45000 });
+        return piezas;
+    },
+
+    calcularTotal: (o) => {
+        let total = o.items.reduce((sum, i) => sum + (i.cant * i.precio), 0);
+        return total + Number(o.valorTrabajo || 0);
+    }
+};
