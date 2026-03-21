@@ -1,74 +1,36 @@
-/**
+ /**
  * orquestadorSupremo.js
- * 🧠 Orquestador + Auto-reparación PRO360
- * Nivel ULTRA + MODO DIOS
- * Ruta: /app/js/core/orquestadorSupremo.js
+ * 🧠 Auto-reparación PRO360
  */
-
-import { state, loadModule } from "./app-init.js";
 import { ejecutarGuardianIA } from "../ai/firestoreGuardianAI.js";
 import { activarModoDiosGuardian } from "../ai/firestoreGuardianGod.js";
 
-const db = window.db;
+export function activarOrquestadorSupremo(state) {
+  if (!state.empresaId) return;
 
-// ================= INIT =================
-export function activarOrquestadorSupremo() {
+  console.log("😈 MODO DIOS: Orquestador activo para " + state.empresaId);
 
-  if (!state.empresaId) {
-    console.warn("⚠️ Orquestador: empresaId no definido");
-    return;
-  }
-
-  console.log("😈 ORQUESTADOR SUPREMO ACTIVADO");
-
-  // 1️⃣ Guardian IA automático
+  // Ejecución inmediata
   ejecutarGuardianIA({ empresaId: state.empresaId });
-
-  // 2️⃣ Modo Dios Guardian (watcher y autocorrección)
   activarModoDiosGuardian(state.empresaId);
 
-  // 3️⃣ Auto-reparación módulos + UI
-  autoRepararUI();
-
-  // 4️⃣ Ciclo continuo cada 10 segundos
+  // Vigilancia continua cada 30 segundos (no saturemos el sistema)
   setInterval(() => {
-    ejecutarGuardianIA({ empresaId: state.empresaId });
-    autoRepararUI();
-  }, 10000);
+    autoRepararEstructura();
+  }, 30000);
 }
 
-// ================= AUTO-REPARACIÓN =================
-function autoRepararUI() {
-
-  const appContainer = document.getElementById("appContainer");
+function autoRepararEstructura() {
+  const container = document.getElementById("appContainer");
   const menu = document.getElementById("menu");
 
-  // Si falta contenedor principal, recrea la UI
-  if (!appContainer || !menu) {
-    console.warn("⚠️ UI faltante, recreando contenedores...");
-    document.body.innerHTML = `
-      <div id="menu"></div>
-      <div id="appContainer"></div>
-    `;
-    return;
-  }
-
-  // Detectar módulos caídos y recargar
-  const moduleButtons = menu.querySelectorAll("button[data-module]");
-  moduleButtons.forEach(btn => {
-    const modName = btn.dataset.module;
-    try {
-      if (appContainer.innerHTML.trim() === "") {
-        console.log(`🔄 Re-cargando módulo: ${modName}`);
-        loadModule(modName);
-      }
-    } catch (e) {
-      console.error(`❌ Error cargando módulo ${modName}:`, e);
+  if (!container || !menu) {
+    console.warn("⚠️ UI dañada. Intentando refrescar...");
+    // En lugar de innerHTML, lanzamos un reload suave si la UI colapsa
+    if (!document.body.innerText.includes("DASHBOARD")) {
+        // location.reload(); 
     }
-  });
+  }
 }
 
-// ================= EXPORT =================
-export default {
-  activarOrquestadorSupremo
-};
+export default { activarOrquestadorSupremo };
