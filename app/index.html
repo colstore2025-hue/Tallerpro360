@@ -20,7 +20,6 @@
 
         #mainLayout { display:flex; height:calc(100vh - 70px); }
         
-        /* Sidebar Neón Profesional */
         #sidebar { width:260px; background: var(--sidebar-bg); display:flex; flex-direction:column; padding:20px 15px; border-right: 1px solid #1e293b; overflow-y: auto; }
         #menuItems button { 
             width:100%; margin:4px 0; padding:12px 15px; border:none; border-radius:12px; 
@@ -32,19 +31,15 @@
         #menuItems button:hover { background: rgba(0, 255, 255, 0.08); color: var(--neon-cyan); }
         #menuItems button.active { background: #1e293b; color: var(--neon-cyan); box-shadow: inset 3px 0 0 var(--neon-cyan); }
         
-        /* Contenedor Principal con Gradiente de Profundidad */
-        #appContainer { flex:1; padding:25px; overflow-y:auto; background: radial-gradient(circle at 50% 0%, #161e2e, #0b1220); }
+        #appContainer { flex:1; padding:25px; overflow-y:auto; background: radial-gradient(circle at 50% 0%, #161e2e, #0b1220); position: relative; }
         
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: var(--sidebar-bg); }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--neon-cyan); }
 
-        /* Animaciones */
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin-custom { animation: spin 1s linear infinite; }
-        .fade-out { opacity: 0; transition: opacity 0.5s ease; pointer-events: none; }
+        .fade-out { opacity: 0; transition: opacity 0.4s ease; pointer-events: none; }
     </style>
 </head>
 
@@ -75,12 +70,11 @@
 <div id="mainLayout">
     <nav id="sidebar">
         <p style="color:#475569; font-size:10px; font-weight:bold; margin-bottom:15px; padding-left:15px; letter-spacing:2px; text-transform: uppercase;">Módulos</p>
-        <div id="menuItems">
-            </div>
+        <div id="menuItems"></div>
     </nav>
 
     <main id="appContainer">
-        <div id="boot-loader" style="text-align:center; margin-top:20vh;">
+        <div id="boot-loader" style="text-align:center; margin-top:20vh; position: absolute; width: 100%; left: 0;">
             <div class="inline-block w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin-custom mb-6"></div>
             <h2 id="boot-text" style="font-size:20px; color:white; font-weight:600; letter-spacing: -0.5px;">🚀 Inicializando Sistema...</h2>
             <p id="boot-subtext" style="color:#64748b; font-size:13px; margin-top:8px;">Validando credenciales y escudo App Check</p>
@@ -89,7 +83,8 @@
 </div>
 
 <script type="module">
-    import { initApp } from "./js/core/app-init.js";
+    // 🔥 CACHE BUSTER: Forzamos la carga del archivo más reciente añadiendo ?v=1.1
+    import { initApp } from "./js/core/app-init.js?v=1.1";
 
     async function startSystem() {
         const loader = document.getElementById("boot-loader");
@@ -97,7 +92,6 @@
         const container = document.getElementById("appContainer");
         
         try {
-            // 1. Verificación de Estado Local
             const state = {
                 uid: localStorage.getItem("uid"),
                 empresaId: localStorage.getItem("empresaId"),
@@ -106,63 +100,59 @@
                 nombre: localStorage.getItem("nombre") || "Operador"
             };
 
-            // 2. Seguridad Inmediata
             if (!state.uid || (!state.empresaId && state.rolGlobal !== 'superadmin')) {
-                console.warn("🔐 Acceso no autorizado. Redirigiendo...");
                 window.location.replace("login.html");
                 return;
             }
 
-            // Inyectar info de usuario en el UI
             document.getElementById("userName").innerText = state.nombre;
             document.getElementById("userRole").innerText = state.rol;
             
-            // 3. Lanzar el motor CORE
-            // El motor se encarga de conectar Firebase y App Check
-            if (loaderText) loaderText.innerText = "🔌 Sincronizando con la Nube...";
+            if (loaderText) loaderText.innerText = "🔌 Sincronizando Núcleo...";
             
+            // Ejecutamos la inicialización
             const ready = await initApp();
 
             if (ready) {
-                console.log("✅ TallerPRO360 ONLINE");
-                // Transición suave de salida del loader
+                console.log("✅ Sistema Autorizado. Limpiando interfaz...");
+                
+                // Mazo de limpieza agresivo:
                 if (loader) {
                     loader.classList.add('fade-out');
-                    setTimeout(() => loader.remove(), 500);
+                    setTimeout(() => {
+                        loader.remove();
+                        // Si después de 500ms el container sigue vacío, es que algo falló en loadModule
+                        if (container.innerHTML.trim() === "") {
+                            console.warn("⚠️ Container vacío, forzando carga de dashboard");
+                            // Aquí podrías disparar un re-intento de carga de dashboard si fuera necesario
+                        }
+                    }, 400);
                 }
             }
 
         } catch (err) {
-            console.error("🔥 CRASH:", err);
+            console.error("🔥 FALLO DE ARRANQUE:", err);
             if (container) {
                 container.innerHTML = `
                     <div class="max-w-md mx-auto mt-20 p-8 bg-red-500/5 border border-red-500/20 rounded-3xl text-center">
                         <i class="fas fa-triangle-exclamation text-red-500 text-4xl mb-4"></i>
-                        <h3 class="text-white font-bold text-xl">Error de Conectividad</h3>
-                        <p class="text-slate-400 text-sm my-4">${err.message || 'No se pudo establecer conexión con el servidor.'}</p>
-                        <div class="flex gap-3 justify-center">
-                            <button onclick="location.reload()" class="bg-slate-800 text-white px-6 py-2 rounded-xl font-bold text-xs hover:bg-slate-700">Reintentar</button>
-                            <button onclick="localStorage.clear(); location.href='login.html'" class="bg-red-500 text-white px-6 py-2 rounded-xl font-bold text-xs">Limpiar Caché</button>
-                        </div>
+                        <h3 class="text-white font-bold text-xl">Error Crítico</h3>
+                        <p class="text-slate-400 text-sm my-4">${err.message}</p>
+                        <button onclick="location.reload()" class="bg-slate-800 text-white px-6 py-2 rounded-xl font-bold text-xs">Reintentar</button>
                     </div>
                 `;
             }
         }
     }
 
-    // Ejecución inicial
     startSystem();
 
-    // Botón Salir con limpieza total
     document.getElementById("logoutBtn")?.addEventListener("click", async () => {
-        if (!confirm("¿Cerrar sesión en TallerPRO360?")) return;
-        
+        if (!confirm("¿Cerrar sesión?")) return;
         try {
-            const { auth } = await import("./js/core/firebase-config.js");
+            const { auth } = await import("./js/core/firebase-config.js?v=1.1");
             const { signOut } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
             await signOut(auth);
-        } catch (e) {
-            console.warn("Cierre forzado");
         } finally {
             localStorage.clear();
             window.location.replace("login.html");
