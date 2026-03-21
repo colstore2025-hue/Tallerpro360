@@ -10,6 +10,15 @@ export async function initApp() {
   const uid = localStorage.getItem("uid");
   const empresaId = localStorage.getItem("empresaId");
 
+// En el initApp del CORE:
+if (state.rolGlobal === 'superadmin') {
+    console.log("🛠️ MODO CONSTRUCTOR ACTIVO");
+    // Habilitar panel de logs extendido o herramientas de fix
+    document.body.classList.add("admin-mode"); 
+    // Podrías cargar automáticamente el bootDiagnostic.js como un widget flotante
+}
+
+
   if (!uid || !empresaId) {
     location.href = "/login.html";
     return;
