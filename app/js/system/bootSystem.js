@@ -1,82 +1,43 @@
-/*
-=====================================
-bootsystem.js
-arranque principal del sistema
-tallerpro360
-=====================================
-*/
+/**
+ * bootSystem.js
+ * Sistema de arranque principal
+ */
 
-import { iniciarapp } from "../core/app-init.js";
+import { bootStatus } from "./bootDiagnostic.js";
 
-let systemstarted=false;
+// 🚀 Importar dashboard PRO360
+import dashboard from "../modules/dashboard.js";
 
-export function bootsystem(){
+export async function bootSystem() {
+  bootStatus("Inicializando PRO360...");
 
-if(systemstarted){
-console.warn("boot ya ejecutado");
-return;
-}
+  const container = document.getElementById("app") || document.body;
+  const empresaId = localStorage.getItem("empresaId");
+  const uid = localStorage.getItem("uid");
 
-systemstarted=true;
+  if (!uid) {
+    bootStatus("Usuario no autenticado. Redirigiendo...");
+    setTimeout(() => { window.location.href = "/login.html"; }, 1000);
+    return;
+  }
 
-console.log("🚀 iniciando tallerpro360");
+  bootStatus("Cargando datos del sistema...");
 
-/* ==============================
-verificar contenedor app
-============================== */
+  const state = {
+    uid,
+    empresaId,
+    rolGlobal: localStorage.getItem("rolGlobal") || "user",
+    plan: localStorage.getItem("plan") || "Freemium",
+    planFechaInicio: new Date(localStorage.getItem("planFechaInicio") || Date.now()),
+  };
 
-const container=document.getElementById("appcontent");
-
-if(!container){
-
-console.error("no existe #appcontent");
-
-return;
-
-}
-
-/* ==============================
-verificar sesión
-============================== */
-
-const uid=localStorage.getItem("uid");
-
-if(!uid){
-
-console.warn("no hay sesión activa");
-
-window.location.href="/login.html";
-
-return;
-
-}
-
-console.log("usuario activo:",uid);
-
-/* ==============================
-pantalla carga
-============================== */
-
-container.innerHTML=`
-<div style="
-padding:40px;
-text-align:center;
-font-family:Arial;
-">
-
-<h2>🚀 iniciando tallerpro360</h2>
-
-<p style="color:#94a3b8">
-cargando sistema...
-</p>
-
-</div>
-`;
-
-/* ==============================
-iniciar app
-============================== */
-
-iniciarapp();
-
+  // Cargar dashboard
+  bootStatus("Cargando módulo Dashboard...");
+  try {
+    await dashboard(container, state);
+    bootStatus("✅ Dashboard cargado correctamente");
+  } catch (e) {
+    console.error("❌ Error cargando Dashboard:", e);
+    bootStatus("❌ Error cargando Dashboard");
+  }
 }
