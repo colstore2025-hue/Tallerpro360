@@ -1,12 +1,11 @@
 {
+  "cleanUrls": true,
   "headers": [
     {
-      "source": "/(.*).js",
+      "source": "/app/js/(.*)",
       "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript"
-        }
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Content-Type", "value": "application/javascript" }
       ]
     }
   ]
