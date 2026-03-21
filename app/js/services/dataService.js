@@ -38,16 +38,25 @@ export async function saveLog(tipoLog, data) {
  * OBTENER DATOS (Genérico con manejo de errores)
  * Optimizado para subcolecciones de empresa.
  */
-async function fetchData(subcoleccion, empresaId, orden = "creadoEn") {
+async function fetchData(subcoleccion, empresaId) {
   try {
-    const q = query(
-      collection(db, `empresas/${empresaId}/${subcoleccion}`),
-      orderBy(orden, "desc")
-    );
+    // Eliminamos el orderBy temporalmente para saltar el error de índices
+    const q = query(collection(db, `empresas/${empresaId}/${subcoleccion}`));
     const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    
+    if (snap.empty) {
+        console.log(`⚠️ La subcolección ${subcoleccion} está vacía.`);
+        return [];
+    }
+
+    return snap.docs.map(d => ({ 
+        id: d.id, 
+        ...d.data(),
+        // Normalizamos la fecha aquí mismo para que el Dashboard no sufra
+        creadoEn: d.data().creadoEn?.toDate ? d.data().creadoEn.toDate() : d.data().creadoEn 
+    }));
   } catch (e) {
-    console.error(`Error obteniendo ${subcoleccion}:`, e);
+    console.error(`🔥 Error crítico obteniendo ${subcoleccion}:`, e);
     return [];
   }
 }
