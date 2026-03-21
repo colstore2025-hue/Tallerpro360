@@ -1,14 +1,15 @@
 /**
  * firebase-config.js
- * Núcleo Firebase centralizado - TallerPRO360
- * Compatible con módulos ES6 + fallback global opcional
+ * 🛡️ Núcleo Firebase centralizado + App Check (reCAPTCHA Enterprise)
+ * Proyecto: TallerPRO360
  */
 
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
 
-/* 🔹 CONFIG */
+/* 🔹 CONFIGURACIÓN OFICIAL */
 const firebaseConfig = {
   apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
   authDomain: "tallerpro360.firebaseapp.com",
@@ -19,18 +20,25 @@ const firebaseConfig = {
   measurementId: "G-VEC2C0QX2G"
 };
 
-/* 🔥 INIT SEGURO (evita doble inicialización) */
+/* 🔥 INICIALIZACIÓN DEL NÚCLEO */
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+
+/* 🛡️ ACTIVACIÓN DE APP CHECK (ESCUDO ANTI-BOTS) */
+// Esto usa la Site Key de reCAPTCHA Enterprise que generamos en Google Cloud
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaEnterpriseProvider('6LdgH5lsAAAAAHftoo-5Y6RKpQDrBpoA18IpGJuV'),
+  isTokenAutoRefreshEnabled: true // Mantiene la sesión segura automáticamente
+});
 
 /* 🔥 SERVICIOS */
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* ✅ EXPORTS (CRÍTICO) */
-export { app, auth, db };
+/* ✅ EXPORTACIONES DINÁMICAS */
+export { app, auth, db, appCheck };
 
-/* 🧠 OPCIONAL (compatibilidad legacy) */
+/* 🧠 COMPATIBILIDAD LEGACY (Solo si es estrictamente necesario) */
 window.db = db;
 window.auth = auth;
 
-console.log("✅ Firebase PRO360 listo (auth + db)");
+console.log("🚀 TallerPRO360: Firebase + App Check Protegido.");
