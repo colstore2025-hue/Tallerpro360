@@ -62,21 +62,31 @@ export async function initApp() {
 
 export async function loadModule(name) {
   if (!container) return;
-  
-  // Limpiar el loader de inicialización si existe
+
+  // 1. FORZAR DESAPARICIÓN DEL LOADER (Soluciona el bloqueo visual)
   const bootLoader = document.getElementById("boot-loader");
-  if (bootLoader) bootLoader.remove();
+  if (bootLoader) {
+      bootLoader.style.display = 'none'; 
+      bootLoader.remove(); 
+  }
+
+  // 2. Feedback de carga interna del módulo
+  container.innerHTML = `<div style="text-align:center;padding:20px;color:#0ff;">Cargando ${name}...</div>`;
 
   const modules = { dashboard, ordenes, clientes, inventario, gerenteAI };
 
   try {
     const mod = modules[name];
-    if (!mod) throw new Error(`Módulo ${name} no registrado`);
+    if (!mod) throw new Error(`Módulo ${name} no encontrado`);
+    
+    // 3. Ejecutar el módulo pasándole el contenedor y el estado
     await mod(container, state);
+    
+    // 4. Marcar botón activo en el menú
     actualizarEstadoMenu(name);
   } catch (e) {
-    console.error("❌ Error cargando módulo:", e);
-    container.innerHTML = `<div class="p-10 text-red-500">Error: ${e.message}</div>`;
+    console.error(`❌ Error en ${name}:`, e);
+    container.innerHTML = `<div style="color:#ff4444;padding:20px;">⚠️ Error al cargar componente: ${e.message}</div>`;
   }
 }
 
