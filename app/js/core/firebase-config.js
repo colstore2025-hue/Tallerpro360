@@ -1,7 +1,6 @@
 /**
  * firebase-config.js
- * 🛡️ Núcleo Firebase centralizado + App Check (reCAPTCHA Enterprise)
- * Proyecto: TallerPRO360
+ * 🛡️ Núcleo Firebase + App Check Certificado
  */
 
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -9,7 +8,6 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-aut
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
 
-/* 🔹 CONFIGURACIÓN OFICIAL */
 const firebaseConfig = {
   apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
   authDomain: "tallerpro360.firebaseapp.com",
@@ -20,25 +18,20 @@ const firebaseConfig = {
   measurementId: "G-VEC2C0QX2G"
 };
 
-/* 🔥 INICIALIZACIÓN DEL NÚCLEO */
+// Inicialización segura
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
-/* 🛡️ ACTIVACIÓN DE APP CHECK (ESCUDO ANTI-BOTS) */
-// Esto usa la Site Key de reCAPTCHA Enterprise que generamos en Google Cloud
+// 🛡️ APP CHECK - El corazón de la seguridad
+// William: Asegúrate de que en Google Cloud esta Key tenga el dominio vercel.app permitido.
 const appCheck = initializeAppCheck(app, {
   provider: new ReCaptchaEnterpriseProvider('6LdgH5lsAAAAAHftoo-5Y6RKpQDrBpoA18IpGJuV'),
-  isTokenAutoRefreshEnabled: true // Mantiene la sesión segura automáticamente
+  isTokenAutoRefreshEnabled: true 
 });
 
-/* 🔥 SERVICIOS */
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* ✅ EXPORTACIONES DINÁMICAS */
+// Exportación para los servicios
 export { app, auth, db, appCheck };
 
-/* 🧠 COMPATIBILIDAD LEGACY (Solo si es estrictamente necesario) */
-window.db = db;
-window.auth = auth;
-
-console.log("🚀 TallerPRO360: Firebase + App Check Protegido.");
+console.log("🛡️ TallerPRO360: Escudo App Check Activo.");
