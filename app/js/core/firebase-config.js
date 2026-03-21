@@ -21,8 +21,10 @@ const firebaseConfig = {
 // Inicialización segura
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
-// 🛡️ APP CHECK - El corazón de la seguridad
-// William: Asegúrate de que en Google Cloud esta Key tenga el dominio vercel.app permitido.
+/* 🛡️ CONFIGURACIÓN DE APP CHECK PARA CELULAR */
+// Activamos el modo debug para que Firebase nos genere un código en la consola
+self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; 
+
 const appCheck = initializeAppCheck(app, {
   provider: new ReCaptchaEnterpriseProvider('6LdgH5lsAAAAAHftoo-5Y6RKpQDrBpoA18IpGJuV'),
   isTokenAutoRefreshEnabled: true 
