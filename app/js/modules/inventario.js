@@ -1,226 +1,82 @@
 /**
- * inventario.js
- * Inventario PRO360 · Producción estable (Modo SaaS limpio 🚀)
- * Integrado con voz y alertas 🔊
+ * inventario.js - CRM PRO360
+ * Gestión de Stock y Repuestos
  */
-
-import {
-  collection,
-  getDocs,
-  addDoc,
-  updateDoc,
-  doc,
-  increment,
-  query,
-  orderBy
+import { 
+  collection, getDocs, addDoc, query, orderBy, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const db = window.db;
+import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 
 export default async function inventarioModule(container, state) {
+  const empresaId = state?.empresaId || localStorage.getItem("empresaId");
 
-  if (!state?.empresaId) {
-    container.innerHTML = `
-      <h2 style="color:red;text-align:center;">❌ Empresa no definida</h2>
-    `;
-    hablar("Error: empresa no definida");
-    return;
-  }
-
-  const base = `empresas/${state.empresaId}`;
-  let repuestos = [];
-
-  /* ================= HTML ================= */
   container.innerHTML = `
-    <h1 style="color:#00ffff;font-size:34px;font-weight:900;">📦 Inventario PRO360</h1>
+    <div style="padding:20px; background:#0a0f1a; min-height:100vh; color:white;">
+      <h1 style="color:#facc15; font-size:28px; font-weight:900;">📦 Inventario</h1>
+      
+      <div style="background:#0f172a; padding:15px; border-radius:12px; margin-bottom:20px; border:1px solid #1e293b;">
+        <input id="prodNombre" placeholder="Nombre del repuesto" style="width:100%; padding:12px; margin-bottom:10px; background:#050a14; border:1px solid #1e293b; color:white; border-radius:8px;"/>
+        <div style="display:flex; gap:10px;">
+          <input id="prodStock" type="number" placeholder="Cant." style="flex:1; padding:12px; background:#050a14; border:1px solid #1e293b; color:white; border-radius:8px;"/>
+          <input id="prodPrecio" type="number" placeholder="Precio" style="flex:2; padding:12px; background:#050a14; border:1px solid #1e293b; color:white; border-radius:8px;"/>
+        </div>
+        <button id="btnGuardarProd" style="width:100%; margin-top:10px; background:#facc15; color:#000; font-weight:bold; padding:12px; border:none; border-radius:8px;">➕ AGREGAR PRODUCTO</button>
+      </div>
 
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
-      <input id="nombre" placeholder="Nombre repuesto" style="flex:2;padding:10px;border-radius:8px;"/>
-      <input id="stock" type="number" placeholder="Stock" style="flex:1;padding:10px;border-radius:8px;"/>
-      <input id="minimo" type="number" placeholder="Mínimo" style="flex:1;padding:10px;border-radius:8px;"/>
-      <input id="compra" type="number" placeholder="Compra" style="flex:1;padding:10px;border-radius:8px;"/>
-      <input id="venta" type="number" placeholder="Venta" style="flex:1;padding:10px;border-radius:8px;"/>
-      <button id="crear" style="flex:1;background:#22c55e;color:#000;border-radius:8px;">➕ Crear</button>
+      <div id="listaInventario"></div>
     </div>
-
-    <div id="alertas" style="margin-bottom:15px;"></div>
-    <div id="lista"></div>
   `;
 
-  const lista = document.getElementById("lista");
-  const alertasDiv = document.getElementById("alertas");
-
-  /* ================= LOAD ================= */
   async function cargarInventario() {
-    lista.innerHTML = "🔄 Cargando inventario...";
+    const listado = document.getElementById("listaInventario");
+    listado.innerHTML = "⌛ Cargando almacén...";
     try {
-      const snap = await getDocs(
-        query(collection(db, `${base}/inventario`), orderBy("creadoEn","desc"))
-      );
+      const q = query(collection(db, `empresas/${empresaId}/inventario`), orderBy("nombre", "asc"));
+      const snap = await getDocs(q);
+      
+      if(snap.empty) {
+        listado.innerHTML = "<p style='color:#64748b;'>No hay productos en stock.</p>";
+        return;
+      }
 
-      repuestos = [];
-      let alertas = [];
-
-      snap.forEach(docSnap => {
-        const r = docSnap.data();
-        const id = docSnap.id;
-
-        repuestos.push({ id, ...r });
-
-        const stock = Number(r.stock || 0);
-        const minimo = Number(r.stockMinimo || 0);
-
-        if (stock <= minimo) {
-          alertas.push(`⚠️ Bajo stock: ${r.nombre}`);
-        }
-      });
-
-      renderLista(repuestos);
-      renderAlertas(alertas);
-
-      if (alertas.length) hablar("Alerta: bajo stock en algunos repuestos");
-
-    } catch (e) {
-      console.error("🔥 ERROR INVENTARIO:", e);
-      lista.innerHTML = `<p style="color:red;text-align:center;">❌ Error cargando inventario</p>`;
-      hablar("Error cargando inventario");
+      listado.innerHTML = snap.docs.map(doc => {
+        const item = doc.data();
+        const colorStock = item.cantidad < 5 ? "#ef4444" : "#22c55e";
+        return `
+          <div style="background:#111827; padding:15px; margin-bottom:10px; border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:bold;">${item.nombre}</div>
+              <div style="font-size:12px; color:#94a3b8;">Precio: $${item.precio || 0}</div>
+            </div>
+            <div style="text-align:right;">
+              <span style="color:${colorStock}; font-weight:bold; font-size:18px;">${item.cantidad}</span>
+              <div style="font-size:10px; color:#64748b;">UND</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    } catch(e) {
+      listado.innerHTML = "❌ Error al cargar inventario.";
     }
   }
 
-  /* ================= RENDER ================= */
-  function renderLista(data) {
-    if (!data.length) {
-      lista.innerHTML = `<p style="text-align:center;">📭 Sin repuestos</p>`;
-      return;
-    }
+  document.getElementById("btnGuardarProd").onclick = async () => {
+    const nombre = document.getElementById("prodNombre").value;
+    const cantidad = Number(document.getElementById("prodStock").value);
+    const precio = Number(document.getElementById("prodPrecio").value);
 
-    lista.innerHTML = data.map(r => `
-      <div style="
-        background:#111827;
-        padding:15px;
-        margin:10px 0;
-        border-radius:12px;
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        border:1px solid #1f2937;
-      ">
-        <div>
-          📦 <strong>${r.nombre}</strong><br/>
-          Stock: ${r.stock || 0} | Min: ${r.stockMinimo || 0}<br/>
-          💰 Compra: $${fmt(r.precioCompra)} | Venta: $${fmt(r.precioVenta)}
-        </div>
-
-        <div style="display:flex;gap:5px;">
-          <button data-id="${r.id}" class="entrada" style="background:#00ffff;border:none;border-radius:6px;padding:6px;">➕</button>
-          <button data-id="${r.id}" class="salida" style="background:#ef4444;border:none;border-radius:6px;padding:6px;">➖</button>
-        </div>
-      </div>
-    `).join("");
-
-    document.querySelectorAll(".entrada").forEach(btn => {
-      btn.onclick = () => agregarStock(btn.dataset.id);
-    });
-    document.querySelectorAll(".salida").forEach(btn => {
-      btn.onclick = () => usarStock(btn.dataset.id);
-    });
-  }
-
-  /* ================= ALERTAS ================= */
-  function renderAlertas(alertas) {
-    if (alertas.length) {
-      alertasDiv.innerHTML = `
-        <h3 style="color:#ef4444;">🚨 Alertas</h3>
-        ${alertas.map(a => `<div>${a}</div>`).join("")}
-      `;
-    } else {
-      alertasDiv.innerHTML = `<h3>✅ Stock OK</h3>`;
-    }
-  }
-
-  /* ================= CREAR ================= */
-  document.getElementById("crear").onclick = async () => {
-    const nombre = document.getElementById("nombre").value.trim();
-    const stock = Number(document.getElementById("stock").value) || 0;
-    const minimo = Number(document.getElementById("minimo").value) || 0;
-    const compra = Number(document.getElementById("compra").value) || 0;
-    const venta = Number(document.getElementById("venta").value) || 0;
-
-    if (!nombre) {
-      alert("Nombre obligatorio");
-      hablar("Nombre obligatorio para crear repuesto");
-      return;
-    }
+    if(!nombre || isNaN(cantidad)) return;
 
     try {
-      await addDoc(collection(db, `${base}/inventario`), {
-        nombre,
-        stock,
-        stockMinimo: minimo,
-        precioCompra: compra,
-        precioVenta: venta,
-        creadoEn: new Date()
+      await addDoc(collection(db, `empresas/${empresaId}/inventario`), {
+        nombre, cantidad, precio, actualizadoEn: serverTimestamp()
       });
-
-      ["nombre","stock","minimo","compra","venta"].forEach(id => document.getElementById(id).value = "");
-      hablar("Repuesto creado");
+      hablar("Producto registrado en almacén");
       cargarInventario();
-
-    } catch (e) {
-      console.error(e);
-      alert("Error creando repuesto");
-      hablar("Error creando repuesto");
-    }
+    } catch(e) { alert("Error al guardar"); }
   };
 
-  /* ================= ENTRADA ================= */
-  async function agregarStock(id) {
-    const cantidad = Number(prompt("Cantidad a ingresar:"));
-    if (!cantidad || cantidad <= 0) return;
-
-    try {
-      await updateDoc(doc(db, `${base}/inventario`, id), { stock: increment(cantidad) });
-      await addDoc(collection(db, `${base}/movimientosInventario`), {
-        repuestoId: id,
-        tipo: "entrada",
-        cantidad,
-        fecha: new Date()
-      });
-      hablar(`Stock aumentado en ${cantidad}`);
-      cargarInventario();
-    } catch (e) {
-      console.error(e);
-      alert("Error actualizando stock");
-      hablar("Error actualizando stock");
-    }
-  }
-
-  /* ================= SALIDA ================= */
-  async function usarStock(id) {
-    const cantidad = Number(prompt("Cantidad a usar:"));
-    if (!cantidad || cantidad <= 0) return;
-
-    try {
-      await updateDoc(doc(db, `${base}/inventario`, id), { stock: increment(-cantidad) });
-      await addDoc(collection(db, `${base}/movimientosInventario`), {
-        repuestoId: id,
-        tipo: "salida",
-        cantidad,
-        fecha: new Date()
-      });
-      hablar(`Stock descontado en ${cantidad}`);
-      cargarInventario();
-    } catch (e) {
-      console.error(e);
-      alert("Error descontando stock");
-      hablar("Error descontando stock");
-    }
-  }
-
-  /* ================= UTILS ================= */
-  function fmt(v) { return new Intl.NumberFormat("es-CO").format(v||0); }
-
-  /* ================= INIT ================= */
   cargarInventario();
 }
