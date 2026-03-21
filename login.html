@@ -103,178 +103,76 @@ Crear cuenta
 </div>
 
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
-  signOut
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-/* 🔥 CONFIG REAL (PON TU API KEY) */
 const firebaseConfig = {
-      apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-      authDomain: "tallerpro360.firebaseapp.com",
-      projectId: "tallerpro360",
-      storageBucket: "tallerpro360.firebasestorage.app",
-      messagingSenderId: "636224778184",
-      appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
-      measurementId: "G-VEC2C0QX2G"
-    };
+  apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+  authDomain: "tallerpro360.firebaseapp.com",
+  projectId: "tallerpro360",
+  storageBucket: "tallerpro360.firebasestorage.app",
+  messagingSenderId: "636224778184",
+  appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+};
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* TABS */
-tabLogin.onclick = ()=>{
-  loginForm.classList.remove("hidden");
-  registerForm.classList.add("hidden");
-};
-
-tabRegister.onclick = ()=>{
-  loginForm.classList.add("hidden");
-  registerForm.classList.remove("hidden");
-};
-
 /* LOGIN */
-loginForm.addEventListener("submit", async e=>{
+loginForm.addEventListener("submit", async e => {
   e.preventDefault();
-  showError("");
-
-  try{
-
-    const cred = await signInWithEmailAndPassword(
-      auth,
-      loginEmail.value.trim(),
-      loginPass.value
-    );
-
+  try {
+    const cred = await signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPass.value);
     const uid = cred.user.uid;
 
-    const userSnap = await getDoc(doc(db,"usuariosGlobal",uid));
-
-    if(!userSnap.exists()){
-      showError("No autorizado");
-      await signOut(auth);
-      return;
-    }
+    // Buscamos su perfil global
+    const userSnap = await getDoc(doc(db, "usuariosGlobal", uid));
+    if(!userSnap.exists()) throw new Error("Usuario no registrado.");
 
     const userData = userSnap.data();
+    
+    // Guardamos sesión para que el Router la lea
+    localStorage.setItem("uid", uid);
+    localStorage.setItem("empresaId", userData.empresaId || uid);
+    localStorage.setItem("rol", userData.rolGlobal || "cliente");
 
-    /* 👑 SUPERADMIN */
-    if(userData.rolGlobal === "superadmin"){
-      window.location.href="/app/";
-      return;
-    }
-
-    /* 👨‍🔧 CLIENTE */
-    const ref = doc(db,"talleres",uid);
-    const snap = await getDoc(ref);
-
-    let data;
-
-    if(!snap.exists()){
-      const vence = new Date();
-      vence.setDate(vence.getDate()+30);
-
-      data = {
-        planId:"freemium",
-        estadoPlan:"ACTIVO",
-        createdAt:new Date(),
-        venceEn:vence
-      };
-
-      await setDoc(ref,data);
-    }else{
-      data = snap.data();
-    }
-
-    if(data.estadoPlan !== "ACTIVO"){
-      showError("Plan inactivo");
-      await signOut(auth);
-      return;
-    }
-
-    window.location.href="/app/";
-
-  }catch(e){
-    console.error(e);
-    showError(e.message);
+    // REDIRECCIÓN ÚNICA A LA APP
+    window.location.href = "/app/index.html";
+  } catch(e) {
+    error.innerText = e.message;
+    error.classList.remove("hidden");
   }
 });
 
-/* REGISTER */
-registerForm.addEventListener("submit", async e=>{
+/* REGISTER (Ajustado para crear la estructura correcta) */
+registerForm.addEventListener("submit", async e => {
   e.preventDefault();
-
-  if(regPass.value !== regPass2.value){
-    showError("Contraseñas no coinciden");
-    return;
-  }
-
-  try{
-
-    const cred = await createUserWithEmailAndPassword(
-      auth,
-      regEmail.value,
-      regPass.value
-    );
-
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, regEmail.value, regPass.value);
     const uid = cred.user.uid;
 
-    await setDoc(doc(db,"usuariosGlobal",uid),{
-      rol:"dueno",
-      rolGlobal:"cliente",
-      activo:true
+    // 1. Crear Perfil de Usuario
+    await setDoc(doc(db, "usuariosGlobal", uid), {
+      rolGlobal: "cliente",
+      empresaId: uid, // Por defecto su propio UID es su empresa
+      email: regEmail.value,
+      activo: true
     });
 
-    await setDoc(doc(db,"talleres",uid),{
-      nombre:nombre.value,
-      planId:"freemium",
-      estadoPlan:"ACTIVO",
-      createdAt:new Date()
+    // 2. Crear la Empresa/Taller
+    await setDoc(doc(db, "empresas", uid), {
+      nombre: nombre.value,
+      planId: "freemium",
+      estadoPlan: "ACTIVO",
+      creadoEn: serverTimestamp()
     });
 
-    alert("Cuenta creada");
-
-  }catch(e){
-    showError(e.message);
-  }
+    alert("¡Cuenta creada! Ya puedes ingresar.");
+    location.reload();
+  } catch(e) { alert(e.message); }
 });
-
-/* RESET */
-resetBtn.onclick = async ()=>{
-  if(!loginEmail.value){
-    showError("Escribe tu correo");
-    return;
-  }
-
-  await sendPasswordResetEmail(auth,loginEmail.value);
-  alert("Correo enviado");
-};
-
-/* UI */
-window.togglePass = function(id){
-  const i = document.getElementById(id);
-  i.type = i.type === "password" ? "text" : "password";
-};
-
-function showError(msg){
-  error.innerText = msg;
-  error.classList.remove("hidden");
-}
-
 </script>
 
 </body>
