@@ -145,6 +145,22 @@ async function renderCharts(m) {
     const ChartLib = window.Chart;
     if (!ChartLib) return;
 
+// En dashboard.js, dentro de renderCEO:
+if (state.rolGlobal === 'superadmin') {
+    panel.innerHTML += `
+        <div style="margin-top:20px; border:1px solid #22c55e; padding:10px; background:#064e3b; border-radius:10px;">
+            <p style="color:#22c55e; font-size:11px; font-weight:bold;">🛠️ CONSOLE AUTO-FIX (Superadmin)</p>
+            <div id="aiConsole" style="font-family:monospace; font-size:10px; color:#fff;">
+                > Esperando logs...
+            </div>
+            <button onclick="IA_AutoFixer.analizarYReparar('${state.empresaId}')" 
+                    style="margin-top:10px; background:#22c55e; color:#000; border:none; padding:5px 10px; cursor:pointer; font-weight:bold; width:100%; border-radius:5px;">
+                FORZAR ESCANEO DE ERRORES
+            </button>
+        </div>
+    `;
+}
+
     const ctx = document.getElementById("mainChart").getContext("2d");
     if (charts.main) charts.main.destroy();
 
