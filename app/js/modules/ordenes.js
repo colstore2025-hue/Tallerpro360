@@ -1,136 +1,71 @@
 /**
- * ordenes.js - TallerPRO360 NEXUS-FLOW V4 🛠️
- * Gestión por Etapas: Recepción -> Cotización -> Ejecución
+ * ordenes_v4_pro.js - EL ELIMINADOR DE TUULAAP 🏁
+ * Enfoque: Velocidad de dedo, Evidencia Visual e IA
  */
-import { db } from "../core/firebase-config.js";
-import { hablar } from "../voice/voiceCore.js";
 
-export default async function ordenesModule(container, state) {
-  const empresaId = state.empresaId;
-  
-  // Estado local del componente para manejar las etapas
-  let etapaActual = 1; 
-
-  const renderEtapa = (etapa) => {
+export default async function ordenesPro(container, state) {
     container.innerHTML = `
-    <div class="p-4 bg-[#050a14] min-h-screen pb-24 text-white animate-fade-in">
-      
-      <div class="flex justify-between items-center mb-8 px-4 relative">
-        <div class="absolute top-4 left-10 right-10 h-[1px] bg-slate-800 -z-0"></div>
-        ${[1, 2, 3, 4].map(num => `
-          <div class="flex flex-col items-center gap-2 z-10">
-            <div class="w-8 h-8 rounded-full ${etapa >= num ? 'bg-cyan-500 shadow-[0_0_15px_#06b6d4]' : 'bg-slate-900 border border-slate-700'} 
-              flex items-center justify-center text-[10px] font-black transition-all">
-              ${etapa > num ? '<i class="fas fa-check"></i>' : num}
+    <div class="p-4 space-y-6 animate-fade-in pb-32">
+        <div class="flex justify-between items-center bg-slate-900/80 p-4 rounded-3xl border border-white/5">
+            <div>
+                <p class="text-[8px] font-black text-cyan-500 uppercase">Vehículo en Rampa</p>
+                <h2 class="text-xl font-black italic tracking-tighter text-white">NUEVO <span class="text-cyan-400">SERVICIO</span></h2>
             </div>
-            <span class="text-[7px] font-black uppercase tracking-widest ${etapa >= num ? 'text-cyan-400' : 'text-slate-600'}">
-              ${['Recepción', 'Diagnóstico', 'Cotización', 'Reparación'][num-1]}
-            </span>
-          </div>
-        `).join('')}
-      </div>
+            <div class="text-right">
+                <p class="text-[10px] font-bold text-slate-500">22 MAR 2026</p>
+                <span class="bg-emerald-500/20 text-emerald-400 text-[8px] px-2 py-0.5 rounded-full font-black uppercase">Sincronizado</span>
+            </div>
+        </div>
 
-      <div id="stepContent" class="space-y-6">
-        ${getEtapaHTML(etapa)}
-      </div>
+        <div class="grid grid-cols-1 gap-4">
+            <div class="bg-gradient-to-br from-slate-900 to-black p-6 rounded-[2.5rem] border border-cyan-500/20 relative overflow-hidden">
+                <h3 class="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4">Evidencia de Ingreso (360°)</h3>
+                
+                <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                    ${['Frontal', 'Trasera', 'Lateral D', 'Lateral I', 'Tablero'].map(pos => `
+                        <div class="min-w-[100px] h-24 bg-slate-800 rounded-2xl border-2 border-dashed border-slate-700 flex flex-col items-center justify-center group active:border-cyan-500">
+                            <i class="fas fa-camera text-slate-600 group-active:text-cyan-400"></i>
+                            <span class="text-[7px] font-black text-slate-500 mt-2 uppercase">${pos}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
 
-      <div class="fixed bottom-20 left-0 right-0 p-4 bg-black/40 backdrop-blur-xl border-t border-white/5 flex justify-between items-center">
-        <button id="btnBack" class="text-slate-500 text-[10px] font-bold uppercase tracking-widest ${etapa === 1 ? 'opacity-0' : ''}">
-          <i class="fas fa-arrow-left mr-2"></i> Volver
-        </button>
-        <button id="btnNext" class="bg-cyan-500 text-black px-8 py-3 rounded-2xl font-black text-[10px] uppercase shadow-[0_5px_20px_rgba(6,182,212,0.3)]">
-          ${etapa === 3 ? 'Enviar a WhatsApp' : (etapa === 4 ? 'Finalizar' : 'Siguiente Paso')}
-        </button>
-      </div>
+            <div class="bg-[#0f172a] p-6 rounded-[2.5rem] border border-slate-800 relative">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Diagnóstico Técnico</h3>
+                    <div class="flex gap-2">
+                        <span class="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                        <span class="text-[8px] font-bold text-red-500 uppercase">Rec Escucha</span>
+                    </div>
+                </div>
+                
+                <div id="voiceWave" class="h-12 flex items-center justify-center gap-1 mb-4">
+                    ${Array(15).fill('<div class="w-1 bg-cyan-500/30 rounded-full h-2"></div>').join('')}
+                </div>
+
+                <textarea id="inputDiagnostico" 
+                    class="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-sm text-slate-300 outline-none focus:border-cyan-500/50 transition-all h-32"
+                    placeholder="Dictando hallazgos..."></textarea>
+            </div>
+        </div>
+
+        <div class="fixed bottom-6 left-6 right-6 z-50">
+            <button id="btnSincronizar" class="w-full bg-gradient-to-r from-cyan-600 to-blue-700 p-5 rounded-3xl text-white font-black uppercase text-xs tracking-[0.2em] shadow-[0_20px_40px_rgba(6,182,212,0.4)] flex items-center justify-center gap-3 active:scale-95 transition-all">
+                <i class="fas fa-satellite-dish animate-pulse"></i>
+                Sincronizar con Nexus-X
+            </button>
+        </div>
     </div>
     `;
-    setupEventListeners(etapa);
-  };
 
-  const getEtapaHTML = (etapa) => {
-    switch(etapa) {
-      case 1: // RECEPCIÓN E INVENTARIO
-        return `
-          <div class="bg-slate-900/50 p-6 rounded-[2.5rem] border border-slate-800 animate-slide-up">
-            <h3 class="text-sm font-black mb-4 italic text-cyan-400">1. INSPECCIÓN DE INGRESO</h3>
-            <div class="grid grid-cols-2 gap-4 mb-6">
-              <div class="aspect-square bg-slate-800 rounded-3xl border-2 border-dashed border-slate-700 flex flex-col items-center justify-center gap-2 group hover:border-cyan-500 transition-all">
-                <i class="fas fa-camera text-2xl text-slate-600 group-hover:text-cyan-400"></i>
-                <span class="text-[8px] font-black text-slate-500 uppercase">Foto Frontal</span>
-              </div>
-              <div class="aspect-square bg-slate-800 rounded-3xl border-2 border-dashed border-slate-700 flex flex-col items-center justify-center gap-2 group hover:border-cyan-500 transition-all">
-                <i class="fas fa-camera text-2xl text-slate-600 group-hover:text-cyan-400"></i>
-                <span class="text-[8px] font-black text-slate-500 uppercase">Foto Trasera</span>
-              </div>
-            </div>
-            <div class="space-y-3">
-              <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Checklist Rápido</p>
-              <label class="flex items-center gap-3 p-3 bg-black/20 rounded-xl border border-white/5">
-                <input type="checkbox" class="accent-cyan-500"> <span class="text-xs">Kit de Carretera</span>
-              </label>
-              <label class="flex items-center gap-3 p-3 bg-black/20 rounded-xl border border-white/5">
-                <input type="checkbox" class="accent-cyan-500"> <span class="text-xs">Rueda de Repuesto</span>
-              </label>
-            </div>
-          </div>
-        `;
-      case 2: // DIAGNÓSTICO
-        return `
-          <div class="bg-slate-900/50 p-6 rounded-[2.5rem] border border-slate-800 animate-slide-up">
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="text-sm font-black italic text-cyan-400 uppercase">2. Diagnóstico Técnico</h3>
-              <button id="btnVoiceDiag" class="w-10 h-10 bg-red-500/20 text-red-500 rounded-full animate-pulse border border-red-500/30">
-                <i class="fas fa-microphone"></i>
-              </button>
-            </div>
-            <textarea id="txtDiagnostico" class="w-full bg-black/30 border border-white/5 p-4 rounded-2xl text-sm h-40 outline-none focus:border-cyan-500 transition-all" 
-              placeholder="Dicta los hallazgos mecánicos..."></textarea>
-          </div>
-        `;
-      case 3: // COTIZACIÓN
-        return `
-          <div class="bg-slate-900/50 p-6 rounded-[2.5rem] border border-slate-800 animate-slide-up">
-            <h3 class="text-sm font-black italic text-cyan-400 uppercase mb-4">3. Cotización de Servicios</h3>
-            <div id="itemsCotizacion" class="space-y-3 mb-6">
-              <div class="flex justify-between items-center p-3 bg-black/40 rounded-xl">
-                <span class="text-xs font-bold">Cambio de Aceite 10W30</span>
-                <span class="text-xs text-emerald-400 font-black">$185.000</span>
-              </div>
-            </div>
-            <div class="border-t border-slate-800 pt-4 flex justify-between items-center">
-              <span class="text-[10px] font-black uppercase text-slate-500">Total Estimado</span>
-              <span class="text-xl font-black text-white">$185.000</span>
-            </div>
-          </div>
-        `;
-      default: return ``;
-    }
-  };
-
-  const setupEventListeners = (etapa) => {
-    document.getElementById("btnNext").onclick = () => {
-      if(etapa < 4) {
-        etapaActual++;
-        renderEtapa(etapaActual);
-      }
-    };
-    if(document.getElementById("btnBack")) {
-        document.getElementById("btnBack").onclick = () => {
-            if(etapaActual > 1) {
-                etapaActual--;
-                renderEtapa(etapaActual);
-            }
-        };
-    }
-    
-    // Integración de voz en etapa 2
-    if(etapa === 2) {
-      document.getElementById("btnVoiceDiag").onclick = () => {
-        hablar("Describa el daño técnico para generar la cotización.");
-        // Lógica de reconocimiento aquí...
-      };
-    }
-  };
-
-  renderEtapa(etapaActual);
+    // Lógica de "Ondas de Voz" reactivas
+    const bars = container.querySelectorAll('#voiceWave div');
+    setInterval(() => {
+        bars.forEach(b => {
+            const h = Math.floor(Math.random() * 24) + 4;
+            b.style.height = `${h}px`;
+            b.style.backgroundColor = h > 15 ? '#22d3ee' : '#1e293b';
+        });
+    }, 150);
 }
