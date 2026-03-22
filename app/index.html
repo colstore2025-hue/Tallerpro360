@@ -80,79 +80,38 @@
 </div>
 
 <script type="module">
-    // 🔥 CACHE BUSTER: Forzamos la carga de la lógica de desbloqueo más reciente
-    import { initApp } from "./js/core/app-init.js?v=1.2";
+    import { initApp } from "./js/core/app-init.js?v=9.9";
 
     async function startSystem() {
-        const loader = document.getElementById("boot-loader");
-        const loaderText = document.getElementById("boot-text");
         const container = document.getElementById("appContainer");
+        const loader = document.getElementById("boot-loader");
         
+        console.log("🛠️ Diagnóstico: Iniciando...");
+
+        // FUERZA BRUTA NIVEL 10: Si en 3 segundos el cohete sigue, lo matamos
+        setTimeout(() => {
+            const cohete = document.getElementById("boot-loader");
+            if (cohete) {
+                console.error("🚨 El sistema se pegó. Forzando limpieza...");
+                cohete.innerHTML = "<h1 style='color:white; padding:20px;'>⚠️ Error de Carga detectado. <br> Revisando módulos...</h1>";
+                
+                // Intento de carga directa saltando TODO
+                import("./js/modules/dashboard.js").then(m => {
+                    m.default(container, { empresaId: 'taller_001', nombre: 'William (Manual)' });
+                }).catch(err => {
+                    cohete.innerHTML += `<p style='color:red;'>Error real: ${err.message}</p>`;
+                });
+            }
+        }, 3000);
+
         try {
-            // Sincronización de Identidad
-            const state = {
-                uid: localStorage.getItem("uid"),
-                empresaId: localStorage.getItem("empresaId") || "taller_001", 
-                rol: localStorage.getItem("rol") || "Gerente",
-                nombre: localStorage.getItem("nombre") || "Usuario"
-            };
-
-            // Seguridad de entrada
-            if (!state.uid) {
-                console.warn("🚫 Sesión no detectada, redirigiendo...");
-                window.location.replace("login.html");
-                return;
-            }
-
-            // Pintamos datos básicos en Header
-            document.getElementById("userName").innerText = state.nombre;
-            document.getElementById("userRole").innerText = state.rol;
-            
-            if (loaderText) loaderText.innerText = "🔌 Sincronizando Núcleo...";
-            
-            // 🚀 INICIALIZACIÓN (app-init.js toma el control)
-            const ready = await initApp();
-
-            if (ready) {
-                console.log("✅ Sistema Autorizado.");
-                if (loader) {
-                    loader.classList.add('fade-out');
-                    setTimeout(() => loader.remove(), 400);
-                }
-            }
-
-        } catch (err) {
-            console.error("🔥 FALLO CRÍTICO:", err);
-            if (container) {
-                container.innerHTML = `
-                    <div class="max-w-md mx-auto mt-20 p-8 bg-red-500/5 border border-red-500/20 rounded-[40px] text-center">
-                        <i class="fas fa-microchip text-red-500 text-4xl mb-4"></i>
-                        <h3 class="text-white font-bold text-xl">Error de Enlace</h3>
-                        <p class="text-slate-400 text-xs my-4 leading-relaxed">${err.message}</p>
-                        <button onclick="location.reload()" class="bg-red-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest">Reintentar Conexión</button>
-                    </div>
-                `;
-            }
+            await initApp();
+        } catch (e) {
+            console.error("🔥 Error en startSystem:", e);
         }
     }
 
-    // Arrancamos el motor
     startSystem();
-
-    // Evento de Salida
-    document.getElementById("logoutBtn")?.addEventListener("click", async () => {
-        if (!confirm("¿Deseas cerrar el sistema?")) return;
-        try {
-            const { auth } = await import("./js/core/firebase-config.js?v=1.2");
-            const { signOut } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
-            await signOut(auth);
-        } catch (e) {
-            console.error("Error al salir:", e);
-        } finally {
-            localStorage.clear();
-            window.location.replace("login.html");
-        }
-    });
 </script>
 
 </body>
