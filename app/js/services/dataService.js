@@ -1,6 +1,7 @@
 /**
  * dataService.js - Versión de Producción para TallerPRO360
  * Centraliza la comunicación con Firestore y el sistema de Logs de IA.
+ * Optimizado para Rutas: empresas/taller_001/[subcoleccion]
  */
 
 import { 
@@ -15,66 +16,84 @@ import {
 import { db } from "../core/firebase-config.js";
 
 /**
- * GUARDAR LOGS (Para errores de sistema o actividad de IA)
- * Esta función es llamada por el CORE cuando un módulo falla 5 veces.
+ * 🛡️ GUARDAR LOGS (Para auditoría de IA y errores)
  */
 export async function saveLog(tipoLog, data) {
   try {
-    const empresaId = data.empresaId || localStorage.getItem("empresaId");
-    if (!empresaId) return;
-
-    await addDoc(collection(db, `empresas/${empresaId}/ia_logs`), {
+    const empresaId = data.empresaId || localStorage.getItem("empresaId") || "taller_001";
+    
+    await addDoc(collection(db, "empresas", empresaId, "ia_logs"), {
       ...data,
       tipo: tipoLog,
-      timestamp: serverTimestamp() // Hora oficial de Google, no del celular
+      fecha: serverTimestamp() 
     });
-    console.log(`[Log] Evento registrado en ia_logs: ${tipoLog}`);
+    console.log(`[Nexus-X Log]: ${tipoLog} registrado.`);
   } catch (e) {
-    console.error("Error guardando log en Firestore:", e);
+    console.error("❌ Error en Log Firestore:", e);
   }
 }
 
 /**
- * OBTENER DATOS (Genérico con manejo de errores)
- * Optimizado para subcolecciones de empresa.
+ * 📡 MOTOR DE EXTRACCIÓN (Genérico y Resiliente)
+ * Maneja la ruta jerárquica: empresas -> taller_001 -> subcoleccion
  */
 async function fetchData(subcoleccion, empresaId) {
+  // Fallback de seguridad para evitar bloqueos si el ID no llega
+  const idReal = empresaId || localStorage.getItem("empresaId") || "taller_001";
+
   try {
-    // Eliminamos el orderBy temporalmente para saltar el error de índices
-    const q = query(collection(db, `empresas/${empresaId}/${subcoleccion}`));
-    const snap = await getDocs(q);
+    // Referencia directa a la subcolección de la empresa
+    const colRef = collection(db, "empresas", idReal, subcoleccion);
+    const snap = await getDocs(colRef);
     
     if (snap.empty) {
-        console.log(`⚠️ La subcolección ${subcoleccion} está vacía.`);
+        console.warn(`⚠️ Subcolección [${subcoleccion}] vacía en ${idReal}`);
         return [];
     }
 
-    return snap.docs.map(d => ({ 
-        id: d.id, 
-        ...d.data(),
-        // Normalizamos la fecha aquí mismo para que el Dashboard no sufra
-        creadoEn: d.data().creadoEn?.toDate ? d.data().creadoEn.toDate() : d.data().creadoEn 
-    }));
+    return snap.docs.map(d => {
+        const data = d.data();
+        return { 
+            id: d.id, 
+            ...data,
+            // Normalización de fechas para evitar errores en Charts/Dashboard
+            creadoEn: data.creadoEn?.toDate ? data.creadoEn.toDate() : (data.creadoEn || new Date())
+        };
+    });
   } catch (e) {
-    console.error(`🔥 Error crítico obteniendo ${subcoleccion}:`, e);
+    console.error(`🔥 Error crítico en fetchData [${subcoleccion}]:`, e);
+    // IMPORTANTE: Retornamos array vacío para que el Dashboard no se cuelgue
     return [];
   }
 }
 
-// Funciones específicas para los módulos
+/* ======================================================
+   📦 EXPORTACIÓN DE SERVICIOS
+   ====================================================== */
+
+// Consultas
 export const getClientes = (id) => fetchData("clientes", id);
 export const getOrdenes = (id) => fetchData("ordenes", id);
 export const getVehiculos = (id) => fetchData("vehiculos", id);
-export const getInventario = (id) => fetchData("inventario", id); // Usando 'inventario' como acordamos
+export const getInventario = (id) => fetchData("inventario", id);
+export const getFinanzas = (id) => fetchData("finanzas", id);
 
 /**
- * REGISTRAR NUEVA ORDEN / CLIENTE
- * Ejemplo de cómo escribir datos de forma segura
+ * ✍️ ESCRITURA DE DOCUMENTOS
+ * Registra datos con marca de tiempo de servidor
  */
 export async function createDocument(subcoleccion, empresaId, data) {
-  return await addDoc(collection(db, `empresas/${empresaId}/${subcoleccion}`), {
-    ...data,
-    creadoEn: serverTimestamp(),
-    estado: data.estado || "activo"
-  });
+  const idReal = empresaId || localStorage.getItem("empresaId") || "taller_001";
+  
+  try {
+    const docRef = await addDoc(collection(db, "empresas", idReal, subcoleccion), {
+      ...data,
+      creadoEn: serverTimestamp(),
+      estado: data.estado || "activo"
+    });
+    return docRef.id;
+  } catch (e) {
+    console.error(`❌ Error creando documento en ${subcoleccion}:`, e);
+    throw e;
+  }
 }
