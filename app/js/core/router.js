@@ -1,132 +1,91 @@
 /**
- * router.js
- * 🚀 Orquestador de Navegación SPA - TallerPRO360
- * Nexus-X Starlink SAS - Enterprise Cloud Edition
- * Ruta: app/js/core/router.js
+ * router.js - TallerPRO360 ULTRA V3 🚀
+ * VERSIÓN: 10.1 (Fuerza Bruta de Caché)
  */
 
-/* ===============================
-   CENTINELA DE ACTUALIZACIONES
-   =============================== */
-async function checkForUpdates() {
-  const CURRENT_VERSION = "v10"; // Cambia esto cada vez que hagas un gran cambio
-  const savedVersion = localStorage.getItem("app_version");
+const VERSION_ACTUAL = "v10.1"; 
 
-  if (savedVersion !== CURRENT_VERSION) {
-    console.log("🔄 Nueva versión detectada. Limpiando sistemas...");
+async function checkForUpdates() {
+  const savedVersion = localStorage.getItem("app_version");
+  if (savedVersion !== VERSION_ACTUAL) {
+    console.warn("🔄 Actualizando estructura del edificio...");
+    localStorage.setItem("app_version", VERSION_ACTUAL);
     
-    // Limpiar cachés viejas de Service Worker
+    // Limpieza profunda de Service Workers
     if ('serviceWorker' in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      for (let reg of registrations) await reg.unregister();
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (let r of regs) await r.unregister();
     }
-    
-    localStorage.setItem("app_version", CURRENT_VERSION);
-    // Recarga suave para aplicar cambios
-    location.reload();
+    // Forzamos recarga ignorando caché del navegador
+    location.reload(true); 
   }
 }
 checkForUpdates();
 
+// 💡 Agregamos el VERSION_ACTUAL a los imports para que Vercel no nos mienta
 const routes = {
-  dashboard:     () => import("../modules/dashboard.js"),
-  ordenes:       () => import("../modules/ordenes.js"),
-  vehiculos:     () => import("../modules/vehiculos.js"), // ✅ Añadido
-  inventario:    () => import("../modules/inventario.js"),
-  clientes:      () => import("../modules/clientes.js"),
-  finanzas:      () => import("../modules/finanzas.js"),
-  contabilidad:  () => import("../modules/contabilidad.js"),
-  pagos:         () => import("../modules/pagosTaller.js"),
-  reportes:      () => import("../modules/reportes.js"),
-  configuracion: () => import("../modules/config.js"),      // ✅ Corregido (config.js)
-  aiAssistant:   () => import("../modules/aiAssistant.js"),
-  gerenteAI:     () => import("../modules/gerenteAI.js"),  // ✅ Corregido (gerenteAI.js)
-  aiAdvisor:     () => import("../modules/aiAdvisor.js")
+  dashboard:     () => import(`../modules/dashboard.js?v=${VERSION_ACTUAL}`),
+  ordenes:       () => import(`../modules/ordenes.js?v=${VERSION_ACTUAL}`),
+  vehiculos:     () => import(`../modules/vehiculos.js?v=${VERSION_ACTUAL}`),
+  inventario:    () => import(`../modules/inventario.js?v=${VERSION_ACTUAL}`),
+  clientes:      () => import(`../modules/clientes.js?v=${VERSION_ACTUAL}`),
+  contabilidad:  () => import(`../modules/contabilidad.js?v=${VERSION_ACTUAL}`),
+  configuracion: () => import(`../modules/config.js?v=${VERSION_ACTUAL}`)
 };
 
-/* ===============================
-   NAVEGACIÓN PRINCIPAL
-   =============================== */
 export async function navigate(moduleName) {
   const container = document.getElementById("appContainer");
-  const role = localStorage.getItem("rol");
-  
   if (!container) return;
 
-  // SEGURIDAD: Solo Superadmin entra al Gerente AI de Nexus-X
-  if (moduleName === 'gerenteAI' && role !== 'superadmin') {
-    console.warn("🚫 Acceso restringido.");
-    window.location.hash = "#dashboard";
-    return;
-  }
+  // 1. Limpieza total antes de cargar el nuevo módulo
+  // Esto evita que los módulos se "encimen" uno sobre otro
+  container.innerHTML = `
+    <div class="flex flex-col items-center justify-center h-64">
+        <div class="w-10 h-10 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin"></div>
+        <p class="mt-4 text-[10px] text-cyan-400 uppercase tracking-widest animate-pulse">Cargando ${moduleName}...</p>
+    </div>`;
 
   if (!routes[moduleName]) {
-    container.innerHTML = `<div class="p-10 text-center text-slate-500">Módulo [${moduleName}] no disponible.</div>`;
+    container.innerHTML = `<div class="p-10 text-white bg-red-900/20 rounded-3xl border border-red-500/50 text-center">
+        ⚠️ Módulo [${moduleName}] no encontrado en el mapa del edificio.
+    </div>`;
     return;
   }
 
   try {
-    // UI Loading Neón
-    container.innerHTML = `
-      <div class="flex flex-col items-center justify-center h-full min-h-[400px]">
-        <div class="w-10 h-10 border-2 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin"></div>
-        <p class="mt-4 text-[10px] tracking-[0.2em] text-cyan-400 uppercase animate-pulse">Sincronizando Nexus-X</p>
-      </div>`;
-
-    // Carga del Módulo
     const module = await routes[moduleName]();
-    const renderFunc = module.default || module[moduleName];
+    const renderFunc = module.default;
 
-    if (typeof renderFunc !== 'function') throw new Error("Falla en punto de entrada del módulo.");
+    if (typeof renderFunc !== 'function') throw new Error("Punto de entrada inválido");
 
-    // Limpieza e Inyección de Estado
+    // Limpiamos de nuevo por si acaso quedó rastro del loader
     container.innerHTML = "";
     
     const state = {
       uid: localStorage.getItem("uid"),
-      empresaId: localStorage.getItem("empresaId"),
-      rol: role,
-      plan: localStorage.getItem("plan") || "freemium"
+      empresaId: localStorage.getItem("empresaId") || "taller_001",
+      rol: localStorage.getItem("rol")
     };
 
-    // CARGA SILENCIOSA DE IA (Si existe el script ia.js)
-    // Esto permite que el asistente de voz esté disponible globalmente
-    try {
-      await import("../modules/ia.js");
-    } catch(e) { 
-      console.log("ℹ️ Sistema IA en espera."); 
-    }
-
+    // Ejecutamos el render
     await renderFunc(container, state);
-
-    // Finalizar loaders
+    
+    console.log(`🏁 Puerta ${moduleName} abierta.`);
     document.getElementById("boot-loader")?.remove();
-    console.log(`✅ [${moduleName}] cargado exitosamente.`);
 
   } catch (error) {
-    console.error(`❌ Error en ${moduleName}:`, error);
-    container.innerHTML = `
-      <div class="p-8 border border-red-500/20 bg-red-500/5 rounded-2xl text-center">
-        <h2 class="text-white font-bold">Error de Conexión Modular</h2>
-        <p class="text-slate-500 text-xs my-2">${error.message}</p>
-        <button onclick="location.reload()" class="mt-4 bg-cyan-500 text-black px-4 py-2 rounded-lg text-xs font-bold">REINTENTAR</button>
-      </div>`;
+    console.error("🔥 Falla en el ascensor:", error);
+    container.innerHTML = `<div class="p-10 text-red-500 text-center">Error: ${error.message}</div>`;
   }
 }
 
-/* ===============================
-   INICIALIZACIÓN
-   =============================== */
-if (typeof window !== "undefined") {
-  window.navigate = navigate;
-
-  window.onhashchange = () => {
+// Escuchas globales (No cambies esto)
+window.onhashchange = () => {
     const mod = window.location.hash.replace("#", "");
     if (mod) navigate(mod);
-  };
+};
 
-  window.onload = () => {
-    const initialMod = window.location.hash.replace("#", "") || "dashboard";
-    navigate(initialMod);
-  };
-}
+window.onload = () => {
+    const mod = window.location.hash.replace("#", "") || "dashboard";
+    navigate(mod);
+};
