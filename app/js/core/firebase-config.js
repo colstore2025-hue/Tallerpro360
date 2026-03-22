@@ -1,8 +1,6 @@
 /**
- * firebase-config.js
- * 🛡️ Núcleo Firebase + App Check Certificado
+ * firebase-config.js - Edición "Soberana" 🛡️
  */
-
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -18,22 +16,26 @@ const firebaseConfig = {
   measurementId: "G-VEC2C0QX2G"
 };
 
-// Inicialización segura
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
-/* 🛡️ CONFIGURACIÓN DE APP CHECK PARA CELULAR */
-// Activamos el modo debug para que Firebase nos genere un código en la consola
-self.FIREBASE_APPCHECK_DEBUG_TOKEN ='f47ac10b-58cc-4372-a567-0e02b2c3d479'; 
+/* 🛡️ CONFIGURACIÓN DE APP CHECK INTELIGENTE */
+// Usamos tu Debug Token para que Firebase reconozca tu sesión de desarrollo
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.protocol === "file:") {
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+}
 
-const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaEnterpriseProvider('6LdgH5lsAAAAAHftoo-5Y6RKpQDrBpoA18IpGJuV'),
-  isTokenAutoRefreshEnabled: true 
-});
+let appCheck;
+try {
+    appCheck = initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider('6LdgH5lsAAAAAHftoo-5Y6RKpQDrBpoA18IpGJuV'),
+      isTokenAutoRefreshEnabled: true 
+    });
+    console.log("🛡️ Escudo App Check Activo.");
+} catch (err) {
+    console.warn("⚠️ App Check no pudo inicializar, continuando en modo preventivo.");
+}
 
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Exportación para los servicios
 export { app, auth, db, appCheck };
-
-console.log("🛡️ TallerPRO360: Escudo App Check Activo.");
