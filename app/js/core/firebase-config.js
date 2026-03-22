@@ -1,10 +1,13 @@
 /**
- * firebase-config.js - Edición "Soberana" 🛡️
+ * firebase-config.js - TallerPRO360 🚀
+ * BYPASS TEMPORAL: Se desactiva App Check para evitar bloqueos de Google Cloud MFA.
  */
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
+
+// Importación de App Check comentada para no generar peso innecesario
+// import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
@@ -16,22 +19,18 @@ const firebaseConfig = {
   measurementId: "G-VEC2C0QX2G"
 };
 
+// Inicialización única y segura
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
-// import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "...";
-
-const app = initializeApp(firebaseConfig);
-
-/* 🛡️ COMENTADO TEMPORALMENTE PARA BYPASS DE SEGURIDAD 
-const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaEnterpriseProvider('6LdgH5ls...'),
-  isTokenAutoRefreshEnabled: true 
-});
+/* 🛡️ APP CHECK DESACTIVADO TEMPORALMENTE 
+   Motivo: Bloqueo de acceso a Google Cloud Console (MFA Requerido).
+   Esto permitirá que el sistema cargue sin esperar validaciones externas.
 */
 
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-export { app, auth, db }; // Quita appCheck de aquí también
+// Exportación limpia (Sin appCheck)
+export { app, auth, db };
 
-
+console.log("🚀 TallerPRO360: Núcleo Firebase cargado en modo Rescate (Sin App Check).");
