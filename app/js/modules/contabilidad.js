@@ -1,223 +1,173 @@
 /**
- * contabilidad.js
- * Contabilidad PRO360 · Producción estable (Modo SaaS limpio 🚀)
+ * contabilidad.js - TallerPRO360 ULTRA V3 💼
+ * Sincronizado con el Núcleo Soberano y Reglas Tipo A
  */
-
-import {
-  collection,
-  getDocs,
-  addDoc,
-  query,
-  orderBy
+import { db } from "../core/firebase-config.js"; // 👈 IMPORTACIÓN DIRECTA (Clave del éxito)
+import { 
+  collection, 
+  getDocs, 
+  addDoc, 
+  query, 
+  orderBy,
+  serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* 🔥 DB GLOBAL */
-const db = window.db;
-
 export default async function contabilidadModule(container, state) {
+  const empresaId = state?.empresaId || localStorage.getItem("empresaId") || "taller_001";
+  const base = `empresas/${empresaId}/finanzas`;
 
-  /* ===== VALIDACIÓN ===== */
-  if (!state?.empresaId) {
-    container.innerHTML = `
-      <h2 style="color:red;text-align:center;">
-        ❌ Empresa no definida
-      </h2>
-    `;
-    return;
-  }
-
-  const base = `empresas/${state.empresaId}`;
-
-  let movimientos = [];
-
+  // 1. RENDER ESTRUCTURA (Diseño UX Pro)
   container.innerHTML = `
-    <h1 style="color:#00ffff;font-size:34px;font-weight:900;">
-      💼 Contabilidad PRO360
-    </h1>
+    <div class="p-4 bg-[#050a14] min-h-screen text-white font-sans">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-black italic tracking-tighter text-cyan-400 uppercase">
+                💼 Finanzas <span class="text-white font-light underline decoration-yellow-500">PRO360</span>
+            </h1>
+            <div id="statusBadge" class="text-[10px] bg-slate-800 px-3 py-1 rounded-full text-slate-400 font-bold uppercase tracking-widest">
+                Sincronizado
+            </div>
+        </div>
 
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
-      <input id="concepto" placeholder="Concepto"
-        style="flex:2;padding:10px;border-radius:8px;"/>
+        <div class="bg-[#0f172a] p-5 rounded-[30px] border border-slate-800 shadow-2xl mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <input id="concepto" type="text" placeholder="Concepto (ej. Repuestos)" 
+                       class="bg-[#1e293b] border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-cyan-500 outline-none">
+                
+                <select id="tipo" class="bg-[#1e293b] border-none rounded-2xl p-3 text-sm text-slate-300 outline-none">
+                    <option value="ingreso">🟢 Ingreso</option>
+                    <option value="gasto">🔴 Gasto</option>
+                </select>
 
-      <input id="tipo" placeholder="Tipo (ingreso/gasto)"
-        style="flex:1;padding:10px;border-radius:8px;"/>
+                <input id="monto" type="number" placeholder="Monto $" 
+                       class="bg-[#1e293b] border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-cyan-500 outline-none">
 
-      <input id="monto" type="number" placeholder="Monto"
-        style="flex:1;padding:10px;border-radius:8px;"/>
+                <button id="btnAgregar" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-black font-black rounded-2xl p-3 hover:scale-95 transition-all">
+                    ➕ REGISTRAR
+                </button>
+            </div>
+        </div>
 
-      <button id="agregar"
-        style="flex:1;background:#22c55e;color:#000;border-radius:8px;">
-        ➕ Agregar
-      </button>
+        <div id="resumenFinanzas" class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-[#0f172a] p-4 rounded-3xl border border-slate-800 text-center">
+                <p class="text-[10px] text-slate-500 font-black uppercase mb-1">Balance Total</p>
+                <h2 id="balanceTxt" class="text-xl font-black text-white">$ 0</h2>
+            </div>
+            <div class="bg-[#0f172a] p-4 rounded-3xl border border-slate-800 text-center">
+                <p class="text-[10px] text-slate-500 font-black uppercase mb-1">Estado</p>
+                <div id="estadoIcon" class="text-xs font-bold py-1 px-2 rounded-full inline-block mt-1">Cargando...</div>
+            </div>
+        </div>
+
+        <div id="listaMovimientos" class="space-y-3 pb-24">
+            <div class="animate-pulse text-center p-10 text-slate-600 italic">Consultando libros contables...</div>
+        </div>
     </div>
-
-    <div id="alertas"></div>
-    <div id="lista"></div>
   `;
 
-  const lista = document.getElementById("lista");
-  const alertasDiv = document.getElementById("alertas");
+  const listaDiv = document.getElementById("listaMovimientos");
+  const balanceTxt = document.getElementById("balanceTxt");
+  const estadoIcon = document.getElementById("estadoIcon");
 
-  /* ================= LOAD ================= */
-
-  async function cargarMovimientos() {
-
-    lista.innerHTML = "🔄 Cargando contabilidad...";
-
+  // 2. LÓGICA DE CARGA (Resiliente)
+  async function cargarDatos() {
     try {
-
-      const snap = await getDocs(
-        query(
-          collection(db, `${base}/finanzas`),
-          orderBy("fecha", "desc")
-        )
-      );
-
-      movimientos = [];
-
+      console.log("📊 Consultando contabilidad para:", empresaId);
+      const q = query(collection(db, base), orderBy("fecha", "desc"));
+      const snap = await getDocs(q);
+      
+      let movimientos = [];
       let totalIngresos = 0;
       let totalGastos = 0;
 
-      snap.forEach(docSnap => {
-
-        const m = docSnap.data() || {};
-
-        movimientos.push({
-          id: docSnap.id,
-          ...m
-        });
-
-        if (m.tipo === "ingreso") {
-          totalIngresos += Number(m.monto || 0);
-        }
-
-        if (m.tipo === "gasto") {
-          totalGastos += Number(m.monto || 0);
-        }
-
+      snap.forEach(doc => {
+        const data = doc.data();
+        movimientos.push({ id: doc.id, ...data });
+        if (data.tipo === "ingreso") totalIngresos += Number(data.monto || 0);
+        else totalGastos += Number(data.monto || 0);
       });
-
-      const utilidad = totalIngresos - totalGastos;
 
       renderLista(movimientos);
-      renderAlertas(utilidad);
+      updateResumen(totalIngresos - totalGastos);
 
-    } catch (e) {
-
-      console.error("🔥 ERROR CONTABILIDAD:", e);
-
-      lista.innerHTML = `
-        <p style="color:red;text-align:center;">
-          ❌ Error cargando contabilidad
-        </p>
-      `;
+    } catch (error) {
+      console.error("🔥 Error Contabilidad:", error);
+      listaDiv.innerHTML = `<div class="p-10 text-center text-red-500 font-bold uppercase">Error de Acceso (Firestore Reglas A)</div>`;
     }
   }
 
-  /* ================= RENDER ================= */
-
+  // 3. RENDERIZADO DE LISTA
   function renderLista(data) {
-
-    if (!data.length) {
-      lista.innerHTML = `<p style="text-align:center;">📭 Sin movimientos</p>`;
+    if (data.length === 0) {
+      listaDiv.innerHTML = `<div class="text-center p-10 text-slate-500">Sin movimientos registrados este mes.</div>`;
       return;
     }
 
-    lista.innerHTML = data.map(m => {
-
-      let fecha = "";
-
-      try {
-        if (m.fecha?.toDate) {
-          fecha = m.fecha.toDate().toLocaleString();
-        } else if (m.fecha) {
-          fecha = new Date(m.fecha).toLocaleString();
-        }
-      } catch {}
-
-      return `
-        <div style="
-          background:#111827;
-          padding:15px;
-          margin:10px 0;
-          border-radius:12px;
-          border:1px solid #1f2937;
-        ">
-          📝 <strong>${m.concepto || "-"}</strong><br/>
-          Tipo: ${m.tipo || "-"} | $${fmt(m.monto)}<br/>
-          <span style="color:#94a3b8;">${fecha}</span>
-        </div>
-      `;
-    }).join("");
+    listaDiv.innerHTML = data.map(m => `
+      <div class="bg-[#0f172a] p-4 rounded-3xl border border-slate-800 flex justify-between items-center transition hover:border-slate-600">
+          <div>
+              <p class="text-[11px] font-black text-white uppercase mb-1">${m.concepto}</p>
+              <p class="text-[9px] text-slate-500 italic">${m.fecha?.toDate ? m.fecha.toDate().toLocaleString() : 'Fecha pendiente'}</p>
+          </div>
+          <div class="text-right">
+              <p class="text-sm font-black ${m.tipo === 'ingreso' ? 'text-emerald-400' : 'text-red-400'}">
+                ${m.tipo === 'ingreso' ? '+' : '-'} $${fmt(m.monto)}
+              </p>
+              <p class="text-[8px] text-slate-600 font-bold uppercase tracking-widest">${m.tipo}</p>
+          </div>
+      </div>
+    `).join("");
   }
 
-  /* ================= ALERTAS ================= */
-
-  function renderAlertas(utilidad) {
-
-    if (utilidad < 0) {
-
-      alertasDiv.innerHTML = `
-        <h3 style="color:#ef4444;">
-          ❌ Pérdida: $${fmt(utilidad)}
-        </h3>
-      `;
-
+  function updateResumen(utilidad) {
+    balanceTxt.innerText = `$ ${fmt(utilidad)}`;
+    if (utilidad >= 0) {
+        balanceTxt.className = "text-xl font-black text-cyan-400";
+        estadoIcon.innerText = "RENTABLE";
+        estadoIcon.className = "text-[9px] font-bold py-1 px-3 rounded-full inline-block bg-emerald-500/20 text-emerald-400";
     } else {
-
-      alertasDiv.innerHTML = `
-        <h3 style="color:#00ffff;">
-          ✅ Utilidad: $${fmt(utilidad)}
-        </h3>
-      `;
+        balanceTxt.className = "text-xl font-black text-red-400";
+        estadoIcon.innerText = "DÉFICIT";
+        estadoIcon.className = "text-[9px] font-bold py-1 px-3 rounded-full inline-block bg-red-500/20 text-red-400";
     }
   }
 
-  /* ================= CREAR ================= */
-
-  document.getElementById("agregar").onclick = async () => {
-
+  // 4. ACCIÓN DE AGREGAR (Con Timestamp de Servidor)
+  document.getElementById("btnAgregar").onclick = async () => {
     const concepto = document.getElementById("concepto").value.trim();
-    const tipo = document.getElementById("tipo").value.trim().toLowerCase();
-    const monto = Number(document.getElementById("monto").value) || 0;
+    const tipo = document.getElementById("tipo").value;
+    const monto = Number(document.getElementById("monto").value);
 
-    if (!concepto || !["ingreso","gasto"].includes(tipo) || monto <= 0) {
-      alert("Datos inválidos");
-      return;
-    }
+    if (!concepto || monto <= 0) return alert("Por favor completa los datos correctamente.");
 
     try {
+      const btn = document.getElementById("btnAgregar");
+      btn.innerText = "⌛...";
+      btn.disabled = true;
 
-      await addDoc(
-        collection(db, `${base}/finanzas`),
-        {
-          concepto,
-          tipo,
-          monto,
-          fecha: new Date(),
-          creadoEn: new Date()
-        }
-      );
-
-      ["concepto","tipo","monto"].forEach(id => {
-        document.getElementById(id).value = "";
+      await addDoc(collection(db, base), {
+        concepto,
+        tipo,
+        monto,
+        fecha: new Date(), // Usamos Date local para visualización inmediata
+        creadoEn: serverTimestamp() // Importante para orden real en DB
       });
 
-      cargarMovimientos();
+      // Reset y Recarga
+      document.getElementById("concepto").value = "";
+      document.getElementById("monto").value = "";
+      btn.innerText = "➕ REGISTRAR";
+      btn.disabled = false;
+      
+      cargarDatos();
 
-    } catch (e) {
-
-      console.error(e);
-      alert("Error guardando movimiento");
+    } catch (error) {
+      console.error("Error al guardar:", error);
+      alert("No tienes permiso para registrar. Revisa tu sesión.");
     }
   };
 
-  /* ================= UTILS ================= */
+  function fmt(v) { return new Intl.NumberFormat("es-CO").format(v || 0); }
 
-  function fmt(v) {
-    return new Intl.NumberFormat("es-CO").format(v || 0);
-  }
-
-  /* INIT */
-  cargarMovimientos();
+  // 🚀 ARRANQUE
+  cargarDatos();
 }
