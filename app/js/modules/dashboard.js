@@ -1,44 +1,58 @@
 /**
- * dashboard.js - TallerPRO360 ULTRA V3
- * Sincronizado con NexusAI Orchestrator & Business Coach 🧠🎙️
+ * dashboard.js - TallerPRO360 ULTRA V3 - EDICIÓN RESCATE 🚀
  */
 import { getClientes, getOrdenes, getInventario } from "../services/dataService.js";
 import { NexusAI } from "../ai/NexusOrchestratorAI.js";
 import { store } from "../core/store.js";
-import { hablar } from "../voice/voiceCore.js"; // Asegúrate de que esta ruta sea correcta
+import { hablar } from "../voice/voiceCore.js";
 
 let charts = {};
 
 export default async function dashboard(container, state) {
-    const empresaId = state?.empresaId || localStorage.getItem("empresaId");
+    const empresaId = state?.empresaId || localStorage.getItem("empresaId") || "taller_001";
     
     // 1. Render Base UI (UX de carga inmediata)
     renderBaseUI(container);
 
-    if (!empresaId) return renderError(container, "❌ Error: Identidad de Taller no detectada");
+    // 2. Quitamos el cohete YA. No esperamos a los datos.
+    const loader = document.getElementById("boot-loader");
+    if (loader) loader.remove();
 
     try {
-        // 2. Carga Paralela (Data Real + Cerebro IA)
-        const [rawData, aiAnalysis] = await Promise.all([
-            loadFullData(empresaId),
-            NexusAI.analizarTodo(empresaId).catch(() => null)
-        ]);
+        // 3. Carga resiliente (Si uno falla, los otros siguen)
+        console.log("📥 Cargando datos para empresa:", empresaId);
+        
+        let rawData = { clientes: [], ordenes: [], inventario: [] };
+        try {
+            rawData = await loadFullData(empresaId);
+        } catch (err) {
+            console.warn("⚠️ Error cargando datos reales, usando vacíos.");
+        }
 
-        // 3. Procesamiento de Métricas
+        let aiAnalysis = null;
+        try {
+            // Bajamos el timeout de la IA para que no nos bloquee
+            aiAnalysis = await Promise.race([
+                NexusAI.analizarTodo(empresaId),
+                new Promise((_, reject) => setTimeout(() => reject('Timeout IA'), 3000))
+            ]).catch(() => null);
+        } catch (e) {}
+
+        // 4. Procesamiento y Renderizado
         const metrics = calculateMetrics(rawData);
-
-        // 4. Renderizado de Componentes
         renderKPIs(metrics);
         renderCharts(metrics);
         renderCEO(metrics, aiAnalysis);
-
-        // 5. INICIALIZAR BUSINESS COACH (Cereza del pastel)
         initBusinessCoach(metrics, aiAnalysis);
 
     } catch (e) {
         console.error("🔥 Dashboard Crash:", e);
+        // Si todo falla, al menos mostramos la estructura básica
     }
 }
+
+// ... (Resto de funciones: initBusinessCoach, calculateMetrics, renderBaseUI, etc. se mantienen igual)
+// ASEGÚRATE DE MANTENER LAS FUNCIONES QUE YA TENÍAS ABAJO
 
 /** * LÓGICA DEL COACH DE NEGOCIOS
  * Transforma datos en consejos de voz
