@@ -1,7 +1,6 @@
 /**
- * config.js - TallerPRO360 V3
- * Centro de Mando del Taller & API WhatsApp
- * Nexus-X Starlink SAS
+ * config.js - TallerPRO360 V4 ⚙️
+ * Centro de Mando: Identidad Corporativa & Nexus-X Starlink API
  */
 import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
@@ -10,79 +9,88 @@ export default async function configModule(container, state) {
   const empresaId = state?.empresaId || localStorage.getItem("empresaId");
 
   container.innerHTML = `
-    <div class="p-4 bg-[#050a14] min-h-screen text-white pb-24">
-      <div class="mb-6">
-        <h1 class="text-2xl font-black">⚙️ Configuración</h1>
-        <p class="text-[10px] text-cyan-400 tracking-widest uppercase">Gestión de Identidad y API</p>
+    <div class="p-4 bg-[#050a14] min-h-screen text-white pb-40 animate-fade-in font-sans">
+      
+      <div class="mb-8">
+        <h1 class="text-2xl font-black italic tracking-tighter leading-none text-white uppercase">
+            SYSTEM <span class="text-cyan-400">CONFIG</span>
+        </h1>
+        <p class="text-[8px] text-slate-500 font-black uppercase tracking-[0.3em] mt-1">Arquitectura Soberana Nexus-X</p>
       </div>
 
-      <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
-        <button id="tabGeneral" class="bg-cyan-500 text-black px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap">🏢 Empresa</button>
-        <button id="tabWhatsApp" class="bg-slate-800 text-slate-400 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap">💬 WhatsApp API</button>
+      <div class="flex gap-2 mb-8 bg-slate-900/50 p-1 rounded-2xl border border-white/5">
+        <button id="tabGeneral" class="flex-1 bg-cyan-500 text-black py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">🏢 Empresa</button>
+        <button id="tabWhatsApp" class="flex-1 text-slate-400 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">💬 WhatsApp</button>
       </div>
 
-      <div id="sectionGeneral" class="space-y-4">
-        <div id="perfilEmpresa" class="bg-[#0f172a] p-6 rounded-3xl border border-slate-800">
-          <p class="animate-pulse text-center text-xs text-slate-500">Sincronizando con Nexus-X...</p>
+      <div id="sectionGeneral" class="space-y-6 animate-fade-in">
+        <div id="perfilEmpresa" class="bg-[#0f172a] p-8 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 opacity-5 text-6xl text-cyan-500"><i class="fas fa-building"></i></div>
+            <p class="animate-pulse text-center text-[10px] font-black text-slate-600 uppercase tracking-widest">Sincronizando con Satélite...</p>
         </div>
       </div>
 
-      <div id="sectionWhatsApp" class="hidden space-y-4">
-        <div class="bg-[#0f172a] p-6 rounded-3xl border border-emerald-500/20">
-          <div class="flex items-center gap-3 mb-4">
-            <div class="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-500">
-              <i class="fab fa-whatsapp text-xl"></i>
+      <div id="sectionWhatsApp" class="hidden space-y-4 animate-fade-in">
+        <div class="bg-gradient-to-br from-[#0f172a] to-[#061e1a] p-8 rounded-[2.5rem] border border-emerald-500/20 shadow-2xl">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+              <i class="fab fa-whatsapp text-2xl"></i>
             </div>
-            <h3 class="font-bold text-sm">Motor de Notificaciones</h3>
+            <div>
+                <h3 class="font-black text-sm uppercase tracking-tighter">Motor de Notificaciones</h3>
+                <p class="text-[8px] text-emerald-500/60 font-black uppercase">Estatus: Conectado a Gateway</p>
+            </div>
           </div>
           
-          <div class="space-y-4">
-            <div>
-              <label class="text-[10px] text-slate-500 uppercase font-bold ml-1">Instance ID</label>
+          <div class="space-y-5">
+            <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
+              <label class="text-[8px] text-slate-500 uppercase font-black tracking-widest mb-2 block">Instance ID (Nexus-X)</label>
               <input id="ws_instance" type="text" placeholder="ID de Instancia" 
-                     class="w-full bg-[#050a14] border border-slate-800 p-3 rounded-xl text-sm focus:border-emerald-500 outline-none">
+                     class="w-full bg-transparent border-none text-emerald-400 text-sm font-black outline-none placeholder:text-slate-700">
             </div>
-            <div>
-              <label class="text-[10px] text-slate-500 uppercase font-bold ml-1">API Token</label>
-              <input id="ws_token" type="password" placeholder="Tu Token Secreto" 
-                     class="w-full bg-[#050a14] border border-slate-800 p-3 rounded-xl text-sm focus:border-emerald-500 outline-none">
+            <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
+              <label class="text-[8px] text-slate-500 uppercase font-black tracking-widest mb-2 block">API Secure Token</label>
+              <input id="ws_token" type="password" placeholder="••••••••••••" 
+                     class="w-full bg-transparent border-none text-emerald-400 text-sm font-black outline-none placeholder:text-slate-700">
             </div>
-            <p class="text-[9px] text-slate-500 italic">Este número se usará para enviar facturas y estados de órdenes automáticamente.</p>
+            <div class="p-3 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
+                <p class="text-[9px] text-slate-400 leading-relaxed italic">Este motor automatiza el envío de órdenes de servicio, recordatorios de mantenimiento y facturación PDF vía WhatsApp.</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <button id="btnGuardarConfig" class="fixed bottom-24 left-4 right-4 bg-cyan-500 text-black p-4 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition">
-        GUARDAR CAMBIOS GLOBAL
-      </button>
+      <div class="fixed bottom-24 left-4 right-4 z-50">
+          <button id="btnGuardarConfig" class="w-full bg-cyan-500 text-black py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-[0_10px_30px_rgba(6,182,212,0.4)] active:scale-95 transition-all">
+            Actualizar Sistema Global
+          </button>
+      </div>
 
-      <div class="mt-12 p-4 border border-red-500/20 rounded-2xl bg-red-500/5 text-center">
-        <button onclick="localStorage.clear(); location.reload();" class="text-red-500 text-xs font-bold">
-          Cerrar Sesión y Purgar Caché
+      <div class="mt-12 mb-10 text-center">
+        <button id="btnLogout" class="text-[9px] font-black text-red-500/50 uppercase tracking-[0.3em] hover:text-red-500 transition-colors">
+          <i class="fas fa-power-off mr-2"></i> Cerrar Sesión y Purgar Caché
         </button>
       </div>
     </div>
   `;
 
-  // Lógica de Tabs
-  const btnGen = document.getElementById("tabGeneral");
-  const btnWS = document.getElementById("tabWhatsApp");
-  const secGen = document.getElementById("sectionGeneral");
-  const secWS = document.getElementById("sectionWhatsApp");
-
-  btnWS.onclick = () => {
-    btnWS.className = "bg-emerald-500 text-black px-4 py-2 rounded-xl text-xs font-bold";
-    btnGen.className = "bg-slate-800 text-slate-400 px-4 py-2 rounded-xl text-xs font-bold";
-    secGen.classList.add("hidden");
-    secWS.classList.remove("hidden");
+  // --- LÓGICA DE INTERACCIÓN ---
+  const tabs = {
+    gen: { btn: document.getElementById("tabGeneral"), sec: document.getElementById("sectionGeneral") },
+    ws: { btn: document.getElementById("tabWhatsApp"), sec: document.getElementById("sectionWhatsApp") }
   };
 
-  btnGen.onclick = () => {
-    btnGen.className = "bg-cyan-500 text-black px-4 py-2 rounded-xl text-xs font-bold";
-    btnWS.className = "bg-slate-800 text-slate-400 px-4 py-2 rounded-xl text-xs font-bold";
-    secWS.classList.add("hidden");
-    secGen.classList.remove("hidden");
+  const switchTab = (active) => {
+    Object.values(tabs).forEach(t => {
+      t.btn.className = "flex-1 text-slate-400 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all";
+      t.sec.classList.add("hidden");
+    });
+    tabs[active].btn.className = "flex-1 bg-cyan-500 text-black py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all";
+    tabs[active].sec.classList.remove("hidden");
   };
+
+  tabs.gen.btn.onclick = () => switchTab('gen');
+  tabs.ws.btn.onclick = () => switchTab('ws');
 
   async function cargarDatos() {
     try {
@@ -90,37 +98,39 @@ export default async function configModule(container, state) {
       if (docSnap.exists()) {
         const data = docSnap.data();
         
-        // Render General
+        // Render Identidad Empresa
         document.getElementById("perfilEmpresa").innerHTML = `
-          <div class="flex flex-col items-center mb-6">
-            <div class="w-20 h-20 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-3xl flex items-center justify-center text-3xl shadow-lg mb-4">🏢</div>
-            <input id="emp_nombre" value="${data.nombre || ''}" class="bg-transparent text-xl font-black text-center outline-none border-b border-white/5 focus:border-cyan-500 w-full">
-            <span class="text-[10px] text-slate-500 mt-2 tracking-widest">${empresaId}</span>
+          <div class="flex flex-col items-center mb-8">
+            <div class="w-24 h-24 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-[2.5rem] flex items-center justify-center text-4xl shadow-2xl mb-4 border-4 border-white/10">🏢</div>
+            <input id="emp_nombre" value="${data.nombre || ''}" class="bg-transparent text-2xl font-black text-center outline-none border-b border-white/5 focus:border-cyan-500 w-full tracking-tighter" placeholder="Nombre del Taller">
+            <span class="text-[8px] text-slate-600 mt-2 font-black uppercase tracking-[0.4em]">${empresaId}</span>
           </div>
-          <div class="space-y-4">
-             <div>
-               <label class="text-[10px] text-slate-500 uppercase font-bold ml-1">NIT / ID Fiscal</label>
-               <input id="emp_nit" value="${data.nit || ''}" class="w-full bg-[#050a14] border border-slate-800 p-3 rounded-xl text-sm focus:border-cyan-500 outline-none">
+          <div class="space-y-5">
+             <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
+               <label class="text-[8px] text-slate-500 uppercase font-black tracking-widest mb-1 block">NIT / Registro Fiscal</label>
+               <input id="emp_nit" value="${data.nit || ''}" class="w-full bg-transparent border-none text-white text-sm font-black outline-none" placeholder="000-000-000">
              </div>
-             <div>
-               <label class="text-[10px] text-slate-500 uppercase font-bold ml-1">Plan Nexus-X</label>
-               <div class="w-full bg-[#050a14] border border-yellow-500/20 p-3 rounded-xl text-sm text-yellow-500 font-bold uppercase">Enterprise Cloud</div>
+             <div class="bg-black/20 p-4 rounded-2xl border border-white/5 flex justify-between items-center">
+               <div>
+                   <label class="text-[8px] text-slate-500 uppercase font-black tracking-widest mb-1 block">Nivel de Suscripción</label>
+                   <div class="text-xs text-yellow-500 font-black uppercase tracking-tighter">Enterprise Cloud Nexus-X</div>
+               </div>
+               <i class="fas fa-crown text-yellow-600 opacity-40"></i>
              </div>
           </div>
         `;
 
-        // Llenar WhatsApp
         document.getElementById("ws_instance").value = data.ws_instance || "";
         document.getElementById("ws_token").value = data.ws_token || "";
       }
     } catch (e) {
-      console.error(e);
+      console.error("Config Load Error:", e);
     }
   }
 
   document.getElementById("btnGuardarConfig").onclick = async () => {
     const btn = document.getElementById("btnGuardarConfig");
-    btn.innerText = "SINCRONIZANDO...";
+    btn.innerText = "SINCRO EN CURSO...";
     btn.disabled = true;
 
     try {
@@ -134,17 +144,23 @@ export default async function configModule(container, state) {
 
       await updateDoc(doc(db, "empresas", empresaId), update);
       
-      // Actualizar localStorage para el Router y Services
+      // Guardar local para uso inmediato en servicios de mensajería
       localStorage.setItem("ws_instance", update.ws_instance);
       localStorage.setItem("ws_token", update.ws_token);
 
-      alert("✅ Sistema Sincronizado");
-      location.reload();
+      btn.innerText = "CONFIGURACIÓN EXITOSA";
+      setTimeout(() => location.reload(), 1000);
     } catch (e) {
-      alert("❌ Error al guardar");
-    } finally {
-      btn.innerText = "GUARDAR CAMBIOS GLOBAL";
+      alert("Falla de Conexión Nexus-X");
+      btn.innerText = "REINTENTAR ACTUALIZACIÓN";
       btn.disabled = false;
+    }
+  };
+
+  document.getElementById("btnLogout").onclick = () => {
+    if(confirm("¿Purgar caché del sistema y cerrar sesión?")) {
+        localStorage.clear();
+        location.reload();
     }
   };
 
