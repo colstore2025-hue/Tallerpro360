@@ -21,18 +21,11 @@
         #mainLayout { display:flex; height:calc(100vh - 70px); }
         
         #sidebar { width:260px; background: var(--sidebar-bg); display:flex; flex-direction:column; padding:20px 15px; border-right: 1px solid #1e293b; overflow-y: auto; }
-        #menuItems button { 
-            width:100%; margin:4px 0; padding:12px 15px; border:none; border-radius:12px; 
-            font-size:14px; font-weight:600; cursor:pointer; text-align: left;
-            transition: all 0.2s ease; color:#94a3b8; background:transparent;
-            display: flex; align-items: center; gap: 12px;
-        }
-        #menuItems button i { width: 20px; text-align: center; font-size: 16px; opacity: 0.7; }
-        #menuItems button:hover { background: rgba(0, 255, 255, 0.08); color: var(--neon-cyan); }
-        #menuItems button.active { background: #1e293b; color: var(--neon-cyan); box-shadow: inset 3px 0 0 var(--neon-cyan); }
         
+        /* Contenedor de módulos dinámico */
         #appContainer { flex:1; padding:25px; overflow-y:auto; background: radial-gradient(circle at 50% 0%, #161e2e, #0b1220); position: relative; }
         
+        /* Scrollbar Neón */
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: var(--sidebar-bg); }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
@@ -40,6 +33,9 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin-custom { animation: spin 1s linear infinite; }
         .fade-out { opacity: 0; transition: opacity 0.4s ease; pointer-events: none; }
+
+        /* Estilo para botones activos en el menú */
+        .menu-btn-active { color: var(--neon-cyan) !important; background: rgba(0, 255, 255, 0.05) !important; border-left: 3px solid var(--neon-cyan) !important; }
     </style>
 </head>
 
@@ -47,44 +43,45 @@
 
 <header>
     <div style="display:flex; align-items:center; gap:12px;">
-        <div style="width:38px; height:38px; background: linear-gradient(135deg, #10b981, #059669); border-radius:10px; display:flex; align-items:center; justify-content:center; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);">
+        <div style="width:38px; height:38px; background: linear-gradient(135deg, #06b6d4, #0891b2); border-radius:10px; display:flex; align-items:center; justify-content:center; box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);">
             <i class="fas fa-car-wrench text-white"></i>
         </div>
         <div>
-            <h1 class="text-lg font-bold text-white leading-none">TallerPRO360</h1>
-            <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Enterprise Cloud</span>
+            <h1 class="text-lg font-bold text-white leading-none tracking-tighter">TallerPRO360</h1>
+            <span class="text-[10px] text-cyan-400 font-black uppercase tracking-widest">Enterprise Cloud</span>
         </div>
     </div>
     
     <div style="display:flex; align-items:center; gap:24px;">
-        <div style="text-align: right;">
-            <p id="userName" style="font-size:13px; font-weight:700; color:white; margin:0;"></p>
-            <p id="userRole" style="font-size:10px; color:#64748b; margin:0; text-transform: uppercase;"></p>
+        <div style="text-align: right;" class="hidden sm:block">
+            <p id="userName" style="font-size:13px; font-weight:700; color:white; margin:0;">Cargando...</p>
+            <p id="userRole" style="font-size:10px; color:#64748b; margin:0; text-transform: uppercase;">Rol</p>
         </div>
         <button id="logoutBtn" class="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all border border-red-500/20">
-            <i class="fas fa-power-off mr-2"></i> Salir
+            <i class="fas fa-power-off"></i>
         </button>
     </div>
 </header>
 
 <div id="mainLayout">
     <nav id="sidebar">
-        <p style="color:#475569; font-size:10px; font-weight:bold; margin-bottom:15px; padding-left:15px; letter-spacing:2px; text-transform: uppercase;">Módulos</p>
-        <div id="menuItems"></div>
+        <p style="color:#475569; font-size:9px; font-weight:900; margin-bottom:15px; padding-left:15px; letter-spacing:3px; text-transform: uppercase;">Módulos</p>
+        <div id="menuItems" class="space-y-1">
+            </div>
     </nav>
 
     <main id="appContainer">
-        <div id="boot-loader" style="text-align:center; margin-top:20vh; position: absolute; width: 100%; left: 0;">
-            <div class="inline-block w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin-custom mb-6"></div>
-            <h2 id="boot-text" style="font-size:20px; color:white; font-weight:600; letter-spacing: -0.5px;">🚀 Inicializando Sistema...</h2>
-            <p id="boot-subtext" style="color:#64748b; font-size:13px; margin-top:8px;">Validando credenciales y escudo App Check</p>
+        <div id="boot-loader" class="text-center mt-[25vh] transition-opacity duration-500">
+            <div class="inline-block w-12 h-12 border-[3px] border-cyan-500/10 border-t-cyan-400 rounded-full animate-spin-custom mb-6"></div>
+            <h2 id="boot-text" class="text-xl text-white font-bold tracking-tight">🚀 Inicializando Nexus-X</h2>
+            <p id="boot-subtext" class="text-slate-500 text-xs mt-2 font-medium">Validando seguridad App Check y Sesión...</p>
         </div>
     </main>
 </div>
 
 <script type="module">
-    // 🔥 CACHE BUSTER: Forzamos la carga del archivo más reciente añadiendo ?v=1.1
-    import { initApp } from "./js/core/app-init.js?v=1.1";
+    // 🔥 CACHE BUSTER: Forzamos la carga de la lógica de desbloqueo más reciente
+    import { initApp } from "./js/core/app-init.js?v=1.2";
 
     async function startSystem() {
         const loader = document.getElementById("boot-loader");
@@ -92,67 +89,65 @@
         const container = document.getElementById("appContainer");
         
         try {
+            // Sincronización de Identidad
             const state = {
                 uid: localStorage.getItem("uid"),
-                empresaId: localStorage.getItem("empresaId"),
-                rol: localStorage.getItem("rol") || "Usuario",
-                rolGlobal: localStorage.getItem("rolGlobal"),
-                nombre: localStorage.getItem("nombre") || "Operador"
+                empresaId: localStorage.getItem("empresaId") || "taller_001", 
+                rol: localStorage.getItem("rol") || "Gerente",
+                nombre: localStorage.getItem("nombre") || "Usuario"
             };
 
-            if (!state.uid || (!state.empresaId && state.rolGlobal !== 'superadmin')) {
+            // Seguridad de entrada
+            if (!state.uid) {
+                console.warn("🚫 Sesión no detectada, redirigiendo...");
                 window.location.replace("login.html");
                 return;
             }
 
+            // Pintamos datos básicos en Header
             document.getElementById("userName").innerText = state.nombre;
             document.getElementById("userRole").innerText = state.rol;
             
             if (loaderText) loaderText.innerText = "🔌 Sincronizando Núcleo...";
             
-            // Ejecutamos la inicialización
+            // 🚀 INICIALIZACIÓN (app-init.js toma el control)
             const ready = await initApp();
 
             if (ready) {
-                console.log("✅ Sistema Autorizado. Limpiando interfaz...");
-                
-                // Mazo de limpieza agresivo:
+                console.log("✅ Sistema Autorizado.");
                 if (loader) {
                     loader.classList.add('fade-out');
-                    setTimeout(() => {
-                        loader.remove();
-                        // Si después de 500ms el container sigue vacío, es que algo falló en loadModule
-                        if (container.innerHTML.trim() === "") {
-                            console.warn("⚠️ Container vacío, forzando carga de dashboard");
-                            // Aquí podrías disparar un re-intento de carga de dashboard si fuera necesario
-                        }
-                    }, 400);
+                    setTimeout(() => loader.remove(), 400);
                 }
             }
 
         } catch (err) {
-            console.error("🔥 FALLO DE ARRANQUE:", err);
+            console.error("🔥 FALLO CRÍTICO:", err);
             if (container) {
                 container.innerHTML = `
-                    <div class="max-w-md mx-auto mt-20 p-8 bg-red-500/5 border border-red-500/20 rounded-3xl text-center">
-                        <i class="fas fa-triangle-exclamation text-red-500 text-4xl mb-4"></i>
-                        <h3 class="text-white font-bold text-xl">Error Crítico</h3>
-                        <p class="text-slate-400 text-sm my-4">${err.message}</p>
-                        <button onclick="location.reload()" class="bg-slate-800 text-white px-6 py-2 rounded-xl font-bold text-xs">Reintentar</button>
+                    <div class="max-w-md mx-auto mt-20 p-8 bg-red-500/5 border border-red-500/20 rounded-[40px] text-center">
+                        <i class="fas fa-microchip text-red-500 text-4xl mb-4"></i>
+                        <h3 class="text-white font-bold text-xl">Error de Enlace</h3>
+                        <p class="text-slate-400 text-xs my-4 leading-relaxed">${err.message}</p>
+                        <button onclick="location.reload()" class="bg-red-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest">Reintentar Conexión</button>
                     </div>
                 `;
             }
         }
     }
 
+    // Arrancamos el motor
     startSystem();
 
+    // Evento de Salida
     document.getElementById("logoutBtn")?.addEventListener("click", async () => {
-        if (!confirm("¿Cerrar sesión?")) return;
+        if (!confirm("¿Deseas cerrar el sistema?")) return;
         try {
-            const { auth } = await import("./js/core/firebase-config.js?v=1.1");
+            const { auth } = await import("./js/core/firebase-config.js?v=1.2");
             const { signOut } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
             await signOut(auth);
+        } catch (e) {
+            console.error("Error al salir:", e);
         } finally {
             localStorage.clear();
             window.location.replace("login.html");
