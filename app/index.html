@@ -80,37 +80,66 @@
 </div>
 
 <script type="module">
-    import { initApp } from "./js/core/app-init.js?v=9.9";
+    // Importamos las piezas básicas
+    import { auth } from "./js/core/firebase-config.js?v=2.0";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import dashboard from "./js/modules/dashboard.js?v=2.0";
 
     async function startSystem() {
         const container = document.getElementById("appContainer");
         const loader = document.getElementById("boot-loader");
         
-        console.log("🛠️ Diagnóstico: Iniciando...");
+        console.log("🚀 Iniciando Secuencia de Despegue...");
 
-        // FUERZA BRUTA NIVEL 10: Si en 3 segundos el cohete sigue, lo matamos
-        setTimeout(() => {
-            const cohete = document.getElementById("boot-loader");
-            if (cohete) {
-                console.error("🚨 El sistema se pegó. Forzando limpieza...");
-                cohete.innerHTML = "<h1 style='color:white; padding:20px;'>⚠️ Error de Carga detectado. <br> Revisando módulos...</h1>";
-                
-                // Intento de carga directa saltando TODO
-                import("./js/modules/dashboard.js").then(m => {
-                    m.default(container, { empresaId: 'taller_001', nombre: 'William (Manual)' });
-                }).catch(err => {
-                    cohete.innerHTML += `<p style='color:red;'>Error real: ${err.message}</p>`;
-                });
+        // 1. SEGURO DE VIDA: Si en 3 segundos nada pasa, borramos el cohete a la fuerza
+        const forcedEntry = setTimeout(() => {
+            if (document.getElementById("boot-loader")) {
+                console.warn("⚠️ Timeout: Forzando visibilidad del Dashboard");
+                limpiarYEntrar();
             }
         }, 3000);
 
-        try {
-            await initApp();
-        } catch (e) {
-            console.error("🔥 Error en startSystem:", e);
+        // 2. ESCUCHA DE SESIÓN
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log("✅ Usuario detectado:", user.email);
+                clearTimeout(forcedEntry);
+                limpiarYEntrar(user);
+            } else {
+                console.warn("❌ Sin sesión activa. Al login...");
+                window.location.href = "login.html";
+            }
+        });
+
+        async function limpiarYEntrar(user = null) {
+            // Borramos el loader
+            const l = document.getElementById("boot-loader");
+            if (l) l.remove();
+
+            // Pintamos los datos en el header (si los hay)
+            if (user) {
+                document.getElementById("userName").innerText = user.displayName || "William";
+                document.getElementById("userRole").innerText = "ADMIN";
+            }
+
+            // CARGAMOS EL DASHBOARD
+            try {
+                // Pasamos los datos mínimos para que el dashboard no explote
+                const state = { 
+                    uid: user?.uid || "manual", 
+                    empresaId: "taller_001", 
+                    nombre: user?.displayName || "William" 
+                };
+                dashboard(container, state);
+                console.log("🏁 Dashboard Renderizado");
+            } catch (err) {
+                console.error("🔥 Error cargando el dashboard:", err);
+                container.innerHTML = `<div class="p-10 text-white">Error en Dashboard: ${err.message}</div>`;
+            }
         }
     }
 
+    // Arrancamos
     startSystem();
 </script>
 
