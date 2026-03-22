@@ -1,279 +1,120 @@
 /**
- * reportes.js
- * Dashboard de reportes PRO360 · Nivel Tesla (FIX FINAL)
+ * reportes.js - TallerPRO360 NEXUS-X 📄
+ * Edición: Auditoría y Exportación Masiva
  */
-
-import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
-import { analizarNegocio } from "../ai/aiManager.js";
-import XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js";
-import Chart from "https://cdn.jsdelivr.net/npm/chart.js";
+
+// Cargamos librerías externas de forma dinámica para no pesar al inicio
+const LOAD_XL = () => import("https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js");
 
 export default async function reportesModule(container, state) {
+  const empresaId = state?.empresaId || localStorage.getItem("empresaId");
+  let datosCargados = [];
 
   container.innerHTML = `
-    <h1 style="color:#0ff; text-shadow:0 0 12px #0ff;">📊 Reportes PRO360 · Nivel Tesla</h1>
+    <div class="p-4 bg-[#050a14] min-h-screen pb-32 text-white animate-fade-in font-sans">
+      
+      <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-2xl font-black italic tracking-tighter leading-none text-white">CENTRO DE <span class="text-cyan-400">REPORTES</span></h1>
+            <p class="text-[8px] text-slate-500 uppercase font-black tracking-[0.3em] mt-1">Auditoría y Descargas Excel/PDF</p>
+        </div>
+        <div class="flex gap-2">
+            <button id="btnExcel" class="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30 flex items-center justify-center active:scale-90 transition-all">
+                <i class="fas fa-file-excel"></i>
+            </button>
+            <button id="btnPDF" class="w-10 h-10 bg-red-500/20 text-red-400 rounded-xl border border-red-500/30 flex items-center justify-center active:scale-90 transition-all">
+                <i class="fas fa-file-pdf"></i>
+            </button>
+        </div>
+      </div>
 
-    <div id="kpis" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; margin-top:20px;"></div>
+      <div class="bg-slate-900/50 p-4 rounded-3xl border border-white/5 mb-6 flex items-center gap-4">
+          <i class="fas fa-filter text-cyan-500 text-xs"></i>
+          <input id="filtroTabla" placeholder="Filtrar por placa o cliente..." class="bg-transparent border-none outline-none text-xs w-full text-slate-300">
+      </div>
 
-    <canvas id="chartIngresos" style="margin-top:30px; background:#111827; border-radius:10px; padding:10px;"></canvas>
+      <div class="bg-[#0f172a] rounded-[2rem] border border-white/5 overflow-hidden shadow-2xl">
+          <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                  <thead>
+                      <tr class="bg-black/20">
+                          <th class="p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest">Orden</th>
+                          <th class="p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest">Vehículo</th>
+                          <th class="p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest text-right">Total</th>
+                          <th class="p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest text-center">Estado</th>
+                      </tr>
+                  </thead>
+                  <tbody id="bodyReportes" class="text-[11px] font-medium text-slate-300">
+                      <tr><td colspan="4" class="p-10 text-center opacity-30 animate-pulse uppercase text-[9px] font-black">Sincronizando Archivos...</td></tr>
+                  </tbody>
+              </table>
+          </div>
+      </div>
 
-    <div style="margin-top:20px;">
-      <button id="exportPDF">📄 Exportar PDF</button>
-      <button id="exportExcel">📊 Exportar Excel</button>
+      <div class="mt-6 p-4 bg-cyan-500/5 rounded-2xl border border-cyan-500/10 text-center">
+          <p class="text-[9px] text-cyan-500/60 font-black uppercase">Para análisis visual y proyecciones IA, visita el módulo de <span class="text-cyan-400">Finanzas</span></p>
+      </div>
+
     </div>
-
-    <div id="reportesTabla" style="margin-top:20px;"></div>
-    <div id="panelIA" style="margin-top:20px;"></div>
   `;
 
-  const kpiDiv = document.getElementById("kpis");
-  const tablaDiv = document.getElementById("reportesTabla");
-  const panelIA = document.getElementById("panelIA");
-  const chartCtx = document.getElementById("chartIngresos").getContext("2d");
-
-  let chartInstance;
-
-  /* =========================
-  CARGAR DATOS
-  ========================= */
-  async function cargarDatos() {
-
+  async function cargarHistorial() {
     try {
-
-      const snap = await getDocs(
-        query(collection(db, "ordenes"), where("empresaId", "==", state.empresaId))
+      const q = query(
+        collection(db, `empresas/${empresaId}/ordenes`),
+        orderBy("creadoEn", "desc")
       );
-
-      let ingresos = 0;
-      let costos = 0;
-      let totalOrdenes = 0;
-
-      let dataTabla = [];
-      let ingresosMes = {};
-
-      snap.forEach(doc => {
-
-        const o = doc.data();
-
-        const t = Number(o.total || 0);
-        const c = Number(o.costoTotal || 0);
-
-        ingresos += t;
-        costos += c;
-        totalOrdenes++;
-
-        const fecha = o.creadoEn?.toDate?.() || new Date();
-
-        const mes = `${fecha.getFullYear()}-${String(fecha.getMonth()+1).padStart(2,'0')}`;
-
-        ingresosMes[mes] = (ingresosMes[mes] || 0) + t;
-
-        dataTabla.push({
-          orden: doc.id,
-          cliente: o.clienteId || "N/A",
-          vehiculo: o.vehiculoId || "N/A",
-          total: t,
-          costo: c,
-          utilidad: t - c,
-          estado: o.estado || "N/A",
-          fecha: fecha.toISOString().split("T")[0]
-        });
-
-      });
-
-      const utilidad = ingresos - costos;
-
-      /* ================= KPI ================= */
-
-      kpiDiv.innerHTML = `
-        ${crearKPI("💰 Ingresos", ingresos, "#00ff99")}
-        ${crearKPI("📉 Costos", costos, "#ff0044")}
-        ${crearKPI("📈 Utilidad", utilidad, "#00ffff")}
-        ${crearKPI("🧾 Órdenes", totalOrdenes, "#ffcc00")}
-      `;
-
-      /* ================= GRAFICO ================= */
-
-      const meses = Object.keys(ingresosMes).sort();
-      const valores = meses.map(m => ingresosMes[m]);
-
-      if (chartInstance) chartInstance.destroy();
-
-      chartInstance = new Chart(chartCtx, {
-        type: "line",
-        data: {
-          labels: meses,
-          datasets: [{
-            label: "Ingresos por mes",
-            data: valores,
-            borderColor: "#0ff",
-            backgroundColor: "#0ff33",
-            fill: true,
-            tension: 0.3
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { labels: { color:"#fff" } }
-          },
-          scales: {
-            x: { ticks: { color:"#0ff" } },
-            y: { ticks: { color:"#0ff" } }
-          }
-        }
-      });
-
-      renderTabla(dataTabla);
-
-      /* ================= IA ================= */
-
-      try {
-
-        const iaData = await analizarNegocio({
-          ordenes: dataTabla,
-          empresaId: state.empresaId,
-          resumen: { ingresos, costos, utilidad }
-        });
-
-        if (iaData) renderIA(iaData);
-
-      } catch (e) {
-        console.warn("⚠️ IA reportes falló:", e);
-      }
-
-      /* ================= EXPORT ================= */
-
-      document.getElementById("exportExcel").onclick = () => exportExcel(dataTabla);
-      document.getElementById("exportPDF").onclick = () => exportPDF(dataTabla);
-
+      const snap = await getDocs(q);
+      datosCargados = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderTabla(datosCargados);
     } catch (e) {
-
-      console.error(e);
-      tablaDiv.innerHTML = "❌ Error cargando reportes";
-
+      console.error("Error Reportes:", e);
     }
   }
 
-  /* ================= KPI ================= */
-
-  function crearKPI(titulo, valor, color) {
-    return `
-      <div style="
-        background:#111827;
-        border-left:6px solid ${color};
-        border-radius:12px;
-        padding:20px;
-        text-align:center;
-      ">
-        <h3 style="color:${color};">${titulo}</h3>
-        <p style="font-size:26px;color:${color};">$${formatear(valor)}</p>
-      </div>
-    `;
-  }
-
-  /* ================= TABLA ================= */
-
   function renderTabla(data) {
-    tablaDiv.innerHTML = `
-      <table style="width:100%; color:#0ff;">
-        <thead>
-          <tr>
-            <th>Orden</th>
-            <th>Cliente</th>
-            <th>Vehículo</th>
-            <th>Total</th>
-            <th>Costo</th>
-            <th>Utilidad</th>
-            <th>Estado</th>
-            <th>Fecha</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${data.map(d => `
-            <tr>
-              <td>${d.orden}</td>
-              <td>${d.cliente}</td>
-              <td>${d.vehiculo}</td>
-              <td>$${formatear(d.total)}</td>
-              <td>$${formatear(d.costo)}</td>
-              <td>$${formatear(d.utilidad)}</td>
-              <td>${d.estado}</td>
-              <td>${d.fecha}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    `;
+    const body = document.getElementById("bodyReportes");
+    if (!data.length) {
+      body.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-slate-600 uppercase text-[9px] font-black">Sin registros para exportar</td></tr>`;
+      return;
+    }
+
+    body.innerHTML = data.map(o => `
+      <tr class="border-t border-white/5 active:bg-white/5 transition-colors">
+          <td class="p-4 font-bold text-white">#${o.id.substring(0, 5)}</td>
+          <td class="p-4 uppercase text-cyan-400 font-black">${o.placa || '---'}</td>
+          <td class="p-4 text-right font-black">$${fmt(o.total)}</td>
+          <td class="p-4 text-center">
+              <span class="px-2 py-1 rounded-md text-[8px] font-black uppercase ${o.estado === 'LISTO' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}">
+                ${o.estado || 'Recibido'}
+              </span>
+          </td>
+      </tr>
+    `).join("");
   }
 
-  /* ================= EXCEL ================= */
-
-  function exportExcel(data) {
-    const ws = XLSX.utils.json_to_sheet(data);
+  // Lógica de Exportación a Excel (Tesla Style)
+  document.getElementById("btnExcel").onclick = async () => {
+    await LOAD_XL();
+    const ws = XLSX.utils.json_to_sheet(datosCargados.map(o => ({
+        ORDEN: o.id,
+        FECHA: o.creadoEn?.toDate ? o.creadoEn.toDate().toLocaleDateString() : '---',
+        PLACA: o.placa,
+        CLIENTE: o.clienteNombre,
+        TOTAL: o.total,
+        ESTADO: o.estado
+    })));
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Reporte");
-    XLSX.writeFile(wb, "Reporte_PRO360.xlsx");
-  }
+    XLSX.utils.book_append_sheet(wb, ws, "Reporte_TallerPRO360");
+    XLSX.writeFile(wb, `Reporte_Auditoria_${empresaId}.xlsx`);
+  };
 
-  /* ================= PDF ================= */
+  // El PDF ya lo tenemos en Finanzas, pero aquí podemos hacer uno resumido de la tabla
+  document.getElementById("btnPDF").onclick = () => window.print();
 
-  async function exportPDF(data) {
+  function fmt(v) { return new Intl.NumberFormat("es-CO").format(v || 0); }
 
-    const { jsPDF } = await import("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
-
-    const doc = new jsPDF();
-
-    doc.text("Reporte PRO360", 10, 10);
-
-    let y = 20;
-
-    data.forEach((d) => {
-
-      if (y > 280) {
-        doc.addPage();
-        y = 20;
-      }
-
-      doc.text(
-        `Orden:${d.orden} | $${formatear(d.total)} | ${d.estado}`,
-        10,
-        y
-      );
-
-      y += 8;
-
-    });
-
-    doc.save("Reporte_PRO360.pdf");
-  }
-
-  /* ================= IA PANEL ================= */
-
-  function renderIA(data) {
-
-    const alertas = data?.alertas || [];
-    const recomendaciones = data?.recomendaciones || [];
-
-    panelIA.innerHTML = `
-      <div style="background:#0f172a; padding:15px; border-radius:10px;">
-        <h2 style="color:#0ff;">🧠 IA Recomendaciones</h2>
-
-        <h3>⚠️ Alertas</h3>
-        ${alertas.length ? alertas.map(a => `<p style="color:red;">${a}</p>`).join("") : "Sin alertas"}
-
-        <h3>🚀 Recomendaciones</h3>
-        ${recomendaciones.length ? recomendaciones.map(r => `<p>${r}</p>`).join("") : "Sin recomendaciones"}
-      </div>
-    `;
-  }
-
-  function formatear(valor) {
-    return new Intl.NumberFormat("es-CO").format(valor || 0);
-  }
-
-  /* ================= INIT ================= */
-
-  cargarDatos();
+  cargarHistorial();
 }
