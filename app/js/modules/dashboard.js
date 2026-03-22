@@ -1,9 +1,8 @@
 /**
- * dashboard.js - TallerPRO360 NEXUS-CORE V4 🚀
- * Reingeniería de Alta Eficiencia y Bajo Costo Firestore
+ * dashboard.js - TallerPRO360 NEXUS-CORE V5 🚀
+ * El "Cerebro" de Predicción y Control Total
  */
 import { getClientes, getOrdenes, getInventario } from "../services/dataService.js";
-import { NexusAI } from "../ai/NexusOrchestratorAI.js";
 import { store } from "../core/store.js";
 import { hablar } from "../voice/voiceCore.js";
 
@@ -12,41 +11,37 @@ let mainChart = null;
 export default async function dashboard(container, state) {
     const empresaId = state?.empresaId || localStorage.getItem("empresaId");
     
-    // 1. UI Skeleton inmediato (UX Premium)
+    // 1. Renderizado Estructural con Glassmorphism
     renderStructure(container);
 
     try {
-        // 2. Carga Inteligente (Prioriza Cache de Store para ahorrar lecturas)
+        // 2. Carga con "Optimistic UI" y Cache
         const data = await loadDataSmart(empresaId);
         
-        // 3. Motor de Métricas (Cálculos en cliente para ahorrar CPU de Server)
+        // 3. Procesamiento de BI (Business Intelligence)
         const metrics = processBusinessIntelligence(data);
 
-        // 4. Renderizado en Cascada (Para no bloquear el hilo principal)
+        // 4. Inyección de datos en cascada para fluidez visual
         updateKPIs(metrics);
-        renderPowerBIChart(metrics);
-        updateCEOPanel(metrics);
-        setupNexusCoach(metrics);
+        renderAdvancedChart(metrics);
+        updateSmartPanel(metrics);
+        initNexusPredictor(metrics);
 
     } catch (err) {
-        console.error("🚨 Error en Dashboard Core:", err);
-        container.innerHTML += `<p class="text-red-500 text-[10px] text-center uppercase font-bold">Error de enlace satelital</p>`;
+        console.error("🚨 Critical Core Failure:", err);
+        showErrorState(container);
     }
 }
 
-/**
- * CARGA SMART: Solo pide a Firebase si el caché tiene más de 5 minutos
- * @principio ECONOMÍA
- */
 async function loadDataSmart(empresaId) {
     const now = Date.now();
-    const CACHE_TIME = 5 * 60 * 1000; // 5 min
+    const CACHE_EXPIRY = 2 * 60 * 1000; // 2 min para datos frescos
 
-    if (store.cache && (now - store.lastFetch < CACHE_TIME)) {
-        console.log("⚡ Nexus-X: Cargando desde memoria local (Costo $0)");
+    if (store.cache && (now - store.lastFetch < CACHE_EXPIRY)) {
         return store.cache;
     }
 
+    // Paralelismo de red para máxima velocidad
     const [clientes, ordenes, inventario] = await Promise.all([
         getClientes(empresaId).catch(() => []),
         getOrdenes(empresaId).catch(() => []),
@@ -58,88 +53,102 @@ async function loadDataSmart(empresaId) {
     return store.cache;
 }
 
-/**
- * BUSINESS INTELLIGENCE ENGINE
- * @principio EFICIENCIA
- */
 function processBusinessIntelligence(data) {
     const { ordenes, inventario } = data;
-    const hoy = new Date().toISOString().split('T')[0];
-    
-    let stats = {
-        ingresosTotal: 0,
-        gastosTotal: 0,
-        ordenesAbiertas: 0,
-        tendenciaDiaria: {},
-        alertasStock: []
+    const stats = {
+        ingresos: 0, gastos: 0, util: 0, margen: 0,
+        abiertas: 0, totalClientes: data.clientes.length,
+        tendencia: {}, stockCritico: []
     };
 
     ordenes.forEach(o => {
-        const total = Number(o.total || 0);
-        const costo = Number(o.costoTotal || 0);
-        
-        stats.ingresosTotal += total;
-        stats.gastosTotal += costo;
-        if (o.estado !== 'entregado') stats.ordenesAbiertas++;
+        const t = Number(o.total || 0);
+        stats.ingresos += t;
+        stats.gastos += Number(o.costoTotal || 0);
+        if (!['entregado', 'pagado'].includes(o.estado?.toLowerCase())) stats.abiertas++;
 
-        // Agrupación para gráfica Power BI
-        const fecha = o.creadoEn?.toDate ? o.creadoEn.toDate().toISOString().split('T')[0] : hoy;
-        stats.tendenciaDiaria[fecha] = (stats.tendenciaDiaria[fecha] || 0) + total;
+        const fecha = o.creadoEn?.toDate ? o.creadoEn.toDate().toLocaleDateString() : 'Hoy';
+        stats.tendencia[fecha] = (stats.tendencia[fecha] || 0) + t;
     });
 
-    stats.utilidad = stats.ingresosTotal - stats.gastosTotal;
-    stats.margen = stats.ingresosTotal ? (stats.utilidad / stats.ingresosTotal) * 100 : 0;
-    
-    // Filtro de Inventario Crítico
-    stats.alertasStock = inventario.filter(i => Number(i.cantidad) <= Number(i.minimo || 5));
+    stats.util = stats.ingresos - stats.gastos;
+    stats.margen = stats.ingresos ? (stats.util / stats.ingresos) * 100 : 0;
+    stats.stockCritico = inventario.filter(i => Number(i.cantidad) <= Number(i.stockMinimo || 5));
 
     return stats;
 }
 
 function renderStructure(container) {
     container.innerHTML = `
-    <div class="animate-fade-in p-4 lg:p-6 space-y-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-black tracking-tighter text-white italic">DASHBOARD / <span class="text-cyan-400">COMMANDER</span></h1>
-                <p class="text-[9px] text-slate-500 font-bold uppercase tracking-[0.3em]">Sistema de Control Predictivo</p>
+    <div class="p-4 lg:p-8 space-y-8 animate-in fade-in duration-700">
+        
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div class="space-y-1">
+                <h1 class="text-3xl font-black text-white tracking-tighter uppercase italic italic">
+                    NEXUS <span class="text-cyan-400">DASHBOARD</span>
+                </h1>
+                <div class="flex items-center gap-2">
+                    <span class="flex h-2 w-2 rounded-full bg-cyan-500 animate-ping"></span>
+                    <p class="text-[9px] text-slate-500 font-black uppercase tracking-[0.4em]">Monitor de Enlace Biométrico de Datos</p>
+                </div>
             </div>
-            <div class="flex gap-2">
-                <button class="bg-slate-800/50 p-2 px-4 rounded-xl text-[10px] font-bold border border-slate-700 hover:border-cyan-500 transition-all">HOY</button>
-                <button class="bg-cyan-500 text-black p-2 px-4 rounded-xl text-[10px] font-black shadow-[0_0_15px_rgba(6,182,212,0.4)]">MES</button>
+            <div class="flex bg-slate-900/80 p-1 rounded-2xl border border-white/5 backdrop-blur-xl">
+                <button class="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all">Semana</button>
+                <button class="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-cyan-500 text-black shadow-lg shadow-cyan-500/20">Mes Actual</button>
             </div>
         </div>
 
-        <div id="kpiGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            ${Array(4).fill(`<div class="h-28 bg-slate-900/50 border border-slate-800 rounded-[2rem] animate-pulse"></div>`).join('')}
+        <div id="kpiGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            ${Array(4).fill(`<div class="h-32 bg-slate-900/40 rounded-[2.5rem] border border-white/5 animate-pulse"></div>`).join('')}
         </div>
 
-        <div class="grid lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2 bg-[#0a0f1d] p-6 rounded-[2.5rem] border border-slate-800 shadow-2xl relative overflow-hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Flujo de Ingresos Activo</h3>
-                    <div id="chartValue" class="text-xs font-bold text-cyan-400">$0.00</div>
+        <div class="grid lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-8 bg-slate-900/30 rounded-[3rem] p-8 border border-white/5 shadow-inner backdrop-blur-md">
+                <div class="flex justify-between items-center mb-8">
+                    <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Curva de Crecimiento Financiero</h3>
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl font-black text-white tracking-tighter" id="totalDisplay">$0</span>
+                        <span class="bg-emerald-500/10 text-emerald-500 text-[8px] px-2 py-1 rounded-full font-black">+12%</span>
+                    </div>
                 </div>
-                <canvas id="canvasPowerBI" class="w-full h-64"></canvas>
+                <div class="h-72">
+                    <canvas id="mainChart"></canvas>
+                </div>
             </div>
 
-            <div id="ceoPanel" class="bg-gradient-to-br from-slate-900 to-black p-6 rounded-[2.5rem] border border-cyan-500/20 relative group overflow-hidden">
-                <div class="absolute -right-6 -bottom-6 text-9xl text-white/5 opacity-10 group-hover:rotate-12 transition-all">
-                    <i class="fas fa-brain"></i>
-                </div>
-                <div class="relative z-10">
-                    <h3 class="text-xs font-black text-cyan-400 uppercase tracking-widest mb-4 italic">👑 Estratega Nexus-X</h3>
-                    <div id="aiInsights" class="space-y-4">
-                        <div class="h-20 bg-slate-800/40 rounded-2xl animate-pulse"></div>
+            <div class="lg:col-span-4 space-y-6">
+                <div id="smartPanel" class="bg-gradient-to-b from-slate-900 to-black rounded-[3rem] p-8 border border-cyan-500/20 h-full flex flex-col justify-between group">
+                    <div class="space-y-6">
+                        <div class="flex justify-between items-center">
+                            <i class="fas fa-brain text-cyan-500 text-xl animate-pulse"></i>
+                            <span class="text-[8px] font-black text-slate-600 uppercase tracking-widest">IA Core Active</span>
+                        </div>
+                        <div id="aiIntelligenceArea" class="space-y-4">
+                            </div>
+                    </div>
+                    <div class="pt-8 mt-8 border-t border-white/5">
+                        <p class="text-[8px] text-slate-500 font-black uppercase mb-4 tracking-widest">Acceso Directo</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="location.hash='#ordenes'" class="bg-white/5 hover:bg-white/10 p-3 rounded-2xl text-[9px] font-black uppercase text-white transition-all">Nueva Orden</button>
+                            <button onclick="location.hash='#pagos'" class="bg-cyan-500/10 hover:bg-cyan-500/20 p-3 rounded-2xl text-[9px] font-black uppercase text-cyan-400 transition-all">Caja</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <button id="btnNexusCoach" class="fixed bottom-24 right-6 w-16 h-16 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-full shadow-[0_10px_30px_rgba(6,182,212,0.5)] flex items-center justify-center border-2 border-white/20 hover:scale-110 active:scale-90 transition-all z-50 group">
-            <i class="fas fa-comment-dots text-white text-xl group-hover:animate-bounce"></i>
-            <span class="absolute right-20 bg-black/80 text-white text-[9px] px-3 py-1.5 rounded-lg border border-cyan-500/30 opacity-0 group-hover:opacity-100 transition-all uppercase font-black whitespace-nowrap">Hablar con Nexus</span>
-        </button>
+        <div id="nexusCoachTrigger" class="fixed bottom-28 right-8 cursor-pointer group z-50">
+            <div class="absolute -inset-4 bg-cyan-500/20 rounded-full blur-xl group-hover:bg-cyan-500/40 transition-all duration-500"></div>
+            <div class="relative w-20 h-20 bg-black rounded-full border-2 border-white/10 flex items-center justify-center shadow-2xl transition-transform group-hover:scale-110 active:scale-95">
+                <div class="absolute inset-0 rounded-full border-t-2 border-cyan-500 animate-spin"></div>
+                <i class="fas fa-comment-dots text-cyan-500 text-2xl group-hover:text-white transition-colors"></i>
+            </div>
+            <div class="absolute right-24 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
+                <div class="bg-black/90 border border-cyan-500/30 text-white text-[10px] px-4 py-2 rounded-xl whitespace-nowrap font-black uppercase tracking-widest">
+                    Consultar a Nexus AI
+                </div>
+            </div>
+        </div>
     </div>
     `;
 }
@@ -149,46 +158,58 @@ function updateKPIs(m) {
     const fmt = (v) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(v);
 
     const cards = [
-        { t: "Facturación", v: fmt(m.ingresosTotal), c: "text-emerald-400", i: "fa-receipt" },
-        { t: "Utilidad Neta", v: fmt(m.utilidad), c: "text-cyan-400", i: "fa-wallet" },
-        { t: "Margen Bruto", v: m.margen.toFixed(1) + "%", c: "text-yellow-400", i: "fa-chart-pie" },
-        { t: "WIP (Órdenes)", v: m.ordenesAbiertas, c: "text-purple-400", i: "fa-tools" }
+        { label: "Facturación", val: fmt(m.ingresos), icon: "fa-rocket", color: "text-emerald-400" },
+        { label: "Utilidad Neta", val: fmt(m.util), icon: "fa-gem", color: "text-cyan-400" },
+        { label: "Pendientes", val: m.abiertas, icon: "fa-clock", color: "text-amber-400" },
+        { label: "Clientes", val: m.totalClientes, icon: "fa-user-astronaut", color: "text-purple-400" }
     ];
 
     grid.innerHTML = cards.map(c => `
-        <div class="bg-slate-900/40 p-5 rounded-[2rem] border border-slate-800 hover:border-slate-600 transition-all group backdrop-blur-md">
-            <div class="flex justify-between items-start mb-2">
-                <p class="text-[8px] text-slate-500 font-black uppercase tracking-widest">${c.t}</p>
-                <i class="fas ${c.i} text-[10px] text-slate-700 group-hover:text-cyan-500 transition-colors"></i>
+        <div class="bg-slate-900/50 backdrop-blur-xl p-7 rounded-[2.5rem] border border-white/5 hover:border-cyan-500/30 transition-all group overflow-hidden relative">
+            <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-all text-4xl"><i class="fas ${c.icon}"></i></div>
+            <p class="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] mb-3">${c.label}</p>
+            <h2 class="${c.color} text-2xl font-black tracking-tighter">${c.val}</h2>
+            <div class="mt-4 flex items-center gap-1">
+                <div class="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div class="h-full bg-cyan-500 w-2/3 animate-shimmer"></div>
+                </div>
             </div>
-            <h2 class="${c.c} text-lg font-black tracking-tight">${c.v}</h2>
         </div>
     `).join("");
+    
+    document.getElementById("totalDisplay").innerText = fmt(m.ingresos);
 }
 
-function renderPowerBIChart(m) {
-    const ctx = document.getElementById("canvasPowerBI");
+function renderAdvancedChart(m) {
+    const ctx = document.getElementById("mainChart");
     if (!ctx || !window.Chart) return;
 
     if (mainChart) mainChart.destroy();
 
-    const dates = Object.keys(m.tendenciaDiaria).sort();
-    const values = dates.map(d => m.tendenciaDiaria[d]);
+    const labels = Object.keys(m.tendencia);
+    const data = Object.values(m.tendencia);
 
     mainChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: dates,
+            labels: labels,
             datasets: [{
                 label: 'Ingresos',
-                data: values,
+                data: data,
                 borderColor: '#06b6d4',
-                borderWidth: 4,
-                pointBackgroundColor: '#06b6d4',
-                pointRadius: 2,
-                tension: 0.4,
+                borderWidth: 6,
+                pointRadius: 0,
+                tension: 0.5,
                 fill: true,
-                backgroundColor: 'rgba(6, 182, 212, 0.05)'
+                backgroundColor: (context) => {
+                    const chart = context.chart;
+                    const {ctx, chartArea} = chart;
+                    if (!chartArea) return null;
+                    const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                    gradient.addColorStop(0, 'rgba(6, 182, 212, 0)');
+                    gradient.addColorStop(1, 'rgba(6, 182, 212, 0.2)');
+                    return gradient;
+                }
             }]
         },
         options: {
@@ -199,48 +220,46 @@ function renderPowerBIChart(m) {
                 y: { display: false },
                 x: { 
                     grid: { display: false },
-                    ticks: { color: '#475569', font: { size: 8, weight: 'bold' } }
+                    ticks: { color: '#475569', font: { size: 9, weight: '900' } }
                 }
             }
         }
     });
 }
 
-function updateCEOPanel(m) {
-    const insightBox = document.getElementById("aiInsights");
+function updateSmartPanel(m) {
+    const area = document.getElementById("aiIntelligenceArea");
     
-    let html = "";
-    
-    // Logica de Alertas Prioritarias
-    if (m.alertasStock.length > 0) {
-        html += `
-            <div class="bg-red-500/10 border border-red-500/20 p-3 rounded-2xl">
-                <p class="text-[8px] text-red-400 font-black uppercase mb-1">Insumos Críticos</p>
-                <p class="text-[10px] text-white font-bold leading-tight">Hay ${m.alertasStock.length} repuestos por debajo del stock mínimo.</p>
-            </div>
-        `;
-    }
+    const stockMsg = m.stockCritico.length > 0 
+        ? `<p class="text-red-400 font-bold"><i class="fas fa-exclamation-triangle mr-2"></i>Atención: ${m.stockCritico.length} insumos agotándose.</p>`
+        : `<p class="text-emerald-400 font-bold"><i class="fas fa-check-circle mr-2"></i>Inventario saludable.</p>`;
 
-    // Insight de Rentabilidad
-    const saludMargen = m.margen > 30 ? 'text-emerald-400' : 'text-amber-400';
-    html += `
-        <div class="bg-slate-800/30 p-4 rounded-2xl border border-white/5">
-            <p class="text-[8px] text-slate-500 font-black uppercase mb-2">Análisis de Rentabilidad</p>
-            <p class="text-[11px] text-slate-200 leading-relaxed italic border-l-2 border-cyan-500 pl-3">
-                "Tu margen actual es del <span class="${saludMargen} font-black">${m.margen.toFixed(1)}%</span>. 
-                ${m.margen < 25 ? 'Sugiero optimizar costos de mano de obra.' : 'Mantén este ritmo operativo.'}"
-            </p>
+    const marginHealth = m.margen > 35 ? 'Excelente' : m.margen > 20 ? 'Saludable' : 'Optimizable';
+
+    area.innerHTML = `
+        <div class="space-y-6">
+            <div class="p-5 rounded-3xl bg-white/5 border border-white/5">
+                <p class="text-[8px] text-slate-500 font-black uppercase mb-2">Diagnóstico de Operación</p>
+                <div class="text-[11px] leading-relaxed text-slate-300 italic">
+                    "Hola William, analizando la data: El margen de rentabilidad es <span class="text-cyan-400 font-black tracking-widest">${marginHealth}</span> (${m.margen.toFixed(1)}%). 
+                    Las órdenes pendientes representan un WIP estable."
+                </div>
+            </div>
+            <div class="p-5 rounded-3xl bg-white/5 border border-white/5">
+                <p class="text-[8px] text-slate-500 font-black uppercase mb-2">Alertas de Almacén</p>
+                <div class="text-[10px]">${stockMsg}</div>
+            </div>
         </div>
     `;
-
-    insightBox.innerHTML = html;
 }
 
-function setupNexusCoach(m) {
-    const btn = document.getElementById("btnNexusCoach");
-    btn.onclick = () => {
-        const userName = localStorage.getItem("userName") || "Ingeniero";
-        const mensaje = `Hola ${userName}. El taller tiene ingresos por ${Math.round(m.ingresosTotal)} pesos este periodo. Tu margen de utilidad es del ${Math.round(m.margen)}%. ${m.alertasStock.length > 0 ? 'Recuerda que tienes alertas de inventario pendientes.' : 'La operación se ve estable.'}`;
-        hablar(mensaje);
+function initNexusPredictor(m) {
+    document.getElementById("nexusCoachTrigger").onclick = () => {
+        const audioMsg = `Nexus detecta una utilidad neta de ${Math.round(m.util)} pesos. El rendimiento del taller es del ${Math.round(m.margen)} por ciento. William, tienes ${m.abiertas} servicios en proceso. ¿Deseas que optimice alguna ruta de pago?`;
+        hablar(audioMsg);
     };
+}
+
+function showErrorState(container) {
+    container.innerHTML = `<div class="p-20 text-center uppercase font-black text-red-500 tracking-[0.5em] animate-pulse">Error en Núcleo Nexus - Reconectando...</div>`;
 }
