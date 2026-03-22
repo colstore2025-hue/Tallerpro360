@@ -1,65 +1,67 @@
 /**
- * contabilidad.js - TallerPRO360 ULTRA V3 💼
- * Sincronizado con el Núcleo Soberano y Reglas Tipo A
+ * contabilidad.js - TallerPRO360 ULTRA V4 💼
+ * Enfoque: Control de Gastos Operativos y Caja Menor
  */
-import { db } from "../core/firebase-config.js"; // 👈 IMPORTACIÓN DIRECTA (Clave del éxito)
+import { db } from "../core/firebase-config.js";
 import { 
-  collection, 
-  getDocs, 
-  addDoc, 
-  query, 
-  orderBy,
-  serverTimestamp 
+  collection, getDocs, addDoc, query, orderBy, serverTimestamp, limit 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export default async function contabilidadModule(container, state) {
-  const empresaId = state?.empresaId || localStorage.getItem("empresaId") || "taller_001";
-  const base = `empresas/${empresaId}/finanzas`;
+  const empresaId = state?.empresaId || localStorage.getItem("empresaId");
+  const base = `empresas/${empresaId}/contabilidad`; // Cambiamos a subcolección dedicada
 
-  // 1. RENDER ESTRUCTURA (Diseño UX Pro)
+  // 1. UI DE ALTO IMPACTO (Mobile First)
   container.innerHTML = `
-    <div class="p-4 bg-[#050a14] min-h-screen text-white font-sans">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-black italic tracking-tighter text-cyan-400 uppercase">
-                💼 Finanzas <span class="text-white font-light underline decoration-yellow-500">PRO360</span>
-            </h1>
-            <div id="statusBadge" class="text-[10px] bg-slate-800 px-3 py-1 rounded-full text-slate-400 font-bold uppercase tracking-widest">
-                Sincronizado
+    <div class="p-4 bg-[#050a14] min-h-screen pb-32 text-white font-sans animate-fade-in">
+        
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-2xl font-black italic tracking-tighter text-white uppercase leading-none">
+                    LIBRO <span class="text-cyan-400">MAYOR</span>
+                </h1>
+                <p class="text-[8px] text-slate-500 font-black uppercase tracking-[0.3em] mt-1">Control de Egresos e Ingresos</p>
+            </div>
+            <div class="bg-slate-900 border border-white/5 p-2 rounded-2xl">
+                <i class="fas fa-vault text-amber-500 text-lg"></i>
             </div>
         </div>
 
-        <div class="bg-[#0f172a] p-5 rounded-[30px] border border-slate-800 shadow-2xl mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <input id="concepto" type="text" placeholder="Concepto (ej. Repuestos)" 
-                       class="bg-[#1e293b] border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-cyan-500 outline-none">
+        <div class="bg-[#0f172a] p-6 rounded-[2.5rem] border border-white/5 shadow-2xl mb-8">
+            <h3 class="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-4 px-2">Registrar Movimiento</h3>
+            <div class="space-y-3">
+                <input id="concepto" type="text" placeholder="Concepto (ej. Pago Arriendo)" 
+                       class="w-full bg-black/30 border border-white/5 rounded-2xl p-4 text-sm outline-none focus:border-cyan-500 transition-all">
                 
-                <select id="tipo" class="bg-[#1e293b] border-none rounded-2xl p-3 text-sm text-slate-300 outline-none">
-                    <option value="ingreso">🟢 Ingreso</option>
-                    <option value="gasto">🔴 Gasto</option>
-                </select>
+                <div class="grid grid-cols-2 gap-3">
+                    <select id="tipo" class="bg-black/30 border border-white/5 rounded-2xl p-4 text-sm text-slate-300 outline-none">
+                        <option value="ingreso">🟢 Ingreso</option>
+                        <option value="gasto" selected>🔴 Egreso / Gasto</option>
+                    </select>
+                    <input id="monto" type="number" placeholder="Valor $" 
+                           class="bg-black/30 border border-white/5 rounded-2xl p-4 text-sm outline-none focus:border-cyan-500 transition-all font-black text-cyan-400">
+                </div>
 
-                <input id="monto" type="number" placeholder="Monto $" 
-                       class="bg-[#1e293b] border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-cyan-500 outline-none">
-
-                <button id="btnAgregar" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-black font-black rounded-2xl p-3 hover:scale-95 transition-all">
-                    ➕ REGISTRAR
+                <button id="btnAgregar" class="w-full bg-cyan-500 text-black font-black rounded-2xl p-4 shadow-[0_5px_20px_rgba(6,182,212,0.3)] active:scale-95 transition-all uppercase text-xs tracking-widest">
+                    Guardar en Libro
                 </button>
             </div>
         </div>
 
-        <div id="resumenFinanzas" class="grid grid-cols-2 gap-4 mb-6">
-            <div class="bg-[#0f172a] p-4 rounded-3xl border border-slate-800 text-center">
-                <p class="text-[10px] text-slate-500 font-black uppercase mb-1">Balance Total</p>
-                <h2 id="balanceTxt" class="text-xl font-black text-white">$ 0</h2>
+        <div id="resumenFinanzas" class="grid grid-cols-2 gap-4 mb-8">
+            <div class="bg-slate-900/50 p-5 rounded-3xl border border-white/5 text-center">
+                <p class="text-[8px] text-slate-500 font-black uppercase mb-1 tracking-widest">Saldo en Caja</p>
+                <h2 id="balanceTxt" class="text-xl font-black text-white tracking-tighter">$ 0</h2>
             </div>
-            <div class="bg-[#0f172a] p-4 rounded-3xl border border-slate-800 text-center">
-                <p class="text-[10px] text-slate-500 font-black uppercase mb-1">Estado</p>
-                <div id="estadoIcon" class="text-xs font-bold py-1 px-2 rounded-full inline-block mt-1">Cargando...</div>
+            <div class="bg-slate-900/50 p-5 rounded-3xl border border-white/5 flex flex-col items-center justify-center">
+                <p class="text-[8px] text-slate-500 font-black uppercase mb-1 tracking-widest">Estado</p>
+                <div id="estadoIcon" class="text-[9px] font-black py-1 px-3 rounded-full uppercase">Calculando...</div>
             </div>
         </div>
 
+        <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 px-2">Movimientos Recientes</h3>
         <div id="listaMovimientos" class="space-y-3 pb-24">
-            <div class="animate-pulse text-center p-10 text-slate-600 italic">Consultando libros contables...</div>
+            <div class="animate-pulse text-center p-10 text-slate-600 text-[10px] font-black uppercase">Sincronizando Libros...</div>
         </div>
     </div>
   `;
@@ -68,11 +70,10 @@ export default async function contabilidadModule(container, state) {
   const balanceTxt = document.getElementById("balanceTxt");
   const estadoIcon = document.getElementById("estadoIcon");
 
-  // 2. LÓGICA DE CARGA (Resiliente)
+  // 2. CARGA DE DATOS (Limitado a 50 para velocidad)
   async function cargarDatos() {
     try {
-      console.log("📊 Consultando contabilidad para:", empresaId);
-      const q = query(collection(db, base), orderBy("fecha", "desc"));
+      const q = query(collection(db, base), orderBy("creadoEn", "desc"), limit(50));
       const snap = await getDocs(q);
       
       let movimientos = [];
@@ -90,29 +91,33 @@ export default async function contabilidadModule(container, state) {
       updateResumen(totalIngresos - totalGastos);
 
     } catch (error) {
-      console.error("🔥 Error Contabilidad:", error);
-      listaDiv.innerHTML = `<div class="p-10 text-center text-red-500 font-bold uppercase">Error de Acceso (Firestore Reglas A)</div>`;
+      console.error("Error Contabilidad:", error);
+      listaDiv.innerHTML = `<div class="p-10 text-center text-red-500 text-[10px] font-black uppercase tracking-widest italic">Error de Enlace Nexus-X</div>`;
     }
   }
 
-  // 3. RENDERIZADO DE LISTA
+  // 3. RENDERIZADO ESTILO "NEUMORPHIC-DARK"
   function renderLista(data) {
     if (data.length === 0) {
-      listaDiv.innerHTML = `<div class="text-center p-10 text-slate-500">Sin movimientos registrados este mes.</div>`;
+      listaDiv.innerHTML = `<div class="text-center p-10 text-slate-500 text-[10px] font-black uppercase tracking-widest">Sin movimientos este periodo</div>`;
       return;
     }
 
     listaDiv.innerHTML = data.map(m => `
-      <div class="bg-[#0f172a] p-4 rounded-3xl border border-slate-800 flex justify-between items-center transition hover:border-slate-600">
-          <div>
-              <p class="text-[11px] font-black text-white uppercase mb-1">${m.concepto}</p>
-              <p class="text-[9px] text-slate-500 italic">${m.fecha?.toDate ? m.fecha.toDate().toLocaleString() : 'Fecha pendiente'}</p>
+      <div class="bg-[#0f172a] p-5 rounded-[2rem] border border-white/5 flex justify-between items-center transition-all hover:bg-[#1e293b]">
+          <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-2xl flex items-center justify-center bg-black/40 border border-white/5">
+                <i class="fas ${m.tipo === 'ingreso' ? 'fa-arrow-up text-emerald-500' : 'fa-arrow-down text-red-500'} text-xs"></i>
+              </div>
+              <div>
+                  <p class="text-xs font-black text-white uppercase tracking-tighter">${m.concepto}</p>
+                  <p class="text-[8px] text-slate-500 font-bold uppercase tracking-widest">${m.fecha?.toDate ? m.fecha.toDate().toLocaleDateString() : 'Pendiente'}</p>
+              </div>
           </div>
           <div class="text-right">
-              <p class="text-sm font-black ${m.tipo === 'ingreso' ? 'text-emerald-400' : 'text-red-400'}">
+              <p class="text-sm font-black ${m.tipo === 'ingreso' ? 'text-emerald-400' : 'text-red-400'} tracking-tighter">
                 ${m.tipo === 'ingreso' ? '+' : '-'} $${fmt(m.monto)}
               </p>
-              <p class="text-[8px] text-slate-600 font-bold uppercase tracking-widest">${m.tipo}</p>
           </div>
       </div>
     `).join("");
@@ -121,53 +126,50 @@ export default async function contabilidadModule(container, state) {
   function updateResumen(utilidad) {
     balanceTxt.innerText = `$ ${fmt(utilidad)}`;
     if (utilidad >= 0) {
-        balanceTxt.className = "text-xl font-black text-cyan-400";
-        estadoIcon.innerText = "RENTABLE";
-        estadoIcon.className = "text-[9px] font-bold py-1 px-3 rounded-full inline-block bg-emerald-500/20 text-emerald-400";
+        balanceTxt.className = "text-2xl font-black text-cyan-400 tracking-tighter";
+        estadoIcon.innerText = "Operación Saludable";
+        estadoIcon.className = "text-[8px] font-black py-1 px-3 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 uppercase";
     } else {
-        balanceTxt.className = "text-xl font-black text-red-400";
-        estadoIcon.innerText = "DÉFICIT";
-        estadoIcon.className = "text-[9px] font-bold py-1 px-3 rounded-full inline-block bg-red-500/20 text-red-400";
+        balanceTxt.className = "text-2xl font-black text-red-400 tracking-tighter";
+        estadoIcon.innerText = "Déficit en Caja";
+        estadoIcon.className = "text-[8px] font-black py-1 px-3 rounded-full bg-red-500/20 text-red-400 border border-red-500/20 uppercase";
     }
   }
 
-  // 4. ACCIÓN DE AGREGAR (Con Timestamp de Servidor)
+  // 4. ACCIÓN DE REGISTRO
   document.getElementById("btnAgregar").onclick = async () => {
     const concepto = document.getElementById("concepto").value.trim();
     const tipo = document.getElementById("tipo").value;
     const monto = Number(document.getElementById("monto").value);
 
-    if (!concepto || monto <= 0) return alert("Por favor completa los datos correctamente.");
+    if (!concepto || monto <= 0) return; // Validación silenciosa o alert
 
     try {
       const btn = document.getElementById("btnAgregar");
-      btn.innerText = "⌛...";
+      btn.innerText = "PROCESANDO...";
       btn.disabled = true;
 
       await addDoc(collection(db, base), {
         concepto,
         tipo,
         monto,
-        fecha: new Date(), // Usamos Date local para visualización inmediata
-        creadoEn: serverTimestamp() // Importante para orden real en DB
+        fecha: new Date(),
+        creadoEn: serverTimestamp()
       });
 
-      // Reset y Recarga
       document.getElementById("concepto").value = "";
       document.getElementById("monto").value = "";
-      btn.innerText = "➕ REGISTRAR";
+      btn.innerText = "Guardar en Libro";
       btn.disabled = false;
       
       cargarDatos();
 
     } catch (error) {
       console.error("Error al guardar:", error);
-      alert("No tienes permiso para registrar. Revisa tu sesión.");
     }
   };
 
   function fmt(v) { return new Intl.NumberFormat("es-CO").format(v || 0); }
 
-  // 🚀 ARRANQUE
   cargarDatos();
 }
