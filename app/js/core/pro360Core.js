@@ -6,18 +6,28 @@ import { db } from "./firebase-config.js";
 
 const VERSION = "v10.2_NEXUS";
 
-// 1. MAPA MAESTRO DE RUTAS (Todos los módulos integrados)
+/**
+ * MAPA MAESTRO DE RUTAS - TallerPRO360 SaaS
+ * Solo los módulos que generan valor real y flujo de caja.
+ */
 const routes = {
-  dashboard:     () => import(`../modules/dashboard.js?v=${VERSION}`),
-  ordenes:       () => import(`../modules/ordenes.js?v=${VERSION}`),
-  inventario:    () => import(`../modules/inventario.js?v=${VERSION}`),
-  clientes:      () => import(`../modules/clientes.js?v=${VERSION}`),
-  pagos:         () => import(`../modules/pagosTaller.js?v=${VERSION}`),
-  contabilidad:  () => import(`../modules/contabilidad.js?v=${VERSION}`),
-  gerencia:      () => import(`../modules/gerenteAI.js?v=${VERSION}`),
-  asistente:     () => import(`../modules/aiAssistant.js?v=${VERSION}`),
-  comando:       () => import(`../modules/aiCommand.js?v=${VERSION}`),
-  configuracion: () => import(`../modules/config.js?v=${VERSION}`)
+  // --- Operación ---
+  dashboard:     () => import(`./modules/dashboard.js?v=${VERSION}`),
+  ordenes:       () => import(`./modules/ordenes.js?v=${VERSION}`),
+  inventario:    () => import(`./modules/inventario.js?v=${VERSION}`),
+  clientes:      () => import(`./modules/clientes.js?v=${VERSION}`),
+  
+  // --- Dinero & Legal ---
+  pagos:         () => import(`./modules/pagosTaller.js?v=${VERSION}`),
+  contabilidad:  () => import(`./modules/contabilidad.js?v=${VERSION}`),
+  
+  // --- Cerebro Nexus-X ---
+  gerencia:      () => import(`./modules/gerenteAI.js?v=${VERSION}`), // Reemplaza a Reportes
+  asistente:     () => import(`./modules/aiAssistant.js?v=${VERSION}`),
+  comando:       () => import(`./modules/aiCommand.js?v=${VERSION}`),
+  
+  // --- Sistema ---
+  configuracion: () => import(`./modules/config.js?v=${VERSION}`)
 };
 
 /**
