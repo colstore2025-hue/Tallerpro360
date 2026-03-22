@@ -1,13 +1,10 @@
 /**
- * clientes.js
- * 👥 CRM PRO360 · Edición Estabilizada V3
+ * clientes.js - TallerPRO360 CRM ELITE V4 👥
+ * Enfoque: Fidelización, Historial de Vehículos y Acciones Rápidas
  */
-
 import { 
   collection, getDocs, addDoc, query, where, orderBy, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-// ✅ IMPORTACIÓN MODULAR (Adiós window.db)
 import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 
@@ -15,59 +12,72 @@ export default async function clientesModule(container, state) {
   const empresaId = state?.empresaId || localStorage.getItem("empresaId");
   let clientes = [];
 
-  if (!empresaId) {
-    container.innerHTML = `<div style="padding:20px;color:red;">❌ Error: ID de empresa no detectado.</div>`;
-    return;
-  }
-
-  /* ================= RENDER ESTRUCTURA ================= */
+  /* ================= ESTRUCTURA UI PRO ================= */
   container.innerHTML = `
-    <div style="padding:20px; background:#0a0f1a; color:white; min-height:100vh; font-family:sans-serif;">
-      <h1 style="color:#00ffff; font-size:28px; font-weight:900; margin-bottom:20px;">👥 Clientes</h1>
-
-      <div style="background:#0f172a; padding:15px; border-radius:12px; border:1px solid #1e293b; margin-bottom:20px;">
-        <input id="nombreCli" placeholder="Nombre completo" style="width:100%; padding:12px; margin-bottom:10px; background:#050a14; border:1px solid #1e293b; color:white; border-radius:8px;"/>
-        <input id="telCli" type="tel" placeholder="Teléfono" style="width:100%; padding:12px; margin-bottom:10px; background:#050a14; border:1px solid #1e293b; color:white; border-radius:8px;"/>
-        <button id="btnCrear" style="width:100%; background:#22c55e; color:#000; font-weight:bold; padding:12px; border:none; border-radius:8px;">➕ REGISTRAR CLIENTE</button>
+    <div class="p-4 bg-[#050a14] min-h-screen pb-32 text-white font-sans">
+      
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h1 class="text-2xl font-black italic tracking-tighter text-white">CRM <span class="text-cyan-400">PRO360</span></h1>
+          <p class="text-[8px] font-black uppercase text-slate-500 tracking-[0.3em]">Gestión de Relaciones Nexus-X</p>
+        </div>
+        <button id="btnOpenAdd" class="w-12 h-12 bg-cyan-500 rounded-2xl flex items-center justify-center shadow-[0_5px_20px_rgba(6,182,212,0.4)] active:scale-90 transition-all">
+          <i class="fas fa-plus text-black"></i>
+        </button>
       </div>
 
-      <input id="busqueda" placeholder="🔍 Buscar cliente..." 
-        style="width:100%; padding:12px; margin-bottom:15px; background:#0f172a; border:1px solid #00ffff44; color:white; border-radius:8px;"/>
-      
-      <div id="listaClientes"></div>
-      <div id="detalleCliente" style="margin-top:25px;"></div>
+      <div class="relative mb-6">
+        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+        <input id="busqueda" placeholder="Buscar por nombre o placa..." 
+          class="w-full bg-[#0f172a] border border-white/5 py-4 pl-12 pr-4 rounded-2xl text-sm focus:border-cyan-500 outline-none transition-all placeholder:text-slate-600"/>
+      </div>
+
+      <div id="listaClientes" class="space-y-4">
+        <div class="flex flex-col items-center justify-center py-20 opacity-20">
+            <i class="fas fa-users text-4xl mb-2"></i>
+            <p class="text-[10px] font-black uppercase tracking-widest">Sincronizando Base de Datos...</p>
+        </div>
+      </div>
+
+      <div id="panelDetalle" class="fixed inset-0 bg-black/90 z-50 translate-y-full transition-transform duration-500 p-6 flex flex-col hidden">
+         </div>
     </div>
   `;
 
   const listaContainer = document.getElementById("listaClientes");
-  const detalleContainer = document.getElementById("detalleCliente");
+  const panelDetalle = document.getElementById("panelDetalle");
 
   /* ================= LÓGICA DE DATOS ================= */
 
   async function cargarClientes() {
-    listaContainer.innerHTML = "<p style='color:#64748b;'>Cargando base de datos...</p>";
     try {
-      // Nota: Si esto falla, recuerda crear el índice en Firestore
       const q = query(collection(db, `empresas/${empresaId}/clientes`), orderBy("creadoEn", "desc"));
       const snap = await getDocs(q);
       clientes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderLista(clientes);
     } catch(e) {
-      console.error(e);
-      listaContainer.innerHTML = "❌ Error al conectar con Firestore.";
+      listaContainer.innerHTML = "<p class='text-red-500 text-center text-xs'>Error de conexión Nexus-X.</p>";
     }
   }
 
   function renderLista(data) {
     if (!data.length) {
-      listaContainer.innerHTML = "<p style='text-align:center; color:#64748b;'>No hay clientes registrados.</p>";
+      listaContainer.innerHTML = `<div class="text-center py-10 text-slate-500 text-[10px] font-black uppercase">Sin registros</div>`;
       return;
     }
 
     listaContainer.innerHTML = data.map(c => `
-      <div class="cli-card" data-id="${c.id}" style="background:#111827; padding:15px; margin-bottom:10px; border-radius:10px; border-left:4px solid #00ffff; cursor:pointer;">
-        <div style="font-weight:bold; color:#fff;">${c.nombre || "Sin Nombre"}</div>
-        <div style="font-size:13px; color:#94a3b8;">📞 ${c.telefono || "Sin teléfono"}</div>
+      <div class="cli-card bg-[#0f172a] p-5 rounded-[2rem] border border-white/5 flex justify-between items-center active:scale-95 transition-all cursor-pointer" data-id="${c.id}">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl flex items-center justify-center border border-white/5">
+                <span class="text-cyan-400 font-black text-lg">${c.nombre?.charAt(0) || '?'}</span>
+            </div>
+            <div>
+                <h4 class="text-sm font-black text-white uppercase tracking-tighter">${c.nombre || "Sin Nombre"}</h4>
+                <p class="text-[9px] font-bold text-slate-500 tracking-widest"><i class="fab fa-whatsapp text-emerald-500 mr-1"></i> ${c.telefono || "---"}</p>
+            </div>
+        </div>
+        <i class="fas fa-chevron-right text-slate-700 text-xs"></i>
       </div>
     `).join("");
 
@@ -76,62 +86,55 @@ export default async function clientesModule(container, state) {
     });
   }
 
-  /* ================= ACCIONES ================= */
-
-  document.getElementById("busqueda").oninput = (e) => {
-    const term = e.target.value.toLowerCase();
-    const filtrados = clientes.filter(c => c.nombre?.toLowerCase().includes(term));
-    renderLista(filtrados);
-  };
-
-  document.getElementById("btnCrear").onclick = async () => {
-    const nombre = document.getElementById("nombreCli").value.trim();
-    const telefono = document.getElementById("telCli").value.trim();
-
-    if (!nombre) return alert("El nombre es obligatorio");
-
-    try {
-      await addDoc(collection(db, `empresas/${empresaId}/clientes`), {
-        nombre,
-        telefono,
-        creadoEn: serverTimestamp()
-      });
-      hablar("Cliente guardado");
-      document.getElementById("nombreCli").value = "";
-      document.getElementById("telCli").value = "";
-      cargarClientes();
-    } catch(e) {
-      alert("Error al guardar");
-    }
-  };
+  /* ================= ACCIONES ÉLITE ================= */
 
   async function verDetalle(id) {
-    detalleContainer.innerHTML = "<div style='padding:20px; background:#0f172a; border-radius:12px;'>⌛ Cargando historial...</div>";
+    const cliente = clientes.find(c => c.id === id);
+    hablar(`Abriendo perfil de ${cliente.nombre}`);
     
-    try {
-      // Buscamos vehículos asociados
-      const vSnap = await getDocs(query(collection(db, `empresas/${empresaId}/vehiculos`), where("clienteId", "==", id)));
-      
-      let htmlVeh = "<h3 style='color:#facc15; font-size:16px;'>🚗 Vehículos</h3>";
-      if (vSnap.empty) htmlVeh += "<p style='font-size:12px; color:#64748b;'>No tiene vehículos registrados.</p>";
-      
-      vSnap.forEach(doc => {
-        const v = doc.data();
-        htmlVeh += `<div style="background:#050a14; padding:8px; margin-bottom:5px; border-radius:5px; font-size:13px;">
-          ${v.placa} - ${v.marca} ${v.modelo}
-        </div>`;
-      });
+    // Abrir panel con animación
+    panelDetalle.classList.remove('hidden');
+    setTimeout(() => panelDetalle.classList.remove('translate-y-full'), 10);
 
-      detalleContainer.innerHTML = `
-        <div style="background:#0f172a; padding:20px; border-radius:12px; border:1px solid #00ffff44;">
-          ${htmlVeh}
-          <button onclick="location.reload()" style="margin-top:15px; width:100%; background:none; border:1px solid #94a3b8; color:#94a3b8; padding:8px; border-radius:6px; font-size:12px;">CERRAR DETALLE</button>
+    panelDetalle.innerHTML = `
+        <div class="flex justify-between items-start mb-8">
+            <button id="closePanel" class="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center border border-white/10">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-right">
+                <span class="bg-cyan-500 text-black text-[8px] font-black px-3 py-1 rounded-full uppercase">Cliente VIP</span>
+            </div>
         </div>
-      `;
-      hablar("Mostrando perfil del cliente");
-    } catch(e) {
-      detalleContainer.innerHTML = "❌ Error al cargar detalle.";
-    }
+
+        <div class="text-center mb-8">
+            <div class="w-24 h-24 bg-slate-800 rounded-[2.5rem] mx-auto mb-4 border-2 border-cyan-500/20 flex items-center justify-center">
+                <i class="fas fa-user text-4xl text-cyan-400"></i>
+            </div>
+            <h2 class="text-2xl font-black italic tracking-tighter">${cliente.nombre}</h2>
+            <p class="text-slate-500 text-xs">${cliente.telefono}</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-8">
+            <a href="https://wa.me/57${cliente.telefono}" class="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-3xl flex flex-col items-center gap-2">
+                <i class="fab fa-whatsapp text-emerald-500 text-xl"></i>
+                <span class="text-[8px] font-black uppercase text-emerald-500">Enviar WhatsApp</span>
+            </a>
+            <div class="bg-blue-500/10 border border-blue-500/20 p-4 rounded-3xl flex flex-col items-center gap-2">
+                <i class="fas fa-history text-blue-400 text-xl"></i>
+                <span class="text-[8px] font-black uppercase text-blue-400">Ver Historial</span>
+            </div>
+        </div>
+
+        <div id="vehiculosCliente" class="space-y-3">
+            <h5 class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Vehículos Vinculados</h5>
+            <div class="animate-pulse bg-slate-800 h-16 rounded-3xl opacity-20"></div>
+        </div>
+    `;
+
+    document.getElementById("closePanel").onclick = () => {
+        panelDetalle.classList.add('translate-y-full');
+        setTimeout(() => panelDetalle.classList.add('hidden'), 500);
+    };
   }
 
   // Inicialización
