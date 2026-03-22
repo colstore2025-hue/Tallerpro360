@@ -1,7 +1,6 @@
 /**
- * dataService.js - Versión de Producción para TallerPRO360
- * Centraliza la comunicación con Firestore y el sistema de Logs de IA.
- * Optimizado para Rutas: empresas/taller_001/[subcoleccion]
+ * dataService.js - TallerPRO360 ULTRA V3 🚀
+ * Optimizado para ESCALABILIDAD y AHORRO de costos (Firebase Saver Mode)
  */
 
 import { 
@@ -11,89 +10,111 @@ import {
   query, 
   where, 
   orderBy, 
-  serverTimestamp 
+  limit, 
+  serverTimestamp,
+  doc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
-/**
- * 🛡️ GUARDAR LOGS (Para auditoría de IA y errores)
- */
-export async function saveLog(tipoLog, data) {
-  try {
-    const empresaId = data.empresaId || localStorage.getItem("empresaId") || "taller_001";
-    
-    await addDoc(collection(db, "empresas", empresaId, "ia_logs"), {
-      ...data,
-      tipo: tipoLog,
-      fecha: serverTimestamp() 
-    });
-    console.log(`[Nexus-X Log]: ${tipoLog} registrado.`);
-  } catch (e) {
-    console.error("❌ Error en Log Firestore:", e);
-  }
-}
+// 🧠 CACHÉ EN MEMORIA (Evita re-lecturas innecesarias en la misma sesión)
+const _cache = {
+  data: {},
+  lastUpdate: {}
+};
 
 /**
- * 📡 MOTOR DE EXTRACCIÓN (Genérico y Resiliente)
- * Maneja la ruta jerárquica: empresas -> taller_001 -> subcoleccion
+ * 📡 MOTOR DE EXTRACCIÓN OPTIMIZADO
+ * @param {string} subcoleccion - Nombre de la subcolección
+ * @param {Object} options - Filtros, límites y orden
  */
-async function fetchData(subcoleccion, empresaId) {
-  // Fallback de seguridad para evitar bloqueos si el ID no llega
+async function fetchDataOptimized(subcoleccion, empresaId, options = {}) {
   const idReal = empresaId || localStorage.getItem("empresaId") || "taller_001";
+  
+  // 1. LÓGICA DE LÍMITES (Economía de Firebase)
+  const maxDocs = options.limit || 50; // Nunca traemos más de 50 por defecto
+  const orderField = options.orderBy || "creadoEn";
+  const orderDir = options.direction || "desc";
 
   try {
-    // Referencia directa a la subcolección de la empresa
     const colRef = collection(db, "empresas", idReal, subcoleccion);
-    const snap = await getDocs(colRef);
     
-    if (snap.empty) {
-        console.warn(`⚠️ Subcolección [${subcoleccion}] vacía en ${idReal}`);
-        return [];
+    // 2. CONSTRUCCIÓN DE QUERY (Filtrado inteligente)
+    let q = query(
+      colRef, 
+      orderBy(orderField, orderDir), 
+      limit(maxDocs)
+    );
+
+    // Si queremos filtrar por estado (ej. solo órdenes 'activas')
+    if (options.status) {
+      q = query(q, where("estado", "==", options.status));
     }
 
-    return snap.docs.map(d => {
-        const data = d.data();
-        return { 
-            id: d.id, 
-            ...data,
-            // Normalización de fechas para evitar errores en Charts/Dashboard
-            creadoEn: data.creadoEn?.toDate ? data.creadoEn.toDate() : (data.creadoEn || new Date())
-        };
-    });
+    const snap = await getDocs(q);
+    
+    if (snap.empty) return [];
+
+    const results = snap.docs.map(d => ({
+      id: d.id,
+      ...d.data(),
+      // Normalización de fechas para UI
+      fechaFormateada: d.data().creadoEn?.toDate ? d.data().creadoEn.toDate().toLocaleString() : 'Reciente'
+    }));
+
+    // Guardamos en caché rápida
+    _cache.data[subcoleccion] = results;
+    return results;
+
   } catch (e) {
-    console.error(`🔥 Error crítico en fetchData [${subcoleccion}]:`, e);
-    // IMPORTANTE: Retornamos array vacío para que el Dashboard no se cuelgue
-    return [];
+    console.error(`🔥 Error en fetchData [${subcoleccion}]:`, e);
+    // Retornamos caché si existe, o vacío
+    return _cache.data[subcoleccion] || [];
   }
 }
 
 /* ======================================================
-   📦 EXPORTACIÓN DE SERVICIOS
+   📦 SERVICIOS EXPORTADOS (CON FILTROS DE AHORRO)
    ====================================================== */
 
-// Consultas
-export const getClientes = (id) => fetchData("clientes", id);
-export const getOrdenes = (id) => fetchData("ordenes", id);
-export const getVehiculos = (id) => fetchData("vehiculos", id);
-export const getInventario = (id) => fetchData("inventario", id);
-export const getFinanzas = (id) => fetchData("finanzas", id);
+// Dashboard: Solo necesita las últimas 5 órdenes (Ahorro máximo)
+export const getRecentOrdenes = (id) => fetchDataOptimized("ordenes", id, { limit: 5 });
+
+// Listados Generales: Limitados a 50 para no saturar
+export const getClientes = (id) => fetchDataOptimized("clientes", id, { limit: 50 });
+export const getOrdenes = (id) => fetchDataOptimized("ordenes", id, { limit: 50 });
+export const getVehiculos = (id) => fetchDataOptimized("vehiculos", id, { limit: 50 });
+export const getInventario = (id) => fetchDataOptimized("inventario", id, { limit: 100 });
 
 /**
- * ✍️ ESCRITURA DE DOCUMENTOS
- * Registra datos con marca de tiempo de servidor
+ * 🛡️ LOGS DE AUDITORÍA (Nexus-X AI)
  */
-export async function createDocument(subcoleccion, empresaId, data) {
-  const idReal = empresaId || localStorage.getItem("empresaId") || "taller_001";
-  
+export async function saveLog(tipoLog, data) {
+  const empresaId = data.empresaId || localStorage.getItem("empresaId") || "taller_001";
   try {
-    const docRef = await addDoc(collection(db, "empresas", idReal, subcoleccion), {
+    await addDoc(collection(db, "empresas", empresaId, "ia_logs"), {
+      ...data,
+      tipo: tipoLog,
+      fecha: serverTimestamp(),
+      plataforma: "TallerPRO360-V3"
+    });
+  } catch (e) { console.error("Error Log:", e); }
+}
+
+/**
+ * ✍️ CREADOR DE DOCUMENTOS
+ */
+export async function createDocument(subcoleccion, data) {
+  const empresaId = localStorage.getItem("empresaId") || "taller_001";
+  try {
+    const docRef = await addDoc(collection(db, "empresas", empresaId, subcoleccion), {
       ...data,
       creadoEn: serverTimestamp(),
+      actualizadoEn: serverTimestamp(),
       estado: data.estado || "activo"
     });
     return docRef.id;
   } catch (e) {
-    console.error(`❌ Error creando documento en ${subcoleccion}:`, e);
     throw e;
   }
 }
