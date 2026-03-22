@@ -18,24 +18,20 @@ const firebaseConfig = {
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
-/* 🛡️ CONFIGURACIÓN DE APP CHECK INTELIGENTE */
-// Usamos tu Debug Token para que Firebase reconozca tu sesión de desarrollo
-if (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.protocol === "file:") {
-    self.FIREBASE_APPCHECK_DEBUG_TOKEN = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
-}
+// import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "...";
 
-let appCheck;
-try {
-    appCheck = initializeAppCheck(app, {
-      provider: new ReCaptchaEnterpriseProvider('6LdgH5lsAAAAAHftoo-5Y6RKpQDrBpoA18IpGJuV'),
-      isTokenAutoRefreshEnabled: true 
-    });
-    console.log("🛡️ Escudo App Check Activo.");
-} catch (err) {
-    console.warn("⚠️ App Check no pudo inicializar, continuando en modo preventivo.");
-}
+const app = initializeApp(firebaseConfig);
+
+/* 🛡️ COMENTADO TEMPORALMENTE PARA BYPASS DE SEGURIDAD 
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaEnterpriseProvider('6LdgH5ls...'),
+  isTokenAutoRefreshEnabled: true 
+});
+*/
 
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-export { app, auth, db, appCheck };
+export { app, auth, db }; // Quita appCheck de aquí también
+
+
