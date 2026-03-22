@@ -1,105 +1,136 @@
 /**
- * ordenes.js - TallerPRO360 ULTRA-SINCRO
- * Flujo de Trabajo Automatizado (Dictado + Inspección Visual)
- * Ruta: app/js/modules/ordenes.js
+ * ordenes.js - TallerPRO360 NEXUS-FLOW V4 🛠️
+ * Gestión por Etapas: Recepción -> Cotización -> Ejecución
  */
 import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
-import { saveOrder } from "../services/ordenesService.js";
 
 export default async function ordenesModule(container, state) {
   const empresaId = state.empresaId;
+  
+  // Estado local del componente para manejar las etapas
+  let etapaActual = 1; 
 
-  container.innerHTML = `
-    <div class="p-4 bg-[#050a14] min-h-screen pb-24 text-white">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-black italic">ÓRDENES <span class="text-cyan-400">PRO</span></h1>
-        <div class="flex gap-2">
-           <button id="btnVozGlobal" class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.4)]">
-             <i class="fas fa-microphone text-white"></i>
-           </button>
-        </div>
-      </div>
-
-      <div class="flex justify-between mb-8 px-2 relative">
-        <div class="absolute top-1/2 left-0 w-full h-[2px] bg-slate-800 -z-10"></div>
-        <div class="flex flex-col items-center gap-2">
-          <div class="w-4 h-4 rounded-full bg-cyan-500 shadow-[0_0_10px_#06b6d4]"></div>
-          <span class="text-[8px] font-bold text-cyan-400">RECIBIDO</span>
-        </div>
-        <div class="flex flex-col items-center gap-2 opacity-30">
-          <div class="w-4 h-4 rounded-full bg-yellow-500"></div>
-          <span class="text-[8px] font-bold">TALLER</span>
-        </div>
-        <div class="flex flex-col items-center gap-2 opacity-30">
-          <div class="w-4 h-4 rounded-full bg-emerald-500"></div>
-          <span class="text-[8px] font-bold">LISTO</span>
-        </div>
-      </div>
-
-      <div class="bg-[#0f172a] p-6 rounded-3xl border border-slate-800 mb-6">
-        <h3 class="text-xs font-bold text-slate-500 mb-4 uppercase tracking-tighter">Diagnóstico Asistido por IA</h3>
-        <textarea id="txtDiagnostico" placeholder="Dicta o escribe la falla..." 
-          class="w-full bg-transparent border-none text-lg text-white outline-none resize-none h-32"></textarea>
-        
-        <div class="flex justify-between mt-4">
-          <button class="bg-slate-800 p-3 rounded-xl text-xs flex items-center gap-2">
-            <i class="fas fa-camera text-cyan-400"></i> EVIDENCIA
-          </button>
-          <button id="btnGenerarOrden" class="bg-cyan-500 text-black px-6 py-3 rounded-xl font-black text-xs uppercase shadow-lg">
-            Sincronizar Orden
-          </button>
-        </div>
-      </div>
-
-      <div id="listaOrdenesActivas" class="space-y-4">
-        </div>
-    </div>
-  `;
-
-  // --- LÓGICA DE VOZ (Integrada con Nexus-X) ---
-  const btnVoz = document.getElementById("btnVozGlobal");
-  const txtDiag = document.getElementById("txtDiagnostico");
-
-  btnVoz.onclick = () => {
-    hablar("William, te escucho. Describe el problema del vehículo.");
-    // Aquí disparamos el reconocimiento de voz de voiceCore.js
-    if ('webkitSpeechRecognition' in window) {
-      const recognition = new webkitSpeechRecognition();
-      recognition.lang = "es-CO";
-      recognition.start();
-      recognition.onresult = (e) => {
-        txtDiag.value = e.results[0][0].transcript;
-        hablar("Entendido, analizando requerimientos técnicos.");
-      };
-    }
-  };
-
-  // --- GUARDADO AUTOMÁTICO ---
-  document.getElementById("btnGenerarOrden").onclick = async () => {
-    if(!txtDiag.value) return hablar("No has dictado el diagnóstico.");
-    
-    const loader = document.createElement("div");
-    loader.className = "fixed inset-0 bg-black/80 flex items-center justify-center z-50 font-black text-cyan-400";
-    loader.innerText = "IA GENERANDO ORDEN...";
-    document.body.appendChild(loader);
-
-    try {
-      const nuevaOrden = {
-        empresaId,
-        diagnostico: txtDiag.value,
-        fecha: new Date(),
-        estado: "RECIBIDO",
-        iaGenerated: true
-      };
+  const renderEtapa = (etapa) => {
+    container.innerHTML = `
+    <div class="p-4 bg-[#050a14] min-h-screen pb-24 text-white animate-fade-in">
       
-      await saveOrder(nuevaOrden);
-      hablar("Orden sincronizada con éxito. El cliente recibirá un mensaje de WhatsApp.");
-      location.reload();
-    } catch (e) {
-      hablar("Error en el servidor de Nexus-X.");
-    } finally {
-      loader.remove();
+      <div class="flex justify-between items-center mb-8 px-4 relative">
+        <div class="absolute top-4 left-10 right-10 h-[1px] bg-slate-800 -z-0"></div>
+        ${[1, 2, 3, 4].map(num => `
+          <div class="flex flex-col items-center gap-2 z-10">
+            <div class="w-8 h-8 rounded-full ${etapa >= num ? 'bg-cyan-500 shadow-[0_0_15px_#06b6d4]' : 'bg-slate-900 border border-slate-700'} 
+              flex items-center justify-center text-[10px] font-black transition-all">
+              ${etapa > num ? '<i class="fas fa-check"></i>' : num}
+            </div>
+            <span class="text-[7px] font-black uppercase tracking-widest ${etapa >= num ? 'text-cyan-400' : 'text-slate-600'}">
+              ${['Recepción', 'Diagnóstico', 'Cotización', 'Reparación'][num-1]}
+            </span>
+          </div>
+        `).join('')}
+      </div>
+
+      <div id="stepContent" class="space-y-6">
+        ${getEtapaHTML(etapa)}
+      </div>
+
+      <div class="fixed bottom-20 left-0 right-0 p-4 bg-black/40 backdrop-blur-xl border-t border-white/5 flex justify-between items-center">
+        <button id="btnBack" class="text-slate-500 text-[10px] font-bold uppercase tracking-widest ${etapa === 1 ? 'opacity-0' : ''}">
+          <i class="fas fa-arrow-left mr-2"></i> Volver
+        </button>
+        <button id="btnNext" class="bg-cyan-500 text-black px-8 py-3 rounded-2xl font-black text-[10px] uppercase shadow-[0_5px_20px_rgba(6,182,212,0.3)]">
+          ${etapa === 3 ? 'Enviar a WhatsApp' : (etapa === 4 ? 'Finalizar' : 'Siguiente Paso')}
+        </button>
+      </div>
+    </div>
+    `;
+    setupEventListeners(etapa);
+  };
+
+  const getEtapaHTML = (etapa) => {
+    switch(etapa) {
+      case 1: // RECEPCIÓN E INVENTARIO
+        return `
+          <div class="bg-slate-900/50 p-6 rounded-[2.5rem] border border-slate-800 animate-slide-up">
+            <h3 class="text-sm font-black mb-4 italic text-cyan-400">1. INSPECCIÓN DE INGRESO</h3>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+              <div class="aspect-square bg-slate-800 rounded-3xl border-2 border-dashed border-slate-700 flex flex-col items-center justify-center gap-2 group hover:border-cyan-500 transition-all">
+                <i class="fas fa-camera text-2xl text-slate-600 group-hover:text-cyan-400"></i>
+                <span class="text-[8px] font-black text-slate-500 uppercase">Foto Frontal</span>
+              </div>
+              <div class="aspect-square bg-slate-800 rounded-3xl border-2 border-dashed border-slate-700 flex flex-col items-center justify-center gap-2 group hover:border-cyan-500 transition-all">
+                <i class="fas fa-camera text-2xl text-slate-600 group-hover:text-cyan-400"></i>
+                <span class="text-[8px] font-black text-slate-500 uppercase">Foto Trasera</span>
+              </div>
+            </div>
+            <div class="space-y-3">
+              <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Checklist Rápido</p>
+              <label class="flex items-center gap-3 p-3 bg-black/20 rounded-xl border border-white/5">
+                <input type="checkbox" class="accent-cyan-500"> <span class="text-xs">Kit de Carretera</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 bg-black/20 rounded-xl border border-white/5">
+                <input type="checkbox" class="accent-cyan-500"> <span class="text-xs">Rueda de Repuesto</span>
+              </label>
+            </div>
+          </div>
+        `;
+      case 2: // DIAGNÓSTICO
+        return `
+          <div class="bg-slate-900/50 p-6 rounded-[2.5rem] border border-slate-800 animate-slide-up">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-sm font-black italic text-cyan-400 uppercase">2. Diagnóstico Técnico</h3>
+              <button id="btnVoiceDiag" class="w-10 h-10 bg-red-500/20 text-red-500 rounded-full animate-pulse border border-red-500/30">
+                <i class="fas fa-microphone"></i>
+              </button>
+            </div>
+            <textarea id="txtDiagnostico" class="w-full bg-black/30 border border-white/5 p-4 rounded-2xl text-sm h-40 outline-none focus:border-cyan-500 transition-all" 
+              placeholder="Dicta los hallazgos mecánicos..."></textarea>
+          </div>
+        `;
+      case 3: // COTIZACIÓN
+        return `
+          <div class="bg-slate-900/50 p-6 rounded-[2.5rem] border border-slate-800 animate-slide-up">
+            <h3 class="text-sm font-black italic text-cyan-400 uppercase mb-4">3. Cotización de Servicios</h3>
+            <div id="itemsCotizacion" class="space-y-3 mb-6">
+              <div class="flex justify-between items-center p-3 bg-black/40 rounded-xl">
+                <span class="text-xs font-bold">Cambio de Aceite 10W30</span>
+                <span class="text-xs text-emerald-400 font-black">$185.000</span>
+              </div>
+            </div>
+            <div class="border-t border-slate-800 pt-4 flex justify-between items-center">
+              <span class="text-[10px] font-black uppercase text-slate-500">Total Estimado</span>
+              <span class="text-xl font-black text-white">$185.000</span>
+            </div>
+          </div>
+        `;
+      default: return ``;
     }
   };
+
+  const setupEventListeners = (etapa) => {
+    document.getElementById("btnNext").onclick = () => {
+      if(etapa < 4) {
+        etapaActual++;
+        renderEtapa(etapaActual);
+      }
+    };
+    if(document.getElementById("btnBack")) {
+        document.getElementById("btnBack").onclick = () => {
+            if(etapaActual > 1) {
+                etapaActual--;
+                renderEtapa(etapaActual);
+            }
+        };
+    }
+    
+    // Integración de voz en etapa 2
+    if(etapa === 2) {
+      document.getElementById("btnVoiceDiag").onclick = () => {
+        hablar("Describa el daño técnico para generar la cotización.");
+        // Lógica de reconocimiento aquí...
+      };
+    }
+  };
+
+  renderEtapa(etapaActual);
 }
