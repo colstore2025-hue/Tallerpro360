@@ -10,137 +10,147 @@
 
     <style>
         :root { --neon-cyan: #00ffff; --dark-bg: #0b1220; --sidebar-bg: #0f172a; }
-        body { margin:0; font-family:'Inter', system-ui, sans-serif; background: var(--dark-bg); color:#cbd5e1; overflow: hidden; }
+        body { margin:0; font-family:'Inter', sans-serif; background: var(--dark-bg); color:#cbd5e1; overflow: hidden; }
         
         header { 
-            background: var(--sidebar-bg); padding:14px 24px; display:flex; justify-content:space-between; 
+            background: var(--sidebar-bg); padding:12px 24px; display:flex; justify-content:space-between; 
             align-items:center; border-bottom: 1px solid #1e293b; z-index: 100; position: relative;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
 
-        #mainLayout { display:flex; height:calc(100vh - 70px); }
+        #mainLayout { display:flex; height:calc(100vh - 65px); }
         
-        #sidebar { width:260px; background: var(--sidebar-bg); display:flex; flex-direction:column; padding:20px 15px; border-right: 1px solid #1e293b; overflow-y: auto; }
+        #sidebar { width:260px; background: var(--sidebar-bg); display:flex; flex-direction:column; padding:20px 15px; border-right: 1px solid #1e293b; }
         
-        /* Contenedor de módulos dinámico */
-        #appContainer { flex:1; padding:25px; overflow-y:auto; background: radial-gradient(circle at 50% 0%, #161e2e, #0b1220); position: relative; }
+        #appContainer { flex:1; padding:20px; overflow-y:auto; background: radial-gradient(circle at 50% 0%, #161e2e, #0b1220); position: relative; }
         
-        /* Scrollbar Neón */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: var(--sidebar-bg); }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .nav-link { 
+            display: flex; items-center; gap: 10px; padding: 12px 15px; border-radius: 12px; 
+            color: #94a3b8; font-size: 13px; font-weight: 600; transition: all 0.3s; 
+        }
+        .nav-link:hover { background: rgba(255,255,255,0.05); color: white; }
+        .nav-link.active { background: rgba(0, 255, 255, 0.1); color: var(--neon-cyan); border-left: 3px solid var(--neon-cyan); }
 
+        /* Loader Neón */
+        .spinner { width: 40px; height: 40px; border: 3px solid rgba(0,255,255,0.1); border-top-color: var(--neon-cyan); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .animate-spin-custom { animation: spin 1s linear infinite; }
-        .fade-out { opacity: 0; transition: opacity 0.4s ease; pointer-events: none; }
-
-        /* Estilo para botones activos en el menú */
-        .menu-btn-active { color: var(--neon-cyan) !important; background: rgba(0, 255, 255, 0.05) !important; border-left: 3px solid var(--neon-cyan) !important; }
     </style>
 </head>
 
 <body>
 
 <header>
-    <div style="display:flex; align-items:center; gap:12px;">
-        <div style="width:38px; height:38px; background: linear-gradient(135deg, #06b6d4, #0891b2); border-radius:10px; display:flex; align-items:center; justify-content:center; box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);">
-            <i class="fas fa-car-wrench text-white"></i>
+    <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+            <i class="fas fa-car-wrench text-white text-sm"></i>
         </div>
         <div>
-            <h1 class="text-lg font-bold text-white leading-none tracking-tighter">TallerPRO360</h1>
-            <span class="text-[10px] text-cyan-400 font-black uppercase tracking-widest">Enterprise Cloud</span>
+            <h1 class="text-md font-black text-white leading-none tracking-tighter">TallerPRO360</h1>
+            <span class="text-[9px] text-cyan-400 font-bold uppercase tracking-[0.2em]">Enterprise Cloud</span>
         </div>
     </div>
     
-    <div style="display:flex; align-items:center; gap:24px;">
-        <div style="text-align: right;" class="hidden sm:block">
-            <p id="userName" style="font-size:13px; font-weight:700; color:white; margin:0;">Cargando...</p>
-            <p id="userRole" style="font-size:10px; color:#64748b; margin:0; text-transform: uppercase;">Rol</p>
+    <div class="flex items-center gap-5">
+        <div class="hidden sm:block text-right">
+            <p id="userName" class="text-xs font-bold text-white m-0">Iniciando...</p>
+            <p id="userRole" class="text-[9px] text-slate-500 uppercase font-black">Verificando Rol</p>
         </div>
-        <button id="logoutBtn" class="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all border border-red-500/20">
-            <i class="fas fa-power-off"></i>
+        <button id="logoutBtn" class="text-slate-500 hover:text-red-500 transition-colors">
+            <i class="fas fa-power-off text-lg"></i>
         </button>
     </div>
 </header>
 
 <div id="mainLayout">
     <nav id="sidebar">
-        <p style="color:#475569; font-size:9px; font-weight:900; margin-bottom:15px; padding-left:15px; letter-spacing:3px; text-transform: uppercase;">Módulos</p>
-        <div id="menuItems" class="space-y-1">
-            </div>
+        <p class="text-[9px] font-black text-slate-600 uppercase tracking-[3px] mb-4 px-4">Navegación</p>
+        <div class="space-y-1">
+            <a href="#dashboard" class="nav-link"><i class="fas fa-chart-pie w-5"></i> Dashboard</a>
+            <a href="#ordenes" class="nav-link"><i class="fas fa-file-invoice w-5"></i> Órdenes</a>
+            <a href="#clientes" class="nav-link"><i class="fas fa-users w-5"></i> Clientes</a>
+            <a href="#contabilidad" class="nav-link"><i class="fas fa-wallet w-5"></i> Contabilidad</a>
+            <a href="#configuracion" class="nav-link"><i class="fas fa-cog w-5"></i> Ajustes</a>
+        </div>
     </nav>
 
     <main id="appContainer">
-        <div id="boot-loader" class="text-center mt-[25vh] transition-opacity duration-500">
-            <div class="inline-block w-12 h-12 border-[3px] border-cyan-500/10 border-t-cyan-400 rounded-full animate-spin-custom mb-6"></div>
-            <h2 id="boot-text" class="text-xl text-white font-bold tracking-tight">🚀 Inicializando Nexus-X</h2>
-            <p id="boot-subtext" class="text-slate-500 text-xs mt-2 font-medium">Validando seguridad App Check y Sesión...</p>
+        <div id="boot-loader" class="flex flex-col items-center justify-center h-full pt-40">
+            <div class="spinner mb-4"></div>
+            <h2 class="text-white font-bold tracking-widest text-sm uppercase animate-pulse">Sincronizando Nexus-X</h2>
         </div>
     </main>
 </div>
 
 <script type="module">
-    // Importamos las piezas básicas
-    import { auth } from "./js/core/firebase-config.js?v=2.0";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import dashboard from "./js/modules/dashboard.js?v=2.0";
+    // 💡 IMPORTACIÓN DEL CORE ÚNICO
+    import { auth } from "./js/core/firebase-config.js?v=10.2";
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    async function startSystem() {
+    // Mapeo de módulos para carga bajo demanda (Económico)
+    const routes = {
+        dashboard: () => import("./js/modules/dashboard.js?v=10.2"),
+        ordenes: () => import("./js/modules/ordenes.js?v=10.2"),
+        contabilidad: () => import("./js/modules/contabilidad.js?v=10.2"),
+        configuracion: () => import("./js/modules/config.js?v=10.2"),
+        clientes: () => import("./js/modules/clientes.js?v=10.2")
+    };
+
+    async function navigate(hash) {
         const container = document.getElementById("appContainer");
-        const loader = document.getElementById("boot-loader");
+        const moduleName = hash.replace("#", "") || "dashboard";
         
-        console.log("🚀 Iniciando Secuencia de Despegue...");
+        // 1. Loader visual (UX de calidad)
+        container.innerHTML = `<div class="flex items-center justify-center h-full"><div class="spinner"></div></div>`;
 
-        // 1. SEGURO DE VIDA: Si en 3 segundos nada pasa, borramos el cohete a la fuerza
-        const forcedEntry = setTimeout(() => {
-            if (document.getElementById("boot-loader")) {
-                console.warn("⚠️ Timeout: Forzando visibilidad del Dashboard");
-                limpiarYEntrar();
-            }
-        }, 3000);
-
-        // 2. ESCUCHA DE SESIÓN
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                console.log("✅ Usuario detectado:", user.email);
-                clearTimeout(forcedEntry);
-                limpiarYEntrar(user);
-            } else {
-                console.warn("❌ Sin sesión activa. Al login...");
-                window.location.href = "login.html";
-            }
+        // 2. Marcar botón activo en sidebar
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === `#${moduleName}`);
         });
 
-        async function limpiarYEntrar(user = null) {
-            // Borramos el loader
-            const l = document.getElementById("boot-loader");
-            if (l) l.remove();
+        try {
+            if (!routes[moduleName]) throw new Error("Módulo no disponible");
+            
+            // 3. Importación dinámica (Eficacia)
+            const module = await routes[moduleName]();
+            const render = module.default;
 
-            // Pintamos los datos en el header (si los hay)
-            if (user) {
-                document.getElementById("userName").innerText = user.displayName || "William";
-                document.getElementById("userRole").innerText = "ADMIN";
-            }
+            const state = {
+                uid: localStorage.getItem("uid"),
+                empresaId: localStorage.getItem("empresaId") || "taller_001",
+                rol: localStorage.getItem("rol") || "admin"
+            };
 
-            // CARGAMOS EL DASHBOARD
-            try {
-                // Pasamos los datos mínimos para que el dashboard no explote
-                const state = { 
-                    uid: user?.uid || "manual", 
-                    empresaId: "taller_001", 
-                    nombre: user?.displayName || "William" 
-                };
-                dashboard(container, state);
-                console.log("🏁 Dashboard Renderizado");
-            } catch (err) {
-                console.error("🔥 Error cargando el dashboard:", err);
-                container.innerHTML = `<div class="p-10 text-white">Error en Dashboard: ${err.message}</div>`;
-            }
+            container.innerHTML = ""; // Limpiamos loader
+            await render(container, state);
+            
+            console.log(`✅ Módulo [${moduleName}] cargado.`);
+        } catch (err) {
+            console.error("🔥 Error de navegación:", err);
+            container.innerHTML = `<div class="p-10 text-center text-red-400 font-bold">⚠️ Error al cargar ${moduleName}.<br><small class="text-slate-500">${err.message}</small></div>`;
         }
     }
 
-    // Arrancamos
-    startSystem();
+    // --- INICIALIZACIÓN ---
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            console.log("👤 Sesión Activa:", user.email);
+            document.getElementById("userName").innerText = user.displayName || "Usuario";
+            document.getElementById("userRole").innerText = localStorage.getItem("rol") || "ADMIN";
+            
+            // Si hay un hash en la URL lo usamos, si no, vamos al dashboard
+            navigate(window.location.hash || "#dashboard");
+        } else {
+            console.warn("🚫 Sin sesión. Redirigiendo...");
+            window.location.href = "../login.html"; // Ajustar ruta según tu carpeta
+        }
+    });
+
+    // Escuchadores de cambio de ruta
+    window.addEventListener("hashchange", () => navigate(window.location.hash));
+
+    // Botón de salida
+    document.getElementById("logoutBtn").onclick = () => {
+        signOut(auth).then(() => window.location.href = "../login.html");
+    };
 </script>
 
 </body>
