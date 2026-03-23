@@ -1,14 +1,15 @@
 /**
- * pro360Core.js - TallerPRO360 V10.2 👑
+ * pro360Core.js - TallerPRO360 V10.3 👑
  * Orquestador Único de Micro-Servicios y Sincronización Real
+ * Actualización: Inclusión de Módulo de Saneamiento
  */
 import { db } from "./firebase-config.js"; 
 
-const VERSION = "v10.2_NEXUS";
+const VERSION = "v10.3_NEXUS";
 
 /**
  * MAPA MAESTRO DE RUTAS - TallerPRO360 SaaS
- * Solo los módulos que generan valor real y flujo de caja.
+ * Registro oficial de módulos activos en el núcleo.
  */
 const routes = {
   // --- Operación ---
@@ -22,12 +23,13 @@ const routes = {
   contabilidad:  () => import(`./modules/contabilidad.js?v=${VERSION}`),
   
   // --- Cerebro Nexus-X ---
-  gerencia:      () => import(`./modules/gerenteAI.js?v=${VERSION}`), // Reemplaza a Reportes
+  gerencia:      () => import(`./modules/gerenteAI.js?v=${VERSION}`),
   asistente:     () => import(`./modules/aiAssistant.js?v=${VERSION}`),
   comando:       () => import(`./modules/aiCommand.js?v=${VERSION}`),
   
-  // --- Sistema ---
-  configuracion: () => import(`./modules/config.js?v=${VERSION}`)
+  // --- Sistema & Mantenimiento (Superadmin William) ---
+  configuracion: () => import(`./modules/config.js?v=${VERSION}`),
+  saneamiento:   () => import(`./modules/saneamiento.js?v=${VERSION}`) // <--- VÍNCULO ACTIVADO
 };
 
 /**
@@ -37,15 +39,15 @@ export async function navigate(moduleName) {
   const container = document.getElementById("appContainer");
   if (!container) return;
 
-  // Feedback visual de carga (Neon Style)
+  // Feedback visual de carga (Nexus Neon Style)
   container.innerHTML = `
     <div class="flex flex-col items-center justify-center min-h-[60vh] animate-pulse">
-        <div class="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p class="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-500">Sincronizando Nexus-X...</p>
+        <div class="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4 shadow-[0_0_15px_rgba(6,182,212,0.3)]"></div>
+        <p class="text-[9px] font-black uppercase tracking-[0.4em] text-cyan-500 italic">Sincronizando Nexus-X...</p>
     </div>
   `;
 
-  // 2. RECUPERACIÓN DE ESTADO (Sync Check)
+  // 2. RECUPERACIÓN DE ESTADO
   const state = {
     uid: localStorage.getItem("uid"),
     empresaId: localStorage.getItem("empresaId") || "PENDIENTE",
@@ -53,34 +55,25 @@ export async function navigate(moduleName) {
     timestamp: Date.now()
   };
 
-  // Redirección si no hay sesión activa
+  // Redirección de seguridad
   if (!state.uid || state.empresaId === "PENDIENTE") {
-    console.warn("⚠️ Sesión no detectada. Re-autenticando...");
-    // Si estamos en desarrollo, podrías forzar un ID para pruebas:
-    // state.empresaId = "tu_id_de_prueba"; 
-    if(window.location.pathname !== "/login.html") {
+    if(!window.location.pathname.includes("login.html")) {
         window.location.href = "/login.html";
         return;
     }
   }
 
   try {
-    // 3. CARGA DINÁMICA DEL MÓDULO
+    // 3. CARGA DINÁMICA
     const routeAction = routes[moduleName] || routes['dashboard'];
     const module = await routeAction();
     
-    // Limpieza de UI previa a la ejecución
     container.innerHTML = "";
     
-    /**
-     * EJECUCIÓN DEL MÓDULO
-     * Pasamos 'container' para el render y 'state' para que el módulo 
-     * sepa qué empresa consultar en Firebase sin repetir código.
-     */
+    // Ejecución con inyección de estado
     if (module.default) {
         await module.default(container, state);
     } else {
-        // Para módulos que exportan funciones específicas (como aiCommand)
         const funcName = Object.keys(module)[0];
         await module[funcName](container, state);
     }
@@ -88,21 +81,28 @@ export async function navigate(moduleName) {
     // 4. PERSISTENCIA DE UI (Menú Activo)
     updateActiveMenu(moduleName);
 
-    // Quitar boot-loader de bienvenida si existe
+    // Limpieza de boot-loader
     setTimeout(() => {
-        document.getElementById("boot-loader")?.classList.add("opacity-0");
-        setTimeout(() => document.getElementById("boot-loader")?.remove(), 500);
+        const bl = document.getElementById("boot-loader");
+        if(bl) {
+            bl.classList.add("opacity-0");
+            setTimeout(() => bl.remove(), 500);
+        }
     }, 300);
 
   } catch (error) {
     console.error(`❌ Error Crítico en [${moduleName}]:`, error);
     container.innerHTML = `
-      <div class="p-10 text-center">
-        <div class="text-red-500 text-4xl mb-4"><i class="fas fa-exclamation-triangle"></i></div>
-        <h2 class="text-white font-black uppercase tracking-tighter">Error de Sincronización</h2>
-        <p class="text-slate-500 text-[10px] uppercase mb-6">${error.message}</p>
-        <button onclick="location.reload()" class="bg-cyan-500 text-black px-8 py-3 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all">
-            Reiniciar Núcleo
+      <div class="p-10 text-center animate-in fade-in zoom-in duration-500">
+        <div class="text-red-500 text-5xl mb-6 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]">
+            <i class="fas fa-microchip"></i>
+        </div>
+        <h2 class="text-white font-black uppercase tracking-tighter text-xl mb-2">Fallo de Enlace Nexus</h2>
+        <p class="text-slate-500 text-[9px] uppercase tracking-widest mb-8 px-10 leading-relaxed">
+            El módulo [${moduleName}] no responde o el archivo físico no existe en el servidor.
+        </p>
+        <button onclick="location.hash='#dashboard'; location.reload();" class="bg-white/5 border border-white/10 text-white px-10 py-4 rounded-3xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-cyan-500 hover:text-black transition-all active:scale-95">
+            Retornar al Núcleo
         </button>
       </div>
     `;
@@ -115,13 +115,14 @@ export async function navigate(moduleName) {
 function updateActiveMenu(activeId) {
     document.querySelectorAll(".nav-link").forEach(link => {
         link.classList.remove("text-cyan-400", "border-cyan-500", "bg-white/5");
+        // Soporte para href="#modulo"
         if (link.getAttribute("href") === `#${activeId}`) {
             link.classList.add("text-cyan-400", "border-cyan-500", "bg-white/5");
         }
     });
 }
 
-// 5. LISTENERS GLOBALES
+// 5. LISTENERS GLOBALES (Hash Navigation)
 window.addEventListener("hashchange", () => {
     const target = window.location.hash.replace("#", "") || "dashboard";
     navigate(target);
@@ -132,5 +133,4 @@ window.addEventListener("load", () => {
     navigate(target);
 });
 
-// Exportación para uso manual si es necesario
 window.nexusNavigate = navigate;
