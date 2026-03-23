@@ -1,10 +1,10 @@
 /**
- * pro360Core.js - TallerPRO360 V10.4.2 👑
- * Orquestador de Micro-Servicios - Corrección de Rutas y URL
+ * pro360Core.js - TallerPRO360 V10.4.3 👑
+ * Orquestador de Micro-Servicios - Lanzamiento Automático de Dashboard
  */
 import { db } from "./firebase-config.js"; 
 
-const VERSION = "v10.4.2_NEXUS";
+const VERSION = "v10.4.3_NEXUS";
 
 const routes = {
   dashboard:     () => import(`./modules/dashboard.js?v=${VERSION}`),
@@ -12,27 +12,23 @@ const routes = {
   inventario:    () => import(`./modules/inventario.js?v=${VERSION}`),
   clientes:      () => import(`./modules/clientes.js?v=${VERSION}`),
   pagos:         () => import(`./modules/pagosTaller.js?v=${VERSION}`),
-  // Alias: Ambos cargan el mismo archivo físico
+  finanzas:      () => import(`./modules/contabilidad.js?v=${VERSION}`),
   contabilidad:  () => import(`./modules/contabilidad.js?v=${VERSION}`),
-  finanzas:      () => import(`./modules/contabilidad.js?v=${VERSION}`), 
-  
   gerencia:      () => import(`./modules/gerenteAI.js?v=${VERSION}`),
-  asistente:     () => import(`./modules/aiAssistant.js?v=${VERSION}`),
-  comando:       () => import(`./modules/aiCommand.js?v=${VERSION}`),
-  configuracion: () => import(`./modules/config.js?v=${VERSION}`),
-  saneamiento:   () => import(`./modules/saneamiento.js?v=${VERSION}`) 
+  configuracion: () => import(`./modules/config.js?v=${VERSION}`)
 };
 
 export async function navigate(moduleName) {
   const container = document.getElementById("appContainer");
   if (!container) return;
 
-  // Normalización del nombre para evitar fallos por "/" o mayúsculas
-  const cleanName = moduleName.replace("/", "").toLowerCase();
+  // 1. Limpieza profunda del nombre del módulo
+  const cleanName = moduleName.replace("#", "").replace("/", "").toLowerCase() || "dashboard";
 
   container.innerHTML = `
-    <div class="flex flex-col items-center justify-center min-h-[60vh]">
+    <div class="flex flex-col items-center justify-center min-h-[60vh] animate-pulse">
         <div class="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-[10px] text-cyan-500 mt-4 tracking-widest uppercase">Nexus Iniciando...</p>
     </div>
   `;
 
@@ -41,8 +37,13 @@ export async function navigate(moduleName) {
     empresaId: localStorage.getItem("empresaId") || "PENDIENTE"
   };
 
+  // Verificación de seguridad
+  if (!state.uid && !window.location.pathname.includes("login.html")) {
+      window.location.href = "/login.html";
+      return;
+  }
+
   try {
-    // Si la ruta no existe, por defecto al dashboard
     const routeAction = routes[cleanName] || routes['dashboard'];
     const module = await routeAction();
     
@@ -58,38 +59,38 @@ export async function navigate(moduleName) {
     updateActiveMenu(cleanName);
 
   } catch (error) {
-    console.error(`❌ Error en [${cleanName}]:`, error);
+    console.error(`❌ Fallo en módulo [${cleanName}]:`, error);
   }
 }
 
 function updateActiveMenu(activeId) {
     document.querySelectorAll(".nav-link").forEach(link => {
         link.classList.remove("text-cyan-400", "bg-white/5");
-        // Verifica si el enlace coincide con el módulo actual
         if (link.getAttribute("href").includes(activeId)) {
             link.classList.add("text-cyan-400", "bg-white/5");
         }
     });
 }
 
-// Listener de cambios en la URL (Maneja el "/" automáticamente)
+// --- LÓGICA DE LANZAMIENTO AUTOMÁTICO ---
+
+// Escucha cambios de Hash
 window.addEventListener("hashchange", () => {
-    const target = window.location.hash.replace("#", "") || "dashboard";
+    const target = window.location.hash || "#dashboard";
     navigate(target);
 });
 
-// Carga inicial: Si falta el "/" o el hash, lo corrige
+// Al cargar la página por primera vez
 window.addEventListener("load", () => {
-    let currentPath = window.location.pathname;
-    let currentHash = window.location.hash;
-
-    // Si estás en /app y no hay hash, fuerza /app/#dashboard
-    if (!currentHash || currentHash === "#") {
-        window.location.hash = "#dashboard";
+    // Si la URL es solo .../app o .../app/ sin nada más
+    if (!window.location.hash || window.location.hash === "#") {
+        // Forzamos visualmente la URL
+        window.history.replaceState(null, null, "#dashboard");
+        navigate("dashboard");
+    } else {
+        // Si ya traía un hash (ej: #inventario), lo respetamos
+        navigate(window.location.hash);
     }
-
-    const target = window.location.hash.replace("#", "") || "dashboard";
-    navigate(target);
 });
 
 window.nexusNavigate = navigate;
