@@ -1,19 +1,16 @@
 /**
- * pro360Core.js - TallerPRO360 V10.4.4 👑
- * Edición: Seguridad Reforzada & Auto-Slash
+ * pro360Core.js - TallerPRO360 V10.4.5 👑
+ * Edición: Normalización de Path, Seguridad Extrema y Auto-Slash
  */
 import { db } from "./firebase-config.js"; 
 
-const VERSION = "v10.4.4_NEXUS";
+const VERSION = "v10.4.5_NEXUS";
 
-// 1. VERIFICACIÓN DE IDENTIDAD INMEDIATA (Cero tolerancia)
+// 1. BLOQUEO DE SEGURIDAD INMEDIATO
 function checkAuth() {
     const uid = localStorage.getItem("uid");
     if (!uid) {
-        // Guardamos a donde quería ir el usuario para volver después del login
-        if (window.location.hash) {
-            localStorage.setItem("redirectAfterLogin", window.location.hash);
-        }
+        // Si no hay sesión, al login sin escalas
         window.location.href = "/login.html";
         return false;
     }
@@ -26,23 +23,26 @@ const routes = {
   inventario:    () => import(`./modules/inventario.js?v=${VERSION}`),
   clientes:      () => import(`./modules/clientes.js?v=${VERSION}`),
   pagos:         () => import(`./modules/pagosTaller.js?v=${VERSION}`),
+  contabilidad:  () => import(`./modules/contabilidad.js?v=${VERSION}`),
   finanzas:      () => import(`./modules/contabilidad.js?v=${VERSION}`),
   gerencia:      () => import(`./modules/gerenteAI.js?v=${VERSION}`),
-  configuracion: () => import(`./modules/config.js?v=${VERSION}`)
+  configuracion: () => import(`./modules/config.js?v=${VERSION}`),
+  saneamiento:   () => import(`./modules/saneamiento.js?v=${VERSION}`)
 };
 
 export async function navigate(moduleName) {
-  if (!checkAuth()) return; // Si no hay sesión, se detiene aquí.
+  if (!checkAuth()) return;
 
   const container = document.getElementById("appContainer");
   if (!container) return;
 
-  const cleanName = moduleName.replace("#", "").replace("/", "").toLowerCase() || "dashboard";
+  // Normalización: quitamos slash, hash y pasamos a minúsculas
+  const cleanName = moduleName.replace("#", "").replace(/\//g, "").toLowerCase() || "dashboard";
 
   container.innerHTML = `
     <div class="flex flex-col items-center justify-center min-h-[60vh]">
-        <div class="w-10 h-10 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p class="text-[9px] text-cyan-500 tracking-[0.3em] uppercase">Validando Acceso Nexus...</p>
+        <div class="w-10 h-10 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-[9px] text-cyan-500 mt-4 tracking-widest uppercase italic">Nexus Sincronizando...</p>
     </div>
   `;
 
@@ -62,26 +62,48 @@ export async function navigate(moduleName) {
         const funcName = Object.keys(module)[0];
         await module[funcName](container, state);
     }
+    
+    updateActiveMenu(cleanName);
   } catch (error) {
-    console.error("Error de Sincronización:", error);
+    console.error(`❌ Error en ${cleanName}:`, error);
+    container.innerHTML = `<div class="p-10 text-white text-center">Error cargando módulo. Reintente.</div>`;
   }
 }
 
-// 2. ELIMINACIÓN DEL "/" MANUAL
-window.addEventListener("load", () => {
-    // Si la URL no tiene el /# (ej: /app#dashboard), lo corregimos silenciosamente
-    if (window.location.hash && !window.location.href.includes("/#")) {
-        const targetHash = window.location.hash;
-        window.history.replaceState(null, null, window.location.pathname + "/" + targetHash);
+function updateActiveMenu(activeId) {
+    document.querySelectorAll(".nav-link").forEach(link => {
+        link.classList.remove("text-cyan-400", "bg-white/5", "border-cyan-500");
+        if (link.getAttribute("href")?.includes(activeId)) {
+            link.classList.add("text-cyan-400", "bg-white/5", "border-cyan-500");
+        }
+    });
+}
+
+/**
+ * MOTOR DE NORMALIZACIÓN DE URL
+ * Este bloque corrige el problema de la "/" y el acceso inicial.
+ */
+function initNexus() {
+    let path = window.location.pathname;
+    let hash = window.location.hash;
+
+    // A. CORRECCIÓN DE SLASH (Evita el problema de Foto 1 y 2)
+    // Si la URL termina en /app (sin la barra final), la forzamos.
+    if (path.endsWith("/app")) {
+        window.history.replaceState(null, null, "/app/" + hash);
     }
 
-    // Si entran a la raíz /app o /app/ sin hash
-    if (!window.location.hash || window.location.hash === "#") {
+    // B. CORRECCIÓN DE HASH VACÍO
+    if (!hash || hash === "#") {
         window.location.hash = "#dashboard";
     }
 
+    // C. LANZAMIENTO
     navigate(window.location.hash);
-});
+}
 
+// Listeners
 window.addEventListener("hashchange", () => navigate(window.location.hash));
+window.addEventListener("load", initNexus);
+
 window.nexusNavigate = navigate;
