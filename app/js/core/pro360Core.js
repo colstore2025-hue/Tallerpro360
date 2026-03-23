@@ -1,45 +1,38 @@
 /**
- * pro360Core.js - TallerPRO360 V10.3 👑
- * Orquestador Único de Micro-Servicios y Sincronización Real
- * Actualización: Inclusión de Módulo de Saneamiento
+ * pro360Core.js - TallerPRO360 V10.4 👑
+ * Orquestador de Micro-Servicios - Edición Reloj Suizo
  */
 import { db } from "./firebase-config.js"; 
 
-const VERSION = "v10.3_NEXUS";
+const VERSION = "v10.4_NEXUS";
 
-/**
- * MAPA MAESTRO DE RUTAS - TallerPRO360 SaaS
- * Registro oficial de módulos activos en el núcleo.
- */
 const routes = {
-  // --- Operación ---
   dashboard:     () => import(`./modules/dashboard.js?v=${VERSION}`),
   ordenes:       () => import(`./modules/ordenes.js?v=${VERSION}`),
   inventario:    () => import(`./modules/inventario.js?v=${VERSION}`),
   clientes:      () => import(`./modules/clientes.js?v=${VERSION}`),
-  
-  // --- Dinero & Legal ---
   pagos:         () => import(`./modules/pagosTaller.js?v=${VERSION}`),
   contabilidad:  () => import(`./modules/contabilidad.js?v=${VERSION}`),
-  
-  // --- Cerebro Nexus-X ---
   gerencia:      () => import(`./modules/gerenteAI.js?v=${VERSION}`),
   asistente:     () => import(`./modules/aiAssistant.js?v=${VERSION}`),
   comando:       () => import(`./modules/aiCommand.js?v=${VERSION}`),
-  
-  // --- Sistema & Mantenimiento (Superadmin William) ---
   configuracion: () => import(`./modules/config.js?v=${VERSION}`),
-  saneamiento:   () => import(`./modules/saneamiento.js?v=${VERSION}`) // <--- VÍNCULO ACTIVADO
+  saneamiento:   () => import(`./modules/saneamiento.js?v=${VERSION}`) 
 };
 
 /**
- * Función Principal de Navegación y Sincronización
+ * Función Principal de Navegación
  */
 export async function navigate(moduleName) {
   const container = document.getElementById("appContainer");
   if (!container) return;
 
-  // Feedback visual de carga (Nexus Neon Style)
+  // Cierre de menú lateral automático para móviles
+  const sidebar = document.getElementById("sidebar");
+  if (sidebar && !sidebar.classList.contains("hidden")) {
+      sidebar.classList.add("hidden"); // Ajusta según tu clase de CSS para ocultar
+  }
+
   container.innerHTML = `
     <div class="flex flex-col items-center justify-center min-h-[60vh] animate-pulse">
         <div class="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4 shadow-[0_0_15px_rgba(6,182,212,0.3)]"></div>
@@ -47,7 +40,6 @@ export async function navigate(moduleName) {
     </div>
   `;
 
-  // 2. RECUPERACIÓN DE ESTADO
   const state = {
     uid: localStorage.getItem("uid"),
     empresaId: localStorage.getItem("empresaId") || "PENDIENTE",
@@ -55,7 +47,6 @@ export async function navigate(moduleName) {
     timestamp: Date.now()
   };
 
-  // Redirección de seguridad
   if (!state.uid || state.empresaId === "PENDIENTE") {
     if(!window.location.pathname.includes("login.html")) {
         window.location.href = "/login.html";
@@ -64,13 +55,11 @@ export async function navigate(moduleName) {
   }
 
   try {
-    // 3. CARGA DINÁMICA
     const routeAction = routes[moduleName] || routes['dashboard'];
     const module = await routeAction();
     
     container.innerHTML = "";
     
-    // Ejecución con inyección de estado
     if (module.default) {
         await module.default(container, state);
     } else {
@@ -78,10 +67,8 @@ export async function navigate(moduleName) {
         await module[funcName](container, state);
     }
 
-    // 4. PERSISTENCIA DE UI (Menú Activo)
     updateActiveMenu(moduleName);
 
-    // Limpieza de boot-loader
     setTimeout(() => {
         const bl = document.getElementById("boot-loader");
         if(bl) {
@@ -91,44 +78,36 @@ export async function navigate(moduleName) {
     }, 300);
 
   } catch (error) {
-    console.error(`❌ Error Crítico en [${moduleName}]:`, error);
+    console.error(`❌ Fallo Nexus en [${moduleName}]:`, error);
     container.innerHTML = `
-      <div class="p-10 text-center animate-in fade-in zoom-in duration-500">
-        <div class="text-red-500 text-5xl mb-6 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]">
-            <i class="fas fa-microchip"></i>
-        </div>
-        <h2 class="text-white font-black uppercase tracking-tighter text-xl mb-2">Fallo de Enlace Nexus</h2>
-        <p class="text-slate-500 text-[9px] uppercase tracking-widest mb-8 px-10 leading-relaxed">
-            El módulo [${moduleName}] no responde o el archivo físico no existe en el servidor.
-        </p>
-        <button onclick="location.hash='#dashboard'; location.reload();" class="bg-white/5 border border-white/10 text-white px-10 py-4 rounded-3xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-cyan-500 hover:text-black transition-all active:scale-95">
-            Retornar al Núcleo
-        </button>
+      <div class="p-10 text-center">
+        <h2 class="text-white font-black uppercase">Fallo de Enlace</h2>
+        <button onclick="window.location.hash='#dashboard'; location.reload();" class="mt-4 bg-cyan-500 text-black px-6 py-2 rounded-full font-bold text-xs">REINTENTAR</button>
       </div>
     `;
   }
 }
 
-/**
- * Resalta el botón del menú actual
- */
 function updateActiveMenu(activeId) {
     document.querySelectorAll(".nav-link").forEach(link => {
         link.classList.remove("text-cyan-400", "border-cyan-500", "bg-white/5");
-        // Soporte para href="#modulo"
         if (link.getAttribute("href") === `#${activeId}`) {
             link.classList.add("text-cyan-400", "border-cyan-500", "bg-white/5");
         }
     });
 }
 
-// 5. LISTENERS GLOBALES (Hash Navigation)
+// Escucha de cambios de hash
 window.addEventListener("hashchange", () => {
     const target = window.location.hash.replace("#", "") || "dashboard";
     navigate(target);
 });
 
+// Carga inicial y corrección de URL vacía
 window.addEventListener("load", () => {
+    if (!window.location.hash) {
+        window.location.hash = "#dashboard"; // Fuerza el hash inicial
+    }
     const target = window.location.hash.replace("#", "") || "dashboard";
     navigate(target);
 });
