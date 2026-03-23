@@ -1,168 +1,144 @@
 /**
- * config.js - TallerPRO360 V4 ⚙️
- * Centro de Mando: Identidad Corporativa & Nexus-X Starlink API
+ * config.js - TallerPRO360 V4.1 ⚙️
+ * Centro de Mando: Identidad, WhatsApp & Pasarela Independiente
  */
-import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
 export default async function configModule(container, state) {
   const empresaId = state?.empresaId || localStorage.getItem("empresaId");
 
   container.innerHTML = `
-    <div class="p-4 bg-[#050a14] min-h-screen text-white pb-40 animate-fade-in font-sans">
+    <div class="p-4 bg-[#050a14] min-h-screen text-white pb-44 animate-fade-in font-sans">
       
-      <div class="mb-8">
-        <h1 class="text-2xl font-black italic tracking-tighter leading-none text-white uppercase">
-            SYSTEM <span class="text-cyan-400">CONFIG</span>
+      <div class="mb-6">
+        <h1 class="text-2xl font-black italic tracking-tighter text-white uppercase font-mono">
+            SYSTEM <span class="text-cyan-400">CORE</span>
         </h1>
-        <p class="text-[8px] text-slate-500 font-black uppercase tracking-[0.3em] mt-1">Arquitectura Soberana Nexus-X</p>
+        <p class="text-[7px] text-slate-500 font-black uppercase tracking-[0.4em] mt-1">NEXUS-X STARLINK PROTOCOL</p>
       </div>
 
-      <div class="flex gap-2 mb-8 bg-slate-900/50 p-1 rounded-2xl border border-white/5">
-        <button id="tabGeneral" class="flex-1 bg-cyan-500 text-black py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">🏢 Empresa</button>
-        <button id="tabWhatsApp" class="flex-1 text-slate-400 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">💬 WhatsApp</button>
+      <div class="flex gap-1 mb-8 bg-black/40 p-1 rounded-2xl border border-white/5 backdrop-blur-md">
+        <button id="tabGen" class="flex-1 bg-cyan-500 text-black py-3 rounded-xl text-[9px] font-black uppercase transition-all">Empresa</button>
+        <button id="tabWs" class="flex-1 text-slate-400 py-3 rounded-xl text-[9px] font-black uppercase transition-all">WhatsApp</button>
+        <button id="tabPay" class="flex-1 text-slate-400 py-3 rounded-xl text-[9px] font-black uppercase transition-all">Pasarela</button>
       </div>
 
-      <div id="sectionGeneral" class="space-y-6 animate-fade-in">
-        <div id="perfilEmpresa" class="bg-[#0f172a] p-8 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden">
-            <div class="absolute -right-4 -top-4 opacity-5 text-6xl text-cyan-500"><i class="fas fa-building"></i></div>
-            <p class="animate-pulse text-center text-[10px] font-black text-slate-600 uppercase tracking-widest">Sincronizando con Satélite...</p>
+      <div id="secGen" class="space-y-4 animate-fade-in">
+        <div class="bg-[#0f172a] p-6 rounded-[2rem] border border-white/5 shadow-xl">
+            <div class="flex flex-col items-center mb-6">
+                <div class="w-20 h-20 bg-gradient-to-tr from-cyan-600 to-blue-900 rounded-[2rem] flex items-center justify-center text-3xl shadow-lg border border-white/10 mb-3">🏢</div>
+                <input id="nombre" class="bg-transparent text-xl font-black text-center outline-none border-b border-white/5 focus:border-cyan-500 w-full" placeholder="Nombre Taller">
+            </div>
+            <div class="space-y-3">
+                <div class="bg-black/20 p-3 rounded-xl border border-white/5">
+                    <label class="text-[7px] text-slate-500 uppercase font-black block mb-1">NIT / ID FISCAL</label>
+                    <input id="nit" class="w-full bg-transparent text-sm font-bold outline-none text-white">
+                </div>
+            </div>
         </div>
       </div>
 
-      <div id="sectionWhatsApp" class="hidden space-y-4 animate-fade-in">
-        <div class="bg-gradient-to-br from-[#0f172a] to-[#061e1a] p-8 rounded-[2.5rem] border border-emerald-500/20 shadow-2xl">
-          <div class="flex items-center gap-4 mb-6">
-            <div class="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-              <i class="fab fa-whatsapp text-2xl"></i>
+      <div id="secWs" class="hidden space-y-4 animate-fade-in">
+        <div class="bg-gradient-to-br from-[#0f172a] to-[#06201a] p-6 rounded-[2rem] border border-emerald-500/10 shadow-xl">
+            <h3 class="text-xs font-black uppercase mb-4 text-emerald-400 flex items-center gap-2">
+                <i class="fab fa-whatsapp text-lg"></i> Motor de Notificaciones
+            </h3>
+            <div class="space-y-4">
+                <input id="ws_id" placeholder="INSTANCE ID" class="w-full bg-black/40 p-4 rounded-xl border border-white/5 text-xs font-mono">
+                <input id="ws_key" type="password" placeholder="API TOKEN" class="w-full bg-black/40 p-4 rounded-xl border border-white/5 text-xs font-mono">
             </div>
-            <div>
-                <h3 class="font-black text-sm uppercase tracking-tighter">Motor de Notificaciones</h3>
-                <p class="text-[8px] text-emerald-500/60 font-black uppercase">Estatus: Conectado a Gateway</p>
-            </div>
-          </div>
-          
-          <div class="space-y-5">
-            <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
-              <label class="text-[8px] text-slate-500 uppercase font-black tracking-widest mb-2 block">Instance ID (Nexus-X)</label>
-              <input id="ws_instance" type="text" placeholder="ID de Instancia" 
-                     class="w-full bg-transparent border-none text-emerald-400 text-sm font-black outline-none placeholder:text-slate-700">
-            </div>
-            <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
-              <label class="text-[8px] text-slate-500 uppercase font-black tracking-widest mb-2 block">API Secure Token</label>
-              <input id="ws_token" type="password" placeholder="••••••••••••" 
-                     class="w-full bg-transparent border-none text-emerald-400 text-sm font-black outline-none placeholder:text-slate-700">
-            </div>
-            <div class="p-3 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
-                <p class="text-[9px] text-slate-400 leading-relaxed italic">Este motor automatiza el envío de órdenes de servicio, recordatorios de mantenimiento y facturación PDF vía WhatsApp.</p>
-            </div>
-          </div>
         </div>
       </div>
 
-      <div class="fixed bottom-24 left-4 right-4 z-50">
-          <button id="btnGuardarConfig" class="w-full bg-cyan-500 text-black py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-[0_10px_30px_rgba(6,182,212,0.4)] active:scale-95 transition-all">
-            Actualizar Sistema Global
-          </button>
+      <div id="secPay" class="hidden space-y-4 animate-fade-in">
+        <div class="bg-gradient-to-br from-[#0f172a] to-[#1e1b4b] p-6 rounded-[2rem] border border-blue-500/20 shadow-xl">
+            <h3 class="text-xs font-black uppercase mb-1 text-blue-400">Mercado Pago <span class="text-[8px] text-slate-500 ml-2 italic">Independiente</span></h3>
+            <p class="text-[8px] text-slate-400 mb-6 italic leading-tight">Cada taller recibe el dinero en su propia cuenta. Obtén tus llaves en el panel de desarrolladores de Mercado Pago.</p>
+            
+            <div class="space-y-4">
+                <div class="bg-black/40 p-4 rounded-xl border border-white/5">
+                    <label class="text-[7px] text-blue-400 font-black uppercase block mb-1">Access Token (Producción)</label>
+                    <input id="mp_token" type="password" placeholder="APP_USR-..." class="w-full bg-transparent text-[10px] font-mono outline-none text-white">
+                </div>
+                <div class="bg-black/40 p-4 rounded-xl border border-white/5">
+                    <label class="text-[7px] text-blue-400 font-black uppercase block mb-1">Public Key</label>
+                    <input id="mp_key" placeholder="APP_USR-..." class="w-full bg-transparent text-[10px] font-mono outline-none text-white">
+                </div>
+            </div>
+        </div>
       </div>
 
-      <div class="mt-12 mb-10 text-center">
-        <button id="btnLogout" class="text-[9px] font-black text-red-500/50 uppercase tracking-[0.3em] hover:text-red-500 transition-colors">
-          <i class="fas fa-power-off mr-2"></i> Cerrar Sesión y Purgar Caché
-        </button>
-      </div>
+      <button id="btnSave" class="fixed bottom-24 left-4 right-4 bg-cyan-500 text-black py-5 rounded-[1.8rem] font-black text-xs uppercase shadow-2xl active:scale-95 transition-all">
+        Sincronizar Protocolos
+      </button>
+
     </div>
   `;
 
-  // --- LÓGICA DE INTERACCIÓN ---
-  const tabs = {
-    gen: { btn: document.getElementById("tabGeneral"), sec: document.getElementById("sectionGeneral") },
-    ws: { btn: document.getElementById("tabWhatsApp"), sec: document.getElementById("sectionWhatsApp") }
+  // --- LÓGICA DE NAVEGACIÓN ---
+  const sections = {
+    gen: { btn: document.getElementById("tabGen"), div: document.getElementById("secGen") },
+    ws: { btn: document.getElementById("tabWs"), div: document.getElementById("secWs") },
+    pay: { btn: document.getElementById("tabPay"), div: document.getElementById("secPay") }
   };
 
-  const switchTab = (active) => {
-    Object.values(tabs).forEach(t => {
-      t.btn.className = "flex-1 text-slate-400 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all";
-      t.sec.classList.add("hidden");
+  const showTab = (key) => {
+    Object.keys(sections).forEach(k => {
+        sections[k].btn.className = "flex-1 text-slate-400 py-3 rounded-xl text-[9px] font-black uppercase transition-all";
+        sections[k].div.classList.add("hidden");
     });
-    tabs[active].btn.className = "flex-1 bg-cyan-500 text-black py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all";
-    tabs[active].sec.classList.remove("hidden");
+    sections[key].btn.className = "flex-1 bg-cyan-500 text-black py-3 rounded-xl text-[9px] font-black uppercase transition-all";
+    sections[key].div.classList.remove("hidden");
   };
 
-  tabs.gen.btn.onclick = () => switchTab('gen');
-  tabs.ws.btn.onclick = () => switchTab('ws');
+  sections.gen.btn.onclick = () => showTab('gen');
+  sections.ws.btn.onclick = () => showTab('ws');
+  sections.pay.btn.onclick = () => showTab('pay');
 
-  async function cargarDatos() {
-    try {
-      const docSnap = await getDoc(doc(db, "empresas", empresaId));
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        
-        // Render Identidad Empresa
-        document.getElementById("perfilEmpresa").innerHTML = `
-          <div class="flex flex-col items-center mb-8">
-            <div class="w-24 h-24 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-[2.5rem] flex items-center justify-center text-4xl shadow-2xl mb-4 border-4 border-white/10">🏢</div>
-            <input id="emp_nombre" value="${data.nombre || ''}" class="bg-transparent text-2xl font-black text-center outline-none border-b border-white/5 focus:border-cyan-500 w-full tracking-tighter" placeholder="Nombre del Taller">
-            <span class="text-[8px] text-slate-600 mt-2 font-black uppercase tracking-[0.4em]">${empresaId}</span>
-          </div>
-          <div class="space-y-5">
-             <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
-               <label class="text-[8px] text-slate-500 uppercase font-black tracking-widest mb-1 block">NIT / Registro Fiscal</label>
-               <input id="emp_nit" value="${data.nit || ''}" class="w-full bg-transparent border-none text-white text-sm font-black outline-none" placeholder="000-000-000">
-             </div>
-             <div class="bg-black/20 p-4 rounded-2xl border border-white/5 flex justify-between items-center">
-               <div>
-                   <label class="text-[8px] text-slate-500 uppercase font-black tracking-widest mb-1 block">Nivel de Suscripción</label>
-                   <div class="text-xs text-yellow-500 font-black uppercase tracking-tighter">Enterprise Cloud Nexus-X</div>
-               </div>
-               <i class="fas fa-crown text-yellow-600 opacity-40"></i>
-             </div>
-          </div>
-        `;
-
-        document.getElementById("ws_instance").value = data.ws_instance || "";
-        document.getElementById("ws_token").value = data.ws_token || "";
-      }
-    } catch (e) {
-      console.error("Config Load Error:", e);
+  // --- PERSISTENCIA ---
+  async function load() {
+    const snap = await getDoc(doc(db, "empresas", empresaId));
+    if (snap.exists()) {
+      const d = snap.data();
+      document.getElementById("nombre").value = d.nombre || "";
+      document.getElementById("nit").value = d.nit || "";
+      document.getElementById("ws_id").value = d.ws_instance || "";
+      document.getElementById("ws_key").value = d.ws_token || "";
+      document.getElementById("mp_token").value = d.mp_access_token || "";
+      document.getElementById("mp_key").value = d.mp_public_key || "";
     }
   }
 
-  document.getElementById("btnGuardarConfig").onclick = async () => {
-    const btn = document.getElementById("btnGuardarConfig");
-    btn.innerText = "SINCRO EN CURSO...";
+  document.getElementById("btnSave").onclick = async () => {
+    const btn = document.getElementById("btnSave");
+    btn.innerText = "ENVIANDO A SATÉLITE...";
     btn.disabled = true;
 
     try {
-      const update = {
-        nombre: document.getElementById("emp_nombre").value,
-        nit: document.getElementById("emp_nit").value,
-        ws_instance: document.getElementById("ws_instance").value,
-        ws_token: document.getElementById("ws_token").value,
-        updatedAt: new Date()
+      const config = {
+        nombre: document.getElementById("nombre").value,
+        nit: document.getElementById("nit").value,
+        ws_instance: document.getElementById("ws_id").value,
+        ws_token: document.getElementById("ws_key").value,
+        mp_access_token: document.getElementById("mp_token").value,
+        mp_public_key: document.getElementById("mp_key").value,
+        lastUpdate: new Date()
       };
 
-      await updateDoc(doc(db, "empresas", empresaId), update);
+      await setDoc(doc(db, "empresas", empresaId), config, { merge: true });
       
-      // Guardar local para uso inmediato en servicios de mensajería
-      localStorage.setItem("ws_instance", update.ws_instance);
-      localStorage.setItem("ws_token", update.ws_token);
-
-      btn.innerText = "CONFIGURACIÓN EXITOSA";
+      // Cache local para ejecución inmediata de pagos
+      localStorage.setItem("mp_key", config.mp_public_key);
+      
+      btn.innerText = "SINCRO EXITOSA";
       setTimeout(() => location.reload(), 1000);
     } catch (e) {
-      alert("Falla de Conexión Nexus-X");
-      btn.innerText = "REINTENTAR ACTUALIZACIÓN";
+      alert("Error de enlace Nexus-X");
       btn.disabled = false;
+      btn.innerText = "REINTENTAR";
     }
   };
 
-  document.getElementById("btnLogout").onclick = () => {
-    if(confirm("¿Purgar caché del sistema y cerrar sesión?")) {
-        localStorage.clear();
-        location.reload();
-    }
-  };
-
-  cargarDatos();
+  load();
 }
