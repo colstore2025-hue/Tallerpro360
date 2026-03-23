@@ -1,10 +1,10 @@
 /**
- * pro360Core.js - TallerPRO360 V10.4 👑
+ * pro360Core.js - TallerPRO360 V10.4.1 👑
  * Orquestador de Micro-Servicios - Edición Reloj Suizo
  */
 import { db } from "./firebase-config.js"; 
 
-const VERSION = "v10.4_NEXUS";
+const VERSION = "v10.4.1_NEXUS";
 
 const routes = {
   dashboard:     () => import(`./modules/dashboard.js?v=${VERSION}`),
@@ -20,17 +20,17 @@ const routes = {
   saneamiento:   () => import(`./modules/saneamiento.js?v=${VERSION}`) 
 };
 
-/**
- * Función Principal de Navegación
- */
 export async function navigate(moduleName) {
   const container = document.getElementById("appContainer");
   if (!container) return;
 
-  // Cierre de menú lateral automático para móviles
+  // 1. CIERRE DE MENÚ (Ajuste para compatibilidad móvil total)
   const sidebar = document.getElementById("sidebar");
-  if (sidebar && !sidebar.classList.contains("hidden")) {
-      sidebar.classList.add("hidden"); // Ajusta según tu clase de CSS para ocultar
+  if (sidebar) {
+      // Usamos classList.replace o remove/add para asegurar que el estado cambie
+      sidebar.classList.add("-translate-x-full"); // Estándar de Tailwind para ocultar
+      // Si usas 'hidden', descomenta la siguiente línea:
+      // sidebar.classList.add("hidden"); 
   }
 
   container.innerHTML = `
@@ -47,6 +47,7 @@ export async function navigate(moduleName) {
     timestamp: Date.now()
   };
 
+  // REDIRECCIÓN SI NO HAY SESIÓN
   if (!state.uid || state.empresaId === "PENDIENTE") {
     if(!window.location.pathname.includes("login.html")) {
         window.location.href = "/login.html";
@@ -55,7 +56,9 @@ export async function navigate(moduleName) {
   }
 
   try {
-    const routeAction = routes[moduleName] || routes['dashboard'];
+    // 2. NORMALIZACIÓN DEL NOMBRE (Evita errores de mayúsculas/minúsculas)
+    const cleanName = moduleName.toLowerCase();
+    const routeAction = routes[cleanName] || routes['dashboard'];
     const module = await routeAction();
     
     container.innerHTML = "";
@@ -67,7 +70,7 @@ export async function navigate(moduleName) {
         await module[funcName](container, state);
     }
 
-    updateActiveMenu(moduleName);
+    updateActiveMenu(cleanName);
 
     setTimeout(() => {
         const bl = document.getElementById("boot-loader");
@@ -79,36 +82,36 @@ export async function navigate(moduleName) {
 
   } catch (error) {
     console.error(`❌ Fallo Nexus en [${moduleName}]:`, error);
-    container.innerHTML = `
-      <div class="p-10 text-center">
-        <h2 class="text-white font-black uppercase">Fallo de Enlace</h2>
-        <button onclick="window.location.hash='#dashboard'; location.reload();" class="mt-4 bg-cyan-500 text-black px-6 py-2 rounded-full font-bold text-xs">REINTENTAR</button>
-      </div>
-    `;
+    container.innerHTML = `<div class="p-10 text-center text-white">Error de Carga: ${error.message}</div>`;
   }
 }
 
 function updateActiveMenu(activeId) {
     document.querySelectorAll(".nav-link").forEach(link => {
         link.classList.remove("text-cyan-400", "border-cyan-500", "bg-white/5");
+        // Comparamos de forma segura el href
         if (link.getAttribute("href") === `#${activeId}`) {
             link.classList.add("text-cyan-400", "border-cyan-500", "bg-white/5");
         }
     });
 }
 
-// Escucha de cambios de hash
+// 3. LISTENERS ROBUSTOS
 window.addEventListener("hashchange", () => {
-    const target = window.location.hash.replace("#", "") || "dashboard";
+    const target = window.location.hash.replace("#", "").split('?')[0] || "dashboard";
     navigate(target);
 });
 
 window.addEventListener("load", () => {
-    if (!window.location.hash || window.location.hash === "#") {
-        window.location.hash = "#dashboard"; // <--- Esto elimina la necesidad de escribirlo a mano
+    // Corrección para evitar el bucle de carga y asegurar el Dashboard inicial
+    let initialHash = window.location.hash.replace("#", "").split('?')[0];
+    
+    if (!initialHash) {
+        window.location.hash = "#dashboard";
+        initialHash = "dashboard";
     }
-    const target = window.location.hash.replace("#", "") || "dashboard";
-    navigate(target);
+    
+    navigate(initialHash);
 });
 
 window.nexusNavigate = navigate;
