@@ -104,6 +104,56 @@ export default async function inventario(container, state) {
                 `;
             }).join("");
 
+// --- LÓGICA PARA REPUESTOS DE CLIENTE ---
+document.getElementById("btnRepuestoCliente").onclick = async () => {
+    const { value: formValues } = await Swal.fire({
+        title: 'RECEPCIÓN DE REPUESTO EXTERNO',
+        background: '#0a0f1d',
+        color: '#fff',
+        html: `
+            <div class="space-y-3 text-left">
+                <div>
+                    <label class="text-[8px] uppercase font-black text-slate-500">Placa del Vehículo</label>
+                    <input id="swal-placa" class="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-cyan-400 font-black uppercase" placeholder="ABC-123">
+                </div>
+                <div>
+                    <label class="text-[8px] uppercase font-black text-slate-500">Descripción del Repuesto</label>
+                    <input id="swal-item" class="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white" placeholder="Ej: Kit de Distribución Gates">
+                </div>
+                <div class="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                    <p class="text-[9px] text-yellow-500 italic leading-tight">
+                        Nota: El ingreso de este ítem no suma al patrimonio del taller. Se marca como "Suministrado por Cliente".
+                    </p>
+                </div>
+            </div>
+        `,
+        focusConfirm: false,
+        confirmButtonText: 'REGISTRAR INGRESO',
+        confirmButtonColor: '#06b6d4',
+        preConfirm: () => {
+            return {
+                placa: document.getElementById('swal-placa').value,
+                item: document.getElementById('swal-item').value
+            }
+        }
+    });
+
+    if (formValues && formValues.placa && formValues.item) {
+        try {
+            await addDoc(collection(db, `empresas/${empresaId}/repuestos_externos`), {
+                ...formValues,
+                fechaIngreso: serverTimestamp(),
+                estado: 'EN_ESPERA'
+            });
+            
+            hablar("Repuesto del cliente registrado. Se ha vinculado a la placa " + formValues.placa);
+            Swal.fire('¡Éxito!', 'Ítem vinculado al vehículo', 'success');
+        } catch (e) {
+            console.error(e);
+        }
+    }
+};
+
             // Actualizar Dashboard del Almacén
             document.getElementById("totalInversion").innerText = `$${new Intl.NumberFormat("es-CO").format(inversionAcumulada)}`;
             if(criticos > 0) {
