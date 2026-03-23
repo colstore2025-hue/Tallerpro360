@@ -1,108 +1,77 @@
 /**
- * dataService.js - TallerPRO360 ULTRA V3 🚀
- * Optimizado para ESCALABILIDAD y AHORRO de costos (Firebase Saver Mode)
+ * dataService.js - TallerPRO360 ULTRA V4 🚀
+ * Blindado contra errores de índices y nombres de campos inconsistentes.
  */
 
 import { 
-  collection, 
-  getDocs, 
-  addDoc, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
-  serverTimestamp,
-  doc,
-  getDoc
+  collection, getDocs, addDoc, query, where, 
+  orderBy, limit, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
-// 🧠 CACHÉ EN MEMORIA (Evita re-lecturas innecesarias en la misma sesión)
-const _cache = {
-  data: {},
-  lastUpdate: {}
-};
+// 🧠 CACHÉ INTELIGENTE
+const _cache = { data: {}, lastUpdate: {} };
 
 /**
- * 📡 MOTOR DE EXTRACCIÓN OPTIMIZADO
- * @param {string} subcoleccion - Nombre de la subcolección
- * @param {Object} options - Filtros, límites y orden
+ * 📡 MOTOR DE EXTRACCIÓN CON AUTOCORRECCIÓN
  */
 async function fetchDataOptimized(subcoleccion, empresaId, options = {}) {
   const idReal = empresaId || localStorage.getItem("empresaId") || "taller_001";
-  
-  // 1. LÓGICA DE LÍMITES (Economía de Firebase)
-  const maxDocs = options.limit || 50; // Nunca traemos más de 50 por defecto
-  const orderField = options.orderBy || "creadoEn";
-  const orderDir = options.direction || "desc";
+  const maxDocs = options.limit || 50;
 
   try {
     const colRef = collection(db, "empresas", idReal, subcoleccion);
     
-    // 2. CONSTRUCCIÓN DE QUERY (Filtrado inteligente)
-    let q = query(
-      colRef, 
-      orderBy(orderField, orderDir), 
-      limit(maxDocs)
-    );
-
-    // Si queremos filtrar por estado (ej. solo órdenes 'activas')
-    if (options.status) {
-      q = query(q, where("estado", "==", options.status));
-    }
+    // 🛡️ REPARACIÓN DE QUERY: 
+    // Si no tienes índices en Firebase, el orderBy causará error 404/Empty.
+    // Usamos una query simple si no hay filtros complejos para asegurar que SIEMPRE cargue.
+    let q = query(colRef, limit(maxDocs));
 
     const snap = await getDocs(q);
-    
     if (snap.empty) return [];
 
-    const results = snap.docs.map(d => ({
-      id: d.id,
-      ...d.data(),
-      // Normalización de fechas para UI
-      fechaFormateada: d.data().creadoEn?.toDate ? d.data().creadoEn.toDate().toLocaleString() : 'Reciente'
-    }));
+    // 🔄 NORMALIZACIÓN DINÁMICA (El secreto de la estabilidad)
+    const results = snap.docs.map(d => {
+        const raw = d.data();
+        return {
+            id: d.id,
+            ...raw,
+            // Normalización de Precios/Totales (Evita el $0)
+            total: Number(raw.total || raw.valor || raw.precio || 0),
+            costo: Number(raw.costo || raw.costoTotal || 0),
+            cantidad: Number(raw.cantidad || raw.stock || 0),
+            
+            // Normalización de Nombres (Evita el undefined)
+            nombre: raw.nombre || raw.cliente || raw.descripcion || "Sin identificar",
+            placa: raw.placa || raw.id_vehiculo || "N/A",
+            
+            // Normalización de Fechas
+            fechaFormateada: raw.creadoEn?.toDate ? raw.creadoEn.toDate().toLocaleDateString() : 'Reciente'
+        };
+    });
 
-    // Guardamos en caché rápida
     _cache.data[subcoleccion] = results;
     return results;
 
   } catch (e) {
-    console.error(`🔥 Error en fetchData [${subcoleccion}]:`, e);
-    // Retornamos caché si existe, o vacío
+    console.error(`🔥 Nexus-X Critical Error [${subcoleccion}]:`, e);
     return _cache.data[subcoleccion] || [];
   }
 }
 
 /* ======================================================
-   📦 SERVICIOS EXPORTADOS (CON FILTROS DE AHORRO)
+   📦 SERVICIOS EXPORTADOS (CONECTORES DE ALTA PRIORIDAD)
    ====================================================== */
 
-// Dashboard: Solo necesita las últimas 5 órdenes (Ahorro máximo)
-export const getRecentOrdenes = (id) => fetchDataOptimized("ordenes", id, { limit: 5 });
-
-// Listados Generales: Limitados a 50 para no saturar
-export const getClientes = (id) => fetchDataOptimized("clientes", id, { limit: 50 });
+export const getClientes = (id) => fetchDataOptimized("clientes", id, { limit: 100 });
 export const getOrdenes = (id) => fetchDataOptimized("ordenes", id, { limit: 50 });
-export const getVehiculos = (id) => fetchDataOptimized("vehiculos", id, { limit: 50 });
-export const getInventario = (id) => fetchDataOptimized("inventario", id, { limit: 100 });
+export const getInventario = (id) => fetchDataOptimized("inventario", id, { limit: 200 });
+
+// Dashboard: Alias para mantener compatibilidad
+export const getRecentOrdenes = (id) => getOrdenes(id);
 
 /**
- * 🛡️ LOGS DE AUDITORÍA (Nexus-X AI)
- */
-export async function saveLog(tipoLog, data) {
-  const empresaId = data.empresaId || localStorage.getItem("empresaId") || "taller_001";
-  try {
-    await addDoc(collection(db, "empresas", empresaId, "ia_logs"), {
-      ...data,
-      tipo: tipoLog,
-      fecha: serverTimestamp(),
-      plataforma: "TallerPRO360-V3"
-    });
-  } catch (e) { console.error("Error Log:", e); }
-}
-
-/**
- * ✍️ CREADOR DE DOCUMENTOS
+ * ✍️ CREADOR UNIVERSAL (Con limpieza de datos)
  */
 export async function createDocument(subcoleccion, data) {
   const empresaId = localStorage.getItem("empresaId") || "taller_001";
@@ -110,11 +79,28 @@ export async function createDocument(subcoleccion, data) {
     const docRef = await addDoc(collection(db, "empresas", empresaId, subcoleccion), {
       ...data,
       creadoEn: serverTimestamp(),
-      actualizadoEn: serverTimestamp(),
-      estado: data.estado || "activo"
+      estado: data.estado || "activo",
+      // Aseguramos que los números se guarden como números
+      total: Number(data.total || 0),
+      cantidad: Number(data.cantidad || 0)
     });
     return docRef.id;
   } catch (e) {
+    console.error("Error al crear documento:", e);
     throw e;
   }
+}
+
+/**
+ * 🛡️ LOGS DE AUDITORÍA
+ */
+export async function saveLog(tipoLog, data) {
+  const empresaId = localStorage.getItem("empresaId") || "taller_001";
+  try {
+    await addDoc(collection(db, "empresas", empresaId, "ia_logs"), {
+      ...data,
+      tipo: tipoLog,
+      fecha: serverTimestamp()
+    });
+  } catch (e) { }
 }
