@@ -107,3 +107,4 @@ window.addEventListener("hashchange", () => navigate(window.location.hash));
 window.addEventListener("load", initNexus);
 
 window.nexusNavigate = navigate;
+
