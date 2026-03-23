@@ -1,16 +1,16 @@
 /**
- * inventario.js - TallerPRO360 V5.1 📦
- * Gestión de Stock Propio vs. Repuestos de Cliente
+ * inventario.js - TallerPRO360 V5.2 📦
+ * Gestión de Stock Propio vs. Repuestos de Cliente (Corregido)
  */
 import { collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
+import { hablar } from "../voice/voiceCore.js";
 
 export default async function inventario(container, state) {
     const empresaId = state?.empresaId || localStorage.getItem("empresaId");
 
     container.innerHTML = `
     <div class="p-4 lg:p-8 animate-fade-in font-sans pb-32">
-        
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <div>
                 <h1 class="text-2xl font-black text-white italic tracking-tighter uppercase">
@@ -48,6 +48,52 @@ export default async function inventario(container, state) {
     </div>
     `;
 
+    // --- LÓGICA PARA REPUESTOS DE CLIENTE (Fuera del render del grid) ---
+    document.getElementById("btnRepuestoCliente").onclick = async () => {
+        const { value: formValues } = await Swal.fire({
+            title: 'RECEPCIÓN DE REPUESTO EXTERNO',
+            background: '#0a0f1d',
+            color: '#fff',
+            html: `
+                <div class="space-y-3 text-left">
+                    <div>
+                        <label class="text-[8px] uppercase font-black text-slate-500 tracking-widest">Placa del Vehículo</label>
+                        <input id="swal-placa" class="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-cyan-400 font-black uppercase" placeholder="ABC-123">
+                    </div>
+                    <div>
+                        <label class="text-[8px] uppercase font-black text-slate-500 tracking-widest">Descripción del Repuesto</label>
+                        <input id="swal-item" class="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white" placeholder="Ej: Kit de Distribución Gates">
+                    </div>
+                    <div class="p-3 bg-yellow-500/5 border border-yellow-500/20 rounded-xl">
+                        <p class="text-[8px] text-yellow-500/80 italic leading-tight">
+                            Exención de garantía: El taller no se hace responsable por fallas en repuestos suministrados por el cliente.
+                        </p>
+                    </div>
+                </div>
+            `,
+            confirmButtonText: 'REGISTRAR INGRESO',
+            confirmButtonColor: '#06b6d4',
+            preConfirm: () => {
+                const placa = document.getElementById('swal-placa').value.trim();
+                const item = document.getElementById('swal-item').value.trim();
+                if (!placa || !item) return Swal.showValidationMessage('Todos los campos son obligatorios');
+                return { placa, item };
+            }
+        });
+
+        if (formValues) {
+            try {
+                await addDoc(collection(db, `empresas/${empresaId}/repuestos_externos`), {
+                    ...formValues,
+                    fechaIngreso: serverTimestamp(),
+                    estado: 'POR_INSTALAR'
+                });
+                hablar(`Repuesto para la placa ${formValues.placa} registrado satisfactoriamente.`);
+                Swal.fire({ icon: 'success', title: 'Recibido', background: '#0a0f1d', color: '#fff' });
+            } catch (e) { console.error(e); }
+        }
+    };
+
     async function cargarInventario() {
         const grid = document.getElementById("gridStock");
         let inversionAcumulada = 0;
@@ -70,101 +116,38 @@ export default async function inventario(container, state) {
 
                 return `
                 <div class="bg-[#0f172a] p-6 rounded-[2.5rem] border border-white/5 relative overflow-hidden group hover:border-cyan-500/30 transition-all">
-                    <div class="absolute -right-4 -top-4 opacity-[0.03] text-6xl text-white group-hover:scale-110 transition-transform">
+                    <div class="absolute -right-4 -top-4 opacity-[0.03] text-6xl text-white group-hover:rotate-12 transition-transform">
                         <i class="fas fa-boxes"></i>
                     </div>
-                    
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <p class="text-[7px] text-cyan-500 font-black uppercase tracking-[0.2em] mb-1">${item.categoria || 'Repuesto'}</p>
+                            <p class="text-[7px] text-cyan-500 font-black uppercase tracking-[0.2em] mb-1">${item.categoria || 'REPUESTO'}</p>
                             <h3 class="text-white text-xs font-black uppercase tracking-tighter leading-tight">${item.nombre}</h3>
                         </div>
-                        <div class="${esBajo ? 'bg-red-500' : 'bg-emerald-500'} w-2 h-2 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                        <div class="${esBajo ? 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]'} w-2 h-2 rounded-full"></div>
                     </div>
-                    
                     <div class="flex justify-between items-end mt-6">
                         <div>
                             <p class="text-[7px] text-slate-500 font-black uppercase mb-1">Disponible</p>
-                            <span class="text-3xl font-black ${esBajo ? 'text-red-500' : 'text-white'}">
-                                ${item.cantidad}
-                            </span>
-                            <span class="text-[8px] text-slate-500 font-bold ml-1 uppercase">unidades</span>
+                            <span class="text-3xl font-black ${esBajo ? 'text-red-500' : 'text-white'}">${item.cantidad}</span>
+                            <span class="text-[8px] text-slate-500 font-bold ml-1 uppercase">unid</span>
                         </div>
                         <div class="text-right">
-                            <p class="text-[7px] text-slate-500 font-black uppercase mb-1">Precio Venta</p>
+                            <p class="text-[7px] text-slate-500 font-black uppercase mb-1">P. Venta</p>
                             <p class="text-sm font-black text-emerald-400">$${new Intl.NumberFormat("es-CO").format(item.precioVenta || 0)}</p>
                         </div>
                     </div>
-
-                    <div class="mt-4 pt-4 border-t border-white/5 flex gap-2">
-                        <button class="flex-1 bg-white/5 hover:bg-white/10 py-2 rounded-xl text-[8px] font-black uppercase transition-colors">Ajustar</button>
-                        <button class="w-10 h-8 bg-white/5 hover:bg-red-500/20 rounded-xl flex items-center justify-center text-slate-600 hover:text-red-500"><i class="fas fa-trash text-[10px]"></i></button>
-                    </div>
-                </div>
-                `;
+                </div>`;
             }).join("");
 
-// --- LÓGICA PARA REPUESTOS DE CLIENTE ---
-document.getElementById("btnRepuestoCliente").onclick = async () => {
-    const { value: formValues } = await Swal.fire({
-        title: 'RECEPCIÓN DE REPUESTO EXTERNO',
-        background: '#0a0f1d',
-        color: '#fff',
-        html: `
-            <div class="space-y-3 text-left">
-                <div>
-                    <label class="text-[8px] uppercase font-black text-slate-500">Placa del Vehículo</label>
-                    <input id="swal-placa" class="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-cyan-400 font-black uppercase" placeholder="ABC-123">
-                </div>
-                <div>
-                    <label class="text-[8px] uppercase font-black text-slate-500">Descripción del Repuesto</label>
-                    <input id="swal-item" class="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white" placeholder="Ej: Kit de Distribución Gates">
-                </div>
-                <div class="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
-                    <p class="text-[9px] text-yellow-500 italic leading-tight">
-                        Nota: El ingreso de este ítem no suma al patrimonio del taller. Se marca como "Suministrado por Cliente".
-                    </p>
-                </div>
-            </div>
-        `,
-        focusConfirm: false,
-        confirmButtonText: 'REGISTRAR INGRESO',
-        confirmButtonColor: '#06b6d4',
-        preConfirm: () => {
-            return {
-                placa: document.getElementById('swal-placa').value,
-                item: document.getElementById('swal-item').value
-            }
-        }
-    });
-
-    if (formValues && formValues.placa && formValues.item) {
-        try {
-            await addDoc(collection(db, `empresas/${empresaId}/repuestos_externos`), {
-                ...formValues,
-                fechaIngreso: serverTimestamp(),
-                estado: 'EN_ESPERA'
-            });
-            
-            hablar("Repuesto del cliente registrado. Se ha vinculado a la placa " + formValues.placa);
-            Swal.fire('¡Éxito!', 'Ítem vinculado al vehículo', 'success');
-        } catch (e) {
-            console.error(e);
-        }
-    }
-};
-
-            // Actualizar Dashboard del Almacén
             document.getElementById("totalInversion").innerText = `$${new Intl.NumberFormat("es-CO").format(inversionAcumulada)}`;
             if(criticos > 0) {
-                const alertBox = document.getElementById("criticoAlerta");
-                alertBox.classList.remove("hidden");
+                document.getElementById("criticoAlerta").classList.remove("hidden");
                 document.getElementById("itemsCriticos").innerText = `${criticos} Items`;
             }
 
         } catch (e) {
-            console.error(e);
-            grid.innerHTML = `<p class="text-red-500 text-[10px] font-black uppercase text-center py-10">Error de Sincronización Nexus-X</p>`;
+            grid.innerHTML = `<p class="text-red-500 text-[10px] font-black uppercase text-center py-10">Error de Conexión</p>`;
         }
     }
 
