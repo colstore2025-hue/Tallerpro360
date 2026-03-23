@@ -103,10 +103,9 @@ window.addEventListener("hashchange", () => {
     navigate(target);
 });
 
-// Carga inicial y corrección de URL vacía
 window.addEventListener("load", () => {
-    if (!window.location.hash) {
-        window.location.hash = "#dashboard"; // Fuerza el hash inicial
+    if (!window.location.hash || window.location.hash === "#") {
+        window.location.hash = "#dashboard"; // <--- Esto elimina la necesidad de escribirlo a mano
     }
     const target = window.location.hash.replace("#", "") || "dashboard";
     navigate(target);
