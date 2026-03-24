@@ -216,46 +216,89 @@
 </a>
 
 <script type="module">
-    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { firebaseConfig } from "/app/js/core/firebase-config.js"; 
 
+    // Inicialización de Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     let currentPlan = null;
 
-    window.scrollPlanes = () => document.getElementById('planes').scrollIntoView({behavior:'smooth'});
-
-    window.confirmarTerminos = (plan) => {
-        currentPlan = plan;
-        document.getElementById("modalTerminos").classList.remove("hidden");
+    // Exponer funciones al objeto Window para que el HTML (onclick) las reconozca
+    window.scrollPlanes = () => {
+        const section = document.getElementById('planes');
+        if(section) section.scrollIntoView({ behavior: 'smooth' });
     };
 
-    window.cerrarTerminos = () => document.getElementById("modalTerminos").classList.add("hidden");
+    window.confirmarTerminos = (plan) => {
+        console.log("Plan seleccionado para procesar:", plan);
+        currentPlan = plan;
+        const modal = document.getElementById("modalTerminos");
+        if(modal) modal.classList.remove("hidden");
+    };
 
-    document.getElementById("btnAceptar").onclick = async () => {
+    window.cerrarTerminos = () => {
+        const modal = document.getElementById("modalTerminos");
+        if(modal) modal.classList.add("hidden");
+    };
+
+    // Lógica principal de pago
+    const btnAceptar = document.getElementById("btnAceptar");
+
+    btnAceptar.onclick = async () => {
         const user = auth.currentUser;
+        
+        // 1. Verificar sesión
         if(!user) {
             localStorage.setItem("pending_plan", currentPlan);
             window.location.href = "/login.html";
             return;
         }
         
+        // 2. Manejo de Plan Gratis
         if(currentPlan === "freemium") {
             window.location.href = "/app/index.html?mode=demo_activated";
-        } else {
-            // INTEGRACIÓN CON MERCADO PAGO
-            try {
-                const response = await fetch("/api/create-preference", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ uid: user.uid, planId: currentPlan })
-                });
-                const data = await response.json();
-                if(data.init_point) window.location.href = data.init_point;
-            } catch(e) {
-                alert("Error de conexión. Intente por WhatsApp.");
+            return;
+        }
+
+        // 3. Procesar Pago con Mercado Pago
+        try {
+            // Feedback visual al usuario
+            const originalText = btnAceptar.innerText;
+            btnAceptar.innerText = "CONECTANDO CON PASARELA...";
+            btnAceptar.disabled = true;
+            btnAceptar.style.opacity = "0.5";
+
+            const response = await fetch("/api/create-preference", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    uid: user.uid, 
+                    planId: currentPlan,
+                    email: user.email 
+                })
+            });
+
+            if (!response.ok) throw new Error(`Error de servidor: ${response.status}`);
+
+            const data = await response.json();
+            
+            if(data.init_point) {
+                // Redirección a la pasarela de Mercado Pago
+                window.location.href = data.init_point;
+            } else {
+                throw new Error("No se recibió el punto de inicio de pago.");
             }
+
+        } catch(e) {
+            console.error("Error en el flujo de pago:", e);
+            alert("No pudimos conectar con Mercado Pago. Por favor, contacta a soporte por WhatsApp.");
+            
+            // Reestablecer botón en caso de error
+            btnAceptar.innerText = "ACEPTAR Y PAGAR";
+            btnAceptar.disabled = false;
+            btnAceptar.style.opacity = "1";
         }
     };
 </script>
