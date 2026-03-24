@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>TallerPRO360 - Onboarding Inteligente</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0b0f14;
+  color: #fff;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: #00ff9c;
+}
+
+.step {
+  display: none;
+  margin-top: 30px;
+  padding: 20px;
+  background: #121821;
+  border-radius: 10px;
+}
+
+.step.active {
+  display: block;
+}
+
+button {
+  background: #00ff9c;
+  border: none;
+  padding: 10px 20px;
+  margin-top: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 5px;
+}
+
+.progress {
+  height: 10px;
+  background: #222;
+  border-radius: 5px;
+  margin-top: 20px;
+}
+
+.progress-bar {
+  height: 10px;
+  background: #00ff9c;
+  width: 0%;
+  border-radius: 5px;
+}
+
+/* Chat IA */
+.chat {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 300px;
+  background: #121821;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.chat-header {
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #00ff9c;
+}
+
+.chat-messages {
+  height: 150px;
+  overflow-y: auto;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.chat input {
+  width: 100%;
+  padding: 5px;
+  border: none;
+  border-radius: 5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🚀 Bienvenido a TallerPRO360</h1>
+
+<div class="progress">
+  <div class="progress-bar" id="progressBar"></div>
+</div>
+
+<!-- PASOS -->
+
+<div class="step active">
+  <h2>👋 Bienvenido</h2>
+  <p>Te guiaré paso a paso para dominar el sistema.</p>
+  <button onclick="nextStep()">Comenzar</button>
+</div>
+
+<div class="step">
+  <h2>👥 Clientes</h2>
+  <p>Aquí puedes registrar y gestionar todos tus clientes.</p>
+  <ul>
+    <li>Agregar cliente</li>
+    <li>Buscar cliente</li>
+    <li>Editar datos</li>
+  </ul>
+  <button onclick="nextStep()">Siguiente</button>
+</div>
+
+<div class="step">
+  <h2>📦 Inventario</h2>
+  <p>Administra repuestos y productos fácilmente.</p>
+  <ul>
+    <li>Stock automático</li>
+    <li>Cálculo de precios</li>
+  </ul>
+  <button onclick="nextStep()">Siguiente</button>
+</div>
+
+<div class="step">
+  <h2>🔧 Órdenes de Trabajo</h2>
+  <p>Crea órdenes con cálculo automático de utilidad.</p>
+  <button onclick="nextStep()">Siguiente</button>
+</div>
+
+<div class="step">
+  <h2>💰 Facturación</h2>
+  <p>Genera facturas PDF automáticamente.</p>
+  <button onclick="nextStep()">Finalizar</button>
+</div>
+
+<div class="step">
+  <h2>🎉 ¡Listo!</h2>
+  <p>Ya estás listo para usar TallerPRO360 como un PRO.</p>
+  <button onclick="window.print()">Descargar PDF</button>
+</div>
+
+</div>
+
+<!-- IA CHAT -->
+<div class="chat">
+  <div class="chat-header">🤖 Asistente IA</div>
+  <div class="chat-messages" id="chatMessages">
+    <div>Hola 👋 soy tu asistente. Pregúntame cómo usar el sistema.</div>
+  </div>
+  <input type="text" id="chatInput" placeholder="Escribe aquí..." onkeypress="handleChat(event)">
+</div>
+
+<script>
+
+let currentStep = 0;
+const steps = document.querySelectorAll(".step");
+const progressBar = document.getElementById("progressBar");
+
+function nextStep() {
+  steps[currentStep].classList.remove("active");
+  currentStep++;
+  if (currentStep < steps.length) {
+    steps[currentStep].classList.add("active");
+  }
+  updateProgress();
+}
+
+function updateProgress() {
+  const percent = (currentStep / (steps.length - 1)) * 100;
+  progressBar.style.width = percent + "%";
+}
+
+/* IA SIMULADA */
+function handleChat(e) {
+  if (e.key === "Enter") {
+    const input = document.getElementById("chatInput");
+    const msg = input.value;
+    if (!msg) return;
+
+    addMessage("Tú: " + msg);
+
+    let response = "Estoy aprendiendo contigo 🤖";
+
+    if (msg.toLowerCase().includes("cliente")) {
+      response = "Ve al módulo Clientes y haz clic en 'Agregar Cliente'.";
+    }
+    if (msg.toLowerCase().includes("factura")) {
+      response = "Las facturas se generan automáticamente al guardar una orden.";
+    }
+    if (msg.toLowerCase().includes("inventario")) {
+      response = "El inventario calcula precios automáticamente según margen.";
+    }
+
+    setTimeout(() => addMessage("IA: " + response), 500);
+
+    input.value = "";
+  }
+}
+
+function addMessage(text) {
+  const chat = document.getElementById("chatMessages");
+  const div = document.createElement("div");
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+</script>
+
+</body>
+</html>
