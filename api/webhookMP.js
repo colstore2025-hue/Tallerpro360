@@ -2,104 +2,55 @@ import admin from "firebase-admin";
 
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(
-      JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-    )
+    credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
   });
 }
-
 const db = admin.firestore();
 
 export default async function handler(req, res) {
+  // MercadoPago a veces envía notificaciones que no son pagos (ej. merchant_order)
+  if (req.body.type !== "payment") return res.status(200).send("ok");
 
   try {
-
-    if (req.method !== "POST") {
-      return res.status(200).send("ok");
-    }
-
-    if (req.body.type !== "payment") {
-      return res.status(200).send("ok");
-    }
-
-    const paymentId = req.body?.data?.id;
-
-    if (!paymentId) {
-      return res.status(200).send("ok");
-    }
-
-    // 🔍 Consultar pago real
-    const mpResp = await fetch(
-      `https://api.mercadopago.com/v1/payments/${paymentId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`
-        }
-      }
-    );
-
+    const paymentId = req.body.data.id;
+    const mpResp = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+      headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` }
+    });
     const payment = await mpResp.json();
 
-    if (payment.status !== "approved") {
-      return res.status(200).send("ok");
+    if (payment.status === "approved") {
+      const { uid, planId } = payment.metadata;
+      const external_reference = payment.external_reference;
+
+      // Definir días según plan
+      const diasPlan = planId === 'test' ? 1 : 30;
+      const vence = new Date();
+      vence.setDate(vence.getDate() + diasPlan);
+
+      const batch = db.batch();
+
+      // 1. Activar Taller
+      const tallerRef = db.collection("talleres").doc(uid);
+      batch.set(tallerRef, {
+        planId,
+        estadoPlan: "ACTIVO",
+        venceEn: admin.firestore.Timestamp.fromDate(vence),
+        ultimoPago: paymentId
+      }, { merge: true });
+
+      // 2. Marcar Pago como Aprobado
+      const pagoRef = db.collection("pagos").doc(external_reference);
+      batch.update(pagoRef, {
+        estado: "aprobado",
+        paymentId: paymentId,
+        fechaAprobado: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      await batch.commit();
     }
-
-    const { uid, planId, precio } = payment.metadata;
-
-    // 🔒 Validar plan
-    const planSnap = await db.collection("planes").doc(planId).get();
-
-    if (!planSnap.exists) {
-      return res.status(200).send("ok");
-    }
-
-    const plan = planSnap.data();
-
-    // 🔒 Validar monto REAL
-    if (Number(payment.transaction_amount) !== Number(plan.precio)) {
-      console.error("Monto alterado");
-      return res.status(200).send("ok");
-    }
-
-    const pagoRef = db.collection("pagos").doc(payment.external_reference);
-
-    const pagoSnap = await pagoRef.get();
-
-    // 🛑 Evitar duplicados
-    if (pagoSnap.exists && pagoSnap.data().estado === "aprobado") {
-      return res.status(200).send("ok");
-    }
-
-    const ahora = admin.firestore.Timestamp.now();
-
-    const vence = admin.firestore.Timestamp.fromDate(
-      new Date(Date.now() + plan.duracion_dias * 86400000)
-    );
-
-    // 🔥 ACTIVAR PLAN
-    await db.collection("talleres").doc(uid).set({
-      planId,
-      planNombre: plan.nombre,
-      estadoPlan: "ACTIVO",
-      inicioPlan: ahora,
-      venceEn: vence,
-      metodoPago: "mercado_pago"
-    }, { merge: true });
-
-    // 💾 Guardar pago aprobado
-    await pagoRef.set({
-      uid,
-      planId,
-      monto: plan.precio,
-      estado: "aprobado",
-      paymentId,
-      actualizadoEn: ahora
-    }, { merge: true });
-
     return res.status(200).send("ok");
-
   } catch (error) {
-    console.error("Webhook error:", error);
+    console.error("Webhook Error:", error);
     return res.status(500).send("error");
   }
 }
