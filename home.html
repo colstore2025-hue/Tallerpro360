@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&display=swap" rel="stylesheet">
     <style>
         :root { --n-green: #00ff9f; --n-blue: #00d4ff; --dark: #050a14; }
-        body { font-family: 'Outfit', sans-serif; background: var(--dark); color: #e2e8f0; overflow-x: hidden; }
+        body { font-family: 'Outfit', sans-serif; background: var(--dark); color: #e2e8f0; overflow-x: hidden; scroll-behavior: smooth; }
         .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .nexus-card { background: linear-gradient(145deg, #0f172a, #020617); border: 1px solid #1e293b; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; }
         .nexus-card:hover { border-color: var(--n-blue); transform: scale(1.02); box-shadow: 0 0 30px rgba(0, 212, 255, 0.15); }
@@ -45,7 +45,7 @@
             "Nexus-X Starlink ready": La primera plataforma que une **ERP de alto rendimiento** con **IA Gerencial por voz**.
         </p>
         <div class="flex flex-wrap justify-center gap-4">
-            <button onclick="scrollPlanes()" class="bg-emerald-500 text-black px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-[0_0_20px_rgba(16,185,129,0.4)]">Activar Taller Ahora</button>
+            <button onclick="window.scrollPlanes()" class="bg-emerald-500 text-black px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:scale-105 transition-transform">Activar Taller Ahora</button>
             <a href="/demos/index.html" class="glass px-10 py-4 rounded-2xl font-bold text-sm hover:bg-slate-800 transition uppercase tracking-widest border border-white/10">Ver Demo</a>
         </div>
     </div>
@@ -59,28 +59,28 @@
             <div class="w-20 h-20 bg-slate-900 rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-emerald-500/30 group-hover:border-emerald-400 transition-all shadow-xl">
                 <i class="fas fa-qrcode text-emerald-400 text-3xl"></i>
             </div>
-            <h4 class="font-black text-white uppercase italic text-sm italic">1. Recepción</h4>
+            <h4 class="font-black text-white uppercase italic text-sm">1. Recepción</h4>
             <p class="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-tighter">Check-in rápido QR</p>
         </div>
         <div class="text-center z-10 group">
             <div class="w-20 h-20 bg-slate-900 rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-cyan-500/30 group-hover:border-cyan-400 transition-all shadow-xl">
                 <i class="fas fa-microchip text-cyan-400 text-3xl"></i>
             </div>
-            <h4 class="font-black text-white uppercase italic text-sm italic">2. Diagnóstico</h4>
+            <h4 class="font-black text-white uppercase italic text-sm">2. Diagnóstico</h4>
             <p class="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-tighter">Análisis por voz IA</p>
         </div>
         <div class="text-center z-10 group">
             <div class="w-20 h-20 bg-slate-900 rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-purple-500/30 group-hover:border-purple-400 transition-all shadow-xl">
                 <i class="fas fa-tools text-purple-400 text-3xl"></i>
             </div>
-            <h4 class="font-black text-white uppercase italic text-sm italic">3. Reparación</h4>
+            <h4 class="font-black text-white uppercase italic text-sm">3. Reparación</h4>
             <p class="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-tighter">Gestión Nexus-X</p>
         </div>
         <div class="text-center z-10 group">
             <div class="w-20 h-20 bg-slate-900 rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-yellow-500/30 group-hover:border-yellow-400 transition-all shadow-xl">
                 <i class="fas fa-flag-checkered text-yellow-400 text-3xl"></i>
             </div>
-            <h4 class="font-black text-white uppercase italic text-sm italic">4. Entrega</h4>
+            <h4 class="font-black text-white uppercase italic text-sm">4. Entrega</h4>
             <p class="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-tighter">Factura & Feedback</p>
         </div>
     </div>
@@ -127,7 +127,7 @@
                     <li><i class="fas fa-users"></i> 1 Usuario Administrativo</li>
                 </ul>
             </div>
-            <button onclick="confirmarTerminos('freemium')" class="mt-8 w-full py-4 bg-slate-800 text-slate-400 font-black rounded-xl text-[10px] uppercase hover:bg-white transition">Activar Trial</button>
+            <button onclick="window.confirmarTerminos('freemium')" class="mt-8 w-full py-4 bg-slate-800 text-slate-400 font-black rounded-xl text-[10px] uppercase hover:bg-white transition">Activar Trial</button>
         </div>
 
         <div class="nexus-card p-6 rounded-[2rem] border-emerald-900/30">
@@ -141,7 +141,7 @@
                     <li><i class="fas fa-users"></i> 2 Usuarios concurrentes</li>
                 </ul>
             </div>
-            <button onclick="confirmarTerminos('basico')" class="mt-8 w-full py-4 bg-emerald-600 text-black font-black rounded-xl text-[10px] uppercase">Suscribir</button>
+            <button onclick="window.confirmarTerminos('basico')" class="mt-8 w-full py-4 bg-emerald-600 text-black font-black rounded-xl text-[10px] uppercase hover:bg-emerald-400 transition">Suscribir</button>
         </div>
 
         <div class="nexus-card p-6 rounded-[2rem] border-blue-900/30">
@@ -156,7 +156,7 @@
                     <li><i class="fas fa-chart-pie text-blue-400"></i> Dashboard Real-time</li>
                 </ul>
             </div>
-            <button onclick="confirmarTerminos('pro')" class="mt-8 w-full py-4 bg-blue-600 text-white font-black rounded-xl text-[10px] uppercase">Activar Pro</button>
+            <button onclick="window.confirmarTerminos('pro')" class="mt-8 w-full py-4 bg-blue-600 text-white font-black rounded-xl text-[10px] uppercase hover:bg-blue-400 transition">Activar Pro</button>
         </div>
 
         <div class="nexus-card p-6 rounded-[2rem] border-2 border-cyan-500 relative scale-105 z-10 shadow-[0_0_40px_rgba(6,182,212,0.2)]">
@@ -172,21 +172,21 @@
                     <li><i class="fas fa-users text-cyan-400"></i> Usuarios Ilimitados</li>
                 </ul>
             </div>
-            <button onclick="confirmarTerminos('elite')" class="mt-8 w-full py-4 bg-cyan-500 text-black font-black rounded-xl text-[10px] uppercase btn-pago-ready">Dominar Mercado</button>
+            <button onclick="window.confirmarTerminos('elite')" class="mt-8 w-full py-4 bg-cyan-500 text-black font-black rounded-xl text-[10px] uppercase btn-pago-ready">Dominar Mercado</button>
         </div>
 
         <div class="nexus-card p-6 rounded-[2rem] border-purple-900/30 text-center">
             <div class="flex-grow">
                 <span class="text-[8px] font-black text-purple-500 tracking-widest uppercase">Multi-Sede</span>
                 <h3 class="text-xl font-black italic text-white mb-4">ENTERPRISE</h3>
-                <div class="text-xl font-black my-6 text-purple-400 italic uppercase italic">A Medida</div>
+                <div class="text-xl font-black my-6 text-purple-400 italic uppercase">A Medida</div>
                 <ul class="tech-list text-slate-500">
                     <li><i class="fas fa-network-wired text-purple-500"></i> Arquitectura Multi-Taller</li>
                     <li><i class="fas fa-shield-check text-purple-500"></i> Auditoría Nexus-X</li>
                     <li><i class="fas fa-server text-purple-500"></i> Servidor Dedicado</li>
                 </ul>
             </div>
-            <a href="https://wa.me/17049419163?text=Cotización%20Plan%20Enterprise" class="mt-8 w-full py-4 border border-purple-500/30 text-purple-400 font-black rounded-xl text-[10px] uppercase">Asesoría VIP</a>
+            <button onclick="window.confirmarTerminos('enterprise')" class="mt-8 w-full py-4 border border-purple-500/30 text-purple-400 font-black rounded-xl text-[10px] uppercase hover:bg-purple-900 transition">Asesoría VIP</button>
         </div>
     </div>
 </section>
@@ -202,7 +202,7 @@
         </div>
         <div class="flex flex-col gap-3">
             <button id="btnAceptar" class="w-full py-4 bg-emerald-500 text-black font-black rounded-2xl text-[10px] uppercase">Aceptar y Pagar</button>
-            <button onclick="cerrarTerminos()" class="w-full py-2 text-slate-600 text-[8px] font-black uppercase tracking-widest">Cerrar</button>
+            <button onclick="window.cerrarTerminos()" class="w-full py-2 text-slate-600 text-[8px] font-black uppercase tracking-widest">Cerrar</button>
         </div>
     </div>
 </div>
@@ -217,22 +217,21 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { firebaseConfig } from "/app/js/core/firebase-config.js"; 
 
-    // Inicialización de Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     let currentPlan = null;
 
-    // Exponer funciones al objeto Window para que el HTML (onclick) las reconozca
+    // Funciones globales vinculadas a window para acceso desde el HTML
     window.scrollPlanes = () => {
-        const section = document.getElementById('planes');
-        if(section) section.scrollIntoView({ behavior: 'smooth' });
+        const target = document.getElementById('planes');
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
     };
 
     window.confirmarTerminos = (plan) => {
-        console.log("Plan seleccionado para procesar:", plan);
+        console.log("Iniciando proceso para:", plan);
         currentPlan = plan;
         const modal = document.getElementById("modalTerminos");
         if(modal) modal.classList.remove("hidden");
@@ -243,30 +242,24 @@
         if(modal) modal.classList.add("hidden");
     };
 
-    // Lógica principal de pago
     const btnAceptar = document.getElementById("btnAceptar");
 
     btnAceptar.onclick = async () => {
         const user = auth.currentUser;
         
-        // 1. Verificar sesión
         if(!user) {
             localStorage.setItem("pending_plan", currentPlan);
             window.location.href = "/login.html";
             return;
         }
         
-        // 2. Manejo de Plan Gratis
         if(currentPlan === "freemium") {
             window.location.href = "/app/index.html?mode=demo_activated";
             return;
         }
 
-        // 3. Procesar Pago con Mercado Pago
         try {
-            // Feedback visual al usuario
-            const originalText = btnAceptar.innerText;
-            btnAceptar.innerText = "CONECTANDO CON PASARELA...";
+            btnAceptar.innerText = "GENERANDO ORDEN...";
             btnAceptar.disabled = true;
             btnAceptar.style.opacity = "0.5";
 
@@ -280,22 +273,20 @@
                 })
             });
 
-            if (!response.ok) throw new Error(`Error de servidor: ${response.status}`);
-
+            if (!response.ok) throw new Error("Error en servidor de pagos");
             const data = await response.json();
             
             if(data.init_point) {
-                // Redirección a la pasarela de Mercado Pago
                 window.location.href = data.init_point;
             } else {
-                throw new Error("No se recibió el punto de inicio de pago.");
+                throw new Error("Preferencia fallida");
             }
 
         } catch(e) {
-            console.error("Error en el flujo de pago:", e);
-            alert("No pudimos conectar con Mercado Pago. Por favor, contacta a soporte por WhatsApp.");
+            console.error("Pago fallido:", e);
+            alert("Error al conectar con Mercado Pago. Redirigiendo a WhatsApp de soporte...");
+            window.location.href = "https://wa.me/17049419163?text=Error%20al%20pagar%20plan%20" + currentPlan;
             
-            // Reestablecer botón en caso de error
             btnAceptar.innerText = "ACEPTAR Y PAGAR";
             btnAceptar.disabled = false;
             btnAceptar.style.opacity = "1";
