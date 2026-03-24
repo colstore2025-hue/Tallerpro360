@@ -1,98 +1,110 @@
-/**
- * manual.html
- * Genera el Manual de Usuario en PDF
- * TallerPRO360 ERP
- */
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Manual TallerPRO360 ERP</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      color: #333;
+      line-height: 1.6;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    h1 {
+      font-size: 28px;
+    }
+    h2 {
+      font-size: 22px;
+      margin-top: 30px;
+    }
+    p {
+      margin: 10px 0;
+    }
+    ul {
+      margin-left: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+    }
+    .btn {
+      display: block;
+      width: 200px;
+      margin: 30px auto;
+      padding: 10px;
+      text-align: center;
+      background: #000;
+      color: #0f0;
+      text-decoration: none;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    .footer {
+      margin-top: 50px;
+      text-align: center;
+      font-size: 12px;
+      color: #777;
+    }
+  </style>
+</head>
 
-import jsPDF from "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm";
+<body>
 
-export function generarManualPDF() {
+<div class="container">
 
-  const doc = new jsPDF();
-  let y = 20;
+  <!-- Portada -->
+  <h1>TallerPRO360 ERP</h1>
+  <h2>Manual de Usuario</h2>
 
-  // ===========================
-  // Portada
-  // ===========================
-  doc.setFontSize(22);
-  doc.text("TallerPRO360 ERP", 105, y, { align: "center" });
-  y += 10;
-  doc.setFontSize(16);
-  doc.text("Manual de Usuario", 105, y, { align: "center" });
-  y += 20;
+  <p>
+    Este manual explica cómo utilizar las funciones principales del ERP TallerPRO360.
+    Incluye gestión de clientes, inventario, órdenes de trabajo y generación de facturas.
+  </p>
 
-  doc.setFontSize(12);
-  doc.text("Este manual explica cómo utilizar las funciones principales del ERP TallerPRO360.", 20, y);
-  y += 8;
-  doc.text("Incluye gestión de clientes, inventario, órdenes de trabajo y generación de facturas.", 20, y);
-  y += 20;
+  <!-- Sección 1 -->
+  <h2>1. Gestión de Clientes</h2>
+  <ul>
+    <li>Para agregar un cliente, ve al módulo <b>Clientes</b>.</li>
+    <li>Ingresa nombre, teléfono y email, luego presiona <b>Guardar Cliente</b>.</li>
+    <li>Puedes buscar clientes usando la barra de búsqueda.</li>
+  </ul>
 
-  // ===========================
-  // Sección 1: Clientes
-  // ===========================
-  doc.setFontSize(16);
-  doc.text("1. Gestión de Clientes", 20, y);
-  y += 10;
-  doc.setFontSize(12);
-  doc.text("• Para agregar un cliente, ve al módulo 'Clientes'.", 25, y);
-  y += 8;
-  doc.text("• Ingresa nombre, teléfono y email, luego presiona 'Guardar Cliente'.", 25, y);
-  y += 8;
-  doc.text("• Puedes buscar clientes usando la barra de búsqueda.", 25, y);
-  y += 12;
+  <!-- Sección 2 -->
+  <h2>2. Gestión de Inventario</h2>
+  <ul>
+    <li>Agrega nuevos productos definiendo nombre, costo, margen de utilidad y stock inicial.</li>
+    <li>El sistema calcula automáticamente el precio de venta según el margen definido.</li>
+  </ul>
 
-  // ===========================
-  // Sección 2: Inventario
-  // ===========================
-  doc.setFontSize(16);
-  doc.text("2. Gestión de Inventario", 20, y);
-  y += 10;
-  doc.setFontSize(12);
-  doc.text("• Agrega nuevos productos definiendo nombre, costo, margen de utilidad y stock inicial.", 25, y);
-  y += 8;
-  doc.text("• El sistema calcula automáticamente el precio de venta según el margen definido.", 25, y);
-  y += 12;
+  <!-- Sección 3 -->
+  <h2>3. Órdenes de Trabajo</h2>
+  <ul>
+    <li>Completa datos de cliente, vehículo y diagnóstico.</li>
+    <li>Agrega repuestos con cantidad y utilidad por unidad.</li>
+    <li>Ingresa el valor de la mano de obra.</li>
+    <li>El sistema calcula total, costo, utilidad y margen automáticamente.</li>
+    <li>Guarda la orden y se generará automáticamente la factura PDF.</li>
+  </ul>
 
-  // ===========================
-  // Sección 3: Órdenes de trabajo
-  // ===========================
-  doc.setFontSize(16);
-  doc.text("3. Órdenes de Trabajo", 20, y);
-  y += 10;
-  doc.setFontSize(12);
-  doc.text("• Completa datos de cliente, vehículo y diagnóstico.", 25, y);
-  y += 8;
-  doc.text("• Agrega repuestos con cantidad y utilidad por unidad.", 25, y);
-  y += 8;
-  doc.text("• Ingresa el valor de la mano de obra.", 25, y);
-  y += 8;
-  doc.text("• El sistema calcula total, costo, utilidad y margen automáticamente.", 25, y);
-  y += 8;
-  doc.text("• Guarda la orden y se generará automáticamente la factura PDF.", 25, y);
-  y += 12;
+  <!-- Sección 4 -->
+  <h2>4. Facturación</h2>
+  <ul>
+    <li>Cada orden guardada permite generar una factura PDF.</li>
+    <li>Puedes imprimir o enviar la factura al cliente.</li>
+  </ul>
 
-  // ===========================
-  // Sección 4: Facturas
-  // ===========================
-  doc.setFontSize(16);
-  doc.text("4. Facturación", 20, y);
-  y += 10;
-  doc.setFontSize(12);
-  doc.text("• Cada orden guardada permite generar una factura PDF.", 25, y);
-  y += 8;
-  doc.text("• Puedes imprimir o enviar la factura al cliente.", 25, y);
-  y += 12;
+  <!-- Botón descargar -->
+  <a href="#" class="btn" onclick="window.print()">Descargar / Imprimir PDF</a>
 
-  // ===========================
-  // Pie de página
-  // ===========================
-  doc.setFontSize(10);
-  doc.setTextColor(100);
-  doc.text("TallerPRO360 ERP - Manual de Usuario", 105, 290, { align: "center" });
+  <!-- Footer -->
+  <div class="footer">
+    TallerPRO360 ERP - Manual de Usuario
+  </div>
 
-  // ===========================
-  // Guardar PDF
-  // ===========================
-  doc.save("Manual_TallerPRO360.pdf");
+</div>
 
-}
+</body>
+</html>
