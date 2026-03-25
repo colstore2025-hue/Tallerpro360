@@ -37,6 +37,7 @@
             background: radial-gradient(circle at 50% 0%, #0f172a, #020617);
         }
 
+        /* ESTILOS NAVEGACIÓN ESCRITORIO */
         .nav-link { 
             display: flex; align-items: center; gap: 12px; padding: 12px 16px; 
             border-radius: 4px; color: #94a3b8; font-size: 12px; 
@@ -44,14 +45,50 @@
             text-decoration: none; border-left: 2px solid transparent;
             text-transform: uppercase; letter-spacing: 1px;
         }
-
         .nav-link:hover { background: rgba(0, 242, 255, 0.03); color: white; }
-        
         .nav-link.active { 
             background: linear-gradient(90deg, rgba(0, 242, 255, 0.1) 0%, transparent 100%); 
-            color: var(--neon-cyan); 
-            border-left-color: var(--neon-cyan);
+            color: var(--neon-cyan); border-left-color: var(--neon-cyan); font-weight: 700;
+        }
+
+        /* NAVBAR INFERIOR PARA MÓVILES */
+        #mobileNav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #0a0f1d;
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255,255,255,0.08);
+            z-index: 1000;
+            grid-template-columns: repeat(4, 1fr);
+            padding: 10px 0 calc(env(safe-area-inset-bottom) + 10px);
+            box-shadow: 0 -10px 25px rgba(0,0,0,0.5);
+        }
+
+        .mobile-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 9px;
+            text-transform: uppercase;
             font-weight: 700;
+            gap: 5px;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .mobile-link i { font-size: 18px; }
+        .mobile-link.active { color: var(--neon-cyan); }
+
+        /* RESPONSIVIDAD */
+        @media (max-width: 768px) {
+            #sidebar { display: none; }
+            #mobileNav { display: grid; }
+            #mainLayout { height: calc(100vh - 64px - 70px); } /* Header + MobileNav height */
+            #appContainer { padding: 16px; }
         }
 
         .spinner { 
@@ -59,32 +96,30 @@
             border-top-color: var(--neon-cyan); border-radius: 50%; 
             animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; 
         }
-
         @keyframes spin { to { transform: rotate(360deg); } }
-        
         .orbitron { font-family: 'Orbitron', sans-serif; }
     </style>
 </head>
 <body>
 
-<header class="nasa-glass h-16 flex items-center justify-between px-8 z-50 relative">
+<header class="nasa-glass h-16 flex items-center justify-between px-6 sm:px-8 z-50 relative">
     <div class="flex items-center gap-4">
         <div class="w-10 h-10 bg-cyan-500/10 border border-cyan-500/30 rounded flex items-center justify-center shadow-[0_0_15px_rgba(0,242,255,0.1)]">
             <i class="fas fa-bolt text-cyan-400 text-lg"></i>
         </div>
         <div>
-            <h1 class="orbitron text-sm font-black text-white leading-none tracking-[2px]">PRO360 <span class="text-cyan-400">CORE</span></h1>
-            <p class="text-[7px] text-slate-500 font-bold uppercase tracking-[0.4em] mt-1">Nexus-X Intelligence System</p>
+            <h1 class="orbitron text-xs sm:text-sm font-black text-white leading-none tracking-[2px]">PRO360 <span class="text-cyan-400">CORE</span></h1>
+            <p class="text-[7px] text-slate-500 font-bold uppercase tracking-[0.4em] mt-1">Nexus-X Intelligence</p>
         </div>
     </div>
 
     <div class="flex items-center gap-6">
         <div class="text-right hidden sm:block">
-            <p id="userName" class="text-[10px] orbitron font-bold text-white uppercase tracking-wider">Loading...</p>
-            <span id="userRole" class="text-[7px] text-cyan-500 font-bold uppercase tracking-[2px]">Auth Pending</span>
+            <p id="userName" class="text-[10px] orbitron font-bold text-white uppercase tracking-wider italic">Syncing...</p>
+            <span id="userRole" class="text-[7px] text-cyan-500 font-bold uppercase tracking-[2px]">Checking Node</span>
         </div>
         <button id="logoutBtn" class="group flex items-center justify-center w-10 h-10 rounded border border-white/5 bg-white/5 hover:border-red-500/50 transition-all">
-            <i class="fas fa-power-off text-xs text-slate-500 group-hover:text-red-500 transition-colors"></i>
+            <i class="fas fa-power-off text-xs text-slate-500 group-hover:text-red-500"></i>
         </button>
     </div>
 </header>
@@ -106,8 +141,16 @@
             <a href="#configuracion" class="nav-link"><i class="fas fa-sliders-h w-4"></i> Configuración</a>
         </div>
     </nav>
+
     <main id="appContainer"></main>
 </div>
+
+<nav id="mobileNav">
+    <a href="#dashboard" class="mobile-link active"><i class="fas fa-th-large"></i><span>Inicio</span></a>
+    <a href="#ordenes" class="mobile-link"><i class="fas fa-file-invoice"></i><span>Órdenes</span></a>
+    <a href="#clientes" class="mobile-link"><i class="fas fa-users"></i><span>Clientes</span></a>
+    <a href="#configuracion" class="mobile-link"><i class="fas fa-cog"></i><span>Ajustes</span></a>
+</nav>
 
 <script type="module">
     import { auth } from "./js/core/firebase-config.js";
@@ -115,7 +158,6 @@
 
     const VERSION = "10.4.6_NEXUS";
     
-    // Configuración dinámica de rutas
     const routes = {
         dashboard: () => import(`./js/modules/dashboard.js?v=${VERSION}`),
         ordenes: () => import(`./js/modules/ordenes.js?v=${VERSION}`),
@@ -130,15 +172,15 @@
         const container = document.getElementById("appContainer");
         const hash = window.location.hash.replace("#", "") || "dashboard";
 
-        // UI: Loader NASA
+        // UI: Feedback de Carga
         container.innerHTML = `
-            <div class="flex h-full flex-col items-center justify-center">
+            <div class="flex h-full flex-col items-center justify-center animate-pulse">
                 <div class="spinner mb-6"></div>
-                <p class="orbitron text-[8px] font-bold uppercase text-cyan-400 tracking-[4px] animate-pulse">Establishing Neural Link...</p>
+                <p class="orbitron text-[8px] font-bold uppercase text-cyan-400 tracking-[4px]">Neural Link Established...</p>
             </div>`;
 
-        // UI: Actualizar Menú
-        document.querySelectorAll('.nav-link').forEach(link => {
+        // ACTUALIZAR ESTADOS ACTIVOS (Ambos menús)
+        document.querySelectorAll('.nav-link, .mobile-link').forEach(link => {
             link.classList.toggle('active', link.getAttribute('href') === `#${hash}`);
         });
 
@@ -159,7 +201,7 @@
             }
         } catch (err) {
             console.error("🔥 Nexus Error:", err);
-            container.innerHTML = `<div class="p-10 border border-red-500/20 bg-red-500/5 rounded text-center"><p class="text-red-400 orbitron text-xs tracking-widest uppercase">Sync Failure: ${hash}</p></div>`;
+            container.innerHTML = `<div class="p-10 text-center border border-red-500/20 bg-red-500/5 rounded"><p class="text-red-400 orbitron text-[10px] tracking-widest uppercase italic font-black">Sync Failure: ${hash}</p></div>`;
         }
     }
 
@@ -169,7 +211,6 @@
             document.getElementById("userName").innerText = user.email.split('@')[0].toUpperCase();
             document.getElementById("userRole").innerText = "Protocol Active";
             
-            // Si no hay hash, forzamos dashboard para evitar URL vacía
             if (!window.location.hash) window.location.hash = "#dashboard";
             router();
         } else {
