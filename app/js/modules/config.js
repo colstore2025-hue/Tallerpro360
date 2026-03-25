@@ -1,76 +1,80 @@
 /**
- * config.js - TallerPRO360 V4.1 ⚙️
- * Centro de Mando: Identidad, WhatsApp & Pasarela Independiente
+ * config.js - TallerPRO360 V10.4.8 ⚡
+ * Centro de Mando: Identidad, WhatsApp & Pasarela BOLD
+ * Optimizado para Móvil - Protocolo Nexus-X Starlink
  */
-import { doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
 export default async function configModule(container, state) {
   const empresaId = state?.empresaId || localStorage.getItem("empresaId");
 
   container.innerHTML = `
-    <div class="p-4 bg-[#050a14] min-h-screen text-white pb-44 animate-fade-in font-sans">
+    <div class="max-w-2xl mx-auto pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
-      <div class="mb-6">
-        <h1 class="text-2xl font-black italic tracking-tighter text-white uppercase font-mono">
+      <header class="mb-8">
+        <h2 class="orbitron text-xl text-white font-black tracking-widest uppercase">
             SYSTEM <span class="text-cyan-400">CORE</span>
-        </h1>
-        <p class="text-[7px] text-slate-500 font-black uppercase tracking-[0.4em] mt-1">NEXUS-X STARLINK PROTOCOL</p>
-      </div>
+        </h2>
+        <p class="text-[8px] text-red-500 font-bold uppercase tracking-[0.4em] mt-1 italic">Protocolo de Recaudo Bold Activo</p>
+      </header>
 
-      <div class="flex gap-1 mb-8 bg-black/40 p-1 rounded-2xl border border-white/5 backdrop-blur-md">
+      <div class="flex gap-2 mb-8 bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-xl">
         <button id="tabGen" class="flex-1 bg-cyan-500 text-black py-3 rounded-xl text-[9px] font-black uppercase transition-all">Empresa</button>
         <button id="tabWs" class="flex-1 text-slate-400 py-3 rounded-xl text-[9px] font-black uppercase transition-all">WhatsApp</button>
-        <button id="tabPay" class="flex-1 text-slate-400 py-3 rounded-xl text-[9px] font-black uppercase transition-all">Pasarela</button>
+        <button id="tabPay" class="flex-1 text-slate-400 py-3 rounded-xl text-[9px] font-black uppercase transition-all italic text-red-400">Pasarela Bold</button>
       </div>
 
-      <div id="secGen" class="space-y-4 animate-fade-in">
-        <div class="bg-[#0f172a] p-6 rounded-[2rem] border border-white/5 shadow-xl">
-            <div class="flex flex-col items-center mb-6">
-                <div class="w-20 h-20 bg-gradient-to-tr from-cyan-600 to-blue-900 rounded-[2rem] flex items-center justify-center text-3xl shadow-lg border border-white/10 mb-3">🏢</div>
-                <input id="nombre" class="bg-transparent text-xl font-black text-center outline-none border-b border-white/5 focus:border-cyan-500 w-full" placeholder="Nombre Taller">
+      <div id="secGen" class="space-y-6 animate-in zoom-in-95 duration-300">
+        <div class="glass-card p-6 border border-white/5 bg-white/5 rounded-[2.5rem]">
+            <div class="flex flex-col items-center mb-8">
+                <div class="w-20 h-20 bg-gradient-to-tr from-cyan-600 to-blue-900 rounded-[2rem] flex items-center justify-center text-3xl shadow-lg border border-white/10 mb-4">🏢</div>
+                <input id="nombre" class="bg-transparent text-xl font-black text-center outline-none border-b border-white/5 focus:border-cyan-500 w-full text-white orbitron" placeholder="NOMBRE DEL TALLER">
             </div>
             <div class="space-y-3">
-                <div class="bg-black/20 p-3 rounded-xl border border-white/5">
-                    <label class="text-[7px] text-slate-500 uppercase font-black block mb-1">NIT / ID FISCAL</label>
+                <div class="bg-black/40 p-4 rounded-2xl border border-white/5">
+                    <label class="text-[7px] text-cyan-500 uppercase font-black block mb-1">NIT / ID FISCAL</label>
                     <input id="nit" class="w-full bg-transparent text-sm font-bold outline-none text-white">
                 </div>
             </div>
         </div>
       </div>
 
-      <div id="secWs" class="hidden space-y-4 animate-fade-in">
-        <div class="bg-gradient-to-br from-[#0f172a] to-[#06201a] p-6 rounded-[2rem] border border-emerald-500/10 shadow-xl">
-            <h3 class="text-xs font-black uppercase mb-4 text-emerald-400 flex items-center gap-2">
-                <i class="fab fa-whatsapp text-lg"></i> Motor de Notificaciones
+      <div id="secWs" class="hidden space-y-6 animate-in zoom-in-95 duration-300">
+        <div class="bg-gradient-to-br from-[#0f172a] to-[#06201a] p-8 rounded-[2.5rem] border border-emerald-500/10">
+            <h3 class="text-xs font-black uppercase text-emerald-400 mb-6 flex items-center gap-2">
+                <i class="fab fa-whatsapp text-lg"></i> Notificaciones
             </h3>
             <div class="space-y-4">
-                <input id="ws_id" placeholder="INSTANCE ID" class="w-full bg-black/40 p-4 rounded-xl border border-white/5 text-xs font-mono">
-                <input id="ws_key" type="password" placeholder="API TOKEN" class="w-full bg-black/40 p-4 rounded-xl border border-white/5 text-xs font-mono">
+                <input id="ws_id" placeholder="INSTANCE ID" class="w-full bg-black/40 p-5 rounded-2xl border border-white/5 text-xs font-mono text-white">
+                <input id="ws_key" type="password" placeholder="API TOKEN" class="w-full bg-black/40 p-5 rounded-2xl border border-white/5 text-xs font-mono text-white">
             </div>
         </div>
       </div>
 
-      <div id="secPay" class="hidden space-y-4 animate-fade-in">
-        <div class="bg-gradient-to-br from-[#0f172a] to-[#1e1b4b] p-6 rounded-[2rem] border border-blue-500/20 shadow-xl">
-            <h3 class="text-xs font-black uppercase mb-1 text-blue-400">Mercado Pago <span class="text-[8px] text-slate-500 ml-2 italic">Independiente</span></h3>
-            <p class="text-[8px] text-slate-400 mb-6 italic leading-tight">Cada taller recibe el dinero en su propia cuenta. Obtén tus llaves en el panel de desarrolladores de Mercado Pago.</p>
+      <div id="secPay" class="hidden space-y-6 animate-in zoom-in-95 duration-300">
+        <div class="bg-gradient-to-br from-[#0f172a] to-[#2b0a0a] p-8 rounded-[2.5rem] border border-red-500/20 shadow-2xl">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center text-white font-black text-xs">B</div>
+                <h3 class="text-xs font-black uppercase text-red-500">Pasarela Bold</h3>
+            </div>
+            <p class="text-[9px] text-slate-400 mb-8 italic leading-tight">Configura tu <span class="text-white">API Key</span> de Bold para generar links de pago y recibir dinero directamente en tu cuenta Bold.</p>
             
             <div class="space-y-4">
-                <div class="bg-black/40 p-4 rounded-xl border border-white/5">
-                    <label class="text-[7px] text-blue-400 font-black uppercase block mb-1">Access Token (Producción)</label>
-                    <input id="mp_token" type="password" placeholder="APP_USR-..." class="w-full bg-transparent text-[10px] font-mono outline-none text-white">
+                <div class="bg-black/40 p-5 rounded-2xl border border-white/5">
+                    <label class="text-[8px] text-red-500 font-black uppercase block mb-2">Bold API Key (Producción)</label>
+                    <input id="bold_key" type="password" placeholder="pk_live_..." class="w-full bg-transparent text-[11px] font-mono outline-none text-white">
                 </div>
-                <div class="bg-black/40 p-4 rounded-xl border border-white/5">
-                    <label class="text-[7px] text-blue-400 font-black uppercase block mb-1">Public Key</label>
-                    <input id="mp_key" placeholder="APP_USR-..." class="w-full bg-transparent text-[10px] font-mono outline-none text-white">
+                <div class="bg-black/40 p-5 rounded-2xl border border-white/5">
+                    <label class="text-[8px] text-red-500 font-black uppercase block mb-2">Integrity Signature Key</label>
+                    <input id="bold_secret" type="password" placeholder="Firma de seguridad..." class="w-full bg-transparent text-[11px] font-mono outline-none text-white">
                 </div>
             </div>
         </div>
       </div>
 
-      <button id="btnSave" class="fixed bottom-24 left-4 right-4 bg-cyan-500 text-black py-5 rounded-[1.8rem] font-black text-xs uppercase shadow-2xl active:scale-95 transition-all">
-        Sincronizar Protocolos
+      <button id="btnSave" class="fixed bottom-24 left-6 right-6 sm:relative sm:bottom-0 sm:left-0 sm:right-0 sm:mt-8 bg-cyan-500 text-black py-5 rounded-[2rem] font-black orbitron text-[10px] uppercase tracking-[3px] shadow-xl active:scale-95 transition-all z-40">
+        Sincronizar Nexus-Bold
       </button>
 
     </div>
@@ -97,7 +101,7 @@ export default async function configModule(container, state) {
   sections.pay.btn.onclick = () => showTab('pay');
 
   // --- PERSISTENCIA ---
-  async function load() {
+  async function loadData() {
     const snap = await getDoc(doc(db, "empresas", empresaId));
     if (snap.exists()) {
       const d = snap.data();
@@ -105,8 +109,9 @@ export default async function configModule(container, state) {
       document.getElementById("nit").value = d.nit || "";
       document.getElementById("ws_id").value = d.ws_instance || "";
       document.getElementById("ws_key").value = d.ws_token || "";
-      document.getElementById("mp_token").value = d.mp_access_token || "";
-      document.getElementById("mp_key").value = d.mp_public_key || "";
+      // Datos de Bold
+      document.getElementById("bold_key").value = d.bold_api_key || "";
+      document.getElementById("bold_secret").value = d.bold_integrity_key || "";
     }
   }
 
@@ -121,24 +126,26 @@ export default async function configModule(container, state) {
         nit: document.getElementById("nit").value,
         ws_instance: document.getElementById("ws_id").value,
         ws_token: document.getElementById("ws_key").value,
-        mp_access_token: document.getElementById("mp_token").value,
-        mp_public_key: document.getElementById("mp_key").value,
+        bold_api_key: document.getElementById("bold_key").value,
+        bold_integrity_key: document.getElementById("bold_secret").value,
         lastUpdate: new Date()
       };
 
       await setDoc(doc(db, "empresas", empresaId), config, { merge: true });
       
-      // Cache local para ejecución inmediata de pagos
-      localStorage.setItem("mp_key", config.mp_public_key);
+      localStorage.setItem("bold_active", "true");
       
-      btn.innerText = "SINCRO EXITOSA";
-      setTimeout(() => location.reload(), 1000);
+      btn.innerText = "SINCRO BOLD EXITOSA";
+      btn.style.backgroundColor = "#ef4444"; // Rojo Bold
+      btn.style.color = "white";
+
+      setTimeout(() => location.reload(), 1200);
     } catch (e) {
-      alert("Error de enlace Nexus-X");
+      alert("Error de enlace Nexus-Bold");
       btn.disabled = false;
-      btn.innerText = "REINTENTAR";
+      btn.innerText = "REINTENTAR ENLACE";
     }
   };
 
-  load();
+  loadData();
 }
