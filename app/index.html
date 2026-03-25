@@ -3,61 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-    <title>TallerPRO360 · Nexus-X Core</title>
+    <title>Nexus-X · PRO360 Core Engine</title>
+    
+    <script>
+        if (window.location.pathname.endsWith('/app')) {
+            window.location.replace(window.location.pathname + '/' + window.location.hash);
+        }
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
     <style>
-        :root { --neon-cyan: #00ffff; --dark-bg: #050a14; --sidebar-bg: #0a0f1d; }
+        :root { --neon-cyan: #00f2ff; --dark-bg: #020617; --sidebar-bg: rgba(10, 15, 29, 0.95); }
         body { margin:0; font-family:'Inter', sans-serif; background: var(--dark-bg); color:#cbd5e1; overflow: hidden; }
-        header { background: var(--sidebar-bg); padding:10px 24px; display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #1e293b; z-index: 100; position: relative; }
-        #mainLayout { display:flex; height:calc(100vh - 60px); }
-        #sidebar { width:250px; background: var(--sidebar-bg); display:flex; flex-direction:column; padding:20px 12px; border-right: 1px solid #1e293b; transition: all 0.3s ease; }
-        #appContainer { flex:1; padding:20px; overflow-y:auto; background: radial-gradient(circle at 50% 0%, #111827, #050a14); }
-        .nav-link { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 14px; color: #64748b; font-size: 13px; font-weight: 600; transition: 0.2s; margin-bottom: 4px; text-decoration: none; border: 1px solid transparent; }
-        .nav-link:hover { background: rgba(255,255,255,0.03); color: white; }
-        .nav-link.active { background: rgba(0, 255, 255, 0.05); color: var(--neon-cyan); border: 1px solid rgba(0, 255, 255, 0.15); }
-        .spinner { width: 40px; height: 40px; border: 3px solid rgba(0,255,255,0.1); border-top-color: var(--neon-cyan); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        
+        .nasa-glass { background: var(--sidebar-bg); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        
+        #mainLayout { display:flex; height:calc(100vh - 64px); }
+        
+        #sidebar { 
+            width:260px; 
+            background: rgba(2, 6, 23, 0.8); 
+            display:flex; flex-direction:column; 
+            padding:24px 16px; 
+            border-right: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #appContainer { 
+            flex:1; padding:24px; overflow-y:auto; 
+            background: radial-gradient(circle at 50% 0%, #0f172a, #020617);
+        }
+
+        .nav-link { 
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; 
+            border-radius: 4px; color: #94a3b8; font-size: 12px; 
+            font-weight: 500; transition: 0.3s; margin-bottom: 6px; 
+            text-decoration: none; border-left: 2px solid transparent;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .nav-link:hover { background: rgba(0, 242, 255, 0.03); color: white; }
+        
+        .nav-link.active { 
+            background: linear-gradient(90deg, rgba(0, 242, 255, 0.1) 0%, transparent 100%); 
+            color: var(--neon-cyan); 
+            border-left-color: var(--neon-cyan);
+            font-weight: 700;
+        }
+
+        .spinner { 
+            width: 32px; height: 32px; border: 2px solid rgba(0,242,255,0.1); 
+            border-top-color: var(--neon-cyan); border-radius: 50%; 
+            animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; 
+        }
+
         @keyframes spin { to { transform: rotate(360deg); } }
-        @media (max-width: 768px) { #sidebar { display: none; } }
+        
+        .orbitron { font-family: 'Orbitron', sans-serif; }
     </style>
 </head>
 <body>
 
-<header>
-    <div class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-700 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20">
-            <i class="fas fa-microchip text-white text-lg"></i>
+<header class="nasa-glass h-16 flex items-center justify-between px-8 z-50 relative">
+    <div class="flex items-center gap-4">
+        <div class="w-10 h-10 bg-cyan-500/10 border border-cyan-500/30 rounded flex items-center justify-center shadow-[0_0_15px_rgba(0,242,255,0.1)]">
+            <i class="fas fa-bolt text-cyan-400 text-lg"></i>
         </div>
         <div>
-            <h1 class="text-md font-black text-white leading-none tracking-tighter uppercase">PRO360 <span class="text-cyan-400 font-light">Core</span></h1>
-            <span class="text-[8px] text-slate-500 font-black uppercase tracking-[0.3em]">Nexus-X Enterprise</span>
+            <h1 class="orbitron text-sm font-black text-white leading-none tracking-[2px]">PRO360 <span class="text-cyan-400">CORE</span></h1>
+            <p class="text-[7px] text-slate-500 font-bold uppercase tracking-[0.4em] mt-1">Nexus-X Intelligence System</p>
         </div>
     </div>
-    <div class="flex items-center gap-4">
-        <div class="text-right leading-none">
-            <p id="userName" class="text-[10px] font-black text-white uppercase italic font-mono">Syncing...</p>
-            <span id="userRole" class="text-[7px] text-cyan-500 font-black uppercase tracking-widest">Verificando...</span>
+
+    <div class="flex items-center gap-6">
+        <div class="text-right hidden sm:block">
+            <p id="userName" class="text-[10px] orbitron font-bold text-white uppercase tracking-wider">Loading...</p>
+            <span id="userRole" class="text-[7px] text-cyan-500 font-bold uppercase tracking-[2px]">Auth Pending</span>
         </div>
-        <button id="logoutBtn" class="w-9 h-9 rounded-full bg-slate-800/50 border border-white/5 text-slate-400 hover:text-red-400 active:scale-90 transition-all">
-            <i class="fas fa-power-off text-xs"></i>
+        <button id="logoutBtn" class="group flex items-center justify-center w-10 h-10 rounded border border-white/5 bg-white/5 hover:border-red-500/50 transition-all">
+            <i class="fas fa-power-off text-xs text-slate-500 group-hover:text-red-500 transition-colors"></i>
         </button>
     </div>
 </header>
 
 <div id="mainLayout">
     <nav id="sidebar">
-        <p class="text-[8px] font-black text-slate-600 uppercase tracking-[3px] mb-4 px-4 italic">Operaciones</p>
-        <div id="navMenu" class="space-y-1">
-            <a href="#dashboard" class="nav-link active"><i class="fas fa-th-large w-5"></i> Dashboard</a>
-            <a href="#ordenes" class="nav-link"><i class="fas fa-clipboard-list w-5"></i> Órdenes</a>
-            <a href="#inventario" class="nav-link"><i class="fas fa-boxes w-5"></i> Inventario</a>
-            <a href="#clientes" class="nav-link"><i class="fas fa-users w-5"></i> Clientes</a>
-            <a href="#pagos" class="nav-link"><i class="fas fa-credit-card w-5"></i> Recaudos</a>
-            <a href="#contabilidad" class="nav-link"><i class="fas fa-chart-pie w-5"></i> Finanzas</a>
-            <a href="#gerencia" class="nav-link text-yellow-500/80"><i class="fas fa-brain w-5"></i> IA Gerente</a>
+        <div class="mb-8 px-4">
+            <p class="text-[8px] font-bold text-cyan-500/50 uppercase tracking-[3px] italic">Main Protocol</p>
         </div>
-        <div class="mt-auto pt-4 border-t border-white/5 px-2">
-            <a href="#configuracion" class="nav-link mb-2"><i class="fas fa-cog w-5"></i> Configuración</a>
+        <div id="navMenu" class="space-y-1">
+            <a href="#dashboard" class="nav-link active"><i class="fas fa-layer-group w-4"></i> Dashboard</a>
+            <a href="#ordenes" class="nav-link"><i class="fas fa-file-invoice w-4"></i> Órdenes</a>
+            <a href="#inventario" class="nav-link"><i class="fas fa-microchip w-4"></i> Inventario</a>
+            <a href="#clientes" class="nav-link"><i class="fas fa-address-book w-4"></i> Clientes</a>
+            <a href="#pagos" class="nav-link"><i class="fas fa-wallet w-4"></i> Recaudos</a>
+            <a href="#contabilidad" class="nav-link"><i class="fas fa-chart-line w-4"></i> Finanzas</a>
+        </div>
+        <div class="mt-auto pt-6 border-t border-white/5">
+            <a href="#configuracion" class="nav-link"><i class="fas fa-sliders-h w-4"></i> Configuración</a>
         </div>
     </nav>
     <main id="appContainer"></main>
@@ -67,7 +113,9 @@
     import { auth } from "./js/core/firebase-config.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    const VERSION = "10.4.5";
+    const VERSION = "10.4.6_NEXUS";
+    
+    // Configuración dinámica de rutas
     const routes = {
         dashboard: () => import(`./js/modules/dashboard.js?v=${VERSION}`),
         ordenes: () => import(`./js/modules/ordenes.js?v=${VERSION}`),
@@ -75,23 +123,21 @@
         clientes: () => import(`./js/modules/clientes.js?v=${VERSION}`),
         pagos: () => import(`./js/modules/pagosTaller.js?v=${VERSION}`),
         contabilidad: () => import(`./js/modules/contabilidad.js?v=${VERSION}`),
-        gerencia: () => import(`./js/modules/gerenteAI.js?v=${VERSION}`),
         configuracion: () => import(`./js/modules/config.js?v=${VERSION}`)
     };
 
     async function router() {
         const container = document.getElementById("appContainer");
-        
-        // FIX 1: Autocorrección de URL para evitar pantallas blancas
-        if (!window.location.hash || window.location.hash === "#") {
-            window.location.hash = "#dashboard";
-            return;
-        }
+        const hash = window.location.hash.replace("#", "") || "dashboard";
 
-        const hash = window.location.hash.replace("#", "");
-        container.innerHTML = `<div class="flex h-full flex-col items-center justify-center animate-pulse"><div class="spinner mb-4"></div><p class="text-[9px] font-black uppercase text-cyan-500 tracking-widest">Nexus Linking...</p></div>`;
+        // UI: Loader NASA
+        container.innerHTML = `
+            <div class="flex h-full flex-col items-center justify-center">
+                <div class="spinner mb-6"></div>
+                <p class="orbitron text-[8px] font-bold uppercase text-cyan-400 tracking-[4px] animate-pulse">Establishing Neural Link...</p>
+            </div>`;
 
-        // UI: Actualizar clase activa
+        // UI: Actualizar Menú
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.toggle('active', link.getAttribute('href') === `#${hash}`);
         });
@@ -101,25 +147,30 @@
             const module = await moduleLoader();
             
             const state = {
-                empresaId: localStorage.getItem("empresaId") || "TALLER_DEMO_01",
+                empresaId: localStorage.getItem("empresaId"),
                 uid: localStorage.getItem("uid"),
                 rol: localStorage.getItem("rol") || "ADMIN",
                 version: VERSION
             };
 
             container.innerHTML = ""; 
-            await module.default(container, state);
+            if (module.default) {
+                await module.default(container, state);
+            }
         } catch (err) {
-            console.error("🔥 Nexus-X Sync Error:", err);
-            container.innerHTML = `<div class="p-10 text-center"><p class="text-red-500 font-black text-[10px] uppercase">Falla de Enlace en módulo: ${hash}</p><button onclick="location.reload()" class="mt-4 bg-white/5 px-6 py-2 rounded-full text-[9px] font-black uppercase text-white border border-white/10">Reintentar</button></div>`;
+            console.error("🔥 Nexus Error:", err);
+            container.innerHTML = `<div class="p-10 border border-red-500/20 bg-red-500/5 rounded text-center"><p class="text-red-400 orbitron text-xs tracking-widest uppercase">Sync Failure: ${hash}</p></div>`;
         }
     }
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
             localStorage.setItem("uid", user.uid);
-            document.getElementById("userName").innerText = user.email.split('@')[0];
-            document.getElementById("userRole").innerText = "SISTEMA ACTIVO";
+            document.getElementById("userName").innerText = user.email.split('@')[0].toUpperCase();
+            document.getElementById("userRole").innerText = "Protocol Active";
+            
+            // Si no hay hash, forzamos dashboard para evitar URL vacía
+            if (!window.location.hash) window.location.hash = "#dashboard";
             router();
         } else {
             window.location.href = "../login.html";
@@ -127,7 +178,9 @@
     });
 
     window.addEventListener("hashchange", router);
-    document.getElementById("logoutBtn").onclick = () => signOut(auth).then(() => { localStorage.clear(); location.reload(); });
+    document.getElementById("logoutBtn").onclick = () => {
+        signOut(auth).then(() => { localStorage.clear(); window.location.href = "../login.html"; });
+    };
 </script>
 </body>
 </html>
