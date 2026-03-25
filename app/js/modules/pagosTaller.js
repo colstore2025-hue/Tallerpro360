@@ -1,115 +1,111 @@
 /**
- * pagosTaller.js - TallerPRO360 V10.7.1 💳
- * Módulo: Terminal de Recaudo Nexus-X (Bold Core)
+ * pagosTaller.js - TallerPRO360 V11.0.0 💳
+ * Terminal de Recaudo Nexus-X: Bold Integration Core
  */
 import { collection, addDoc, updateDoc, doc, query, where, getDocs, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
-import { procesarSalidaInventario } from "../services/stockService.js";
 
 export default async function pagosTaller(container, state) {
   const empresaId = state?.empresaId || localStorage.getItem("empresaId");
   
-  // Renderizado de Interfaz 2030
   container.innerHTML = `
-    <div class="p-4 bg-[#020617] min-h-screen text-white animate-in fade-in duration-500">
-      <div class="flex justify-between items-center mb-8">
+    <div class="p-6 bg-[#020617] min-h-screen text-white animate-in fade-in duration-500 pb-32">
+      <header class="flex justify-between items-center mb-10">
           <div>
-              <h1 class="text-2xl font-black italic tracking-tighter uppercase">NEXUS <span class="text-emerald-400">TERMINAL</span></h1>
-              <p class="text-[8px] text-slate-500 font-bold uppercase tracking-[0.3em]">Protocolo de Recaudo Activo</p>
+              <h1 class="text-3xl font-black italic tracking-tighter uppercase text-white">NEXUS <span class="text-emerald-400">TERMINAL</span></h1>
+              <p class="text-[8px] text-slate-500 font-black uppercase tracking-[0.4em] italic">Protocolo de Recaudo Starlink</p>
           </div>
-          <div class="bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
-              <span class="text-[7px] font-black text-emerald-400 uppercase tracking-widest">● Sistema Online</span>
+          <div class="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
+              <i class="fas fa-satellite-dish text-emerald-400 animate-pulse"></i>
           </div>
-      </div>
+      </header>
 
-      <div class="bg-white/5 border border-white/10 rounded-[2rem] p-6 backdrop-blur-xl shadow-2xl">
-        <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-black/40 p-4 rounded-2xl border border-white/5">
-                    <label class="text-[7px] text-slate-500 font-black uppercase mb-1 block">Placa del Vehículo</label>
-                    <input id="placaIn" placeholder="ABC123" class="bg-transparent border-none outline-none text-base font-black text-emerald-400 w-full uppercase">
-                </div>
-                <div class="bg-black/40 p-4 rounded-2xl border border-white/5">
-                    <label class="text-[7px] text-slate-500 font-black uppercase mb-1 block">Valor Total</label>
-                    <input id="montoIn" type="number" placeholder="0" class="bg-transparent border-none outline-none text-base font-black text-white w-full">
-                </div>
-            </div>
+      <div class="max-w-xl mx-auto space-y-6">
+          <div class="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-3xl shadow-2xl relative overflow-hidden">
+              <div class="grid grid-cols-2 gap-4 mb-6">
+                  <div class="bg-black/40 p-5 rounded-[1.5rem] border border-white/5 focus-within:border-emerald-500/50 transition-all">
+                      <label class="text-[8px] text-emerald-500 font-black uppercase mb-2 block tracking-widest">Placa</label>
+                      <input id="placaIn" placeholder="ABC123" class="bg-transparent border-none outline-none text-xl font-black text-white w-full uppercase">
+                  </div>
+                  <div class="bg-black/40 p-5 rounded-[1.5rem] border border-white/5 focus-within:border-emerald-500/50 transition-all">
+                      <label class="text-[8px] text-slate-500 font-black uppercase mb-2 block tracking-widest">Valor COP</label>
+                      <input id="montoIn" type="number" placeholder="0" class="bg-transparent border-none outline-none text-xl font-black text-white w-full">
+                  </div>
+              </div>
 
-            <div class="bg-black/40 p-4 rounded-2xl border border-white/5">
-                <label class="text-[7px] text-slate-500 font-black uppercase mb-1 block">Pasarela de Cobro</label>
-                <select id="metodoIn" class="bg-transparent border-none outline-none text-xs font-black text-emerald-400 w-full uppercase cursor-pointer">
-                    <option value="efectivo">💵 Efectivo (Caja)</option>
-                    <option value="bold">⚡ Bold (Tarjeta/PSE/Nequi)</option>
-                </select>
-            </div>
+              <div class="bg-black/40 p-5 rounded-[1.5rem] border border-white/5 mb-8">
+                  <label class="text-[8px] text-slate-500 font-black uppercase mb-2 block tracking-widest">Método de Recaudo</label>
+                  <select id="metodoIn" class="bg-transparent border-none outline-none text-sm font-black text-emerald-400 w-full uppercase appearance-none cursor-pointer">
+                      <option value="efectivo">💵 Efectivo en Caja</option>
+                      <option value="bold">⚡ Bold (Datáfono / Link)</option>
+                  </select>
+              </div>
 
-            <button id="btnCobrar" class="w-full bg-emerald-500 text-black py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 active:scale-95 transition-all">
-                Ejecutar Cierre de Orden
-            </button>
-        </div>
+              <button id="btnCobrar" class="w-full bg-emerald-500 hover:bg-emerald-400 text-black py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.3em] shadow-[0_20px_40px_rgba(16,185,129,0.2)] active:scale-95 transition-all">
+                  Sincronizar y Cerrar Orden
+              </button>
+          </div>
       </div>
     </div>
   `;
 
-  const btn = document.getElementById("btnCobrar");
-
-  btn.onclick = async () => {
+  document.getElementById("btnCobrar").onclick = async () => {
+    const btn = document.getElementById("btnCobrar");
     const placa = document.getElementById("placaIn").value.trim().toUpperCase();
     const monto = Number(document.getElementById("montoIn").value);
     const metodo = document.getElementById("metodoIn").value;
 
-    if (!placa || monto <= 0) return alert("Error: Placa o Monto inválidos.");
+    if (!placa || monto <= 0) return alert("Datos insuficientes.");
 
     btn.disabled = true;
-    btn.innerText = "Sincronizando Stock...";
+    btn.innerText = "ACCEDIENDO A NEXUS CORE...";
 
     try {
-      // 1. Localizar Orden y Procesar Inventario
       const q = query(collection(db, `empresas/${empresaId}/ordenes`), where("placa", "==", placa), where("estado", "==", "EN_TALLER"));
       const snap = await getDocs(q);
 
-      if (!snap.empty) {
-          const docRef = snap.docs[0];
-          const d = docRef.data();
-          if (d.items) await procesarSalidaInventario(empresaId, d.items);
-          await updateDoc(doc(db, `empresas/${empresaId}/ordenes`, docRef.id), { estado: "PAGADA", fechaPago: serverTimestamp() });
-      }
+      if (snap.empty) throw new Error("No hay órdenes activas para esta placa.");
+      
+      const docOrden = snap.docs[0];
+      const idOrden = docOrden.id;
 
-      // 2. Lógica de Pago Digital (Bold)
       if (metodo === 'bold') {
-          const emp = await getDoc(doc(db, "empresas", empresaId));
-          const key = emp.data().bold_api_key; 
+          const empDoc = await getDoc(doc(db, "empresas", empresaId));
+          const apiKey = empDoc.data()?.bold_api_key;
           
-          if(!key) throw new Error("API Key de Bold no configurada en este taller.");
+          if(!apiKey) throw new Error("El taller no ha configurado su Bold API Key.");
 
           const bold = new BoldCheckout({
-              orderId: `BOL-${placa}-${Date.now()}`,
+              orderId: `NEXUS-${placa}-${Date.now()}`,
               amount: monto,
               currency: 'COP',
-              description: `Pago Taller - Placa ${placa}`,
-              apiKey: key, 
-              redirectionUrl: 'https://tallerpro360.vercel.app/app/success.html'
+              description: `Servicio Técnico Placa ${placa}`,
+              apiKey: apiKey,
+              integritySignature: "", // Opcional según tu nivel de seguridad Bold
+              redirectionUrl: 'https://tallerpro360.vercel.app/app/success.html',
+              metadata: { empresaId, placa, idOrden } // DATOS PARA EL WEBHOOK
           });
           bold.open();
+      } else {
+          // EFECTIVO: Cierre directo
+          await updateDoc(doc(db, `empresas/${empresaId}/ordenes`, idOrden), { 
+            estado: "PAGADA", 
+            metodoPago: "EFECTIVO",
+            fechaPago: serverTimestamp() 
+          });
+          
+          await addDoc(collection(db, `empresas/${empresaId}/contabilidad`), {
+              concepto: `Recaudo Efectivo - Placa ${placa}`,
+              monto, tipo: "ingreso", metodo: "efectivo", fecha: serverTimestamp()
+          });
+
+          alert("Cierre de Caja Exitoso.");
+          location.reload();
       }
-
-      // 3. Registro en Contabilidad del Taller
-      await addDoc(collection(db, `empresas/${empresaId}/contabilidad`), {
-          concepto: `Recaudo Orden ${placa}`,
-          monto,
-          tipo: "ingreso",
-          metodo,
-          fecha: serverTimestamp()
-      });
-
-      alert("Protocolo Completado. Orden cerrada con éxito.");
-      location.reload();
-
     } catch (err) {
-      console.error(err);
-      alert("Nexus Error: " + err.message);
+      alert("Error: " + err.message);
       btn.disabled = false;
-      btn.innerText = "Reintentar Protocolo";
+      btn.innerText = "REINTENTAR";
     }
   };
 }
