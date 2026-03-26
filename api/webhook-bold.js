@@ -1,6 +1,6 @@
 /**
- * webhook-bold.js - TallerPRO360 V13.0.0 🚀
- * NEXUS-X STARLINK: Procesador Inteligente de Tiempo Dinámico
+ * webhook-bold.js - TallerPRO360 V13.5.0 🚀
+ * NEXUS-X STARLINK: Procesador Inteligente de Tiempo Dinámico y Recaudos
  */
 import admin from "firebase-admin";
 
@@ -18,66 +18,86 @@ export default async function handler(req, res) {
     const payload = req.body.data || req.body; 
     const { status, order_id, metadata, amount } = payload;
 
-    // Protocolo de validación Bold (Aprobado)
+    // Solo procesamos transacciones exitosas
     const estadosExitosos = ["approved", "successful", "completed"];
-    
-    if (estadosExitosos.includes(status?.toLowerCase())) {
-      const batch = db.batch();
-
-      // --- CASO A: ACTIVACIÓN DINÁMICA DE PLAN (1 a 12 meses) ---
-      if (metadata && metadata.firebase_uid && metadata.plan_tipo) {
-        const { firebase_uid, plan_tipo, meses_comprados } = metadata;
-        
-        // Convertimos meses a días (Si no llega meses_comprados por error, default a 30 días)
-        const numeroDeMeses = parseInt(meses_comprados) || 1;
-        const diasASumar = numeroDeMeses * 30;
-
-        // Calculamos fecha de vencimiento: Si el plan está activo, sumamos a la fecha actual
-        const vence = new Date();
-        vence.setDate(vence.getDate() + diasASumar);
-
-        const tallerRef = db.collection("talleres").doc(firebase_uid);
-        batch.set(tallerRef, {
-          planId: plan_tipo.toUpperCase(),
-          estadoPlan: "ACTIVO",
-          mesesContratados: numeroDeMeses,
-          venceEn: admin.firestore.Timestamp.fromDate(vence),
-          ultimaTransaccion: order_id,
-          montoPago: amount,
-          fechaUltimoPago: admin.firestore.FieldValue.serverTimestamp(),
-          versionEngine: "13.0.0-DYNAMIC"
-        }, { merge: true });
-        
-        console.log(`✅ Nexus-X: Activados ${diasASumar} días para taller ${firebase_uid}`);
-      } 
-      
-      // --- CASO B: RECAUDO DE ORDEN DE SERVICIO (SE MANTIENE ESTABLE) ---
-      else if (metadata && metadata.empresaId && metadata.placa) {
-        const { empresaId, placa, idOrden } = metadata;
-        const ordenRef = db.collection("empresas").doc(empresaId).collection("ordenes").doc(idOrden);
-        
-        batch.update(ordenRef, {
-          estado: "PAGADA",
-          metodoPago: "BOLD_ONLINE",
-          transaccionId: order_id,
-          fechaPago: admin.firestore.FieldValue.serverTimestamp()
-        });
-
-        const contaRef = db.collection("empresas").doc(empresaId).collection("contabilidad").doc();
-        batch.set(contaRef, {
-          concepto: `Recaudo Bold Online - Placa ${placa}`,
-          monto: amount,
-          tipo: "ingreso",
-          referencia: order_id,
-          fecha: admin.firestore.FieldValue.serverTimestamp()
-        });
-      }
-
-      await batch.commit();
-      return res.status(200).send("NEXUS_SYNC_OK");
+    if (!estadosExitosos.includes(status?.toLowerCase())) {
+      return res.status(200).send("PAYMENT_PENDING_OR_FAILED");
     }
 
-    return res.status(200).send("PAYMENT_PENDING");
+    const batch = db.batch();
+
+    // --- CASO A: ACTIVACIÓN DE SUSCRIPCIÓN NEXUS-X (Taller nos paga a nosotros) ---
+    // Metadata enviada desde create-bold-checkout: { empresaId, planId, meses }
+    if (metadata && metadata.empresaId && metadata.planId) {
+      const { empresaId, planId, meses } = metadata;
+      const numMeses = parseInt(meses) || 1;
+      const diasASumar = numMeses * 30;
+
+      const tallerRef = db.collection("empresas").doc(empresaId);
+      const tallerDoc = await tallerRef.get();
+      
+      let fechaBase = new Date();
+      
+      // Si el plan ya existe y no ha vencido, sumamos el tiempo a la fecha de vencimiento actual
+      if (tallerDoc.exists && tallerDoc.data().venceEn) {
+        const actualVence = tallerDoc.data().venceEn.toDate();
+        if (actualVence > fechaBase) {
+          fechaBase = actualVence;
+        }
+      }
+
+      const nuevaFechaVencimiento = new Date(fechaBase);
+      nuevaFechaVencimiento.setDate(nuevaFechaVencimiento.getDate() + diasASumar);
+
+      batch.set(tallerRef, {
+        planActual: planId.toUpperCase(),
+        estadoPlan: "ACTIVO",
+        venceEn: admin.firestore.Timestamp.fromDate(nuevaFechaVencimiento),
+        ultimaRenovacion: admin.firestore.FieldValue.serverTimestamp(),
+        tracking: {
+            ultimaTransaccionId: order_id,
+            montoSuscripcion: amount
+        },
+        versionEngine: "13.5.0-STARLINK"
+      }, { merge: true });
+
+      console.log(`✅ Nexus-X: Suscripción extendida para ${empresaId}. Vence: ${nuevaFechaVencimiento}`);
+    } 
+    
+    // --- CASO B: RECAUDO DE ORDEN DE SERVICIO (Cliente paga al taller) ---
+    // Metadata enviada desde cobrar-factura-taller: { empresaId, facturaId, placa }
+    else if (metadata && metadata.empresaId && metadata.facturaId) {
+      const { empresaId, facturaId, placa } = metadata;
+      
+      // 1. Actualizar Factura/Orden
+      // Nota: Ajusta 'finanzas' o 'ordenes' según tu sub-colección preferida
+      const ordenRef = db.collection("empresas").doc(empresaId).collection("ordenes").doc(facturaId);
+      
+      batch.set(ordenRef, {
+        pago: {
+            estado: "PAGADA",
+            metodo: "BOLD_ONLINE",
+            monto: amount,
+            transaccion: order_id,
+            fecha: admin.firestore.FieldValue.serverTimestamp()
+        }
+      }, { merge: true });
+
+      // 2. Registrar en Contabilidad/Caja automáticamente
+      const contaRef = db.collection("empresas").doc(empresaId).collection("contabilidad").doc();
+      batch.set(contaRef, {
+        tipo: "ingreso",
+        concepto: `Pago Online - Factura ${facturaId} (Placa: ${placa || 'N/A'})`,
+        monto: amount,
+        referencia: order_id,
+        fecha: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      console.log(`✅ Nexus-X: Recaudo procesado para Taller ${empresaId} - Orden ${facturaId}`);
+    }
+
+    await batch.commit();
+    return res.status(200).send("NEXUS_SYNC_OK");
 
   } catch (error) {
     console.error("❌ Fallo Crítico en Webhook:", error);
