@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover">
     <title>Nexus-X · PRO360 Core Engine</title>
     
     <script>
@@ -13,19 +13,35 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
 
     <style>
-        :root { --neon-cyan: #00f2ff; --dark-bg: #020617; --sidebar-bg: rgba(10, 15, 29, 0.95); }
-        body { margin:0; font-family:'Inter', sans-serif; background: var(--dark-bg); color:#cbd5e1; overflow: hidden; }
+        :root { 
+            --neon-cyan: #00f2ff; 
+            --dark-bg: #020617; 
+            --sidebar-bg: rgba(10, 15, 29, 0.98); 
+        }
         
-        .nasa-glass { background: var(--sidebar-bg); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        body { 
+            margin:0; 
+            font-family:'Inter', sans-serif; 
+            background: var(--dark-bg); 
+            color:#cbd5e1; 
+            overflow: hidden; 
+            height: 100vh;
+        }
+        
+        .nasa-glass { 
+            background: var(--sidebar-bg); 
+            backdrop-filter: blur(20px); 
+            border-bottom: 1px solid rgba(255,255,255,0.05); 
+        }
         
         #mainLayout { display:flex; height:calc(100vh - 64px); }
         
         #sidebar { 
             width:260px; 
-            background: rgba(2, 6, 23, 0.8); 
+            background: rgba(2, 6, 23, 0.9); 
             display:flex; flex-direction:column; 
             padding:24px 16px; 
             border-right: 1px solid rgba(255,255,255,0.05);
@@ -33,68 +49,63 @@
         }
 
         #appContainer { 
-            flex:1; padding:24px; overflow-y:auto; 
+            flex:1; 
+            padding:24px; 
+            overflow-y:auto; 
             background: radial-gradient(circle at 50% 0%, #0f172a, #020617);
+            scroll-behavior: smooth;
         }
 
-        /* ESTILOS NAVEGACIÓN ESCRITORIO */
+        /* NAVEGACIÓN ESCRITORIO */
         .nav-link { 
             display: flex; align-items: center; gap: 12px; padding: 12px 16px; 
-            border-radius: 4px; color: #94a3b8; font-size: 12px; 
-            font-weight: 500; transition: 0.3s; margin-bottom: 6px; 
-            text-decoration: none; border-left: 2px solid transparent;
+            border-radius: 12px; color: #64748b; font-size: 11px; 
+            font-weight: 800; transition: 0.3s; margin-bottom: 4px; 
+            text-decoration: none; border: 1px solid transparent;
             text-transform: uppercase; letter-spacing: 1px;
         }
-        .nav-link:hover { background: rgba(0, 242, 255, 0.03); color: white; }
+        .nav-link:hover { background: rgba(0, 242, 255, 0.05); color: white; }
         .nav-link.active { 
-            background: linear-gradient(90deg, rgba(0, 242, 255, 0.1) 0%, transparent 100%); 
-            color: var(--neon-cyan); border-left-color: var(--neon-cyan); font-weight: 700;
+            background: rgba(0, 242, 255, 0.1); 
+            color: var(--neon-cyan); 
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.05);
         }
 
-        /* NAVBAR INFERIOR PARA MÓVILES */
+        /* NAVBAR MÓVIL */
         #mobileNav {
             display: none;
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: #0a0f1d;
-            backdrop-filter: blur(20px);
+            background: rgba(10, 15, 29, 0.95);
+            backdrop-filter: blur(25px);
             border-top: 1px solid rgba(255,255,255,0.08);
             z-index: 1000;
             grid-template-columns: repeat(4, 1fr);
-            padding: 10px 0 calc(env(safe-area-inset-bottom) + 10px);
-            box-shadow: 0 -10px 25px rgba(0,0,0,0.5);
+            padding: 12px 0 calc(env(safe-area-inset-bottom) + 12px);
         }
 
         .mobile-link {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #64748b;
-            font-size: 9px;
-            text-transform: uppercase;
-            font-weight: 700;
-            gap: 5px;
-            text-decoration: none;
-            transition: 0.3s;
+            display: flex; flex-direction: column; align-items: center;
+            color: #475569; font-size: 9px; font-weight: 900; gap: 4px;
+            text-decoration: none; text-transform: uppercase;
         }
         .mobile-link i { font-size: 18px; }
         .mobile-link.active { color: var(--neon-cyan); }
 
-        /* RESPONSIVIDAD */
         @media (max-width: 768px) {
             #sidebar { display: none; }
             #mobileNav { display: grid; }
-            #mainLayout { height: calc(100vh - 64px - 70px); } /* Header + MobileNav height */
-            #appContainer { padding: 16px; }
+            #mainLayout { height: calc(100vh - 64px - 75px); }
+            #appContainer { padding: 16px; padding-bottom: 40px; }
         }
 
         .spinner { 
-            width: 32px; height: 32px; border: 2px solid rgba(0,242,255,0.1); 
+            width: 40px; height: 40px; border: 3px solid rgba(0,242,255,0.1); 
             border-top-color: var(--neon-cyan); border-radius: 50%; 
-            animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; 
+            animation: spin 0.8s linear infinite; 
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         .orbitron { font-family: 'Orbitron', sans-serif; }
@@ -102,43 +113,43 @@
 </head>
 <body>
 
-<header class="nasa-glass h-16 flex items-center justify-between px-6 sm:px-8 z-50 relative">
+<header class="nasa-glass h-16 flex items-center justify-between px-6 z-50 relative">
     <div class="flex items-center gap-4">
-        <div class="w-10 h-10 bg-cyan-500/10 border border-cyan-500/30 rounded flex items-center justify-center shadow-[0_0_15px_rgba(0,242,255,0.1)]">
-            <i class="fas fa-bolt text-cyan-400 text-lg"></i>
+        <div class="w-10 h-10 bg-cyan-500/10 border border-cyan-500/20 rounded-xl flex items-center justify-center">
+            <i class="fas fa-bolt text-cyan-400"></i>
         </div>
         <div>
-            <h1 class="orbitron text-xs sm:text-sm font-black text-white leading-none tracking-[2px]">PRO360 <span class="text-cyan-400">CORE</span></h1>
-            <p class="text-[7px] text-slate-500 font-bold uppercase tracking-[0.4em] mt-1">Nexus-X Intelligence</p>
+            <h1 class="orbitron text-sm font-black text-white leading-none tracking-widest">PRO360 <span class="text-cyan-400">CORE</span></h1>
+            <p class="text-[7px] text-slate-500 font-black uppercase tracking-[0.4em] mt-1 italic">Nexus-X Starlink</p>
         </div>
     </div>
 
-    <div class="flex items-center gap-6">
+    <div class="flex items-center gap-4">
         <div class="text-right hidden sm:block">
-            <p id="userName" class="text-[10px] orbitron font-bold text-white uppercase tracking-wider italic">Syncing...</p>
-            <span id="userRole" class="text-[7px] text-cyan-500 font-bold uppercase tracking-[2px]">Checking Node</span>
+            <p id="userName" class="text-[10px] orbitron font-black text-white uppercase italic tracking-tighter">Connecting...</p>
+            <span id="userRole" class="text-[7px] text-cyan-500 font-black uppercase tracking-widest">Uplink Active</span>
         </div>
-        <button id="logoutBtn" class="group flex items-center justify-center w-10 h-10 rounded border border-white/5 bg-white/5 hover:border-red-500/50 transition-all">
-            <i class="fas fa-power-off text-xs text-slate-500 group-hover:text-red-500"></i>
+        <button id="logoutBtn" class="w-10 h-10 rounded-xl border border-white/5 bg-white/5 hover:bg-red-500/10 hover:border-red-500/50 transition-all text-slate-500 hover:text-red-500">
+            <i class="fas fa-power-off text-xs"></i>
         </button>
     </div>
 </header>
 
 <div id="mainLayout">
     <nav id="sidebar">
-        <div class="mb-8 px-4">
-            <p class="text-[8px] font-bold text-cyan-500/50 uppercase tracking-[3px] italic">Main Protocol</p>
+        <div class="mb-10 px-4">
+            <p class="text-[9px] font-black text-cyan-500/40 uppercase tracking-[4px] italic">Protocolos</p>
         </div>
         <div id="navMenu" class="space-y-1">
-            <a href="#dashboard" class="nav-link active"><i class="fas fa-layer-group w-4"></i> Dashboard</a>
-            <a href="#ordenes" class="nav-link"><i class="fas fa-file-invoice w-4"></i> Órdenes</a>
-            <a href="#inventario" class="nav-link"><i class="fas fa-microchip w-4"></i> Inventario</a>
-            <a href="#clientes" class="nav-link"><i class="fas fa-address-book w-4"></i> Clientes</a>
-            <a href="#pagos" class="nav-link"><i class="fas fa-wallet w-4"></i> Recaudos</a>
-            <a href="#contabilidad" class="nav-link"><i class="fas fa-chart-line w-4"></i> Finanzas</a>
+            <a href="#dashboard" class="nav-link active"><i class="fas fa-grid-2 w-5"></i> Dashboard</a>
+            <a href="#ordenes" class="nav-link"><i class="fas fa-file-invoice w-5"></i> Órdenes</a>
+            <a href="#inventario" class="nav-link"><i class="fas fa-box-open w-5"></i> Inventario</a>
+            <a href="#clientes" class="nav-link"><i class="fas fa-users-gear w-5"></i> Clientes</a>
+            <a href="#pagos" class="nav-link"><i class="fas fa-credit-card w-5"></i> Recaudos</a>
+            <a href="#contabilidad" class="nav-link"><i class="fas fa-chart-pie w-5"></i> Finanzas</a>
         </div>
         <div class="mt-auto pt-6 border-t border-white/5">
-            <a href="#configuracion" class="nav-link"><i class="fas fa-sliders-h w-4"></i> Configuración</a>
+            <a href="#configuracion" class="nav-link italic"><i class="fas fa-cog w-5"></i> Configuración</a>
         </div>
     </nav>
 
@@ -146,17 +157,18 @@
 </div>
 
 <nav id="mobileNav">
-    <a href="#dashboard" class="mobile-link active"><i class="fas fa-th-large"></i><span>Inicio</span></a>
-    <a href="#ordenes" class="mobile-link"><i class="fas fa-file-invoice"></i><span>Órdenes</span></a>
-    <a href="#clientes" class="mobile-link"><i class="fas fa-users"></i><span>Clientes</span></a>
-    <a href="#configuracion" class="mobile-link"><i class="fas fa-cog"></i><span>Ajustes</span></a>
+    <a href="#dashboard" class="mobile-link active"><i class="fas fa-home"></i><span>Inicio</span></a>
+    <a href="#ordenes" class="mobile-link"><i class="fas fa-tools"></i><span>Órdenes</span></a>
+    <a href="#clientes" class="mobile-link"><i class="fas fa-user-friends"></i><span>Clientes</span></a>
+    <a href="#configuracion" class="mobile-link"><i class="fas fa-sliders"></i><span>Ajustes</span></a>
 </nav>
 
 <script type="module">
-    import { auth } from "./js/core/firebase-config.js";
+    import { auth, db } from "./js/core/firebase-config.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const VERSION = "10.4.6_NEXUS";
+    const VERSION = "13.5.0_STARLINK";
     
     const routes = {
         dashboard: () => import(`./js/modules/dashboard.js?v=${VERSION}`),
@@ -172,22 +184,24 @@
         const container = document.getElementById("appContainer");
         const hash = window.location.hash.replace("#", "") || "dashboard";
 
-        // UI: Feedback de Carga
+        // UI: Loading State
         container.innerHTML = `
-            <div class="flex h-full flex-col items-center justify-center animate-pulse">
+            <div class="flex h-full flex-col items-center justify-center">
                 <div class="spinner mb-6"></div>
-                <p class="orbitron text-[8px] font-bold uppercase text-cyan-400 tracking-[4px]">Neural Link Established...</p>
+                <p class="orbitron text-[9px] font-black uppercase text-cyan-400 tracking-[5px] animate-pulse">Syncing Nexus-X Core...</p>
             </div>`;
 
-        // ACTUALIZAR ESTADOS ACTIVOS (Ambos menús)
+        // Update Active Links
         document.querySelectorAll('.nav-link, .mobile-link').forEach(link => {
-            link.classList.toggle('active', link.getAttribute('href') === `#${hash}`);
+            const isActive = link.getAttribute('href') === `#${hash}`;
+            link.classList.toggle('active', isActive);
         });
 
         try {
             const moduleLoader = routes[hash] || routes.dashboard;
             const module = await moduleLoader();
             
+            // Estado Global Inyectado
             const state = {
                 empresaId: localStorage.getItem("empresaId"),
                 uid: localStorage.getItem("uid"),
@@ -200,27 +214,50 @@
                 await module.default(container, state);
             }
         } catch (err) {
-            console.error("🔥 Nexus Error:", err);
-            container.innerHTML = `<div class="p-10 text-center border border-red-500/20 bg-red-500/5 rounded"><p class="text-red-400 orbitron text-[10px] tracking-widest uppercase italic font-black">Sync Failure: ${hash}</p></div>`;
+            console.error("🔥 Router Error:", err);
+            container.innerHTML = `
+                <div class="p-10 text-center border border-red-500/20 bg-red-500/5 rounded-2xl">
+                    <p class="text-red-500 orbitron text-xs tracking-widest uppercase font-black">Link Broken: ${hash}</p>
+                    <button onclick="location.reload()" class="mt-4 text-[10px] text-cyan-500 underline font-bold">REINTENTAR CONEXIÓN</button>
+                </div>`;
         }
     }
 
-    onAuthStateChanged(auth, (user) => {
+    // AUTH OBSERVER: El motor de arranque
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
             localStorage.setItem("uid", user.uid);
-            document.getElementById("userName").innerText = user.email.split('@')[0].toUpperCase();
-            document.getElementById("userRole").innerText = "Protocol Active";
+            
+            // Si no tenemos empresaId en el local, intentamos recuperarlo de la base
+            if (!localStorage.getItem("empresaId")) {
+                const userRef = doc(db, "users", user.uid);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    localStorage.setItem("empresaId", userSnap.data().empresaId);
+                }
+            }
+
+            document.getElementById("userName").innerText = (user.displayName || user.email.split('@')[0]).toUpperCase();
+            document.getElementById("userRole").innerText = `Nodo: ${localStorage.getItem("empresaId") || 'Global'}`;
             
             if (!window.location.hash) window.location.hash = "#dashboard";
             router();
         } else {
+            localStorage.clear();
             window.location.href = "../login.html";
         }
     });
 
+    // Listeners
     window.addEventListener("hashchange", router);
-    document.getElementById("logoutBtn").onclick = () => {
-        signOut(auth).then(() => { localStorage.clear(); window.location.href = "../login.html"; });
+    
+    document.getElementById("logoutBtn").onclick = async () => {
+        const confirm = window.confirm("¿Cerrar sesión en Nexus-X?");
+        if (confirm) {
+            await signOut(auth);
+            localStorage.clear();
+            window.location.href = "../login.html";
+        }
     };
 </script>
 </body>
