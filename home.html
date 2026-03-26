@@ -233,29 +233,38 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { firebaseConfig } from "/app/js/core/firebase-config.js"; 
 
-    // 1. Inicialización de Motor Nexus-X
+    // Inicialización
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     let selectedPlanId = null;
 
-    // --- FUNCIONES GLOBALES (Disponibles para los botones onclick) ---
+    // --- EXPORTACIÓN A WINDOW (Para que el HTML vea las funciones) ---
+    
     window.scrollPlanes = () => {
         document.getElementById('planes')?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    // Abre el modal y prepara el plan seleccionado
     window.confirmarTerminos = (plan) => {
+        console.log("Nexus-X: Seleccionando plan", plan);
         selectedPlanId = plan;
+        
+        // Si es Trial, redirigir directo (opcional) o pasar por el modal
+        if(plan === 'freemium') {
+            window.location.href = "/api/activar-trial";
+            return;
+        }
+
         const modal = document.getElementById("modalTerminos");
         if(modal) {
             modal.classList.remove("hidden");
-            // Reset de seguridad
+            // Reset modal
             const btn = document.getElementById("btnAceptar");
             btn.disabled = true;
             btn.style.opacity = "0.5";
+            btn.innerText = "Confirmar y Pagar con Bold";
             document.getElementById("checkTerminos").checked = false;
             document.getElementById("checkPoliticas").checked = false;
         }
@@ -265,41 +274,38 @@
         document.getElementById("modalTerminos").classList.add("hidden");
     };
 
-    // --- VALIDACIÓN LEGAL ---
+    // --- LÓGICA DE INTERFAZ ---
     const checkT = document.getElementById("checkTerminos");
     const checkP = document.getElementById("checkPoliticas");
     const btnAceptar = document.getElementById("btnAceptar");
 
-    if (checkT && checkP && btnAceptar) {
-        const validarChecks = () => {
-            if (checkT.checked && checkP.checked) {
-                btnAceptar.disabled = false;
-                btnAceptar.style.opacity = "1";
-            } else {
-                btnAceptar.disabled = true;
-                btnAceptar.style.opacity = "0.5";
-            }
-        };
+    const validarChecks = () => {
+        if (checkT && checkP && btnAceptar) {
+            const esValido = checkT.checked && checkP.checked;
+            btnAceptar.disabled = !esValido;
+            btnAceptar.style.opacity = esValido ? "1" : "0.5";
+        }
+    };
 
-        checkT.onchange = validarChecks;
-        checkP.onchange = validarChecks;
+    if(checkT) checkT.onchange = validarChecks;
+    if(checkP) checkP.onchange = validarChecks;
 
-        // --- LÓGICA DE PAGO BOLD (Ejecución Final) ---
+    // --- DISPARADOR DE PAGO ---
+    if(btnAceptar) {
         btnAceptar.onclick = async () => {
             const user = auth.currentUser;
             
             if(!user) {
+                alert("Identificación requerida. Redirigiendo a Login...");
                 localStorage.setItem("pending_plan", selectedPlanId);
                 window.location.href = "/login.html";
                 return;
             }
 
             try {
-                const originalText = btnAceptar.innerText;
-                btnAceptar.innerText = "CONECTANDO CON BOLD...";
+                btnAceptar.innerText = "SINCRO STARLINK...";
                 btnAceptar.disabled = true;
 
-                // Llamada al endpoint en Vercel
                 const response = await fetch("/api/create-bold-checkout", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -313,25 +319,18 @@
                 const data = await response.json();
 
                 if (data.url) {
-                    // Redirección al checkout seguro de Bold
                     window.location.href = data.url;
                 } else {
-                    throw new Error(data.error || "No se generó la URL de Bold");
+                    throw new Error(data.error || "Error en respuesta de servidor");
                 }
 
             } catch(e) {
                 console.error("Error Nexus-X:", e);
-                alert("Error de conexión con la pasarela.");
-                // Soporte vía WhatsApp
+                alert("Error de comunicación. Soporte técnico activo.");
                 window.location.href = "https://wa.me/17049419163?text=Error_Pago_" + selectedPlanId;
             }
         };
     }
-
-    // --- PROTOCOLO DE ACTIVACIÓN TRIAL ---
-    window.activarTrial = () => {
-        window.location.href = "/api/activar-trial";
-    };
 </script>
 </body>
 </html>
