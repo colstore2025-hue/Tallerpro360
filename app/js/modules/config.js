@@ -218,3 +218,55 @@ export default async function configModule(container, state) {
         if (data.url) window.location.href = data.url;
     };
 }
+
+// --- DENTRO DE config.js ---
+
+document.getElementById("btnSave").onclick = async () => {
+    const btn = document.getElementById("btnSave");
+    btn.disabled = true;
+    btn.innerHTML = `SINCRONIZANDO NODO... <i class="fas fa-sync fa-spin"></i>`;
+
+    // Validamos que exista el ID del taller antes de disparar
+    if (!empresaId) {
+        console.error("🚀 Nexus Error: ID de taller no definido.");
+        return;
+    }
+
+    try {
+        // La ruta absoluta: empresas/taller_001 (o el ID que corresponda)
+        const tallerRef = doc(db, "empresas", empresaId);
+
+        const payload = {
+            // Información Básica (Se crea si no existe)
+            nombre: document.getElementById("nombre").value.trim().toUpperCase(),
+            nit: document.getElementById("nit").value.trim(),
+            whatsapp: document.getElementById("whatsapp")?.value || "",
+            logo: logoBase64, // Solo si se subió uno nuevo
+            
+            // Sub-objeto de Configuración (Estructura jerárquica)
+            configuracion: {
+                bold: {
+                    apiKey: document.getElementById("bold_api_key").value.trim(),
+                    identity: document.getElementById("bold_identity").value.trim()
+                },
+                engine: {
+                    version: "13.5.0-STARLINK",
+                    lastSync: serverTimestamp(),
+                    status: "ACTIVE"
+                }
+            }
+        };
+
+        // El secreto de la estabilidad: setDoc con merge:true
+        await setDoc(tallerRef, payload, { merge: true });
+
+        btn.innerHTML = `ÓRBITA ESTABILIZADA <i class="fas fa-check"></i>`;
+        btn.classList.replace("bg-cyan-500", "bg-emerald-500");
+        
+        setTimeout(() => location.reload(), 1500);
+    } catch (e) {
+        console.error("❌ Fallo en Sincronización:", e);
+        btn.disabled = false;
+        btn.innerHTML = `REINTENTAR CONEXIÓN`;
+    }
+};
