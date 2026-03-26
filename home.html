@@ -217,79 +217,89 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { firebaseConfig } from "/app/js/core/firebase-config.js"; 
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    let currentPlan = null;
+    let selectedPlanId = null;
 
-    // Funciones globales vinculadas a window para acceso desde el HTML
+    // --- FUNCIONES DE NAVEGACIÓN ---
     window.scrollPlanes = () => {
-        const target = document.getElementById('planes');
-        if (target) target.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('planes')?.scrollIntoView({ behavior: 'smooth' });
     };
 
     window.confirmarTerminos = (plan) => {
-        console.log("Iniciando proceso para:", plan);
-        currentPlan = plan;
-        const modal = document.getElementById("modalTerminos");
-        if(modal) modal.classList.remove("hidden");
+        selectedPlanId = plan;
+        document.getElementById("modalTerminos").classList.remove("hidden");
+        // Resetear el botón por seguridad
+        const btn = document.getElementById("btnAceptar");
+        btn.disabled = true;
+        btn.style.opacity = "0.5";
+        document.getElementById("checkTerminos").checked = false;
+        document.getElementById("checkPoliticas").checked = false;
     };
 
     window.cerrarTerminos = () => {
-        const modal = document.getElementById("modalTerminos");
-        if(modal) modal.classList.add("hidden");
+        document.getElementById("modalTerminos").classList.add("hidden");
     };
 
+    // --- VALIDACIÓN LEGAL (COLOMBIA) ---
+    const checkT = document.getElementById("checkTerminos");
+    const checkP = document.getElementById("checkPoliticas");
     const btnAceptar = document.getElementById("btnAceptar");
 
+    const validarChecks = () => {
+        if (checkT.checked && checkP.checked) {
+            btnAceptar.disabled = false;
+            btnAceptar.style.opacity = "1";
+        } else {
+            btnAceptar.disabled = true;
+            btnAceptar.style.opacity = "0.5";
+        }
+    };
+
+    checkT.onchange = validarChecks;
+    checkP.onchange = validarChecks;
+
+    // --- LÓGICA DE PAGO BOLD ---
     btnAceptar.onclick = async () => {
         const user = auth.currentUser;
         
         if(!user) {
-            localStorage.setItem("pending_plan", currentPlan);
+            localStorage.setItem("pending_plan", selectedPlanId);
             window.location.href = "/login.html";
-            return;
-        }
-        
-        if(currentPlan === "freemium") {
-            window.location.href = "/app/index.html?mode=demo_activated";
             return;
         }
 
         try {
-            btnAceptar.innerText = "GENERANDO ORDEN...";
+            btnAceptar.innerText = "GENERANDO CONEXIÓN BOLD...";
             btnAceptar.disabled = true;
-            btnAceptar.style.opacity = "0.5";
 
-            const response = await fetch("/api/create-preference", {
+            // Llamada al nuevo endpoint de Bold que creamos
+            const response = await fetch("/api/create-bold-checkout", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ 
                     uid: user.uid, 
-                    planId: currentPlan,
+                    planId: selectedPlanId,
                     email: user.email 
                 })
             });
 
-            if (!response.ok) throw new Error("Error en servidor de pagos");
             const data = await response.json();
-            
-            if(data.init_point) {
-                window.location.href = data.init_point;
+
+            if (data.url) {
+                // REDIRECCIÓN AL CHECKOUT DE BOLD
+                window.location.href = data.url;
             } else {
-                throw new Error("Preferencia fallida");
+                throw new Error("No se generó la URL de Bold");
             }
 
         } catch(e) {
-            console.error("Pago fallido:", e);
-            alert("Error al conectar con Mercado Pago. Redirigiendo a WhatsApp de soporte...");
-            window.location.href = "https://wa.me/17049419163?text=Error%20al%20pagar%20plan%20" + currentPlan;
-            
-            btnAceptar.innerText = "ACEPTAR Y PAGAR";
-            btnAceptar.disabled = false;
-            btnAceptar.style.opacity = "1";
+            console.error("Error Nexus-X:", e);
+            alert("Error de conexión. Contactando a soporte Starlink...");
+            window.location.href = `https://wa.me/17049419163?text=Error_Pago_${selectedPlanId}`;
         }
     };
 </script>
