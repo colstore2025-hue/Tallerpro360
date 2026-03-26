@@ -1,47 +1,37 @@
 /**
- * create-bold-checkout.js - TallerPRO360 V11.5.0 🛰️
- * PROTOCOLO ESTABILIZADO: Soporta Test y Producción
+ * create-bold-checkout.js - TallerPRO360 V12.5.0 🛰️
+ * PROTOCOLO STARLINK: Procesador Dinámico de 12 Planes
  */
 
 export default async function handler(req, res) {
-  // 1. Seguridad: Solo peticiones POST
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método no permitido" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ error: "Method Denied" });
 
-  // 2. Carga de llaves desde Vercel (Nombres actualizados según tu captura)
   const BOLD_API_SECRET = process.env.BOLD_API_SECRET;     
   const BOLD_API_IDENTITY = process.env.BOLD_API_IDENTITY; 
-  const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE || 'test'; // Por defecto test si no existe
+  const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE || 'test';
 
   if (!BOLD_API_SECRET || !BOLD_API_IDENTITY) {
-    console.error("❌ Error Nexus-X: Llaves ausentes en Vercel");
-    return res.status(500).json({ error: "Configuración incompleta en Vercel" });
+    return res.status(500).json({ error: "NEXUS_KEYS_MISSING_IN_VERCEL" });
   }
 
-  const { planId, uid, email } = req.body;
+  // Recibimos planId (basico, pro, elite) y periodo (mensual, trimestral, semestral, anual)
+  const { planId, periodo, uid, email, empresaNombre } = req.body;
 
-  // 3. Diccionario de Planes Nexus-X
-  const PLANES = {
-    freemium: { title: "Plan Trial - TallerPRO360", price: 0 },
-    basico: { title: "Plan Básico - TallerPRO360", price: 49900 },
-    pro: { title: "Plan PRO - TallerPRO360", price: 79900 },
-    elite: { title: "Plan ELITE NEXUS - TallerPRO360", price: 129000 },
-    enterprise: { title: "Plan ENTERPRISE - TallerPRO360", price: 259900 }
+  // --- LA MATRIZ DE VERDAD (Sincronizada con config.js) ---
+  const MATRIZ = {
+    basico: { mensual: 49900, trimestral: 134700, semestral: 239500, anual: 419200 },
+    pro:    { mensual: 79900, trimestral: 215700, semestral: 383500, anual: 671200 },
+    elite:  { mensual: 129000, trimestral: 348300, semestral: 619200, anual: 1083600 }
   };
 
-  const selectedPlan = PLANES[planId];
-  if (!selectedPlan) return res.status(400).json({ error: "Plan no válido" });
-
-  // 4. FÓRMULA DE ESTABILIZACIÓN: Ajuste de monto para pruebas
-  // Si el modo es 'test', cobramos el mínimo ($1,000 COP) para no afectar tu bolsillo
-  const finalAmount = PAYMENT_MODE === 'production' ? selectedPlan.price : 1000;
-  const description = PAYMENT_MODE === 'production' 
-    ? selectedPlan.title 
-    : `TEST: ${selectedPlan.title}`;
-
   try {
-    // 5. Conexión con Bold API V2
+    const basePrice = MATRIZ[planId]?.[periodo];
+    if (!basePrice) return res.status(400).json({ error: "PLAN_OR_PERIOD_INVALID" });
+
+    // FÓRMULA DE ESTABILIZACIÓN
+    const finalAmount = PAYMENT_MODE === 'production' ? basePrice : 1000;
+    const planName = `[${periodo.toUpperCase()}] Plan ${planId.toUpperCase()} - Nexus-X`;
+
     const boldResponse = await fetch("https://api.bold.co/v2/checkout", {
       method: "POST",
       headers: {
@@ -52,28 +42,24 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         amount: finalAmount,
         currency: "COP",
-        description: description,
-        order_id: `NEXUS-${uid}-${Date.now()}`,
+        description: `${planName} para ${empresaNombre || 'Taller'}`,
+        order_id: `NEX-PAGO-${Date.now()}`,
         notification_url: "https://tallerpro360.vercel.app/api/webhook-bold",
-        redirection_url: "https://tallerpro360.vercel.app/app/index.html?pago=exitoso",
+        redirection_url: "https://tallerpro360.vercel.app/app/#configuracion?pago=exitoso",
         metadata: {
-          plan_tipo: planId,
           firebase_uid: uid,
-          mode: PAYMENT_MODE 
+          plan_tipo: planId,
+          periodo: periodo, // CRÍTICO: Para que el webhook sepa cuántos días sumar
+          modo: PAYMENT_MODE 
         }
       })
     });
 
     const data = await boldResponse.json();
-
-    if (!boldResponse.ok) {
-      return res.status(boldResponse.status).json({ error: "Bold rechazó la petición", details: data });
-    }
-
     return res.status(200).json({ url: data.payment_url || data.url });
 
   } catch (error) {
-    console.error("❌ Fallo Crítico Nexus-X:", error);
-    return res.status(500).json({ error: "Error de conexión con Bold" });
+    console.error("❌ Fallo Crítico:", error);
+    return res.status(500).json({ error: "BOLD_CONNECTION_FAILED" });
   }
 }
