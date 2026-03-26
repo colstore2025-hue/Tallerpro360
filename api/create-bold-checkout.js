@@ -9,19 +9,20 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  // 2. Carga de llaves desde Vercel (Botón de Pagos)
+  // 2. Carga de llaves desde Vercel (Tal cual aparecen en tu captura)
   const BOLD_API_KEY = process.env.BOLD_API_KEY;           // Llave Secreta
   const BOLD_API_IDENTITY = process.env.BOLD_API_IDENTITY; // Llave de Identidad
 
   if (!BOLD_API_KEY || !BOLD_API_IDENTITY) {
-    console.error("❌ Error: Llaves de Bold no configuradas en Vercel");
-    return res.status(500).json({ error: "Configuración de servidor incompleta" });
+    console.error("❌ Error Nexus-X: Llaves de Bold ausentes en Vercel Environment Variables");
+    return res.status(500).json({ error: "Configuración de servidor incompleta en Vercel" });
   }
 
   const { planId, uid, email } = req.body;
 
-  // 3. Diccionario de Planes Nexus-X (Sincronizado con home.html)
+  // 3. Diccionario de Planes Nexus-X (Mapeo exacto)
   const PLANES = {
+    freemium: { title: "Plan Trial - TallerPRO360", price: 0 },
     basico: { title: "Plan Básico - TallerPRO360", price: 49900 },
     pro: { title: "Plan PRO - TallerPRO360", price: 79900 },
     elite: { title: "Plan Elite - TallerPRO360", price: 129000 },
@@ -31,7 +32,7 @@ export default async function handler(req, res) {
   const selectedPlan = PLANES[planId];
 
   if (!selectedPlan) {
-    return res.status(400).json({ error: "Plan seleccionado no válido" });
+    return res.status(400).json({ error: "Plan seleccionado no válido: " + planId });
   }
 
   try {
@@ -40,7 +41,6 @@ export default async function handler(req, res) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        // Autenticación oficial de Bold para Botón de Pagos
         "X-API-KEY": BOLD_API_KEY,
         "X-IDENTITY": BOLD_API_IDENTITY
       },
@@ -48,10 +48,9 @@ export default async function handler(req, res) {
         amount: selectedPlan.price,
         currency: "COP",
         description: selectedPlan.title,
-        order_id: `NEXUS-${uid}-${Date.now()}`, // ID rastreable para el Webhook
+        order_id: `NEXUS-${uid}-${Date.now()}`,
         notification_url: "https://tallerpro360.vercel.app/api/webhook-bold",
         redirection_url: "https://tallerpro360.vercel.app/app/index.html?pago=exitoso",
-        // Metadata crucial para que el Webhook sepa qué activar en Firebase
         metadata: {
           plan_tipo: planId,
           firebase_uid: uid,
@@ -64,15 +63,14 @@ export default async function handler(req, res) {
 
     if (!boldResponse.ok) {
       console.error("❌ Bold API Error:", data);
-      return res.status(boldResponse.status).json({ error: "Error en la pasarela" });
+      return res.status(boldResponse.status).json({ error: "Bold rechazó la petición", details: data });
     }
 
-    // 5. Retornar la URL del checkout para redirección inmediata
-    // Nota: Validamos si Bold devuelve 'payment_url' o 'url' según versión
+    // 5. Retorno de URL (Soporta ambos formatos de API)
     return res.status(200).json({ url: data.payment_url || data.url });
 
   } catch (error) {
-    console.error("❌ Error interno Nexus-X:", error);
-    return res.status(500).json({ error: "Fallo crítico en conexión de pagos" });
+    console.error("❌ Fallo Crítico Nexus-X:", error);
+    return res.status(500).json({ error: "Error interno de conexión con Bold" });
   }
 }
