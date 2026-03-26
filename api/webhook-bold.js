@@ -1,9 +1,11 @@
 /**
- * webhookBold.js - TallerPRO360 V11.0.0 🛰️
- * NEXUS-X STARLINK: Procesador Universal de Pagos (Suscripciones + Órdenes)
+ * webhook-bold.js - TallerPRO360 V11.5.0 🛰️
+ * NEXUS-X STARLINK: Procesador Universal de Pagos
+ * Ubicación: /api/webhook-bold.js
  */
 import admin from "firebase-admin";
 
+// Inicialización Segura de Firebase
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
@@ -12,36 +14,53 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
+  // 1. Solo permitimos POST
+  if (req.method !== "POST") return res.status(405).send("NEXUS_DENIED");
 
   try {
-    const { status, order_id, metadata, amount } = req.body;
+    // 2. Extracción de datos según el formato Real de Bold
+    // Bold suele enviar la info dentro de req.body.data
+    const payload = req.body.data || req.body; 
+    const { status, order_id, metadata, amount } = payload;
 
-    // Procesamos solo pagos aprobados
-    if (status === "approved" || status === "completed") {
+    // 3. Filtro de Seguridad: Solo procesamos si el pago fue exitoso
+    // Bold usa 'approved', 'successful' o 'completed' según la versión
+    const estadosExitosos = ["approved", "successful", "completed"];
+    
+    if (estadosExitosos.includes(status?.toLowerCase())) {
       const batch = db.batch();
 
-      // CASO A: Es una suscripción del dueño del taller (Nexus-X SaaS)
-      if (metadata.plan_tipo) {
+      // --- LÓGICA DE ENGRANAJE NEXUS-X ---
+
+      // CASO A: Suscripción de Dueño de Taller (SaaS)
+      // Identificamos por 'plan_tipo' en los metadatos
+      if (metadata && metadata.plan_tipo) {
         const { firebase_uid, plan_tipo, periodo } = metadata;
+        
         const DIAS = { mensual: 30, trimestral: 90, semestral: 180, anual: 365 };
         const vence = new Date();
         vence.setDate(vence.getDate() + (DIAS[periodo] || 30));
 
+        // Actualizamos el documento del taller para activar funciones
         const tallerRef = db.collection("talleres").doc(firebase_uid);
         batch.set(tallerRef, {
-          planId: plan_tipo,
+          planId: plan_tipo.toUpperCase(),
           estadoPlan: "ACTIVO",
           venceEn: admin.firestore.Timestamp.fromDate(vence),
-          ultimaTransaccion: order_id
+          ultimaTransaccion: order_id,
+          fechaUltimoPago: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
+        
+        console.log(`✅ Plan ${plan_tipo} activado para UID: ${firebase_uid}`);
       } 
       
-      // CASO B: Es el pago de una Orden de Servicio de un cliente (Terminal)
-      else if (metadata.empresaId && metadata.placa) {
+      // CASO B: Recaudo de Orden de Servicio (Terminal de Clientes)
+      // Identificamos por 'empresaId' y 'placa'
+      else if (metadata && metadata.empresaId && metadata.placa) {
         const { empresaId, placa, idOrden } = metadata;
-        const ordenRef = db.collection("empresas").doc(empresaId).collection("ordenes").doc(idOrden);
         
+        // 1. Actualizar la Orden de Servicio
+        const ordenRef = db.collection("empresas").doc(empresaId).collection("ordenes").doc(idOrden);
         batch.update(ordenRef, {
           estado: "PAGADA",
           metodoPago: "BOLD_ONLINE",
@@ -49,21 +68,29 @@ export default async function handler(req, res) {
           fechaPago: admin.firestore.FieldValue.serverTimestamp()
         });
 
-        // Registro en contabilidad automática
+        // 2. Registro en Contabilidad Automática (Ingresos)
         const contaRef = db.collection("empresas").doc(empresaId).collection("contabilidad").doc();
         batch.set(contaRef, {
-          concepto: `Recaudo Bold - Placa ${placa}`,
+          concepto: `Recaudo Bold Online - Placa ${placa}`,
           monto: amount,
           tipo: "ingreso",
+          referencia: order_id,
           fecha: admin.firestore.FieldValue.serverTimestamp()
         });
+
+        console.log(`✅ Contabilidad sincronizada para Placa: ${placa}`);
       }
 
+      // Ejecución atómica de todos los cambios
       await batch.commit();
+      return res.status(200).send("NEXUS_SYNC_OK");
     }
 
-    return res.status(200).send("NEXUS_SYNC_OK");
+    // Si el pago no fue aprobado, informamos pero no fallamos
+    return res.status(200).send("PAYMENT_PENDING_OR_REJECTED");
+
   } catch (error) {
-    return res.status(500).send("WEBHOOK_ERROR");
+    console.error("❌ Error en Webhook Nexus-X:", error);
+    return res.status(500).send("WEBHOOK_INTERNAL_ERROR");
   }
 }
