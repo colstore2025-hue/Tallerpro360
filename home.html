@@ -319,5 +319,72 @@
         }
     };
 </script>
+<script>
+// TallerPRO360 - Protocolo de Activación Bold
+async function iniciarPago(planId) {
+    console.log("Iniciando proceso para:", planId);
+    
+    // 1. Obtener datos del usuario actual (Asegúrate de tener Firebase cargado)
+    const user = auth.currentUser; 
+    
+    if (!user) {
+        alert("Por favor, inicia sesión para continuar con la suscripción.");
+        window.location.href = "login.html";
+        return;
+    }
+
+    // Mostrar un estado de carga visual si lo deseas
+    const btnOriginalText = event.target.innerText;
+    event.target.innerText = "PROCESANDO...";
+    event.target.disabled = true;
+
+    try {
+        // 2. Llamada a tu nueva función en Vercel
+        const response = await fetch('/api/create-bold-checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                planId: planId,
+                uid: user.uid,
+                email: user.email
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.url) {
+            // 3. Redirección automática a la pasarela de Bold
+            window.location.href = data.url;
+        } else {
+            throw new Error(data.error || "Error al generar link de pago");
+        }
+
+    } catch (error) {
+        console.error("Error Nexus-X:", error);
+        alert("Hubo un error al conectar con Bold: " + error.message);
+        
+        // Restaurar botón
+        event.target.innerText = btnOriginalText;
+        event.target.disabled = false;
+    }
+}
+
+// 4. Vincular los botones de tus capturas a la función
+document.addEventListener("DOMContentLoaded", () => {
+    // Botón Trial
+    const btnTrial = document.querySelector('button:contains("ACTIVAR TRIAL")');
+    if(btnTrial) btnTrial.onclick = () => window.location.href = "/api/activar-trial"; 
+
+    // Botones de Suscripción (Básico, Pro, Elite)
+    // Ajusta los selectores según las clases de tus botones en el HTML
+    document.querySelectorAll('.btn-suscripcion').forEach(boton => {
+        boton.addEventListener('click', (e) => {
+            const plan = e.target.getAttribute('data-plan'); // Asegúrate de que el botón tenga este atributo
+            iniciarPago(plan);
+        });
+    });
+});
+</script>
+
 </body>
 </html>
