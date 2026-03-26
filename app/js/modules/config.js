@@ -140,6 +140,30 @@ export default async function configModule(container, state) {
 
         <div class="fixed bottom-10 left-0 right-0 px-6 z-50">
             <button id="btnSave" class="w-full max-w-2xl mx-auto bg-cyan-500 hover:bg-cyan-400 text-black py-8 rounded-[3rem] font-black text-[14px] uppercase tracking-[0.6em] shadow-[0_20px_60px_rgba(34,211,238,0.3)] transition-all flex items-center justify-center gap-4">
+
+<div class="mt-12 mb-20">
+    <h3 class="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mb-4 ml-2">Soporte y Academia</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <a href="https://youtube.com/tu-link-tutorial-bold" target="_blank" class="nexus-card p-6 rounded-3xl flex items-center gap-4 hover:border-red-500/40 transition-all group">
+            <div class="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center text-red-500 group-hover:bg-red-500 group-hover:text-white transition-all">
+                <i class="fab fa-youtube text-xl"></i>
+            </div>
+            <div>
+                <p class="text-xs font-black uppercase italic">Configurar Bold</p>
+                <p class="text-[9px] text-slate-400">Video-guía paso a paso</p>
+            </div>
+        </a>
+        <a href="https://youtube.com/tu-link-tutorial-ws" target="_blank" class="nexus-card p-6 rounded-3xl flex items-center gap-4 hover:border-emerald-500/40 transition-all group">
+            <div class="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                <i class="fab fa-whatsapp text-xl"></i>
+            </div>
+            <div>
+                <p class="text-xs font-black uppercase italic">WhatsApp Engine</p>
+                <p class="text-[9px] text-slate-400">Domina las notificaciones</p>
+            </div>
+        </a>
+    </div>
+</div>
                 SINCRONIZAR NEXUS-X <i class="fas fa-satellite animate-bounce"></i>
             </button>
         </div>
