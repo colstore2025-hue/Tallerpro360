@@ -1,50 +1,78 @@
-// /api/create-bold-checkout.js (Transformación para Bold)
+/**
+ * create-bold-checkout.js - TallerPRO360 V11.5.0 🛰️
+ * NEXUS-X STARLINK: Generador de Checkout Automatizado
+ */
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido" });
+  // 1. Seguridad: Solo permitir peticiones POST
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método no permitido" });
+  }
 
-  // 1. Ahora necesitamos la API KEY de BOLD (No la de Mercado Pago)
-  const BOLD_API_KEY = process.env.BOLD_API_KEY; 
+  // 2. Carga de llaves desde Vercel (Botón de Pagos)
+  const BOLD_API_KEY = process.env.BOLD_API_KEY;           // Llave Secreta
+  const BOLD_API_IDENTITY = process.env.BOLD_API_IDENTITY; // Llave de Identidad
+
+  if (!BOLD_API_KEY || !BOLD_API_IDENTITY) {
+    console.error("❌ Error: Llaves de Bold no configuradas en Vercel");
+    return res.status(500).json({ error: "Configuración de servidor incompleta" });
+  }
 
   const { planId, uid, email } = req.body;
 
-  // 2. Mantenemos tus Planes y Precios (Están perfectos)
+  // 3. Diccionario de Planes Nexus-X (Sincronizado con home.html)
   const PLANES = {
-    basico: { title: "Plan Básico", price: 49900 },
-    pro: { title: "Plan PRO", price: 79900 },
-    elite: { title: "Plan Elite", price: 129000 },
-    enterprise: { title: "Plan Enterprise", price: 259900 }
+    basico: { title: "Plan Básico - TallerPRO360", price: 49900 },
+    pro: { title: "Plan PRO - TallerPRO360", price: 79900 },
+    elite: { title: "Plan Elite - TallerPRO360", price: 129000 },
+    enterprise: { title: "Plan Enterprise - TallerPRO360", price: 259900 }
   };
 
   const selectedPlan = PLANES[planId];
 
+  if (!selectedPlan) {
+    return res.status(400).json({ error: "Plan seleccionado no válido" });
+  }
+
   try {
-    // 3. CAMBIO CLAVE: Llamada a la API de Bold para generar el link
-    // Nota: Bold usa una estructura diferente a Mercado Pago
+    // 4. Conexión con el API de Checkout de Bold
     const boldResponse = await fetch("https://api.bold.co/v2/checkout", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${BOLD_API_KEY}`
+        // Autenticación oficial de Bold para Botón de Pagos
+        "X-API-KEY": BOLD_API_KEY,
+        "X-IDENTITY": BOLD_API_IDENTITY
       },
       body: JSON.stringify({
         amount: selectedPlan.price,
         currency: "COP",
         description: selectedPlan.title,
-        order_id: `NEXUS-${uid}-${Date.now()}`, // ID único para rastrear
+        order_id: `NEXUS-${uid}-${Date.now()}`, // ID rastreable para el Webhook
         notification_url: "https://tallerpro360.vercel.app/api/webhook-bold",
-        redirection_url: "https://tallerpro360.vercel.app/app/index.html?pago=exitoso"
+        redirection_url: "https://tallerpro360.vercel.app/app/index.html?pago=exitoso",
+        // Metadata crucial para que el Webhook sepa qué activar en Firebase
+        metadata: {
+          plan_tipo: planId,
+          firebase_uid: uid,
+          periodo: "mensual"
+        }
       })
     });
 
     const data = await boldResponse.json();
-    
-    // Retornamos la URL de Bold para que el cliente pague
-    return res.status(200).json({ url: data.payment_url });
+
+    if (!boldResponse.ok) {
+      console.error("❌ Bold API Error:", data);
+      return res.status(boldResponse.status).json({ error: "Error en la pasarela" });
+    }
+
+    // 5. Retornar la URL del checkout para redirección inmediata
+    // Nota: Validamos si Bold devuelve 'payment_url' o 'url' según versión
+    return res.status(200).json({ url: data.payment_url || data.url });
 
   } catch (error) {
-    return res.status(500).json({ error: "Error conectando con Bold" });
+    console.error("❌ Error interno Nexus-X:", error);
+    return res.status(500).json({ error: "Fallo crítico en conexión de pagos" });
   }
 }
-
-
