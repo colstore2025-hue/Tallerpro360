@@ -1,85 +1,102 @@
 /**
- * printService.js - TallerPRO360 PDF Engine 🛰️
- * Generación de Documentos de Misión Nexus-X
+ * printService.js - TallerPRO360 PDF & Comms Engine 🛰️
+ * Ubicación: app/js/services/printService.js
  */
 
 export const generarPDFOrden = (orden) => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
-    // Configuración de Estética (Tesla Dark Mode Adaptado a Papel)
+    // Configuración Estética Nexus-X (Cyan & Dark)
     const azulNexus = [0, 242, 255];
-    const grisOscuro = [30, 41, 59];
+    const grisOscuro = [15, 23, 42];
 
-    // 1. Encabezado / Logo
+    // --- HEADER ---
     doc.setFillColor(...grisOscuro);
-    doc.rect(0, 0, 210, 40, 'F');
+    doc.rect(0, 0, 210, 45, 'F');
     
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
-    doc.text("TallerPRO360", 15, 20);
+    doc.setFontSize(24);
+    doc.text("TallerPRO360", 15, 25);
     
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setTextColor(...azulNexus);
-    doc.text("SISTEMA LOGÍSTICO NEXUS-X STARLINK", 15, 28);
+    doc.text("CORE ENGINE: NEXUS-X STARLINK LOGISTICS", 15, 33);
+    doc.text("COLOMBIAN TRUCKS LOGISTICS LLC", 15, 37);
 
-    // 2. Información de la Orden
+    // --- INFO ORDEN ---
     doc.setTextColor(40, 40, 40);
-    doc.setFontSize(10);
-    doc.text(`ORDEN DE SERVICIO: #${orden.placa}-${new Date().getTime().toString().slice(-4)}`, 15, 50);
-    doc.text(`FECHA: ${new Date().toLocaleDateString()}`, 15, 55);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.text(`ORDEN DE SERVICIO: #${orden.placa}-${new Date().getTime().toString().slice(-4)}`, 15, 55);
+    doc.setFont("helvetica", "normal");
+    doc.text(`FECHA DE EMISIÓN: ${new Date().toLocaleString()}`, 15, 60);
 
-    // 3. Cuadro de Datos (Cliente / Vehículo)
+    // --- TABLA CLIENTE ---
     doc.autoTable({
-        startY: 65,
+        startY: 70,
         head: [['CLIENTE', 'PLACA / VEHÍCULO', 'ESTADO']],
-        body: [[orden.cliente, orden.placa, 'EN PROCESO']],
+        body: [[orden.cliente, orden.placa, 'EN TALLER (ACTIVO)']],
         theme: 'grid',
-        headStyles: { fillColor: grisOscuro, textColor: [255, 255, 255], fontStyle: 'bold' }
+        headStyles: { fillColor: grisOscuro, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+        styles: { fontSize: 8, cellPadding: 4 }
     });
 
-    // 4. Detalle de Diagnóstico
+    // --- DIAGNÓSTICO ---
+    const currentY = doc.lastAutoTable.finalY + 15;
     doc.setFont("helvetica", "bold");
-    doc.text("DIAGNÓSTICO TÉCNICO:", 15, doc.lastAutoTable.finalY + 10);
+    doc.text("REPORTE DE DIAGNÓSTICO TÉCNICO:", 15, currentY);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    const splitDiag = doc.splitTextToSize(orden.diagnostico || "Sin diagnóstico registrado.", 180);
-    doc.text(splitDiag, 15, doc.lastAutoTable.finalY + 15);
+    doc.setFontSize(8);
+    const splitDiag = doc.splitTextToSize(orden.diagnostico || "Sin observaciones registradas.", 180);
+    doc.text(splitDiag, 15, currentY + 7);
 
-    // 5. Tabla de Repuestos y Servicios
+    // --- TABLA DE ITEMS ---
     const tableRows = orden.items.map(it => [
         it.nombre,
-        it.origen === 'TALLER' ? 'Taller' : 'Cliente',
+        it.origen === 'TALLER' ? 'Taller' : 'Externo',
         it.cantidad,
         `$${new Intl.NumberFormat("es-CO").format(it.precio)}`,
         `$${new Intl.NumberFormat("es-CO").format(it.precio * it.cantidad)}`
     ]);
 
     doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 30,
-        head: [['ÍTEM/SERVICIO', 'ORIGEN', 'CANT', 'UNITARIO', 'SUBTOTAL']],
+        startY: currentY + 25,
+        head: [['SERVICIO / REPUESTO', 'ORIGEN', 'CANT', 'VALOR UNIT', 'SUBTOTAL']],
         body: tableRows,
+        theme: 'striped',
+        headStyles: { fillColor: [0, 150, 200], fontSize: 8 },
         styles: { fontSize: 8 },
-        headStyles: { fillColor: [0, 150, 200] }
+        foot: [[ { content: 'TOTAL ESTIMADO DE OPERACIÓN:', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } }, 
+                `$${new Intl.NumberFormat("es-CO").format(orden.total)}` ]],
+        footStyles: { fillColor: grisOscuro, textColor: azulNexus, fontSize: 10 }
     });
 
-    // 6. Totales
-    const finalY = doc.lastAutoTable.finalY + 10;
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text(`TOTAL A PAGAR: $${new Intl.NumberFormat("es-CO").format(orden.total)}`, 140, finalY);
-
-    // 7. Pie de página Legal
+    // --- QR SIMULADO / PIE DE PÁGINA ---
+    const finalY = doc.internal.pageSize.height - 20;
     doc.setFontSize(7);
     doc.setTextColor(150);
-    doc.text("Este documento es un comprobante de servicio digital generado por Nexus-X Starlink.", 15, 285);
-    doc.text("Colombian Trucks Logistics LLC - Charlotte, NC / Colombia.", 15, 290);
+    doc.text("Este es un documento digital generado por el motor Nexus-X Starlink. No requiere firma física.", 15, finalY);
+    doc.text("Copyright © 2026 Colombian Trucks Logistics LLC - Charlotte, NC. USA.", 15, finalY + 4);
 
-    // --- ACCIÓN FINAL ---
-    // Guardar archivo
-    doc.save(`Orden_${orden.placa}.pdf`);
+    // Ejecutar Acción
+    doc.save(`Orden_${orden.placa}_NexusX.pdf`);
+};
+
+/**
+ * Envío de resumen ejecutivo vía WhatsApp
+ */
+export const enviarWhatsAppOrden = (orden) => {
+    const telefono = "573000000000"; // Aquí podrías jalar el tel del cliente si lo tienes en el objeto orden
+    const mensaje = `*TallerPRO360 · REPORTE NEXUS-X*%0A` +
+                    `------------------------------------%0A` +
+                    `*VEHÍCULO:* ${orden.placa}%0A` +
+                    `*CLIENTE:* ${orden.cliente}%0A` +
+                    `*TOTAL ESTIMADO:* $${new Intl.NumberFormat("es-CO").format(orden.total)}%0A` +
+                    `------------------------------------%0A` +
+                    `*DIAGNÓSTICO:* ${orden.diagnostico}%0A%0A` +
+                    `_Su servicio está siendo procesado bajo estándares Nexus-X Starlink._`;
     
-    // Retornar blob para WhatsApp si es necesario
-    return doc.output('blob');
+    window.open(`https://wa.me/${telefono}?text=${mensaje}`, '_blank');
 };
