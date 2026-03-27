@@ -23,6 +23,81 @@
         .btn-bold { background: linear-gradient(90deg, #06b6d4, #3b82f6); animation: pulse 2s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(6,182,212, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(6,182,212, 0); } 100% { box-shadow: 0 0 0 0 rgba(6,182,212, 0); } }
     </style>
+<style>
+    .modal-glass { background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(6, 182, 212, 0.2); }
+    .btn-disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+
+<section class="py-12 border-t border-white/5 bg-slate-900/20">
+    <div class="max-w-4xl mx-auto flex flex-wrap justify-center gap-8 text-[10px] font-black uppercase tracking-widest text-slate-500">
+        <a href="/manual-operacion.html" class="hover:text-cyan-400"><i class="fas fa-book mr-2"></i> Manual de Operación</a>
+        <a href="/terminos.html" class="hover:text-cyan-400"><i class="fas fa-gavel mr-2"></i> Términos y Condiciones</a>
+        <a href="/politicas.html" class="hover:text-cyan-400"><i class="fas fa-user-shield mr-2"></i> Políticas de Privacidad</a>
+    </div>
+</section>
+
+<div id="modalLegal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6 bg-black/80">
+    <div class="modal-glass max-w-md w-full p-8 rounded-[2.5rem] text-center">
+        <i class="fas fa-shield-check text-cyan-500 text-4xl mb-4"></i>
+        <h3 class="orbitron text-xl font-black mb-6">VALIDACIÓN NEXUS-X</h3>
+        
+        <div class="text-left space-y-4 mb-8">
+            <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" id="checkTerminos" class="mt-1 accent-cyan-500">
+                <span class="text-[10px] text-slate-400 uppercase font-bold">Acepto los Términos y Condiciones de uso de la plataforma TallerPRO360.</span>
+            </label>
+            <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" id="checkPoliticas" class="mt-1 accent-cyan-500">
+                <span class="text-[10px] text-slate-400 uppercase font-bold">Autorizo el tratamiento de mis datos según la Política de Privacidad (Ley 1581).</span>
+            </label>
+        </div>
+
+        <button id="btnConfirmarLegal" disabled class="w-full py-4 bg-cyan-500 text-black font-black rounded-xl text-xs uppercase btn-disabled transition-all">
+            Confirmar y Proceder
+        </button>
+        <button onclick="cerrarModal()" class="mt-4 text-[9px] text-slate-600 uppercase font-black tracking-widest">Cancelar</button>
+    </div>
+</div>
+
+<a href="https://wa.me/17049419163?text=Soporte_TallerPRO360" target="_blank" 
+   class="fixed bottom-6 right-6 w-16 h-16 bg-[#25d366] rounded-full flex items-center justify-center text-3xl text-white shadow-[0_0_20px_rgba(37,211,102,0.4)] z-50 hover:scale-110 transition-transform">
+    <i class="fab fa-whatsapp"></i>
+</a>
+
+<script>
+    let planSeleccionado = '';
+
+    function prepararPago(plan) {
+        planSeleccionado = plan;
+        document.getElementById('modalLegal').classList.remove('hidden');
+    }
+
+    function cerrarModal() {
+        document.getElementById('modalLegal').classList.add('hidden');
+    }
+
+    // Lógica de habilitación de botón
+    const checkT = document.getElementById('checkTerminos');
+    const checkP = document.getElementById('checkPoliticas');
+    const btnConf = document.getElementById('btnConfirmarLegal');
+
+    [checkT, checkP].forEach(check => {
+        check.addEventListener('change', () => {
+            if(checkT.checked && checkP.checked) {
+                btnConf.disabled = false;
+                btnConf.classList.remove('btn-disabled');
+            } else {
+                btnConf.disabled = true;
+                btnConf.classList.add('btn-disabled');
+            }
+        });
+    });
+
+    btnConf.onclick = () => {
+        localStorage.setItem("legal_accepted", "true");
+        window.location.href = `/login.html?plan=${planSeleccionado}`;
+    };
+</script>
 </head>
 <body>
 
