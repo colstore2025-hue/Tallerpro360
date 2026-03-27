@@ -33,7 +33,7 @@
         
         .nasa-glass { 
             background: var(--sidebar-bg); 
-            backdrop-filter: blur(20px); 
+            backdrop-filter: blur(25px); 
             border-bottom: 1px solid rgba(255,255,255,0.05); 
         }
         
@@ -41,71 +41,73 @@
         
         #sidebar { 
             width:260px; 
-            background: rgba(2, 6, 23, 0.9); 
+            background: rgba(2, 6, 23, 0.95); 
             display:flex; flex-direction:column; 
             padding:24px 16px; 
-            border-right: 1px solid rgba(255,255,255,0.05);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-right: 1px solid rgba(255,255,255,0.08);
+            transition: all 0.4s ease;
         }
 
         #appContainer { 
             flex:1; 
-            padding:24px; 
+            padding:0; /* El padding lo manejan los módulos internos */
             overflow-y:auto; 
             background: radial-gradient(circle at 50% 0%, #0f172a, #020617);
             scroll-behavior: smooth;
         }
 
-        /* NAVEGACIÓN ESCRITORIO */
+        /* NAVEGACIÓN ESTILO TESLA */
         .nav-link { 
-            display: flex; align-items: center; gap: 12px; padding: 12px 16px; 
-            border-radius: 12px; color: #64748b; font-size: 11px; 
-            font-weight: 800; transition: 0.3s; margin-bottom: 4px; 
+            display: flex; align-items: center; gap: 14px; padding: 14px 18px; 
+            border-radius: 16px; color: #475569; font-size: 10px; 
+            font-weight: 900; transition: 0.3s; margin-bottom: 6px; 
             text-decoration: none; border: 1px solid transparent;
-            text-transform: uppercase; letter-spacing: 1px;
+            text-transform: uppercase; letter-spacing: 2px;
+            font-family: 'Orbitron', sans-serif;
         }
-        .nav-link:hover { background: rgba(0, 242, 255, 0.05); color: white; }
+        .nav-link:hover { background: rgba(0, 242, 255, 0.03); color: white; }
         .nav-link.active { 
-            background: rgba(0, 242, 255, 0.1); 
+            background: rgba(0, 242, 255, 0.08); 
             color: var(--neon-cyan); 
-            border: 1px solid rgba(0, 242, 255, 0.2);
-            box-shadow: 0 0 20px rgba(0, 242, 255, 0.05);
+            border: 1px solid rgba(0, 242, 255, 0.15);
+            box-shadow: 0 10px 30px rgba(0, 242, 255, 0.05);
         }
 
-        /* NAVBAR MÓVIL */
+        /* NAVBAR MÓVIL OPTIMIZADA */
         #mobileNav {
             display: none;
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(10, 15, 29, 0.95);
-            backdrop-filter: blur(25px);
-            border-top: 1px solid rgba(255,255,255,0.08);
+            background: rgba(10, 15, 29, 0.98);
+            backdrop-filter: blur(30px);
+            border-top: 1px solid rgba(255,255,255,0.1);
             z-index: 1000;
             grid-template-columns: repeat(4, 1fr);
-            padding: 12px 0 calc(env(safe-area-inset-bottom) + 12px);
+            padding: 14px 0 calc(env(safe-area-inset-bottom) + 14px);
         }
 
         .mobile-link {
             display: flex; flex-direction: column; align-items: center;
-            color: #475569; font-size: 9px; font-weight: 900; gap: 4px;
-            text-decoration: none; text-transform: uppercase;
+            color: #475569; font-size: 8px; font-weight: 900; gap: 6px;
+            text-decoration: none; text-transform: uppercase; letter-spacing: 1px;
         }
-        .mobile-link i { font-size: 18px; }
-        .mobile-link.active { color: var(--neon-cyan); }
+        .mobile-link i { font-size: 20px; }
+        .mobile-link.active { color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0,242,255,0.5); }
 
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
             #sidebar { display: none; }
             #mobileNav { display: grid; }
-            #mainLayout { height: calc(100vh - 64px - 75px); }
-            #appContainer { padding: 16px; padding-bottom: 40px; }
+            #mainLayout { height: calc(100vh - 64px - 85px); }
+            #appContainer { padding-bottom: 50px; }
         }
 
         .spinner { 
-            width: 40px; height: 40px; border: 3px solid rgba(0,242,255,0.1); 
+            width: 50px; height: 50px; border: 4px solid rgba(0,242,255,0.05); 
             border-top-color: var(--neon-cyan); border-radius: 50%; 
-            animation: spin 0.8s linear infinite; 
+            animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; 
+            box-shadow: 0 0 20px rgba(0,242,255,0.1);
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         .orbitron { font-family: 'Orbitron', sans-serif; }
@@ -115,21 +117,24 @@
 
 <header class="nasa-glass h-16 flex items-center justify-between px-6 z-50 relative">
     <div class="flex items-center gap-4">
-        <div class="w-10 h-10 bg-cyan-500/10 border border-cyan-500/20 rounded-xl flex items-center justify-center">
-            <i class="fas fa-bolt text-cyan-400"></i>
+        <div class="w-10 h-10 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl flex items-center justify-center relative group">
+            <div class="absolute inset-0 bg-cyan-400 blur-lg opacity-0 group-hover:opacity-20 transition-all"></div>
+            <i class="fas fa-bolt text-cyan-400 relative"></i>
         </div>
         <div>
-            <h1 class="orbitron text-sm font-black text-white leading-none tracking-widest">PRO360 <span class="text-cyan-400">CORE</span></h1>
-            <p class="text-[7px] text-slate-500 font-black uppercase tracking-[0.4em] mt-1 italic">Nexus-X Starlink</p>
+            <h1 class="orbitron text-sm font-black text-white leading-none tracking-widest italic">PRO360 <span class="text-cyan-400">CORE</span></h1>
+            <p class="text-[7px] text-slate-600 font-black uppercase tracking-[0.5em] mt-1 italic">Protocolo Nexus-X Starlink</p>
         </div>
     </div>
 
-    <div class="flex items-center gap-4">
-        <div class="text-right hidden sm:block">
+    <div class="flex items-center gap-5">
+        <div class="text-right hidden sm:block border-r border-white/5 pr-5">
             <p id="userName" class="text-[10px] orbitron font-black text-white uppercase italic tracking-tighter">Connecting...</p>
-            <span id="userRole" class="text-[7px] text-cyan-500 font-black uppercase tracking-widest">Uplink Active</span>
+            <span id="userRole" class="text-[7px] text-emerald-500 font-black uppercase tracking-widest flex items-center justify-end gap-1">
+                <span class="w-1 h-1 bg-emerald-500 rounded-full animate-ping"></span> Uplink Active
+            </span>
         </div>
-        <button id="logoutBtn" class="w-10 h-10 rounded-xl border border-white/5 bg-white/5 hover:bg-red-500/10 hover:border-red-500/50 transition-all text-slate-500 hover:text-red-500">
+        <button id="logoutBtn" class="w-10 h-10 rounded-2xl border border-white/5 bg-white/5 hover:bg-red-500/20 hover:border-red-500/40 transition-all text-slate-600 hover:text-red-500 active:scale-90">
             <i class="fas fa-power-off text-xs"></i>
         </button>
     </div>
@@ -137,19 +142,19 @@
 
 <div id="mainLayout">
     <nav id="sidebar">
-        <div class="mb-10 px-4">
-            <p class="text-[9px] font-black text-cyan-500/40 uppercase tracking-[4px] italic">Protocolos</p>
+        <div class="mb-12 px-4">
+            <p class="text-[8px] font-black text-slate-700 uppercase tracking-[6px] italic">Protocolos Maestros</p>
         </div>
-        <div id="navMenu" class="space-y-1">
-            <a href="#dashboard" class="nav-link active"><i class="fas fa-grid-2 w-5"></i> Dashboard</a>
-            <a href="#ordenes" class="nav-link"><i class="fas fa-file-invoice w-5"></i> Órdenes</a>
-            <a href="#inventario" class="nav-link"><i class="fas fa-box-open w-5"></i> Inventario</a>
-            <a href="#clientes" class="nav-link"><i class="fas fa-users-gear w-5"></i> Clientes</a>
-            <a href="#pagos" class="nav-link"><i class="fas fa-credit-card w-5"></i> Recaudos</a>
-            <a href="#contabilidad" class="nav-link"><i class="fas fa-chart-pie w-5"></i> Finanzas</a>
+        <div id="navMenu" class="space-y-2">
+            <a href="#dashboard" class="nav-link active"><i class="fas fa-chart-line w-6"></i> Dashboard</a>
+            <a href="#ordenes" class="nav-link"><i class="fas fa-screwdriver-wrench w-6"></i> Órdenes</a>
+            <a href="#inventario" class="nav-link"><i class="fas fa-warehouse w-6"></i> Stock</a>
+            <a href="#clientes" class="nav-link"><i class="fas fa-address-book w-6"></i> CRM</a>
+            <a href="#pagos" class="nav-link"><i class="fas fa-cash-register w-6"></i> Recaudos</a>
+            <a href="#contabilidad" class="nav-link"><i class="fas fa-receipt w-6"></i> Finanzas</a>
         </div>
-        <div class="mt-auto pt-6 border-t border-white/5">
-            <a href="#configuracion" class="nav-link italic"><i class="fas fa-cog w-5"></i> Configuración</a>
+        <div class="mt-auto pt-8 border-t border-white/5">
+            <a href="#configuracion" class="nav-link italic border-cyan-500/10"><i class="fas fa-gear w-6"></i> Configuración</a>
         </div>
     </nav>
 
@@ -157,10 +162,10 @@
 </div>
 
 <nav id="mobileNav">
-    <a href="#dashboard" class="mobile-link active"><i class="fas fa-home"></i><span>Inicio</span></a>
-    <a href="#ordenes" class="mobile-link"><i class="fas fa-tools"></i><span>Órdenes</span></a>
-    <a href="#clientes" class="mobile-link"><i class="fas fa-user-friends"></i><span>Clientes</span></a>
-    <a href="#configuracion" class="mobile-link"><i class="fas fa-sliders"></i><span>Ajustes</span></a>
+    <a href="#dashboard" class="mobile-link active"><i class="fas fa-home-alt"></i><span>Inicio</span></a>
+    <a href="#ordenes" class="mobile-link"><i class="fas fa-clipboard-list"></i><span>Órdenes</span></a>
+    <a href="#pagos" class="mobile-link"><i class="fas fa-wallet"></i><span>Pagos</span></a>
+    <a href="#configuracion" class="mobile-link"><i class="fas fa-sliders-h"></i><span>Ajustes</span></a>
 </nav>
 
 <script type="module">
@@ -168,30 +173,35 @@
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const VERSION = "13.5.0_STARLINK";
+    // GOBERNADOR DE VERSIÓN (Anti-Cache NASA)
+    const CORE_VERSION = "V15.5.0-STRLNK-" + new Date().getTime();
     
+    // RUTAS MAESTRAS DE MÓDULOS (Ajustado a tu estructura real)
     const routes = {
-        dashboard: () => import(`./js/modules/dashboard.js?v=${VERSION}`),
-        ordenes: () => import(`./js/modules/ordenes.js?v=${VERSION}`),
-        inventario: () => import(`./js/modules/inventario.js?v=${VERSION}`),
-        clientes: () => import(`./js/modules/clientes.js?v=${VERSION}`),
-        pagos: () => import(`./js/modules/pagosTaller.js?v=${VERSION}`),
-        contabilidad: () => import(`./js/modules/contabilidad.js?v=${VERSION}`),
-        configuracion: () => import(`./js/modules/config.js?v=${VERSION}`)
+        dashboard: () => import(`./js/modules/dashboard.js?v=${CORE_VERSION}`),
+        ordenes: () => import(`./js/modules/ordenes.js?v=${CORE_VERSION}`),
+        inventario: () => import(`./js/modules/inventario.js?v=${CORE_VERSION}`),
+        clientes: () => import(`./js/modules/clientes.js?v=${CORE_VERSION}`),
+        pagos: () => import(`./js/modules/pagosTaller.js?v=${CORE_VERSION}`),
+        contabilidad: () => import(`./js/modules/contabilidad.js?v=${CORE_VERSION}`),
+        configuracion: () => import(`./js/modules/config.js?v=${CORE_VERSION}`)
     };
 
     async function router() {
         const container = document.getElementById("appContainer");
         const hash = window.location.hash.replace("#", "") || "dashboard";
 
-        // UI: Loading State
+        // Loading State: Estética Starlink
         container.innerHTML = `
-            <div class="flex h-full flex-col items-center justify-center">
-                <div class="spinner mb-6"></div>
-                <p class="orbitron text-[9px] font-black uppercase text-cyan-400 tracking-[5px] animate-pulse">Syncing Nexus-X Core...</p>
+            <div class="flex h-full flex-col items-center justify-center animate-in fade-in duration-700">
+                <div class="spinner mb-8"></div>
+                <div class="text-center">
+                    <p class="orbitron text-[8px] font-black uppercase text-cyan-400 tracking-[8px] animate-pulse">Syncing Nexus-X Core</p>
+                    <p class="text-[6px] text-slate-600 mt-2 uppercase tracking-[4px]">Uplink Terminal: ${hash}</p>
+                </div>
             </div>`;
 
-        // Update Active Links
+        // Update Nav UI
         document.querySelectorAll('.nav-link, .mobile-link').forEach(link => {
             const isActive = link.getAttribute('href') === `#${hash}`;
             link.classList.toggle('active', isActive);
@@ -201,12 +211,11 @@
             const moduleLoader = routes[hash] || routes.dashboard;
             const module = await moduleLoader();
             
-            // Estado Global Inyectado
             const state = {
                 empresaId: localStorage.getItem("empresaId"),
                 uid: localStorage.getItem("uid"),
                 rol: localStorage.getItem("rol") || "ADMIN",
-                version: VERSION
+                version: CORE_VERSION
             };
 
             container.innerHTML = ""; 
@@ -214,31 +223,34 @@
                 await module.default(container, state);
             }
         } catch (err) {
-            console.error("🔥 Router Error:", err);
+            console.error("🔥 NEXUS ROUTER ERROR:", err);
             container.innerHTML = `
-                <div class="p-10 text-center border border-red-500/20 bg-red-500/5 rounded-2xl">
-                    <p class="text-red-500 orbitron text-xs tracking-widest uppercase font-black">Link Broken: ${hash}</p>
-                    <button onclick="location.reload()" class="mt-4 text-[10px] text-cyan-500 underline font-bold">REINTENTAR CONEXIÓN</button>
+                <div class="h-full flex items-center justify-center p-10">
+                    <div class="max-w-xs text-center border border-red-500/20 bg-red-500/5 p-8 rounded-[2rem] backdrop-blur-xl">
+                        <i class="fas fa-triangle-exclamation text-red-500 text-3xl mb-4"></i>
+                        <p class="text-red-500 orbitron text-[9px] tracking-widest uppercase font-black">Link Protocol Broken: ${hash}</p>
+                        <button onclick="location.reload()" class="mt-6 px-6 py-3 bg-red-500/10 text-red-500 rounded-xl text-[8px] orbitron font-black uppercase hover:bg-red-500 hover:text-white transition-all">Reestablecer Órbita</button>
+                    </div>
                 </div>`;
         }
     }
 
-    // AUTH OBSERVER: El motor de arranque
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             localStorage.setItem("uid", user.uid);
             
-            // Si no tenemos empresaId en el local, intentamos recuperarlo de la base
+            // Inyección de Data Dinámica
             if (!localStorage.getItem("empresaId")) {
                 const userRef = doc(db, "users", user.uid);
                 const userSnap = await getDoc(userRef);
                 if (userSnap.exists()) {
                     localStorage.setItem("empresaId", userSnap.data().empresaId);
+                    localStorage.setItem("rol", userSnap.data().rol || "ADMIN");
                 }
             }
 
             document.getElementById("userName").innerText = (user.displayName || user.email.split('@')[0]).toUpperCase();
-            document.getElementById("userRole").innerText = `Nodo: ${localStorage.getItem("empresaId") || 'Global'}`;
+            document.getElementById("userRole").innerText = `Nodo: ${localStorage.getItem("empresaId") || 'Link-0'}`;
             
             if (!window.location.hash) window.location.hash = "#dashboard";
             router();
@@ -248,12 +260,10 @@
         }
     });
 
-    // Listeners
     window.addEventListener("hashchange", router);
     
     document.getElementById("logoutBtn").onclick = async () => {
-        const confirm = window.confirm("¿Cerrar sesión en Nexus-X?");
-        if (confirm) {
+        if (confirm("¿Finalizar transmisión Nexus-X?")) {
             await signOut(auth);
             localStorage.clear();
             window.location.href = "../login.html";
