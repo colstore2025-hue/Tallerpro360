@@ -46,8 +46,8 @@ export async function procesarSuscripcionBold(planId, periodo, uid, email) {
         amount: monto,
         currency: 'COP',
         description: nombreCompleto,
-        apiKey: 'c0S_rTfd6bmQY99Nrc_t68MEOM2zV4IHk-Yr3zP3-v4', // Tu llave de identidad (Pruebas)
-        integrityKey: 'zPuNOc2IDS3JGW809m0RMw', // Tu llave secreta (Pruebas)
+        apiKey: 'Msbo2MPoBdHPDV9SL5WLoUNWlR1mVkyTwgvdB6rjsU0', // Tu llave de identidad (Pruebas)
+        integrityKey: 'xdAB11ZPl0UqH_VmG91dcA', // Tu llave secreta (Pruebas)
         redirectionUrl: 'https://tallerpro360.vercel.app/app/success.html',
         tax: 0,
         metadata: {
