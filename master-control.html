@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus-X | OMNI MASTER CONTROL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Outfit:wght@200;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --neon: #00f2ff; --warning: #facc15; --danger: #ff4d4d; --bg: #020617; }
+        body { 
+            background: var(--bg); color: white; font-family: 'Outfit', sans-serif;
+            height: 100vh; overflow: hidden;
+        }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); }
+        
+        /* Animación de Escaneo Global */
+        .grid-bg {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(0, 242, 255, 0.05) 1px, transparent 1px), 
+                              linear-gradient(90deg, rgba(0, 242, 255, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px; z-index: -1;
+            mask-image: radial-gradient(circle, black, transparent 80%);
+        }
+
+        .status-pulse {
+            width: 8px; height: 8px; border-radius: 50%;
+            display: inline-block; margin-right: 8px;
+            box-shadow: 0 0 10px var(--neon);
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        .terminal-text { font-family: monospace; font-size: 10px; color: var(--neon); opacity: 0.7; }
+        
+        tr { transition: all 0.3s ease; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        tr:hover { background: rgba(0, 242, 255, 0.03); transform: scale(1.005); }
+
+        .btn-action {
+            padding: 4px 12px; border-radius: 4px; font-size: 10px;
+            font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
+            transition: 0.3s;
+        }
+    </style>
+</head>
+<body class="p-6">
+
+    <div class="grid-bg"></div>
+
+    <header class="flex justify-between items-end mb-8">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <span class="status-pulse bg-cyan-400"></span>
+                <h1 class="orbitron text-2xl font-black tracking-widest italic uppercase">Omni <span class="text-cyan-400">Master</span></h1>
+            </div>
+            <p class="terminal-text uppercase tracking-[0.4em]">Global Network Oversight // Year 2026-2030</p>
+        </div>
+
+        <div class="flex gap-10">
+            <div class="text-right">
+                <p class="text-[9px] text-slate-500 uppercase tracking-widest">Global Revenue</p>
+                <p class="orbitron text-xl text-emerald-400">$45,290.00 <span class="text-[10px] text-white/50">USD</span></p>
+            </div>
+            <div class="text-right border-l border-white/10 pl-10">
+                <p class="text-[9px] text-slate-500 uppercase tracking-widest">Active Nodes</p>
+                <p class="orbitron text-xl text-cyan-400">128 <span class="text-[10px] text-white/50">Units</span></p>
+            </div>
+        </div>
+    </header>
+
+    <main class="grid grid-cols-12 gap-6 h-[calc(100vh-180px)]">
+        
+        <aside class="col-span-3 space-y-6">
+            <div class="glass p-6 rounded-3xl h-1/2">
+                <h3 class="orbitron text-[10px] text-cyan-500 mb-6 uppercase tracking-[0.3em]">Core Integrity</h3>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Firebase DB</span>
+                        <span class="text-[10px] text-emerald-400 font-bold">100% ONLINE</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Nexus-X AI</span>
+                        <span class="text-[10px] text-cyan-400 font-bold italic animate-pulse">OPTIMIZING</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Global SSL</span>
+                        <span class="text-[10px] text-emerald-400 font-bold">SECURE</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass p-6 rounded-3xl h-1/2 overflow-hidden relative">
+                <h3 class="orbitron text-[10px] text-warning mb-4 uppercase tracking-[0.3em]">System Logs</h3>
+                <div id="logs" class="terminal-text h-full space-y-1">
+                    <p>> [INFO] New node registered: Taller Elite Bogotá</p>
+                    <p>> [WARN] License NX-445 expiring in 48h</p>
+                    <p>> [INFO] Sync with Starlink Sat-09 complete</p>
+                </div>
+            </div>
+        </aside>
+
+        <section class="col-span-9 glass rounded-[3rem] p-8 overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="orbitron text-sm font-black italic uppercase tracking-widest">Satellite Network <span class="text-slate-500 font-light">(Registered Talleres)</span></h2>
+                <div class="flex gap-4">
+                    <input type="text" placeholder="BUSCAR NODO..." class="bg-black/40 border border-white/10 rounded-full px-6 py-2 text-[10px] focus:border-cyan-500 outline-none w-64">
+                    <button class="bg-cyan-500 text-black orbitron text-[9px] px-6 py-2 rounded-full font-black">Refresh Grid</button>
+                </div>
+            </div>
+
+            <div class="overflow-y-auto flex-grow pr-4 custom-scrollbar">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-[9px] text-slate-500 uppercase tracking-widest border-b border-white/10">
+                            <th class="pb-4">Nodo / Organización</th>
+                            <th class="pb-4">Plan Tier</th>
+                            <th class="pb-4">Status</th>
+                            <th class="pb-4 text-center">Power Level</th>
+                            <th class="pb-4 text-right">Comandos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="masterTable" class="text-sm">
+                        <tr>
+                            <td class="py-6">
+                                <p class="font-black italic text-white uppercase">Taller Central Medellín</p>
+                                <p class="text-[9px] text-slate-500">UID: NX-88493-A</p>
+                            </td>
+                            <td>
+                                <span class="orbitron text-[10px] text-cyan-400 border border-cyan-400/30 px-3 py-1 rounded-full">ELITE</span>
+                            </td>
+                            <td>
+                                <span class="flex items-center text-[10px] font-black text-emerald-400 uppercase italic">
+                                    <span class="status-pulse bg-emerald-400"></span> ACTIVO
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <div class="w-24 bg-white/5 h-1 rounded-full mx-auto overflow-hidden">
+                                    <div class="bg-cyan-400 h-full w-[90%]"></div>
+                                </div>
+                            </td>
+                            <td class="text-right space-x-2">
+                                <button class="btn-action border border-cyan-500 text-cyan-500 hover:bg-cyan-500 hover:text-black">Edit</button>
+                                <button onclick="suspendNode(this)" class="btn-action border border-red-500 text-red-500 hover:bg-red-500 hover:text-white">Suspend</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+            authDomain: "tallerpro360.firebaseapp.com",
+            projectId: "tallerpro360",
+            storageBucket: "tallerpro360.firebasestorage.app",
+            messagingSenderId: "636224778184",
+            appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- FETCH REALTIME DE TODOS LOS TALLERES ---
+        onSnapshot(collection(db, "empresas"), (snapshot) => {
+            const tableBody = document.getElementById("masterTable");
+            tableBody.innerHTML = ""; // Limpiar para actualizar
+
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const id = docSnap.id;
+                const statusColor = data.estadoPlan === 'ACTIVO' ? 'emerald-400' : 'red-500';
+                const tierColor = data.planId === 'elite' ? 'cyan-400' : (data.planId === 'pro' ? 'warning' : 'slate-400');
+
+                tableBody.innerHTML += `
+                    <tr>
+                        <td class="py-6">
+                            <p class="font-black italic text-white uppercase">${data.nombre}</p>
+                            <p class="text-[9px] text-slate-500 italic">UID: ${id.substring(0,10)}...</p>
+                        </td>
+                        <td>
+                            <span class="orbitron text-[10px] text-${tierColor} border border-${tierColor}/30 px-3 py-1 rounded-full uppercase">${data.planId}</span>
+                        </td>
+                        <td>
+                            <span class="flex items-center text-[10px] font-black text-${statusColor} uppercase italic">
+                                <span class="status-pulse bg-${statusColor}"></span> ${data.estadoPlan}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <div class="w-24 bg-white/5 h-1 rounded-full mx-auto overflow-hidden">
+                                <div class="bg-cyan-400 h-full w-[${data.powerLevel}%]"></div>
+                            </div>
+                        </td>
+                        <td class="text-right space-x-2">
+                            <button class="btn-action border border-cyan-500 text-cyan-500 hover:bg-cyan-500 hover:text-black">Logs</button>
+                            <button onclick="toggleStatus('${id}', '${data.estadoPlan}')" class="btn-action border border-${data.estadoPlan === 'ACTIVO' ? 'red-500' : 'emerald-500'} text-${data.estadoPlan === 'ACTIVO' ? 'red-500' : 'emerald-500'} hover:bg-${data.estadoPlan === 'ACTIVO' ? 'red-500' : 'emerald-500'} hover:text-white">
+                                ${data.estadoPlan === 'ACTIVO' ? 'Suspender' : 'Activar'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        });
+
+        // --- ACCIÓN: SUSPENDER / ACTIVAR NODO ---
+        window.toggleStatus = async (id, currentStatus) => {
+            const newStatus = currentStatus === 'ACTIVO' ? 'SUSPENDIDO' : 'ACTIVO';
+            const confirmAction = confirm(`¿EJECUTAR PROTOCOLO DE ${newStatus} PARA EL NODO ${id}?`);
+            
+            if (confirmAction) {
+                try {
+                    await updateDoc(doc(db, "empresas", id), { estadoPlan: newStatus });
+                    console.log(`Nexus-X: Nodo ${id} actualizado a ${newStatus}`);
+                } catch(e) {
+                    alert("ERROR DE PROTOCOLO: " + e.message);
+                }
+            }
+        };
+
+        // Simulación de Logs
+        setInterval(() => {
+            const logs = document.getElementById('logs');
+            const events = [
+                "> [SEC] Encryption Key Rotated",
+                "> [DB] Global sync complete",
+                "> [API] Webhook Proccessed: PayU",
+                "> [SYS] Monitoring Starlink Latency: 12ms"
+            ];
+            const p = document.createElement('p');
+            p.innerText = events[Math.floor(Math.random() * events.length)];
+            logs.prepend(p);
+            if(logs.children.length > 8) logs.lastChild.remove();
+        }, 4000);
+
+    </script>
+</body>
+</html>
