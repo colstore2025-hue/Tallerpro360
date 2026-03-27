@@ -1,7 +1,7 @@
 /**
- * config.js - TallerPRO360 V13.5.0 🚀
- * NEXUS-X STARLINK CORE: Reingeniería Total de Estabilidad
- * Ruta Maestra: empresas/[empresaId]
+ * config.js - TallerPRO360 V14.0.0 🚀
+ * NEXUS-X STARLINK CORE: Reingeniería de Algoritmos y Pasarela Bold
+ * Ruta Crítica: empresas/[empresaId]
  */
 import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
@@ -10,166 +10,175 @@ export default async function configModule(container, state) {
     const empresaId = state?.empresaId || localStorage.getItem("empresaId");
     const uid = state?.uid || localStorage.getItem("uid");
 
-    if (!empresaId) {
+    // ESCUDO DE SEGURIDAD NEXUS
+    if (!empresaId || empresaId === "PENDIENTE") {
         return container.innerHTML = `
-            <div class="p-10 text-white font-black italic animate-pulse flex flex-col items-center">
-                <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
-                ERROR: ÓRBITA NO IDENTIFICADA - REINICIE SESIÓN
+            <div class="p-20 text-center animate-pulse">
+                <i class="fas fa-satellite-dish text-cyan-500 text-5xl mb-6"></i>
+                <h2 class="orbitron text-white text-xs font-black tracking-[0.5em] uppercase">Error: Órbita No Identificada</h2>
+                <p class="text-[8px] text-slate-500 mt-4 uppercase">Sincronizando con el satélite... Por favor reingrese.</p>
+                <button onclick="location.reload()" class="mt-8 bg-cyan-500 text-black px-8 py-3 rounded-full font-black text-[9px] uppercase">Reintentar Enlace</button>
             </div>`;
     }
 
     const docRef = doc(db, "empresas", empresaId);
-    let logoBase64 = null; // Variable persistente para el logo
+    let logoBase64 = null;
 
-    // --- ALGORITMO DE PRECIOS BASE NEXUS-X ---
-    const PRECIOS_BASE = {
-        basico: 49900,
-        pro: 79900,
-        elite: 129000,
-        enterprise: 0
+    // --- ALGORITMO DE PRECIOS NEXUS-X ---
+    const PLANES = {
+        basico: { nombre: "Básico", base: 49900 },
+        pro: { nombre: "PRO", base: 79900 },
+        elite: { nombre: "ELITE", base: 129000 }
     };
 
     container.innerHTML = `
-    <style>
-        .nexus-ui { font-family: 'Inter', sans-serif; color: white; }
-        .nexus-card { background: rgba(10, 15, 29, 0.7); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(40px); border-radius: 2rem; }
-        .nexus-input-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 1.2rem; transition: 0.3s; padding: 1rem; }
-        .nexus-input-box:focus-within { border-color: #06b6d4; box-shadow: 0 0 20px rgba(6,182,212,0.1); }
-        .tab-btn { padding: 0.8rem; border-radius: 1rem; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #475569; transition: 0.3s; flex: 1; }
-        .tab-btn.active { background: #06b6d4; color: black; box-shadow: 0 8px 20px rgba(6,182,212,0.2); }
-        .btn-pay { background: linear-gradient(90deg, #ef4444, #b91c1c); color: white; font-weight: 900; letter-spacing: 2px; }
-        .tab-content.hidden { display: none; }
-        @media (min-width: 1024px) { .nexus-content { margin-left: 260px; padding: 3rem; } }
-    </style>
-
-    <div class="nexus-content pb-32 animate-in fade-in duration-500">
-        <header class="flex justify-between items-end mb-10">
+    <div class="max-w-4xl mx-auto pb-40 animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <header class="flex justify-between items-center mb-10 px-4">
             <div>
-                <h1 class="text-3xl font-black italic text-white uppercase tracking-tighter">CONFIGURACIÓN <span class="text-cyan-400">CORE</span></h1>
-                <p class="text-[9px] text-cyan-500/60 font-bold uppercase tracking-[0.3em]">Protocolo Nexus-X Starlink • v13.5</p>
+                <h1 class="orbitron text-2xl font-black italic text-white tracking-tighter uppercase">SYSTEM <span class="text-cyan-400">CORE</span></h1>
+                <p class="text-[8px] text-cyan-500/80 font-bold uppercase tracking-[0.4em] mt-1">Protocolo de Configuración Global v14.0</p>
             </div>
-            <div class="text-right hidden md:block">
-                <span id="syncStatus" class="text-[8px] font-black text-emerald-500 uppercase border border-emerald-500/30 px-3 py-1 rounded-full">Nodo: ${empresaId}</span>
+            <div class="bg-black/40 border border-cyan-500/30 px-4 py-2 rounded-2xl backdrop-blur-md">
+                <span class="text-[7px] text-cyan-400 font-black uppercase tracking-widest flex items-center gap-2">
+                    <span class="w-2 h-2 bg-cyan-500 rounded-full animate-ping"></span> Nodo: ${empresaId}
+                </span>
             </div>
         </header>
 
-        <nav class="flex gap-2 p-1.5 nexus-card mb-8">
-            <button data-tab="secGen" class="tab-btn active">Empresa</button>
-            <button data-tab="secWs" class="tab-btn">WhatsApp</button>
-            <button data-tab="secPay" class="tab-btn italic text-red-400">Suscripción</button>
+        <nav class="flex gap-2 p-1.5 bg-white/5 border border-white/10 rounded-[2rem] mb-10 backdrop-blur-2xl shadow-2xl mx-4">
+            <button data-tab="secGen" class="tab-btn active flex-1 py-4 rounded-2xl text-[9px] font-black uppercase transition-all">Empresa</button>
+            <button data-tab="secWs" class="tab-btn flex-1 py-4 rounded-2xl text-[9px] font-black uppercase transition-all">WhatsApp</button>
+            <button data-tab="secPay" class="tab-btn flex-1 py-4 rounded-2xl text-[9px] font-black uppercase transition-all italic text-red-400">Suscripción & Bold</button>
         </nav>
 
-        <div id="secGen" class="tab-content space-y-6">
-            <div class="nexus-card p-8">
-                <div class="flex flex-col items-center mb-8">
-                    <div id="logoWrapper" class="w-32 h-32 bg-black rounded-[2.5rem] border-2 border-dashed border-white/10 flex items-center justify-center relative overflow-hidden group cursor-pointer">
-                        <img id="imgLogo" src="" class="hidden w-full h-full object-cover">
-                        <i id="iconCam" class="fas fa-camera text-xl text-slate-700 group-hover:text-cyan-500 transition-colors"></i>
-                        <input type="file" id="fileLogo" class="absolute inset-0 opacity-0 cursor-pointer" accept="image/*">
+        <div id="secGen" class="tab-content space-y-6 px-4">
+            <div class="bg-white/5 border border-white/5 p-8 rounded-[3rem] backdrop-blur-sm relative overflow-hidden group">
+                <div class="flex flex-col items-center mb-10">
+                    <div id="logoDrop" class="w-32 h-32 bg-gradient-to-tr from-slate-900 to-black rounded-[2.5rem] border-2 border-dashed border-white/20 flex items-center justify-center relative overflow-hidden shadow-2xl hover:border-cyan-500/50 transition-all cursor-pointer">
+                        <img id="prevLogo" src="" class="hidden w-full h-full object-cover">
+                        <i id="camIcon" class="fas fa-camera text-2xl text-slate-700"></i>
+                        <input type="file" id="inputLogo" class="absolute inset-0 opacity-0 cursor-pointer" accept="image/*">
                     </div>
-                    <p class="text-[8px] font-black text-slate-500 mt-3 uppercase">Identidad de Marca</p>
+                    <p class="text-[8px] text-slate-500 font-black mt-4 uppercase tracking-[0.2em]">Cargar Identidad de Marca</p>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="nexus-input-box">
-                        <label class="text-[8px] text-cyan-500 font-black uppercase mb-1 block italic">Razón Social</label>
-                        <input id="nombre" type="text" class="w-full bg-transparent text-lg font-bold outline-none text-white uppercase italic">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-[7px] text-cyan-500 font-black uppercase tracking-widest ml-4 italic">Razón Social</label>
+                        <input id="inNombre" class="w-full bg-black/40 p-5 rounded-2xl border border-white/5 outline-none text-white font-bold orbitron uppercase italic focus:border-cyan-500/40">
                     </div>
-                    <div class="nexus-input-box">
-                        <label class="text-[8px] text-cyan-500 font-black uppercase mb-1 block italic">NIT / Identificación</label>
-                        <input id="nit" type="text" class="w-full bg-transparent text-lg font-bold outline-none text-white">
+                    <div class="space-y-2">
+                        <label class="text-[7px] text-cyan-500 font-black uppercase tracking-widest ml-4 italic">NIT / ID Fiscal</label>
+                        <input id="inNit" class="w-full bg-black/40 p-5 rounded-2xl border border-white/5 outline-none text-white font-mono focus:border-cyan-500/40">
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="secWs" class="tab-content hidden space-y-6">
-            <div class="nexus-card p-8 border-emerald-500/20">
-                <div class="flex items-center gap-3 mb-6">
-                    <i class="fab fa-whatsapp text-2xl text-emerald-500"></i>
-                    <h3 class="text-sm font-black text-emerald-500 uppercase">WhatsApp Engine</h3>
+        <div id="secWs" class="tab-content hidden px-4">
+            <div class="bg-gradient-to-br from-[#0f172a] to-[#06201a] p-10 rounded-[3rem] border border-emerald-500/20 shadow-2xl">
+                <div class="flex justify-between items-center mb-8">
+                    <h3 class="text-xs font-black text-emerald-400 uppercase italic flex items-center gap-3">
+                        <i class="fab fa-whatsapp text-2xl"></i> Motor de Notificaciones
+                    </h3>
+                    <span class="text-[7px] bg-emerald-500/10 text-emerald-500 px-4 py-1.5 rounded-full border border-emerald-500/20 font-black uppercase">Auto-Sincronización</span>
                 </div>
-                <div class="nexus-input-box">
-                    <label class="text-[8px] text-emerald-500 font-black uppercase mb-1 block">Número Maestro (Con código de país)</label>
-                    <input id="whatsapp" type="number" placeholder="57300..." class="w-full bg-transparent text-2xl font-black text-white outline-none">
+                <div class="bg-black/60 p-8 rounded-3xl border border-white/5">
+                    <label class="text-[8px] text-emerald-500 font-black uppercase mb-3 block">Número Maestro (Eje: 573001234567)</label>
+                    <input id="inWs" type="number" class="w-full bg-transparent text-3xl font-black text-white outline-none tracking-tighter" placeholder="57...">
+                    <p class="text-[9px] text-slate-500 mt-6 italic">Este número enviará automáticamente los estados de orden y links de pago a sus clientes.</p>
                 </div>
             </div>
         </div>
 
-        <div id="secPay" class="tab-content hidden space-y-6">
-            <div class="nexus-card p-8 border-red-500/20 bg-gradient-to-b from-[#0a0f1d] to-[#1a0505]">
-                <h3 class="text-xl font-black italic text-red-500 mb-6 uppercase">Nexus-X Billing Engine</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div class="nexus-input-box">
-                        <label class="text-[8px] text-slate-400 font-black uppercase mb-2 block">Seleccionar Plan</label>
-                        <select id="selectPlan" class="w-full bg-transparent text-white font-bold outline-none cursor-pointer">
+        <div id="secPay" class="tab-content hidden px-4 space-y-8">
+            <div class="bg-gradient-to-b from-[#0a0f1d] to-[#1a0505] p-10 rounded-[3.5rem] border border-red-500/20 shadow-2xl relative overflow-hidden">
+                <h3 class="text-xl font-black italic text-red-500 mb-8 uppercase tracking-tighter">Billing Engine <span class="text-white">Starlink</span></h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                    <div class="bg-black/40 p-5 rounded-2xl border border-white/5">
+                        <label class="text-[8px] text-slate-500 font-black uppercase mb-2 block">Seleccionar Plan</label>
+                        <select id="selPlan" class="w-full bg-transparent text-white font-black outline-none cursor-pointer orbitron text-xs">
                             <option value="basico">PLAN BÁSICO</option>
                             <option value="pro">PLAN PRO</option>
                             <option value="elite">PLAN ELITE</option>
                         </select>
                     </div>
-                    <div class="nexus-input-box">
-                        <label class="text-[8px] text-slate-400 font-black uppercase mb-2 block">Tiempo de Uso</label>
-                        <select id="selectMeses" class="w-full bg-transparent text-white font-bold outline-none cursor-pointer">
-                            ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m => `<option value="${m}">${m} Mes${m>1?'es':''}</option>`).join('')}
+                    <div class="bg-black/40 p-5 rounded-2xl border border-white/5">
+                        <label class="text-[8px] text-slate-500 font-black uppercase mb-2 block">Periodo de Uso</label>
+                        <select id="selMeses" class="w-full bg-transparent text-white font-black outline-none cursor-pointer orbitron text-xs">
+                            <option value="1">1 MES (Estándar)</option>
+                            <option value="3">3 MESES (10% OFF)</option>
+                            <option value="6">6 MESES (20% OFF)</option>
+                            <option value="12">12 MESES (30% OFF - VIP)</option>
                         </select>
                     </div>
                 </div>
-                <div class="bg-black/40 p-6 rounded-2xl border border-white/5 text-center mb-8">
-                    <p class="text-[9px] text-cyan-400 font-black uppercase tracking-widest mb-1 italic">Total Suscripción Nexus-X</p>
-                    <h2 id="montoPreview" class="text-4xl font-black text-white italic tracking-tighter">$ 0</h2>
-                    <p id="ahorroText" class="text-[10px] text-emerald-400 font-bold mt-2 uppercase"></p>
+                <div class="bg-black/60 p-10 rounded-[2.5rem] border border-white/5 text-center shadow-inner">
+                    <p class="text-[9px] text-cyan-400 font-black uppercase tracking-[0.3em] mb-2 italic">Valor de Renovación Nexus-X</p>
+                    <h2 id="txtTotal" class="text-5xl font-black text-white italic tracking-tighter">$ 0</h2>
+                    <p id="txtAhorro" class="text-[10px] text-emerald-400 font-bold mt-4 uppercase animate-pulse"></p>
                 </div>
-                <button id="btnPaySusc" class="w-full btn-pay p-5 rounded-2xl shadow-xl hover:scale-[1.02] transition-transform flex items-center justify-center gap-3">
-                    RENOVAR AHORA <i class="fas fa-rocket animate-pulse"></i>
+                <button id="btnRenovar" class="w-full mt-8 bg-gradient-to-r from-red-600 to-red-900 text-white py-6 rounded-3xl font-black orbitron text-[10px] uppercase tracking-[0.3em] shadow-2xl shadow-red-500/20 active:scale-95 transition-all">
+                    Ejecutar Protocolo de Pago <i class="fas fa-bolt ml-2"></i>
                 </button>
             </div>
 
-            <div class="nexus-card p-8 border-cyan-500/20">
-                <h3 class="text-sm font-black text-cyan-400 mb-4 uppercase italic">Configuración de Cobro (Pasarela Taller)</h3>
-                <div class="space-y-4">
-                    <div class="nexus-input-box">
-                        <label class="text-[8px] text-slate-500 font-black uppercase mb-1 block">API Key Bold (Producción)</label>
-                        <input id="bold_api_key" type="password" class="w-full bg-transparent text-xs font-mono text-cyan-200 outline-none">
+            <div class="bg-white/5 p-10 rounded-[3rem] border border-cyan-500/20 backdrop-blur-md">
+                <div class="flex justify-between items-start mb-8">
+                    <div>
+                        <h3 class="text-xs font-black text-cyan-400 uppercase italic">Pasarela de Cobro (Bold Pay)</h3>
+                        <p class="text-[8px] text-slate-500 uppercase font-bold mt-1">Reciba pagos de sus clientes directamente</p>
                     </div>
-                    <div class="nexus-input-box">
-                        <label class="text-[8px] text-slate-500 font-black uppercase mb-1 block">Identity Bold (Producción)</label>
-                        <input id="bold_identity" type="password" class="w-full bg-transparent text-xs font-mono text-cyan-200 outline-none">
+                    <button onclick="window.open('https://bold.co')" class="text-[7px] bg-cyan-500/10 text-cyan-400 px-4 py-2 rounded-full border border-cyan-500/30 font-black uppercase tracking-widest">Video Guía Bold</button>
+                </div>
+                <div class="space-y-4">
+                    <div class="bg-black/40 p-5 rounded-2xl border border-white/5">
+                        <label class="text-[8px] text-slate-500 font-black uppercase mb-1 block">API Key de Producción (pk_live_...)</label>
+                        <input id="inBoldKey" type="password" class="w-full bg-transparent text-xs font-mono text-cyan-200 outline-none">
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="fixed bottom-8 left-0 right-0 px-6 z-[100] flex justify-center">
-            <button id="btnSave" class="w-full max-w-lg bg-cyan-500 text-black py-6 rounded-full font-black text-xs uppercase tracking-[0.4em] shadow-2xl hover:bg-cyan-400 transition-all flex items-center justify-center gap-3">
-                SINCRONIZAR NODO <i class="fas fa-satellite"></i>
+        <div class="fixed bottom-10 left-0 right-0 px-8 z-[100] flex justify-center">
+            <button id="btnSaveAll" class="w-full max-w-lg bg-cyan-500 text-black py-7 rounded-full font-black orbitron text-[11px] uppercase tracking-[0.5em] shadow-[0_20px_50px_rgba(6,182,212,0.3)] hover:bg-cyan-400 active:scale-95 transition-all flex items-center justify-center gap-4">
+                Sincronizar Nexus-X <i class="fas fa-satellite"></i>
             </button>
         </div>
     </div>
+
+    <style>
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .tab-btn { background: transparent; color: #64748b; border: 1px solid transparent; }
+        .tab-btn.active { background: #06b6d4; color: #000; box-shadow: 0 10px 25px rgba(6,182,212,0.3); }
+        .tab-content.hidden { display: none; }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
     `;
 
-    // --- LÓGICA DE ALGORITMO ---
-    const selectPlan = document.getElementById("selectPlan");
-    const selectMeses = document.getElementById("selectMeses");
-    const montoPreview = document.getElementById("montoPreview");
-    const ahorroText = document.getElementById("ahorroText");
+    // --- LÓGICA DE ALGORITMOS DE PRECIO ---
+    const selPlan = document.getElementById("selPlan");
+    const selMeses = document.getElementById("selMeses");
+    const txtTotal = document.getElementById("txtTotal");
+    const txtAhorro = document.getElementById("txtAhorro");
 
-    const actualizarAlgoritmo = () => {
-        const plan = selectPlan.value;
-        const meses = parseInt(selectMeses.value);
-        let factor = 1.0;
-        if (meses >= 12) { factor = 0.70; ahorroText.innerText = "¡Beneficio Anual: 30% OFF!"; }
-        else if (meses >= 6) { factor = 0.80; ahorroText.innerText = "¡Beneficio Semestral: 20% OFF!"; }
-        else if (meses >= 3) { factor = 0.90; ahorroText.innerText = "¡Beneficio Trimestral: 10% OFF!"; }
-        else { ahorroText.innerText = "Tarifa Mensual Estándar"; }
+    const calcularPrecios = () => {
+        const plan = PLANES[selPlan.value];
+        const meses = parseInt(selMeses.value);
+        let descuento = 1.0;
 
-        const total = Math.round((PRECIOS_BASE[plan] * meses) * factor);
-        montoPreview.innerText = `$ ${total.toLocaleString()}`;
+        if (meses === 12) { descuento = 0.70; txtAhorro.innerText = "★ BENEFICIO ANUAL ACTIVADO: 30% OFF ★"; }
+        else if (meses === 6) { descuento = 0.80; txtAhorro.innerText = "✔ BENEFICIO SEMESTRAL: 20% OFF"; }
+        else if (meses === 3) { descuento = 0.90; txtAhorro.innerText = "✔ BENEFICIO TRIMESTRAL: 10% OFF"; }
+        else { txtAhorro.innerText = "TARIFA ESTÁNDAR MENSUAL"; }
+
+        const total = Math.round((plan.base * meses) * descuento);
+        txtTotal.innerText = `$ ${total.toLocaleString()}`;
     };
 
-    selectPlan.onchange = actualizarAlgoritmo;
-    selectMeses.onchange = actualizarAlgoritmo;
+    selPlan.onchange = calcularPrecios;
+    selMeses.onchange = calcularPrecios;
 
-    // --- GESTIÓN DE TABS ---
+    // --- MANEJO DE TABS ---
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -179,97 +188,72 @@ export default async function configModule(container, state) {
         };
     });
 
-    // --- CARGA DE LOGO ---
-    document.getElementById("fileLogo").onchange = (e) => {
+    // --- MANEJO DE LOGO (BASE64) ---
+    document.getElementById("inputLogo").onchange = (e) => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = (ev) => {
                 logoBase64 = ev.target.result;
-                document.getElementById("imgLogo").src = logoBase64;
-                document.getElementById("imgLogo").classList.remove("hidden");
-                document.getElementById("iconCam").classList.add("hidden");
+                document.getElementById("prevLogo").src = logoBase64;
+                document.getElementById("prevLogo").classList.remove("hidden");
+                document.getElementById("camIcon").classList.add("hidden");
             };
             reader.readAsDataURL(file);
         }
     };
 
-    // --- CARGA INICIAL (RECUPERAR DATOS) ---
-    const loadData = async () => {
+    // --- CARGA INICIAL DE DATOS ---
+    const loadCore = async () => {
         const snap = await getDoc(docRef);
         if (snap.exists()) {
             const d = snap.data();
-            document.getElementById("nombre").value = d.nombre || "";
-            document.getElementById("nit").value = d.nit || "";
-            document.getElementById("whatsapp").value = d.whatsapp || "";
-            document.getElementById("bold_api_key").value = d.configuracion?.bold?.apiKey || "";
-            document.getElementById("bold_identity").value = d.configuracion?.bold?.identity || "";
+            document.getElementById("inNombre").value = d.nombre || "";
+            document.getElementById("inNit").value = d.nit || "";
+            document.getElementById("inWs").value = d.whatsapp || "";
+            document.getElementById("inBoldKey").value = d.bold_api_key || "";
             if (d.logo) {
                 logoBase64 = d.logo;
-                document.getElementById("imgLogo").src = d.logo;
-                document.getElementById("imgLogo").classList.remove("hidden");
-                document.getElementById("iconCam").classList.add("hidden");
+                document.getElementById("prevLogo").src = d.logo;
+                document.getElementById("prevLogo").classList.remove("hidden");
+                document.getElementById("camIcon").classList.add("hidden");
             }
         }
-        actualizarAlgoritmo();
+        calcularPrecios();
     };
 
-    // --- GUARDADO DINÁMICO (Sincronización Total) ---
-    document.getElementById("btnSave").onclick = async () => {
-        const btn = document.getElementById("btnSave");
+    // --- GUARDADO MAESTRO ---
+    document.getElementById("btnSaveAll").onclick = async () => {
+        const btn = document.getElementById("btnSaveAll");
         btn.disabled = true;
-        btn.innerHTML = `SINCRONIZANDO NODO... <i class="fas fa-sync fa-spin"></i>`;
+        btn.innerHTML = `TRANSMITIENDO A SATÉLITE... <i class="fas fa-sync fa-spin"></i>`;
 
         try {
             const payload = {
-                nombre: document.getElementById("nombre").value.trim().toUpperCase(),
-                nit: document.getElementById("nit").value.trim(),
-                whatsapp: document.getElementById("whatsapp").value.trim(),
+                nombre: document.getElementById("inNombre").value.trim().toUpperCase(),
+                nit: document.getElementById("inNit").value.trim(),
+                whatsapp: document.getElementById("inWs").value.trim(),
+                bold_api_key: document.getElementById("inBoldKey").value.trim(),
                 logo: logoBase64,
-                configuracion: {
-                    bold: {
-                        apiKey: document.getElementById("bold_api_key").value.trim(),
-                        identity: document.getElementById("bold_identity").value.trim()
-                    },
-                    engine: {
-                        version: "13.5.0-STARLINK",
-                        lastSync: serverTimestamp(),
-                        status: "ACTIVE"
-                    }
-                }
+                lastUpdate: serverTimestamp(),
+                empresaId: empresaId,
+                status: "ACTIVE_CORE"
             };
 
             await setDoc(docRef, payload, { merge: true });
-            btn.innerHTML = `ÓRBITA ESTABILIZADA <i class="fas fa-check"></i>`;
-            btn.className = "w-full max-w-lg bg-emerald-500 text-black py-6 rounded-full font-black text-xs uppercase tracking-[0.4em]";
             
+            // Actualizar contexto local
+            localStorage.setItem("nombreTaller", payload.nombre);
+            
+            btn.innerHTML = `SINCRO EXITOSA <i class="fas fa-check"></i>`;
+            btn.classList.replace("bg-cyan-500", "bg-emerald-500");
             setTimeout(() => location.reload(), 1500);
         } catch (e) {
-            console.error("Error:", e);
+            console.error("Falla Nexus:", e);
             btn.disabled = false;
-            btn.innerHTML = `ERROR DE TRANSMISIÓN`;
+            btn.innerHTML = `ERROR DE ENLACE`;
         }
     };
 
-    // --- PAGO DE SUSCRIPCIÓN ---
-    document.getElementById("btnPaySusc").onclick = async () => {
-        try {
-            const res = await fetch("/api/create-bold-checkout", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    planId: selectPlan.value,
-                    meses: selectMeses.value,
-                    uid: uid,
-                    empresaId: empresaId
-                })
-            });
-            const data = await res.json();
-            if (data.url) window.location.href = data.url;
-        } catch (e) {
-            alert("Error al conectar con el Gateway Nexus-X");
-        }
-    };
-
-    loadData();
+    loadCore();
 }
