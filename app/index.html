@@ -57,6 +57,21 @@
             scroll-behavior: smooth;
         }
 
+/* Scrollbar Estilo Nexus-X */
+#appContainer::-webkit-scrollbar {
+    width: 4px;
+}
+#appContainer::-webkit-scrollbar-track {
+    background: transparent;
+}
+#appContainer::-webkit-scrollbar-thumb {
+    background: rgba(0, 242, 255, 0.1);
+    border-radius: 10px;
+}
+#appContainer::-webkit-scrollbar-thumb:hover {
+    background: var(--neon-cyan);
+}
+
         /* NAVEGACIÓN ESTILO TESLA */
         .nav-link { 
             display: flex; align-items: center; gap: 14px; padding: 14px 18px; 
