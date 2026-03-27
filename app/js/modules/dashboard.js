@@ -1,8 +1,9 @@
 /**
- * dashboard.js - TallerPRO360 NEXUS-CORE V15.0 🛰️
- * SISTEMA DE INTELIGENCIA DE NEGOCIO Y CONTROL DE MISIÓN
+ * dashboard.js - TallerPRO360 NEXUS-CORE V16.0 🛰️
+ * SISTEMA DE INTELIGENCIA DE NEGOCIO Y CONTROL DE MISIÓN "AEGIS"
+ * Visión 2030: Autogestión, Blindaje Proactivo y Notificación Galáctica
  */
-import { getClientes, getOrdenes, getInventario } from "../services/dataService.js";
+import { getClientes, getOrdenes, getInventario, getEmpresaData } from "../services/dataService.js";
 import { store } from "../core/store.js";
 import { hablar } from "../voice/voiceCore.js";
 
@@ -11,22 +12,35 @@ let mainChart = null;
 export default async function dashboard(container, state) {
     const empresaId = state?.empresaId || localStorage.getItem("empresaId");
     
-    // 1. Renderizado de la Estructura de Comando
+    // 1. Verificación de Seguridad y Licencia (El Guardián Nexus)
+    const access = await verifyNexusLicense(empresaId);
+    
+    if (access.status === "LOCKED") {
+        renderLockState(container, access);
+        return;
+    }
+
+    // 2. Renderizado de la Estructura de Comando
     renderStructure(container);
 
     try {
-        // 2. Carga Inteligente (Paralela y con Cache)
+        // 3. Alertas de Próximo Vencimiento (8 días antes)
+        if (access.daysRemaining <= 8 && access.status === "ACTIVE") {
+            showGracePeriodAlert(access.daysRemaining);
+        }
+
+        // 4. Carga Inteligente (Paralela y con Cache)
         const data = await loadDataSmart(empresaId);
         
-        // 3. Procesamiento Nexus-BI
+        // 5. Procesamiento Nexus-BI
         const metrics = processBusinessIntelligence(data);
 
-        // 4. Despliegue de Módulos (Animación en Cascada)
+        // 6. Despliegue de Módulos (Animación en Cascada)
         updateKPIs(metrics);
         renderAdvancedChart(metrics);
-        updatePhaseMonitor(metrics); // Nuevo: Monitor de Etapas
-        updateSmartPanel(metrics);
-        initNexusPredictor(metrics);
+        updatePhaseMonitor(metrics); 
+        updateSmartPanel(metrics, access);
+        initNexusPredictor(metrics, access);
 
     } catch (err) {
         console.error("🚨 Critical Core Failure:", err);
@@ -34,9 +48,84 @@ export default async function dashboard(container, state) {
     }
 }
 
+/**
+ * VERIFICACIÓN DE LICENCIA TALLA NASA
+ * Compara fecha actual con 'venceEn' de Firestore
+ */
+async function verifyNexusLicense(empresaId) {
+    const doc = await getEmpresaData(empresaId);
+    const data = doc.data();
+    const now = new Date();
+    const venceEn = data.venceEn?.toDate() || new Date();
+    
+    const diffTime = venceEn - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffTime <= 0) {
+        return { status: "LOCKED", daysRemaining: 0, plan: data.planActual };
+    }
+    return { status: "ACTIVE", daysRemaining: diffDays, plan: data.planActual };
+}
+
+/**
+ * BLOQUEO ELEGANTE (VISION 2030)
+ * No es un error, es una invitación a mantener el estatus Pro
+ */
+function renderLockState(container, access) {
+    container.innerHTML = `
+    <div class="h-screen w-full flex items-center justify-center bg-[#020617] relative overflow-hidden p-6">
+        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+        <div class="absolute w-[500px] h-[500px] bg-red-600/10 blur-[120px] rounded-full -top-48 -left-48"></div>
+        
+        <div class="max-w-2xl w-full glass-card p-12 rounded-[4rem] border border-red-500/30 text-center relative z-10 backdrop-blur-3xl">
+            <div class="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-red-500/40">
+                <i class="fas fa-satellite-dish text-4xl text-red-500 animate-pulse"></i>
+            </div>
+            <h1 class="orbitron text-3xl font-black text-white italic uppercase tracking-tighter mb-4">
+                Sincronización <span class="text-red-500">Suspendida</span>
+            </h1>
+            <p class="text-slate-400 font-light text-lg mb-10 leading-relaxed">
+                Comandante, la licencia del plan <b class="text-white">${access.plan}</b> ha expirado. 
+                Para reactivar los protocolos de inteligencia y el motor <span class="text-cyan-400 italic">Nexus-Core</span>, es necesario renovar el combustible digital.
+            </p>
+            
+            <button onclick="location.hash='#pagos'" class="w-full py-6 bg-red-500 hover:bg-red-600 text-black orbitron font-black text-xs rounded-[2rem] uppercase transition-all shadow-xl shadow-red-500/20">
+                Reactivar Misión Ahora <i class="fas fa-bolt ml-2"></i>
+            </button>
+            
+            <p class="mt-8 text-[8px] orbitron text-slate-600 uppercase tracking-[0.5em]">Nexus-X Security Protocol v16.0.4</p>
+        </div>
+    </div>
+    `;
+}
+
+/**
+ * ALERTA DE GRACIA (HUD NOTIFICATION)
+ * Aparece sutilmente en la parte superior del Dashboard
+ */
+function showGracePeriodAlert(days) {
+    const alert = document.createElement('div');
+    alert.className = "fixed top-6 left-1/2 -translate-x-1/2 z-[200] w-[90%] max-w-xl animate-in slide-in-from-top-10 duration-500";
+    alert.innerHTML = `
+        <div class="bg-amber-500/10 border border-amber-500/30 backdrop-blur-xl p-4 rounded-[2rem] flex items-center justify-between shadow-2xl">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center">
+                    <i class="fas fa-clock text-amber-500 animate-spin-slow"></i>
+                </div>
+                <div>
+                    <p class="orbitron text-[9px] font-black text-amber-500 uppercase">Aviso de Mantenimiento</p>
+                    <p class="text-[11px] text-white font-bold uppercase tracking-tighter">Tu plan expira en <span class="text-amber-400">${days} días</span></p>
+                </div>
+            </div>
+            <button onclick="location.hash='#pagos'" class="px-6 py-2 bg-amber-500 text-black text-[9px] font-black orbitron rounded-full uppercase hover:scale-105 transition">Renovar</button>
+        </div>
+    `;
+    document.body.appendChild(alert);
+}
+
 async function loadDataSmart(empresaId) {
     const now = Date.now();
-    const CACHE_EXPIRY = 60 * 1000; // 1 min para máxima precisión
+    const CACHE_EXPIRY = 60 * 1000;
 
     if (store.cache && (now - store.lastFetch < CACHE_EXPIRY)) {
         return store.cache;
@@ -65,17 +154,13 @@ function processBusinessIntelligence(data) {
     ordenes.forEach(o => {
         const t = Number(o.total || 0);
         stats.ingresos += t;
-        
-        // Conteo de fases para el monitor inteligente
         const fase = o.estado || 'EN_TALLER';
         if(stats.fases[fase] !== undefined) stats.fases[fase]++;
-
-        // Lógica de tendencia temporal
         const fecha = o.fechaIngreso?.toDate ? o.fechaIngreso.toDate().toLocaleDateString('es-CO', {day:'2-digit', month:'short'}) : 'Hoy';
         stats.tendencia[fecha] = (stats.tendencia[fecha] || 0) + t;
     });
 
-    stats.util = stats.ingresos * 0.4; // Estimación base de utilidad si no hay costos cargados
+    stats.util = stats.ingresos * 0.4;
     stats.margen = stats.ingresos ? (stats.util / stats.ingresos) * 100 : 0;
     stats.stockCritico = inventario.filter(i => Number(i.cantidad) <= Number(i.stockMinimo || 5));
 
@@ -125,8 +210,7 @@ function renderStructure(container) {
                     </div>
                 </div>
 
-                <div id="phaseMonitor" class="grid grid-cols-4 gap-4">
-                    </div>
+                <div id="phaseMonitor" class="grid grid-cols-4 gap-4"></div>
             </div>
 
             <div class="lg:col-span-4 space-y-8">
@@ -142,8 +226,7 @@ function renderStructure(container) {
                             <i class="fas fa-microchip text-slate-700 text-xl"></i>
                         </div>
                         
-                        <div id="aiIntelligenceArea" class="space-y-6">
-                            </div>
+                        <div id="aiIntelligenceArea" class="space-y-6"></div>
                     </div>
 
                     <div class="relative z-10 pt-10 mt-10 border-t border-white/10">
@@ -184,7 +267,7 @@ function updateKPIs(m) {
     ];
 
     grid.innerHTML = cards.map(c => `
-        <div class="bg-black/40 backdrop-blur-2xl p-8 rounded-[3.5rem] border border-white/5 hover:border-white/20 transition-all group relative overflow-hidden">
+        <div class="bg-black/40 backdrop-blur-2xl p-8 rounded-[3.5rem] border border-white/5 hover:border-white/20 transition-all group relative overflow-hidden shadow-xl">
             <div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-all text-6xl group-hover:scale-110 duration-500">
                 <i class="fas ${c.icon}"></i>
             </div>
@@ -192,7 +275,7 @@ function updateKPIs(m) {
             <h2 class="bg-gradient-to-r ${c.color} bg-clip-text text-transparent text-3xl font-black orbitron tracking-tighter">${c.val}</h2>
             <div class="mt-6 flex items-center gap-2">
                 <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r ${c.color} w-3/4"></div>
+                    <div class="h-full bg-gradient-to-r ${c.color} w-3/4 animate-pulse"></div>
                 </div>
             </div>
         </div>
@@ -211,7 +294,7 @@ function updatePhaseMonitor(m) {
     ];
 
     monitor.innerHTML = fases.map(f => `
-        <div class="bg-white/5 p-4 rounded-3xl border border-white/5 flex flex-col items-center text-center">
+        <div class="bg-white/5 p-4 rounded-3xl border border-white/5 flex flex-col items-center text-center transition-all hover:bg-white/10">
             <i class="fas ${f.icon} text-[10px] mb-2 ${m.fases[f.id] > 0 ? 'text-cyan-400' : 'text-slate-700'}"></i>
             <span class="orbitron text-[7px] text-slate-500 font-black uppercase mb-1">${f.label}</span>
             <span class="text-lg font-black text-white orbitron">${m.fases[f.id] || 0}</span>
@@ -222,7 +305,6 @@ function updatePhaseMonitor(m) {
 function renderAdvancedChart(m) {
     const ctx = document.getElementById("mainChart");
     if (!ctx || !window.Chart) return;
-
     if (mainChart) mainChart.destroy();
 
     const labels = Object.keys(m.tendencia);
@@ -240,7 +322,6 @@ function renderAdvancedChart(m) {
                 pointBorderColor: '#000',
                 pointBorderWidth: 2,
                 pointRadius: 4,
-                pointHoverRadius: 8,
                 tension: 0.4,
                 fill: true,
                 backgroundColor: (context) => {
@@ -266,21 +347,21 @@ function renderAdvancedChart(m) {
     });
 }
 
-function updateSmartPanel(m) {
+function updateSmartPanel(m, access) {
     const area = document.getElementById("aiIntelligenceArea");
     
     const stockMsg = m.stockCritico.length > 0 
         ? `<div class="flex items-center gap-3 text-red-400"><i class="fas fa-triangle-exclamation animate-pulse"></i> <span class="font-black uppercase text-[10px]">${m.stockCritico.length} CRITICAL STOCK ALERT</span></div>`
         : `<div class="flex items-center gap-3 text-emerald-500"><i class="fas fa-check-double"></i> <span class="font-black uppercase text-[10px]">SUPPLY CHAIN OPTIMAL</span></div>`;
 
-    const statusIA = m.margen > 30 ? 'OPERACIÓN ALTAMENTE RENTABLE' : 'AJUSTAR COSTOS OPERATIVOS';
+    const statusIA = access.daysRemaining <= 5 ? "⚠️ PROTOCOLO DE SUSPENSIÓN PRÓXIMO" : "🛡️ SISTEMA PROTEGIDO";
 
     area.innerHTML = `
         <div class="space-y-6">
             <div class="p-6 rounded-[2.5rem] bg-white/5 border border-white/5 hover:border-cyan-500/30 transition-all">
                 <p class="orbitron text-[8px] text-cyan-500 font-black uppercase mb-3 tracking-widest italic">Análisis Predictivo</p>
                 <div class="text-[12px] leading-relaxed text-slate-200 italic font-medium">
-                    "William, el rendimiento actual es del <span class="text-cyan-400 font-black">${m.margen.toFixed(1)}%</span>. Detecto <span class="text-white font-black">${m.fases.REPARACION} unidades</span> en etapa crítica de mecánica. Se recomienda acelerar la facturación de servicios terminados."
+                    "William, rendimiento al <span class="text-cyan-400 font-black">${m.margen.toFixed(1)}%</span>. Tienes <span class="text-white font-black">${m.fases.REPARACION} misiones</span> en mecánica. ${statusIA}."
                 </div>
             </div>
             <div class="p-6 rounded-[2.5rem] bg-black/50 border border-white/5">
@@ -291,10 +372,15 @@ function updateSmartPanel(m) {
     `;
 }
 
-function initNexusPredictor(m) {
+function initNexusPredictor(m, access) {
     document.getElementById("nexusCoachTrigger").onclick = () => {
-        const audioMsg = `Comandante William. El sistema reporta un flujo de ${Math.round(m.ingresos)} pesos. Tenemos ${m.fases.EN_TALLER + m.fases.DIAGNOSTICO + m.fases.REPARACION} misiones activas en el radar. El inventario está bajo control. ¿Procedemos con la auditoría de caja?`;
-        hablar(audioMsg);
+        let msg = `Comandante William. El sistema reporta un flujo de ${Math.round(m.ingresos)} pesos. `;
+        if(access.daysRemaining <= 8) {
+            msg += `Alerta: Su suscripción Starlink expira en ${access.daysRemaining} días. Evite interrupciones en el radar.`;
+        } else {
+            msg += `Tenemos ${m.fases.EN_TALLER + m.fases.DIAGNOSTICO + m.fases.REPARACION} unidades activas. Todo bajo control.`;
+        }
+        hablar(msg);
     };
 }
 
