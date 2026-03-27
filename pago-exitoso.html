@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso Validado | TallerPRO360</title>
+    <title>Acceso Validado | TallerPRO360 NEXUS-X</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
-        :root { --cyan: #06b6d4; --dark: #020617; }
+        :root { --cyan: #06b6d4; --dark: #020617; --emerald: #10b981; }
         body { 
             font-family: 'Outfit', sans-serif; 
             background: var(--dark); 
@@ -21,7 +21,6 @@
         }
         .orbitron { font-family: 'Orbitron', sans-serif; }
         
-        /* Efecto de Escaneo */
         .scanner-line {
             position: absolute;
             width: 100%;
@@ -53,56 +52,103 @@
             from { box-shadow: 0 0 20px rgba(6, 182, 212, 0.1); }
             to { box-shadow: 0 0 50px rgba(6, 182, 212, 0.4); }
         }
+
+        .loading-bar {
+            width: 0%;
+            height: 4px;
+            background: var(--cyan);
+            box-shadow: 0 0 10px var(--cyan);
+            transition: width 0.5s ease;
+        }
     </style>
 </head>
 <body>
 
     <div class="scanner-line"></div>
 
-    <div class="max-w-md w-full p-8 glass-card rounded-[3rem] text-center success-glow mx-4">
+    <div class="max-w-md w-full p-10 glass-card rounded-[3.5rem] text-center success-glow mx-4 border-t-cyan-500/50">
         
-        <div class="mb-8 relative">
-            <div class="w-24 h-24 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto border border-cyan-500/30">
-                <i class="fas fa-check-double text-4xl text-cyan-400 animate-bounce"></i>
+        <div class="mb-10 relative">
+            <div class="w-28 h-28 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto border-2 border-cyan-500/20">
+                <i id="status-icon" class="fas fa-shield-check text-5xl text-cyan-400"></i>
             </div>
             <div class="absolute inset-0 bg-cyan-500/20 blur-3xl rounded-full -z-10"></div>
         </div>
 
-        <span class="text-[10px] orbitron text-cyan-500 tracking-[0.6em] uppercase block mb-2">Nexus-X Authentication</span>
-        <h1 class="text-3xl font-black uppercase italic tracking-tighter mb-4">PAGO <span class="text-cyan-400">VALIDADO</span></h1>
+        <span class="text-[10px] orbitron text-cyan-500 tracking-[0.7em] uppercase block mb-3 italic">Nexus-X Starlink Sincronización</span>
+        <h1 class="text-4xl font-black uppercase italic tracking-tighter mb-6">ACCESO <span class="text-cyan-400">VALIDADO</span></h1>
         
-        <p class="text-slate-400 text-sm font-light leading-relaxed mb-8">
-            La transacción ha sido procesada por el motor <span class="text-white font-bold italic">PRO360CORE</span>. Tu suscripción o servicio ha sido activado en la red Starlink con éxito.
+        <p class="text-slate-400 text-sm font-light leading-relaxed mb-10 px-4">
+            La firma digital <span class="text-white font-bold italic">PRO360CORE</span> ha verificado el recaudo. Su infraestructura logística está ahora operando en la red satelital.
         </p>
 
-        <div class="bg-white/5 rounded-2xl p-4 border border-white/5 mb-8 text-left">
-            <div class="flex justify-between mb-2">
-                <span class="text-[9px] font-black text-slate-500 uppercase">Estado:</span>
-                <span class="text-[9px] font-black text-emerald-400 uppercase tracking-widest italic">Synchronized</span>
+        <div class="bg-black/40 rounded-[2rem] p-6 border border-white/5 mb-10 text-left relative overflow-hidden">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Protocolo:</span>
+                <span id="protocol-status" class="text-[9px] font-black text-emerald-400 uppercase tracking-widest italic animate-pulse">Synchronizing...</span>
             </div>
+            
+            <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden mb-4">
+                <div id="sync-bar" class="loading-bar"></div>
+            </div>
+
             <div class="flex justify-between">
-                <span class="text-[9px] font-black text-slate-500 uppercase">ID Operación:</span>
-                <span class="text-[9px] font-black text-white" id="op-id">NX-360-B0LD</span>
+                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Hash Transacción:</span>
+                <span class="text-[9px] font-black text-white orbitron" id="op-id">NX-SYNC-LOADING</span>
             </div>
         </div>
 
-        <a href="/dashboard.html" class="block w-full py-4 bg-cyan-500 text-black orbitron font-black text-xs rounded-xl uppercase hover:scale-105 transition shadow-lg shadow-cyan-500/30">
-            Ingresar al Panel <i class="fas fa-chevron-right ml-2"></i>
-        </a>
+        <button onclick="enterMission()" id="btn-enter" class="opacity-50 pointer-events-none block w-full py-5 bg-cyan-500 text-black orbitron font-black text-xs rounded-2xl uppercase transition-all shadow-lg shadow-cyan-500/30 hover:scale-[1.02] active:scale-95">
+            Ingresar al Comando <i class="fas fa-arrow-right ml-2"></i>
+        </button>
 
-        <div class="mt-8">
-            <p class="text-[8px] text-slate-600 font-bold uppercase tracking-[0.4em]">Engine Version 13.5.0-STARLINK</p>
+        <div class="mt-10">
+            <p class="text-[8px] text-slate-600 font-black uppercase tracking-[0.5em] italic">Engine Version 16.0.4-AEGIS</p>
         </div>
     </div>
 
     <script>
-        // Generar un ID visual aleatorio para la estética
-        document.getElementById('op-id').innerText = 'NX-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-        
-        // Redirección automática después de 10 segundos
-        setTimeout(() => {
-            // window.location.href = '/dashboard.html';
-        }, 10000);
+        // Simulación de validación de Hash y Seguridad
+        const opId = 'NX-' + Math.random().toString(36).substr(2, 12).toUpperCase();
+        document.getElementById('op-id').innerText = opId;
+
+        // Protocolo de Sincronización Automática
+        function startSync() {
+            const bar = document.getElementById('sync-bar');
+            const statusText = document.getElementById('protocol-status');
+            const btn = document.getElementById('btn-enter');
+            const icon = document.getElementById('status-icon');
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 30;
+                if (progress > 100) progress = 100;
+                
+                bar.style.width = progress + '%';
+
+                if (progress === 100) {
+                    clearInterval(interval);
+                    statusText.innerText = 'ONLINE - SECURE';
+                    statusText.classList.remove('text-emerald-400', 'animate-pulse');
+                    statusText.classList.add('text-cyan-400');
+                    
+                    // Activar botón y cambiar icono
+                    btn.classList.remove('opacity-50', 'pointer-events-none');
+                    icon.classList.remove('fa-shield-check');
+                    icon.classList.add('fa-rocket-launch', 'animate-bounce');
+                    
+                    console.log("Nexus-X: Sincronización de licencia completada.");
+                }
+            }, 600);
+        }
+
+        function enterMission() {
+            // Aquí podrías forzar un refresh de los datos de Firebase antes de redirigir
+            window.location.href = '/dashboard.html';
+        }
+
+        // Iniciar al cargar
+        window.onload = startSync;
     </script>
 </body>
 </html>
