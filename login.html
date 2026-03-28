@@ -1,257 +1,141 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nexus-X · PRO360CORE Login V16.6</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-<style>
-  :root { 
-    --neon-cyan: #00f2ff; 
-    --neon-purple: #bc13fe;
-    --space-black: #020617; 
-  }
-
-  body {
-    background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
-    font-family: 'Inter', sans-serif;
-    color: #f8fafc;
-    height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0;
-  }
-
-  .stars-container {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: url('https://www.transparenttextures.com/patterns/stardust.png');
-    opacity: 0.3; z-index: -1; animation: drift 120s linear infinite;
-  }
-
-  @keyframes drift { from { background-position: 0 0; } to { background-position: 1000px 1000px; } }
-
-  .glass-card {
-    background: rgba(15, 23, 42, 0.4); 
-    backdrop-filter: blur(50px);
-    border: 1px solid rgba(0, 242, 255, 0.1); 
-    box-shadow: 0 0 120px rgba(0, 0, 0, 0.9), inset 0 0 40px rgba(0, 242, 255, 0.05);
-  }
-
-  .nasa-title {
-    font-family: 'Orbitron', sans-serif; letter-spacing: 12px;
-    background: linear-gradient(to right, #fff, var(--neon-cyan), #fff);
-    background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    animation: shine 5s linear infinite;
-  }
-
-  @keyframes shine { to { background-position: 200% center; } }
-
-  .input-nexus {
-    background: rgba(2, 6, 23, 0.7); border: 1px solid rgba(255,255,255,0.03);
-    font-family: 'JetBrains Mono', monospace; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: white;
-  }
-
-  .input-nexus:focus {
-    border-color: var(--neon-cyan); box-shadow: 0 0 25px rgba(0, 242, 255, 0.15); 
-    outline: none; background: rgba(2, 6, 23, 0.95);
-  }
-
-  .btn-nexus-main {
-    background: transparent; border: 1px solid var(--neon-cyan); color: var(--neon-cyan);
-    font-family: 'Orbitron', sans-serif; letter-spacing: 3px; transition: all 0.5s ease;
-    text-transform: uppercase; font-weight: 900; position: relative; overflow: hidden;
-  }
-
-  .btn-nexus-main:hover { 
-    background: var(--neon-cyan); color: #000; box-shadow: 0 0 50px var(--neon-cyan); 
-  }
-
-  .tab-nexus { transition: all 0.4s ease; border-bottom: 2px solid transparent; }
-  .tab-active { color: var(--neon-cyan); border-bottom: 2px solid var(--neon-cyan); font-weight: 900; text-shadow: 0 0 10px var(--neon-cyan); }
-
-  .loader-orbit {
-    width: 22px; height: 22px; border: 2px solid rgba(0, 242, 255, 0.1);
-    border-top-color: var(--neon-cyan); border-radius: 50%; animation: spin 0.6s linear infinite;
-    display: none;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nexus-X · PRO360CORE V16.7</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root { --neon-cyan: #00f2ff; --space-black: #020617; }
+        body {
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            font-family: 'Inter', sans-serif; color: #f8fafc;
+            height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0;
+        }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(40px);
+            border: 1px solid rgba(0, 242, 255, 0.1);
+            box-shadow: 0 0 100px rgba(0, 0, 0, 0.8);
+        }
+        .nasa-title {
+            font-family: 'Orbitron', sans-serif; letter-spacing: 10px;
+            background: linear-gradient(to right, #fff, var(--neon-cyan), #fff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-size: 200% auto; animation: shine 5s linear infinite;
+        }
+        @keyframes shine { to { background-position: 200% center; } }
+        .input-nexus {
+            background: rgba(2, 6, 23, 0.8); border: 1px solid rgba(255,255,255,0.05);
+            font-family: 'JetBrains Mono', monospace; color: white; transition: all 0.3s;
+        }
+        .input-nexus:focus { border-color: var(--neon-cyan); box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); outline: none; }
+        .btn-nexus {
+            border: 1px solid var(--neon-cyan); color: var(--neon-cyan);
+            font-family: 'Orbitron', sans-serif; transition: all 0.4s;
+            text-transform: uppercase; font-weight: 900;
+        }
+        .btn-nexus:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 40px var(--neon-cyan); }
+    </style>
 </head>
-
 <body>
-<div class="stars-container"></div>
 
-<div class="w-full max-w-lg glass-card p-12 rounded-[4rem] relative overflow-hidden">
-  <div class="absolute -top-20 -left-20 w-64 h-64 bg-cyan-500/10 rounded-full blur-[80px]"></div>
-  <div class="absolute -bottom-20 -right-20 w-64 h-64 bg-purple-500/10 rounded-full blur-[80px]"></div>
-
-  <div class="text-center mb-12">
-    <div class="relative inline-block group">
-        <div class="absolute -inset-1 bg-cyan-500 rounded-2xl blur opacity-20 group-hover:opacity-60 transition duration-1000"></div>
-        <div class="relative w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center border border-white/10 rotate-45 group-hover:rotate-[135deg] transition-all duration-700">
-            <i class="fas fa-shield-halved text-3xl text-cyan-400 -rotate-45 group-hover:-rotate-[135deg] transition-all duration-700"></i>
-        </div>
-    </div>
-    <h1 class="nasa-title text-5xl font-black mt-8 mb-2">Nexus-X</h1>
-    <p class="text-[8px] tracking-[0.8em] text-cyan-500/50 uppercase font-black">Strategic Intelligence Interface</p>
-  </div>
-
-  <div class="flex justify-center gap-12 mb-12 text-[10px] font-black uppercase tracking-[0.3em] orbitron">
-    <button id="tabLogin" class="tab-nexus tab-active pb-2" onclick="switchTab('login')">Ingresar</button>
-    <button id="tabRegister" class="tab-nexus text-slate-600 hover:text-white pb-2" onclick="switchTab('register')">Nuevo Nodo</button>
-  </div>
-
-  <form id="loginForm" class="space-y-8">
-    <div class="space-y-3">
-      <label class="block text-[9px] text-slate-500 uppercase tracking-widest ml-4 font-black">Identidad (Email)</label>
-      <input type="email" id="loginEmail" class="w-full p-6 input-nexus rounded-[2rem] text-sm" placeholder="COMMANDER@NEXUS.COM" required>
+<div class="w-full max-w-lg glass-card p-10 rounded-[3rem] relative">
+    <div class="text-center mb-10">
+        <h1 class="nasa-title text-4xl font-black mb-2">Nexus-X</h1>
+        <p class="text-[7px] tracking-[0.6em] text-cyan-500/50 uppercase font-black">Strategic Logistics Engine</p>
     </div>
 
-    <div class="space-y-3">
-      <label class="block text-[9px] text-slate-500 uppercase tracking-widest ml-4 font-black">Llave de Acceso</label>
-      <input type="password" id="loginPass" class="w-full p-6 input-nexus rounded-[2rem] text-sm" placeholder="••••••••" required>
+    <form id="loginForm" class="space-y-6">
+        <input type="email" id="email" class="w-full p-5 input-nexus rounded-2xl text-sm" placeholder="USUARIO / EMAIL" required>
+        <input type="password" id="pass" class="w-full p-5 input-nexus rounded-2xl text-sm" placeholder="CONTRASEÑA" required>
+        
+        <button type="submit" class="w-full py-5 btn-nexus rounded-2xl text-[10px] tracking-widest flex justify-center items-center gap-3">
+            <span>Iniciar Secuencia</span>
+            <i class="fas fa-rocket"></i>
+        </button>
+    </form>
+
+    <div id="statusMsg" class="hidden mt-6 p-4 rounded-xl text-[10px] text-center font-bold orbitron border animate-pulse"></div>
+
+    <div class="mt-8 text-center text-[8px] text-slate-500 uppercase tracking-widest">
+        Copyright © 2026 Colombian Trucks Logistics LLC
     </div>
-
-    <button type="submit" id="loginBtn" class="w-full py-7 btn-nexus-main rounded-[2.5rem] mt-4 text-[11px] flex items-center justify-center gap-4 group">
-        <span>Sincronizar Con Satélite</span>
-        <div class="loader-orbit" id="loginLoader"></div>
-        <i class="fas fa-chevron-right text-xs group-hover:translate-x-2 transition-transform" id="loginIcon"></i>
-    </button>
-  </form>
-
-  <form id="registerForm" class="space-y-4 hidden">
-    <div id="planDisplay" class="py-4 bg-cyan-500/5 border border-cyan-500/20 rounded-3xl text-center text-[10px] orbitron font-bold text-cyan-400 tracking-widest mb-6">
-        PLAN SELECCIONADO: <span id="planName">FREEMIUM</span>
-    </div>
-    <input type="text" id="nombre" class="w-full p-5 input-nexus rounded-[1.8rem] text-sm" placeholder="NOMBRE DE LA EMPRESA / TALLER" required>
-    <input type="email" id="regEmail" class="w-full p-5 input-nexus rounded-[1.8rem] text-sm" placeholder="EMAIL CORPORATIVO" required>
-    <div class="grid grid-cols-2 gap-4">
-      <input type="password" id="regPass" class="w-full p-5 input-nexus rounded-[1.8rem] text-sm" placeholder="CREAR LLAVE" required>
-      <input type="password" id="regPass2" class="w-full p-5 input-nexus rounded-[1.8rem] text-sm" placeholder="REPETIR LLAVE" required>
-    </div>
-    <button type="submit" id="regBtn" class="w-full py-6 btn-nexus-main rounded-[2.2rem] mt-2 text-[11px]">
-        Inicializar Protocolo <i class="fas fa-rocket ml-2"></i>
-    </button>
-  </form>
-
-  <div id="msgError" class="hidden mt-8 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-500 text-[10px] text-center uppercase orbitron font-bold animate-pulse"></div>
-
-  <div class="mt-10 text-center flex justify-between items-center px-4">
-    <button class="text-[9px] text-slate-600 hover:text-cyan-400 uppercase tracking-widest orbitron transition-all">Recuperar Acceso</button>
-    <div class="h-px w-20 bg-white/5"></div>
-    <p class="text-[8px] text-slate-700 font-bold uppercase tracking-widest">Nexus OS v16.6</p>
-  </div>
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-    authDomain: "tallerpro360.firebaseapp.com",
-    projectId: "tallerpro360",
-    storageBucket: "tallerpro360.firebasestorage.app",
-    messagingSenderId: "636224778184",
-    appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-  };
+    const firebaseConfig = {
+        apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+        authDomain: "tallerpro360.firebaseapp.com",
+        projectId: "tallerpro360",
+        storageBucket: "tallerpro360.firebasestorage.app",
+        messagingSenderId: "636224778184",
+        appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-  const urlParams = new URLSearchParams(window.location.search);
-  let selectedPlan = urlParams.get('plan') || 'freemium';
-  document.getElementById('planName').innerText = selectedPlan.toUpperCase();
+    const loginForm = document.getElementById('loginForm');
+    const statusMsg = document.getElementById('statusMsg');
 
-  window.switchTab = (tab) => {
-    const isLogin = tab === 'login';
-    document.getElementById('loginForm').classList.toggle('hidden', !isLogin);
-    document.getElementById('registerForm').classList.toggle('hidden', isLogin);
-    document.getElementById('tabLogin').classList.toggle('tab-active', isLogin);
-    document.getElementById('tabRegister').classList.toggle('tab-active', !isLogin);
-  };
+    const notify = (text, isError = true) => {
+        statusMsg.innerText = text;
+        statusMsg.className = `mt-6 p-4 rounded-xl text-[10px] text-center font-bold orbitron border ${isError ? 'bg-red-500/10 border-red-500/30 text-red-500' : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-500'}`;
+        statusMsg.classList.remove('hidden');
+    };
 
-  /**
-   * --- LOGIN ENGINE V16.6 ---
-   */
-  loginForm.addEventListener("submit", async e => {
-    e.preventDefault();
-    const btn = document.getElementById('loginBtn');
-    const loader = document.getElementById('loginLoader');
-    const icon = document.getElementById('loginIcon');
-    const errBox = document.getElementById('msgError');
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        notify("SINCRONIZANDO CON SATÉLITE...", false);
 
-    // Estado de carga
-    btn.disabled = true;
-    loader.style.display = "inline-block";
-    icon.style.display = "none";
-    errBox.classList.add('hidden');
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email.value, pass.value);
+            const uid = userCredential.user.uid;
 
-    try {
-      const cred = await signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPass.value);
-      const uid = cred.user.uid;
+            // BUSQUEDA EN COLECCIÓN ÚNICA 'usuarios'
+            const userSnap = await getDoc(doc(db, "usuarios", uid));
 
-      // 1. Obtener Datos Globales y de Empresa (Paralelo para velocidad)
-      const [uDoc, eDoc] = await Promise.all([
-        getDoc(doc(db, "usuariosGlobal", uid)),
-        getDoc(doc(doc(db, "empresas"), uid)) // Nota: Ajusta la ruta si 'empresas' no usa el UID como ID de doc
-      ]);
+            if (!userSnap.exists()) {
+                throw new Error("NODO NO RECONOCIDO EN LA RED.");
+            }
 
-      if (!uDoc.exists()) throw new Error("PERFIL_NO_ENCONTRADO");
+            const userData = userSnap.data();
+            const empresaId = userData.empresaId;
 
-      // 2. Preparar localStorage para Dashboard V16.5
-      const userData = uDoc.data();
-      const empData = eDoc.exists() ? eDoc.data() : null;
+            // OBTENER DATOS DE LA EMPRESA Y PLAN
+            const empSnap = await getDoc(doc(db, "empresas", empresaId));
+            const empData = empSnap.exists() ? empSnap.data() : {};
 
-      localStorage.setItem("empresaId", uid);
-      localStorage.setItem("rolGlobal", userData.rolGlobal || "cliente");
-      localStorage.setItem("planTier", empData?.planId || userData.tier || "freemium");
-      localStorage.setItem("status", empData?.estadoPlan || "ACTIVO");
+            // ESTRATEGIA DE SIMULACIÓN Y PLANES
+            const plan = empData.planTipo || "freemium";
+            const esSimulador = (plan === "freemium");
 
-      // 3. Salto al Dashboard
-      window.location.href = userData.rolGlobal === "superadmin" ? "/app/#master" : "/app/#dashboard";
+            // PERSISTENCIA EN LOCALSTORAGE (GOD-MODE INCLUIDO)
+            localStorage.setItem("nexus_uid", uid);
+            localStorage.setItem("nexus_empresaId", empresaId);
+            localStorage.setItem("nexus_rol", userData.rolGlobal || "operador");
+            localStorage.setItem("nexus_plan", plan);
+            localStorage.setItem("nexus_mode", esSimulador ? "SIMULATOR" : "LIVE");
 
-    } catch(e) {
-      btn.disabled = false;
-      loader.style.display = "none";
-      icon.style.display = "inline-block";
-      errBox.innerText = "FALLO EN SECUENCIA: " + e.message.replace('Firebase:', '').toUpperCase();
-      errBox.classList.remove('hidden');
-    }
-  });
+            // DIRECCIONAMIENTO ESTRATÉGICO
+            if (userData.rolGlobal === "superadmin") {
+                window.location.href = "/app/#master";
+            } else {
+                // Si es Freemium, el Dashboard sabrá que debe mostrar el prototipo
+                window.location.href = "/app/#dashboard";
+            }
 
-  /**
-   * --- REGISTER ENGINE ---
-   */
-  registerForm.addEventListener("submit", async e => {
-    e.preventDefault();
-    if(regPass.value !== regPass2.value) return alert("LLAVES NO COINCIDEN");
-    
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, regEmail.value, regPass.value);
-      const uid = cred.user.uid;
-      const vDate = new Date(); vDate.setDate(vDate.getDate() + 30);
-
-      await setDoc(doc(db, "usuariosGlobal", uid), {
-        rolGlobal: "cliente", email: regEmail.value, tier: selectedPlan, creadoEn: serverTimestamp()
-      });
-
-      await setDoc(doc(db, "empresas", uid), {
-        nombre: nombre.value.toUpperCase(), planId: selectedPlan,
-        venceEn: vDate, estadoPlan: "ACTIVO", creadoEn: serverTimestamp()
-      });
-
-      localStorage.setItem("empresaId", uid);
-      localStorage.setItem("planTier", selectedPlan);
-      localStorage.setItem("status", "ACTIVO");
-      
-      window.location.href = "/app/#dashboard";
-    } catch(e) { alert("ERROR: " + e.message); }
-  });
+        } catch (error) {
+            notify("FALLO EN SECUENCIA: " + error.message.toUpperCase());
+        }
+    });
 </script>
 </body>
 </html>
