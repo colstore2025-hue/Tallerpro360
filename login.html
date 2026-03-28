@@ -1,266 +1,81 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Nexus-X · PRO360CORE V17.0 🛰️</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <style>
-        :root { 
-            --neon-cyan: #00f2ff; 
-            --space-black: #020617; 
-            --deep-slate: #0f172a;
-        }
-        
-        body {
-            background: radial-gradient(circle at center, var(--deep-slate) 0%, var(--space-black) 100%);
-            font-family: 'Inter', sans-serif; 
-            color: #f8fafc;
-            height: 100vh; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            overflow: hidden; 
-            margin: 0;
-        }
+import { auth, db } from "./core/firebase-config.js";
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        /* Efecto de Partículas de Fondo (Sutil) */
-        body::before {
-            content: "";
-            position: absolute;
-            width: 100%; height: 100%;
-            background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
-            opacity: 0.2; pointer-events: none;
-        }
+const loginForm = document.getElementById("loginForm");
+const msgError = document.getElementById("msgError"); // El cuadro rojo de tus fotos
 
-        .glass-card {
-            background: rgba(15, 23, 42, 0.7); 
-            backdrop-filter: blur(50px);
-            border: 1px solid rgba(0, 242, 255, 0.15);
-            box-shadow: 0 0 120px rgba(0, 0, 0, 0.9);
-            transform: perspective(1000px) rotateX(2deg);
-        }
+/**
+ * PROTOCOLO 1: INICIO DE SESIÓN MANUAL (SuperAdmin / Staff)
+ */
+loginForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("email").value.trim();
+    const pass = document.getElementById("password").value.trim();
 
-        .nasa-title {
-            font-family: 'Orbitron', sans-serif; 
-            letter-spacing: 12px;
-            background: linear-gradient(to right, #fff, var(--neon-cyan), #4f46e5, #fff);
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent;
-            background-size: 300% auto; 
-            animation: shine 8s linear infinite;
-        }
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+        const uid = userCredential.user.uid;
 
-        @keyframes shine { to { background-position: 300% center; } }
+        // 🛡️ BÚSQUEDA EN COLECCIÓN RAÍZ (La clave del éxito)
+        const userRef = doc(db, "usuarios", uid);
+        const userSnap = await getDoc(userRef);
 
-        .input-nexus {
-            background: rgba(2, 6, 23, 0.9); 
-            border: 1px solid rgba(255,255,255,0.08);
-            font-family: 'JetBrains Mono', monospace; 
-            color: white; 
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .input-nexus:focus { 
-            border-color: var(--neon-cyan); 
-            box-shadow: 0 0 30px rgba(0, 242, 255, 0.15); 
-            background: rgba(0, 242, 255, 0.02);
-            outline: none; 
-            transform: translateY(-2px);
-        }
-
-        .btn-nexus {
-            position: relative;
-            background: transparent;
-            border: 1px solid var(--neon-cyan); 
-            color: var(--neon-cyan);
-            font-family: 'Orbitron', sans-serif; 
-            transition: all 0.5s;
-            text-transform: uppercase; 
-            font-weight: 900;
-            overflow: hidden;
-        }
-
-        .btn-nexus::before {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(0, 242, 255, 0.4), transparent);
-            transition: 0.5s;
-        }
-
-        .btn-nexus:hover::before { left: 100%; }
-
-        .btn-nexus:hover { 
-            background: var(--neon-cyan); 
-            color: #000; 
-            box-shadow: 0 0 50px rgba(0, 242, 255, 0.6); 
-            transform: scale(1.02);
-        }
-
-        .btn-nexus:active { transform: scale(0.98); }
-
-        .loader-orbit {
-            width: 20px; height: 20px;
-            border: 2px solid var(--neon-cyan);
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
-</head>
-<body>
-
-<div class="w-full max-w-lg glass-card p-12 rounded-[4rem] relative z-10 mx-4">
-    <div class="absolute -top-10 -left-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl"></div>
-    
-    <div class="text-center mb-12">
-        <h1 class="nasa-title text-5xl font-black mb-4 italic">NEXUS-X</h1>
-        <div class="flex items-center justify-center gap-4">
-            <span class="h-[1px] w-12 bg-gradient-to-r from-transparent to-cyan-500/50"></span>
-            <p class="text-[8px] tracking-[0.8em] text-cyan-400 font-black uppercase">Core Terminal V17.0</p>
-            <span class="h-[1px] w-12 bg-gradient-to-l from-transparent to-cyan-500/50"></span>
-        </div>
-    </div>
-
-    <form id="loginForm" class="space-y-8">
-        <div class="relative group">
-            <i class="fas fa-at absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-cyan-400 transition-colors"></i>
-            <input type="email" id="email" class="w-full p-6 pl-16 input-nexus rounded-[2rem] text-sm" placeholder="USUARIO / ENLACE SATELITAL" required>
-        </div>
-
-        <div class="relative group">
-            <i class="fas fa-fingerprint absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-cyan-400 transition-colors"></i>
-            <input type="password" id="pass" class="w-full p-6 pl-16 input-nexus rounded-[2rem] text-sm" placeholder="LLAVE DE ACCESO CRÍPTICO" required>
-        </div>
-        
-        <button type="submit" id="submitBtn" class="w-full py-7 btn-nexus rounded-[2.5rem] text-[11px] tracking-[0.3em] flex justify-center items-center gap-4 shadow-xl">
-            <span id="btnText">INICIAR SECUENCIA</span>
-            <i id="btnIcon" class="fas fa-rocket animate-pulse"></i>
-        </button>
-    </form>
-
-    <div id="statusMsg" class="hidden mt-8 p-6 rounded-[2rem] text-[10px] text-center font-bold orbitron border-2 animate-in fade-in zoom-in duration-500"></div>
-
-    <div class="mt-12 text-center">
-        <p class="text-[7px] text-slate-600 uppercase tracking-[0.5em] font-black">
-            Strategic Logistics Engine · 2026
-        </p>
-        <p class="text-[6px] text-cyan-500/30 uppercase tracking-widest mt-2">
-            Colombian Trucks Logistics LLC · NC Branch
-        </p>
-    </div>
-</div>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    // Configuración Starlink (Asegúrate de que coincida con tu firebase-config.js)
-    const firebaseConfig = {
-        apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-        authDomain: "tallerpro360.firebaseapp.com",
-        projectId: "tallerpro360",
-        storageBucket: "tallerpro360.firebasestorage.app",
-        messagingSenderId: "636224778184",
-        appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    const loginForm = document.getElementById('loginForm');
-    const statusMsg = document.getElementById('statusMsg');
-    const btnText = document.getElementById('btnText');
-    const btnIcon = document.getElementById('btnIcon');
-    const submitBtn = document.getElementById('submitBtn');
-
-    const notify = (text, isError = true) => {
-        statusMsg.innerText = text;
-        statusMsg.className = `mt-8 p-6 rounded-[2rem] text-[10px] text-center font-bold orbitron border-2 ${
-            isError ? 'bg-red-500/10 border-red-500/40 text-red-500' : 'bg-cyan-500/10 border-cyan-500/40 text-cyan-500 animate-pulse'
-        }`;
-        statusMsg.classList.remove('hidden');
-    };
-
-    const setLoader = (active) => {
-        if(active) {
-            submitBtn.disabled = true;
-            btnText.innerText = "VERIFICANDO IDENTIDAD";
-            btnIcon.className = "loader-orbit";
-        } else {
-            submitBtn.disabled = false;
-            btnText.innerText = "INICIAR SECUENCIA";
-            btnIcon.className = "fas fa-rocket animate-pulse";
-        }
-    };
-
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const emailVal = document.getElementById('email').value.trim();
-        const passVal = document.getElementById('pass').value;
-
-        setLoader(true);
-        notify("SINCRONIZANDO CON SATÉLITE NEXUS...", false);
-
-        try {
-            const userCredential = await signInWithEmailAndPassword(auth, emailVal, passVal);
-            const uid = userCredential.user.uid;
-
-            // FASE 1: Búsqueda en Raíz de Usuarios
-            const userSnap = await getDoc(doc(db, "usuarios", uid));
-
-            if (!userSnap.exists()) {
-                throw new Error("NODO NO RECONOCIDO EN LA RED GLOBAL.");
-            }
-
-            const userData = userSnap.data();
-            const empresaId = userData.empresaId;
-
-            // FASE 2: Escaneo de Licencia y Modo (SaaS)
-            const empSnap = await getDoc(doc(db, "empresas", empresaId));
-            const empData = empSnap.exists() ? empSnap.data() : {};
-
-            const plan = empData.planTipo || "freemium";
-            const esSimulador = (plan === "freemium");
-
-            // FASE 3: Persistencia de Sesión Estratégica
-            // Usamos el prefijo 'nexus_' para evitar colisiones
-            localStorage.setItem("nexus_uid", uid);
-            localStorage.setItem("nexus_empresaId", empresaId);
-            localStorage.setItem("nexus_rol", userData.rolGlobal || "operador");
-            localStorage.setItem("nexus_plan", plan);
-            localStorage.setItem("nexus_mode", esSimulador ? "SIMULATOR" : "LIVE");
-            localStorage.setItem("nexus_userName", userData.nombre || "Comandante");
-
-            notify("AUTENTICACIÓN EXITOSA. ABRIENDO PUERTA DE ENLACE...", false);
-
-            // Redirección con delay para efecto visual
-            setTimeout(() => {
-                if (userData.rolGlobal === "superadmin") {
-                    window.location.href = "/app/#master";
-                } else {
-                    window.location.href = "/app/#dashboard";
-                }
-            }, 1500);
-
-        } catch (error) {
-            setLoader(false);
-            let msg = "FALLO EN SECUENCIA: ";
-            if(error.code === 'auth/invalid-credential') msg += "CREDENCIALES INVÁLIDAS";
-            else if(error.code === 'auth/user-not-found') msg += "NODO INEXISTENTE";
-            else msg += error.message.toUpperCase();
+        if (userSnap.exists()) {
+            const data = userSnap.data();
             
-            notify(msg);
+            // Inyectamos todo al LocalStorage para el Core
+            localStorage.setItem("nexus_uid", uid);
+            localStorage.setItem("nexus_empresaId", data.empresaId);
+            localStorage.setItem("nexus_rol", data.rol || "TECNICO");
+            
+            window.location.href = "app/index.html";
+        } else {
+            throw new Error("NODO NO RECONOCIDO EN LA RED GLOBAL");
         }
-    });
-</script>
-</body>
-</html>
+
+    } catch (error) {
+        msgError.innerText = `FALLO EN SECUENCIA: ${error.message.toUpperCase()}`;
+        msgError.classList.remove("hidden");
+    }
+};
+
+/**
+ * PROTOCOLO 2: ACCESO FREEMIUM / DEMO AUTOMÁTICO
+ * Este es el que me pediste para los 7 días sin fricción.
+ */
+window.iniciarDemo = async () => {
+    const emailDemo = prompt("Ingrese su Email para activar los 7 días de prueba:");
+    if (!emailDemo) return;
+
+    try {
+        // 1. Generamos un ID de Empresa temporal
+        const tempEmpresaId = "DEMO_" + Math.random().toString(36).substring(7).toUpperCase();
+        
+        // 2. Aquí podrías usar createUserWithEmailAndPassword o un login anónimo
+        // Para simplificar y que entren YA, simulamos el registro en la raíz:
+        
+        const demoUid = "TEMP_" + Date.now();
+        
+        // Creamos el perfil de prueba en la raíz 'usuarios'
+        await setDoc(doc(db, "usuarios", demoUid), {
+            email: emailDemo,
+            empresaId: tempEmpresaId,
+            rol: "ADMIN",
+            plan: "FREE_TRIAL",
+            expira: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días exactos
+            createdAt: serverTimestamp()
+        });
+
+        // Guardamos y saltamos al Dashboard
+        localStorage.setItem("nexus_uid", demoUid);
+        localStorage.setItem("nexus_empresaId", tempEmpresaId);
+        localStorage.setItem("nexus_rol", "ADMIN");
+        
+        alert("¡Nodo Demo Activado! Bienvenido a la red Nexus-X.");
+        window.location.href = "app/index.html";
+
+    } catch (error) {
+        alert("Error al sincronizar Demo: " + error.message);
+    }
+};
