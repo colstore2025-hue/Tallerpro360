@@ -536,6 +536,21 @@ function showErrorState(container) {
 }
 
 /**
+ * CONSOLA MAESTRA DE PRUEBAS (SOLO DUEÑOS)
+ * Presiona "Ctrl + Shift + P" para forzar un plan diferente en el Dashboard
+ */
+window.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key === 'P') {
+        const nuevoPlan = prompt("COMANDANTE WILLIAM: Ingrese plan para simular (freemium, basico, pro, elite):");
+        if (nuevoPlan) {
+            localStorage.setItem("planTier", nuevoPlan);
+            alert(`Sincronización establecida: Modo ${nuevoPlan.toUpperCase()}`);
+            location.reload();
+        }
+    }
+});
+
+/**
  * --- FINAL DEL ARCHIVO V16.4 ---
  * William, este código está diseñado para ser escalable y resistente.
  * Cada módulo está entrelazado para que la IA pueda "leer" el estado del taller.
