@@ -156,3 +156,4 @@ export const enviarWhatsAppOrden = (orden) => {
     const url = `https://wa.me/${telFull}?text=${mensaje}`;
     window.open(url, '_blank');
 };
+
