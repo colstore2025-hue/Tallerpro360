@@ -335,3 +335,56 @@ function applyHardLock() {
         </div>`;
     document.body.appendChild(lock);
 }
+
+/**
+ * renderTechPerformance - Visualización de Eficiencia por Operador
+ * Calcula: Órdenes completadas vs. Tiempo promedio vs. Ingreso generado.
+ */
+export function renderTechPerformance(containerId, ordenes) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Agrupar datos por técnico
+    const techStats = {};
+    
+    ordenes.forEach(o => {
+        const tech = o.tecnico || "Sin Asignar";
+        if (!techStats[tech]) {
+            techStats[tech] = { nombre: tech, total: 0, completadas: 0, revenue: 0 };
+        }
+        techStats[tech].total++;
+        techStats[tech].revenue += Number(o.total || 0);
+        if (o.estado === 'LISTO') techStats[tech].completadas++;
+    });
+
+    const fmt = (v) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(v);
+
+    container.innerHTML = `
+        <div class="bg-slate-900/40 rounded-[3rem] p-8 border border-white/5 h-full">
+            <div class="flex justify-between items-center mb-8">
+                <h4 class="orbitron text-[9px] font-black text-slate-500 uppercase tracking-[0.4em]">Productividad de Campo</h4>
+                <i class="fas fa-users-cog text-cyan-500 text-xs"></i>
+            </div>
+            
+            <div class="space-y-6">
+                ${Object.values(techStats).sort((a,b) => b.revenue - a.revenue).map(t => {
+                    const porc = (t.completadas / t.total) * 100 || 0;
+                    return `
+                    <div class="group">
+                        <div class="flex justify-between items-end mb-2">
+                            <div>
+                                <p class="text-[10px] font-black text-white uppercase italic">${t.nombre}</p>
+                                <p class="text-[7px] mono text-cyan-500 uppercase">${t.completadas} Completadas / ${t.total} Asignadas</p>
+                            </div>
+                            <p class="text-[9px] orbitron font-black text-emerald-400">${fmt(t.revenue)}</p>
+                        </div>
+                        <div class="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-1000" style="width: ${porc}%"></div>
+                        </div>
+                    </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+}
