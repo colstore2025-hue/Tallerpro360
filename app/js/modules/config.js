@@ -1,35 +1,38 @@
 /**
- * config.js - TallerPRO360 V15.0.0 🚀
- * NEXUS-X STARLINK: Edición Blindada (Super Admin Ready)
- * Ruta Crítica: empresas/[empresaId]
+ * config.js - TallerPRO360 NEXUS-X V17.0 🚀
+ * NEXUS-X STARLINK: Edición Blindada (Multi-Tenant & Root Architecture)
+ * Ruta Crítica: empresas/[empresaId] - Sincronización Global
+ * @author William Jeffry Urquijo Cubillos
  */
-import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { 
+    doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
 export default async function configModule(container, state) {
     // 🛡️ REPARACIÓN DE ÓRBITA: Protocolo de recuperación de triple vía
-    let empresaId = state?.empresaId || localStorage.getItem("empresaId");
-    const uid = state?.uid || localStorage.getItem("uid");
+    let empresaId = state?.empresaId || localStorage.getItem("nexus_empresaId");
+    const uid = state?.uid || localStorage.getItem("nexus_uid");
 
     // RASTREO DE EMERGENCIA PARA SUPER ADMIN / USUARIOS GLOBAL
     if ((!empresaId || empresaId === "PENDIENTE") && uid) {
         console.warn("Nexus: Iniciando rastreo de órbita para UID:", uid);
         try {
-            // Intento 1: Buscar en colección usuarios estándar
+            // Intento 1: Buscar en colección raíz 'usuarios'
             const userRef = doc(db, "usuarios", uid);
             const userSnap = await getDoc(userRef);
             
             if (userSnap.exists()) {
                 empresaId = userSnap.data().empresaId;
             } else {
-                // Intento 2: Rastreo en jerarquía Super Admin (Capturas Firestore)
-                // Buscamos si el usuario existe dentro de una estructura de empresa
-                console.log("Nexus: Buscando en nodos globales...");
-                // Nota: Aquí se podría iterar o usar una colección de mapeo si el empresaId es dinámico
+                // Intento 2: Búsqueda por query en caso de que el UID no sea el ID del doc
+                const qU = query(collection(db, "usuarios"), where("uid", "==", uid));
+                const snapU = await getDocs(qU);
+                if(!snapU.empty) empresaId = snapU.docs[0].data().empresaId;
             }
 
             if (empresaId && empresaId !== "PENDIENTE") {
-                localStorage.setItem("empresaId", empresaId);
+                localStorage.setItem("nexus_empresaId", empresaId);
                 console.log("Nexus: Órbita recuperada con éxito ->", empresaId);
             }
         } catch (err) {
@@ -49,7 +52,7 @@ export default async function configModule(container, state) {
                 <p class="text-[10px] text-slate-500 mt-4 uppercase max-w-xs mx-auto leading-relaxed">
                     El nodo de su taller no responde. Esto puede deberse a una sesión expirada o un perfil de Super Admin sin taller vinculado.
                 </p>
-                <button onclick="location.href='index.html'" class="mt-10 bg-white text-black px-12 py-4 rounded-full font-black text-[10px] uppercase shadow-2xl hover:bg-cyan-500 transition-all orbitron tracking-[0.2em]">
+                <button onclick="location.reload()" class="mt-10 bg-white text-black px-12 py-4 rounded-full font-black text-[10px] uppercase shadow-2xl hover:bg-cyan-500 transition-all orbitron tracking-[0.2em]">
                     Reestablecer Conexión Principal
                 </button>
             </div>`;
@@ -69,10 +72,10 @@ export default async function configModule(container, state) {
     <div class="max-w-4xl mx-auto pb-40 animate-in fade-in slide-in-from-bottom-8 duration-700">
         <header class="flex flex-col md:flex-row justify-between items-center mb-12 px-6 gap-6">
             <div>
-                <h1 class="orbitron text-3xl font-black italic text-white tracking-tighter uppercase">SYSTEM <span class="text-cyan-400">CORE</span></h1>
-                <p class="text-[8px] text-cyan-500/80 font-bold uppercase tracking-[0.4em] mt-1">Protocolo de Configuración Global v15.0</p>
+                <h1 class="orbitron text-3xl font-black italic text-white tracking-tighter uppercase leading-none">SYSTEM <span class="text-cyan-400">CORE</span></h1>
+                <p class="text-[8px] text-cyan-500/80 font-bold uppercase tracking-[0.4em] mt-3">Protocolo de Configuración Global v17.0</p>
             </div>
-            <div class="bg-black/40 border border-cyan-500/30 px-6 py-3 rounded-[2rem] backdrop-blur-xl shadow-2xl">
+            <div class="bg-black/40 border border-cyan-500/30 px-6 py-4 rounded-[2rem] backdrop-blur-xl shadow-2xl">
                 <span class="text-[8px] text-cyan-400 font-black uppercase tracking-widest flex items-center gap-3">
                     <span class="w-2 h-2 bg-cyan-500 rounded-full animate-ping"></span> Nodo Activo: <span class="text-white">${empresaId}</span>
                 </span>
@@ -86,13 +89,13 @@ export default async function configModule(container, state) {
         </nav>
 
         <div id="secGen" class="tab-content space-y-8 px-4">
-            <div class="bg-white/5 border border-white/5 p-10 rounded-[3.5rem] backdrop-blur-sm relative overflow-hidden group">
+            <div class="bg-white/5 border border-white/5 p-10 rounded-[3.5rem] backdrop-blur-sm relative overflow-hidden group shadow-2xl">
                 <div class="flex flex-col items-center mb-12">
-                    <div id="logoDrop" class="w-40 h-40 bg-gradient-to-tr from-slate-900 to-black rounded-[3rem] border-2 border-dashed border-white/10 flex items-center justify-center relative overflow-hidden shadow-inner hover:border-cyan-500/50 transition-all cursor-pointer group">
+                    <div id="logoDrop" class="w-44 h-44 bg-gradient-to-tr from-slate-900 to-black rounded-[3rem] border-2 border-dashed border-white/10 flex items-center justify-center relative overflow-hidden shadow-inner hover:border-cyan-500/50 transition-all cursor-pointer group">
                         <img id="prevLogo" src="" class="hidden w-full h-full object-cover group-hover:opacity-40 transition-opacity">
                         <div class="flex flex-col items-center gap-2" id="camOverlay">
                             <i id="camIcon" class="fas fa-camera text-3xl text-slate-700"></i>
-                            <span class="text-[6px] text-slate-600 font-black uppercase">Subir Marca</span>
+                            <span class="text-[6px] text-slate-600 font-black uppercase tracking-widest">Subir Marca</span>
                         </div>
                         <input type="file" id="inputLogo" class="absolute inset-0 opacity-0 cursor-pointer" accept="image/*">
                     </div>
@@ -100,11 +103,11 @@ export default async function configModule(container, state) {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="space-y-3">
                         <label class="text-[8px] text-cyan-500 font-black uppercase tracking-widest ml-5 italic">Nombre del Taller / Empresa</label>
-                        <input id="inNombre" class="w-full bg-black/60 p-6 rounded-3xl border border-white/5 outline-none text-white font-bold orbitron uppercase italic focus:border-cyan-500/40 transition-all" placeholder="EJ: TALLER NEXUS">
+                        <input id="inNombre" class="w-full bg-black/60 p-6 rounded-3xl border border-white/5 outline-none text-white font-bold orbitron uppercase italic focus:border-cyan-400 transition-all" placeholder="EJ: TALLER NEXUS">
                     </div>
                     <div class="space-y-3">
-                        <label class="text-[8px] text-cyan-500 font-black uppercase tracking-widest ml-5 italic">Identificación NIT</label>
-                        <input id="inNit" class="w-full bg-black/60 p-6 rounded-3xl border border-white/5 outline-none text-white font-mono focus:border-cyan-500/40 transition-all" placeholder="900.000.000-1">
+                        <label class="text-[8px] text-cyan-500 font-black uppercase tracking-widest ml-5 italic">Identificación NIT / TAX ID</label>
+                        <input id="inNit" class="w-full bg-black/60 p-6 rounded-3xl border border-white/5 outline-none text-white font-mono focus:border-cyan-400 transition-all" placeholder="900.000.000-1">
                     </div>
                 </div>
             </div>
@@ -113,7 +116,7 @@ export default async function configModule(container, state) {
         <div id="secWs" class="tab-content hidden px-4">
             <div class="bg-gradient-to-br from-[#0f172a] to-[#06201a] p-12 rounded-[4rem] border border-emerald-500/10 shadow-3xl">
                 <div class="flex justify-between items-center mb-10">
-                    <h3 class="text-sm font-black text-emerald-400 uppercase italic flex items-center gap-4">
+                    <h3 class="text-sm font-black text-emerald-400 uppercase italic flex items-center gap-4 orbitron">
                         <i class="fab fa-whatsapp text-3xl"></i> Starlink Messenger
                     </h3>
                     <span class="text-[7px] bg-emerald-500/10 text-emerald-500 px-5 py-2 rounded-full border border-emerald-500/20 font-black uppercase tracking-widest">IA Active</span>
@@ -124,7 +127,7 @@ export default async function configModule(container, state) {
                         <span class="text-2xl font-black text-emerald-800 orbitron">+57</span>
                         <input id="inWs" type="number" class="w-full bg-transparent text-4xl font-black text-white outline-none tracking-tighter" placeholder="3000000000">
                     </div>
-                    <p class="text-[9px] text-slate-500 mt-8 italic leading-relaxed">Nexus-X utilizará este número para el envío automático de órdenes PDF y estados de reparación vía WhatsApp Cloud API.</p>
+                    <p class="text-[9px] text-slate-500 mt-8 italic leading-relaxed uppercase font-black opacity-50">Nexus-X enviará órdenes y estados vía WhatsApp Cloud API.</p>
                 </div>
             </div>
         </div>
@@ -135,7 +138,7 @@ export default async function configModule(container, state) {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                     <div class="bg-black/60 p-6 rounded-3xl border border-white/5">
                         <label class="text-[8px] text-slate-500 font-black uppercase mb-3 block italic">Nivel de Potencia (Plan)</label>
-                        <select id="selPlan" class="w-full bg-transparent text-white font-black outline-none cursor-pointer orbitron text-xs appearance-none">
+                        <select id="selPlan" class="w-full bg-transparent text-white font-black outline-none cursor-pointer orbitron text-[10px] uppercase appearance-none">
                             <option value="basico">PLAN BÁSICO NEXUS</option>
                             <option value="pro" selected>PLAN PRO STARLINK</option>
                             <option value="elite">PLAN ELITE NASA-TECH</option>
@@ -143,7 +146,7 @@ export default async function configModule(container, state) {
                     </div>
                     <div class="bg-black/60 p-6 rounded-3xl border border-white/5">
                         <label class="text-[8px] text-slate-500 font-black uppercase mb-3 block italic">Ciclo de Sincronización</label>
-                        <select id="selMeses" class="w-full bg-transparent text-white font-black outline-none cursor-pointer orbitron text-xs appearance-none">
+                        <select id="selMeses" class="w-full bg-transparent text-white font-black outline-none cursor-pointer orbitron text-[10px] uppercase appearance-none">
                             <option value="1">1 MES (ÓRBITA ESTÁNDAR)</option>
                             <option value="3">3 MESES (10% DESCUENTO)</option>
                             <option value="6">6 MESES (20% DESCUENTO)</option>
@@ -165,7 +168,7 @@ export default async function configModule(container, state) {
                 <div class="flex flex-col md:flex-row justify-between items-start gap-6 mb-10">
                     <div>
                         <h3 class="text-sm font-black text-cyan-400 uppercase italic orbitron">Pasarela de Recaudo (Bold Pay)</h3>
-                        <p class="text-[9px] text-slate-500 uppercase font-bold mt-2">Conecte su cuenta Bold para cobrar a sus clientes</p>
+                        <p class="text-[9px] text-slate-500 uppercase font-bold mt-2">Integración para cobros a clientes</p>
                     </div>
                     <button onclick="window.open('https://bold.co')" class="text-[8px] bg-cyan-500/10 text-cyan-400 px-6 py-3 rounded-full border border-cyan-500/20 font-black uppercase tracking-widest hover:bg-cyan-500 hover:text-black transition-all">Configurar Bold</button>
                 </div>
@@ -176,8 +179,8 @@ export default async function configModule(container, state) {
             </div>
         </div>
 
-        <div class="fixed bottom-12 left-0 right-0 px-8 z-[100] flex justify-center">
-            <button id="btnSaveAll" class="w-full max-w-2xl bg-cyan-500 text-black py-8 rounded-[3rem] font-black orbitron text-[12px] uppercase tracking-[0.6em] shadow-[0_25px_60px_rgba(6,182,212,0.4)] hover:bg-cyan-400 active:scale-95 transition-all flex items-center justify-center gap-6">
+        <div class="fixed bottom-12 left-0 right-0 px-8 z-[100] flex justify-center pointer-events-none">
+            <button id="btnSaveAll" class="pointer-events-auto w-full max-w-2xl bg-cyan-500 text-black py-8 rounded-[3rem] font-black orbitron text-[12px] uppercase tracking-[0.6em] shadow-[0_25px_60px_rgba(6,182,212,0.4)] hover:bg-cyan-400 active:scale-95 transition-all flex items-center justify-center gap-6">
                 Sincronizar Nexus-X <i class="fas fa-satellite animate-bounce"></i>
             </button>
         </div>
@@ -188,9 +191,8 @@ export default async function configModule(container, state) {
         .tab-btn { background: transparent; color: #475569; border: 1px solid transparent; }
         .tab-btn.active { background: #06b6d4; color: #000; box-shadow: 0 15px 35px rgba(6,182,212,0.4); border-color: transparent; }
         .tab-content.hidden { display: none; }
-        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         #logoDrop:hover #camOverlay { opacity: 1; color: #06b6d4; }
-    </style>
+    </div>
     `;
 
     // --- LÓGICA DE ALGORITMOS DE PRECIO ---
@@ -260,16 +262,14 @@ export default async function configModule(container, state) {
                 }
             }
             calcularPrecios();
-        } catch (e) {
-            console.error("Falla en carga inicial:", e);
-        }
+        } catch (e) { console.error("Falla en carga:", e); }
     };
 
     // --- GUARDADO MAESTRO (SINCRO STARLINK) ---
     document.getElementById("btnSaveAll").onclick = async () => {
         const btn = document.getElementById("btnSaveAll");
         btn.disabled = true;
-        btn.innerHTML = `TRANSMITIENDO A SATÉLITE... <i class="fas fa-sync fa-spin"></i>`;
+        btn.innerHTML = `TRANSMITIENDO... <i class="fas fa-sync fa-spin"></i>`;
 
         try {
             const payload = {
@@ -284,30 +284,19 @@ export default async function configModule(container, state) {
                 updatedBy: uid
             };
 
-            // Validación mínima antes de transmitir
             if (!payload.nombre) throw new Error("NOMBRE REQUERIDO");
 
             await setDoc(docRef, payload, { merge: true });
             
-            // Actualizar contexto local para que el resto de la app se entere
-            localStorage.setItem("nombreTaller", payload.nombre);
-            localStorage.setItem("empresaId", empresaId);
+            localStorage.setItem("nexus_nombreTaller", payload.nombre);
             
             btn.innerHTML = `SINCRO EXITOSA <i class="fas fa-check"></i>`;
             btn.classList.replace("bg-cyan-500", "bg-emerald-500");
             
-            // Notificación auditiva de éxito
-            if (window.speechSynthesis) {
-                const msg = new SpeechSynthesisUtterance("Nexus sincronizado exitosamente");
-                msg.lang = 'es-ES';
-                window.speechSynthesis.speak(msg);
-            }
-
             setTimeout(() => location.reload(), 1500);
         } catch (e) {
-            console.error("Falla Nexus:", e);
             btn.disabled = false;
-            btn.innerHTML = `ERROR DE ENLACE: ${e.message.toUpperCase()}`;
+            btn.innerHTML = `ERROR: ${e.message.toUpperCase()}`;
             btn.classList.replace("bg-cyan-500", "bg-red-500");
         }
     };
