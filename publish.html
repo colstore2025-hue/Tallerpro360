@@ -3,69 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Publicar Servicio | TallerPRO360</title>
+    <title>Nexus-X · Publish Engine V16.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    
     <style>
-        :root { --cyan: #06b6d4; --dark: #020617; }
-        body { font-family: 'Outfit', sans-serif; background: var(--dark); color: white; }
+        :root { --neon-cyan: #00f2ff; --space-black: #020617; }
+        body {
+            background: radial-gradient(circle at top right, #0f172a 0%, #020617 100%);
+            font-family: 'Inter', sans-serif; color: white; min-height: 100vh;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(30px);
+            border: 1px solid rgba(0, 242, 255, 0.1); border-radius: 3rem;
+        }
+        .input-nexus {
+            background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.1);
+            color: white; transition: all 0.3s;
+        }
+        .input-nexus:focus { border-color: var(--neon-cyan); outline: none; box-shadow: 0 0 15px rgba(0, 242, 255, 0.2); }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        .glass-input { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 1rem; width: 100%; outline: none; transition: 0.3s; }
-        .glass-input:focus { border-color: var(--cyan); background: rgba(6,182,212,0.05); }
     </style>
 </head>
-<body class="p-6 md:p-12">
+<body class="p-4 md:p-10">
 
-    <div class="max-w-4xl mx-auto">
-        <header class="mb-12 flex justify-between items-end">
-            <div>
-                <span class="text-cyan-500 orbitron text-[10px] tracking-[0.5em] uppercase">Nexus-X Publisher</span>
-                <h1 class="text-4xl font-black uppercase italic tracking-tighter">Publicar <span class="text-cyan-400">Servicio</span></h1>
-            </div>
-            <a href="/dashboard.html" class="text-slate-500 hover:text-white text-xs font-black orbitron uppercase tracking-widest"><i class="fas fa-arrow-left mr-2"></i> Volver</a>
-        </header>
-
-        <form id="formPublish" class="grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-900/40 p-8 rounded-[2rem] border border-white/5">
-            
-            <div class="space-y-4">
-                <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Imagen del Servicio</label>
-                <div class="h-64 border-2 border-dashed border-white/10 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer hover:border-cyan-500/50 transition bg-white/5">
-                    <i class="fas fa-cloud-upload-alt text-3xl text-slate-600 mb-2"></i>
-                    <p class="text-[10px] text-slate-500 font-bold uppercase">Click para cargar (JPG/PNG)</p>
-                </div>
-            </div>
-
-            <div class="space-y-6">
-                <div>
-                    <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Nombre del Servicio</label>
-                    <input type="text" placeholder="Ej: Mantenimiento Preventivo 10K" class="glass-input text-white font-bold">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Precio Público</label>
-                        <input type="number" placeholder="$ 0.00" class="glass-input text-cyan-400 font-black">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Tiempo Est.</label>
-                        <select class="glass-input font-bold text-slate-400">
-                            <option>1-2 Horas</option>
-                            <option>Medio Día</option>
-                            <option>24 Horas</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Descripción (Promoción)</label>
-                    <textarea rows="3" placeholder="Describe por qué tu taller es el mejor para este servicio..." class="glass-input text-sm"></textarea>
-                </div>
-            </div>
-
-            <div class="md:col-span-2 pt-6 border-t border-white/5 flex justify-end">
-                <button type="submit" class="px-12 py-4 bg-cyan-500 text-black orbitron font-black text-xs rounded-xl uppercase hover:scale-105 transition shadow-lg shadow-cyan-500/20"> Lanzar Publicación <i class="fas fa-paper-plane ml-2"></i></button>
-            </div>
-        </form>
+<div class="max-w-4xl mx-auto">
+    <div class="flex justify-between items-center mb-10">
+        <div>
+            <h1 class="orbitron text-3xl font-black italic uppercase tracking-tighter">Lanzar <span class="text-cyan-400">Oferta</span></h1>
+            <p class="text-[9px] text-cyan-500 font-black uppercase tracking-[0.5em] mt-2">Marketplace Nexus-X Sincronizado</p>
+        </div>
+        <button onclick="history.back()" class="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition-all">
+            <i class="fas fa-times"></i>
+        </button>
     </div>
 
+    <div class="grid lg:grid-cols-12 gap-10">
+        <div class="lg:col-span-7 space-y-8">
+            <div class="glass-panel p-8 md:p-10 space-y-6">
+                <div class="grid grid-cols-1 gap-6">
+                    <div>
+                        <label class="block text-[10px] text-slate-500 uppercase font-black mb-3 tracking-widest">Nombre del Producto / Repuesto</label>
+                        <input type="text" id="prodNombre" class="w-full p-4 rounded-2xl input-nexus text-sm" placeholder="Ej: Kit Distribución Original Mazda 3">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] text-slate-500 uppercase font-black mb-3 tracking-widest">Precio (COP)</label>
+                            <input type="number" id="prodPrecio" class="w-full p-4 rounded-2xl input-nexus text-sm" placeholder="0.00">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-500 uppercase font-black mb-3 tracking-widest">Categoría</label>
+                            <select id="prodCat" class="w-full p-4 rounded-2xl input-nexus text-sm">
+                                <option value="motores">Motores</option>
+                                <option value="frenos">Frenos</option>
+                                <option value="suspension">Suspensión</option>
+                                <option value="herramientas">Herramientas</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] text-slate-500 uppercase font-black mb-3 tracking-widest">Descripción Técnica</label>
+                        <textarea id="prodDesc" rows="4" class="w-full p-4 rounded-2xl input-nexus text-sm" placeholder="Detalles de compatibilidad, estado, etc."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="publicarOferta()" id="btnPublish" class="w-full py-6 bg-cyan-500 text-black orbitron font-black text-xs rounded-[2rem] uppercase shadow-xl shadow-cyan-500/20 hover:scale-[1.02] transition-all">
+                Subir al Satélite Marketplace <i class="fas fa-satellite-dish ml-2"></i>
+            </button>
+        </div>
+
+        <div class="lg:col-span-5 space-y-8">
+            <div class="glass-panel p-8 text-center border-dashed border-2 border-cyan-500/20">
+                <div id="dropZone" class="cursor-pointer py-10">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-cyan-400 mb-4"></i>
+                    <p class="orbitron text-[10px] font-black uppercase text-white">Capturar Imagen</p>
+                    <p class="text-[8px] text-slate-500 mt-2 uppercase tracking-widest">JPG, PNG o Inyección Directa</p>
+                    <input type="file" id="fileInput" class="hidden" accept="image/*">
+                </div>
+                <div id="previewContainer" class="hidden mt-4 rounded-2xl overflow-hidden border border-white/10">
+                    <img id="imgPreview" src="#" alt="Vista Previa" class="w-full h-48 object-cover">
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-purple-900/40 to-blue-900/40 p-8 rounded-[2.5rem] border border-white/10">
+                <div class="flex items-center gap-3 mb-4">
+                    <i class="fas fa-robot text-purple-400"></i>
+                    <span class="orbitron text-[10px] font-black text-white uppercase tracking-widest">Nexus IA Advisor</span>
+                </div>
+                <p id="aiHint" class="text-[11px] text-slate-300 italic leading-relaxed">
+                    "Comandante, sugiero un precio de <b>$450,000</b> basado en ofertas similares en Charlotte. La demanda de este repuesto ha subido un 12%."
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    
+    // El sistema ya debe tener Firebase inicializado en el core
+    const db = getFirestore();
+
+    // Lógica de Previsualización de Imagen
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    
+    dropZone.onclick = () => fileInput.click();
+    
+    fileInput.onchange = e => {
+        const [file] = fileInput.files;
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById('imgPreview').src = e.target.result;
+                document.getElementById('previewContainer').classList.remove('hidden');
+            }
+            reader.readAsDataURL(file);
+        }
+    };
+
+    window.publicarOferta = async () => {
+        const btn = document.getElementById('btnPublish');
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner animate-spin"></i> TRANSMITIENDO...`;
+
+        const oferta = {
+            nombre: document.getElementById('prodNombre').value,
+            precio: document.getElementById('prodPrecio').value,
+            categoria: document.getElementById('prodCat').value,
+            descripcion: document.getElementById('prodDesc').value,
+            empresaId: localStorage.getItem('empresaId'),
+            vendedor: "William Nexus", // Aquí usarías el nombre dinámico
+            creadoEn: serverTimestamp(),
+            estado: 'DISPONIBLE'
+        };
+
+        try {
+            await addDoc(collection(db, "marketplace"), oferta);
+            alert("¡MISIÓN CUMPLIDA! Oferta en órbita.");
+            window.location.hash = "#marketplace";
+        } catch (e) {
+            alert("ERROR EN TRANSMISIÓN: " + e.message);
+            btn.disabled = false;
+            btn.innerText = "Subir al Satélite Marketplace";
+        }
+    };
+</script>
 </body>
 </html>
