@@ -48,6 +48,38 @@ export default async function dashboard(container, state) {
     }
 }
 
+// --- NEXUS-X ACCESS PROTOCOL V16.2 ---
+function verificarAccesoSistema() {
+    const currentPlan = localStorage.getItem("planTier");
+    const systemStatus = localStorage.getItem("status");
+    const lockOverlay = document.getElementById("lockOverlay");
+    const mainContent = document.getElementById("mainContent");
+    const errorText = document.getElementById("errorText");
+
+    // Lógica de Desbloqueo: 
+    // Se permite si está ACTIVO o si es el plan FREEMIUM (que tiene acceso perpetuo limitado)
+    if (systemStatus === "ACTIVO" || currentPlan === "freemium") {
+        console.log("🔓 DASHBOARD: PROTOCOLO DE ACCESO CONCEDIDO");
+        console.log("NIVEL DE RED: " + (currentPlan ? currentPlan.toUpperCase() : "DESCONOCIDO"));
+        
+        if (lockOverlay) lockOverlay.classList.add("hidden");
+        if (mainContent) mainContent.classList.remove("hidden");
+        
+        // Opcional: Aplicar restricciones visuales si es freemium
+        if (currentPlan === "freemium") {
+            aplicarRestriccionesFreemium();
+        }
+    } else {
+        console.error("🛑 DASHBOARD: LINK PROTOCOL BROKEN");
+        if (lockOverlay) lockOverlay.classList.remove("hidden");
+        if (mainContent) mainContent.classList.add("hidden");
+        if (errorText) errorText.innerText = "LINK PROTOCOL BROKEN: " + (currentPlan ? currentPlan.toUpperCase() : "OFFLINE");
+    }
+}
+
+// Ejecutar al cargar la página
+document.addEventListener("DOMContentLoaded", verificarAccesoSistema);
+
 /**
  * VERIFICACIÓN DE LICENCIA TALLA NASA
  * Compara fecha actual con 'venceEn' de Firestore
