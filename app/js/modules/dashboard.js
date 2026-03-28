@@ -388,3 +388,71 @@ export function renderTechPerformance(containerId, ordenes) {
         </div>
     `;
 }
+
+/**
+ * renderPayrollModule - El Cerebro Financiero de Nexus-X
+ * Calcula comisiones basadas en órdenes finalizadas.
+ */
+export function renderPayrollModule(containerId, ordenes) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const COMISION_ESTANDAR = 0.30; // 30% para el técnico
+    const payroll = {};
+
+    // Procesar solo órdenes 'LISTO' para pago
+    ordenes.filter(o => o.estado === 'LISTO').forEach(o => {
+        const tech = o.tecnico || "Staff General";
+        if (!payroll[tech]) {
+            payroll[tech] = { nombre: tech, base: 0, comision: 0, nOrdenes: 0 };
+        }
+        const totalOrden = Number(o.total || 0);
+        payroll[tech].base += totalOrden;
+        payroll[tech].comision += (totalOrden * COMISION_ESTANDAR);
+        payroll[tech].nOrdenes++;
+    });
+
+    const fmt = (v) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(v);
+
+    container.innerHTML = `
+        <div class="bg-gradient-to-br from-slate-900 to-black rounded-[3rem] p-10 border border-emerald-500/20 shadow-2xl relative overflow-hidden group">
+            <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl"></div>
+            
+            <div class="flex justify-between items-center mb-10">
+                <div>
+                    <h4 class="orbitron text-[10px] font-black text-emerald-500 uppercase tracking-[0.4em] mb-1">Liquidación de Misión</h4>
+                    <p class="text-[7px] mono text-slate-500 uppercase tracking-widest italic">Corte de Caja en Tiempo Real</p>
+                </div>
+                <div class="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                    <i class="fas fa-hand-holding-usd text-emerald-400"></i>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                ${Object.values(payroll).length === 0 
+                    ? `<p class="text-center text-[9px] mono text-slate-600 py-10 uppercase">No hay órdenes liquidadas hoy</p>`
+                    : Object.values(payroll).map(p => `
+                    <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-emerald-500/30 transition-all">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center orbitron text-[10px] font-bold text-white">
+                                ${p.nombre.substring(0,2).toUpperCase()}
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-white uppercase">${p.nombre}</p>
+                                <p class="text-[8px] text-slate-500 mono">${p.nOrdenes} Servicios Cerrados</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[7px] text-slate-500 uppercase font-black mb-1">A Pagar (30%)</p>
+                            <p class="text-xs font-black text-emerald-400 orbitron tracking-tighter">${fmt(p.comision)}</p>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <button class="w-full mt-8 py-4 border border-emerald-500/30 rounded-2xl text-[9px] font-black text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all uppercase tracking-widest">
+                Exportar Reporte de Pagos <i class="fas fa-file-invoice-dollar ml-2"></i>
+            </button>
+        </div>
+    `;
+}
