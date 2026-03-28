@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nexus-X · PRO360CORE Engine V16.1</title>
+<title>Nexus-X · PRO360CORE Engine V16.2</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -65,7 +65,7 @@
         <i class="fas fa-bolt-lightning text-cyan-400"></i>
     </div>
     <h1 class="nasa-title text-3xl font-black mb-2">Nexus-X</h1>
-    <p id="systemStatus" class="text-[8px] tracking-[0.5em] text-cyan-500/60 uppercase italic">Aegis Security Layer V16.1</p>
+    <p id="systemStatus" class="text-[8px] tracking-[0.5em] text-cyan-500/60 uppercase italic">Aegis Security Layer V16.2</p>
   </div>
 
   <div class="flex justify-center space-x-12 mb-10 text-[10px] font-black uppercase tracking-[0.2em]">
@@ -152,12 +152,49 @@
     input.type = input.type === 'password' ? 'text' : 'password';
   };
 
-  // --- LÓGICA DE LOGIN EVOLUCIONADA V16.1 ---
+  // --- HOTFIX V16.2: PROTOCOL RESTORE & BYPASS ---
+  async function validarAccesoDashboard(uid, userData) {
+    try {
+        const empresaDoc = await getDoc(doc(db, "empresas", uid));
+        
+        // 1. BYPASS SUPERADMIN
+        if (userData.rolGlobal === "superadmin") {
+            localStorage.setItem("planTier", "elite");
+            localStorage.setItem("status", "ACTIVO");
+            localStorage.setItem("empresaId", "NEXUS_GLOBAL");
+            return true;
+        }
+
+        // 2. BYPASS FREEMIUM / TEST ACCOUNTS
+        if (!empresaDoc.exists()) {
+            if(userData.tier === "freemium" || userData.email.includes("@test.com")) {
+                localStorage.setItem("planTier", userData.tier || "basico");
+                localStorage.setItem("status", "ACTIVO");
+                localStorage.setItem("empresaId", uid);
+                return true;
+            }
+            throw new Error("NODO_NO_SINCRONIZADO");
+        }
+
+        // 3. VALIDACIÓN ESTÁNDAR
+        const data = empresaDoc.data();
+        localStorage.setItem("planTier", data.planId);
+        localStorage.setItem("status", data.estadoPlan);
+        localStorage.setItem("empresaId", uid);
+        return true;
+
+    } catch (error) {
+        console.error("Critical Sync Error:", error);
+        return false;
+    }
+  }
+
+  // --- LOGIN ENGINE ---
   loginForm.addEventListener("submit", async e => {
     e.preventDefault();
     const btn = document.getElementById('loginBtn');
     const errEl = document.getElementById('error');
-    btn.innerHTML = `<span class="system-loader"></span> Sincronizando Red...`;
+    btn.innerHTML = `<span class="system-loader"></span> Verificando Órbita...`;
     btn.disabled = true;
     errEl.classList.add('hidden');
 
@@ -169,55 +206,41 @@
       const uid = cred.user.uid;
 
       const userDoc = await getDoc(doc(db, "usuariosGlobal", uid));
-      
-      if (!userDoc.exists()) throw new Error("IDENTIDAD NO REGISTRADA EN NEXUS-CORE");
-      const userData = userDoc.data();
+      if (!userDoc.exists()) throw new Error("IDENTIDAD NO ENCONTRADA");
 
-      // ROL: SUPERADMIN (Bypass total)
-      if (userData.rolGlobal === "superadmin") {
-          localStorage.setItem("adminMode", "true");
-          localStorage.setItem("empresaId", "NEXUS_GLOBAL"); 
-          window.location.href = "/app/#master-control";
-          return;
+      const isAuthorized = await validarAccesoDashboard(uid, userDoc.data());
+      
+      if (isAuthorized) {
+          window.location.href = userDoc.data().rolGlobal === "superadmin" ? "/app/#master-control" : "/app/#dashboard";
+      } else {
+          throw new Error("ERROR DE VINCULACIÓN CON DASHBOARD");
       }
 
-      // ROL: CLIENTE (Validación de Empresa)
-      const empresaDoc = await getDoc(doc(db, "empresas", uid));
-      if (!empresaDoc.exists()) throw new Error("NODO DE EMPRESA INEXISTENTE");
-
-      const empresaData = empresaDoc.data();
-      localStorage.setItem("empresaId", uid);
-      localStorage.setItem("planTier", empresaData.planId);
-      localStorage.setItem("status", empresaData.estadoPlan);
-
-      window.location.href = "/app/#dashboard";
     } catch(e) {
       btn.innerText = "VALIDAR CREDENCIALES";
       btn.disabled = false;
-      errEl.innerText = "FALLO DE ACCESO: " + e.message.toUpperCase();
+      errEl.innerText = "FALLO DE SISTEMA: " + e.message.toUpperCase();
       errEl.classList.remove("hidden");
     }
   });
 
-  // --- REGISTRO CON TIERING (ELITE / PRO / BASICO) ---
+  // --- REGISTER ENGINE ---
   registerForm.addEventListener("submit", async e => {
     e.preventDefault();
-    if(regPass.value !== regPass2.value) return alert("LLAVES DE SEGURIDAD NO COINCIDEN");
+    if(regPass.value !== regPass2.value) return alert("LLAVES NO COINCIDEN");
     
     const btn = document.getElementById('regBtn');
-    btn.innerHTML = `<span class="system-loader"></span> Creando Nodo...`;
+    btn.innerHTML = `<span class="system-loader"></span> Sincronizando Satélite...`;
     btn.disabled = true;
 
     try {
       const cred = await createUserWithEmailAndPassword(auth, regEmail.value, regPass.value);
       const uid = cred.user.uid;
 
-      // Definir expiración por Tier
-      const trialDays = selectedPlan === 'elite' ? 60 : 30;
+      const trialDays = selectedPlan === 'freemium' ? 365 : (selectedPlan === 'elite' ? 60 : 30);
       const venceDate = new Date();
       venceDate.setDate(venceDate.getDate() + trialDays);
 
-      // 1. Perfil de Usuario
       await setDoc(doc(db, "usuariosGlobal", uid), {
         rolGlobal: "cliente",
         email: regEmail.value,
@@ -225,31 +248,32 @@
         creadoEn: serverTimestamp()
       });
 
-      // 2. Perfil de Empresa (Dashboard Ready)
       await setDoc(doc(db, "empresas", uid), {
         nombre: nombre.value.toUpperCase(),
         planId: selectedPlan,
         venceEn: venceDate,
         estadoPlan: "ACTIVO",
-        powerLevel: selectedPlan === 'elite' ? 100 : (selectedPlan === 'pro' ? 70 : 40),
+        powerLevel: selectedPlan === 'elite' ? 100 : 50,
         creadoEn: serverTimestamp()
       });
 
       localStorage.setItem("empresaId", uid);
       localStorage.setItem("planTier", selectedPlan);
+      localStorage.setItem("status", "ACTIVO");
+      
       window.location.href = "/app/#dashboard";
     } catch(e) { 
       btn.innerText = "INICIALIZAR PROTOCOLO";
       btn.disabled = false;
-      alert("ERROR EN REGISTRO: " + e.message);
+      alert("FALLO EN SECUENCIA: " + e.message);
     }
   });
 
   document.getElementById("resetBtn").onclick = async () => {
     const email = loginEmail.value.trim();
-    if (!email) return alert("Ingrese su email en el campo de identidad.");
+    if (!email) return alert("IDENTIFICACIÓN REQUERIDA.");
     await sendPasswordResetEmail(auth, email);
-    alert("Protocolo de recuperación enviado.");
+    alert("Protocolo de restauración enviado al correo.");
   };
 </script>
 </body>
