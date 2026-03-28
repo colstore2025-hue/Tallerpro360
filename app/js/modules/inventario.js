@@ -1,6 +1,6 @@
 /**
  * inventario.js - TallerPRO360 V17.0 📦
- * Motor de Almacén Nexus-X: Colección Principal 'inventario'
+ * Motor de Almacén Nexus-X: Gestión de Activos (Arquitectura Raíz)
  * @author William Jeffry Urquijo Cubillos
  */
 import { 
@@ -10,8 +10,8 @@ import { db } from "../core/firebase-config.js";
 import { createDocument, saveLog } from "../services/dataService.js";
 
 export default async function inventario(container, state) {
-    // Usamos el ID de empresa para filtrar en la colección principal
     const empresaId = localStorage.getItem("nexus_empresaId");
+    const mode = localStorage.getItem("nexus_mode");
     let filtroActual = "PROPIO"; 
     let unsubscribe = null;
 
@@ -91,16 +91,12 @@ export default async function inventario(container, state) {
         escucharStock();
     };
 
-    /**
-     * ESCUCHA EN TIEMPO REAL (onSnapshot)
-     * Apuntando a COLECCIÓN PRINCIPAL 'inventario' filtrada por empresaId
-     */
     function escucharStock() {
         if (unsubscribe) unsubscribe();
         
         const grid = document.getElementById("gridStock");
         
-        // CONSULTA A COLECCIÓN PRINCIPAL 'inventario'
+        // 🛰️ IGUAL QUE CLIENTES: Consulta a COLECCIÓN RAÍZ con filtro empresaId
         const q = query(
             collection(db, "inventario"),
             where("empresaId", "==", empresaId),
@@ -110,7 +106,7 @@ export default async function inventario(container, state) {
 
         unsubscribe = onSnapshot(q, (snap) => {
             if (snap.empty) {
-                grid.innerHTML = `<div class="col-span-full py-40 text-center opacity-10"><i class="fas fa-box-open text-6xl mb-6 text-slate-500"></i><p class="orbitron text-[10px] tracking-[0.5em] uppercase italic">Sector de Almacén Vacío</p></div>`;
+                grid.innerHTML = `<div class="col-span-full py-40 text-center opacity-10"><i class="fas fa-box-open text-6xl mb-6 text-slate-500"></i><p class="orbitron text-[10px] tracking-[0.5em] uppercase italic">Bóveda sin registros</p></div>`;
                 actualizarEstadisticas(0, 0);
                 return;
             }
@@ -129,21 +125,21 @@ export default async function inventario(container, state) {
                 <div class="bg-slate-900/40 backdrop-blur-xl p-8 rounded-[3.5rem] border border-white/5 relative group hover:border-${color}/30 transition-all duration-700">
                     <div class="flex justify-between items-start mb-8">
                         <div class="space-y-2">
-                            <span class="text-[7px] text-${color} font-black uppercase tracking-[0.3em] orbitron italic">ORIGEN ${filtroActual}</span>
+                            <span class="text-[7px] text-${color} font-black uppercase tracking-[0.3em] orbitron italic">CARGA ${filtroActual}</span>
                             <h3 class="text-white text-md font-black uppercase tracking-tight leading-tight">${item.nombre}</h3>
                         </div>
                         <div class="w-12 h-12 bg-black rounded-2xl flex items-center justify-center border border-white/10">
-                            <i class="fas ${filtroActual === 'PROPIO' ? 'fa-microchip' : 'fa-tools'} text-${color} text-sm"></i>
+                            <i class="fas ${filtroActual === 'PROPIO' ? 'fa-box-open' : 'fa-tools'} text-${color} text-sm"></i>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div class="bg-black/40 p-5 rounded-2xl border border-white/5">
-                            <p class="text-[7px] text-slate-600 font-black orbitron mb-1">EXISTENCIAS</p>
+                            <p class="text-[7px] text-slate-600 font-black orbitron mb-1">CANTIDAD</p>
                             <p class="text-2xl font-black text-white orbitron">${item.cantidad}</p>
                         </div>
                         <div class="bg-black/40 p-5 rounded-2xl border border-white/5">
-                            <p class="text-[7px] text-slate-600 font-black orbitron mb-1">${filtroActual === 'PROPIO' ? 'P. VENTA' : 'PLACA'}</p>
+                            <p class="text-[7px] text-slate-600 font-black orbitron mb-1">${filtroActual === 'PROPIO' ? 'P. VENTA' : 'REF_PLACA'}</p>
                             <p class="text-xs font-black ${filtroActual === 'PROPIO' ? 'text-emerald-400' : 'text-yellow-500'} orbitron truncate uppercase">
                                 ${filtroActual === 'PROPIO' ? '$'+Number(item.precioVenta).toLocaleString() : item.placa}
                             </p>
@@ -166,25 +162,25 @@ export default async function inventario(container, state) {
         const color = isPropio ? '#00f2ff' : '#f59e0b';
 
         const { value: f } = await window.Swal.fire({
-            title: isPropio ? 'SUMINISTRO INTERNO' : 'INSUMO CLIENTE',
+            title: isPropio ? 'LOGÍSTICA INTERNA' : 'INSUMO EXTERNO',
             background: '#020617', 
             color: '#fff',
+            customClass: { popup: 'rounded-[4rem] border border-white/10 backdrop-blur-3xl' },
             html: `
-                <div class="space-y-4 p-4 mt-4 text-left">
-                    <input id="sw-nom" class="w-full bg-black/40 p-6 rounded-[2rem] text-white border border-white/5 outline-none focus:border-[${color}]" placeholder="DESCRIPCIÓN DEL ACTIVO">
+                <div class="space-y-4 p-4 mt-4">
+                    <input id="sw-nom" class="w-full bg-black/40 p-6 rounded-[2rem] text-white border border-white/5 outline-none focus:border-[${color}]" placeholder="DESCRIPCIÓN">
                     <div class="grid grid-cols-2 gap-4">
-                        <input id="sw-can" type="number" class="w-full bg-black/40 p-6 rounded-[2rem] text-white border border-white/5" placeholder="CANTIDAD">
-                        <input id="sw-val" class="w-full bg-black/40 p-6 rounded-[2rem] text-white border border-white/5" placeholder="${isPropio ? 'PRECIO $' : 'PLACA'}">
+                        <input id="sw-can" type="number" class="w-full bg-black/40 p-6 rounded-[2rem] text-white border border-white/5" placeholder="CANT">
+                        <input id="sw-val" class="w-full bg-black/40 p-6 rounded-[2rem] text-white border border-white/5" placeholder="${isPropio ? '$ PRECIO' : 'PLACA'}">
                     </div>
                 </div>`,
             showCancelButton: true,
-            confirmButtonText: 'REGISTRAR EN ÓRBITA',
+            confirmButtonText: 'DESPLEGAR ACTIVO',
             preConfirm: () => {
                 const n = document.getElementById('sw-nom').value;
                 const v = document.getElementById('sw-val').value;
-                if(!n) return window.Swal.showValidationMessage("Se requiere descripción");
+                if(!n) return window.Swal.showValidationMessage("Nombre requerido");
                 return {
-                    empresaId: empresaId, // IMPORTANTE: Se guarda en la raíz
                     nombre: n.toUpperCase(),
                     cantidad: Number(document.getElementById('sw-can').value || 1),
                     precioVenta: isPropio ? Number(v) : 0,
@@ -196,10 +192,10 @@ export default async function inventario(container, state) {
         });
 
         if(f) { 
-            // Usamos createDocument para inyectar en la COLECCIÓN PRINCIPAL 'inventario'
+            // 🚀 createDocument se encarga de inyectar el empresaId (Colección Raíz)
             await createDocument("inventario", f); 
             saveLog("CARGA_STOCK", { item: f.nombre, origen: f.origen });
-            window.Swal.fire({ icon: 'success', title: 'ACTIVO REGISTRADO', background: '#020617', color: '#fff' });
+            window.Swal.fire({ icon: 'success', title: 'ACTIVO VINCULADO', background: '#020617', color: '#fff' });
         }
     }
 
