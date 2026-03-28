@@ -85,45 +85,58 @@ function verificarAccesoSistema() {
 }
 
 /**
- * VERIFICACIÓN DE LICENCIA DE GRADO MILITAR
+ * VERIFICACIÓN DE LICENCIA V16.5 - RESILIENTE
+ * Blindaje total contra datos nulos o incompletos.
  */
 async function verifyNexusLicense(empresaId, planTier, sessionStatus) {
     try {
-        // BYPASS MAESTRO: William (SuperAdmin) siempre tiene luz verde
+        // 1. MODO DIOS: William siempre entra
         if (localStorage.getItem("rolGlobal") === "superadmin") {
-            return { status: "ACTIVE", daysRemaining: 9999, plan: "elite" };
+            return { status: "ACTIVE", daysRemaining: 999, plan: "elite" };
         }
 
-        // Si el ID de empresa no existe, pero tenemos sesión activa (Demos)
-        if (!empresaId || empresaId === "undefined") {
-            return { status: "ACTIVE", daysRemaining: 7, plan: "freemium" };
+        // 2. CASO FREEMIUM / NUEVOS: Si no hay ID o es demo, no consultamos Firebase aún
+        if (!empresaId || empresaId === "undefined" || empresaId === "null") {
+            console.log("🛰️ MODO DEMO: Iniciando con parámetros seguros.");
+            return { status: "ACTIVE", daysRemaining: 30, plan: "freemium" };
         }
 
+        // 3. CONSULTA SEGURA A FIREBASE
         const docSnap = await getEmpresaData(empresaId);
         
         if (!docSnap.exists()) {
-            // Fallback para usuarios recién creados (Evita pantalla negra)
-            if (planTier === "freemium" || planTier === "basico") {
-                return { status: "ACTIVE", daysRemaining: 30, plan: planTier };
-            }
-            return { status: "LOCKED", daysRemaining: 0, plan: "unknown" };
+            return { status: "ACTIVE", daysRemaining: 30, plan: "freemium" };
         }
 
         const data = docSnap.data();
-        const now = new Date();
-        const venceEn = data.venceEn?.toDate ? data.venceEn.toDate() : new Date();
-        const diffTime = venceEn - now;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        // Validación de expiración
-        if (diffTime <= 0 && data.planId !== "freemium") {
-            return { status: "LOCKED", daysRemaining: 0, plan: data.planId };
+        
+        // --- PARCHE QUIRÚRGICO PARA FECHAS ---
+        // Si 'venceEn' no existe o no es un Timestamp de Firebase, creamos una fecha futura
+        let venceEn;
+        if (data.venceEn && typeof data.venceEn.toDate === 'function') {
+            venceEn = data.venceEn.toDate();
+        } else {
+            venceEn = new Date();
+            venceEn.setDate(venceEn.getDate() + 30); // Le damos 30 días por defecto
         }
 
-        return { status: "ACTIVE", daysRemaining: diffDays, plan: data.planId };
+        const now = new Date();
+        const diffDays = Math.ceil((venceEn - now) / (1000 * 60 * 60 * 24));
+        const currentPlan = data.planId || "freemium";
+
+        // 4. LÓGICA DE BLOQUEO AMIGABLE
+        // Si debe dinero, el status es LOCKED, pero el Dashboard cargará (Solo Lectura)
+        const status = (diffDays <= 0 && currentPlan !== "freemium") ? "LOCKED" : "ACTIVE";
+
+        return { 
+            status: status, 
+            daysRemaining: diffDays, 
+            plan: currentPlan 
+        };
+
     } catch (e) {
-        console.warn("⚠️ Network Lag: Usando Cache de Licencia.");
-        return { status: "ACTIVE", daysRemaining: 1, plan: planTier };
+        console.error("⚠️ NEXUS-CORE: Error de red, entrando en Modo Emergencia.");
+        return { status: "ACTIVE", daysRemaining: 1, plan: "freemium" };
     }
 }
 
