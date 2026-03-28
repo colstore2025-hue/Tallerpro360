@@ -24,14 +24,34 @@ export default async function dashboard(container, state) {
     const planTier = localStorage.getItem("planTier") || "freemium";
     const sessionStatus = localStorage.getItem("status") || "INACTIVO";
 
-    // 1. EL GUARDIÁN NEXUS (Validación de Acceso de Triple Capa)
-    // El "Aegis Shield" valida si el token es válido o si requiere reactivación
-    const access = await verifyNexusLicense(empresaId, planTier, sessionStatus);
-    
-    if (access.status === "LOCKED") {
-        renderLockState(container, access);
-        return;
+    /**
+ * SEMÁFORO DE CONTROL DE MISIÓN (ESTADOS DE PAGO)
+ */
+function aplicarSemaforoNexus(access) {
+    const { status, daysRemaining, plan } = access;
+
+    // 1. ELIMINAR ALERTAS PREVIAS (Para evitar duplicados al recargar)
+    const oldBanner = document.getElementById("nexusReadOnlyBanner");
+    if (oldBanner) oldBanner.remove();
+
+    // 2. LÓGICA DE SEMÁFORO
+    if (status === "LOCKED") {
+        // 🔴 SEMÁFORO ROJO: Suscripción Expirada
+        console.log("🔴 SEMÁFORO: MODO SOLO LECTURA ACTIVADO");
+        injectReadOnlyBanner(plan); // La función roja que hicimos antes
+        freezeDataInjectors();      // Bloquea los botones de "Nueva Orden"
+        
+    } else if (daysRemaining <= 8 && plan !== "freemium") {
+        // 🟡 SEMÁFORO ÁMBAR: Periodo de Gracia
+        console.log("🟡 SEMÁFORO: ALERTA DE PRÓXIMA EXPIRACIÓN");
+        showGracePeriodAlert(daysRemaining); // La alerta naranja de "Cargar Energía"
+        
+    } else {
+        // 🟢 SEMÁFORO VERDE: Sistema Nominal
+        console.log("🟢 SEMÁFORO: SISTEMA EN ÓRBITA");
+        // Aquí puedes poner un mensaje de voz sutil: "Sistemas al 100%"
     }
+}
 
     // 2. Renderizado de la Estructura de Comando (Interfaz Tesla-Style)
     renderStructure(container, access.plan);
