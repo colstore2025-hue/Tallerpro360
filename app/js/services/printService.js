@@ -31,7 +31,7 @@ export const generarPDFOrden = (orden) => {
     doc.setTextColor(200, 200, 200);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
-    doc.text("COLOMBIAN TRUCKS LOGISTICS LLC", 195, 20, { align: "right" });
+    doc.text("Nexus-XStarlink Saas", 195, 20, { align: "right" });
     doc.text("Charlotte, NC. United States", 195, 24, { align: "right" });
     doc.text("Soporte: support@tallerpro360.com", 195, 28, { align: "right" });
 
@@ -118,7 +118,7 @@ export const generarPDFOrden = (orden) => {
     // Footer de Marca
     doc.setFontSize(7);
     doc.setTextColor(180);
-    doc.text("Copyright © 2026 Colombian Trucks Logistics LLC · Nexus-X Starlink Engine", 105, finalY + 15, { align: "center" });
+    doc.text("Copyright © 2026·Nexus-X Starlink Engine", 105, finalY + 15, { align: "center" });
 
     // Ejecutar Acción
     doc.save(`NexusX_Orden_${orden.placa}_${new Date().getTime().toString().slice(-4)}.pdf`);
