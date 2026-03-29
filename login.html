@@ -2,159 +2,121 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Nexus-X · PRO360CORE V17.0 🛰️</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Nexus-X · TallerPRO360 V17.0 🛰️</title>
+    
+    <meta name="theme-color" content="#020617">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="assets/logo-192.png">
+    <link rel="manifest" href="manifest.json">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
     <style>
-        :root { 
-            --neon-cyan: #00f2ff; 
-            --space-black: #020617; 
-            --deep-slate: #0f172a;
-        }
+        :root { --neon-cyan: #00f2ff; --space-black: #020617; --deep-slate: #0f172a; }
         
         body {
             background: radial-gradient(circle at center, var(--deep-slate) 0%, var(--space-black) 100%);
             font-family: 'Inter', sans-serif; 
-            color: #f8fafc;
-            height: 100vh; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            overflow: hidden; 
-            margin: 0;
+            color: #f8fafc; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0;
         }
 
-        /* Efecto de Partículas de Fondo (Sutil) */
         body::before {
-            content: "";
-            position: absolute;
-            width: 100%; height: 100%;
+            content: ""; position: absolute; width: 100%; height: 100%;
             background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
             opacity: 0.2; pointer-events: none;
         }
 
         .glass-card {
-            background: rgba(15, 23, 42, 0.7); 
-            backdrop-filter: blur(50px);
-            border: 1px solid rgba(0, 242, 255, 0.15);
-            box-shadow: 0 0 120px rgba(0, 0, 0, 0.9);
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(50px);
+            border: 1px solid rgba(0, 242, 255, 0.15); box-shadow: 0 0 120px rgba(0, 0, 0, 0.9);
             transform: perspective(1000px) rotateX(2deg);
         }
 
         .nasa-title {
-            font-family: 'Orbitron', sans-serif; 
-            letter-spacing: 12px;
+            font-family: 'Orbitron', sans-serif; letter-spacing: 12px;
             background: linear-gradient(to right, #fff, var(--neon-cyan), #4f46e5, #fff);
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent;
-            background-size: 300% auto; 
-            animation: shine 8s linear infinite;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-size: 300% auto; animation: shine 8s linear infinite;
         }
 
         @keyframes shine { to { background-position: 300% center; } }
 
         .input-nexus {
-            background: rgba(2, 6, 23, 0.9); 
-            border: 1px solid rgba(255,255,255,0.08);
-            font-family: 'JetBrains Mono', monospace; 
-            color: white; 
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(2, 6, 23, 0.9); border: 1px solid rgba(255,255,255,0.08);
+            font-family: 'JetBrains Mono', monospace; color: white; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .input-nexus:focus { 
-            border-color: var(--neon-cyan); 
-            box-shadow: 0 0 30px rgba(0, 242, 255, 0.15); 
-            background: rgba(0, 242, 255, 0.02);
-            outline: none; 
-            transform: translateY(-2px);
+            border-color: var(--neon-cyan); box-shadow: 0 0 30px rgba(0, 242, 255, 0.15); 
+            background: rgba(0, 242, 255, 0.02); outline: none; transform: translateY(-2px);
         }
 
         .btn-nexus {
-            position: relative;
-            background: transparent;
-            border: 1px solid var(--neon-cyan); 
-            color: var(--neon-cyan);
-            font-family: 'Orbitron', sans-serif; 
-            transition: all 0.5s;
-            text-transform: uppercase; 
-            font-weight: 900;
-            overflow: hidden;
+            position: relative; background: transparent; border: 1px solid var(--neon-cyan); 
+            color: var(--neon-cyan); font-family: 'Orbitron', sans-serif; transition: all 0.5s;
+            text-transform: uppercase; font-weight: 900; overflow: hidden;
         }
 
-        .btn-nexus::before {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(0, 242, 255, 0.4), transparent);
-            transition: 0.5s;
-        }
-
-        .btn-nexus:hover::before { left: 100%; }
-
-        .btn-nexus:hover { 
-            background: var(--neon-cyan); 
-            color: #000; 
-            box-shadow: 0 0 50px rgba(0, 242, 255, 0.6); 
-            transform: scale(1.02);
-        }
-
-        .btn-nexus:active { transform: scale(0.98); }
+        .btn-nexus:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 50px rgba(0, 242, 255, 0.6); }
 
         .loader-orbit {
-            width: 20px; height: 20px;
-            border: 2px solid var(--neon-cyan);
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            width: 20px; height: 20px; border: 2px solid var(--neon-cyan);
+            border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;
         }
 
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Splash Screen Esthetics */
+        #splashScreen { z-index: 1000; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
     </style>
 </head>
 <body>
 
+<div id="splashScreen" class="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center hidden animate-in fade-in duration-500">
+    <div class="absolute inset-0 bg-radial-at-center from-[#0f172a] to-[#020617] opacity-80"></div>
+    <div class="relative group mb-16 scale-90">
+        <div class="absolute -inset-10 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <img src="assets/logo-tallerpro360.png" alt="Nexus Logo" class="relative w-56 h-auto drop-shadow-[0_0_40px_rgba(0,242,255,0.2)]">
+    </div>
+    <div class="w-72 h-1 bg-white/5 rounded-full relative overflow-hidden">
+        <div id="splashBar" class="h-full bg-cyan-500 transition-all duration-300" style="width: 0%"></div>
+    </div>
+    <p id="splashStatus" class="orbitron text-[8px] text-cyan-500 mt-10 tracking-[0.6em] uppercase font-black italic">
+        Sincronizando Nodo Nexus-X
+    </p>
+</div>
+
 <div class="w-full max-w-lg glass-card p-12 rounded-[4rem] relative z-10 mx-4">
-    <div class="absolute -top-10 -left-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl"></div>
-    
     <div class="text-center mb-12">
         <h1 class="nasa-title text-5xl font-black mb-4 italic">NEXUS-X</h1>
-        <div class="flex items-center justify-center gap-4">
-            <span class="h-[1px] w-12 bg-gradient-to-r from-transparent to-cyan-500/50"></span>
-            <p class="text-[8px] tracking-[0.8em] text-cyan-400 font-black uppercase">Core Terminal V17.0</p>
-            <span class="h-[1px] w-12 bg-gradient-to-l from-transparent to-cyan-500/50"></span>
-        </div>
+        <p class="text-[8px] tracking-[0.8em] text-cyan-400 font-black uppercase italic">Core Terminal V17.0</p>
     </div>
 
     <form id="loginForm" class="space-y-8">
         <div class="relative group">
-            <i class="fas fa-at absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-cyan-400 transition-colors"></i>
+            <i class="fas fa-at absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-cyan-400"></i>
             <input type="email" id="email" class="w-full p-6 pl-16 input-nexus rounded-[2rem] text-sm" placeholder="USUARIO / ENLACE SATELITAL" required>
         </div>
-
         <div class="relative group">
-            <i class="fas fa-fingerprint absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-cyan-400 transition-colors"></i>
-            <input type="password" id="pass" class="w-full p-6 pl-16 input-nexus rounded-[2rem] text-sm" placeholder="LLAVE DE ACCESO CRÍPTICO" required>
+            <i class="fas fa-fingerprint absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-cyan-400"></i>
+            <input type="password" id="pass" class="w-full p-6 pl-16 input-nexus rounded-[2rem] text-sm" placeholder="LLAVE DE ACCESO" required>
         </div>
-        
-        <button type="submit" id="submitBtn" class="w-full py-7 btn-nexus rounded-[2.5rem] text-[11px] tracking-[0.3em] flex justify-center items-center gap-4 shadow-xl">
+        <button type="submit" id="submitBtn" class="w-full py-7 btn-nexus rounded-[2.5rem] text-[11px] tracking-[0.3em] flex justify-center items-center gap-4">
             <span id="btnText">INICIAR SECUENCIA</span>
-            <i id="btnIcon" class="fas fa-rocket animate-pulse"></i>
+            <i id="btnIcon" class="fas fa-rocket"></i>
         </button>
     </form>
 
-    <div id="statusMsg" class="hidden mt-8 p-6 rounded-[2rem] text-[10px] text-center font-bold orbitron border-2 animate-in fade-in zoom-in duration-500"></div>
+    <button onclick="window.iniciarPruebaExpress()" class="w-full mt-6 py-4 text-[9px] orbitron text-slate-500 hover:text-cyan-400 transition-colors tracking-[0.4em] uppercase font-bold">
+        ¿No tienes acceso? Iniciar Prueba 7 Días
+    </button>
 
-    <div class="mt-12 text-center">
-        <p class="text-[7px] text-slate-600 uppercase tracking-[0.5em] font-black">
-            Strategic Logistics Engine · 2026
-        </p>
-        <p class="text-[6px] text-cyan-500/30 uppercase tracking-widest mt-2">
-            Colombian Trucks Logistics LLC · NC Branch
-        </p>
-    </div>
+    <div id="statusMsg" class="hidden mt-8 p-6 rounded-[2rem] text-[10px] text-center font-bold orbitron border-2"></div>
 </div>
 
 <script type="module">
@@ -178,129 +140,143 @@
     const loginForm = document.getElementById('loginForm');
     const statusMsg = document.getElementById('statusMsg');
     const btnText = document.getElementById('btnText');
-    const btnIcon = document.getElementById('btnIcon');
     const submitBtn = document.getElementById('submitBtn');
+    
+    const splash = {
+        el: document.getElementById('splashScreen'),
+        bar: document.getElementById('splashBar'),
+        status: document.getElementById('splashStatus'),
+        show: () => splash.el.classList.remove('hidden'),
+        update: (p, t) => { splash.bar.style.width = p+'%'; splash.status.innerText = t; }
+    };
 
-    // UI HELPER: Notificaciones Estilo Nexus
     const notify = (text, isError = true) => {
         statusMsg.innerText = text;
         statusMsg.className = `mt-8 p-6 rounded-[2rem] text-[10px] text-center font-bold orbitron border-2 ${
-            isError ? 'bg-red-500/10 border-red-500/40 text-red-500' : 'bg-cyan-500/10 border-cyan-500/40 text-cyan-500 animate-pulse'
+            isError ? 'bg-red-500/10 border-red-500/40 text-red-500' : 'bg-cyan-500/10 border-cyan-500/40 text-cyan-500'
         }`;
         statusMsg.classList.remove('hidden');
     };
 
-    const setLoader = (active, customText = null) => {
-        if(active) {
-            submitBtn.disabled = true;
-            btnText.innerText = customText || "VERIFICANDO IDENTIDAD";
-            btnIcon.className = "loader-orbit";
-        } else {
-            submitBtn.disabled = false;
-            btnText.innerText = "INICIAR SECUENCIA";
-            btnIcon.className = "fas fa-rocket animate-pulse";
+    /**
+     * DETECCIÓN AUTOMÁTICA DE FREEMIUM DESDE URL
+     * Si el usuario viene de home.html?mode=demo, disparamos el registro automático.
+     */
+    window.addEventListener('load', () => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('mode') === 'demo') {
+            window.iniciarPruebaExpress();
         }
-    };
+    });
 
     /**
-     * ESTRATEGIA 1: LOGIN MANUAL (SuperAdmin / Staff Registrado)
+     * SECUENCIA DE ACCESO MANUAL
      */
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const emailVal = document.getElementById('email').value.trim();
         const passVal = document.getElementById('pass').value;
 
-        setLoader(true);
-        notify("SINCRONIZANDO CON SATÉLITE NEXUS...", false);
+        submitBtn.disabled = true;
+        notify("VERIFICANDO CREDENCIALES...", false);
 
         try {
             const userCredential = await signInWithEmailAndPassword(auth, emailVal, passVal);
             const uid = userCredential.user.uid;
 
-            // AUDITORÍA RAÍZ: Buscamos al usuario directamente en la colección de alto nivel
-            const userSnap = await getDoc(doc(db, "usuarios", uid));
+            splash.show();
+            splash.update(20, "IDENTIDAD CONFIRMADA");
 
-            if (!userSnap.exists()) {
-                throw new Error("NODO NO RECONOCIDO EN LA RED GLOBAL.");
-            }
+            const userSnap = await getDoc(doc(db, "usuarios", uid));
+            if (!userSnap.exists()) throw new Error("PERFIL NO ENCONTRADO EN LA RAÍZ.");
 
             const userData = userSnap.data();
-            
-            // Inyectamos datos de sesión para el Core
             saveSession(uid, userData);
 
-            notify("IDENTIDAD CONFIRMADA. ABRIENDO PUERTA DE ENLACE...", false);
-            setTimeout(() => window.location.href = "app/index.html#dashboard", 1500);
+            splash.update(60, "SINCRONIZANDO TALLER: " + (userData.empresaId || 'BASE'));
+            
+            let p = 60;
+            const timer = setInterval(() => {
+                p += 10;
+                splash.update(p, "CARGANDO MÓDULOS OPERATIVOS");
+                if(p >= 100) {
+                    clearInterval(timer);
+                    window.location.href = "app/index.html";
+                }
+            }, 400);
 
         } catch (error) {
-            setLoader(false);
-            let msg = "FALLO EN SECUENCIA: ";
-            if(error.code === 'auth/invalid-credential') msg += "LLAVE DE ACCESO INCORRECTA";
-            else msg += error.message.toUpperCase();
-            notify(msg);
+            submitBtn.disabled = false;
+            splash.el.classList.add('hidden');
+            notify("FALLO EN SECUENCIA: " + error.message.toUpperCase());
         }
     });
 
     /**
-     * ESTRATEGIA 2: ACCESO FREEMIUM / DEMO (Registro Express)
-     * Inyecta esta función en tu botón de "Iniciar Prueba" o "Freemium"
+     * MOTOR FREEMIUM AUTOMÁTICO
+     * Crea usuario, empresa y loguea en un solo flujo.
      */
     window.iniciarPruebaExpress = async () => {
-        const emailDemo = prompt("INGRESE EMAIL PARA ACTIVAR NODO DE PRUEBA (7 DÍAS):");
-        if (!emailDemo || !emailDemo.includes('@')) return notify("EMAIL INVÁLIDO");
+        const emailDemo = prompt("INGRESE EMAIL PARA ACTIVAR LICENCIA DEMO (7 DÍAS):");
+        if (!emailDemo || !emailDemo.includes('@')) return;
 
-        setLoader(true, "CREANDO NODO TEMPORAL");
-        notify("GENERANDO LICENCIA DE PRUEBA...", false);
+        submitBtn.disabled = true;
+        splash.show();
+        splash.update(10, "INICIANDO PROTOCOLO DEMO");
 
         try {
-            // 1. Crear cuenta en Firebase Auth (Contraseña genérica para el demo)
-            const passDemo = "Nexus" + Math.floor(1000 + Math.random() * 9000);
-            const userCredential = await createUserWithEmailAndPassword(auth, emailDemo, passDemo);
-            const uid = userCredential.user.uid;
-            const empresaId = "EMP_" + uid.substring(0, 5).toUpperCase();
+            const tempPass = "Nexus" + Math.floor(1000 + Math.random() * 9000);
+            const userCred = await createUserWithEmailAndPassword(auth, emailDemo, tempPass);
+            const uid = userCred.user.uid;
+            const empresaId = "DEMO_" + Math.floor(1000 + Math.random() * 9000);
 
-            // 2. Crear perfil en Colección Raíz 'usuarios'
             const demoData = {
-                nombre: "Usuario Demo",
+                nombre: "Comandante Demo",
                 email: emailDemo,
                 empresaId: empresaId,
                 rolGlobal: "ADMIN",
                 plan: "FREEMIUM",
-                status: "TRIAL",
                 createdAt: serverTimestamp()
             };
 
+            // Registro en Raíz
             await setDoc(doc(db, "usuarios", uid), demoData);
 
-            // 3. Crear el nodo de la empresa básico
+            // Registro de Empresa
             await setDoc(doc(db, "empresas", empresaId), {
                 nombreTaller: "Mi Taller Pro",
                 planTipo: "freemium",
-                owner: uid,
                 fechaActivacion: serverTimestamp()
             });
 
             saveSession(uid, demoData);
             
-            alert(`¡BIENVENIDO! Tu acceso ha sido creado.\nTu llave de acceso es: ${passDemo}\nGuárdala para re-ingresar.`);
-            window.location.href = "app/index.html#dashboard";
+            splash.update(100, "CUENTA CREADA: CLAVE ES " + tempPass);
+            alert("TU CLAVE DE ACCESO ES: " + tempPass + "\nGuárdala para volver a entrar.");
+            
+            setTimeout(() => window.location.href = "app/index.html", 2000);
 
         } catch (error) {
-            setLoader(false);
-            notify("ERROR AL CREAR NODO: " + error.message);
+            submitBtn.disabled = false;
+            splash.el.classList.add('hidden');
+            alert("EL NODO NO PUDO SER CREADO: " + error.message);
         }
     };
 
-    /**
-     * HELPER: PERSISTENCIA ESTRATÉGICA
-     */
     function saveSession(uid, data) {
         localStorage.setItem("nexus_uid", uid);
-        localStorage.setItem("uid", uid); // Compatibilidad vieja
         localStorage.setItem("nexus_empresaId", data.empresaId);
-        localStorage.setItem("empresaId", data.empresaId); // Compatibilidad vieja
         localStorage.setItem("nexus_rol", data.rolGlobal || "operador");
         localStorage.setItem("nexus_userName", data.nombre || "Comandante");
+    }
+</script>
+
+<script>
+    // Registro de Service Worker para PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js');
+        });
     }
 </script>
 </body>
