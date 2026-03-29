@@ -1,10 +1,10 @@
 /**
- * ordenes.js - TallerPRO360 NEXUS-X V24.0 🛰️
- * SISTEMA UNIVERSAL: PERSISTENCIA TOTAL, COMISIONES Y LOGÍSTICA
+ * ordenes.js - TallerPRO360 NEXUS-X V25.0 🛰️
+ * TERMINAL DE OPERACIÓN CUÁNTICA: VOZ, DATOS & ERP INTEGRADO
  * @author William Jeffry Urquijo Cubillos
  */
 import { 
-    collection, query, where, orderBy, onSnapshot, doc, updateDoc, getDoc, serverTimestamp, addDoc, deleteDoc 
+    collection, query, where, orderBy, onSnapshot, doc, updateDoc, getDoc, serverTimestamp, addDoc, deleteDoc, arrayUnion 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
@@ -12,247 +12,291 @@ import { generarPDFOrden, enviarWhatsAppOrden } from "../services/printService.j
 
 export default async function ordenes(container, state) {
     const empresaId = localStorage.getItem("nexus_empresaId");
-    let ordenActiva = null; // Objeto persistente de la orden en edición
-    let faseActual = 'EN_TALLER';
+    let ordenActiva = null;
+    let faseActiva = 'EN_TALLER';
     let unsubscribe = null;
 
     const renderBase = () => {
         container.innerHTML = `
-        <div class="p-4 lg:p-10 animate-in fade-in duration-1000 bg-[#010409] min-h-screen text-slate-100">
-            <header class="flex flex-col lg:flex-row justify-between items-center gap-6 mb-8 border-b border-white/5 pb-8">
-                <div>
-                    <h1 class="orbitron text-5xl font-black text-white italic tracking-tighter">NEXUS<span class="text-orange-500">-X</span></h1>
-                    <p class="text-[9px] text-slate-500 orbitron tracking-[0.4em]">SISTEMA DE DESPLIEGUE LOGÍSTICO SAS</p>
+        <div class="p-4 lg:p-10 bg-[#010409] min-h-screen text-slate-100 font-sans selection:bg-orange-500/30">
+            <header class="flex flex-col lg:flex-row justify-between items-end gap-6 mb-12 border-b border-white/5 pb-10">
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3">
+                        <div class="h-4 w-4 bg-orange-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(249,115,22,0.5)]"></div>
+                        <h1 class="orbitron text-7xl font-black italic tracking-tighter text-white">NEXUS<span class="text-orange-500">X</span></h1>
+                    </div>
+                    <p class="text-[10px] orbitron tracking-[0.6em] text-slate-500 uppercase">Universal Operation Terminal • Starlink Logistics</p>
                 </div>
-                <div class="flex gap-4">
-                    <button id="btnPreVuelo" class="px-8 py-4 bg-blue-500/10 border border-blue-500/30 rounded-xl orbitron text-[10px] text-blue-400 font-black hover:bg-blue-500 hover:text-white transition-all">REPARACIÓN EXPRESS</button>
-                    <button id="btnNuevaOrden" class="px-8 py-4 bg-orange-600 rounded-xl orbitron text-[10px] text-black font-black hover:bg-orange-400 transition-all shadow-lg shadow-orange-600/20">NUEVA MISIÓN (RECEPCIÓN)</button>
+                
+                <div class="flex flex-wrap gap-4">
+                    <button id="btnQuickRepair" class="group px-8 py-5 bg-blue-600/10 border border-blue-500/20 rounded-2xl hover:bg-blue-600 transition-all">
+                        <span class="orbitron text-[10px] font-black text-blue-400 group-hover:text-white">REPARACIÓN RÁPIDA</span>
+                    </button>
+                    <button id="btnFullMission" class="px-10 py-5 bg-orange-600 rounded-2xl shadow-[0_0_40px_rgba(234,88,12,0.2)] hover:scale-105 transition-all">
+                        <span class="orbitron text-[11px] font-black text-black">DESPLEGAR MISIÓN 2030</span>
+                    </button>
                 </div>
             </header>
 
-            <nav class="flex gap-2 overflow-x-auto no-scrollbar mb-8">
+            <nav class="flex gap-3 mb-12 overflow-x-auto no-scrollbar pb-4">
                 ${['COTIZACION', 'EN_TALLER', 'DIAGNOSTICO', 'REPARACION', 'LISTO'].map(f => `
-                    <button class="nav-fase shrink-0 px-6 py-4 rounded-xl border border-white/5 bg-[#0d1117] orbitron text-[9px] font-black text-slate-500 uppercase transition-all" data-fase="${f}">
-                        ${f.replace('_', ' ')}
+                    <button class="nav-fase-btn shrink-0 px-10 py-6 rounded-2xl border border-white/5 bg-[#0d1117] transition-all relative group" data-fase="${f}">
+                        <div class="absolute inset-0 bg-orange-600 opacity-0 group-hover:opacity-5 rounded-2xl transition-all"></div>
+                        <span class="orbitron text-[10px] font-black text-slate-500 group-hover:text-white uppercase tracking-widest">${f.replace('_', ' ')}</span>
                     </button>
                 `).join('')}
             </nav>
 
-            <div id="workspace" class="hidden mb-12"></div>
-            <div id="gridOrdenes" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"></div>
+            <div id="nexus-console" class="hidden mb-16 animate-in slide-in-from-bottom-10 duration-500"></div>
+            <div id="grid-misiones" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8"></div>
         </div>`;
 
-        document.getElementById("btnNuevaOrden").onclick = () => abrirConsola('EN_TALLER');
-        document.getElementById("btnPreVuelo").onclick = () => abrirConsola('COTIZACION');
-        vincularNavegacion();
+        document.getElementById("btnFullMission").onclick = () => abrirConsola('EN_TALLER');
+        document.getElementById("btnQuickRepair").onclick = () => abrirConsola('COTIZACION');
+        vincularFases();
     };
 
     const abrirConsola = (fase, data = null) => {
-        ordenActiva = data || { placa: '', cliente: '', telefono: '', items: [], gastos: [], fotos: [], estado: fase };
-        const ws = document.getElementById("workspace");
-        ws.classList.remove("hidden");
+        ordenActiva = data || { 
+            placa: '', cliente: '', telefono: '', items: [], gastos: [], fotos: [], 
+            historial: [], estado: fase, logs: [] 
+        };
         
-        ws.innerHTML = `
-        <div class="bg-[#0d1117] border border-white/10 rounded-[2rem] p-8 shadow-2xl animate-in zoom-in-95 duration-300">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                
-                <div class="lg:col-span-4 space-y-6 border-r border-white/5 pr-8">
-                    <div class="flex justify-between items-center">
-                        <span class="orbitron text-orange-500 text-[10px] font-black">DATOS DE INGRESO</span>
-                        <button id="btnDictarID" class="text-orange-500 hover:scale-110"><i class="fas fa-microphone"></i></button>
+        const console = document.getElementById("nexus-console");
+        console.classList.remove("hidden");
+        console.innerHTML = `
+        <div class="bg-[#0d1117] border border-white/10 rounded-[3.5rem] p-10 lg:p-16 shadow-[0_0_100px_rgba(0,0,0,0.5)] relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-10 opacity-10 orbitron text-8xl font-black text-white pointer-events-none">${fase}</div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 relative">
+                <div class="lg:col-span-5 space-y-10">
+                    <div class="flex items-center justify-between">
+                        <h3 class="orbitron text-xs font-black text-orange-500 tracking-widest italic">DIAGNÓSTICO DE ENTRADA</h3>
+                        <button id="btnVoiceMaster" class="w-16 h-16 bg-orange-600 text-black rounded-full shadow-2xl hover:scale-110 transition-all"><i class="fas fa-microphone"></i></button>
                     </div>
-                    <input id="f-placa" value="${ordenActiva.placa}" class="w-full bg-black border border-white/10 p-4 rounded-xl text-2xl font-black text-white orbitron uppercase" placeholder="PLACA">
-                    <input id="f-cliente" value="${ordenActiva.cliente}" class="w-full bg-black border border-white/10 p-4 rounded-xl text-sm font-bold text-white uppercase" placeholder="NOMBRE CLIENTE">
-                    <input id="f-tel" value="${ordenActiva.telefono}" class="w-full bg-black border border-white/10 p-4 rounded-xl text-sm font-bold text-white" placeholder="WHATSAPP">
-                    
-                    <div class="pt-4">
-                        <span class="orbitron text-slate-500 text-[8px] block mb-2">EVIDENCIA FOTOGRÁFICA</span>
-                        <div class="grid grid-cols-3 gap-2" id="galeriaRecepcion">
-                            ${[0,1,2].map(i => `
-                                <div class="aspect-square bg-black border border-white/5 rounded-lg flex items-center justify-center relative overflow-hidden group">
-                                    <input type="file" id="file-${i}" hidden onchange="window.handleFoto(${i}, this)">
-                                    <img src="${ordenActiva.fotos[i] || ''}" id="img-${i}" class="w-full h-full object-cover ${ordenActiva.fotos[i] ? '' : 'hidden'}">
-                                    <button onclick="document.getElementById('file-${i}').click()" class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all"><i class="fas fa-camera"></i></button>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="orbitron text-[8px] text-slate-500 ml-4">PLATE_ID</label>
+                            <input id="f-placa" value="${ordenActiva.placa}" class="w-full bg-black/50 border border-white/10 p-6 rounded-[1.5rem] text-3xl font-black text-white orbitron uppercase focus:border-orange-500 outline-none transition-all">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="orbitron text-[8px] text-slate-500 ml-4">COM_LINK (WA)</label>
+                            <input id="f-tel" value="${ordenActiva.telefono}" class="w-full bg-black/50 border border-white/10 p-6 rounded-[1.5rem] text-xl font-bold text-white focus:border-orange-500 outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="orbitron text-[8px] text-slate-500 ml-4">COMMANDER_NAME</label>
+                        <input id="f-cliente" value="${ordenActiva.cliente}" class="w-full bg-black/50 border border-white/10 p-6 rounded-[1.5rem] text-xl font-bold text-white uppercase focus:border-orange-500 outline-none transition-all">
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="orbitron text-[9px] text-slate-500 uppercase italic">Evidencia Visual de Misión</span>
+                            <span class="text-[9px] text-orange-500 font-bold">ALTA RESOLUCIÓN</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-3">
+                            ${[0,1,2,3].map(i => `
+                                <div class="aspect-square bg-black border border-white/5 rounded-2xl flex items-center justify-center relative group cursor-pointer overflow-hidden shadow-inner" onclick="document.getElementById('upl-${i}').click()">
+                                    <input type="file" id="upl-${i}" hidden onchange="window.nexusUpl(${i}, this)">
+                                    <img src="${ordenActiva.fotos[i] || ''}" id="view-${i}" class="w-full h-full object-cover ${ordenActiva.fotos[i] ? '' : 'hidden'}">
+                                    <i id="ico-${i}" class="fas fa-camera text-slate-800 text-xl group-hover:text-orange-500 transition-colors ${ordenActiva.fotos[i] ? 'hidden' : ''}"></i>
                                 </div>
                             `).join('')}
                         </div>
                     </div>
                 </div>
 
-                <div class="lg:col-span-8 space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="orbitron text-white text-xs font-black italic">ESTACIÓN DE CARGOS</h3>
-                        <div class="flex gap-2">
-                            <button id="btnVoiceItems" class="px-4 py-2 bg-orange-600 rounded-lg text-black text-[10px] orbitron font-black"><i class="fas fa-microphone mr-2"></i>DICTAR CARGO</button>
+                <div class="lg:col-span-7 flex flex-col">
+                    <div class="bg-black/30 rounded-[3rem] p-10 border border-white/5 flex-grow flex flex-col">
+                        <div class="flex justify-between items-start mb-12">
+                            <div>
+                                <p class="orbitron text-[9px] text-emerald-500 mb-2 tracking-widest">ESTADO FINANCIERO DE ORDEN</p>
+                                <h2 id="total-val" class="orbitron text-7xl font-black text-white italic tracking-tighter">$ 0</h2>
+                            </div>
+                            <div class="text-right">
+                                <p class="orbitron text-[9px] text-red-500 mb-2">OPERATIVOS / GASTOS</p>
+                                <h4 id="gastos-val" class="orbitron text-2xl font-black text-red-500">$ 0</h4>
+                            </div>
                         </div>
-                    </div>
 
-                    <div id="listaItems" class="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar"></div>
+                        <div id="lista-orden" class="space-y-4 max-h-[400px] overflow-y-auto pr-4 custom-scrollbar flex-grow">
+                            </div>
 
-                    <div class="bg-red-500/5 border border-red-500/10 p-4 rounded-xl">
-                        <div class="flex justify-between items-center mb-4">
-                            <span class="orbitron text-red-500 text-[9px] font-black italic">GASTOS ANEXOS (OPERATIVOS)</span>
-                            <button id="btnAddGasto" class="text-red-500 text-xs"><i class="fas fa-plus-circle"></i></button>
-                        </div>
-                        <div id="listaGastos" class="space-y-2"></div>
-                    </div>
-
-                    <div class="flex justify-between items-end pt-4 border-t border-white/10">
-                        <div>
-                            <span class="orbitron text-[9px] text-slate-500 block mb-1">TOTAL FACTURACIÓN</span>
-                            <h2 id="totalFinal" class="orbitron text-5xl font-black text-white">$ 0</h2>
-                        </div>
-                        <div class="flex gap-3">
-                            <button id="btnSaveAll" class="px-10 py-5 bg-white text-black rounded-xl orbitron font-black text-[11px] hover:bg-orange-500 transition-all uppercase tracking-widest">Sincronizar Misión</button>
-                            <button onclick="document.getElementById('workspace').classList.add('hidden')" class="px-6 py-5 text-slate-500 orbitron text-[9px] font-black">CANCELAR</button>
+                        <div class="grid grid-cols-3 gap-4 mt-10">
+                            <button id="btnSaveNexus" class="col-span-2 py-8 bg-white text-black rounded-[2rem] orbitron font-black text-xs hover:bg-orange-600 hover:text-white transition-all shadow-2xl">
+                                SINCRONIZAR CON TALLERPRO ERP
+                            </button>
+                            <button onclick="document.getElementById('nexus-console').classList.add('hidden')" class="py-8 bg-white/5 text-slate-500 rounded-[2rem] orbitron font-black text-[9px] hover:bg-red-500/10 transition-all">
+                                CERRAR
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>`;
 
-        setupEventsConsola(fase);
-        actualizarTablas();
+        vincularEventosConsola(fase);
+        renderizarItems();
     };
 
-    const setupEventsConsola = (fase) => {
-        document.getElementById("btnVoiceItems").onclick = () => iniciarDictadoItems();
-        document.getElementById("btnSaveAll").onclick = () => guardarMisionCompleta(fase);
-        document.getElementById("btnAddGasto").onclick = () => {
-            const n = prompt("Concepto de gasto:");
-            const v = prompt("Valor:");
-            if(n && v) { ordenActiva.gastos.push({ nombre: n, valor: parseInt(v) }); actualizarTablas(); }
-        };
-        window.handleFoto = (idx, input) => {
+    const vincularEventosConsola = (fase) => {
+        document.getElementById("btnVoiceMaster").onclick = () => hablarItemsPorVoz();
+        document.getElementById("btnSaveNexus").onclick = () => guardarMisionERP(fase);
+        
+        window.nexusUpl = (idx, input) => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 ordenActiva.fotos[idx] = e.target.result;
-                document.getElementById(`img-${idx}`).src = e.target.result;
-                document.getElementById(`img-${idx}`).classList.remove('hidden');
+                document.getElementById(`view-${idx}`).src = e.target.result;
+                document.getElementById(`view-${idx}`).classList.remove('hidden');
+                document.getElementById(`ico-${idx}`).classList.add('hidden');
             };
             reader.readAsDataURL(input.files[0]);
         };
     };
 
-    const actualizarTablas = () => {
-        const listItems = document.getElementById("listaItems");
-        const listGastos = document.getElementById("listaGastos");
-        const totalTxt = document.getElementById("totalFinal");
-
-        listItems.innerHTML = (ordenActiva.items || []).map((it, idx) => `
-            <div class="flex justify-between items-center p-4 bg-black border-l-4 ${it.tipo === 'ORO' ? 'border-amber-500' : 'border-emerald-500'} rounded-r-xl">
-                <div>
-                    <p class="text-[10px] font-black text-white uppercase">${it.nombre}</p>
-                    <div class="flex gap-4 mt-1">
-                        <span class="text-[8px] orbitron ${it.tipo === 'ORO' ? 'text-amber-500' : 'text-emerald-500'}">${it.tipo}</span>
-                        ${it.tipo === 'ORO' ? `<span class="text-[8px] text-slate-500">TÉCNICO: ${it.tecnico || 'NO ASIGNADO'}</span>` : ''}
-                    </div>
-                </div>
-                <div class="flex items-center gap-6">
-                    <span class="orbitron font-black text-white text-sm">$${it.valor.toLocaleString()}</span>
-                    <button onclick="window.delItemNexus(${idx})" class="text-red-500/30 hover:text-red-500"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>`).join("");
-
-        listGastos.innerHTML = (ordenActiva.gastos || []).map((g, idx) => `
-            <div class="flex justify-between text-[10px] bg-red-500/5 p-2 rounded-lg">
-                <span class="text-red-200 uppercase">${g.nombre}</span>
-                <span class="font-black text-red-500">$${g.valor.toLocaleString()}</span>
-            </div>`).join("");
-
-        const total = ordenActiva.items.reduce((a, b) => a + b.valor, 0);
-        totalTxt.innerText = `$ ${total.toLocaleString()}`;
-
-        window.delItemNexus = (i) => { ordenActiva.items.splice(i, 1); actualizarTablas(); };
-    };
-
-    const iniciarDictadoItems = () => {
+    const hablarItemsPorVoz = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const rec = new SpeechRecognition();
         rec.lang = 'es-CO';
-        rec.onstart = () => hablar("Nexus escuchando cargo");
+        rec.onstart = () => { hablar("Nexus escuchando requerimiento"); };
         rec.onresult = (e) => {
             const frase = e.results[0][0].transcript.toLowerCase();
-            const valorMatch = frase.match(/\d+/g);
-            if (!valorMatch) return;
-            const valor = parseInt(valorMatch[0]) * (frase.includes("mil") ? 1000 : 1);
-            const nombre = frase.replace(valorMatch[0], "").replace("mil", "").replace("pesos", "").trim().toUpperCase();
-            
-            if (frase.includes("oro") || frase.includes("mano de obra")) {
-                const tec = prompt("¿Qué técnico realizó este trabajo?");
-                ordenActiva.items.push({ tipo: 'ORO', nombre, valor, tecnico: tec });
-            } else {
-                ordenActiva.items.push({ tipo: 'REPUESTO', nombre, valor });
-            }
-            actualizarTablas();
-            hablar("Cargado");
+            procesarComandoUniversal(frase);
         };
         rec.start();
     };
 
-    const guardarMisionCompleta = async (fase) => {
-        ordenActiva.placa = document.getElementById("f-placa").value.toUpperCase();
-        ordenActiva.cliente = document.getElementById("f-cliente").value.toUpperCase();
-        ordenActiva.telefono = document.getElementById("f-tel").value;
-        ordenActiva.estado = fase;
-        ordenActiva.empresaId = empresaId;
-        ordenActiva.ultimaActualizacion = serverTimestamp();
+    const procesarComandoUniversal = (frase) => {
+        const num = frase.match(/\d+/g);
+        if(!num) return hablar("Valor no detectado");
+        const valor = parseInt(num[0]) * (frase.includes("mil") ? 1000 : 1);
+        const desc = frase.replace(num[0], "").replace("mil", "").replace("pesos", "").trim().toUpperCase();
 
-        if (ordenActiva.id) {
-            await updateDoc(doc(db, "ordenes", ordenActiva.id), ordenActiva);
+        if(frase.includes("gasto") || frase.includes("café")) {
+            ordenActiva.gastos.push({ desc, valor, timestamp: new Date() });
+            hablar("Gasto registrado en ERP");
+        } else if(frase.includes("oro") || frase.includes("mano de obra")) {
+            const tec = prompt("Nombre del Técnico Responsable:");
+            ordenActiva.items.push({ tipo: 'ORO', desc, valor, tecnico: tec, comision: valor * 0.40 }); // Ejemplo de comisión 40%
+            hablar(`Mano de obra asignada a ${tec}`);
         } else {
-            ordenActiva.creadoEn = serverTimestamp();
-            await addDoc(collection(db, "ordenes"), ordenActiva);
+            // ENLACE A INVENTARIO.JS (SIMULADO)
+            ordenActiva.items.push({ tipo: 'REPUESTO', desc, valor, stock_sync: true });
+            hablar("Repuesto cargado al inventario");
         }
-        document.getElementById("workspace").classList.add("hidden");
-        Swal.fire({ title: 'DESPLIEGUE EXITOSO', icon: 'success', background: '#0d1117', color: '#fff' });
+        renderizarItems();
     };
 
-    function vincularNavegacion() {
-        document.querySelectorAll('.nav-fase').forEach(btn => {
+    const renderizarItems = () => {
+        const list = document.getElementById("lista-orden");
+        const tVal = document.getElementById("total-val");
+        const gVal = document.getElementById("gastos-val");
+
+        list.innerHTML = (ordenActiva.items || []).map((it, idx) => `
+            <div class="flex justify-between items-center p-6 bg-black/40 border-l-8 ${it.tipo === 'ORO' ? 'border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]' : 'border-emerald-500'} rounded-r-3xl animate-in fade-in slide-in-from-left-4">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <p class="text-[11px] font-black text-white uppercase tracking-tighter">${it.desc}</p>
+                        <span class="text-[7px] orbitron px-2 py-0.5 rounded bg-white/5 text-slate-500">${it.tipo}</span>
+                    </div>
+                    ${it.tecnico ? `<p class="text-[8px] orbitron text-amber-500 mt-1 uppercase">ASIGNADO: ${it.tecnico}</p>` : ''}
+                </div>
+                <div class="flex items-center gap-6">
+                    <span class="orbitron text-lg font-black text-white italic">$${it.valor.toLocaleString()}</span>
+                    <button onclick="window.delNexusItem(${idx})" class="text-red-500/20 hover:text-red-500 transition-all"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            </div>
+        `).join("");
+
+        const total = ordenActiva.items.reduce((a, b) => a + b.valor, 0);
+        const gastos = (ordenActiva.gastos || []).reduce((a, b) => a + b.valor, 0);
+        
+        tVal.innerText = `$ ${total.toLocaleString()}`;
+        gVal.innerText = `$ ${gastos.toLocaleString()}`;
+
+        window.delNexusItem = (i) => { ordenActiva.items.splice(i, 1); renderizarItems(); };
+    };
+
+    const guardarMisionERP = async (fase) => {
+        const payload = {
+            ...ordenActiva,
+            placa: document.getElementById("f-placa").value.toUpperCase(),
+            cliente: document.getElementById("f-cliente").value.toUpperCase(),
+            telefono: document.getElementById("f-tel").value,
+            estado: fase,
+            total: ordenActiva.items.reduce((a, b) => a + b.valor, 0),
+            empresaId,
+            ultimaSincronizacion: serverTimestamp()
+        };
+
+        try {
+            if (ordenActiva.id) {
+                await updateDoc(doc(db, "ordenes", ordenActiva.id), payload);
+            } else {
+                payload.creadoEn = serverTimestamp();
+                await addDoc(collection(db, "ordenes"), payload);
+            }
+            document.getElementById("nexus-console").classList.add("hidden");
+            Swal.fire({ 
+                title: 'SYNC COMPLETA', 
+                text: 'Los datos han sido inyectados al ERP Nexus-X',
+                icon: 'success', background: '#0d1117', color: '#fff', 
+                confirmButtonColor: '#ea580c' 
+            });
+        } catch (e) { console.error("Error ERP Sync:", e); }
+    };
+
+    function vincularFases() {
+        document.querySelectorAll('.nav-fase-btn').forEach(btn => {
             btn.onclick = () => {
-                document.querySelectorAll('.nav-fase').forEach(b => b.classList.remove('bg-orange-600', 'text-black', 'border-orange-600'));
-                btn.classList.add('bg-orange-600', 'text-black', 'border-orange-600');
-                faseActual = btn.dataset.fase;
-                escucharMisiones(faseActual);
+                document.querySelectorAll('.nav-fase-btn').forEach(b => {
+                    b.classList.remove('border-orange-500', 'bg-orange-500/10');
+                    b.querySelector('span').classList.replace('text-white', 'text-slate-500');
+                });
+                btn.classList.add('border-orange-500', 'bg-orange-500/10');
+                btn.querySelector('span').classList.replace('text-slate-500', 'text-white');
+                faseActiva = btn.dataset.fase;
+                escucharMisionesReales(faseActiva);
             };
         });
         document.querySelector('[data-fase="EN_TALLER"]').click();
     }
 
-    function escucharMisiones(fase) {
+    function escucharMisionesReales(fase) {
         if (unsubscribe) unsubscribe();
-        const grid = document.getElementById("gridOrdenes");
-        const q = query(collection(db, "ordenes"), 
-            where("empresaId", "==", empresaId), 
-            where("estado", "==", fase), 
-            orderBy("ultimaActualizacion", "desc"));
+        const grid = document.getElementById("grid-misiones");
+        const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId), where("estado", "==", fase), orderBy("ultimaSincronizacion", "desc"));
 
         unsubscribe = onSnapshot(q, (snap) => {
             grid.innerHTML = snap.docs.map(docSnap => {
                 const o = docSnap.data();
                 const id = docSnap.id;
                 return `
-                <div class="bg-[#0d1117] border border-white/5 p-6 rounded-[2rem] hover:border-orange-500/40 transition-all group relative overflow-hidden">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="orbitron text-2xl font-black text-white italic">${o.placa}</span>
+                <div class="bg-[#0d1117] border border-white/5 p-8 rounded-[3rem] hover:border-orange-500/50 transition-all group relative">
+                    <div class="flex justify-between items-start mb-6">
+                        <h4 class="orbitron text-3xl font-black text-white italic tracking-tighter">${o.placa}</h4>
                         <div class="flex gap-2">
-                             <button onclick="window.editarNexus('${id}')" class="w-8 h-8 bg-white/5 rounded-full text-white hover:bg-orange-600 transition-all"><i class="fas fa-pen text-[10px]"></i></button>
-                             <button onclick="window.borrarNexus('${id}')" class="w-8 h-8 bg-white/5 rounded-full text-red-500"><i class="fas fa-trash text-[10px]"></i></button>
+                             <button onclick="window.nexusEdit('${id}')" class="w-10 h-10 bg-white/5 rounded-full text-white hover:bg-orange-600 transition-all flex items-center justify-center"><i class="fas fa-pen-nib text-xs"></i></button>
+                             <button onclick="window.nexusDel('${id}')" class="w-10 h-10 bg-white/5 rounded-full text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center"><i class="fas fa-trash-alt text-xs"></i></button>
                         </div>
                     </div>
-                    <p class="text-[10px] font-bold text-slate-500 uppercase mb-4">${o.cliente}</p>
-                    <div class="bg-black p-4 rounded-xl flex justify-between mb-6">
-                        <span class="orbitron text-[8px] text-orange-500 uppercase">Total</span>
-                        <span class="orbitron text-lg font-black text-white">$${o.items.reduce((a,b)=>a+b.valor, 0).toLocaleString()}</span>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <button onclick='window.printNexus("${id}")' class="w-full py-3 bg-white/5 text-[9px] orbitron font-black rounded-lg hover:bg-white hover:text-black">IMPRIMIR / PDF</button>
-                        <button onclick='window.waNexus("${id}")' class="w-full py-3 bg-emerald-600/10 text-emerald-500 text-[9px] orbitron font-black rounded-lg hover:bg-emerald-600 hover:text-white">ENVIAR WHATSAPP</button>
-                    </div>
+                    <p class="text-[11px] font-bold text-slate-500 uppercase mb-6 tracking-widest">${o.cliente}</p>
                     
-                    <select onchange="window.moverNexus('${id}', this.value)" class="w-full mt-4 bg-black border border-white/5 text-[9px] orbitron p-2 rounded-lg text-slate-500">
-                        <option value="" disabled selected>TRANSFERIR A...</option>
+                    <div class="bg-black/40 p-5 rounded-2xl flex justify-between items-center mb-8">
+                        <span class="orbitron text-[8px] text-orange-500 uppercase font-black">Monto Misión</span>
+                        <span class="orbitron text-xl font-black text-white">$${o.total.toLocaleString()}</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick='window.nexusWA("${id}")' class="py-4 bg-emerald-500/10 text-emerald-500 rounded-2xl text-[9px] orbitron font-black hover:bg-emerald-500 hover:text-white transition-all uppercase">WhatsApp</button>
+                        <button onclick='window.nexusPDF("${id}")' class="py-4 bg-white/5 text-white rounded-2xl text-[9px] orbitron font-black hover:bg-white hover:text-black transition-all uppercase">Reporte PDF</button>
+                    </div>
+
+                    <select onchange="window.nexusMover('${id}', this.value)" class="w-full mt-4 bg-black/50 border border-white/5 text-slate-500 p-3 rounded-xl text-[9px] orbitron outline-none">
+                        <option value="" disabled selected>CAMBIAR FASE LOGÍSTICA</option>
                         <option value="COTIZACION">COTIZACIÓN</option>
                         <option value="EN_TALLER">EN TALLER</option>
                         <option value="DIAGNOSTICO">DIAGNÓSTICO</option>
@@ -263,24 +307,26 @@ export default async function ordenes(container, state) {
             }).join("");
         });
 
-        window.editarNexus = async (id) => {
+        // FUNCIONES DE ACCIÓN GLOBAL
+        window.nexusEdit = async (id) => {
             const snap = await getDoc(doc(db, "ordenes", id));
             abrirConsola(snap.data().estado, { ...snap.data(), id });
         };
-        window.moverNexus = async (id, nf) => {
-            await updateDoc(doc(db, "ordenes", id), { estado: nf, ultimaActualizacion: serverTimestamp() });
-            hablar(`Misión transferida a ${nf}`);
+        window.nexusMover = async (id, nf) => {
+            await updateDoc(doc(db, "ordenes", id), { estado: nf, ultimaSincronizacion: serverTimestamp() });
+            hablar(`Vehículo transferido a ${nf}`);
         };
-        window.borrarNexus = async (id) => {
-            if(confirm("¿Eliminar registro?")) await deleteDoc(doc(db, "ordenes", id));
-        };
-        window.printNexus = async (id) => {
+        window.nexusWA = async (id) => {
             const snap = await getDoc(doc(db, "ordenes", id));
-            generarPDFOrden(snap.data());
+            enviarWhatsAppOrden(snap.data()); // Conecta con tu service de WhatsApp
         };
-        window.waNexus = async (id) => {
+        window.nexusPDF = async (id) => {
             const snap = await getDoc(doc(db, "ordenes", id));
-            enviarWhatsAppOrden(snap.data());
+            generarPDFOrden(snap.data()); // Conecta con tu service de PDF
+        };
+        window.nexusDel = async (id) => {
+            const r = await Swal.fire({ title: '¿ELIMINAR MISIÓN?', text: "Se borrará del ERP", icon: 'warning', showCancelButton: true, background: '#0d1117', color: '#fff' });
+            if(r.isConfirmed) await deleteDoc(doc(db, "ordenes", id));
         };
     }
 
