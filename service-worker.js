@@ -1,92 +1,75 @@
 /*
 ========================================
-SERVICE WORKER: TallerPRO360 ERP SaaS
-Version: v9 (Network First Strategy)
+SERVICE WORKER: TallerPRO360 Nexus-X
+Version: v10 (Optimized Network-First)
 ========================================
 */
 
-const CACHE_VERSION = "v9";
-const STATIC_CACHE = `tallerpro360-static-${CACHE_VERSION}`;
-const DYNAMIC_CACHE = `tallerpro360-dynamic-${CACHE_VERSION}`;
-const OFFLINE_URL = "/login.html";
+const CACHE_VERSION = "v10";
+const STATIC_CACHE = `nexus-static-${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `nexus-dynamic-${CACHE_VERSION}`;
 
+// Sincronizado con tus archivos reales en /assets
 const STATIC_ASSETS = [
   "/",
   "/login.html",
   "/app/index.html",
-  "/admin/ceo-dashboard.html",
   "/manifest.json",
   "/assets/logo-192.png",
   "/assets/logo-512.png",
-  "/assets/favicon.png"
+  "/assets/logo-tallerpro360.png", 
+  "/assets/favicon.png",
+  "https://cdn.tailwindcss.com"
 ];
 
-/* ===============================
-   INSTALL: Limpieza inmediata
-   =============================== */
 self.addEventListener("install", event => {
-  console.log("🚀 SW v9: Instalando y Cacheando Estáticos");
+  self.skipWaiting();
   event.waitUntil(
     caches.open(STATIC_CACHE).then(cache => cache.addAll(STATIC_ASSETS))
   );
-  self.skipWaiting(); // Fuerza a la nueva versión a tomar el control
 });
 
-/* ===============================
-   ACTIVATE: Borrar versiones viejas
-   =============================== */
 self.addEventListener("activate", event => {
-  console.log("🛰️ SW v9: Activado. Limpiando cachés antiguas...");
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
-        keys
-          .filter(key => key !== STATIC_CACHE && key !== DYNAMIC_CACHE)
-          .map(key => caches.delete(key))
+        keys.filter(key => key !== STATIC_CACHE && key !== DYNAMIC_CACHE)
+            .map(key => caches.delete(key))
       )
     )
   );
   self.clients.claim();
 });
 
-/* ===============================
-   ESTRATEGIA DE CARGA (FETCH)
-   =============================== */
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
 
   const url = new URL(event.request.url);
 
-  // 1. FIREBASE / GOOGLE FONTS: Directo a la red siempre
-  if (url.origin.includes("firebase") || url.origin.includes("gstatic")) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
+  // Ignorar Firebase para evitar conflictos de tiempo real
+  if (url.origin.includes("firebase") || url.origin.includes("gstatic")) return;
 
-  // 2. ESTRATEGIA: NETWORK FIRST (Red primero, luego caché)
-  // Esto asegura que William siempre vea la última actualización de Vercel.
   event.respondWith(
     fetch(event.request)
       .then(networkResponse => {
-        // Guardamos una copia en la caché dinámica
         return caches.open(DYNAMIC_CACHE).then(cache => {
-          cache.put(event.request, networkResponse.clone());
-          limitCacheSize(DYNAMIC_CACHE, 50);
+          // Solo cacheamos si la respuesta es válida
+          if (networkResponse.status === 200) {
+            cache.put(event.request, networkResponse.clone());
+            limitCacheSize(DYNAMIC_CACHE, 40); 
+          }
           return networkResponse;
         });
       })
       .catch(() => {
-        // Si no hay red, buscamos en la caché
-        return caches.match(event.request).then(cachedResponse => {
-          return cachedResponse || caches.match(OFFLINE_URL);
+        // Si falla la red (offline), buscamos en cualquier caché disponible
+        return caches.match(event.request).then(response => {
+          return response || caches.match("/login.html");
         });
       })
   );
 });
 
-/* ===============================
-   UTILS & NOTIFICATIONS
-   =============================== */
 async function limitCacheSize(name, size) {
   const cache = await caches.open(name);
   const keys = await cache.keys();
@@ -96,18 +79,14 @@ async function limitCacheSize(name, size) {
   }
 }
 
+// Bloque de Notificaciones Push (Listo para el futuro)
 self.addEventListener("push", event => {
-  const data = event.data ? event.data.json() : {};
-  const options = {
-    body: data.body || "TallerPRO360 Actualizado",
-    icon: "/assets/logo-192.png",
-    badge: "/assets/logo-192.png",
-    data: data.url || "/"
-  };
-  event.waitUntil(self.registration.showNotification(data.title || "TallerPRO360", options));
-});
-
-self.addEventListener("notificationclick", event => {
-  event.notification.close();
-  event.waitUntil(clients.openWindow(event.notification.data || "/"));
+  const data = event.data ? event.data.json() : { title: "Nexus-X", body: "Actualización de Sistema" };
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "/assets/logo-192.png",
+      badge: "/assets/logo-192.png"
+    })
+  );
 });
