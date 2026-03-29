@@ -292,6 +292,28 @@
             window.location.href = "../login.html";
         }
     };
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Aquí puedes mostrar un botón que diga "INSTALAR APP NEXUS"
+    console.log("PWA lista para instalar");
+});
+
+// Función para llamar cuando el usuario haga clic en tu botón de instalar
+function instalarApp() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('Usuario aceptó la instalación');
+            }
+            deferredPrompt = null;
+        });
+    }
+}
+
 </script>
 </body>
 </html>
