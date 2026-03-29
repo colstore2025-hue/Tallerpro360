@@ -1,10 +1,10 @@
 /**
- * ordenes.js - TallerPRO360 NEXUS-X V17.1 🛰️
- * PROTOCOLO DE CONTROL DE MISIONES: Operaciones Raíz & Cotizaciones CRM
+ * ordenes.js - TallerPRO360 NEXUS-X V17.2 🛰️
+ * PROTOCOLO DE CONTROL DE MISIONES: Órdenes Evolutivas & Telemetría Fotográfica
  * @author William Jeffry Urquijo Cubillos
  */
 import { 
-    collection, query, where, orderBy, onSnapshot, doc, updateDoc, serverTimestamp 
+    collection, query, where, orderBy, onSnapshot, doc, updateDoc, getDoc, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 import { createDocument, saveLog } from "../services/dataService.js";
@@ -17,9 +17,10 @@ export default async function ordenes(container, state) {
     const mode = localStorage.getItem("nexus_mode");
 
     let itemsOrden = [];
+    let ordenEdicionId = null; // Track de si estamos editando o creando
     let unsubscribe = null;
 
-    // --- BINDING GLOBAL MANTENIDO ---
+    // --- BINDING GLOBAL REFORZADO ---
     window.removeItem = (idx) => {
         itemsOrden.splice(idx, 1);
         actualizarTablaItems();
@@ -27,22 +28,44 @@ export default async function ordenes(container, state) {
 
     window.ejecutarImpresion = (data) => generarPDFOrden(data);
     window.compartirWhatsApp = (data) => enviarWhatsAppOrden(data);
+
+    // NUEVO: Telemetría Fotográfica Directa (No guarda en Storage, abre cámara para enviar)
+    window.capturarYEnviar = (data, tipo) => {
+        const msg = tipo === 'INICIO' ? `📸 Telemetría de INGRESO - Placa: ${data.placa}` : `📸 Evidencia de FINALIZACIÓN - Placa: ${data.placa}`;
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.capture = 'environment';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                hablar("Preparando envío de evidencia satelital.");
+                // Simulación de envío de archivo vía WhatsApp (abre chat con texto y recordatorio de adjuntar)
+                const url = `https://wa.me/57${data.telefono}?text=${encodeURIComponent(msg + ". Por favor adjunte la foto capturada.")}`;
+                window.open(url, '_blank');
+            }
+        };
+        input.click();
+    };
     
     window.cambiarFase = async (ordenId, nuevaFase) => {
-        if (mode === "SIMULATOR") {
-            hablar("Acción restringida en modo simulador.");
-            return;
-        }
+        if (mode === "SIMULATOR") return hablar("Acción restringida.");
         try {
             const docRef = doc(db, "ordenes", ordenId);
-            await updateDoc(docRef, { 
-                estado: nuevaFase, 
-                ultimaActualizacion: serverTimestamp() 
-            });
-            const msg = nuevaFase === 'EN_TALLER' ? "Cotización autorizada. Misión en curso." : `Fase ${nuevaFase.replace('_', ' ')} confirmada.`;
-            hablar(msg);
-            saveLog("TRANSICION_FASE", { ordenId, nuevaFase });
-        } catch (e) { console.error("Error en transición:", e); }
+            await updateDoc(docRef, { estado: nuevaFase, ultimaActualizacion: serverTimestamp() });
+            hablar(`Misión actualizada a fase ${nuevaFase.replace('_', ' ')}`);
+        } catch (e) { console.error(e); }
+    };
+
+    // NUEVO: Motor de Edición Evolutiva
+    window.abrirEdicionMision = async (id) => {
+        hablar("Recuperando datos de misión para actualización.");
+        const docSnap = await getDoc(doc(db, "ordenes", id));
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            ordenEdicionId = id;
+            abrirFormularioOrden(data);
+        }
     };
 
     const renderBase = () => {
@@ -54,15 +77,10 @@ export default async function ordenes(container, state) {
                         MISSION <span class="text-cyan-400 text-6xl">OPS</span>
                     </h1>
                     <div class="flex items-center gap-3 mt-4">
-                        <span class="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[8px] font-black orbitron rounded-full">
-                            ${mode === "SIMULATOR" ? 'MODO HOLOGRÁFICO' : 'SATÉLITE ACTIVO'}
-                        </span>
-                        <p class="text-[8px] text-slate-500 font-black uppercase tracking-[0.5em] orbitron">LOGÍSTICA DE FLOTA V17.1</p>
+                        <span class="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[8px] font-black orbitron rounded-full">SISTEMA EVOLUTIVO V17.2</span>
                     </div>
                 </div>
-                
                 <button id="btnNuevaOrden" class="group relative px-14 py-7 bg-slate-900 rounded-[2.5rem] border border-cyan-500/30 hover:border-cyan-400 transition-all shadow-2xl overflow-hidden">
-                    <div class="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <span class="relative orbitron text-[12px] font-black text-cyan-400 tracking-widest flex items-center gap-4">
                         <i class="fas fa-plus-circle text-xl"></i> NUEVO DESPLIEGUE
                     </span>
@@ -71,13 +89,11 @@ export default async function ordenes(container, state) {
 
             <div class="flex overflow-x-auto no-scrollbar gap-4 mb-16 pb-4">
                 <button class="phase-nexus shrink-0 border-amber-500/20" data-fase="COTIZACION">
-                    <span class="text-[7px] block opacity-40 mb-1 font-black orbitron text-amber-500">PRE-VUELO</span>
-                    <span class="orbitron text-[11px] font-black tracking-[0.2em]">COTIZACIONES</span>
+                    <span class="orbitron text-[11px] font-black">COTIZACIONES</span>
                 </button>
                 ${['EN_TALLER', 'DIAGNOSTICO', 'REPARACION', 'LISTO'].map(fase => `
                     <button class="phase-nexus shrink-0" data-fase="${fase}">
-                        <span class="text-[7px] block opacity-40 mb-1 font-black orbitron">${fase === 'LISTO' ? 'FINALIZADO' : 'SECTOR'}</span>
-                        <span class="orbitron text-[11px] font-black tracking-[0.2em]">${fase.replace('_', ' ')}</span>
+                        <span class="orbitron text-[11px] font-black">${fase.replace('_', ' ')}</span>
                     </button>
                 `).join('')}
             </div>
@@ -86,8 +102,7 @@ export default async function ordenes(container, state) {
             <div id="gridOrdenes" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8"></div>
         </div>
         `;
-        
-        document.getElementById("btnNuevaOrden").onclick = abrirFormularioOrden;
+        document.getElementById("btnNuevaOrden").onclick = () => { ordenEdicionId = null; abrirFormularioOrden(); };
         document.querySelectorAll('.phase-nexus').forEach(btn => {
             btn.onclick = () => {
                 document.querySelectorAll('.phase-nexus').forEach(b => b.classList.remove('active-nexus'));
@@ -98,138 +113,119 @@ export default async function ordenes(container, state) {
         document.querySelector('[data-fase="EN_TALLER"]').click();
     };
 
-    const abrirFormularioOrden = () => {
+    const abrirFormularioOrden = (dataPrev = null) => {
         const workspace = document.getElementById("workspace");
         workspace.classList.remove("hidden");
         workspace.scrollIntoView({ behavior: 'smooth' });
-        itemsOrden = [];
+        itemsOrden = dataPrev ? dataPrev.items : [];
 
         workspace.innerHTML = `
         <div class="bg-slate-950/90 backdrop-blur-3xl p-10 lg:p-16 rounded-[4rem] border border-white/10 shadow-2xl animate-in zoom-in-95 duration-500">
             <div class="flex flex-col lg:flex-row justify-between items-start mb-16 gap-8">
                 <div>
-                    <h2 class="orbitron text-sm font-black text-cyan-400 mb-3 tracking-[0.6em] uppercase italic">DATOS DE TELEMETRÍA</h2>
-                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Apertura de Ticket v17.1</p>
+                    <h2 class="orbitron text-sm font-black text-cyan-400 mb-3 tracking-[0.6em] uppercase italic">
+                        ${ordenEdicionId ? 'ACTUALIZACIÓN DE MISIÓN' : 'TELEMETRÍA DE INGRESO'}
+                    </h2>
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Protocolo Nexus-X Evolution</p>
                 </div>
                 <div class="bg-cyan-500/5 px-10 py-6 rounded-[2rem] border border-cyan-500/20 text-right">
-                    <p class="text-[8px] text-cyan-500/60 uppercase orbitron mb-2 font-black">Estimación de Carga</p>
-                    <p id="totalLive" class="text-4xl font-black text-white orbitron tabular-nums">$0</p>
+                    <p class="text-[8px] text-cyan-500/60 uppercase orbitron mb-2 font-black">Carga Financiera Actual</p>
+                    <p id="totalLive" class="text-4xl font-black text-white orbitron">$0</p>
                 </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-10 mb-16">
-                <div class="field-nexus">
-                    <label class="orbitron text-[9px] uppercase tracking-widest text-slate-500 mb-3 block">Identificador de Placa</label>
-                    <input id="newPlaca" class="w-full bg-black/40 border border-white/5 p-6 rounded-2xl text-white orbitron font-black text-xl uppercase" placeholder="ABC-123" maxlength="7">
-                </div>
-                <div class="field-nexus">
-                    <label class="orbitron text-[9px] uppercase tracking-widest text-slate-500 mb-3 block">Comandante de Misión</label>
-                    <input id="newCliente" class="w-full bg-black/40 border border-white/5 p-6 rounded-2xl text-white font-bold" placeholder="NOMBRE COMPLETO">
-                </div>
-                <div class="field-nexus">
-                    <label class="orbitron text-[9px] uppercase tracking-widest text-slate-500 mb-3 block">Enlace Satelital</label>
-                    <div class="flex items-center gap-4 bg-black/40 border border-white/5 p-6 rounded-2xl">
-                        <span class="text-slate-500 font-black">+57</span>
-                        <input id="newTel" type="number" class="bg-transparent border-none outline-none text-white w-full" placeholder="3200000000">
-                    </div>
-                </div>
+                <input id="newPlaca" class="input-nexus-field" placeholder="PLACA" value="${dataPrev?.placa || ''}" ${ordenEdicionId ? 'readonly' : ''}>
+                <input id="newCliente" class="input-nexus-field" placeholder="COMANDANTE" value="${dataPrev?.cliente || ''}">
+                <input id="newTel" type="number" class="input-nexus-field" placeholder="TELÉFONO" value="${dataPrev?.telefono || ''}">
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                <div class="space-y-8">
-                    <div class="bg-black/40 p-10 rounded-[3rem] border border-white/5">
-                        <div class="flex justify-between items-center mb-8">
-                            <label class="text-[9px] text-cyan-400 font-black uppercase orbitron tracking-[0.3em]">Diagnóstico de Campo</label>
-                            <button id="btnDictar" class="w-14 h-14 rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 hover:bg-cyan-500 transition-all">
-                                <i class="fas fa-microphone-alt"></i>
-                            </button>
-                        </div>
-                        <textarea id="newDiagnostico" rows="5" class="bg-transparent border-none outline-none text-md font-medium text-slate-300 w-full resize-none placeholder:text-slate-800" placeholder="A la espera de reporte vocal..."></textarea>
+                <div class="bg-black/40 p-10 rounded-[3rem] border border-white/5">
+                    <div class="flex justify-between items-center mb-6">
+                        <label class="orbitron text-[9px] text-cyan-400 font-black uppercase">REPORTE TÉCNICO</label>
+                        <button id="btnDictar" class="w-12 h-12 rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/20"><i class="fas fa-microphone"></i></button>
                     </div>
+                    <textarea id="newDiagnostico" rows="6" class="bg-transparent border-none outline-none text-slate-300 w-full resize-none font-medium">${dataPrev?.diagnostico || ''}</textarea>
                 </div>
 
-                <div class="space-y-8">
-                    <div class="flex justify-between items-center px-4">
-                        <h3 class="orbitron text-[10px] font-black text-slate-500 uppercase tracking-widest">Suministros & Repuestos</h3>
-                        <button id="btnAddItem" class="bg-white/10 hover:bg-cyan-500 text-white hover:text-black px-8 py-3 rounded-full text-[10px] font-black uppercase orbitron transition-all border border-white/5">
-                            + VINCULAR
-                        </button>
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h3 class="orbitron text-[10px] font-black text-slate-500 uppercase">SUMINISTROS & CARGOS</h3>
+                        <button id="btnAddItem" class="bg-cyan-500 text-black px-6 py-2 rounded-full text-[9px] font-black orbitron">+ AÑADIR</button>
                     </div>
-                    <div id="itemsLista" class="space-y-4 max-h-[350px] overflow-y-auto pr-4 custom-scrollbar">
-                        <p class="text-center py-24 text-[9px] text-slate-700 uppercase font-black tracking-[0.5em]">Escaneo de carga vacío</p>
-                    </div>
+                    <div id="itemsLista" class="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar"></div>
                 </div>
             </div>
 
-            <div class="flex flex-col md:flex-row gap-8 mt-20 pt-12 border-t border-white/10">
-                <button id="btnGuardarOrden" class="flex-[2] bg-cyan-500 text-black py-9 rounded-[2.5rem] font-black text-[14px] uppercase tracking-[0.5em] shadow-2xl hover:bg-cyan-400 active:scale-95 transition-all orbitron">
-                    DESPLEGAR MISIÓN <i class="fas fa-satellite-dish ml-4"></i>
+            <div class="flex flex-col md:flex-row gap-6 mt-16 pt-10 border-t border-white/10">
+                <button id="btnGuardarOrden" class="btn-nexus-main bg-cyan-500 text-black flex-[2]">
+                    ${ordenEdicionId ? 'ACTUALIZAR MISIÓN' : 'DESPLEGAR MISIÓN'} <i class="fas fa-sync ml-3"></i>
                 </button>
-                <button id="btnGuardarCotizacion" class="flex-1 bg-amber-500/10 text-amber-500 py-9 rounded-[2.5rem] font-black text-[12px] uppercase border border-amber-500/20 orbitron hover:bg-amber-500 hover:text-black transition-all">
-                    SOLO COTIZACIÓN <i class="fas fa-file-invoice-dollar ml-3"></i>
-                </button>
-                <button onclick="document.getElementById('workspace').classList.add('hidden')" class="px-10 bg-white/5 text-slate-500 rounded-[2.5rem] font-black text-[11px] uppercase border border-white/5 orbitron hover:bg-red-900/20 hover:text-red-500 transition-all">
-                    CANCELAR
-                </button>
+                <button onclick="document.getElementById('workspace').classList.add('hidden')" class="btn-nexus-main bg-white/5 text-slate-500 flex-1">CANCELAR</button>
             </div>
         </div>
         `;
 
-        // Lógica de Voz Mantenida
-        const btnDictar = document.getElementById("btnDictar");
-        btnDictar.onclick = () => {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) return;
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'es-CO';
-            recognition.onstart = () => { hablar("Nexus escuchando."); btnDictar.classList.add('animate-pulse', 'bg-red-500/20', 'text-red-500'); };
-            recognition.onresult = (e) => { document.getElementById("newDiagnostico").value += " " + e.results[0][0].transcript.toUpperCase(); };
-            recognition.onend = () => { btnDictar.classList.remove('animate-pulse', 'bg-red-500/20', 'text-red-500'); };
-            recognition.start();
-        };
+        actualizarTablaItems();
+        
+        // Voz y Eventos
+        document.getElementById("btnDictar").onclick = () => iniciarReconocimientoVoz("newDiagnostico");
+        document.getElementById("btnAddItem").onclick = () => modalAñadirItem();
+        document.getElementById("btnGuardarOrden").onclick = () => guardarMision(dataPrev?.estado || 'EN_TALLER');
+    };
 
-        document.getElementById("btnAddItem").onclick = async () => {
-            const { value: v } = await Swal.fire({
-                title: 'VINCULAR COMPONENTE',
-                background: '#020617', color: '#fff',
-                html: `<div class="space-y-4 p-4"><input id="sw-n" class="sw-input" placeholder="DESCRIPCIÓN"><div class="flex gap-4"><input id="sw-p" type="number" class="sw-input" placeholder="PRECIO $"><input id="sw-c" type="number" value="1" class="sw-input w-24"></div></div>`,
-                showCancelButton: true, confirmButtonText: 'AÑADIR', customClass: { confirmButton: 'btn-confirm-nexus' }
-            });
-            if (v) {
-                const nombre = document.getElementById('sw-n').value.toUpperCase();
-                const precio = Number(document.getElementById('sw-p').value);
-                const cantidad = Number(document.getElementById('sw-c').value);
-                if(nombre && precio) {
-                    itemsOrden.push({ nombre, precio, cantidad, total: precio * cantidad });
-                    actualizarTablaItems();
+    const modalAñadirItem = async () => {
+        const { value: formValues } = await Swal.fire({
+            title: 'NUEVO CARGO / REPUESTO',
+            background: '#020617', color: '#fff',
+            html: `
+                <input id="sw-n" class="swal2-input !bg-black/50 !border-white/10 !text-white" placeholder="Descripción">
+                <input id="sw-p" type="number" class="swal2-input !bg-black/50 !border-white/10 !text-white" placeholder="Precio $">
+                <input id="sw-c" type="number" value="1" class="swal2-input !bg-black/50 !border-white/10 !text-white" placeholder="Cant.">
+            `,
+            focusConfirm: false,
+            preConfirm: () => {
+                return {
+                    nombre: document.getElementById('sw-n').value.toUpperCase(),
+                    precio: Number(document.getElementById('sw-p').value),
+                    cantidad: Number(document.getElementById('sw-c').value)
                 }
             }
-        };
-
-        document.getElementById("btnGuardarOrden").onclick = () => guardarMision('EN_TALLER');
-        document.getElementById("btnGuardarCotizacion").onclick = () => guardarMision('COTIZACION');
+        });
+        if (formValues && formValues.nombre && formValues.precio) {
+            itemsOrden.push({ ...formValues, total: formValues.precio * formValues.cantidad });
+            actualizarTablaItems();
+        }
     };
 
     const actualizarTablaItems = () => {
         const area = document.getElementById("itemsLista");
         const totalLive = document.getElementById("totalLive");
-        if (itemsOrden.length === 0) {
-            area.innerHTML = `<p class="text-center py-24 text-[9px] text-slate-700 uppercase font-black tracking-[0.5em]">Escaneo de carga vacío</p>`;
-            totalLive.innerText = "$0"; return;
-        }
         const total = itemsOrden.reduce((acc, i) => acc + i.total, 0);
         totalLive.innerText = `$${total.toLocaleString()}`;
+        
+        if (itemsOrden.length === 0) {
+            area.innerHTML = `<p class="text-center py-10 text-[9px] text-slate-700 font-black orbitron">CARGA VACÍA</p>`;
+            return;
+        }
+
         area.innerHTML = itemsOrden.map((it, idx) => `
-            <div class="flex justify-between items-center bg-white/[0.02] p-6 rounded-3xl border border-white/5">
-                <div><p class="text-[11px] font-black text-white uppercase tracking-wider">${it.nombre}</p>
-                <p class="text-[9px] text-slate-500 font-bold mt-1">${it.cantidad} UN x $${it.precio.toLocaleString()}</p></div>
-                <div class="flex items-center gap-6"><p class="text-sm font-black text-cyan-400 orbitron">$${it.total.toLocaleString()}</p>
-                <button class="text-red-500/20 hover:text-red-500 transition-colors" onclick="window.removeItem(${idx})"><i class="fas fa-trash-alt"></i></button></div>
-            </div>`).join("");
+            <div class="flex justify-between items-center bg-white/[0.03] p-4 rounded-2xl border border-white/5 group">
+                <div>
+                    <p class="text-[10px] font-black text-white uppercase">${it.nombre}</p>
+                    <p class="text-[8px] text-slate-500">${it.cantidad} x $${it.precio.toLocaleString()}</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <p class="text-xs font-black text-cyan-400 orbitron">$${it.total.toLocaleString()}</p>
+                    <button onclick="window.removeItem(${idx})" class="text-red-500 opacity-20 group-hover:opacity-100 transition-opacity"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+        `).join("");
     };
 
     const guardarMision = async (estadoDestino) => {
-        if (mode === "SIMULATOR") { Swal.fire('MODO DEMO', 'Activa plan PRO.', 'info'); return; }
+        if (mode === "SIMULATOR") return;
         const payload = {
             placa: document.getElementById("newPlaca").value.trim().toUpperCase(),
             cliente: document.getElementById("newCliente").value.trim().toUpperCase(),
@@ -239,71 +235,82 @@ export default async function ordenes(container, state) {
             total: itemsOrden.reduce((acc, i) => acc + i.total, 0),
             estado: estadoDestino,
             empresaId: empresaId,
-            creadoPor: uid,
-            creadoEn: serverTimestamp()
+            ultimaActualizacion: serverTimestamp()
         };
 
-        if (!payload.placa || !payload.cliente) return Swal.fire('Error', 'Datos incompletos.', 'error');
-
         try {
-            const docId = await createDocument("ordenes", payload);
-            if (payload.telefono) await enviarWhatsAppOrden({ ...payload, id: docId });
-            hablar(estadoDestino === 'COTIZACION' ? "Cotización registrada." : "Misión confirmada.");
+            if (ordenEdicionId) {
+                await updateDoc(doc(db, "ordenes", ordenEdicionId), payload);
+                saveLog("ACTUALIZACION_ORDEN", { id: ordenEdicionId });
+            } else {
+                payload.creadoPor = uid;
+                payload.creadoEn = serverTimestamp();
+                await createDocument("ordenes", payload);
+            }
+            hablar("Protocolo actualizado con éxito.");
             document.getElementById("workspace").classList.add("hidden");
-            Swal.fire({ title: 'ÉXITO', icon: 'success', background: '#020617', color: '#fff' });
         } catch (e) { console.error(e); }
     };
 
     function escucharMisiones(fase) {
         if (unsubscribe) unsubscribe();
         const grid = document.getElementById("gridOrdenes");
-        const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId), where("estado", "==", fase));
+        const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId), where("estado", "==", fase), orderBy("ultimaActualizacion", "desc"));
 
         unsubscribe = onSnapshot(q, (snap) => {
             if (snap.empty) {
-                grid.innerHTML = `<div class="col-span-full py-48 text-center opacity-10"><i class="fas fa-satellite-dish text-6xl mb-8"></i><p class="orbitron text-[12px] tracking-[0.5em] uppercase">Sector Vacío</p></div>`;
+                grid.innerHTML = `<div class="col-span-full py-32 text-center opacity-10"><p class="orbitron text-[10px] tracking-widest">SECTOR VACÍO</p></div>`;
                 return;
             }
             grid.innerHTML = snap.docs.map(docSnap => {
                 const o = docSnap.data();
                 const id = docSnap.id;
                 const oJson = JSON.stringify({ ...o, id }).replace(/'/g, "&apos;");
-                const esCotizacion = o.estado === 'COTIZACION';
                 
                 return `
-                <div class="bg-slate-900/30 p-8 rounded-[3rem] border ${esCotizacion ? 'border-amber-500/20' : 'border-white/5'} hover:border-cyan-500/30 transition-all group relative overflow-hidden">
-                    <div class="flex justify-between items-start mb-8">
-                        <div class="bg-black px-5 py-3 rounded-2xl border border-white/10">
-                            <p class="text-[7px] text-slate-500 orbitron uppercase mb-1">PLACA_REF</p>
-                            <p class="text-sm text-cyan-400 font-black orbitron">${o.placa}</p>
+                <div class="bg-slate-900/40 p-6 rounded-[2.5rem] border border-white/5 hover:border-cyan-500/50 transition-all flex flex-col h-full">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="bg-black px-4 py-2 rounded-xl border border-white/10">
+                            <p class="text-[12px] text-cyan-400 font-black orbitron">${o.placa}</p>
                         </div>
-                        <div class="w-10 h-10 rounded-full ${esCotizacion ? 'bg-amber-500/10' : 'bg-cyan-500/10'} flex items-center justify-center border border-white/10">
-                            <i class="fas ${esCotizacion ? 'fa-file-invoice-dollar text-amber-500' : 'fa-bolt text-cyan-500'} text-[10px]"></i>
+                        <div class="flex gap-2">
+                            <button onclick='window.capturarYEnviar(${oJson}, "INICIO")' class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px]"><i class="fas fa-camera"></i></button>
+                            <button onclick="window.abrirEdicionMision('${id}')" class="w-8 h-8 rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 text-[10px]"><i class="fas fa-edit"></i></button>
                         </div>
                     </div>
-                    <h3 class="text-white text-md font-black uppercase mb-3 truncate tracking-tight">${o.cliente}</h3>
-                    <p class="text-[9px] text-slate-500 leading-relaxed h-12 overflow-hidden mb-8 uppercase italic">${o.diagnostico || 'Pendiente técnico'}</p>
-                    <div class="bg-black/40 p-5 rounded-2xl border border-white/5 mb-8 flex justify-between items-center">
-                        <span class="text-[8px] text-slate-500 font-black orbitron uppercase">${esCotizacion ? 'Presupuesto' : 'Total Misión'}</span>
-                        <span class="text-lg font-black text-white orbitron">$${Number(o.total).toLocaleString()}</span>
+                    <h3 class="text-white text-[12px] font-black uppercase mb-2">${o.cliente}</h3>
+                    <p class="text-[9px] text-slate-500 mb-6 italic line-clamp-2">${o.diagnostico || 'SIN DIAGNÓSTICO'}</p>
+                    
+                    <div class="mt-auto">
+                        <div class="bg-black/30 p-4 rounded-xl mb-4 flex justify-between items-center">
+                            <span class="text-[8px] text-slate-600 font-black orbitron uppercase">Total</span>
+                            <span class="text-md font-black text-white orbitron">$${Number(o.total).toLocaleString()}</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mb-4">
+                            <button onclick='window.ejecutarImpresion(${oJson})' class="btn-card-nexus"><i class="fas fa-file-pdf"></i></button>
+                            <button onclick='window.compartirWhatsApp(${oJson})' class="btn-card-nexus text-emerald-500"><i class="fab fa-whatsapp"></i></button>
+                        </div>
+                        <select onchange="window.cambiarFase('${id}', this.value)" class="w-full bg-cyan-500 text-black p-3 rounded-xl orbitron text-[9px] font-black uppercase">
+                            <option value="" disabled selected>ESTADO: ${o.estado}</option>
+                            <option value="DIAGNOSTICO">🧠 Diagnóstico</option>
+                            <option value="REPARACION">🔧 Reparación</option>
+                            <option value="LISTO">✅ Finalizado</option>
+                        </select>
                     </div>
-                    <div class="grid grid-cols-2 gap-3 mb-6">
-                        <button onclick='window.ejecutarImpresion(${oJson})' class="py-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-all text-white"><i class="fas fa-print"></i></button>
-                        <button onclick='window.compartirWhatsApp(${oJson})' class="py-4 bg-emerald-500/10 rounded-2xl hover:bg-emerald-500/20 transition-all text-emerald-500"><i class="fab fa-whatsapp"></i></button>
-                    </div>
-
-                    <select onchange="window.cambiarFase('${id}', this.value)" class="w-full ${esCotizacion ? 'bg-amber-500' : 'bg-cyan-500'} text-black p-4 rounded-2xl orbitron text-[9px] font-black uppercase cursor-pointer transition-all">
-                        <option value="" disabled selected>${esCotizacion ? 'ESTADO: PRE-VUELO' : 'CAMBIAR STATUS'}</option>
-                        ${esCotizacion ? '<option value="EN_TALLER">🚀 AUTORIZAR E INGRESAR</option>' : ''}
-                        <option value="EN_TALLER">📡 Recepción</option>
-                        <option value="DIAGNOSTICO">🧠 Diagnóstico</option>
-                        <option value="REPARACION">🔧 Reparación</option>
-                        <option value="LISTO">✅ Finalizar</option>
-                    </select>
                 </div>`;
             }).join("");
         });
     }
 
     renderBase();
+}
+
+/** HELPERS ESTÉTICOS **/
+function iniciarReconocimientoVoz(id) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-CO';
+    recognition.onresult = (e) => { document.getElementById(id).value += " " + e.results[0][0].transcript.toUpperCase(); };
+    recognition.start();
 }
