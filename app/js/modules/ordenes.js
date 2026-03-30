@@ -107,88 +107,94 @@ export default async function ordenes(container) {
         renderTerminal();
     };
 
-    const renderTerminal = () => {
-        const modal = document.getElementById("nexus-terminal");
-        modal.innerHTML = `
-        <div class="max-w-[1400px] mx-auto pb-20 animate-in zoom-in duration-300">
-            <div class="flex flex-wrap justify-between items-center gap-6 mb-10 bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 shadow-2xl">
-                <div class="flex items-center gap-6">
-                    <input id="f-placa" value="${ordenActiva.placa}" class="bg-transparent text-5xl font-black orbitron text-cyan-400 outline-none w-52 uppercase" placeholder="PLACA">
-                    <select id="f-estado" class="bg-black text-cyan-400 orbitron text-[10px] p-4 rounded-2xl border border-cyan-500/20 outline-none">
-                        ${['COTIZACION', 'INGRESO', 'DIAGNOSTICO', 'REPARACION', 'LISTO'].map(f => `<option value="${f}" ${ordenActiva.estado === f ? 'selected' : ''}>${f}</option>`).join('')}
-                    </select>
+    // 1. RENDER DE LA TERMINAL CON TÍTULOS CLAROS Y MODALIDAD HÍBRIDA
+const renderTerminal = () => {
+    const modal = document.getElementById("nexus-terminal");
+    modal.innerHTML = `
+    <div class="max-w-[1400px] mx-auto pb-20 animate-in zoom-in duration-300">
+        <div class="flex flex-wrap justify-between items-center gap-6 mb-10 bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 shadow-2xl">
+            <div class="flex items-center gap-6">
+                <input id="f-placa" value="${ordenActiva.placa}" class="bg-transparent text-5xl font-black orbitron text-cyan-400 outline-none w-52 uppercase" placeholder="PLACA">
+                <select id="f-estado" class="bg-black text-cyan-400 orbitron text-[10px] p-4 rounded-2xl border border-cyan-500/20 outline-none">
+                    ${['COTIZACION', 'INGRESO', 'DIAGNOSTICO', 'REPARACION', 'LISTO'].map(f => `<option value="${f}" ${ordenActiva.estado === f ? 'selected' : ''}>${f}</option>`).join('')}
+                </select>
+            </div>
+            <div class="flex gap-3">
+                <button id="btnEliminarOT" class="w-14 h-14 rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 text-xl hover:bg-red-500 hover:text-white transition-all"><i class="fas fa-trash"></i></button>
+                <button id="btnCloseTerminal" class="w-14 h-14 rounded-2xl bg-white/10 text-white font-black text-2xl">✕</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <div class="lg:col-span-4 space-y-8">
+                <div class="bg-[#0d1117] p-10 rounded-[3.5rem] border border-white/5">
+                    <label class="text-[9px] text-slate-500 font-black uppercase mb-4 block tracking-[0.2em]">Información del Cliente</label>
+                    <input id="f-cliente" value="${ordenActiva.cliente}" class="w-full bg-white/5 p-6 rounded-3xl mb-4 border border-white/5 outline-none font-bold uppercase" placeholder="NOMBRE">
+                    <input id="f-telefono" value="${ordenActiva.telefono}" class="w-full bg-white/5 p-6 rounded-3xl border border-white/5 outline-none" placeholder="WHATSAPP">
                 </div>
-                <div class="flex gap-3">
-                    <button id="btnWppDirect" class="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xl"><i class="fab fa-whatsapp"></i></button>
-                    <button id="btnDescargarOT" class="w-14 h-14 rounded-2xl bg-white/5 text-white border border-white/10 text-xl"><i class="fas fa-download"></i></button>
-                    <button id="btnEliminarOT" class="w-14 h-14 rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 text-xl"><i class="fas fa-trash"></i></button>
-                    <button id="btnCloseTerminal" class="w-14 h-14 rounded-2xl bg-white/10 text-white font-black text-2xl">✕</button>
+
+                <div class="bg-black p-10 rounded-[3.5rem] border border-cyan-500/20 shadow-glow-cyan">
+                    <div class="flex justify-between items-center mb-6">
+                        <span class="orbitron text-[10px] text-cyan-400 font-black italic">SCANNER DE FALLAS</span>
+                        <div id="rec-indicator" class="h-3 w-3 bg-red-600 rounded-full hidden animate-pulse"></div>
+                    </div>
+                    <textarea id="ai-log-display" class="w-full bg-white/5 p-6 rounded-3xl text-xs h-40 outline-none border border-white/5 italic text-slate-300 leading-relaxed resize-none focus:border-cyan-500/50 transition-all">${ordenActiva.bitacora_ia || ''}</textarea>
+                    <div class="grid grid-cols-2 gap-4 mt-6">
+                        <button id="btnDictar" class="py-5 bg-cyan-500 text-black rounded-2xl orbitron text-[9px] font-black">🎤 DICTAR</button>
+                        <button id="btnMultimedia" class="py-5 bg-white/10 text-white rounded-2xl border border-white/20 orbitron text-[9px] font-black"><i class="fas fa-camera mr-2"></i> FOTOS</button>
+                    </div>
+                </div>
+
+                <div class="bg-[#0d1117] p-10 rounded-[3.5rem] border border-emerald-500/10 space-y-6">
+                    <div>
+                        <label class="text-[8px] text-red-400 font-black uppercase mb-2 block tracking-widest">[EGRESO] Gastos Varios / Insumos</label>
+                        <input type="number" id="f-gastos-varios" value="${ordenActiva.finanzas?.gastos_varios || 0}" class="w-full bg-black/50 p-5 rounded-2xl text-white border border-white/5 text-xl font-bold" onchange="recalcularFinanzas()">
+                    </div>
+                    <div>
+                        <label class="text-[8px] text-red-400 font-black uppercase mb-2 block tracking-widest">[EGRESO] Adelanto a Técnico</label>
+                        <input type="number" id="f-adelanto-tecnico" value="${ordenActiva.finanzas?.adelanto_tecnico || 0}" class="w-full bg-black/50 p-5 rounded-2xl text-white border border-white/5 text-xl font-bold" onchange="recalcularFinanzas()">
+                    </div>
+                    <div class="pt-4 border-t border-white/5">
+                        <label class="text-[8px] text-emerald-400 font-black uppercase mb-2 block tracking-widest">[INGRESO] Anticipo del Cliente (Efectivo)</label>
+                        <input type="number" id="f-anticipo-cliente" value="${ordenActiva.finanzas?.anticipo_cliente || 0}" class="w-full bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-[2rem] text-3xl font-black text-emerald-400 orbitron" onchange="recalcularFinanzas()">
+                    </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                <div class="lg:col-span-4 space-y-8">
-                    <div class="bg-[#0d1117] p-10 rounded-[3.5rem] border border-white/5 shadow-xl">
-                        <input id="f-cliente" value="${ordenActiva.cliente}" class="w-full bg-white/5 p-6 rounded-3xl mb-6 border border-white/5 outline-none font-bold uppercase" placeholder="NOMBRE COMPLETO">
-                        <input id="f-telefono" value="${ordenActiva.telefono}" class="w-full bg-white/5 p-6 rounded-3xl border border-white/5 outline-none" placeholder="WHATSAPP (+57)">
-                    </div>
-
-                    <div class="bg-black p-10 rounded-[3.5rem] border border-cyan-500/20 shadow-glow-cyan relative overflow-hidden">
-                        <div class="flex justify-between items-center mb-6">
-                            <span class="orbitron text-[10px] text-cyan-400 font-black">VEHICLE SCANNER & AI</span>
-                            <div id="rec-indicator" class="h-3 w-3 bg-red-600 rounded-full hidden animate-pulse"></div>
+            <div class="lg:col-span-8 space-y-8">
+                <div class="bg-[#0d1117] p-12 rounded-[4rem] border border-white/5 shadow-2xl relative">
+                    <div class="flex justify-between items-end mb-12">
+                        <div>
+                            <p class="orbitron text-[12px] text-cyan-400 uppercase italic font-black">Total Facturación</p>
+                            <h2 id="total-factura" class="orbitron text-7xl md:text-9xl font-black text-white italic tracking-tighter">$ 0</h2>
                         </div>
-                        <div id="ai-log-display" class="bg-white/5 p-6 rounded-3xl text-xs h-48 overflow-y-auto mb-6 italic text-slate-300 leading-relaxed">
-                            ${ordenActiva.bitacora_ia || 'Inicie el dictado...'}
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <button id="btnDictar" class="py-5 bg-cyan-500 text-black rounded-2xl orbitron text-[9px] font-black">🎤 DICTAR</button>
-                            <button id="btnCapturaFalla" class="py-5 bg-white/10 text-white rounded-2xl border border-white/20 orbitron text-[9px] font-black"><i class="fas fa-camera mr-2"></i> MULTIMEDIA</button>
+                        <div class="text-right">
+                            <div id="saldo-display" class="text-3xl font-black text-white orbitron italic"></div>
                         </div>
                     </div>
-
-                    <div class="bg-[#0d1117] p-10 rounded-[3.5rem] border border-emerald-500/10">
-                        <div class="grid grid-cols-2 gap-4 mb-6">
-                            <input type="number" id="f-cafeteria" value="${ordenActiva.gastos_varios?.cafeteria || 0}" class="bg-black/50 p-4 rounded-2xl text-white border border-white/5" placeholder="CAFÉ">
-                            <input type="number" id="f-adelanto" value="${ordenActiva.gastos_varios?.adelanto_tecnico || 0}" class="bg-black/50 p-4 rounded-2xl text-white border border-white/5" placeholder="ADELANTO">
-                        </div>
-                        <input type="number" id="f-abono" value="${ordenActiva.abonos || 0}" class="w-full bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-[2rem] text-3xl font-black text-emerald-400 orbitron">
+                    
+                    <div class="flex gap-4 mb-6">
+                        <span class="text-[9px] text-slate-500 font-black uppercase">Detalle de Repuestos y Servicios</span>
+                    </div>
+                    
+                    <div id="items-container" class="space-y-4 max-h-[450px] overflow-y-auto pr-4 custom-scrollbar"></div>
+                    
+                    <div class="grid grid-cols-2 gap-6 mt-12">
+                        <button id="btnAddRepuesto" class="py-7 bg-white/5 rounded-3xl border border-white/10 orbitron text-[11px] font-black hover:bg-white/10 transition-all">+ REPUESTO</button>
+                        <button id="btnAddMano" class="py-7 bg-cyan-500/5 rounded-3xl border border-cyan-500/20 text-cyan-400 orbitron text-[11px] font-black hover:bg-cyan-500/10 transition-all">+ MANO OBRA</button>
                     </div>
                 </div>
 
-                <div class="lg:col-span-8 space-y-8">
-                    <div class="bg-[#0d1117] p-12 rounded-[4rem] border border-white/5 shadow-2xl relative">
-                        <div class="flex justify-between items-end mb-12">
-                            <div>
-                                <p class="orbitron text-[12px] text-cyan-400 uppercase italic font-black">Total Misión</p>
-                                <h2 id="total-factura" class="orbitron text-7xl md:text-9xl font-black text-white italic tracking-tighter">$ 0</h2>
-                            </div>
-                            <div class="text-right">
-                                <p id="saldo-display" class="text-4xl font-black text-white orbitron italic">$ 0</p>
-                            </div>
-                        </div>
-                        <div id="items-container" class="space-y-4 max-h-[400px] overflow-y-auto pr-4"></div>
-                        <div class="grid grid-cols-2 gap-6 mt-12">
-                            <button id="btnAddRepuesto" class="py-7 bg-white/5 rounded-3xl border border-white/10 orbitron text-[11px] font-black">+ REPUESTO</button>
-                            <button id="btnAddMano" class="py-7 bg-cyan-500/5 rounded-3xl border border-cyan-500/20 text-cyan-400 orbitron text-[11px] font-black">+ MANO OBRA</button>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <button id="btnPagarBold" class="py-10 bg-gradient-to-br from-red-600 to-red-900 text-white rounded-[2.5rem] orbitron font-black text-[12px] uppercase">
-                            <i class="fas fa-bolt mr-3"></i> EJECUTAR CIERRE BOLD
-                        </button>
-                        <button id="btnSincronizar" class="py-10 bg-white text-black rounded-[2.5rem] orbitron font-black text-[12px] uppercase">
-                            🛰️ SINCRONIZAR NEXUS-X
-                        </button>
-                    </div>
-                </div>
+                <button id="btnSincronizar" class="w-full py-10 bg-white text-black rounded-[2.5rem] orbitron font-black text-[15px] uppercase tracking-[0.5em] shadow-glow-white hover:bg-cyan-400 transition-all">
+                    🛰️ SINCRONIZAR CON NEXUS-X
+                </button>
             </div>
-        </div>`;
+        </div>
+    </div>`;
 
-        vincularAccionesTerminal();
-        recalcularFinanzas();
-    };
+    vincularAccionesTerminal();
+    recalcularFinanzas();
+};
 
     // --- ACCIONES Y LOGICA ---
     const vincularAccionesTerminal = () => {
@@ -353,18 +359,28 @@ const recalcularFinanzas = () => {
         renderItems();
     };
 
-    const renderItems = () => {
-        const container = document.getElementById("items-container");
-        container.innerHTML = ordenActiva.items.map((item, idx) => `
-            <div class="flex flex-wrap items-center gap-4 bg-white/5 p-4 rounded-3xl border border-white/5">
-                <div class="flex-1 min-w-[150px]">
-                    <span class="text-[8px] orbitron text-cyan-400 uppercase">${item.tipo}</span>
-                    <input onchange="window.editItemNexus(${idx}, 'desc', this.value)" value="${item.desc}" class="w-full bg-transparent outline-none text-white text-sm uppercase">
-                </div>
-                <input type="number" onchange="window.editItemNexus(${idx}, 'venta', this.value)" value="${item.venta}" class="w-24 bg-black/40 p-2 rounded-xl text-emerald-400 text-center text-sm">
-                <button onclick="window.removeItemNexus(${idx})" class="text-red-500 px-3">✕</button>
-            </div>`).join('');
-    };
+    // 2. RENDER DE ÍTEMS CON COSTO Y VENTA (VISTA GERENCIAL)
+const renderItems = () => {
+    const container = document.getElementById("items-container");
+    container.innerHTML = ordenActiva.items.map((item, idx) => `
+        <div class="grid grid-cols-1 md:grid-cols-12 items-center gap-4 bg-white/5 p-6 rounded-[2rem] border border-white/5 hover:border-white/10 transition-all">
+            <div class="md:col-span-6">
+                <span class="text-[8px] orbitron ${item.tipo === 'REPUESTO' ? 'text-orange-400' : 'text-cyan-400'} uppercase font-black">${item.tipo}</span>
+                <input onchange="window.editItemNexus(${idx}, 'desc', this.value)" value="${item.desc}" class="w-full bg-transparent outline-none text-white text-sm uppercase font-bold mt-1" placeholder="Descripción...">
+            </div>
+            <div class="md:col-span-2">
+                <label class="text-[7px] text-slate-500 block mb-1 uppercase">Costo $</label>
+                <input type="number" onchange="window.editItemNexus(${idx}, 'costo', this.value)" value="${item.costo || 0}" class="w-full bg-black/40 p-3 rounded-xl text-red-400 text-center text-xs font-bold border border-red-900/20" placeholder="Costo">
+            </div>
+            <div class="md:col-span-3">
+                <label class="text-[7px] text-slate-500 block mb-1 uppercase">Venta (Publico) $</label>
+                <input type="number" onchange="window.editItemNexus(${idx}, 'venta', this.value)" value="${item.venta || 0}" class="w-full bg-black/40 p-3 rounded-xl text-emerald-400 text-center text-sm font-black border border-emerald-900/20" placeholder="Venta">
+            </div>
+            <div class="md:col-span-1 text-right">
+                <button onclick="window.removeItemNexus(${idx})" class="text-red-500 hover:text-white transition-all p-2">✕</button>
+            </div>
+        </div>`).join('');
+};
 
     const generarPDF = () => {
         const { jsPDF } = window.jspdf;
