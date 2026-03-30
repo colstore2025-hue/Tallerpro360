@@ -223,9 +223,60 @@ export default async function ordenes(container) {
         // ... (btnAddRepuesto, btnAddOro, btnAddGasto se mantienen igual)
 
         // --- SINCRONIZACIÓN (REPARADO PERMISOS) ---
-        document.getElementById("btnSaveMission").onclick = async () => {
-            const btn = document.getElementById("btnSaveMission");
-            btn.innerText = "SINCRONIZANDO...";
+        // --- SINCRONIZACIÓN (SOLUCIÓN DEFINITIVA A ERROR DE PERMISOS) ---
+document.getElementById("btnSaveMission").onclick = async () => {
+    const btn = document.getElementById("btnSaveMission");
+    btn.innerHTML = `<i class="fas fa-sync fa-spin"></i> SINCRONIZANDO...`;
+    
+    // 1. Extraemos los valores de los inputs manualmente
+    const placaVal = document.getElementById("f-placa").value.toUpperCase();
+    const clienteVal = document.getElementById("f-cliente").value;
+    const telefonoVal = document.getElementById("f-telefono").value;
+    const estadoVal = document.getElementById("f-estado").value;
+
+    if(!placaVal) {
+        hablar("William, la placa es obligatoria para la misión.");
+        btn.innerHTML = `SINCRONIZAR MISION <br><span class="text-[9px] opacity-60 italic">GLOBAL NEXUS-X</span>`;
+        return;
+    }
+
+    // 2. CREAMOS EL OBJETO DE SUBIDA (Sin las fotos pesadas)
+    // Esto evita el error "Missing or insufficient permissions" por exceso de tamaño
+    const missionData = {
+        placa: placaVal,
+        cliente: clienteVal || "CLIENTE GENERAL",
+        telefono: telefonoVal || "",
+        estado: estadoVal,
+        empresaId: empresaId,
+        items: ordenActiva.items || [],
+        costos_totales: ordenActiva.costos_totales || {},
+        updatedAt: serverTimestamp(),
+        evidencia: {
+            audio_diagnostico: ordenActiva.evidencia.audio_diagnostico || ""
+            // Nota: temp_foto NO se incluye aquí para no bloquear Firestore
+        }
+    };
+
+    try {
+        // 3. Definimos la referencia (Si tiene ID actualiza, si no, crea uno nuevo)
+        const docRef = ordenActiva.id 
+            ? doc(db, "ordenes", ordenActiva.id) 
+            : doc(collection(db, "ordenes"));
+        
+        // 4. SOBREESCRIBIMOS (Sin merge para limpiar cualquier basura previa)
+        await setDoc(docRef, missionData); 
+        
+        hablar("Misión sincronizada en la nube de Nexus X.");
+        
+        // Cerramos la terminal
+        document.getElementById("nexus-terminal").classList.add("hidden");
+        
+    } catch (e) {
+        console.error("Error en Firebase:", e);
+        btn.innerHTML = `<span class="text-white">ERROR DE PERMISOS</span>`;
+        hablar("Error de persistencia. William, revisa las reglas de Firestore.");
+    }
+};
             
             // LIMPIEZA CRÍTICA: Eliminamos datos pesados antes de subir a Firestore
             const datosParaSubir = { ...ordenActiva };
