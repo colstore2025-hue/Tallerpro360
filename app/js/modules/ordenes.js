@@ -149,6 +149,44 @@ export default async function ordenes(container) {
             </div>
         </div>`;
 
+// ... dentro de vincularAccionesTerminal en ordenes.js ...
+
+document.getElementById("btnWhatsApp").onclick = () => {
+    const placa = document.getElementById("f-placa").value;
+    const cliente = document.getElementById("f-cliente").value;
+    const tel = document.getElementById("f-telefono").value;
+    const total = document.getElementById("total-final").innerText;
+
+    if (!tel || tel.length < 7) {
+        hablar("William, necesito un número de contacto válido para el despliegue.");
+        return;
+    }
+
+    // --- CONSTRUCCIÓN DEL MENSAJE ESTILO "TECH-REPORT" ---
+    let mensaje = `*🛰️ TallerPRO360 NEXUS-X: REPORTE DE MISIÓN* \n\n`;
+    mensaje += `*Hola, ${cliente.split(' ')[0]}!* 👋\n`;
+    mensaje += `Tu vehículo con placa *${placa.toUpperCase()}* ha sido procesado en nuestra terminal de diagnóstico inteligente.\n\n`;
+    
+    mensaje += `*📋 DETALLE DEL SERVICIO:*\n`;
+    ordenActiva.items.forEach(item => {
+        mensaje += `• ${item.descripcion.toUpperCase()} - _$${Number(item.precio_venta).toLocaleString()}_\n`;
+    });
+
+    mensaje += `\n*💰 INVERSIÓN TOTAL: ${total}*\n\n`;
+    mensaje += `*Estado:* 🛠️ ${ordenActiva.estado}\n`;
+    mensaje += `_Diagnóstico asistido por Inteligencia Artificial Nexus-X._\n\n`;
+    mensaje += `¿Procedemos con la misión? Quedo atento a tus órdenes. 🚀`;
+
+    // Formatear número (Colombia por defecto)
+    const telLimpio = tel.replace(/\D/g, '');
+    const finalTel = telLimpio.startsWith('57') ? telLimpio : `57${telLimpio}`;
+
+    const url = `https://api.whatsapp.com/send?phone=${finalTel}&text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
+    
+    hablar("Reporte enviado al cliente vía WhatsApp.");
+};
+
         vincularAccionesTerminal();
         recalcularTotales();
     };
