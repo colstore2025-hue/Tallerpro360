@@ -13,6 +13,7 @@ import { hablar } from "../voice/voiceCore.js";
 // --- NÚCLEO DE INTELIGENCIA SUPERIOR ---
 import WorkshopBrain from "../ai/workshopBrain.js";
 import { VoiceMechanicAI } from "../ai/voiceMechanicAI.js";
+import VehicleScanner from "../ai/vehicleScanner.js";
 
 export default async function ordenes(container) {
     const empresaId = localStorage.getItem("nexus_empresaId");
