@@ -1,8 +1,14 @@
 /**
  * ordenes.js - TallerPRO360 NEXUS-X V30.1 🛰️
  * REPARACIÓN DE PERMISOS Y MOTOR DE IMPRESIÓN EXTERNO
- */
-// ... (Tus imports se mantienen igual)
+
+*/
+import { 
+    collection, query, where, onSnapshot, doc, updateDoc, getDoc, 
+    setDoc, serverTimestamp, runTransaction 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db } from "../core/firebase-config.js";
+import { hablar } from "../voice/voiceCore.js";
 
 // --- MOTORES DE INTELIGENCIA ---
 import { diagnosticarProblema } from "../ai/iaMecanica.js";
