@@ -213,27 +213,83 @@ export default async function ordenes(container) {
     };
 
     const vincularAccionesTerminal = () => {
-        // --- ACTUALIZACIÓN WHATSAPP LIMPIO ---
-document.getElementById("btnWppDirect").onclick = () => {
-    const placa = document.getElementById("f-placa").value;
-    // Limpiamos el texto de la IA antes de enviar
-    const bitacoraLimpia = ordenActiva.bitacora_ia.replace(/el sistema nexo se está escuchando/gi, "").trim();
-    
-    const linkPago = `https://bold.co/pay/tallerpro360-${placa.replace(/\s+/g, '')}`;
-    
-    let msg = `*🛰️ REPORTE TÉCNICO NEXUS-X*\n`;
-    msg += `Vehículo: *${placa.toUpperCase()}*\n`;
-    msg += `Estado: *${document.getElementById("f-estado").value}*\n\n`;
-    msg += `*DETALLE DE MISIÓN:*\n`;
-    ordenActiva.items.forEach(i => msg += `• ${i.desc.toUpperCase()} ($${Number(i.venta).toLocaleString()})\n`);
-    msg += `\n*TOTAL:* $${ordenActiva.costos_totales.total.toLocaleString()}\n`;
-    msg += `*SALDO:* $${ordenActiva.costos_totales.saldo_pendiente.toLocaleString()}\n\n`;
-    msg += `*DIAGNÓSTICO:* _${bitacoraLimpia}_\n\n`;
-    msg += `🔗 *PAGO BOLD:* ${linkPago}`;
+          // --- BOTÓN WHATSAPP CON LÓGICA DE ANTICIPOS ---
+    document.getElementById("btnWppDirect").onclick = async () => {
+        const placa = document.getElementById("f-placa").value.trim().toUpperCase();
+        const cliente = document.getElementById("f-cliente").value;
+        const estado = document.getElementById("f-estado").value;
+        const totalMision = ordenActiva.costos_totales.total;
+        
+        // 1. Limpieza de ruidos de IA
+        const bitacoraLimpia = ordenActiva.bitacora_ia.replace(/el sistema nexo se está escuchando/gi, "").trim();
+        
+        // 2. Generación de Link Seguro (Sin espacios para evitar error Bold)
+        const linkPago = `https://bold.co/pay/tallerpro360-${placa.replace(/\s+/g, '')}`;
 
-    const phone = document.getElementById("f-telefono").value.replace(/\D/g, '');
-    const finalPhone = phone.startsWith('57') ? phone : `57${phone}`;
-    window.open(`https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+        let cuerpoMensaje = "";
+        
+        // 3. Lógica de Anticipo Personalizado
+        if (estado === 'INGRESO' || estado === 'COTIZACION') {
+            const { value: montoAnticipo } = await window.Swal.fire({
+                title: 'SOLICITAR ANTICIPO',
+                text: `Total Misión: $${totalMision.toLocaleString()}. ¿Cuánto dinero solicitas para iniciar?`,
+                input: 'number',
+                inputPlaceholder: 'Ej: 200000',
+                showCancelButton: true,
+                confirmButtonText: 'Enviar con Anticipo',
+                cancelButtonText: 'Enviar Reporte Total',
+                background: '#0d1117', color: '#fff', confirmButtonColor: '#00f2ff'
+            });
+
+            if (montoAnticipo) {
+                cuerpoMensaje = `*🛰️ REPORTE TÉCNICO NEXUS-X*\n`;
+                cuerpoMensaje += `Vehículo: *${placa}*\n`;
+                cuerpoMensaje += `Estado: *INICIO DE MISIÓN*\n\n`;
+                cuerpoMensaje += `Hola *${cliente}*, para proceder con la compra de repuestos e iniciar el trabajo, requerimos un anticipo de: *$${Number(montoAnticipo).toLocaleString()}*.\n\n`;
+                cuerpoMensaje += `Puedes realizar el pago aquí:\n🔗 ${linkPago}\n\n`;
+                cuerpoMensaje += `*Presupuesto Total:* $${totalMision.toLocaleString()}`;
+            }
+        }
+
+        // 4. Si no hay anticipo o es otra fase, enviar reporte estándar
+        if (!cuerpoMensaje) {
+            cuerpoMensaje = `*🛰️ REPORTE TÉCNICO NEXUS-X*\n`;
+            cuerpoMensaje += `Vehículo: *${placa}*\n`;
+            cuerpoMensaje += `Estado: *${estado}*\n\n`;
+            cuerpoMensaje += `*DETALLE DE MISIÓN:*\n`;
+            ordenActiva.items.forEach(i => cuerpoMensaje += `• ${i.desc.toUpperCase()} ($${Number(i.venta).toLocaleString()})\n`);
+            cuerpoMensaje += `\n*TOTAL:* $${totalMision.toLocaleString()}\n`;
+            cuerpoMensaje += `*SALDO:* $${ordenActiva.costos_totales.saldo_pendiente.toLocaleString()}\n\n`;
+            cuerpoMensaje += `*DIAGNÓSTICO:* _${bitacoraLimpia || 'Verificación de sistemas.'}_\n\n`;
+            cuerpoMensaje += `🔗 *PAGO BOLD:* ${linkPago}`;
+        }
+
+        const phone = document.getElementById("f-telefono").value.replace(/\D/g, '');
+        const finalPhone = phone.startsWith('57') ? phone : `57${phone}`;
+        window.open(`https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodeURIComponent(cuerpoMensaje)}`, '_blank');
+    };
+
+    // --- BOTÓN BOLD (SDK PARA CIERRE FINAL) ---
+    document.getElementById("btnPagarBold").onclick = async () => {
+        hablar("William, abriendo terminal de pago para liquidación final.");
+        
+        const empSnap = await getDoc(doc(db, "empresas", empresaId));
+        const boldKey = empSnap.data()?.bold_api_key;
+
+        if (!boldKey) return window.Swal.fire('ERROR', 'Configura tu API KEY en Ajustes.', 'error');
+
+        const bold = new window.BoldCheckout({
+            orderId: `NXS-${ordenActiva.placa}-${Date.now().toString().slice(-4)}`,
+            amount: ordenActiva.costos_totales.saldo_pendiente,
+            currency: 'COP',
+            description: `Liquidación Final TallerPRO360 - ${ordenActiva.placa}`,
+            apiKey: boldKey,
+            redirectionUrl: 'https://tallerpro360.vercel.app/success'
+        });
+        bold.open();
+    };
+
+    // ... (Resto de botones: Sincronizar, PDF, etc.)
 };
 
         // --- VEHICLE SCANNER MULTIMEDIA (Sugerencia 3) ---
