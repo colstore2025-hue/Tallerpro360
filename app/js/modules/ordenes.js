@@ -213,26 +213,28 @@ export default async function ordenes(container) {
     };
 
     const vincularAccionesTerminal = () => {
-        // --- BOTÓN WHATSAPP CRM (Mejorado - Sugerencia 2 y 3) ---
-        document.getElementById("btnWppDirect").onclick = () => {
-            const placa = document.getElementById("f-placa").value;
-            const cliente = document.getElementById("f-cliente").value;
-            const linkPago = `https://bold.co/pay/tallerpro360-${placa}`;
-            
-            let msg = `*🛰️ REPORTE TÉCNICO NEXUS-X*\n`;
-            msg += `Vehículo: *${placa.toUpperCase()}*\n`;
-            msg += `Estado: *${document.getElementById("f-estado").value}*\n\n`;
-            msg += `*DETALLE DE MISIÓN:*\n`;
-            ordenActiva.items.forEach(i => msg += `• ${i.desc.toUpperCase()} ($${Number(i.venta).toLocaleString()})\n`);
-            msg += `\n*TOTAL:* $${ordenActiva.costos_totales.total.toLocaleString()}\n`;
-            msg += `*SALDO:* $${ordenActiva.costos_totales.saldo_pendiente.toLocaleString()}\n\n`;
-            msg += `*DIAGNÓSTICO:* _${ordenActiva.bitacora_ia}_\n\n`;
-            msg += `🔗 *PAGO BOLD:* ${linkPago}`;
+        // --- ACTUALIZACIÓN WHATSAPP LIMPIO ---
+document.getElementById("btnWppDirect").onclick = () => {
+    const placa = document.getElementById("f-placa").value;
+    // Limpiamos el texto de la IA antes de enviar
+    const bitacoraLimpia = ordenActiva.bitacora_ia.replace(/el sistema nexo se está escuchando/gi, "").trim();
+    
+    const linkPago = `https://bold.co/pay/tallerpro360-${placa.replace(/\s+/g, '')}`;
+    
+    let msg = `*🛰️ REPORTE TÉCNICO NEXUS-X*\n`;
+    msg += `Vehículo: *${placa.toUpperCase()}*\n`;
+    msg += `Estado: *${document.getElementById("f-estado").value}*\n\n`;
+    msg += `*DETALLE DE MISIÓN:*\n`;
+    ordenActiva.items.forEach(i => msg += `• ${i.desc.toUpperCase()} ($${Number(i.venta).toLocaleString()})\n`);
+    msg += `\n*TOTAL:* $${ordenActiva.costos_totales.total.toLocaleString()}\n`;
+    msg += `*SALDO:* $${ordenActiva.costos_totales.saldo_pendiente.toLocaleString()}\n\n`;
+    msg += `*DIAGNÓSTICO:* _${bitacoraLimpia}_\n\n`;
+    msg += `🔗 *PAGO BOLD:* ${linkPago}`;
 
-            const phone = document.getElementById("f-telefono").value.replace(/\D/g, '');
-            const finalPhone = phone.startsWith('57') ? phone : `57${phone}`;
-            window.open(`https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodeURIComponent(msg)}`, '_blank');
-        };
+    const phone = document.getElementById("f-telefono").value.replace(/\D/g, '');
+    const finalPhone = phone.startsWith('57') ? phone : `57${phone}`;
+    window.open(`https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+};
 
         // --- VEHICLE SCANNER MULTIMEDIA (Sugerencia 3) ---
         document.getElementById("btnCapturaFalla").onclick = () => {
