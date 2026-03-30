@@ -1,7 +1,7 @@
 /**
  * ordenes.js - TallerPRO360 NEXUS-X V30.1 🛰️
  * REPARACIÓN DE PERMISOS Y MOTOR DE IMPRESIÓN EXTERNO
-
+* @author William Jeffry Urquijo Cubillos
 */
 import { 
     collection, query, where, onSnapshot, doc, updateDoc, getDoc, 
