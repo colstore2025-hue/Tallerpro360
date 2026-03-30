@@ -1,7 +1,6 @@
 /**
  * ordenes.js - NEXUS-X COMMAND CENTER V31.2 🛰️
  * Nivel: Aeroespacial / Automatización Total
- * @author William Jeffry Urquijo Cubillos & Gemini AI
  */
 import { 
     collection, query, where, onSnapshot, doc, getDoc, 
@@ -21,7 +20,6 @@ export default async function ordenes(container) {
     const voiceAI = new VoiceMechanicAI();
     let ordenActiva = null;
 
-    // --- RENDERIZADO DE INTERFAZ DE COMANDO ---
     const renderBase = () => {
         container.innerHTML = `
         <div class="p-4 lg:p-10 bg-[#010409] min-h-screen text-slate-100 font-sans animate-in fade-in duration-1000">
@@ -91,6 +89,7 @@ export default async function ordenes(container) {
                     </select>
                 </div>
                 <div class="flex gap-4">
+                    <button id="btnWhatsApp" class="w-16 h-16 rounded-3xl bg-emerald-600/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-600 hover:text-black transition-all shadow-lg"><i class="fab fa-whatsapp"></i></button>
                     <button id="btnImprimir" class="w-16 h-16 rounded-3xl bg-cyan-600/10 text-cyan-500 border border-cyan-500/20 hover:bg-cyan-600 hover:text-black transition-all shadow-lg"><i class="fas fa-print"></i></button>
                     <button onclick="document.getElementById('nexus-terminal').classList.add('hidden')" class="w-16 h-16 rounded-3xl bg-red-600/10 text-red-500 border border-red-500/20 hover:bg-red-600 hover:text-white transition-all">✕</button>
                 </div>
@@ -139,8 +138,7 @@ export default async function ordenes(container) {
                 <div class="lg:col-span-3 space-y-8">
                     <div class="bg-[#0d1117] p-10 rounded-[3.5rem] border border-white/5 space-y-8 shadow-2xl">
                         <p class="orbitron text-[10px] text-slate-500 uppercase tracking-widest italic">Análisis de Rentabilidad</p>
-                        <div id="balance-results" class="space-y-6">
-                            </div>
+                        <div id="balance-results" class="space-y-6"></div>
                     </div>
                     <button id="btnSaveMission" class="group w-full py-12 bg-orange-600 rounded-[3.5rem] text-black orbitron font-black text-sm hover:scale-[1.02] transition-all shadow-[0_25px_60px_rgba(234,88,12,0.4)] relative overflow-hidden">
                         <span class="relative z-10">SINCRONIZAR MISIÓN <br><span class="text-[10px] opacity-70 italic tracking-widest">ECOSISTEMA GLOBAL NEXUS-X</span></span>
@@ -149,44 +147,6 @@ export default async function ordenes(container) {
                 </div>
             </div>
         </div>`;
-
-// ... dentro de vincularAccionesTerminal en ordenes.js ...
-
-document.getElementById("btnWhatsApp").onclick = () => {
-    const placa = document.getElementById("f-placa").value;
-    const cliente = document.getElementById("f-cliente").value;
-    const tel = document.getElementById("f-telefono").value;
-    const total = document.getElementById("total-final").innerText;
-
-    if (!tel || tel.length < 7) {
-        hablar("William, necesito un número de contacto válido para el despliegue.");
-        return;
-    }
-
-    // --- CONSTRUCCIÓN DEL MENSAJE ESTILO "TECH-REPORT" ---
-    let mensaje = `*🛰️ TallerPRO360 NEXUS-X: REPORTE DE MISIÓN* \n\n`;
-    mensaje += `*Hola, ${cliente.split(' ')[0]}!* 👋\n`;
-    mensaje += `Tu vehículo con placa *${placa.toUpperCase()}* ha sido procesado en nuestra terminal de diagnóstico inteligente.\n\n`;
-    
-    mensaje += `*📋 DETALLE DEL SERVICIO:*\n`;
-    ordenActiva.items.forEach(item => {
-        mensaje += `• ${item.descripcion.toUpperCase()} - _$${Number(item.precio_venta).toLocaleString()}_\n`;
-    });
-
-    mensaje += `\n*💰 INVERSIÓN TOTAL: ${total}*\n\n`;
-    mensaje += `*Estado:* 🛠️ ${ordenActiva.estado}\n`;
-    mensaje += `_Diagnóstico asistido por Inteligencia Artificial Nexus-X._\n\n`;
-    mensaje += `¿Procedemos con la misión? Quedo atento a tus órdenes. 🚀`;
-
-    // Formatear número (Colombia por defecto)
-    const telLimpio = tel.replace(/\D/g, '');
-    const finalTel = telLimpio.startsWith('57') ? telLimpio : `57${telLimpio}`;
-
-    const url = `https://api.whatsapp.com/send?phone=${finalTel}&text=${encodeURIComponent(mensaje)}`;
-    window.open(url, '_blank');
-    
-    hablar("Reporte enviado al cliente vía WhatsApp.");
-};
 
         vincularAccionesTerminal();
         recalcularTotales();
@@ -201,10 +161,7 @@ document.getElementById("btnWhatsApp").onclick = () => {
         });
 
         ordenActiva.costos_totales = {
-            venta: tVenta,
-            costo_taller: tCosto,
-            comision_staff: tStaff,
-            utilidad: tVenta - tCosto - tStaff
+            venta: tVenta, costo_taller: tCosto, comision_staff: tStaff, utilidad: tVenta - tCosto - tStaff
         };
 
         document.getElementById("total-final").innerText = `$ ${tVenta.toLocaleString()}`;
@@ -221,9 +178,6 @@ document.getElementById("btnWhatsApp").onclick = () => {
                 <div class="flex justify-between items-center">
                     <span class="orbitron text-[10px] font-black text-emerald-500">UTILIDAD NETA:</span>
                     <span class="orbitron text-2xl font-black text-emerald-500">$ ${ordenActiva.costos_totales.utilidad.toLocaleString()}</span>
-                </div>
-                <div class="h-1 bg-white/5 rounded-full mt-4 overflow-hidden">
-                    <div class="h-full bg-emerald-500" style="width: ${tVenta > 0 ? (ordenActiva.costos_totales.utilidad/tVenta)*100 : 0}%"></div>
                 </div>
             </div>
         `;
@@ -244,70 +198,61 @@ document.getElementById("btnWhatsApp").onclick = () => {
                         <span class="text-[8px] text-slate-500 orbitron block mb-1">COSTO/COM</span>
                         <input type="number" onchange="editItemNexus(${idx}, '${item.tipo === 'ORO' ? 'comision_staff' : 'costo_taller'}', this.value)" 
                                value="${item.tipo === 'ORO' ? item.comision_staff : item.costo_taller}" 
-                               class="w-24 bg-black/40 p-3 rounded-xl text-[11px] text-red-400 text-center border border-white/5 outline-none focus:border-red-500/50 font-bold">
+                               class="w-24 bg-black/40 p-3 rounded-xl text-[11px] text-red-400 text-center border border-white/5 outline-none font-bold">
                     </div>
                     <div class="text-center">
                         <span class="text-[8px] text-slate-500 orbitron block mb-1">PRECIO VENTA</span>
                         <input type="number" onchange="editItemNexus(${idx}, 'precio_venta', this.value)" 
                                value="${item.precio_venta}" 
-                               class="w-32 bg-black/40 p-3 rounded-xl text-sm text-emerald-500 text-center border border-emerald-500/20 outline-none focus:border-emerald-500 font-black">
+                               class="w-32 bg-black/40 p-3 rounded-xl text-sm text-emerald-500 text-center border border-emerald-500/20 outline-none font-black">
                     </div>
                 </div>
-                <button onclick="delItemNexus(${idx})" class="w-12 h-12 rounded-2xl bg-red-600/5 text-red-500 hover:bg-red-600 hover:text-white transition-all shadow-lg">✕</button>
+                <button onclick="delItemNexus(${idx})" class="w-12 h-12 rounded-2xl bg-red-600/5 text-red-500 hover:bg-red-600 transition-all">✕</button>
             </div>
         `).join('');
     };
 
     const vincularAccionesTerminal = () => {
-        // --- MOTOR IA: DIAGNÓSTICO POR VOZ (BRAIN INTEGRATION) ---
-        // ... dentro de vincularAccionesTerminal en ordenes.js ...
+        // --- 1. WHATSAPP CRM ---
+        document.getElementById("btnWhatsApp").onclick = () => {
+            const placa = document.getElementById("f-placa").value;
+            const cliente = document.getElementById("f-cliente").value;
+            const tel = document.getElementById("f-telefono").value;
+            const total = document.getElementById("total-final").innerText;
 
-document.getElementById("btnScanVoz").onclick = async () => {
-    const display = document.getElementById("preview-scanner");
-    display.innerText = "🛰️ ESCUCHANDO NÚCLEO...";
-    hablar("William, describe el síntoma.");
+            if (!tel) { hablar("William, falta el contacto."); return; }
 
-    try {
-        const sintoma = await voiceAI.listen();
-        
-        // 1. Ejecutar el Escáner Técnico primero (Detección de patrones)
-        const scanner = new VehicleScanner();
-        const hallazgosTecnicos = scanner.scanVehicle({}, [sintoma]); 
+            let mensaje = `*🛰️ TallerPRO360 NEXUS-X: REPORTE DE MISIÓN* \n\n`;
+            mensaje += `*Hola, ${cliente.split(' ')[0]}!* 👋\n`;
+            mensaje += `Vehículo: *${placa.toUpperCase()}*\n\n`;
+            mensaje += `*📋 SERVICIOS:*\n`;
+            ordenActiva.items.forEach(item => {
+                mensaje += `• ${item.descripcion.toUpperCase()} - _$${Number(item.precio_venta).toLocaleString()}_\n`;
+            });
+            mensaje += `\n*💰 TOTAL: ${total}*\n`;
+            mensaje += `_Diagnóstico IA Nexus-X._`;
 
-        // 2. Ejecutar el WorkshopBrain para repuestos
-        const diagnosticoIA = await brain.runDiagnosis({
-            problem: sintoma,
-            placa: document.getElementById("f-placa").value
-        });
+            const finalTel = tel.replace(/\D/g, '').startsWith('57') ? tel.replace(/\D/g, '') : `57${tel.replace(/\D/g, '')}`;
+            window.open(`https://api.whatsapp.com/send?phone=${finalTel}&text=${encodeURIComponent(mensaje)}`, '_blank');
+            hablar("Reporte enviado.");
+        };
 
-        // 3. Renderizar Hallazgos en la Terminal
-        let htmlHallazgos = hallazgosTecnicos.map(h => 
-            `<div class="flex items-center gap-2 ${h.gravedad === 'alta' ? 'text-red-500' : 'text-orange-400'} font-bold">
-                ${h.icon} <span>${h.problema}</span>
-            </div>`
-        ).join('');
+        // --- 2. IA MECÁNICA ---
+        document.getElementById("btnScanVoz").onclick = async () => {
+            const display = document.getElementById("preview-scanner");
+            display.innerText = "🛰️ ESCUCHANDO...";
+            hablar("William, describe el síntoma.");
+            try {
+                const sintoma = await voiceAI.listen();
+                const scanner = new VehicleScanner();
+                const hallazgos = scanner.scanVehicle({}, [sintoma]);
+                const diagIA = await brain.runDiagnosis({ problem: sintoma, placa: document.getElementById("f-placa").value });
 
-        display.innerHTML = `
-            <div class="text-left space-y-2">
-                <div class="text-white border-b border-white/10 pb-2 mb-2 font-black">HALLAZGOS TÉCNICOS:</div>
-                ${htmlHallazgos || '<p class="text-slate-500">Sin fallos críticos detectados</p>'}
-                <div class="text-orange-500 text-[10px] mt-4 uppercase font-black">Resumen IA:</div>
-                <p class="text-[11px] text-slate-300">${diagnosticoIA.diagnosis}</p>
-            </div>
-        `;
-
-        hablar(`Escaneo finalizado. Detecté ${hallazgosTecnicos.length} posibles fallas.`);
-        
-        // Auto-llenado de repuestos (opcional)
-        diagnosticoIA.partsNeeded.forEach(part => {
-            ordenActiva.items.push({ tipo: 'REPUESTO', descripcion: part.toUpperCase(), costo_taller: 0, precio_venta: 0 });
-        });
-        recalcularTotales();
-
-    } catch (e) {
-        display.innerText = "ERROR EN VÍNCULO NEURAL";
-    }
-};
+                display.innerHTML = `<div class="text-left text-[11px]">${hallazgos.map(h=>h.icon+' '+h.problema).join('<br>')}<br>IA: ${diagIA.diagnosis}</div>`;
+                diagIA.partsNeeded.forEach(p => ordenActiva.items.push({ tipo:'REPUESTO', descripcion: p.toUpperCase(), costo_taller:0, precio_venta:0 }));
+                recalcularTotales();
+            } catch (e) { display.innerText = "ERROR NEURAL"; }
+        };
 
         document.getElementById("btnAddRepuesto").onclick = () => {
             ordenActiva.items.push({ tipo: 'REPUESTO', descripcion: 'NUEVO REPUESTO', costo_taller: 0, precio_venta: 0 });
@@ -315,67 +260,35 @@ document.getElementById("btnScanVoz").onclick = async () => {
         };
 
         document.getElementById("btnAddOro").onclick = () => {
-            ordenActiva.items.push({ tipo: 'ORO', descripcion: 'MANO DE OBRA ESPECIALIZADA', comision_staff: 0, precio_venta: 0 });
+            ordenActiva.items.push({ tipo: 'ORO', descripcion: 'MANO DE OBRA', comision_staff: 0, precio_venta: 0 });
             recalcularTotales();
         };
 
-        // --- SINCRONIZACIÓN ATÓMICA GLOBAL (TRIGGER SYSTEM) ---
         document.getElementById("btnSaveMission").onclick = async () => {
             const btn = document.getElementById("btnSaveMission");
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = `<i class="fas fa-sync fa-spin"></i> DESPLEGANDO TRANSACCIÓN...`;
-            
+            btn.innerHTML = `<i class="fas fa-sync fa-spin"></i> SINCRONIZANDO...`;
             const placa = document.getElementById("f-placa").value.toUpperCase();
-            if(!placa) { hablar("William, la placa es el identificador de misión obligatorio."); btn.innerHTML = originalHTML; return; }
+            if(!placa) { hablar("Placa requerida."); btn.innerHTML = "ERROR"; return; }
 
             const missionData = {
-                placa,
-                cliente: document.getElementById("f-cliente").value || "CLIENTE GENERAL",
-                telefono: document.getElementById("f-telefono").value || "",
+                placa, cliente: document.getElementById("f-cliente").value,
+                telefono: document.getElementById("f-telefono").value,
                 estado: document.getElementById("f-estado").value,
-                empresaId,
-                items: ordenActiva.items,
-                costos_totales: ordenActiva.costos_totales,
-                updatedAt: serverTimestamp()
+                empresaId, items: ordenActiva.items,
+                costos_totales: ordenActiva.costos_totales, updatedAt: serverTimestamp()
             };
 
             try {
-                // TRANSACCIÓN GLOBAL: OT + CONTABILIDAD + NÓMINA
-                await runTransaction(db, async (transaction) => {
+                await runTransaction(db, async (t) => {
                     const otRef = ordenActiva.id ? doc(db, "ordenes", ordenActiva.id) : doc(collection(db, "ordenes"));
-                    transaction.set(otRef, missionData);
-
-                    // 1. Trigger Contabilidad (Finanzas.js)
-                    const contRef = doc(db, "contabilidad", `MOV_${Date.now()}_${placa}`);
-                    transaction.set(contRef, {
-                        tipo: 'ORDEN_TRABAJO',
-                        monto: missionData.costos_totales.venta,
-                        utilidad: missionData.costos_totales.utilidad,
-                        referencia: placa,
-                        empresaId,
-                        timestamp: serverTimestamp()
-                    });
-
-                    // 2. Trigger Nómina (Staff.js)
-                    missionData.items.filter(i => i.tipo === 'ORO').forEach((item, idx) => {
-                        const staffRef = doc(db, "nominas", `COM_${placa}_${idx}`);
-                        transaction.set(staffRef, {
-                            mecanico: "TECNICO_LIDER", // Enlazable a staffId
-                            monto: item.comision_staff,
-                            ot: placa,
-                            empresaId,
-                            status: 'PROCESADO'
-                        });
-                    });
+                    t.set(otRef, missionData);
+                    // Disparadores para Finanzas y Staff
+                    const finRef = doc(db, "contabilidad", `MOV_${Date.now()}`);
+                    t.set(finRef, { monto: missionData.costos_totales.venta, ref: placa, empresaId, tipo: 'OT' });
                 });
-
-                hablar("Misión sincronizada. Ecosistema Nexus X actualizado.");
+                hablar("Misión sincronizada.");
                 document.getElementById("nexus-terminal").classList.add("hidden");
-            } catch (e) {
-                console.error(e);
-                btn.innerHTML = "FALLO DE DESPLIEGUE";
-                hablar("Error de persistencia en el núcleo de datos.");
-            }
+            } catch (e) { btn.innerHTML = "FALLO"; }
         };
 
         window.editItemNexus = (idx, campo, valor) => { ordenActiva.items[idx][campo] = valor; recalcularTotales(); };
@@ -384,33 +297,20 @@ document.getElementById("btnScanVoz").onclick = async () => {
 
     const vincularNavegacion = () => {
         document.getElementById("btnNewMission").onclick = () => abrirTerminal();
-        document.querySelectorAll(".fase-tab").forEach(tab => {
-            tab.onclick = () => cargarGrid(tab.dataset.fase);
-        });
+        document.querySelectorAll(".fase-tab").forEach(tab => tab.onclick = () => cargarGrid(tab.dataset.fase));
     };
 
     const cargarGrid = (fase = 'INGRESO') => {
         const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId), where("estado", "==", fase));
         onSnapshot(q, (snap) => {
-            const grid = document.getElementById("grid-ordenes");
-            grid.innerHTML = snap.docs.map(d => {
-                const data = d.data();
-                return `
-                <div onclick="abrirTerminalNexus('${d.id}')" class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 hover:border-orange-500/50 hover:bg-white/5 transition-all cursor-pointer group relative overflow-hidden">
-                    <div class="absolute -right-4 -top-4 text-orange-500/5 text-8xl group-hover:text-orange-500/10 transition-all"><i class="fas fa-car"></i></div>
-                    <div class="relative z-10">
-                        <div class="flex justify-between mb-6">
-                            <span class="orbitron text-3xl font-black text-white group-hover:text-orange-500 transition-all">${data.placa}</span>
-                            <span class="bg-orange-500/10 text-orange-500 text-[8px] orbitron px-3 py-1 rounded-full border border-orange-500/20">${data.estado}</span>
-                        </div>
-                        <p class="text-xs text-slate-400 mb-6 font-bold uppercase tracking-widest">${data.cliente}</p>
-                        <div class="flex justify-between items-end">
-                            <span class="text-[9px] orbitron text-slate-600">PRESUPUESTO</span>
-                            <span class="text-2xl font-black text-emerald-500">$ ${data.costos_totales?.venta.toLocaleString() || 0}</span>
-                        </div>
+            document.getElementById("grid-ordenes").innerHTML = snap.docs.map(d => `
+                <div onclick="abrirTerminalNexus('${d.id}')" class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 hover:border-orange-500/50 transition-all cursor-pointer group">
+                    <div class="flex justify-between mb-4">
+                        <span class="orbitron text-2xl font-black text-white">${d.data().placa}</span>
                     </div>
-                </div>`;
-            }).join('');
+                    <p class="text-[10px] text-slate-400 uppercase">${d.data().cliente}</p>
+                    <div class="mt-4 text-emerald-500 font-bold">$ ${d.data().costos_totales?.venta.toLocaleString() || 0}</div>
+                </div>`).join('');
             document.getElementById(`count-${fase}`).innerText = snap.size;
         });
     };
