@@ -290,15 +290,71 @@ export default async function ordenes(container) {
             recalcularFinanzas();
         };
 
-        document.getElementById("btnDescargarOT").onclick = () => {
-            const data = JSON.stringify(ordenActiva, null, 2);
-            const blob = new Blob([data], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `OT_${ordenActiva.placa}_${Date.now()}.json`;
-            a.click();
-        };
+        // --- MOTOR DE GENERACIÓN PDF NEXUS-X (Sustituir dentro de vincularAccionesTerminal) ---
+document.getElementById("btnDescargarOT").onclick = async () => {
+    const { jsPDF } = window.jspdf;
+    const docPdf = new jsPDF();
+    const empresaNombre = localStorage.getItem("nexus_empresaNombre") || "TALLER PRO 360";
+    const empresaNit = localStorage.getItem("nexus_empresaNit") || "NIT: 900.000.000-1";
+
+    hablar("Generando reporte empresarial en PDF.");
+
+    // 1. ENCABEZADO ESTILO NEXUS
+    docPdf.setFillColor(1, 4, 9); // Color oscuro Nexus
+    docPdf.rect(0, 0, 210, 40, 'F');
+    docPdf.setTextColor(0, 242, 255); // Cian Nexus
+    docPdf.setFont("helvetica", "bold");
+    docPdf.setFontSize(22);
+    docPdf.text("NEXUS_OT", 15, 20);
+    
+    docPdf.setTextColor(255, 255, 255);
+    docPdf.setFontSize(10);
+    docPdf.text(empresaNombre.toUpperCase(), 15, 28);
+    docPdf.setFontSize(8);
+    docPdf.text(empresaNit, 15, 33);
+
+    // 2. DATOS DE LA MISIÓN
+    docPdf.setTextColor(40, 40, 40);
+    docPdf.setFontSize(12);
+    docPdf.text(`ORDEN DE SERVICIO: ${ordenActiva.placa.toUpperCase()}`, 15, 55);
+    docPdf.setFontSize(10);
+    docPdf.text(`CLIENTE: ${ordenActiva.cliente.toUpperCase()}`, 15, 62);
+    docPdf.text(`FECHA: ${new Date().toLocaleDateString()}`, 150, 55);
+
+    // 3. TABLA DE ÍTEMS
+    const tablaData = ordenActiva.items.map(i => [
+        i.tipo, 
+        i.desc.toUpperCase(), 
+        `$ ${Number(i.venta).toLocaleString()}`
+    ]);
+
+    docPdf.autoTable({
+        startY: 70,
+        head: [['TIPO', 'DESCRIPCIÓN', 'VALOR']],
+        body: tablaData,
+        headStyles: { fillColor: [1, 4, 9], textColor: [0, 242, 255] },
+        alternateRowStyles: { fillColor: [245, 245, 245] }
+    });
+
+    // 4. DIAGNÓSTICO (Limpiando rastro de IA)
+    const diagnosticoLimpio = ordenActiva.bitacora_ia.replace(/el sistema nexo se está escuchando/gi, "").trim();
+    let finalY = docPdf.lastAutoTable.finalY + 15;
+    docPdf.setFont("helvetica", "bold");
+    docPdf.text("DIAGNÓSTICO TÉCNICO:", 15, finalY);
+    docPdf.setFont("helvetica", "italic");
+    docPdf.setFontSize(9);
+    docPdf.text(diagnosticoLimpio || "Sin diagnóstico registrado.", 15, finalY + 7, { maxWidth: 180 });
+
+    // 5. TOTALES
+    finalY += 30;
+    docPdf.setFontSize(14);
+    docPdf.setFont("helvetica", "bold");
+    docPdf.text(`TOTAL A PAGAR: $ ${ordenActiva.costos_totales.total.toLocaleString()}`, 130, finalY);
+    docPdf.setFontSize(10);
+    docPdf.text(`SALDO PENDIENTE: $ ${ordenActiva.costos_totales.saldo_pendiente.toLocaleString()}`, 130, finalY + 8);
+
+    docPdf.save(`OT_${ordenActiva.placa}_${Date.now()}.pdf`);
+};
 
         document.getElementById("btnEliminarOT").onclick = async () => {
             if(!confirm("¿Borrar misión de la nube?")) return;
