@@ -167,6 +167,39 @@ export default async function ordenes(container) {
             </div>
         </div>`;
 
+// --- LÓGICA DE CÁMARA REAL (PUNTO 2.2 - FOTOS) ---
+document.getElementById("btnScanFoto").onclick = () => {
+    // Creamos un input oculto para disparar la cámara del dispositivo
+    const scannerInput = document.createElement('input');
+    scannerInput.type = 'file';
+    scannerInput.accept = 'image/*';
+    scannerInput.capture = 'environment'; // Fuerza el uso de la cámara trasera en móviles
+
+    scannerInput.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            document.getElementById("preview-scanner").innerText = "🔄 PROCESANDO IMAGEN...";
+            
+            reader.onload = (event) => {
+                const imgData = event.target.result;
+                
+                // 1. Guardamos en el estado local de la orden
+                if (!ordenActiva.evidencia.fotos) ordenActiva.evidencia.fotos = [];
+                ordenActiva.evidencia.fotos.push(imgData);
+                
+                // 2. Actualizamos la vista previa con la foto capturada
+                const preview = document.getElementById("preview-scanner");
+                preview.innerHTML = `<img src="${imgData}" class="h-full w-full object-cover rounded-2xl animate-in zoom-in">`;
+                
+                hablar("Evidencia visual capturada y vinculada a la placa " + ordenActiva.placa);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    scannerInput.click();
+};
+
         vincularAccionesTerminal();
         recalcularTotales();
     };
