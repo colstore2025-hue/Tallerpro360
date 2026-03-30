@@ -200,6 +200,71 @@ document.getElementById("btnScanFoto").onclick = () => {
     scannerInput.click();
 };
 
+// --- GENERADOR DE PDF PROFESIONAL (PUNTO 3.1) ---
+document.getElementById("btnImprimir").onclick = async () => {
+    const { jsPDF } = window.jspdf ? window.jspdf : { jsPDF: null };
+    if (!jsPDF) {
+        hablar("Instalando motor de impresión, intenta de nuevo en un segundo.");
+        const script = document.createElement('script');
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+        document.head.appendChild(script);
+        return;
+    }
+
+    const doc = new jsPDF();
+    const logoTaller = localStorage.getItem("nexus_logo") || ""; // Trae el logo de config.js
+    const nombreTaller = localStorage.getItem("nexus_nombreTaller") || "TALLER NEXUS-X";
+
+    // Diseño de Cabezote
+    doc.setFillColor(1, 4, 9); // Color oscuro Nexus
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.text(nombreTaller, 20, 25);
+    doc.setFontSize(10);
+    doc.text("ORDEN DE SERVICIO: " + ordenActiva.placa, 150, 25);
+
+    // Datos del Cliente
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(12);
+    doc.text("CLIENTE: " + ordenActiva.cliente, 20, 55);
+    doc.text("TELÉFONO: " + ordenActiva.telefono, 20, 62);
+    doc.text("FECHA: " + new Date().toLocaleDateString(), 150, 55);
+
+    // Tabla de Ítems
+    let y = 80;
+    doc.setFont("helvetica", "bold");
+    doc.text("DESCRIPCIÓN", 20, y);
+    doc.text("TIPO", 120, y);
+    doc.text("VALOR", 170, y);
+    doc.line(20, y + 2, 190, y + 2);
+
+    doc.setFont("helvetica", "normal");
+    ordenActiva.items.forEach(it => {
+        y += 10;
+        doc.text(it.descripcion.substring(0, 40), 20, y);
+        doc.text(it.tipo, 120, y);
+        doc.text("$" + Number(it.precio_venta).toLocaleString(), 170, y);
+    });
+
+    // Totales
+    y += 20;
+    doc.setFillColor(249, 115, 22); // Naranja Nexus
+    doc.rect(140, y, 50, 15, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.text("TOTAL: $" + ordenActiva.costos_totales.venta.toLocaleString(), 145, y + 10);
+
+    // Cláusulas Legales (Punto 3.2)
+    y += 30;
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(8);
+    const clausula = "Garantía de servicio: 30 días en mano de obra. No nos hacemos responsables por objetos de valor no reportados. Este documento es una cotización técnica generada por TallerPRO360 Nexus-X.";
+    doc.text(doc.splitTextToSize(clausula, 170), 20, y);
+
+    doc.save(`OT_${ordenActiva.placa}.pdf`);
+    hablar("Documento PDF generado con éxito.");
+};
+
         vincularAccionesTerminal();
         recalcularTotales();
     };
