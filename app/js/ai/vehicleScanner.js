@@ -1,126 +1,65 @@
 /**
- * vehicleScanner.js
- * Escáner inteligente PRO360
+ * vehicleScanner.js - NEXUS-X V31.2 🛰️
+ * Escáner inteligente PRO360 - "The Digital Stethoscope"
  */
 
 class VehicleScanner {
-
-  constructor(){
-
+  constructor() {
     this.vehicleData = {};
+    console.log("🔎 VehicleScanner: Sensores térmicos y acústicos calibrados.");
+  }
 
-    console.log("🔎 VehicleScanner listo");
+  normalize(text) {
+    if (!text) return "";
+    return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   }
 
   /* ===============================
-  NORMALIZAR TEXTO
+  ESCANEAR VEHICULO (Integración OBD + Voz)
   ============================== */
-  normalize(text){
-    if(!text) return "";
-    return text
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g,"")
-      .trim();
-  }
-
-  /* ===============================
-  ESCANEAR VEHICULO
-  ============================== */
-  scanVehicle(obdData = {}, customerSymptoms = []){
-
-    console.log("🔎 Escaneando vehículo...");
-
+  scanVehicle(obdData = {}, customerSymptoms = []) {
     this.vehicleData.obd = obdData || {};
-    this.vehicleData.symptoms = (customerSymptoms || []).map(s => this.normalize(s));
+    // Si viene un string (desde la voz), lo convertimos en array
+    const symptomsArray = Array.isArray(customerSymptoms) ? customerSymptoms : [customerSymptoms];
+    this.vehicleData.symptoms = symptomsArray.map(s => this.normalize(s));
 
     return this.analyze();
   }
 
-  /* ===============================
-  ANALISIS TECNICO INTELIGENTE
-  ============================== */
-  analyze(){
-
+  analyze() {
     const findings = [];
+    const { engineTemp, batteryVoltage, oilPressure } = this.vehicleData.obd;
+    const symptoms = this.vehicleData.symptoms;
 
-    const obd = this.vehicleData.obd || {};
-    const symptoms = this.vehicleData.symptoms || [];
-
-    /* ===============================
-    TEMPERATURA MOTOR
-    ============================== */
-    if(obd.engineTemp){
-
-      if(obd.engineTemp > 105){
-        findings.push({
-          problema: "Sobrecalentamiento del motor",
-          gravedad: "alta"
-        });
-      }
-
-      if(obd.engineTemp > 95 && obd.engineTemp <= 105){
-        findings.push({
-          problema: "Temperatura elevada del motor",
-          gravedad: "media"
-        });
-      }
+    // --- ANÁLISIS TÉRMICO ---
+    if (engineTemp) {
+      if (engineTemp > 105) findings.push({ id: "HOT_CRITICAL", problema: "Sobrecalentamiento Crítico", gravedad: "alta", icon: "🔥" });
+      else if (engineTemp > 98) findings.push({ id: "HOT_WARN", problema: "Temperatura fuera de rango", gravedad: "media", icon: "🌡️" });
     }
 
-    /* ===============================
-    BATERÍA
-    ============================== */
-    if(obd.batteryVoltage){
-
-      if(obd.batteryVoltage < 12){
-        findings.push({
-          problema: "Batería baja o alternador defectuoso",
-          gravedad: "alta"
-        });
-      }
-
-      if(obd.batteryVoltage >= 12 && obd.batteryVoltage < 12.5){
-        findings.push({
-          problema: "Nivel de batería bajo",
-          gravedad: "media"
-        });
-      }
+    // --- ANÁLISIS ELÉCTRICO ---
+    if (batteryVoltage) {
+      if (batteryVoltage < 11.8) findings.push({ id: "BAT_DEAD", problema: "Batería/Alternador en fallo", gravedad: "alta", icon: "🪫" });
+      else if (batteryVoltage < 12.4) findings.push({ id: "BAT_LOW", problema: "Batería con carga baja", gravedad: "media", icon: "⚡" });
     }
 
-    /* ===============================
-    FRENOS
-    ============================== */
-    const tieneRuidoFrenos = symptoms.some(s =>
-      s.includes("freno") && s.includes("ruido")
-    );
+    // --- ANÁLISIS DE SÍNTOMAS ACÚSTICOS Y VIBRACIÓN (NLP Simple) ---
+    const check = (keywords) => symptoms.some(s => keywords.every(k => s.includes(k)));
 
-    if(tieneRuidoFrenos){
-      findings.push({
-        problema: "Posible desgaste de pastillas de freno",
-        gravedad: "media"
-      });
-    }
+    if (check(["freno", "ruido"]) || check(["freno", "chilla"])) 
+        findings.push({ id: "BRAKE_WEAR", problema: "Desgaste de Pastillas/Discos", gravedad: "media", icon: "🛑" });
 
-    /* ===============================
-    MOTOR (SÍNTOMAS)
-    ============================== */
-    const ruidoMotor = symptoms.some(s =>
-      s.includes("ruido") && s.includes("motor")
-    );
+    if (check(["motor", "ruido"]) || check(["golpe", "motor"])) 
+        findings.push({ id: "ENG_NOISE", problema: "Ruido interno de motor (Posible biela/valvulas)", gravedad: "alta", icon: "⚙️" });
 
-    if(ruidoMotor){
-      findings.push({
-        problema: "Ruido anormal en el motor",
-        gravedad: "alta"
-      });
-    }
+    if (check(["vibracion"]) || check(["tiembla"])) 
+        findings.push({ id: "VIB_ISSUE", problema: "Inestabilidad/Vibración (Soportes o Balanceo)", gravedad: "media", icon: "📳" });
 
-    /* ===============================
-    RESULTADO FINAL
-    ============================== */
+    if (check(["humo", "azul"]) || check(["humo", "negro"])) 
+        findings.push({ id: "EMISSION_FAIL", problema: "Emisiones contaminantes elevadas", gravedad: "alta", icon: "💨" });
+
     return findings;
   }
-
 }
 
 export default VehicleScanner;
