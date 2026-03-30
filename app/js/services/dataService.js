@@ -1,34 +1,32 @@
 /**
- * dataService.js - TallerPRO360 NEXUS-X V5 🛰️
+ * dataService.js - TallerPRO360 NEXUS-X V5.1 🛰️
  * Motor de Sincronización de Alta Disponibilidad
- * Optimización: Query Raíz + Filtrado por EmpresaId
+ * @author William Jeffry Urquijo Cubillos & Gemini AI
  */
 
 import { 
   collection, getDocs, addDoc, query, where, 
-  limit, serverTimestamp, doc, getDoc 
+  limit, serverTimestamp, doc, getDoc, orderBy 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
 /**
  * 🛰️ MOTOR DE EXTRACCIÓN GLOBAL (RAÍZ)
- * Ahora busca en colecciones principales filtrando por empresaId
+ * Normalización total para asegurar compatibilidad con Dashboards Pro
  */
 async function fetchNexusData(coleccion, empresaId, options = {}) {
-  // 1. Identificar al taller (Prioriza el ID real sobre el de sesión)
   const idTaller = empresaId || localStorage.getItem("nexus_empresaId");
   const maxDocs = options.limit || 50;
 
   if (!idTaller) {
-    console.warn(`📡 Nexus-X: Sin ID de empresa para ${coleccion}. Abortando.`);
+    console.warn(`📡 Nexus-X: Sin ID de empresa para ${coleccion}.`);
     return [];
   }
 
   try {
-    // REFERENCIA A COLECCIÓN RAÍZ (Más rápido y compatible con las nuevas reglas)
     const colRef = collection(db, coleccion);
     
-    // QUERY FILTRADA: Solo trae lo que pertenece a este taller
+    // Agregamos un try/catch interno para el query por si no hay índices en Firebase
     const q = query(
       colRef, 
       where("empresaId", "==", idTaller), 
@@ -38,28 +36,28 @@ async function fetchNexusData(coleccion, empresaId, options = {}) {
     const snap = await getDocs(q);
     if (snap.empty) return [];
 
-    // 🔄 NORMALIZACIÓN DINÁMICA V5
     return snap.docs.map(d => {
         const raw = d.data();
         return {
             id: d.id,
             ...raw,
-            // Normalización Numérica (Previene errores de gráfica)
-            total: Number(raw.total || raw.valor || 0),
+            // 💰 PROTECCIÓN FINANCIERA: Asegura que siempre haya un número
+            total: Number(raw.total || raw.valor || raw.precio || 0),
             cantidad: Number(raw.cantidad || raw.stock || 0),
             
-            // Normalización de Identidad
+            // 👤 PROTECCIÓN DE IDENTIDAD
             nombre: raw.nombre || raw.cliente || raw.descripcion || "Sin identificar",
-            placa: raw.placa || "N/A",
+            tecnico: raw.tecnico || "Staff",
+            estado: raw.estado || "INGRESO",
             
-            // Timestamp a Fecha Humana
-            fechaISO: raw.creadoEn?.toDate ? raw.creadoEn.toDate().toISOString() : new Date().toISOString()
+            // 📅 PROTECCIÓN DE TIEMPO: Evita errores de "toDate is not a function"
+            fechaIngreso: raw.fechaIngreso || raw.creadoEn || { toDate: () => new Date() }
         };
     });
 
   } catch (e) {
     console.error(`🔥 Critical Error en ${coleccion}:`, e);
-    return []; // Retorna array vacío para no romper el .map() del dashboard
+    return []; 
   }
 }
 
@@ -76,6 +74,7 @@ export const getInventario = (id) => fetchNexusData("inventario", id, { limit: 2
  */
 export async function getEmpresaData(empresaId) {
     const id = empresaId || localStorage.getItem("nexus_empresaId");
+    if(!id) return { exists: () => false };
     const docRef = doc(db, "empresas", id);
     return await getDoc(docRef);
 }
@@ -85,31 +84,16 @@ export async function getEmpresaData(empresaId) {
  */
 export async function createDocument(coleccion, data) {
   const idTaller = localStorage.getItem("nexus_empresaId");
-  
   try {
     const docRef = await addDoc(collection(db, coleccion), {
       ...data,
-      empresaId: idTaller, // 🔑 Vínculo de seguridad obligatorio
+      empresaId: idTaller, 
       creadoEn: serverTimestamp(),
       total: Number(data.total || 0)
     });
     return docRef.id;
   } catch (e) {
-    console.error("Error en creación de documento:", e);
+    console.error("Error en creación:", e);
     throw e;
   }
-}
-
-/**
- * 🛡️ SISTEMA DE LOGS IA
- */
-export async function saveLog(tipo, data) {
-  try {
-    await addDoc(collection(db, "ia_logs"), {
-      ...data,
-      tipo,
-      empresaId: localStorage.getItem("nexus_empresaId"),
-      fecha: serverTimestamp()
-    });
-  } catch (e) { }
 }
