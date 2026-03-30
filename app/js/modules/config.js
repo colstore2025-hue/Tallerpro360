@@ -243,7 +243,7 @@ export default async function configModule(container, state) {
         }
     };
 
-    // --- CARGA INICIAL DE DATOS ---
+        // --- CARGA INICIAL DE DATOS (OPTIMIZADA NEXUS-X) ---
     const loadCore = async () => {
         try {
             const snap = await getDoc(docRef);
@@ -253,6 +253,12 @@ export default async function configModule(container, state) {
                 document.getElementById("inNit").value = d.nit || "";
                 document.getElementById("inWs").value = d.whatsapp || "";
                 document.getElementById("inBoldKey").value = d.bold_api_key || "";
+                
+                // Sincronización de caché local para uso inmediato en Ordenes/Pagos
+                if(d.nombre) localStorage.setItem("nexus_empresaNombre", d.nombre);
+                if(d.nit) localStorage.setItem("nexus_empresaNit", d.nit);
+                if(d.bold_api_key) localStorage.setItem("nexus_bold_api_key", d.bold_api_key);
+
                 if (d.logo) {
                     logoBase64 = d.logo;
                     const img = document.getElementById("prevLogo");
@@ -262,7 +268,7 @@ export default async function configModule(container, state) {
                 }
             }
             calcularPrecios();
-        } catch (e) { console.error("Falla en carga:", e); }
+        } catch (e) { console.error("Falla en radar de carga:", e); }
     };
 
     // --- GUARDADO MAESTRO (SINCRO STARLINK) ---
