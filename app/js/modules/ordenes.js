@@ -1,24 +1,20 @@
 /**
  * ordenes.js - TallerPRO360 NEXUS-X V30.1 🛰️
  * REPARACIÓN DE PERMISOS Y MOTOR DE IMPRESIÓN EXTERNO
-* @author William Jeffry Urquijo Cubillos
-*/
+ * @author William Jeffry Urquijo Cubillos
+ */
 import { 
-    collection, query, where, onSnapshot, doc, updateDoc, getDoc, 
-    setDoc, serverTimestamp, runTransaction 
+    collection, query, where, onSnapshot, doc, getDoc, 
+    setDoc, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 
 // --- MOTORES DE INTELIGENCIA ---
-import { diagnosticarProblema } from "../ai/iaMecanica.js";
 import { VoiceMechanicAI } from "../ai/voiceMechanicAI.js";
-import InventoryAI from "../ai/inventoryAI.js";
-import VehicleScanner from "../ai/vehicleScanner.js";
 
 export default async function ordenes(container) {
     const empresaId = localStorage.getItem("nexus_empresaId");
-    const voiceAI = new VoiceMechanicAI();
     let unsubscribe = null;
     let ordenActiva = null;
 
@@ -35,7 +31,6 @@ export default async function ordenes(container) {
                     <p class="text-[10px] orbitron text-slate-500 tracking-[0.4em]">SISTEMA DE FUERZA OPERACIONAL V30.1</p>
                 </div>
                 <div class="flex gap-4">
-                    <button id="btnNewCotiza" class="px-6 py-4 border border-white/10 rounded-2xl orbitron text-[10px] font-black hover:bg-white/5 transition-all text-cyan-400">NUEVA COTIZACIÓN</button>
                     <button id="btnNewMission" class="px-10 py-4 bg-orange-600 rounded-2xl orbitron text-[11px] font-black text-black hover:scale-105 transition-all shadow-2xl">INGRESAR VEHÍCULO</button>
                 </div>
             </header>
@@ -46,7 +41,7 @@ export default async function ordenes(container) {
                         <div class="flex justify-between items-start">
                             <span class="orbitron text-[9px] text-slate-500 group-hover:text-orange-500">${fase}</span>
                         </div>
-                        <h3 class="fase-count text-4xl font-black mt-4 text-white">0</h3>
+                        <h3 id="count-${fase}" class="fase-count text-4xl font-black mt-4 text-white">0</h3>
                         <div class="h-1 w-0 bg-orange-500 mt-4 group-hover:w-full transition-all duration-500"></div>
                     </button>
                 `).join('')}
@@ -57,6 +52,7 @@ export default async function ordenes(container) {
         </div>`;
 
         vincularNavegacion();
+        cargarGrid();
     };
 
     const abrirTerminal = async (id = null, faseDefault = 'INGRESO') => {
@@ -71,7 +67,7 @@ export default async function ordenes(container) {
                 placa: '', cliente: '', telefono: '', estado: faseDefault,
                 items: [], 
                 costos_totales: { venta: 0, costo_taller: 0, comision_staff: 0, utilidad: 0 },
-                evidencia: { fotos_locales: [], audio_diagnostico: null } // Nota: fotos_locales no se suben a Firestore
+                evidencia: { audio_diagnostico: null }
             };
         }
         renderTerminal();
@@ -97,22 +93,18 @@ export default async function ordenes(container) {
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 <div class="lg:col-span-3 space-y-6">
-                    <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 space-y-4 shadow-xl">
+                    <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 space-y-4">
                         <p class="orbitron text-[9px] text-slate-500">IDENTIDAD VEHICULAR</p>
                         <input id="f-placa" value="${ordenActiva.placa}" class="w-full bg-transparent text-5xl font-black orbitron uppercase focus:text-orange-500 outline-none" placeholder="ABC123">
                         <input id="f-cliente" value="${ordenActiva.cliente}" class="w-full bg-white/5 p-4 rounded-xl text-sm border border-white/5" placeholder="CLIENTE">
                         <input id="f-telefono" value="${ordenActiva.telefono}" class="w-full bg-white/5 p-4 rounded-xl text-sm border border-white/5" placeholder="CELULAR">
                     </div>
-
                     <div class="bg-orange-600/5 p-8 rounded-[2.5rem] border border-orange-500/20">
                         <p class="orbitron text-[9px] text-orange-500 font-bold mb-4 italic">NEXUS AI SCANNER</p>
                         <div id="preview-scanner" class="aspect-video bg-black/40 rounded-2xl mb-4 border border-dashed border-white/10 flex items-center justify-center overflow-hidden text-center p-4 text-[10px] text-slate-500">
-                            ${ordenActiva.evidencia.audio_diagnostico || 'SISTEMA LISTO'}
+                             SISTEMA LISTO
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button id="btnScanFoto" class="p-4 bg-white/5 rounded-xl text-[9px] orbitron border border-white/10 hover:bg-white/10 transition-all">📸 FOTO PIEZA</button>
-                            <button id="btnScanVoz" class="p-4 bg-orange-600/20 rounded-xl text-[9px] orbitron border border-orange-500/30 text-orange-500 hover:bg-orange-600 hover:text-black transition-all">🎤 DICTAR SÍNTOMA</button>
-                        </div>
+                        <button id="btnScanFoto" class="w-full p-4 bg-white/5 rounded-xl text-[9px] orbitron border border-white/10 hover:bg-white/10 transition-all">📸 CAPTURAR EVIDENCIA LOCAL</button>
                     </div>
                 </div>
 
@@ -123,41 +115,23 @@ export default async function ordenes(container) {
                                 <p class="orbitron text-[10px] text-emerald-500 mb-2">PRESUPUESTO TOTAL</p>
                                 <h2 id="total-final" class="orbitron text-7xl font-black italic">$ 0</h2>
                             </div>
-                            <button id="btnVoiceCommand" class="w-16 h-16 bg-cyan-500 text-black rounded-full shadow-[0_0_20px_#06b6d4] hover:scale-110 transition-all"><i class="fas fa-microphone"></i></button>
                         </div>
-                        <div id="items-list" class="space-y-4 h-[450px] overflow-y-auto custom-scrollbar pr-4"></div>
+                        <div id="items-list" class="space-y-4 h-[450px] overflow-y-auto pr-4"></div>
                         <div class="mt-8 flex gap-4">
-                            <button id="btnAddRepuesto" class="flex-1 py-4 bg-white/5 border border-white/10 rounded-2xl orbitron text-[9px] font-black hover:bg-emerald-600/20 hover:text-emerald-500 transition-all">+ REPUESTO</button>
+                            <button id="btnAddRepuesto" class="flex-1 py-4 bg-white/5 border border-white/10 rounded-2xl orbitron text-[9px] font-black">+ REPUESTO</button>
                             <button id="btnAddOro" class="flex-1 py-4 bg-amber-600/10 border border-amber-600/20 text-amber-500 rounded-2xl orbitron text-[9px] font-black">+ MANO OBRA</button>
-                            <button id="btnAddGasto" class="flex-1 py-4 bg-red-600/10 border border-red-600/20 text-red-500 rounded-2xl orbitron text-[9px] font-black">+ GASTO IND.</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="lg:col-span-3 space-y-6">
                     <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 space-y-6">
-                        <p class="orbitron text-[9px] text-slate-500 uppercase tracking-widest">Balance de Misión</p>
-                        <div class="space-y-4">
-                            <div class="flex justify-between border-b border-white/5 pb-2">
-                                <span class="text-xs text-slate-400 italic">Inversión Repuestos:</span>
-                                <span id="res-costo" class="font-bold text-white">$ 0</span>
+                        <p class="orbitron text-[9px] text-slate-500 uppercase">Balance</p>
+                        <div id="balance-results" class="space-y-4 text-sm">
                             </div>
-                            <div class="flex justify-between border-b border-white/5 pb-2">
-                                <span class="text-xs text-slate-400 italic">Comisión Staff:</span>
-                                <span id="res-staff" class="font-bold text-amber-500">$ 0</span>
-                            </div>
-                            <div class="flex justify-between border-b border-white/5 pb-2">
-                                <span class="text-xs text-slate-400 italic">Gastos / Insumos:</span>
-                                <span id="res-gastos" class="font-bold text-red-400">$ 0</span>
-                            </div>
-                            <div class="flex justify-between pt-4">
-                                <span class="text-xs font-black orbitron text-emerald-500">UTILIDAD NETA:</span>
-                                <span id="res-utilidad" class="font-black text-xl text-emerald-500">$ 0</span>
-                            </div>
-                        </div>
                     </div>
-                    <button id="btnSaveMission" class="w-full py-10 bg-orange-600 rounded-[2.5rem] shadow-[0_20px_50px_rgba(234,88,12,0.3)] text-black orbitron font-black text-sm hover:scale-[1.02] transition-all">
-                        SINCRONIZAR MISION <br><span class="text-[9px] opacity-60 italic">GLOBAL NEXUS-X</span>
+                    <button id="btnSaveMission" class="w-full py-10 bg-orange-600 rounded-[2.5rem] text-black orbitron font-black text-sm hover:scale-[1.02] transition-all shadow-xl">
+                        SINCRONIZAR MISION
                     </button>
                 </div>
             </div>
@@ -167,145 +141,127 @@ export default async function ordenes(container) {
         recalcularTotales();
     };
 
-    const vincularAccionesTerminal = () => {
-        // --- CÁMARA REAL (VINCULADA CORRECTAMENTE) ---
-        document.getElementById("btnScanFoto").onclick = () => {
-            const scannerInput = document.createElement('input');
-            scannerInput.type = 'file';
-            scannerInput.accept = 'image/*';
-            scannerInput.capture = 'environment';
-            scannerInput.onchange = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    document.getElementById("preview-scanner").innerText = "🔄 PROCESANDO...";
-                    reader.onload = (ev) => {
-                        const imgData = ev.target.result;
-                        // Guardamos localmente para previsualizar/PDF, NO en el objeto que va a Firestore
-                        ordenActiva.temp_foto = imgData; 
-                        document.getElementById("preview-scanner").innerHTML = `<img src="${imgData}" class="h-full w-full object-cover">`;
-                        hablar("Evidencia capturada.");
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
-            scannerInput.click();
+    const recalcularTotales = () => {
+        let tVenta = 0, tCosto = 0, tStaff = 0;
+        ordenActiva.items.forEach(item => {
+            tVenta += Number(item.precio_venta || 0);
+            tCosto += Number(item.costo_taller || 0);
+            tStaff += Number(item.comision_staff || 0);
+        });
+
+        ordenActiva.costos_totales = {
+            venta: tVenta,
+            costo_taller: tCosto,
+            comision_staff: tStaff,
+            utilidad: tVenta - tCosto - tStaff
         };
 
-        // --- IMPRESIÓN PDF ---
-        document.getElementById("btnImprimir").onclick = async () => {
-            const { jsPDF } = window.jspdf ? window.jspdf : { jsPDF: null };
-            if (!jsPDF) {
-                const s = document.createElement('script');
-                s.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-                document.head.appendChild(s);
-                hablar("Cargando motor PDF...");
-                return;
-            }
-            const docPdf = new jsPDF();
-            docPdf.text(`ORDEN: ${ordenActiva.placa}`, 20, 20);
-            docPdf.text(`CLIENTE: ${ordenActiva.cliente}`, 20, 30);
-            let y = 50;
-            ordenActiva.items.forEach(i => {
-                docPdf.text(`${i.descripcion} - $${Number(i.precio_venta).toLocaleString()}`, 20, y);
-                y += 10;
-            });
-            docPdf.save(`OT_${ordenActiva.placa}.pdf`);
-            hablar("PDF generado.");
-        };
-
-        // --- WHATSAPP ---
-        document.getElementById("btnWhatsApp").onclick = () => {
-            const msj = `*TallerPRO360 - ${ordenActiva.placa}*\nPresupuesto: $${ordenActiva.costos_totales.venta.toLocaleString()}`;
-            window.open(`https://wa.me/${ordenActiva.telefono}?text=${encodeURIComponent(msj)}`);
-        };
-
-        // ... (btnAddRepuesto, btnAddOro, btnAddGasto se mantienen igual)
-
-        // --- SINCRONIZACIÓN (REPARADO PERMISOS) ---
-        // --- SINCRONIZACIÓN (SOLUCIÓN DEFINITIVA A ERROR DE PERMISOS) ---
-document.getElementById("btnSaveMission").onclick = async () => {
-    const btn = document.getElementById("btnSaveMission");
-    btn.innerHTML = `<i class="fas fa-sync fa-spin"></i> SINCRONIZANDO...`;
-    
-    // 1. Extraemos los valores de los inputs manualmente
-    const placaVal = document.getElementById("f-placa").value.toUpperCase();
-    const clienteVal = document.getElementById("f-cliente").value;
-    const telefonoVal = document.getElementById("f-telefono").value;
-    const estadoVal = document.getElementById("f-estado").value;
-
-    if(!placaVal) {
-        hablar("William, la placa es obligatoria para la misión.");
-        btn.innerHTML = `SINCRONIZAR MISION <br><span class="text-[9px] opacity-60 italic">GLOBAL NEXUS-X</span>`;
-        return;
-    }
-
-    // 2. CREAMOS EL OBJETO DE SUBIDA (Sin las fotos pesadas)
-    // Esto evita el error "Missing or insufficient permissions" por exceso de tamaño
-    const missionData = {
-        placa: placaVal,
-        cliente: clienteVal || "CLIENTE GENERAL",
-        telefono: telefonoVal || "",
-        estado: estadoVal,
-        empresaId: empresaId,
-        items: ordenActiva.items || [],
-        costos_totales: ordenActiva.costos_totales || {},
-        updatedAt: serverTimestamp(),
-        evidencia: {
-            audio_diagnostico: ordenActiva.evidencia.audio_diagnostico || ""
-            // Nota: temp_foto NO se incluye aquí para no bloquear Firestore
-        }
+        document.getElementById("total-final").innerText = `$ ${tVenta.toLocaleString()}`;
+        document.getElementById("balance-results").innerHTML = `
+            <div class="flex justify-between"><span>Costo:</span><span>$${tCosto.toLocaleString()}</span></div>
+            <div class="flex justify-between"><span>Staff:</span><span>$${tStaff.toLocaleString()}</span></div>
+            <div class="flex justify-between pt-4 border-t border-white/10 font-bold text-emerald-500">
+                <span>UTILIDAD:</span><span>$${ordenActiva.costos_totales.utilidad.toLocaleString()}</span>
+            </div>
+        `;
+        renderItems();
     };
 
-    try {
-        // 3. Definimos la referencia (Si tiene ID actualiza, si no, crea uno nuevo)
-        const docRef = ordenActiva.id 
-            ? doc(db, "ordenes", ordenActiva.id) 
-            : doc(collection(db, "ordenes"));
-        
-        // 4. SOBREESCRIBIMOS (Sin merge para limpiar cualquier basura previa)
-        await setDoc(docRef, missionData); 
-        
-        hablar("Misión sincronizada en la nube de Nexus X.");
-        
-        // Cerramos la terminal
-        document.getElementById("nexus-terminal").classList.add("hidden");
-        
-    } catch (e) {
-        console.error("Error en Firebase:", e);
-        btn.innerHTML = `<span class="text-white">ERROR DE PERMISOS</span>`;
-        hablar("Error de persistencia. William, revisa las reglas de Firestore.");
-    }
-};
-            
-            // LIMPIEZA CRÍTICA: Eliminamos datos pesados antes de subir a Firestore
-            const datosParaSubir = { ...ordenActiva };
-            delete datosParaSubir.temp_foto; // NO subimos la foto base64 a Firestore para evitar el error de permisos
-            delete datosParaSubir.id;
+    const renderItems = () => {
+        const list = document.getElementById("items-list");
+        list.innerHTML = ordenActiva.items.map((item, idx) => `
+            <div class="bg-white/5 p-4 rounded-2xl border border-white/5 flex gap-4 items-center">
+                <input onchange="editItemNexus(${idx}, 'descripcion', this.value)" value="${item.descripcion}" class="flex-1 bg-transparent outline-none text-sm">
+                <input type="number" onchange="editItemNexus(${idx}, 'precio_venta', this.value)" value="${item.precio_venta}" class="w-24 bg-black/40 p-2 rounded-lg text-emerald-500 text-right font-bold" placeholder="Venta">
+                <button onclick="delItemNexus(${idx})" class="text-red-500 px-2">✕</button>
+            </div>
+        `).join('');
+    };
 
-            datosParaSubir.placa = document.getElementById("f-placa").value.toUpperCase();
-            datosParaSubir.cliente = document.getElementById("f-cliente").value;
-            datosParaSubir.telefono = document.getElementById("f-telefono").value;
-            datosParaSubir.estado = document.getElementById("f-estado").value;
-            datosParaSubir.empresaId = empresaId;
+    const vincularAccionesTerminal = () => {
+        document.getElementById("btnScanFoto").onclick = () => {
+            const input = document.createElement('input');
+            input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
+            input.onchange = (e) => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    ordenActiva.temp_foto = ev.target.result;
+                    document.getElementById("preview-scanner").innerHTML = `<img src="${ev.target.result}" class="h-full w-full object-cover">`;
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            };
+            input.click();
+        };
+
+        document.getElementById("btnAddRepuesto").onclick = () => {
+            ordenActiva.items.push({ tipo: 'REPUESTO', descripcion: 'NUEVO REPUESTO', costo_taller: 0, precio_venta: 0 });
+            recalcularTotales();
+        };
+
+        document.getElementById("btnAddOro").onclick = () => {
+            ordenActiva.items.push({ tipo: 'ORO', descripcion: 'MANO DE OBRA', comision_staff: 0, precio_venta: 0 });
+            recalcularTotales();
+        };
+
+        document.getElementById("btnSaveMission").onclick = async () => {
+            const btn = document.getElementById("btnSaveMission");
+            btn.innerHTML = `<i class="fas fa-sync fa-spin"></i> PROCESANDO...`;
+            
+            const missionData = {
+                placa: document.getElementById("f-placa").value.toUpperCase(),
+                cliente: document.getElementById("f-cliente").value,
+                telefono: document.getElementById("f-telefono").value,
+                estado: document.getElementById("f-estado").value,
+                empresaId: empresaId,
+                items: ordenActiva.items,
+                costos_totales: ordenActiva.costos_totales,
+                updatedAt: serverTimestamp(),
+                evidencia: { audio_diagnostico: ordenActiva.evidencia.audio_diagnostico || "" }
+            };
 
             try {
                 const docRef = ordenActiva.id ? doc(db, "ordenes", ordenActiva.id) : doc(collection(db, "ordenes"));
-                await setDoc(docRef, { ...datosParaSubir, updatedAt: serverTimestamp() }, { merge: true });
-                hablar("Misión sincronizada en la nube.");
+                await setDoc(docRef, missionData); 
+                hablar("Misión sincronizada en Nexus X.");
                 document.getElementById("nexus-terminal").classList.add("hidden");
             } catch (e) {
-                console.error("Firestore Error:", e);
-                btn.innerText = "ERROR DE RED";
+                btn.innerHTML = "ERROR PERMISOS";
+                hablar("Error al guardar.");
             }
         };
 
-        // Vincular el resto de funciones de edición...
         window.editItemNexus = (idx, campo, valor) => { ordenActiva.items[idx][campo] = valor; recalcularTotales(); };
         window.delItemNexus = (idx) => { ordenActiva.items.splice(idx, 1); recalcularTotales(); };
     };
 
-    // ... (recalcularTotales, renderItems, vincularNavegacion, cargarGrid se mantienen igual)
+    const vincularNavegacion = () => {
+        document.getElementById("btnNewMission").onclick = () => abrirTerminal();
+        document.querySelectorAll(".fase-tab").forEach(tab => {
+            tab.onclick = () => cargarGrid(tab.dataset.fase);
+        });
+    };
+
+    const cargarGrid = (fase = 'INGRESO') => {
+        const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId), where("estado", "==", fase));
+        onSnapshot(q, (snap) => {
+            const grid = document.getElementById("grid-ordenes");
+            grid.innerHTML = snap.docs.map(d => {
+                const data = d.data();
+                return `
+                <div onclick="abrirTerminalNexus('${d.id}')" class="bg-[#0d1117] p-6 rounded-[2rem] border border-white/5 hover:border-orange-500/50 transition-all cursor-pointer group">
+                    <div class="flex justify-between mb-4">
+                        <span class="orbitron text-2xl font-black text-white group-hover:text-orange-500">${data.placa}</span>
+                        <span class="text-[10px] text-slate-500 italic">${data.estado}</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">${data.cliente}</p>
+                    <div class="text-xl font-bold text-emerald-500">$ ${data.costos_totales?.venta.toLocaleString() || 0}</div>
+                </div>`;
+            }).join('');
+            document.getElementById(`count-${fase}`).innerText = snap.size;
+        });
+    };
+
+    window.abrirTerminalNexus = (id) => abrirTerminal(id);
 
     renderBase();
 }
