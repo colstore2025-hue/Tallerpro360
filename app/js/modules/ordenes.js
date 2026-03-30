@@ -221,35 +221,54 @@ export default async function ordenes(container) {
 
     const vincularAccionesTerminal = () => {
         // --- MOTOR IA: DIAGNÓSTICO POR VOZ (BRAIN INTEGRATION) ---
-        document.getElementById("btnScanVoz").onclick = async () => {
-            const display = document.getElementById("preview-scanner");
-            display.innerText = "🛰️ ESCUCHANDO NÚCLEO...";
-            hablar("William, describe el síntoma del vehículo para el análisis de Workshop Brain.");
+        // ... dentro de vincularAccionesTerminal en ordenes.js ...
 
-            try {
-                const sintoma = await voiceAI.listen();
-                display.innerHTML = `<div class="animate-pulse text-orange-500 uppercase font-black">Procesando: "${sintoma}"</div>`;
-                
-                // Ejecutamos el cerebro
-                const diagnostico = await brain.runDiagnosis({
-                    problem: sintoma,
-                    placa: document.getElementById("f-placa").value
-                });
+document.getElementById("btnScanVoz").onclick = async () => {
+    const display = document.getElementById("preview-scanner");
+    display.innerText = "🛰️ ESCUCHANDO NÚCLEO...";
+    hablar("William, describe el síntoma.");
 
-                display.innerHTML = `<div class="text-white text-left overflow-y-auto h-full p-2">${diagnostico.diagnosis}</div>`;
-                hablar(`Análisis completo. Sugiero revisar: ${diagnostico.partsNeeded.join(', ')}`);
+    try {
+        const sintoma = await voiceAI.listen();
+        
+        // 1. Ejecutar el Escáner Técnico primero (Detección de patrones)
+        const scanner = new VehicleScanner();
+        const hallazgosTecnicos = scanner.scanVehicle({}, [sintoma]); 
 
-                // Auto-agregar repuestos sugeridos
-                diagnostico.partsNeeded.forEach(part => {
-                    ordenActiva.items.push({ 
-                        tipo: 'REPUESTO', descripcion: part.toUpperCase(), costo_taller: 0, precio_venta: 0 
-                    });
-                });
-                recalcularTotales();
-            } catch (e) {
-                display.innerText = "ERROR EN VÍNCULO NEURAL";
-            }
-        };
+        // 2. Ejecutar el WorkshopBrain para repuestos
+        const diagnosticoIA = await brain.runDiagnosis({
+            problem: sintoma,
+            placa: document.getElementById("f-placa").value
+        });
+
+        // 3. Renderizar Hallazgos en la Terminal
+        let htmlHallazgos = hallazgosTecnicos.map(h => 
+            `<div class="flex items-center gap-2 ${h.gravedad === 'alta' ? 'text-red-500' : 'text-orange-400'} font-bold">
+                ${h.icon} <span>${h.problema}</span>
+            </div>`
+        ).join('');
+
+        display.innerHTML = `
+            <div class="text-left space-y-2">
+                <div class="text-white border-b border-white/10 pb-2 mb-2 font-black">HALLAZGOS TÉCNICOS:</div>
+                ${htmlHallazgos || '<p class="text-slate-500">Sin fallos críticos detectados</p>'}
+                <div class="text-orange-500 text-[10px] mt-4 uppercase font-black">Resumen IA:</div>
+                <p class="text-[11px] text-slate-300">${diagnosticoIA.diagnosis}</p>
+            </div>
+        `;
+
+        hablar(`Escaneo finalizado. Detecté ${hallazgosTecnicos.length} posibles fallas.`);
+        
+        // Auto-llenado de repuestos (opcional)
+        diagnosticoIA.partsNeeded.forEach(part => {
+            ordenActiva.items.push({ tipo: 'REPUESTO', descripcion: part.toUpperCase(), costo_taller: 0, precio_venta: 0 });
+        });
+        recalcularTotales();
+
+    } catch (e) {
+        display.innerText = "ERROR EN VÍNCULO NEURAL";
+    }
+};
 
         document.getElementById("btnAddRepuesto").onclick = () => {
             ordenActiva.items.push({ tipo: 'REPUESTO', descripcion: 'NUEVO REPUESTO', costo_taller: 0, precio_venta: 0 });
