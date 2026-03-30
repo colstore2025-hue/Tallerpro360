@@ -271,18 +271,20 @@ export default async function configModule(container, state) {
         } catch (e) { console.error("Falla en radar de carga:", e); }
     };
 
-    // --- GUARDADO MAESTRO (SINCRO STARLINK) ---
+        // --- GUARDADO MAESTRO (SINCRO STARLINK V17.1) ---
     document.getElementById("btnSaveAll").onclick = async () => {
         const btn = document.getElementById("btnSaveAll");
+        const boldKeyVal = document.getElementById("inBoldKey").value.trim();
+        
         btn.disabled = true;
-        btn.innerHTML = `TRANSMITIENDO... <i class="fas fa-sync fa-spin"></i>`;
+        btn.innerHTML = `TRANSMITIENDO DATOS... <i class="fas fa-sync fa-spin"></i>`;
 
         try {
             const payload = {
                 nombre: document.getElementById("inNombre").value.trim().toUpperCase(),
                 nit: document.getElementById("inNit").value.trim(),
                 whatsapp: document.getElementById("inWs").value.trim(),
-                bold_api_key: document.getElementById("inBoldKey").value.trim(),
+                bold_api_key: boldKeyVal,
                 logo: logoBase64,
                 lastUpdate: serverTimestamp(),
                 empresaId: empresaId,
@@ -290,22 +292,26 @@ export default async function configModule(container, state) {
                 updatedBy: uid
             };
 
-            if (!payload.nombre) throw new Error("NOMBRE REQUERIDO");
+            if (!payload.nombre) throw new Error("IDENTIDAD REQUERIDA");
 
+            // Guardado en Nube
             await setDoc(docRef, payload, { merge: true });
             
-            localStorage.setItem("nexus_nombreTaller", payload.nombre);
+            // Persistencia inmediata en LocalStorage (Para PDF y Pagos Bold)
+            localStorage.setItem("nexus_empresaNombre", payload.nombre);
+            localStorage.setItem("nexus_empresaNit", payload.nit);
+            localStorage.setItem("nexus_bold_api_key", boldKeyVal);
             
-            btn.innerHTML = `SINCRO EXITOSA <i class="fas fa-check"></i>`;
+            btn.innerHTML = `NODO ACTUALIZADO <i class="fas fa-check"></i>`;
             btn.classList.replace("bg-cyan-500", "bg-emerald-500");
+            
+            // Feedback auditivo si lo tienes activo
+            if(typeof hablar !== 'undefined') hablar("Sincronización de órbita exitosa. Datos resguardados.");
             
             setTimeout(() => location.reload(), 1500);
         } catch (e) {
             btn.disabled = false;
-            btn.innerHTML = `ERROR: ${e.message.toUpperCase()}`;
+            btn.innerHTML = `FALLO: ${e.message.toUpperCase()}`;
             btn.classList.replace("bg-cyan-500", "bg-red-500");
         }
     };
-
-    loadCore();
-}
