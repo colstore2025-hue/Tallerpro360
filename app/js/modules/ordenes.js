@@ -241,20 +241,68 @@ export default async function ordenes(container) {
         document.getElementById("btnSincronizar").onclick = async () => {
             const btn = document.getElementById("btnSincronizar");
             btn.innerText = "🛰️ GUARDANDO...";
-            recalcularFinanzas();
-            const data = {
-                ...ordenActiva,
-                empresaId,
-                placa: document.getElementById("f-placa").value.toUpperCase(),
-                cliente: document.getElementById("f-cliente").value,
-                telefono: document.getElementById("f-telefono").value,
-                estado: document.getElementById("f-estado").value,
-                updatedAt: serverTimestamp()
-            };
-            await setDoc(doc(db, "ordenes", ordenActiva.id || `OT_${Date.now()}`), data);
-            hablar("Misión sincronizada.");
-            document.getElementById("nexus-terminal").classList.add("hidden");
-        };
+            // 1. ACTUALIZA LA INICIALIZACIÓN DE ordenActiva (Cuando creas una nueva misión)
+ordenActiva = {
+    placa: '', cliente: '', telefono: '', estado: 'INGRESO', 
+    items: [], // Ahora cada ítem tendrá: {tipo, desc, costo, venta}
+    bitacora_ia: '', 
+    // SECCIÓN DE GASTOS E INGRESOS CLAROS
+    finanzas: {
+        gastos_varios: 0,       // Insumos menores (tornillería, etc)
+        adelanto_tecnico: 0,   // Pago parcial al mecánico
+        anticipo_cliente: 0,   // Dinero que el cliente YA entregó
+        impuesto_tipo: 'REGIMEN_SIMPLIFICADO' // o 'IVA_19'
+    },
+    costos_totales: { total_venta: 0, total_costo: 0, utilidad: 0, iva: 0, gran_total: 0, saldo: 0 }
+};
+
+// 2. REFORMA TOTAL DE LA FUNCIÓN DE CÁLCULO
+const recalcularFinanzas = () => {
+    let sumaVentaBruta = 0;
+    let sumaCostoRepuestos = 0;
+
+    ordenActiva.items.forEach(i => {
+        sumaVentaBruta += Number(i.venta || 0);
+        sumaCostoRepuestos += Number(i.costo || 0);
+    });
+
+    // Captura de valores de los inputs con IDs claros
+    const g_varios = Number(document.getElementById("f-gastos-varios")?.value || 0);
+    const a_tecnico = Number(document.getElementById("f-adelanto-tecnico")?.value || 0);
+    const a_cliente = Number(document.getElementById("f-anticipo-cliente")?.value || 0);
+    
+    // Lógica de Impuestos (Colombia)
+    let valorIVA = 0;
+    if (ordenActiva.finanzas.impuesto_tipo === 'IVA_19') {
+        valorIVA = sumaVentaBruta * 0.19;
+    }
+
+    const granTotal = sumaVentaBruta + valorIVA;
+    const costoTotalOperativo = sumaCostoRepuestos + g_varios + a_tecnico;
+    const utilidadNeta = sumaVentaBruta - (sumaCostoRepuestos + g_varios); // El adelanto al técnico es parte de la utilidad, no gasto de material
+
+    ordenActiva.costos_totales = {
+        total_venta: sumaVentaBruta,
+        total_costo: costoTotalOperativo,
+        iva: valorIVA,
+        gran_total: granTotal,
+        utilidad: utilidadNeta,
+        saldo_pendiente: granTotal - a_cliente
+    };
+
+    // Actualización de la UI con etiquetas claras
+    if(document.getElementById("total-factura")) {
+        document.getElementById("total-factura").innerText = `$ ${granTotal.toLocaleString()}`;
+        document.getElementById("saldo-display").innerHTML = `
+            <span class="text-slate-500 text-xs uppercase block">Saldo Pendiente Cliente</span>
+            $ ${ordenActiva.costos_totales.saldo_pendiente.toLocaleString()}
+        `;
+        // Mini-indicador de utilidad para el gerente (invisible en el PDF)
+        console.log("Utilidad Estimada: ", utilidadNeta);
+    }
+    
+    renderItems(); // Refresca la lista para mostrar cambios
+};
 
         // Dictado por voz
         document.getElementById("btnDictar").onclick = () => {
