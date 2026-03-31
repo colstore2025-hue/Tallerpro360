@@ -105,60 +105,58 @@
         </main>
 
     <script type="module">
-        const products = [
-            { id: 1, name: "Turbocompresor Precision 6266", brand: "Precision Turbo USA", price: "7.850.000", location: "Charlotte, NC", tag: "Importado", status: "Stock", img: "https://images.unsplash.com/photo-1616788494707-ec28f08d05a1?q=80&w=400" },
-            { id: 2, name: "Scanner Autel Ultra 2026", brand: "Autel Intelligence", price: "12.400.000", location: "Ibagué, TOL", tag: "Nexus Verified", status: "Inmediate", img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=400" },
-            { id: 3, name: "Inyectores Bosch High Flow", brand: "Bosch Performance", price: "2.150.000", location: "Charlotte, NC", tag: "Importado", status: "5 Days", img: "https://images.unsplash.com/photo-1486006396113-ad7301fd04f7?q=80&w=400" },
-            { id: 4, name: "Estación Soldadura JBC", brand: "JBC Spain/USA", price: "3.200.000", location: "Ibagué, TOL", tag: "Premium", status: "Stock", img: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=400" },
-            { id: 5, name: "Aceite Motul 300V (Caja x12)", brand: "Motul Racing", price: "1.100.000", location: "Charlotte, NC", tag: "Importado", status: "Stock", img: "https://images.unsplash.com/photo-1590674899484-13da0d1b58f5?q=80&w=400" }
-        ];
+    import { getFirestore, collection, query, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    
+    // 1. Conexión a la base de datos
+    const db = getFirestore();
+    const grid = document.getElementById('productGrid');
 
-        const grid = document.getElementById('productGrid');
+    // 2. Escuchar la "Nube" en tiempo real
+    const q = query(collection(db, "marketplace"), orderBy("creadoEn", "desc"));
 
-        function renderProducts(items) {
-            grid.innerHTML = items.map(p => `
-                <div class="card-elite p-5 rounded-[2rem] flex flex-col group relative overflow-hidden">
-                    <div class="aspect-square bg-slate-900 rounded-[1.5rem] mb-5 overflow-hidden relative border border-white/5 scan-overlay">
-                        <div class="absolute top-3 left-3 flex flex-col gap-2 z-10">
-                            <span class="${p.tag === 'Importado' ? 'badge-import' : 'bg-emerald-600'} text-white text-[7px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-2xl">
-                                <i class="fas ${p.tag === 'Importado' ? 'fa-plane-arrival' : 'fa-check-double'} mr-1"></i> ${p.tag}
-                            </span>
-                        </div>
-                        <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover group-hover:scale-125 transition-transform duration-1000 opacity-70 group-hover:opacity-100">
-                    </div>
-                    
-                    <div class="space-y-1">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[8px] mono text-cyan-400 uppercase tracking-widest">${p.brand}</span>
-                            <span class="text-[7px] font-black text-slate-500 uppercase">${p.status}</span>
-                        </div>
-                        <h3 class="text-[13px] font-black text-white uppercase tracking-tighter leading-tight h-10 overflow-hidden">${p.name}</h3>
-                        <div class="flex items-center gap-2 text-[8px] text-slate-500 font-bold uppercase mt-2">
-                            <i class="fas fa-map-marker-alt text-cyan-500"></i> ${p.location}
-                        </div>
-                    </div>
+    onSnapshot(q, (snapshot) => {
+        const items = [];
+        snapshot.forEach((doc) => {
+            items.push({ id: doc.id, ...doc.data() });
+        });
+        renderProducts(items);
+    });
 
-                    <div class="mt-6 flex items-center justify-between bg-black/40 p-4 rounded-2xl border border-white/5">
-                        <div>
-                            <p class="text-[7px] text-slate-500 font-black uppercase tracking-widest">Valor Nexus-X</p>
-                            <p class="text-white font-black text-lg orbitron tracking-tighter italic">$${p.price}</p>
-                        </div>
-                        <button class="w-10 h-10 bg-cyan-500 text-black rounded-xl flex items-center justify-center hover:bg-white transition-all shadow-lg shadow-cyan-500/20">
-                            <i class="fas fa-crosshairs"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+    // 3. Renderizado Dinámico
+    function renderProducts(items) {
+        if(items.length === 0) {
+            grid.innerHTML = `<div class="col-span-full py-20 text-center orbitron text-slate-500 uppercase tracking-widest opacity-30">No hay misiones comerciales activas...</div>`;
+            return;
         }
 
-        renderProducts(products);
+        grid.innerHTML = items.map(p => `
+            <div class="card-elite p-5 rounded-[2rem] flex flex-col group relative overflow-hidden">
+                <div class="aspect-square bg-slate-900 rounded-[1.5rem] mb-5 overflow-hidden relative border border-white/5 scan-overlay">
+                    <img src="${p.imgUrl || 'https://via.placeholder.com/400?text=Nexus-X+Image'}" class="w-full h-full object-cover group-hover:scale-110 transition-all duration-700">
+                </div>
+                
+                <div class="space-y-1">
+                    <span class="text-[8px] mono text-cyan-400 uppercase tracking-widest">${p.categoria || 'Repuesto'}</span>
+                    <h3 class="text-[13px] font-black text-white uppercase tracking-tighter leading-tight h-10 overflow-hidden">${p.nombre}</h3>
+                </div>
 
-        // Búsqueda Inteligente Nexus-Engine
-        document.getElementById('nexusSearch').addEventListener('input', (e) => {
-            const val = e.target.value.toLowerCase();
-            const filtered = products.filter(p => p.name.toLowerCase().includes(val) || p.brand.toLowerCase().includes(val));
-            renderProducts(filtered);
-        });
-    </script>
+                <div class="mt-6 flex items-center justify-between bg-black/40 p-4 rounded-2xl border border-white/5">
+                    <div>
+                        <p class="text-[7px] text-slate-500 font-black uppercase tracking-widest">Valor Nexus-X</p>
+                        <p class="text-white font-black text-lg orbitron tracking-tighter italic">${p.precio}</p>
+                    </div>
+                    <button onclick="contactarVendedor('${p.nombre}')" class="w-10 h-10 bg-cyan-500 text-black rounded-xl flex items-center justify-center hover:bg-white transition-all shadow-lg">
+                        <i class="fas fa-crosshairs"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    window.contactarVendedor = (item) => {
+        const msg = `Hola Nexus-X, me interesa el activo: ${item}. Solicito enlace logístico.`;
+        window.open(`https://wa.me/17049419163?text=${encodeURIComponent(msg)}`);
+    };
+</script>
 </body>
 </html>
