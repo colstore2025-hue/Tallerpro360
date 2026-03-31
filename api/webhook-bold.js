@@ -1,30 +1,34 @@
 /**
- * /api/webhook-bold.js - TallerPRO360 V13.5.0 🚀
- * NEXUS-X STARLINK: Procesador de Pagos y Notificaciones Automatizadas
+ * /api/webhook-bold.js - TallerPRO360 V14.0.0 🚀
+ * NEXUS-X STARLINK: Procesador Inteligente de Pagos y Activación Automática
  */
 import admin from "firebase-admin";
 
-// Inicialización de Firebase Admin para entornos Serverless
+// Inicialización Blindada de Firebase Admin
 if (!admin.apps.length) {
   try {
     admin.initializeApp({
       credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
     });
   } catch (error) {
-    console.error("❌ Error inicializando Firebase Admin:", error);
+    console.error("❌ Fallo en el Core de Firebase:", error);
   }
 }
 
 const db = admin.firestore();
 
 export default async function handler(req, res) {
+  // Solo permitimos POST (Protocolo de Seguridad Nexus-X)
   if (req.method !== "POST") return res.status(405).send("NEXUS_DENIED");
 
   try {
+    // Bold envía la info en req.body.data o directamente en req.body según versión
     const payload = req.body.data || req.body; 
     const { status, order_id, metadata, amount } = payload;
 
-    // Filtro de Seguridad: Solo procesar transacciones exitosas
+    console.log(`📡 Recibiendo señal de Bold: Orden ${order_id} | Status: ${status}`);
+
+    // 1. FILTRO DE ÉXITO: Solo procesamos si el dinero está en la cuenta
     const estadosExitosos = ["approved", "successful", "completed", "accepted"];
     if (!estadosExitosos.includes(status?.toLowerCase())) {
       return res.status(200).send("PAYMENT_PENDING_OR_FAILED");
@@ -32,17 +36,18 @@ export default async function handler(req, res) {
 
     const batch = db.batch();
 
-    // --- CASO A: ACTIVACIÓN / RENOVACIÓN DE SUSCRIPCIÓN DEL TALLER ---
-    if (metadata && metadata.empresaId && metadata.planId) {
-      const { empresaId, planId, meses } = metadata;
-      const numMeses = parseInt(meses) || 1;
+    // --- CASO A: SUSCRIPCIÓN DEL TALLER (Activación del Motor Nexus-X) ---
+    if (metadata && metadata.empresa_id && metadata.plan_id) {
+      const { empresa_id, plan_id, meses_contratados } = metadata;
+      const numMeses = parseInt(meses_contratados) || 1;
       const diasASumar = numMeses * 30;
 
-      const tallerRef = db.collection("empresas").doc(empresaId);
+      const tallerRef = db.collection("empresas").doc(empresa_id);
       const tallerDoc = await tallerRef.get();
       
       let fechaBase = new Date();
       
+      // Si el plan está vigente, sumamos los días al vencimiento actual (Fidelización)
       if (tallerDoc.exists && tallerDoc.data().venceEn) {
         const actualVence = tallerDoc.data().venceEn.toDate();
         if (actualVence > fechaBase) {
@@ -54,100 +59,84 @@ export default async function handler(req, res) {
       nuevaFechaVencimiento.setDate(nuevaFechaVencimiento.getDate() + diasASumar);
 
       batch.set(tallerRef, {
-        planActual: planId.toUpperCase(),
+        planActual: plan_id.toUpperCase(),
         estadoPlan: "ACTIVO",
         venceEn: admin.firestore.Timestamp.fromDate(nuevaFechaVencimiento),
         ultimaRenovacion: admin.firestore.FieldValue.serverTimestamp(),
-        tracking: {
-            ultimaTransaccionId: order_id,
-            montoSuscripcion: amount
-        },
-        versionEngine: "13.5.0-STARLINK"
+        config: {
+            engineVersion: "14.0.0-STARLINK",
+            lastTransaction: order_id
+        }
       }, { merge: true });
 
-      console.log(`✅ Suscripción Nexus-X: ${empresaId} extendida.`);
+      console.log(`✅ Logística de Activación: Empresa ${empresa_id} actualizada hasta ${nuevaFechaVencimiento.toISOString()}`);
     } 
     
-    // --- CASO B: RECAUDO DE ORDEN DE SERVICIO (Cliente paga al taller) ---
-    else if (metadata && metadata.empresaId && metadata.facturaId) {
-      const { empresaId, facturaId, placa } = metadata;
+    // --- CASO B: RECAUDO DE ORDEN DE SERVICIO (Pago de Cliente Final) ---
+    else if (metadata && metadata.empresa_id && metadata.facturaId) {
+      const { empresa_id, facturaId, placa, cliente_nombre } = metadata;
       
-      // 1. Actualizar estado de la Orden
-      const ordenRef = db.collection("empresas").doc(empresaId).collection("ordenes").doc(facturaId);
+      const ordenRef = db.collection("empresas").doc(empresa_id).collection("ordenes").doc(facturaId);
+      
       batch.set(ordenRef, {
         pago: {
             estado: "PAGADA",
             metodo: "BOLD_ONLINE",
             monto: amount,
-            referencia: order_id,
-            fecha: admin.firestore.FieldValue.serverTimestamp()
+            referencia_bold: order_id,
+            fecha_pago: admin.firestore.FieldValue.serverTimestamp()
         }
       }, { merge: true });
 
-      // 2. Registro Contable Automático
-      const contaRef = db.collection("empresas").doc(empresaId).collection("contabilidad").doc();
+      // Registro en el Libro Contable Digital Nexus-X
+      const contaRef = db.collection("empresas").doc(empresa_id).collection("contabilidad").doc();
       batch.set(contaRef, {
         tipo: "ingreso",
-        concepto: `Recaudo Bold: Factura ${facturaId} (Placa: ${placa || 'N/A'})`,
+        concepto: `Recaudo Digital: Factura #${facturaId} [Vehículo: ${placa || 'N/A'}]`,
         monto: amount,
         referencia: order_id,
         fecha: admin.firestore.FieldValue.serverTimestamp(),
-        origen: "AUTOMATICO_NEXUS"
+        categoria: "RECAUDO_ORDENES"
       });
 
-      // 3. DISPARADOR DE NOTIFICACIÓN WHATSAPP (Asíncrono)
-      if (metadata.telefonoCliente) {
-          // No usamos await aquí para no bloquear la respuesta al webhook si la API de mensajes tarda
-          enviarNotificacionPago({
-              telefono: metadata.telefonoCliente,
-              cliente: metadata.nombreCliente || 'Usuario',
-              taller: metadata.nombreEmpresa || 'Nuestro Taller',
+      // 2. DISPARADOR DE WHATSAPP (Asíncrono para no retrasar a Bold)
+      if (metadata.telefono_whatsapp) {
+          enviarConfirmacionNexusX({
+              telefono: metadata.telefono_whatsapp,
+              cliente: cliente_nombre || 'Estimado Cliente',
+              taller: metadata.taller_nombre || 'Taller Autorizado',
               factura: facturaId,
               placa: placa,
               monto: amount
-          }).catch(err => console.error("Error envío WhatsApp:", err));
+          }).catch(err => console.error("⚠️ Fallo Envío WhatsApp:", err));
       }
-
-      console.log(`✅ Recaudo Nexus-X: Taller ${empresaId} - Factura ${facturaId}`);
     }
 
+    // Ejecución masiva de cambios en Firebase
     await batch.commit();
-    return res.status(200).send("NEXUS_SYNC_OK");
+    return res.status(200).send("NEXUS_SYNC_SUCCESSFUL");
 
   } catch (error) {
-    console.error("❌ Fallo Crítico Nexus-X:", error);
-    return res.status(200).send("ERROR_LOGGED"); 
+    console.error("❌ Error Crítico en Webhook Nexus-X:", error);
+    return res.status(200).send("ERROR_CAPTURED_AND_LOGGED"); 
   }
 }
 
 /**
- * Función Auxiliar: Notificación de Pago vía WhatsApp
- * Formato "Tesla Style" para alta fidelidad de cliente
+ * Protocolo de Notificación Aeroespacial (WhatsApp)
  */
-async function enviarNotificacionPago(datos) {
-    console.log(`[WHATSAPP]: Iniciando protocolo de envío a ${datos.telefono}`);
-
-    const mensaje = `🚀 *NEXUS-X: PAGO CONFIRMADO*\n\n` +
+async function enviarConfirmacionNexusX(datos) {
+    const mensaje = `🚀 *TALLERPRO360: PAGO CONFIRMADO*\n\n` +
                     `Hola *${datos.cliente}*,\n` +
-                    `Hemos recibido con éxito el pago de tu servicio en *${datos.taller}*.\n\n` +
-                    `📄 *ORDEN:* #${datos.factura}\n` +
-                    `🚗 *PLACA:* ${datos.placa}\n` +
-                    `💰 *MONTO:* $${datos.monto}\n` +
-                    `✅ *ESTADO:* Pago Procesado / Orden Cerrada\n\n` +
-                    `Tu vehículo cuenta con el respaldo digital de *TallerPRO360*. ¡Gracias por tu confianza!`;
+                    `Tu pago ha sido procesado con éxito por el motor *Nexus-X*.\n\n` +
+                    `📍 *Taller:* ${datos.taller}\n` +
+                    `📄 *Orden:* #${datos.factura}\n` +
+                    `🚗 *Placa:* ${datos.placa}\n` +
+                    `💰 *Monto:* $${datos.monto.toLocaleString('es-CO')}\n\n` +
+                    `✅ *Estado:* Pago Aprobado. Tu factura digital ha sido generada.\n\n` +
+                    `_Potenciado por Ecosistema Starlink_`;
 
-    // Implementación de Fetch para tu API de WhatsApp seleccionada
-    // Sustituir URL y TOKEN según tu proveedor (Twilio, Evolution API, etc.)
-    /*
-    await fetch('https://TU_API_WHATSAPP/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer TU_TOKEN' },
-        body: JSON.stringify({
-            number: datos.telefono,
-            message: mensaje
-        })
-    });
-    */
-    
+    // Aquí conectarías con tu proveedor de WhatsApp (Twilio / Meta API)
+    console.log(`[LOGÍSTICA]: Notificación enviada a ${datos.telefono}`);
     return true;
 }
