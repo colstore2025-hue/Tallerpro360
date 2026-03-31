@@ -200,32 +200,113 @@ const renderTerminal = () => {
     const vincularAccionesTerminal = () => {
         document.getElementById("btnCloseTerminal").onclick = () => document.getElementById("nexus-terminal").classList.add("hidden");
         
-        document.getElementById("btnWppDirect").onclick = async () => {
-            const placa = document.getElementById("f-placa").value.trim().toUpperCase();
-            const cliente = document.getElementById("f-cliente").value;
-            const estado = document.getElementById("f-estado").value;
-            const totalMision = ordenActiva.costos_totales.total;
-            const linkPago = `https://bold.co/pay/tallerpro360-${placa.replace(/\s+/g, '')}`;
+        // 1. REFORMA DEL ENVÍO DE WHATSAPP (Dentro de vincularAccionesTerminal)
+document.getElementById("btnWppDirect").onclick = async () => {
+    const placa = document.getElementById("f-placa").value.trim().toUpperCase();
+    const cliente = document.getElementById("f-cliente").value;
+    const estado = document.getElementById("f-estado").value;
+    const finanzas = ordenActiva.costos_totales;
+    
+    // Configuración del mensaje según estado de la misión
+    let tituloReporte = (estado === 'COTIZACION' || estado === 'INGRESO') 
+        ? "🛰️ PROPUESTA TÉCNICA - NEXUS-X" 
+        : "🛰️ REPORTE DE LIQUIDACIÓN - NEXUS-X";
 
-            let { value: montoAnticipo } = (estado === 'INGRESO' || estado === 'COTIZACION') ? await Swal.fire({
-                title: 'SOLICITAR ANTICIPO',
-                text: `Total: $${totalMision.toLocaleString()}. ¿Monto de anticipo?`,
-                input: 'number',
-                background: '#0d1117', color: '#fff', confirmButtonColor: '#00f2ff',
-                showCancelButton: true
-            }) : { value: null };
+    let detalleItems = ordenActiva.items.map(i => `- ${i.desc}: *$${Number(i.venta).toLocaleString()}*`).join('\n');
+    
+    // Lógica de anticipo dinámico
+    let bloquePago = "";
+    if (estado === 'COTIZACION' || estado === 'INGRESO') {
+        const sugerenciaAnticipo = Math.ceil(finanzas.total_venta * 0.5); // Sugiere el 50%
+        bloquePago = `\n💰 *ANTICIPO REQUERIDO:* $${sugerenciaAnticipo.toLocaleString()}\n_Para autorizar la compra de repuestos e inicio de labor._`;
+    } else {
+        bloquePago = `\n💳 *SALDO PENDIENTE:* $${finanzas.saldo_pendiente.toLocaleString()}`;
+    }
 
-            let msg = `*🛰️ REPORTE TÉCNICO NEXUS-X*\nVehículo: *${placa}*\n`;
-            if (montoAnticipo) {
-                msg += `Requerimos un anticipo de: *$${Number(montoAnticipo).toLocaleString()}* para iniciar.\n🔗 Pagar aquí: ${linkPago}`;
-            } else {
-                msg += `Estado: *${estado}*\n*TOTAL:* $${totalMision.toLocaleString()}\n*SALDO:* $${ordenActiva.costos_totales.saldo_pendiente.toLocaleString()}\n🔗 Pagar: ${linkPago}`;
-            }
+    const linkPago = `https://bold.co/pay/tallerpro360-${placa.replace(/\s+/g, '')}`;
 
-            const phone = document.getElementById("f-telefono").value.replace(/\D/g, '');
-            window.open(`https://api.whatsapp.com/send?phone=57${phone.slice(-10)}&text=${encodeURIComponent(msg)}`, '_blank');
-        };
+    let msg = `*${tituloReporte}*\n\n` +
+              `Vehículo: *${placa}*\n` +
+              `Cliente: ${cliente}\n` +
+              `---------------------------\n` +
+              `*RESUMEN DE TRABAJO:*\n${detalleItems}\n` +
+              `---------------------------\n` +
+              `*TOTAL ESTIMADO:* $${finanzas.gran_total.toLocaleString()}\n` +
+              bloquePago + `\n\n` +
+              `🔗 *PAGAR AQUÍ:* ${linkPago}\n\n` +
+              `_Enviado desde TallerPRO360 Nexus-X_`;
 
+    const phone = document.getElementById("f-telefono").value.replace(/\D/g, '');
+    window.open(`https://api.whatsapp.com/send?phone=57${phone.slice(-10)}&text=${encodeURIComponent(msg)}`, '_blank');
+};
+
+// 2. REFORMA DEL GENERADOR DE PDF (Con desglose de IVA 19%)
+const generarPDF = async () => {
+    const { jsPDF } = window.jspdf;
+    const docPdf = new jsPDF();
+    hablar("Generando documento legal de taller.");
+
+    // Obtener datos de la empresa para el encabezado
+    const empSnap = await getDoc(doc(db, "empresas", empresaId));
+    const empresa = empSnap.data() || { nombre: "TALLER PRO 360", nit: "900.000.000-1" };
+
+    // Estilo Encabezado Aeroespacial (Fondo Oscuro)
+    docPdf.setFillColor(1, 4, 9);
+    docPdf.rect(0, 0, 210, 50, 'F');
+    docPdf.setTextColor(0, 242, 255);
+    docPdf.setFontSize(24);
+    docPdf.text(empresa.nombre.toUpperCase(), 15, 25);
+    docPdf.setFontSize(10);
+    docPdf.text(`NIT: ${empresa.nit} | TERMINAL NEXUS-X`, 15, 35);
+
+    // Datos de la Orden
+    docPdf.setTextColor(40, 40, 40);
+    docPdf.setFontSize(12);
+    docPdf.text(`ORDEN DE SERVICIO: ${ordenActiva.placa}`, 15, 65);
+    docPdf.text(`FECHA: ${new Date().toLocaleDateString()}`, 150, 65);
+    docPdf.text(`CLIENTE: ${ordenActiva.cliente.toUpperCase()}`, 15, 75);
+
+    // Tabla de ítems con desglose
+    const tableBody = ordenActiva.items.map(i => [
+        i.desc.toUpperCase(), 
+        `$${Number(i.venta).toLocaleString()}`
+    ]);
+
+    docPdf.autoTable({
+        startY: 85,
+        head: [['DESCRIPCIÓN DE SERVICIO / REPUESTO', 'VALOR']],
+        body: tableBody,
+        theme: 'striped',
+        headStyles: { fillColor: [1, 4, 9], textColor: [0, 242, 255] },
+        styles: { fontSize: 9 }
+    });
+
+    // Bloque de Totales e Impuestos (Colombia)
+    const finalY = docPdf.lastAutoTable.finalY + 10;
+    docPdf.setFontSize(10);
+    
+    let subtotal = ordenActiva.costos_totales.total_venta;
+    let iva = ordenActiva.costos_totales.iva;
+    let total = ordenActiva.costos_totales.gran_total;
+
+    docPdf.text(`SUBTOTAL:`, 140, finalY);
+    docPdf.text(`$${subtotal.toLocaleString()}`, 180, finalY, { align: 'right' });
+    
+    docPdf.text(`IVA (19%):`, 140, finalY + 7);
+    docPdf.text(`$${iva.toLocaleString()}`, 180, finalY + 7, { align: 'right' });
+
+    docPdf.setFontSize(13);
+    docPdf.setFont(undefined, 'bold');
+    docPdf.text(`TOTAL A PAGAR:`, 140, finalY + 15);
+    docPdf.text(`$${total.toLocaleString()}`, 180, finalY + 15, { align: 'right' });
+
+    // Pie de página legal
+    docPdf.setFontSize(8);
+    docPdf.setFont(undefined, 'normal');
+    docPdf.text("Este documento es un reporte técnico de servicio. No constituye factura de venta para efectos tributarios según la normativa vigente.", 15, 280);
+
+    docPdf.save(`OT_${ordenActiva.placa}_TallerPRO360.pdf`);
+};
         document.getElementById("btnPagarBold").onclick = async () => {
             hablar("William, abriendo terminal de pago Bold.");
             const empSnap = await getDoc(doc(db, "empresas", empresaId));
