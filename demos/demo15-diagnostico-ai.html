@@ -1,106 +1,172 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TallerPRO360 | AI Diagnostics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Outfit:wght@300;400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root { --cyan: #06b6d4; --emerald: #10b981; --dark: #020617; }
+        body { background: var(--dark); color: white; font-family: 'Outfit', sans-serif; min-height: 100vh; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
 
-<title>Diagnóstico AI - TallerPRO360</title>
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px; padding: 30px; backdrop-filter: blur(10px);
+        }
 
-<script src="https://cdn.tailwindcss.com"></script>
+        .ai-input {
+            background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(6, 182, 212, 0.2);
+            color: white; border-radius: 16px; padding: 20px; width: 100%;
+            transition: 0.3s; resize: none; font-size: 16px;
+        }
+        .ai-input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 20px rgba(6, 182, 212, 0.1); }
 
+        .btn-scan {
+            background: linear-gradient(90deg, var(--cyan), #3b82f6);
+            color: var(--dark); font-weight: 900; border-radius: 16px;
+            padding: 16px 32px; transition: 0.3s; display: flex; align-items: center; gap: 10px;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-scan:hover { transform: scale(1.02); box-shadow: 0 0 30px rgba(6, 182, 212, 0.4); }
+
+        .result-box {
+            animation: fadeInUp 0.5s ease-out forwards;
+            border-left: 4px solid var(--emerald);
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .confidence-bar {
+            height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden;
+        }
+        .confidence-fill {
+            height: 100%; background: var(--emerald); width: 0%; transition: 1.5s cubic-bezier(0.1, 1, 0.1, 1);
+        }
+    </style>
 </head>
+<body class="flex items-center justify-center p-6">
 
-<body class="bg-slate-950 text-white p-8">
+    <div class="max-w-3xl w-full">
+        
+        <div class="text-center mb-10">
+            <h1 class="orbitron text-3xl font-black italic tracking-tighter mb-2">
+                DIAGNOSTIC<span class="text-cyan-500">CENTER</span>
+            </h1>
+            <p class="text-slate-400 text-sm mono uppercase tracking-widest">Análisis Predictivo de Fallas Mecánicas</p>
+        </div>
 
-<h1 class="text-4xl text-green-400 mb-6">
-Diagnóstico Inteligente
-</h1>
+        <div class="glass-card">
+            <div class="flex items-center gap-3 mb-6">
+                <i class="fas fa-microchip text-cyan-500 text-xl"></i>
+                <h2 class="text-lg font-bold">Describa la anomalía del activo</h2>
+            </div>
 
-<p class="mb-6 text-slate-300">
-Describe el problema de tu vehículo y el sistema sugerirá una posible falla.
-</p>
+            <textarea id="problema" rows="4" 
+                placeholder="Ejemplo: El motor hace un ruido metálico al encender o el pedal del freno se siente esponjoso..."
+                class="ai-input mb-6"></textarea>
 
-<textarea
-id="problema"
-placeholder="Ej: mi carro hace ruido al frenar"
-class="w-full p-3 text-black mb-4 rounded">
-</textarea>
+            <div class="flex justify-between items-center">
+                <div class="text-[10px] text-slate-500 max-w-[250px] leading-tight">
+                    <i class="fas fa-shield-halved mr-1"></i> 
+                    Protocolo de privacidad Nexus-X activo. Sus datos están encriptados.
+                </div>
+                <button onclick="diagnosticar()" class="btn-scan orbitron text-xs">
+                    <i class="fas fa-satellite-dish animate-pulse"></i> Iniciar Análisis
+                </button>
+            </div>
+        </div>
 
-<button
-onclick="diagnosticar()"
-class="bg-green-500 px-6 py-3 rounded">
-Analizar
-</button>
+        <div id="resultado" class="mt-8"></div>
 
-<div id="resultado" class="mt-8"></div>
-
+    </div>
 
 <script>
+    function diagnosticar() {
+        const texto = document.getElementById("problema").value.toLowerCase();
+        const resDiv = document.getElementById("resultado");
+        
+        if(!texto) return;
 
-function diagnosticar(){
+        // Reset visual para re-animar
+        resDiv.innerHTML = `<div class="text-center py-10 mono text-cyan-500 animate-pulse">Procesando telemetría...</div>`;
 
-const texto=document
-.getElementById("problema")
-.value
-.toLowerCase()
+        setTimeout(() => {
+            let info = {
+                falla: "Anomalía compleja (Requiere inspección física)",
+                costo: "Sujeto a revisión",
+                tiempo: "N/A",
+                confianza: "45%"
+            };
 
-let falla="No detectada"
-let costo="$0"
-let tiempo="---"
+            // Lógica de coincidencia mejorada
+            if(texto.includes("freno") || texto.includes("frenar") || texto.includes("chillido")) {
+                info = { falla: "Pastillas de freno desgastadas o cristalizadas", costo: "$ 120.000", tiempo: "2 Horas", confianza: "92%" };
+            }
+            else if(texto.includes("bateria") || texto.includes("prende") || texto.includes("encendido")) {
+                info = { falla: "Ciclo de vida de batería agotado", costo: "$ 245.000", tiempo: "45 Minutos", confianza: "88%" };
+            }
+            else if(texto.includes("motor") || texto.includes("ruido") || texto.includes("golpe")) {
+                info = { falla: "Desajuste de válvulas o bujías defectuosas", costo: "$ 185.000", tiempo: "3 Horas", confianza: "74%" };
+            }
+            else if(texto.includes("aceite") || texto.includes("fuga") || texto.includes("mancha")) {
+                info = { falla: "Fuga en empaque de cárter o filtro obstruido", costo: "$ 95.000", tiempo: "1 Hora", confianza: "95%" };
+            }
+            else if(texto.includes("luces") || texto.includes("bombillo") || texto.includes("faro")) {
+                info = { falla: "Fallo en circuito eléctrico o fusible fundido", costo: "$ 45.000", tiempo: "30 Minutos", confianza: "98%" };
+            }
 
-if(texto.includes("freno")){
+            resDiv.innerHTML = `
+                <div class="glass-card result-box">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h3 class="text-emerald-400 font-bold uppercase text-xs tracking-widest mb-1">Diagnóstico IA Generado</h3>
+                            <h2 class="text-xl font-bold italic">${info.falla}</h2>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] mono text-slate-500">CERTEZA</span>
+                            <div class="text-emerald-400 orbitron font-black text-lg">${info.confianza}</div>
+                        </div>
+                    </div>
 
-falla="Pastillas de freno desgastadas"
-costo="$120.000"
-tiempo="2 horas"
+                    <div class="confidence-bar mb-8">
+                        <div id="barFill" class="confidence-fill"></div>
+                    </div>
 
-}
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-white/5 p-4 rounded-xl border border-white/5">
+                            <p class="text-[9px] text-slate-500 uppercase font-black mb-1">Inversión Estimada</p>
+                            <p class="orbitron text-cyan-400 font-bold text-lg">${info.costo}</p>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded-xl border border-white/5">
+                            <p class="text-[9px] text-slate-500 uppercase font-black mb-1">Tiempo de Operación</p>
+                            <p class="orbitron text-white font-bold text-lg">${info.tiempo}</p>
+                        </div>
+                    </div>
 
-else if(texto.includes("bateria")){
+                    <div class="mt-6 p-4 border border-emerald-500/20 bg-emerald-500/5 rounded-xl text-center">
+                        <p class="text-xs text-emerald-400 italic">
+                            <i class="fas fa-calendar-check mr-2"></i> Orden de servicio pre-aprobada para la sede <b>Ibagué</b>.
+                        </p>
+                    </div>
+                </div>
+            `;
 
-falla="Batería descargada"
-costo="$200.000"
-tiempo="30 minutos"
+            // Animar la barra después de insertar el HTML
+            setTimeout(() => {
+                document.getElementById('barFill').style.width = info.confianza;
+            }, 100);
 
-}
-
-else if(texto.includes("motor")){
-
-falla="Posible problema de bujías"
-costo="$180.000"
-tiempo="1 hora"
-
-}
-
-else if(texto.includes("aceite")){
-
-falla="Cambio de aceite necesario"
-costo="$90.000"
-tiempo="20 minutos"
-
-}
-
-document.getElementById("resultado").innerHTML=
-`
-<div class="bg-slate-900 p-6 rounded">
-
-<h2 class="text-2xl text-green-400 mb-4">
-Resultado del diagnóstico
-</h2>
-
-<p>🔧 Falla probable: ${falla}</p>
-<p>💰 Costo estimado: ${costo}</p>
-<p>⏱ Tiempo estimado: ${tiempo}</p>
-
-</div>
-`
-
-}
-
+        }, 1500);
+    }
 </script>
 
 </body>
-
 </html>
