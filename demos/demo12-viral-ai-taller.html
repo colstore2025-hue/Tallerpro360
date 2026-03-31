@@ -1,298 +1,214 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TallerPRO360 | AI Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root { --cyan: #06b6d4; --dark: #020617; --slate-900: #0f172a; }
+        body { background: var(--dark); color: white; font-family: 'JetBrains Mono', monospace; overflow: hidden; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
 
-<title>TallerPRO360 AI Demo</title>
+        /* HANGAR DE ESCANEO */
+        .hangar {
+            position: relative; height: 350px; background: #010409;
+            border-radius: 30px; border: 1px solid rgba(255,255,255,0.05);
+            background-image: radial-gradient(circle at 2px 2px, rgba(6, 182, 212, 0.05) 1px, transparent 0);
+            background-size: 30px 30px; overflow: hidden;
+            box-shadow: inset 0 0 50px rgba(0,0,0,1);
+        }
 
-<script src="https://cdn.tailwindcss.com"></script>
+        .vehiculo-container {
+            position: absolute; left: -150px; top: 50%; transform: translateY(-50%);
+            transition: 3.5s cubic-bezier(0.19, 1, 0.22, 1);
+            filter: drop-shadow(0 0 20px rgba(6, 182, 212, 0.2));
+        }
 
-<style>
+        .laser-beam {
+            position: absolute; top: 0; left: 50%; width: 2px; height: 100%;
+            background: var(--cyan); box-shadow: 0 0 30px var(--cyan), 0 0 60px var(--cyan);
+            opacity: 0; transform: scaleY(0); transition: 0.5s; z-index: 10;
+        }
 
-body{
-background:#020617;
-color:white;
-font-family:system-ui;
-overflow:hidden;
-}
+        .laser-beam.active {
+            opacity: 0.8; transform: scaleY(1);
+            animation: pulse-laser 1.5s infinite alternate;
+        }
 
-.taller{
-position:relative;
-height:300px;
-background:#0f172a;
-border-radius:20px;
-border:1px solid #1e293b;
-overflow:hidden;
-}
+        @keyframes pulse-laser {
+            0% { box-shadow: 0 0 20px var(--cyan); opacity: 0.5; }
+            100% { box-shadow: 0 0 50px var(--cyan); opacity: 1; }
+        }
 
-.auto{
-position:absolute;
-left:-120px;
-top:170px;
-font-size:40px;
-transition:3s linear;
-}
+        /* CARDS & LOGS */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 20px; padding: 20px; backdrop-filter: blur(10px);
+        }
 
-.scanner{
-position:absolute;
-top:0;
-left:50%;
-width:4px;
-height:100%;
-background:#10b981;
-opacity:0;
-animation:scan 2s infinite;
-}
+        .terminal-log {
+            background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 15px; height: 220px; overflow-y: auto; padding: 20px;
+            font-size: 11px; line-height: 1.8;
+        }
 
-@keyframes scan{
+        .glow-cyan { color: var(--cyan); text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); }
+        
+        .badge {
+            background: rgba(6, 182, 212, 0.1); border: 1px solid var(--cyan);
+            padding: 2px 8px; border-radius: 4px; font-size: 9px; font-weight: bold;
+        }
 
-0%{transform:translateX(-200px);opacity:0}
-
-50%{opacity:1}
-
-100%{transform:translateX(200px);opacity:0}
-
-}
-
-.card{
-
-background:#0f172a;
-border:1px solid #1e293b;
-border-radius:16px;
-padding:20px;
-
-}
-
-.log{
-
-background:#020617;
-border:1px solid #1e293b;
-border-radius:12px;
-height:200px;
-overflow:auto;
-padding:15px;
-font-size:14px;
-
-}
-
-.glow{
-color:#10b981;
-}
-
-</style>
-
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: var(--cyan); }
+    </style>
 </head>
 
-<body class="p-10">
+<body class="p-8 md:p-12">
 
-<!-- HEADER -->
+    <div class="flex justify-between items-end mb-8 px-4">
+        <div>
+            <h1 class="orbitron text-3xl font-black italic glow-cyan uppercase tracking-tighter">
+                NEXUS-X<span class="text-white">SCAN</span>
+            </h1>
+            <p class="text-[9px] text-slate-500 uppercase tracking-[0.4em]">Autonomous Workshop Simulation v.2026</p>
+        </div>
+        <div class="text-right hidden md:block">
+            <span class="badge">SISTEMA: OPERATIVO</span>
+            <p class="text-[10px] text-slate-400 mt-2">HUB: IBAGUÉ CENTRAL</p>
+        </div>
+    </div>
 
-<div class="flex justify-between mb-8">
+    <div class="hangar mb-10">
+        <div id="vehiculo" class="vehiculo-container">
+            <div class="flex flex-col items-center">
+                <i class="fas fa-truck-monster text-6xl text-white"></i>
+                <div class="w-20 h-2 bg-cyan-500/20 blur-xl mt-4"></div>
+            </div>
+        </div>
+        <div id="laser" class="laser-beam"></div>
+        
+        <div class="absolute bottom-6 left-6 flex gap-4">
+            <div class="w-3 h-3 bg-cyan-500 rounded-full animate-ping"></div>
+            <span class="text-[10px] font-bold text-cyan-400 orbitron tracking-widest">IA SCANNING ZONE</span>
+        </div>
+    </div>
 
-<h1 class="text-3xl font-bold glow">
-TallerPRO360 AI
-</h1>
+    <div class="grid md:grid-cols-3 gap-8 mb-10">
+        <div class="glass-card">
+            <p class="text-[10px] text-slate-500 font-bold uppercase mb-2">Unidades Procesadas</p>
+            <div id="vehiculos" class="orbitron text-4xl font-black glow-cyan">0</div>
+        </div>
+        <div class="glass-card">
+            <p class="text-[10px] text-slate-500 font-bold uppercase mb-2">Misiones Completadas</p>
+            <div id="ordenes" class="orbitron text-4xl font-black">0</div>
+        </div>
+        <div class="glass-card">
+            <p class="text-[10px] text-emerald-500 font-bold uppercase mb-2 italic">Ingresos Netos (COP)</p>
+            <div id="ingresos" class="orbitron text-3xl font-black text-emerald-400 italic">$ 0</div>
+        </div>
+    </div>
 
-<div class="text-slate-400">
-Simulación Inteligente de Taller
-</div>
-
-</div>
-
-<!-- TALLER -->
-
-<div class="taller mb-8">
-
-<div id="auto" class="auto">
-🚗
-</div>
-
-<div id="scanner" class="scanner"></div>
-
-</div>
-
-
-<!-- PANEL -->
-
-<div class="grid md:grid-cols-3 gap-6">
-
-<div class="card">
-
-<div class="text-slate-400">
-Vehículos procesados
-</div>
-
-<div id="vehiculos" class="text-3xl glow mt-2">
-0
-</div>
-
-</div>
-
-<div class="card">
-
-<div class="text-slate-400">
-Órdenes generadas
-</div>
-
-<div id="ordenes" class="text-3xl glow mt-2">
-0
-</div>
-
-</div>
-
-<div class="card">
-
-<div class="text-slate-400">
-Ingresos
-</div>
-
-<div id="ingresos" class="text-3xl glow mt-2">
-$0
-</div>
-
-</div>
-
-</div>
-
-
-<!-- ACTIVIDAD -->
-
-<div class="card mt-8">
-
-<h3 class="mb-4 font-bold">
-Actividad de IA
-</h3>
-
-<div id="log" class="log"></div>
-
-</div>
-
-
+    <div class="glass-card">
+        <h3 class="text-[11px] font-bold text-white uppercase mb-4 flex items-center gap-2">
+            <i class="fas fa-terminal text-cyan-500"></i> Eventos de Inteligencia Artificial
+        </h3>
+        <div id="log" class="terminal-log">
+            <div class="text-slate-600 italic">>> Sistema listo. Esperando ingreso de activos...</div>
+        </div>
+    </div>
 
 <script>
+    let vCount = 0, oCount = 0, iCount = 0;
 
-let vehiculos = 0
-let ordenes = 0
-let ingresos = 0
+    const modelos = [
+        { icon: "fa-truck-monster", name: "Toyota Hilux 4x4" },
+        { icon: "fa-car-side", name: "Renault Duster" },
+        { icon: "fa-truck-pickup", name: "Ford Raptor" },
+        { icon: "fa-shuttle-van", name: "Kia Grand Carnival" }
+    ];
 
-const autos = [
-"🚗","🚙","🚘"
-]
+    const fallas = [
+        "Desgaste de Pastillas Cerámicas",
+        "Fallo en Inyección de Combustible",
+        "Error Crítico: Sensor ABS P0420",
+        "Batería con 15% de Vida Útil",
+        "Fuga en Amortiguadores Traseros",
+        "Filtro de Partículas Obstruido"
+    ];
 
-const fallas = [
+    const precios = [250000, 850000, 1200000, 320000, 480000];
 
-"Pastillas de freno desgastadas",
-"Falla en sensor ABS",
-"Batería descargada",
-"Filtro de aire sucio",
-"Fuga de aceite",
-"Bobina de encendido dañada"
+    function registrar(msg, color = "text-slate-300") {
+        const area = document.getElementById("log");
+        const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+        const item = document.createElement("div");
+        item.className = `mb-2 ${color}`;
+        item.innerHTML = `<span class="text-cyan-500/50 mr-2">[${time}]</span> ${msg}`;
+        area.prepend(item);
+    }
 
-]
+    function simular() {
+        const modelo = modelos[Math.floor(Math.random()*modelos.length)];
+        const falla = fallas[Math.floor(Math.random()*fallas.length)];
+        const precio = precios[Math.floor(Math.random()*precios.length)];
 
-const precios = [
+        const vDiv = document.getElementById("vehiculo");
+        const laser = document.getElementById("laser");
 
-90000,
-120000,
-150000,
-200000,
-250000
+        // 1. Reset & Entrada
+        vDiv.innerHTML = `
+            <div class="flex flex-col items-center">
+                <i class="fas ${modelo.icon} text-6xl text-white"></i>
+                <div class="w-20 h-2 bg-cyan-500/20 blur-xl mt-4"></div>
+            </div>
+        `;
+        vDiv.style.left = "-150px";
+        vDiv.style.opacity = "1";
 
-]
+        setTimeout(() => {
+            vDiv.style.left = "40%";
+            registrar(`ACTIVO DETECTADO: <span class="text-white font-bold">${modelo.name}</span>`, "text-cyan-400");
+        }, 100);
 
+        // 2. Escaneo Láser
+        setTimeout(() => {
+            laser.classList.add("active");
+            registrar(`🤖 IA NEXUS: Iniciando escaneo de telemetría completa...`);
+        }, 2800);
 
-function log(msg){
+        // 3. Diagnóstico
+        setTimeout(() => {
+            registrar(`🔎 DIAGNÓSTICO: ${falla}`, "text-yellow-400");
+        }, 4500);
 
-const area = document.getElementById("log")
+        // 4. Procesamiento
+        setTimeout(() => {
+            vCount++; oCount++; iCount += precio;
+            document.getElementById("vehiculos").innerText = vCount;
+            document.getElementById("ordenes").innerText = oCount;
+            document.getElementById("ingresos").innerText = "$ " + iCount.toLocaleString("es-CO");
+            
+            registrar(`📦 ORDEN DE TRABAJO GENERADA. Ticket: $${precio.toLocaleString("es-CO")}`, "text-emerald-400");
+            laser.classList.remove("active");
+        }, 6000);
 
-const item = document.createElement("div")
+        // 5. Salida
+        setTimeout(() => {
+            vDiv.style.left = "110%";
+            vDiv.style.opacity = "0";
+            registrar(`✅ ACTIVO DESPACHADO. Notificación enviada al cliente.`);
+            registrar(`<hr class="border-white/5 my-2">`);
+        }, 7500);
+    }
 
-item.classList.add("mb-1")
-
-item.innerHTML = msg
-
-area.prepend(item)
-
-}
-
-
-
-function simular(){
-
-const autoIcon = autos[Math.floor(Math.random()*autos.length)]
-const falla = fallas[Math.floor(Math.random()*fallas.length)]
-const precio = precios[Math.floor(Math.random()*precios.length)]
-
-const auto = document.getElementById("auto")
-const scanner = document.getElementById("scanner")
-
-
-auto.innerHTML = autoIcon
-auto.style.left = "-120px"
-
-
-setTimeout(()=>{
-
-auto.style.left="45%"
-
-},100)
-
-
-setTimeout(()=>{
-
-scanner.style.opacity=1
-
-log("🚗 Vehículo ingresó al taller")
-
-},2500)
-
-
-setTimeout(()=>{
-
-log("🤖 IA escaneando vehículo")
-
-},3500)
-
-
-setTimeout(()=>{
-
-log("🔎 Diagnóstico detectado: "+falla)
-
-},4500)
-
-
-setTimeout(()=>{
-
-ordenes++
-vehiculos++
-ingresos+=precio
-
-document.getElementById("vehiculos").innerText=vehiculos
-document.getElementById("ordenes").innerText=ordenes
-document.getElementById("ingresos").innerText="$"+ingresos.toLocaleString("es-CO")
-
-log("📦 Orden generada automáticamente")
-
-},5500)
-
-
-setTimeout(()=>{
-
-log("💰 Factura enviada al cliente: $"+precio.toLocaleString("es-CO"))
-log("<hr class='border-slate-800'>")
-
-scanner.style.opacity=0
-
-},6500)
-
-}
-
-
-setInterval(simular,8000)
-
+    // Intervalo de ciclo
+    setInterval(simular, 10000);
+    simular(); // Inicio inmediato
 </script>
 
 </body>
