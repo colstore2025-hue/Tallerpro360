@@ -1,119 +1,181 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TallerPRO360 | Asset Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Outfit:wght@300;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root { --cyan: #06b6d4; --dark: #020617; }
+        body { background: var(--dark); color: white; font-family: 'Outfit', sans-serif; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
 
-<title>TallerPRO360</title>
+        .input-field {
+            background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1);
+            color: white; padding: 12px; border-radius: 12px; width: 100%;
+            transition: 0.3s;
+        }
+        .input-field:focus { outline: none; border-color: var(--cyan); background: rgba(30, 41, 59, 0.8); }
 
-<script src="https://cdn.tailwindcss.com"></script>
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px; padding: 20px;
+        }
 
+        .btn-primary {
+            background: var(--cyan); color: var(--dark); font-weight: 900;
+            padding: 12px; border-radius: 12px; transition: 0.3s; width: 100%;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(6, 182, 212, 0.4); }
+
+        .ticket {
+            background: linear-gradient(145deg, #0f172a, #020617);
+            border-left: 4px solid var(--cyan); border-radius: 12px;
+            padding: 15px; margin-bottom: 12px; animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+    </style>
 </head>
+<body class="p-4 md:p-10 max-w-5xl mx-auto">
 
-<body class="bg-slate-950 text-white p-6">
+    <header class="flex justify-between items-center mb-10">
+        <div>
+            <h1 class="orbitron text-2xl font-black italic text-white uppercase tracking-tighter">
+                TALLER<span class="text-cyan-500">PRO360</span>
+            </h1>
+            <p class="text-[9px] mono text-slate-500 uppercase tracking-[0.3em]">Gestión de Base de Datos Local</p>
+        </div>
+        <button onclick="resetData()" class="text-[10px] mono text-red-500 hover:text-red-400 font-bold uppercase tracking-widest">
+            <i class="fas fa-trash-alt mr-2"></i> Formatear DB
+        </button>
+    </header>
 
-<h1 class="text-3xl text-green-400 mb-6">
-TallerPRO360
-</h1>
+    <div class="grid grid-cols-3 gap-6 mb-10">
+        <div class="glass-card text-center">
+            <p class="text-[10px] text-slate-500 font-bold uppercase mb-1">Vehículos</p>
+            <div id="kpiVehiculos" class="orbitron text-3xl font-black text-white">0</div>
+        </div>
+        <div class="glass-card text-center">
+            <p class="text-[10px] text-slate-500 font-bold uppercase mb-1">Órdenes</p>
+            <div id="kpiOrdenes" class="orbitron text-3xl font-black text-white">0</div>
+        </div>
+        <div class="glass-card text-center border-cyan-500/20">
+            <p class="text-[10px] text-cyan-500 font-bold uppercase mb-1 italic">Ingresos (COP)</p>
+            <div id="kpiIngresos" class="orbitron text-2xl font-black text-cyan-400">$ 0</div>
+        </div>
+    </div>
 
+    <div class="grid md:grid-cols-2 gap-10">
+        
+        <section class="space-y-6">
+            <h2 class="orbitron text-xs font-black text-slate-400 uppercase tracking-widest">Registro de Misión</h2>
+            <div class="glass-card space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-2">Vehículo / Marca</label>
+                    <input id="marca" type="text" placeholder="Ej. Toyota Hilux" class="input-field mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-2">Diagnóstico Inicial</label>
+                    <input id="falla" type="text" placeholder="Ej. Falla Inyección" class="input-field mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-2">Valor del Servicio (COP)</label>
+                    <input id="precio" type="number" placeholder="Ej. 120000" class="input-field mt-1">
+                </div>
+                <button onclick="guardar()" class="btn-primary orbitron text-xs mt-4">
+                    <i class="fas fa-save mr-2"></i> Confirmar Orden
+                </button>
+            </div>
+        </section>
 
-<div class="grid grid-cols-3 gap-4 mb-6">
+        <section>
+            <h2 class="orbitron text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Órdenes Activas</h2>
+            <div id="lista" class="max-h-[500px] overflow-y-auto pr-2">
+                </div>
+        </section>
 
-<div class="bg-slate-900 p-4 rounded">
-Vehículos
-<div id="kpiVehiculos" class="text-green-400 text-xl">0</div>
-</div>
-
-<div class="bg-slate-900 p-4 rounded">
-Órdenes
-<div id="kpiOrdenes" class="text-green-400 text-xl">0</div>
-</div>
-
-<div class="bg-slate-900 p-4 rounded">
-Ingresos
-<div id="kpiIngresos" class="text-green-400 text-xl">$0</div>
-</div>
-
-</div>
-
-
-<h2 class="text-xl mb-2">Nuevo vehículo</h2>
-
-<input id="marca" placeholder="Marca"
-class="p-2 text-black mb-2 w-full">
-
-<input id="falla" placeholder="Falla"
-class="p-2 text-black mb-2 w-full">
-
-<input id="precio" placeholder="Precio"
-class="p-2 text-black mb-2 w-full">
-
-<button onclick="guardar()"
-class="bg-green-500 px-4 py-2 rounded mb-6">
-Guardar
-</button>
-
-
-<h2 class="text-xl mb-2">Vehículos registrados</h2>
-
-<div id="lista"></div>
-
+    </div>
 
 <script>
+    // Carga inicial de datos
+    let data = JSON.parse(localStorage.getItem("taller_pro_360")) || [];
 
-let data=JSON.parse(localStorage.getItem("taller")) || []
+    function guardar() {
+        const marca = document.getElementById("marca").value;
+        const falla = document.getElementById("falla").value;
+        const precioInput = document.getElementById("precio").value;
 
-function guardar(){
+        // Validación simple
+        if(!marca || !falla || !precioInput) {
+            alert("William, faltan datos para procesar la orden.");
+            return;
+        }
 
-const marca=document.getElementById("marca").value
-const falla=document.getElementById("falla").value
-const precio=parseInt(document.getElementById("precio").value)
+        const precio = parseInt(precioInput);
 
-data.push({marca,falla,precio})
+        // Guardar en array y storage
+        data.push({ marca, falla, precio, date: new Date().toLocaleDateString() });
+        localStorage.setItem("taller_pro_360", JSON.stringify(data));
 
-localStorage.setItem("taller",JSON.stringify(data))
+        // Limpiar inputs
+        document.getElementById("marca").value = "";
+        document.getElementById("falla").value = "";
+        document.getElementById("precio").value = "";
 
-mostrar()
+        mostrar();
+    }
 
-}
+    function mostrar() {
+        const lista = document.getElementById("lista");
+        lista.innerHTML = "";
+        let ingresosTotal = 0;
 
-function mostrar(){
+        if(data.length === 0) {
+            lista.innerHTML = `<p class="text-slate-600 italic mono text-xs">Sin registros en base de datos local...</p>`;
+        }
 
-const lista=document.getElementById("lista")
+        data.forEach((v, index) => {
+            ingresosTotal += v.precio;
 
-lista.innerHTML=""
+            const div = document.createElement("div");
+            div.className = "ticket";
+            div.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[9px] mono text-cyan-500 uppercase mb-1">UNIDAD #${index + 1} | ${v.date}</p>
+                        <h4 class="font-bold text-white uppercase">${v.marca}</h4>
+                        <p class="text-xs text-slate-400 mt-1"><i class="fas fa-wrench mr-2"></i>${v.falla}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="orbitron text-sm font-bold text-emerald-400">$${v.precio.toLocaleString("es-CO")}</p>
+                    </div>
+                </div>
+            `;
+            lista.appendChild(div);
+        });
 
-let ingresos=0
+        // Actualizar KPIs
+        document.getElementById("kpiVehiculos").innerText = data.length;
+        document.getElementById("kpiOrdenes").innerText = data.length;
+        document.getElementById("kpiIngresos").innerText = "$ " + ingresosTotal.toLocaleString("es-CO");
+    }
 
-data.forEach(v=>{
+    function resetData() {
+        if(confirm("¿Estás seguro de borrar toda la base de datos local?")) {
+            data = [];
+            localStorage.removeItem("taller_pro_360");
+            mostrar();
+        }
+    }
 
-ingresos+=v.precio
-
-const div=document.createElement("div")
-
-div.className="bg-slate-900 p-3 rounded mb-2"
-
-div.innerHTML=
-"🚗 "+v.marca+
-"<br>🔧 "+v.falla+
-"<br>💰 $"+v.precio
-
-lista.appendChild(div)
-
-})
-
-document.getElementById("kpiVehiculos").innerText=data.length
-document.getElementById("kpiOrdenes").innerText=data.length
-document.getElementById("kpiIngresos").innerText="$"+ingresos
-
-}
-
-mostrar()
-
+    // Render inicial
+    mostrar();
 </script>
 
 </body>
-
 </html>
