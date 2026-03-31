@@ -3,106 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus-X Marketplace | Global Logistics</title>
+    <title>Nexus-X Marketplace | Elite Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;900&family=Orbitron:wght@700;900&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
     <style>
-        :root { --cyan: #06b6d4; --dark: #020617; --neon-purple: #a855f7; }
+        :root { --cyan: #06b6d4; --dark: #020617; --slate-900: #0f172a; --emerald: #10b981; }
         body { font-family: 'Outfit', sans-serif; background: var(--dark); color: white; overflow-x: hidden; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.05); }
-        .card-item { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; }
-        .card-item:hover { transform: translateY(-10px); border-color: var(--cyan); box-shadow: 0 20px 40px rgba(6,182,212,0.15); }
-        .card-item::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: conic-gradient(transparent, var(--cyan), transparent); animation: rotate 6s linear infinite; opacity: 0; transition: 0.3s; z-index: -1; }
-        .card-item:hover::before { opacity: 0.2; }
-        @keyframes rotate { 100% { transform: rotate(360deg); } }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Fondo dinámico de Radar */
+        .radar-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 80%);
+            z-index: -1; pointer-events: none;
+        }
+        
+        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,0.05); }
+        
+        .card-elite { 
+            transition: all 0.5s cubic-bezier(0.2, 1, 0.2, 1); 
+            border: 1px solid rgba(255,255,255,0.03);
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.8), rgba(2, 6, 23, 1));
+        }
+        
+        .card-elite:hover { 
+            transform: scale(1.03) translateY(-10px);
+            border-color: var(--cyan);
+            box-shadow: 0 25px 50px -12px rgba(6, 182, 212, 0.3);
+        }
+
+        /* Badge Animado para Importaciones */
+        .badge-import {
+            background: linear-gradient(90deg, #1e40af, #b91c1c);
+            animation: pulse-border 2s infinite;
+        }
+        @keyframes pulse-border { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .badge-usa { background: linear-gradient(90deg, #1e3a8a, #b91c1c); }
+        
+        /* Animación de escaneo láser en las fotos */
+        .scan-overlay::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--cyan); opacity: 0.5; animation: laser 3s linear infinite;
+        }
+        @keyframes laser { 0% { top: 0%; } 100% { top: 100%; } }
     </style>
 </head>
-<body class="p-6 md:p-10">
+<body class="p-4 md:p-8">
 
-    <div class="max-w-7xl mx-auto mb-16">
-        <div class="flex flex-col lg:flex-row justify-between items-end gap-10">
-            <div class="relative group">
-                <div class="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-lg blur opacity-25 group-hover:opacity-60 transition"></div>
-                <div class="relative bg-slate-950 p-6 rounded-3xl border border-white/10">
-                    <h2 class="orbitron text-4xl font-black italic uppercase tracking-tighter">MARKET<span class="text-cyan-400">X</span></h2>
-                    <p class="text-[9px] text-slate-500 font-black uppercase tracking-[0.5em] mt-3 italic">
-                        <i class="fas fa-globe-americas text-cyan-500 mr-2"></i> Charlotte ↔ Ibagué Hub
-                    </p>
+    <div class="radar-bg"></div>
+
+    <header class="max-w-7xl mx-auto mb-12">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="px-3 py-1 bg-purple-600/20 border border-purple-500/50 rounded-full">
+                        <span class="text-[8px] orbitron font-black text-purple-400 tracking-widest uppercase">Elite Access Enabled</span>
+                    </div>
+                    <span class="text-[8px] mono text-cyan-500/50 uppercase tracking-widest">Protocolo: 0xNexus-Market</span>
                 </div>
+                <h1 class="orbitron text-5xl font-black italic uppercase tracking-tighter">
+                    MARKET<span class="text-cyan-400">X</span> <span class="text-white/20 font-light">TERMINAL</span>
+                </h1>
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.4em] mt-2 italic flex items-center">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full mr-3 animate-ping"></span>
+                    Enlace Satelital Activo: Charlotte (USA) <i class="fas fa-arrows-left-right mx-2 text-cyan-500"></i> Ibagué (COL)
+                </p>
             </div>
 
-            <div class="relative w-full lg:w-2/5 group">
-                <i class="fas fa-search absolute left-6 top-1/2 -translate-y-1/2 text-cyan-500 group-hover:scale-125 transition-transform"></i>
-                <input type="text" id="nexusSearch" placeholder="¿Qué misión técnica vas a completar hoy?..." 
-                       class="w-full bg-black/40 border-2 border-white/5 rounded-[2rem] py-6 pl-16 pr-8 text-xs font-bold uppercase tracking-widest focus:border-cyan-500/50 outline-none transition-all placeholder:text-slate-700">
+            <div class="relative w-full lg:w-1/3 group">
+                <div class="absolute inset-y-0 left-6 flex items-center">
+                    <i class="fas fa-satellite text-cyan-500 group-hover:rotate-45 transition-transform"></i>
+                </div>
+                <input type="text" id="nexusSearch" placeholder="Escanear pieza, referencia o SKU..." 
+                       class="w-full bg-slate-900/50 border border-white/10 rounded-2xl py-5 pl-16 pr-8 text-[11px] font-bold uppercase tracking-widest focus:border-cyan-500 outline-none transition-all placeholder:text-slate-600">
             </div>
 
-            <div class="flex gap-4">
-                <button onclick="location.href='publish.html'" class="px-8 py-5 bg-white text-black orbitron text-[10px] font-black rounded-3xl uppercase hover:bg-cyan-400 transition-all shadow-xl shadow-white/5">
-                    <i class="fas fa-plus-circle mr-2"></i> Publicar
+            <div class="flex items-center gap-4">
+                <button onclick="location.href='publish.html'" class="px-8 py-4 bg-cyan-500 text-black orbitron text-[10px] font-black rounded-xl uppercase hover:scale-105 transition-all shadow-xl shadow-cyan-500/20">
+                    <i class="fas fa-plus-square mr-2"></i> Nuevo Despliegue
                 </button>
-                <div class="flex glass p-2 rounded-[2rem]">
-                    <button class="w-12 h-12 flex items-center justify-center text-cyan-400 hover:scale-110 transition"><i class="fas fa-shopping-cart"></i></button>
-                    <button class="w-12 h-12 flex items-center justify-center text-slate-400 hover:scale-110 transition"><i class="fas fa-filter"></i></button>
+                <div class="flex glass p-1.5 rounded-xl border border-white/10">
+                    <button class="w-11 h-11 flex items-center justify-center text-cyan-400 hover:bg-white/5 rounded-lg transition"><i class="fas fa-shopping-cart"></i></button>
+                    <button class="w-11 h-11 flex items-center justify-center text-slate-400 hover:bg-white/5 rounded-lg transition"><i class="fas fa-sliders"></i></button>
                 </div>
             </div>
         </div>
-    </div>
+    </header>
 
-    <div class="max-w-7xl mx-auto flex gap-6 overflow-x-auto pb-12 no-scrollbar scroll-smooth">
-        <button class="px-10 py-4 bg-cyan-500 text-black text-[10px] font-black rounded-2xl uppercase flex-shrink-0 shadow-2xl shadow-cyan-500/40">Nexus-All</button>
-        <button class="px-10 py-4 glass text-[10px] font-black rounded-2xl uppercase flex-shrink-0 hover:border-cyan-500/50 transition-all"><i class="fas fa-bolt mr-2"></i> Motores</button>
-        <button class="px-10 py-4 glass text-[10px] font-black rounded-2xl uppercase flex-shrink-0 hover:border-cyan-500/50 transition-all"><i class="fas fa-car-battery mr-2"></i> Eléctrico</button>
-        <button class="px-10 py-4 glass text-[10px] font-black rounded-2xl uppercase flex-shrink-0 hover:border-cyan-500/50 transition-all"><i class="fas fa-microchip mr-2"></i> Sensores / ECUs</button>
-        <button class="px-10 py-4 glass text-[10px] font-black rounded-2xl uppercase flex-shrink-0 hover:border-cyan-500/50 transition-all"><i class="fas fa-tools mr-2"></i> Herramientas</button>
-    </div>
+    <nav class="max-w-7xl mx-auto flex gap-4 overflow-x-auto pb-10 no-scrollbar scroll-smooth">
+        <button class="px-8 py-3 bg-cyan-500 text-black text-[9px] font-black rounded-lg uppercase flex-shrink-0 orbitron tracking-widest shadow-lg shadow-cyan-500/30">Todo el Sistema</button>
+        <button class="px-8 py-3 glass text-[9px] font-black rounded-lg uppercase flex-shrink-0 hover:border-cyan-500/50 transition-all border border-white/5 tracking-widest"><i class="fas fa-microchip mr-2"></i> ECU & Sensores</button>
+        <button class="px-8 py-3 glass text-[9px] font-black rounded-lg uppercase flex-shrink-0 hover:border-cyan-500/50 transition-all border border-white/5 tracking-widest"><i class="fas fa-fan mr-2"></i> Turbo / Aspiración</button>
+        <button class="px-8 py-3 glass text-[9px] font-black rounded-lg uppercase flex-shrink-0 hover:border-cyan-500/50 transition-all border border-white/5 tracking-widest"><i class="fas fa-wrench mr-2"></i> Herramientas Pro</button>
+        <button class="px-8 py-3 glass text-[9px] font-black rounded-lg uppercase flex-shrink-0 hover:border-cyan-500/50 transition-all border border-white/5 tracking-widest"><i class="fas fa-bolt mr-2"></i> Sistemas Eléctricos</button>
+    </nav>
 
-    <div id="productGrid" class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-8">
-        </div>
+    <main id="productGrid" class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        </main>
 
     <script type="module">
-        // Simulación de Datos V16.5 (Próximamente de Firebase)
         const products = [
-            { id: 1, name: "Kit Turbo Garrett V2", brand: "Precision Racing", price: "4.200.000", location: "Charlotte, NC", tag: "Importado", img: "https://images.unsplash.com/photo-1616788494707-ec28f08d05a1?q=80&w=300&auto=format&fit=crop" },
-            { id: 2, name: "Scanner Launch X431", brand: "Launch Elite", price: "2.150.000", location: "Ibagué, TOL", tag: "Local", img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=300&auto=format&fit=crop" },
-            { id: 3, name: "Set Frenos Cerámicos", brand: "Brembo Pro", price: "980.000", location: "Charlotte, NC", tag: "Importado", img: "https://images.unsplash.com/photo-1486006396113-ad7301fd04f7?q=80&w=300&auto=format&fit=crop" },
-            { id: 4, name: "Batería AGM 12V", brand: "Optima Red", price: "650.000", location: "Ibagué, TOL", tag: "Oferta", img: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=300&auto=format&fit=crop" },
-            { id: 5, name: "Aceite Sintético 5W-30", brand: "Liqui Moly", price: "220.000", location: "Charlotte, NC", tag: "Premium", img: "https://images.unsplash.com/photo-1590674899484-13da0d1b58f5?q=80&w=300&auto=format&fit=crop" }
+            { id: 1, name: "Turbocompresor Precision 6266", brand: "Precision Turbo USA", price: "7.850.000", location: "Charlotte, NC", tag: "Importado", status: "Stock", img: "https://images.unsplash.com/photo-1616788494707-ec28f08d05a1?q=80&w=400" },
+            { id: 2, name: "Scanner Autel Ultra 2026", brand: "Autel Intelligence", price: "12.400.000", location: "Ibagué, TOL", tag: "Nexus Verified", status: "Inmediate", img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=400" },
+            { id: 3, name: "Inyectores Bosch High Flow", brand: "Bosch Performance", price: "2.150.000", location: "Charlotte, NC", tag: "Importado", status: "5 Days", img: "https://images.unsplash.com/photo-1486006396113-ad7301fd04f7?q=80&w=400" },
+            { id: 4, name: "Estación Soldadura JBC", brand: "JBC Spain/USA", price: "3.200.000", location: "Ibagué, TOL", tag: "Premium", status: "Stock", img: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=400" },
+            { id: 5, name: "Aceite Motul 300V (Caja x12)", brand: "Motul Racing", price: "1.100.000", location: "Charlotte, NC", tag: "Importado", status: "Stock", img: "https://images.unsplash.com/photo-1590674899484-13da0d1b58f5?q=80&w=400" }
         ];
 
         const grid = document.getElementById('productGrid');
 
         function renderProducts(items) {
             grid.innerHTML = items.map(p => `
-                <div class="card-item glass p-6 rounded-[2.5rem] flex flex-col group">
-                    <div class="aspect-square bg-black/40 rounded-[2rem] mb-6 overflow-hidden relative border border-white/5">
+                <div class="card-elite p-5 rounded-[2rem] flex flex-col group relative overflow-hidden">
+                    <div class="aspect-square bg-slate-900 rounded-[1.5rem] mb-5 overflow-hidden relative border border-white/5 scan-overlay">
                         <div class="absolute top-3 left-3 flex flex-col gap-2 z-10">
-                            <span class="${p.tag === 'Importado' ? 'badge-usa' : 'bg-emerald-500'} text-white text-[7px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-xl">
-                                ${p.tag}
+                            <span class="${p.tag === 'Importado' ? 'badge-import' : 'bg-emerald-600'} text-white text-[7px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-2xl">
+                                <i class="fas ${p.tag === 'Importado' ? 'fa-plane-arrival' : 'fa-check-double'} mr-1"></i> ${p.tag}
                             </span>
                         </div>
-                        <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100">
+                        <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover group-hover:scale-125 transition-transform duration-1000 opacity-70 group-hover:opacity-100">
                     </div>
                     
                     <div class="space-y-1">
-                        <span class="text-[8px] font-black text-cyan-500 uppercase tracking-[0.3em]">${p.brand}</span>
-                        <h3 class="text-sm font-black text-white uppercase tracking-tighter leading-tight">${p.name}</h3>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[8px] mono text-cyan-400 uppercase tracking-widest">${p.brand}</span>
+                            <span class="text-[7px] font-black text-slate-500 uppercase">${p.status}</span>
+                        </div>
+                        <h3 class="text-[13px] font-black text-white uppercase tracking-tighter leading-tight h-10 overflow-hidden">${p.name}</h3>
                         <div class="flex items-center gap-2 text-[8px] text-slate-500 font-bold uppercase mt-2">
-                            <i class="fas fa-map-marker-alt text-red-500"></i> ${p.location}
+                            <i class="fas fa-map-marker-alt text-cyan-500"></i> ${p.location}
                         </div>
                     </div>
 
-                    <div class="mt-6 flex items-center justify-between border-t border-white/5 pt-6">
+                    <div class="mt-6 flex items-center justify-between bg-black/40 p-4 rounded-2xl border border-white/5">
                         <div>
-                            <p class="text-[8px] text-slate-500 font-black uppercase">Precio Nexus</p>
+                            <p class="text-[7px] text-slate-500 font-black uppercase tracking-widest">Valor Nexus-X</p>
                             <p class="text-white font-black text-lg orbitron tracking-tighter italic">$${p.price}</p>
                         </div>
-                        <button class="w-12 h-12 bg-white/5 hover:bg-cyan-500 rounded-2xl flex items-center justify-center text-white hover:text-black transition-all">
-                            <i class="fas fa-arrow-right"></i>
+                        <button class="w-10 h-10 bg-cyan-500 text-black rounded-xl flex items-center justify-center hover:bg-white transition-all shadow-lg shadow-cyan-500/20">
+                            <i class="fas fa-crosshairs"></i>
                         </button>
                     </div>
                 </div>
@@ -111,7 +153,7 @@
 
         renderProducts(products);
 
-        // Búsqueda en tiempo real (Nexus-Engine)
+        // Búsqueda Inteligente Nexus-Engine
         document.getElementById('nexusSearch').addEventListener('input', (e) => {
             const val = e.target.value.toLowerCase();
             const filtered = products.filter(p => p.name.toLowerCase().includes(val) || p.brand.toLowerCase().includes(val));
