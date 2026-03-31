@@ -1,87 +1,144 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TallerPRO360 | Fleet Radar</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root { --cyan: #06b6d4; --dark: #020617; }
+        body { margin: 0; background: var(--dark); color: white; font-family: 'JetBrains Mono', monospace; overflow: hidden; }
+        
+        #map { height: 100vh; width: 100vw; z-index: 1; }
 
-<title>Mapa TallerPRO360</title>
+        /* Superposición de Interfaz (HUD) */
+        .hud-overlay {
+            position: absolute; top: 20px; left: 20px; z-index: 1000;
+            background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px);
+            padding: 20px; border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: 20px; pointer-events: none;
+        }
 
-<link rel="stylesheet"
-href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        
+        /* Estilo de los Marcadores (Vehículos) */
+        .vehicle-icon {
+            text-align: center; color: var(--cyan);
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.8);
+            transition: all 0.5s ease-in-out;
+        }
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        /* Popups Estilizados */
+        .leaflet-popup-content-wrapper {
+            background: #0f172a; color: white; border: 1px solid var(--cyan);
+            border-radius: 12px; font-family: 'JetBrains Mono', monospace;
+        }
+        .leaflet-popup-tip { background: var(--cyan); }
 
-<style>
+        .pulse {
+            position: absolute; width: 20px; height: 20px;
+            background: rgba(6, 182, 212, 0.3); border-radius: 50%;
+            animation: pulse-ring 2s infinite;
+        }
 
-body{
-margin:0;
-background:#020617;
-color:white;
-font-family:system-ui;
-}
-
-#map{
-height:100vh;
-}
-
-</style>
-
+        @keyframes pulse-ring {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+    </style>
 </head>
-
 <body>
 
-<div id="map"></div>
+    <div class="hud-overlay">
+        <h1 class="orbitron text-lg font-black italic text-white tracking-tighter uppercase">
+            FLEET<span class="text-cyan-500">RADAR</span> <span class="text-[10px] text-slate-500 font-light">360</span>
+        </h1>
+        <div class="mt-4 space-y-2">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                <span class="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Sensores Activos: <span id="count">0</span></span>
+            </div>
+            <div class="text-[8px] text-cyan-500 mono uppercase tracking-[0.3em]">Nodo: Ibagué - Colombia</div>
+        </div>
+    </div>
+
+    <div id="map"></div>
 
 <script>
+    // Configuración Inicial centrada en Ibagué (Coordenadas Reales)
+    const ibagueCoords = [4.4389, -75.2322];
+    const map = L.map('map', {
+        zoomControl: false,
+        attributionControl: false
+    }).setView(ibagueCoords, 14);
 
-const map = L.map('map').setView([4.7110,-74.0721],13)
+    // Capa de Mapa Dark Mode (CartoDB Dark Matter)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19
+    }).addTo(map);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-maxZoom:19
-}).addTo(map)
+    const autos = [];
+    const marcas = ["Toyota Hilux", "Kia Rio", "Chevrolet Onix", "Renault Duster", "Mazda CX5"];
 
-const autos=[]
+    // Función para crear un icono personalizado
+    function createVehicleIcon() {
+        return L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div class="pulse"></div><div class="vehicle-icon"><i class="fa-solid fa-car-side fa-xl"></i></div>`,
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+        });
+    }
 
-function crearAuto(){
+    function crearAuto() {
+        // Dispersión aleatoria sobre el centro de Ibagué
+        const lat = ibagueCoords[0] + (Math.random() - 0.5) / 50;
+        const lng = ibagueCoords[1] + (Math.random() - 0.5) / 50;
+        
+        const vehiculoNombre = marcas[Math.floor(Math.random()*marcas.length)];
+        const placa = "TPRO-" + Math.floor(100 + Math.random() * 900);
 
-const lat=4.7110+(Math.random()-0.5)/100
-const lng=-74.0721+(Math.random()-0.5)/100
+        const marker = L.marker([lat, lng], { icon: createVehicleIcon() }).addTo(map);
 
-const marker=L.marker([lat,lng]).addTo(map)
+        marker.bindPopup(`
+            <div style="text-align:center">
+                <b class="orbitron text-cyan-500" style="font-size:10px">${vehiculoNombre}</b><br>
+                <span style="font-size:11px; color:#94a3b8">Placa: ${placa}</span><br>
+                <div style="margin-top:5px; padding:2px 5px; background:#065f46; border-radius:4px; font-size:9px">EN RUTA AL TALLER</div>
+            </div>
+        `);
 
-marker.bindPopup("🚗 Vehículo del taller")
+        autos.push(marker);
+        document.getElementById('count').innerText = autos.length;
+    }
 
-autos.push(marker)
+    function moverAutos() {
+        autos.forEach(auto => {
+            const pos = auto.getLatLng();
+            // Movimiento muy ligero para simular tráfico real
+            const newLat = pos.lat + (Math.random() - 0.5) / 1000;
+            const newLng = pos.lng + (Math.random() - 0.5) / 1000;
+            auto.setLatLng([newLat, newLng]);
+        });
+    }
 
-}
+    // Generar flota inicial
+    for(let i = 0; i < 8; i++) {
+        crearAuto();
+    }
 
-function moverAutos(){
+    // Actualización de telemetría
+    setInterval(moverAutos, 4000);
 
-autos.forEach(auto=>{
-
-const pos=auto.getLatLng()
-
-const lat=pos.lat+(Math.random()-0.5)/500
-const lng=pos.lng+(Math.random()-0.5)/500
-
-auto.setLatLng([lat,lng])
-
-})
-
-}
-
-for(let i=0;i<5;i++){
-
-crearAuto()
-
-}
-
-setInterval(moverAutos,3000)
+    // Ajuste dinámico de vista (Opcional: puedes quitarlo si quieres que el usuario mueva el mapa)
+    // map.on('click', () => { console.log("Radar de coordenadas activo"); });
 
 </script>
 
 </body>
-
 </html>
