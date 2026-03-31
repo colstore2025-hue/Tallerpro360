@@ -1,328 +1,240 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TallerPRO360 | Nexus-X Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Outfit:wght@300;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root { --cyan: #06b6d4; --dark: #020617; --slate-800: #1e293b; }
+        body { background: var(--dark); color: white; font-family: 'Outfit', sans-serif; overflow-x: hidden; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
 
-<title>TallerPRO360 | Simulación del Taller Inteligente</title>
+        .sidebar { background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(20px); border-right: 1px solid rgba(255,255,255,0.05); }
+        
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 24px; padding: 24px; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover { border-color: var(--cyan); box-shadow: 0 0 40px rgba(6, 182, 212, 0.1); }
 
-<script src="https://cdn.tailwindcss.com"></script>
+        .log-terminal {
+            background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 20px; padding: 20px; font-size: 11px; height: 300px;
+            overflow-y: auto; scroll-behavior: smooth;
+        }
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        .kpi-value { font-family: 'Orbitron', sans-serif; letter-spacing: -1px; font-style: italic; }
+        
+        /* Animación de escaneo */
+        .scan-line {
+            width: 100%; height: 2px; background: var(--cyan);
+            box-shadow: 0 0 15px var(--cyan); position: absolute;
+            top: 0; left: 0; animation: scan 3s linear infinite; opacity: 0.3;
+        }
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
 
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-<style>
-
-body{
-background:#020617;
-color:white;
-font-family:system-ui;
-}
-
-.sidebar{
-background:#020617;
-border-right:1px solid #1e293b;
-}
-
-.card{
-background:#0f172a;
-border:1px solid #1e293b;
-border-radius:14px;
-padding:20px;
-}
-
-.log{
-background:#020617;
-border:1px solid #1e293b;
-border-radius:10px;
-padding:10px;
-font-size:14px;
-height:220px;
-overflow:auto;
-}
-
-</style>
-
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--cyan); border-radius: 10px; }
+    </style>
 </head>
-
 
 <body class="flex min-h-screen">
 
-<!-- SIDEBAR -->
+<aside class="sidebar w-64 p-8 flex flex-col justify-between">
+    <div>
+        <div class="mb-12">
+            <h1 class="orbitron text-xl font-black italic tracking-tighter text-white">TALLER<span class="text-cyan-500">PRO</span></h1>
+            <p class="text-[8px] mono text-slate-500 uppercase tracking-[0.3em] mt-1">Sincronización Satelital</p>
+        </div>
 
-<div class="sidebar w-64 p-6">
+        <nav class="space-y-6 text-[10px] orbitron font-black uppercase tracking-widest text-slate-400">
+            <div class="flex items-center gap-4 text-cyan-400"><i class="fa-solid fa-bolt-lightning text-sm"></i> Operaciones</div>
+            <div class="flex items-center gap-4 hover:text-white transition-colors cursor-pointer"><i class="fa-solid fa-microchip text-sm"></i> Nexus IA</div>
+            <div class="flex items-center gap-4 hover:text-white transition-colors cursor-pointer"><i class="fa-solid fa-truck-ramp-box text-sm"></i> Logística</div>
+            <div class="flex items-center gap-4 hover:text-white transition-colors cursor-pointer"><i class="fa-solid fa-gear text-sm"></i> Ajustes</div>
+        </nav>
+    </div>
 
-<h1 class="text-2xl font-black text-emerald-400 mb-10">
-TallerPRO360
-</h1>
-
-<div class="space-y-4 text-slate-300">
-
-<div>
-<i class="fa-solid fa-car"></i> Órdenes
-</div>
-
-<div>
-<i class="fa-solid fa-brain"></i> IA Mecánica
-</div>
-
-<div>
-<i class="fa-solid fa-chart-line"></i> Finanzas
-</div>
-
-<div>
-<i class="fa-solid fa-users"></i> Clientes
-</div>
-
-</div>
-
-</div>
+    <div class="p-4 bg-cyan-500/5 rounded-2xl border border-cyan-500/20">
+        <p class="text-[8px] mono text-cyan-500 uppercase mb-1">Status de Conexión</p>
+        <p class="text-[10px] font-bold text-white uppercase">Charlotte Hub [OK]</p>
+    </div>
+</aside>
 
 
-<!-- PANEL PRINCIPAL -->
+<div class="flex-1 p-10 relative overflow-hidden">
+    <div class="scan-line"></div>
 
-<div class="flex-1 p-10">
-
-<h2 class="text-3xl font-bold mb-8">
-Simulación del Taller Inteligente
-</h2>
-
-
-<!-- KPIs -->
-
-<div class="grid md:grid-cols-3 gap-6">
-
-<div class="card">
-
-<h3 class="text-lg font-bold">
-Órdenes Activas
-</h3>
-
-<p id="ordenes" class="text-3xl text-emerald-400 mt-3">
-0
-</p>
-
-</div>
-
-<div class="card">
-
-<h3 class="text-lg font-bold">
-Ingresos Hoy
-</h3>
-
-<p id="ingresos" class="text-3xl text-emerald-400 mt-3">
-$0
-</p>
-
-</div>
-
-<div class="card">
-
-<h3 class="text-lg font-bold">
-Clientes Atendidos
-</h3>
-
-<p id="clientes" class="text-3xl text-emerald-400 mt-3">
-0
-</p>
-
-</div>
-
-</div>
+    <header class="flex justify-between items-end mb-12">
+        <div>
+            <h2 class="orbitron text-4xl font-black italic uppercase tracking-tighter text-white">SIMULATION <span class="text-cyan-500">ENGINE</span></h2>
+            <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mt-2">Monitoreo de actividad: <span class="text-slate-300">Ibagué Hub - Tolima</span></p>
+        </div>
+        <div class="text-right">
+            <p class="text-[10px] mono text-slate-500">UPTIME: 99.9%</p>
+            <p id="clock" class="text-sm font-black mono text-cyan-500">00:00:00</p>
+        </div>
+    </header>
 
 
-<!-- GRAFICO -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+        <div class="glass-card">
+            <h3 class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4">Órdenes en Proceso</h3>
+            <div class="flex items-baseline gap-2">
+                <span id="ordenes" class="kpi-value text-4xl font-black text-white">0</span>
+                <span class="text-[10px] text-cyan-500 font-bold">UNIDADES</span>
+            </div>
+        </div>
 
-<div class="card mt-8">
+        <div class="glass-card">
+            <h3 class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4">Ingresos de Misión</h3>
+            <div class="flex items-baseline gap-2">
+                <span id="ingresos" class="kpi-value text-4xl font-black text-emerald-400">$ 0</span>
+            </div>
+        </div>
 
-<h3 class="text-lg font-bold mb-4">
-Ingresos del Día
-</h3>
-
-<canvas id="graficoIngresos"></canvas>
-
-</div>
+        <div class="glass-card">
+            <h3 class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4">Clientes Conectados</h3>
+            <div id="clientes" class="kpi-value text-4xl font-black text-white">0</div>
+        </div>
+    </div>
 
 
-<!-- ACTIVIDAD -->
+    <div class="grid lg:grid-cols-12 gap-8">
+        <div class="lg:col-span-8 glass-card">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="orbitron text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                    <i class="fas fa-wave-square text-cyan-500"></i> Análisis de Flujo Financiero
+                </h3>
+            </div>
+            <canvas id="graficoIngresos" height="150"></canvas>
+        </div>
 
-<div class="mt-8">
-
-<h3 class="text-xl font-bold mb-3">
-Actividad del Taller
-</h3>
-
-<div id="log" class="log"></div>
-
-</div>
-
+        <div class="lg:col-span-4">
+            <h3 class="orbitron text-[10px] font-black text-white uppercase mb-4 tracking-widest">Logs de Inteligencia</h3>
+            <div id="log" class="log-terminal mono">
+                <div class="text-slate-600 italic">>> Esperando inyección de datos...</div>
+            </div>
+        </div>
+    </div>
 </div>
 
 
 
 <script>
+/* ========================
+ENGINE DATA
+======================== */
+let ordenes = 0, ingresos = 0, clientes = 0;
+const vehiculos = ["Toyota Hilux 4x4", "Kenworth T800", "Caterpillar 320D", "Chevrolet Silverado", "Ford F-150 Raptor"];
+const fallas = ["Desgaste de Turbo Garrett", "Fuga en Bomba Inyectora", "Error ECU: Inyección P0201", "Sensor ABS Descalibrado", "Filtro Partículas Obstruido"];
+const costos = [450000, 1250000, 890000, 320000, 2100000];
 
 /* ========================
-VARIABLES
+CHART CONFIG (Elite Style)
 ======================== */
-
-let ordenes = 0
-let ingresos = 0
-let clientes = 0
-
-let datosGrafico = []
-
-
-
-const vehiculos = [
-"Toyota Corolla",
-"Chevrolet Spark",
-"Renault Logan",
-"Kia Picanto",
-"Mazda 3"
-]
-
-const fallas = [
-"Fuga de aceite",
-"Falla en frenos",
-"Batería descargada",
-"Sensor de oxígeno",
-"Filtro de aire obstruido"
-]
-
-const costos = [
-120000,
-250000,
-90000,
-180000,
-320000
-]
-
-
-
-/* ========================
-GRAFICO
-======================== */
-
-const ctx = document.getElementById('graficoIngresos')
+const ctx = document.getElementById('graficoIngresos').getContext('2d');
+const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+gradient.addColorStop(0, 'rgba(6, 182, 212, 0.3)');
+gradient.addColorStop(1, 'rgba(6, 182, 212, 0)');
 
 const grafico = new Chart(ctx, {
-
-type: 'line',
-
-data: {
-
-labels: [],
-
-datasets: [{
-
-label: 'Ingresos',
-
-data: [],
-
-borderColor: '#10b981',
-
-backgroundColor: '#10b98133',
-
-tension:0.3
-
-}]
-
-}
-
-})
-
-
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Flujo COP',
+            data: [],
+            borderColor: '#06b6d4',
+            borderWidth: 3,
+            pointRadius: 0,
+            fill: true,
+            backgroundColor: gradient,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { display: false },
+            y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#475569', font: { family: 'JetBrains Mono', size: 10 } } }
+        }
+    }
+});
 
 /* ========================
-SIMULADOR
+SYSTEM CLOCK
 ======================== */
-
-function simular(){
-
-const v = vehiculos[Math.floor(Math.random()*vehiculos.length)]
-
-const f = fallas[Math.floor(Math.random()*fallas.length)]
-
-const c = costos[Math.floor(Math.random()*costos.length)]
-
-ordenes++
-clientes++
-ingresos += c
-
-document.getElementById("ordenes").innerText = ordenes
-
-document.getElementById("clientes").innerText = clientes
-
-document.getElementById("ingresos").innerText =
-"$"+ingresos.toLocaleString("es-CO")
-
-registrarLog(v,f,c)
-
-actualizarGrafico()
-
+function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').innerText = now.toLocaleTimeString('en-US', { hour12: false });
 }
-
-
+setInterval(updateClock, 1000);
 
 /* ========================
-LOG
+SIMULATION CORE
 ======================== */
+function simular() {
+    const v = vehiculos[Math.floor(Math.random()*vehiculos.length)];
+    const f = fallas[Math.floor(Math.random()*fallas.length)];
+    const c = costos[Math.floor(Math.random()*costos.length)];
 
-function registrarLog(vehiculo,falla,costo){
+    ordenes++;
+    clientes++;
+    ingresos += c;
 
-const log = document.getElementById("log")
+    // Actualizar UI
+    document.getElementById("ordenes").innerText = ordenes;
+    document.getElementById("clientes").innerText = clientes;
+    document.getElementById("ingresos").innerText = "$ " + ingresos.toLocaleString("es-CO");
 
-const item = document.createElement("div")
-
-item.innerHTML =
-
-`<p class="text-slate-300 mb-2">
-
-🚗 ${vehiculo} ingresó al taller<br>
-
-🧠 IA detecta: ${falla}<br>
-
-💰 Orden creada: $${costo.toLocaleString("es-CO")}
-
-</p>`
-
-log.prepend(item)
-
+    registrarLog(v, f, c);
+    actualizarGrafico();
 }
 
-
-
-/* ========================
-GRAFICO
-======================== */
-
-function actualizarGrafico(){
-
-const hora = new Date().toLocaleTimeString()
-
-grafico.data.labels.push(hora)
-
-grafico.data.datasets[0].data.push(ingresos)
-
-grafico.update()
-
+function registrarLog(vehiculo, falla, costo) {
+    const log = document.getElementById("log");
+    const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+    
+    const entry = document.createElement("div");
+    entry.className = "mb-4 border-l-2 border-cyan-500 pl-3 py-1 bg-white/5 rounded-r-lg";
+    entry.innerHTML = `
+        <p class="text-cyan-400 text-[9px] font-black uppercase">[${time}] Misión Detectada</p>
+        <p class="text-white text-xs font-bold uppercase mt-1">${vehiculo}</p>
+        <p class="text-slate-500 text-[10px]">IA Mecánica: <span class="text-slate-300 italic">${falla}</span></p>
+        <p class="text-emerald-400 text-[10px] font-bold mt-1">Ticket: $${costo.toLocaleString("es-CO")}</p>
+    `;
+    log.prepend(entry);
 }
 
-
+function actualizarGrafico() {
+    const hora = new Date().toLocaleTimeString();
+    grafico.data.labels.push(hora);
+    grafico.data.datasets[0].data.push(ingresos);
+    
+    if (grafico.data.labels.length > 15) {
+        grafico.data.labels.shift();
+        grafico.data.datasets[0].data.shift();
+    }
+    grafico.update();
+}
 
 /* ========================
-EJECUCION
+START SYSTEM
 ======================== */
-
-setInterval(simular,4000)
+setTimeout(() => {
+    setInterval(simular, 5000);
+    simular();
+}, 1000);
 
 </script>
-
 
 </body>
 </html>
