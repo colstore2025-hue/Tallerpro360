@@ -194,31 +194,15 @@
 <div id="modalTerminos" class="fixed inset-0 bg-black/95 z-[200] hidden flex items-center justify-center p-6">
     <div class="bg-[#0f172a] max-w-lg w-full rounded-[3rem] border border-cyan-500/30 p-10">
         <div class="text-center mb-6">
-            <i class="fas fa-shield-alt text-cyan-500 text-3xl mb-4"></i>
-            <h3 class="text-xl font-black italic uppercase text-white">Autorización Nexus-X</h3>
+            <i class="fas fa-file-contract text-cyan-500 text-3xl mb-4"></i>
+            <h3 class="text-xl font-black italic uppercase text-white">Acuerdo Nexus-X</h3>
         </div>
-        
-        <div class="space-y-4 mb-8">
-            <label class="flex items-start gap-3 cursor-pointer group">
-                <input type="checkbox" id="checkTerminos" class="mt-1 accent-cyan-500">
-                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tight">
-                    Acepto los <a href="/terminos.html" target="_blank" class="text-cyan-400 underline">Términos y Condiciones</a> de TallerPRO360.
-                </span>
-            </label>
-
-            <label class="flex items-start gap-3 cursor-pointer group">
-                <input type="checkbox" id="checkPoliticas" class="mt-1 accent-cyan-500">
-                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tight">
-                    Autorizo el tratamiento de datos según la <a href="/politicas.html" target="_blank" class="text-cyan-400 underline">Política de Privacidad</a> (Ley 1581).
-                </span>
-            </label>
+        <div class="h-48 overflow-y-auto text-[9px] text-slate-400 font-bold mb-6 pr-4 leading-relaxed uppercase border-y border-white/5 py-4">
+            Al activar este plan, acepta el tratamiento de datos según Ley 1581 (Habeas Data). Autoriza a TallerPRO360 el uso de IA para análisis predictivos. Los pagos no son reembolsables.
         </div>
-
         <div class="flex flex-col gap-3">
-            <button id="btnAceptar" disabled class="w-full py-4 bg-emerald-500 text-black font-black rounded-2xl text-[10px] uppercase opacity-50 transition-all">
-                Confirmar y Pagar con Bold
-            </button>
-            <button onclick="window.cerrarTerminos()" class="w-full py-2 text-slate-600 text-[8px] font-black uppercase tracking-widest">Cancelar</button>
+            <button id="btnAceptar" class="w-full py-4 bg-emerald-500 text-black font-black rounded-2xl text-[10px] uppercase">Aceptar y Pagar</button>
+            <button onclick="window.cerrarTerminos()" class="w-full py-2 text-slate-600 text-[8px] font-black uppercase tracking-widest">Cerrar</button>
         </div>
     </div>
 </div>
@@ -233,89 +217,79 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { firebaseConfig } from "/app/js/core/firebase-config.js"; 
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    let selectedPlanId = null;
+    let currentPlan = null;
 
-    // --- FUNCIONES DE NAVEGACIÓN ---
+    // Funciones globales vinculadas a window para acceso desde el HTML
     window.scrollPlanes = () => {
-        document.getElementById('planes')?.scrollIntoView({ behavior: 'smooth' });
+        const target = document.getElementById('planes');
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
     };
 
     window.confirmarTerminos = (plan) => {
-        selectedPlanId = plan;
-        document.getElementById("modalTerminos").classList.remove("hidden");
-        // Resetear el botón por seguridad
-        const btn = document.getElementById("btnAceptar");
-        btn.disabled = true;
-        btn.style.opacity = "0.5";
-        document.getElementById("checkTerminos").checked = false;
-        document.getElementById("checkPoliticas").checked = false;
+        console.log("Iniciando proceso para:", plan);
+        currentPlan = plan;
+        const modal = document.getElementById("modalTerminos");
+        if(modal) modal.classList.remove("hidden");
     };
 
     window.cerrarTerminos = () => {
-        document.getElementById("modalTerminos").classList.add("hidden");
+        const modal = document.getElementById("modalTerminos");
+        if(modal) modal.classList.add("hidden");
     };
 
-    // --- VALIDACIÓN LEGAL (COLOMBIA) ---
-    const checkT = document.getElementById("checkTerminos");
-    const checkP = document.getElementById("checkPoliticas");
     const btnAceptar = document.getElementById("btnAceptar");
 
-    const validarChecks = () => {
-        if (checkT.checked && checkP.checked) {
-            btnAceptar.disabled = false;
-            btnAceptar.style.opacity = "1";
-        } else {
-            btnAceptar.disabled = true;
-            btnAceptar.style.opacity = "0.5";
-        }
-    };
-
-    checkT.onchange = validarChecks;
-    checkP.onchange = validarChecks;
-
-    // --- LÓGICA DE PAGO BOLD ---
     btnAceptar.onclick = async () => {
         const user = auth.currentUser;
         
         if(!user) {
-            localStorage.setItem("pending_plan", selectedPlanId);
+            localStorage.setItem("pending_plan", currentPlan);
             window.location.href = "/login.html";
+            return;
+        }
+        
+        if(currentPlan === "freemium") {
+            window.location.href = "/app/index.html?mode=demo_activated";
             return;
         }
 
         try {
-            btnAceptar.innerText = "GENERANDO CONEXIÓN BOLD...";
+            btnAceptar.innerText = "GENERANDO ORDEN...";
             btnAceptar.disabled = true;
+            btnAceptar.style.opacity = "0.5";
 
-            // Llamada al nuevo endpoint de Bold que creamos
-            const response = await fetch("/api/create-bold-checkout", {
+            const response = await fetch("/api/create-preference", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ 
                     uid: user.uid, 
-                    planId: selectedPlanId,
+                    planId: currentPlan,
                     email: user.email 
                 })
             });
 
+            if (!response.ok) throw new Error("Error en servidor de pagos");
             const data = await response.json();
-
-            if (data.url) {
-                // REDIRECCIÓN AL CHECKOUT DE BOLD
-                window.location.href = data.url;
+            
+            if(data.init_point) {
+                window.location.href = data.init_point;
             } else {
-                throw new Error("No se generó la URL de Bold");
+                throw new Error("Preferencia fallida");
             }
 
         } catch(e) {
-            console.error("Error Nexus-X:", e);
-            alert("Error de conexión. Contactando a soporte Starlink...");
-            window.location.href = `https://wa.me/17049419163?text=Error_Pago_${selectedPlanId}`;
+            console.error("Pago fallido:", e);
+            alert("Error al conectar con Mercado Pago. Redirigiendo a WhatsApp de soporte...");
+            window.location.href = "https://wa.me/17049419163?text=Error%20al%20pagar%20plan%20" + currentPlan;
+            
+            btnAceptar.innerText = "ACEPTAR Y PAGAR";
+            btnAceptar.disabled = false;
+            btnAceptar.style.opacity = "1";
         }
     };
 </script>
