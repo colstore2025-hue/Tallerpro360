@@ -1,155 +1,184 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TallerPRO360 | Analytics Hub</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Outfit:wght@300;400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root { --cyan: #06b6d4; --emerald: #10b981; --dark: #020617; }
+        body { background: var(--dark); color: white; font-family: 'Outfit', sans-serif; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
 
-<title>Analítica TallerPRO360</title>
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px; padding: 25px; backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+        .glass-card:hover { transform: translateY(-5px); border-color: var(--cyan); }
 
-<script src="https://cdn.tailwindcss.com"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+        .kpi-value { font-size: 2rem; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+    </style>
 </head>
+<body class="p-6 md:p-12">
 
-<body class="bg-slate-950 text-white p-8">
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+        <div>
+            <h1 class="orbitron text-3xl font-black italic tracking-tighter uppercase">
+                DATA<span class="text-cyan-500">INTELLIGENCE</span>
+            </h1>
+            <p class="text-[10px] mono text-slate-500 uppercase tracking-[0.4em] mt-1">Ecosistema Nexus-X Starlink | Nodo Operativo</p>
+        </div>
+        <div class="flex gap-4">
+            <div class="bg-white/5 border border-white/10 p-4 rounded-2xl text-center min-w-[120px]">
+                <p class="text-[9px] text-slate-500 uppercase font-bold mb-1">Margen Neto</p>
+                <div class="text-emerald-400 font-bold">+24.8%</div>
+            </div>
+            <div class="bg-cyan-500/10 border border-cyan-500/20 p-4 rounded-2xl text-center min-w-[120px]">
+                <p class="text-[9px] text-cyan-500 uppercase font-bold mb-1">Eficiencia IA</p>
+                <div class="text-white font-bold">98.2%</div>
+            </div>
+        </div>
+    </header>
 
-<h1 class="text-4xl text-green-400 mb-8">
-Analítica del Taller
-</h1>
+    <div class="grid lg:grid-cols-2 gap-8">
 
+        <div class="glass-card">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-sm font-bold uppercase tracking-widest text-slate-400">Proyección de Ingresos</h2>
+                <i class="fas fa-chart-line text-cyan-500"></i>
+            </div>
+            <canvas id="graficoIngresos" height="200"></canvas>
+        </div>
 
-<div class="grid md:grid-cols-2 gap-8">
+        <div class="glass-card">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-sm font-bold uppercase tracking-widest text-slate-400">Demanda por Categoría</h2>
+                <i class="fas fa-tools text-yellow-500"></i>
+            </div>
+            <canvas id="graficoServicios" height="200"></canvas>
+        </div>
 
+        <div class="glass-card">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-sm font-bold uppercase tracking-widest text-slate-400">Rotación de Inventario</h2>
+                <i class="fas fa-box-open text-purple-500"></i>
+            </div>
+            <div class="max-w-[300px] mx-auto">
+                <canvas id="graficoRepuestos"></canvas>
+            </div>
+        </div>
 
-<div class="bg-slate-900 p-6 rounded">
+        <div class="glass-card">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-sm font-bold uppercase tracking-widest text-slate-400">Adquisición de Clientes</h2>
+                <i class="fas fa-users text-emerald-500"></i>
+            </div>
+            <canvas id="graficoCrecimiento" height="200"></canvas>
+        </div>
 
-<h2 class="text-xl text-blue-400 mb-4">
-Ingresos por mes
-</h2>
+    </div>
 
-<canvas id="graficoIngresos"></canvas>
-
-</div>
-
-
-<div class="bg-slate-900 p-6 rounded">
-
-<h2 class="text-xl text-yellow-400 mb-4">
-Servicios más comunes
-</h2>
-
-<canvas id="graficoServicios"></canvas>
-
-</div>
-
-
-<div class="bg-slate-900 p-6 rounded">
-
-<h2 class="text-xl text-purple-400 mb-4">
-Repuestos más vendidos
-</h2>
-
-<canvas id="graficoRepuestos"></canvas>
-
-</div>
-
-
-<div class="bg-slate-900 p-6 rounded">
-
-<h2 class="text-xl text-green-400 mb-4">
-Crecimiento del negocio
-</h2>
-
-<canvas id="graficoCrecimiento"></canvas>
-
-</div>
-
-
-</div>
-
-
+    <footer class="mt-12 text-center">
+        <p class="text-[9px] text-slate-600 mono uppercase tracking-[0.5em]">
+            Propiedad de Colombian Trucks Logistics LLC &copy; 2026 | Charlotte, NC
+        </p>
+    </footer>
 
 <script>
+    // Configuración Global de Chart.js para Dark Mode
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.font.family = "'Outfit', sans-serif";
+    Chart.defaults.scale.grid.color = 'rgba(255, 255, 255, 0.05)';
 
-new Chart(
-document.getElementById("graficoIngresos"),
-{
-type:"line",
-data:{
-labels:["Ene","Feb","Mar","Abr","May","Jun"],
-datasets:[{
-label:"Ingresos",
-data:[500000,800000,750000,1000000,1200000,1500000],
-borderColor:"rgb(34,197,94)",
-backgroundColor:"rgba(34,197,94,0.2)"
-}]
-}
-}
-)
+    // Función para crear gradientes
+    function getGradient(ctx, color) {
+        let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, color.replace('1)', '0.3)'));
+        gradient.addColorStop(1, color.replace('1)', '0)'));
+        return gradient;
+    }
 
+    // 1. Gráfico de Ingresos (Línea Suave)
+    const ctxIngresos = document.getElementById("graficoIngresos").getContext("2d");
+    new Chart(ctxIngresos, {
+        type: "line",
+        data: {
+            labels: ["Ene", "Feb", "Mar", "Abr", "May", "Jun"],
+            datasets: [{
+                label: "Ingresos (COP)",
+                data: [500000, 800000, 750000, 1000000, 1200000, 1500000],
+                borderColor: "#06b6d4",
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                backgroundColor: getGradient(ctxIngresos, 'rgba(6, 182, 212, 1)'),
+                pointRadius: 4,
+                pointBackgroundColor: "#06b6d4"
+            }]
+        },
+        options: { plugins: { legend: { display: false } } }
+    });
 
-new Chart(
-document.getElementById("graficoServicios"),
-{
-type:"bar",
-data:{
-labels:["Aceite","Frenos","Batería","Alineación"],
-datasets:[{
-label:"Servicios",
-data:[40,25,15,20],
-backgroundColor:[
-"#22c55e",
-"#3b82f6",
-"#eab308",
-"#a855f7"
-]
-}]
-}
-}
-)
+    // 2. Gráfico de Servicios (Barras Modernas)
+    new Chart(document.getElementById("graficoServicios"), {
+        type: "bar",
+        data: {
+            labels: ["Aceite", "Frenos", "Batería", "Alineación"],
+            datasets: [{
+                label: "Órdenes",
+                data: [40, 25, 15, 20],
+                backgroundColor: ["#06b6d4", "#3b82f6", "#eab308", "#a855f7"],
+                borderRadius: 8,
+                barThickness: 25
+            }]
+        },
+        options: { plugins: { legend: { display: false } } }
+    });
 
+    // 3. Gráfico de Repuestos (Doughnut Estilo Cyberpunk)
+    new Chart(document.getElementById("graficoRepuestos"), {
+        type: "doughnut",
+        data: {
+            labels: ["Pastillas", "Baterías", "Filtros", "Aceite"],
+            datasets: [{
+                data: [30, 20, 25, 25],
+                backgroundColor: ["#10b981", "#3b82f6", "#f59e0b", "#ef4444"],
+                borderWidth: 0,
+                hoverOffset: 20
+            }]
+        },
+        options: { 
+            cutout: '70%',
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 20, font: { size: 10 } } } }
+        }
+    });
 
-new Chart(
-document.getElementById("graficoRepuestos"),
-{
-type:"pie",
-data:{
-labels:["Pastillas freno","Baterías","Filtros","Aceite"],
-datasets:[{
-data:[30,20,25,25],
-backgroundColor:[
-"#22c55e",
-"#3b82f6",
-"#eab308",
-"#ef4444"
-]
-}]
-}
-}
-)
-
-
-new Chart(
-document.getElementById("graficoCrecimiento"),
-{
-type:"line",
-data:{
-labels:["2021","2022","2023","2024"],
-datasets:[{
-label:"Clientes",
-data:[120,200,320,500],
-borderColor:"#22c55e",
-backgroundColor:"rgba(34,197,94,0.2)"
-}]
-}
-}
-)
-
+    // 4. Gráfico de Crecimiento (Área de Tensión)
+    const ctxCres = document.getElementById("graficoCrecimiento").getContext("2d");
+    new Chart(ctxCres, {
+        type: "line",
+        data: {
+            labels: ["2022", "2023", "2024", "2025"],
+            datasets: [{
+                label: "Clientes Activos",
+                data: [120, 200, 350, 580],
+                borderColor: "#10b981",
+                backgroundColor: getGradient(ctxCres, 'rgba(16, 185, 129, 1)'),
+                fill: true,
+                tension: 0.5,
+                borderDash: [5, 5]
+            }]
+        },
+        options: { plugins: { legend: { display: false } } }
+    });
 </script>
 
 </body>
-
 </html>
