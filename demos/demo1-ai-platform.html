@@ -1,306 +1,253 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TallerPRO360 | Global Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Outfit:wght@300;400;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root { --cyan: #06b6d4; --dark: #020617; --slate-900: #0f172a; }
+        body { background: var(--dark); color: white; font-family: 'Outfit', sans-serif; overflow-x: hidden; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        .sidebar {
+            background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px);
+            width: 260px; height: 100vh; position: fixed;
+            border-right: 1px solid rgba(255,255,255,0.05); z-index: 50;
+        }
 
-<title>TallerPRO360 AI Platform</title>
+        .main-content { margin-left: 260px; padding: 40px; transition: all 0.3s; }
+        
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 24px; padding: 24px; transition: 0.3s;
+        }
+        .glass-card:hover { border-color: var(--cyan); box-shadow: 0 0 30px rgba(6, 182, 212, 0.1); }
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        .nav-item {
+            padding: 14px 20px; margin: 8px 0; cursor: pointer; border-radius: 12px;
+            font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            transition: 0.3s; color: #94a3b8; display: flex; align-items: center; gap: 12px;
+        }
+        .nav-item:hover, .nav-item.active { background: rgba(6, 182, 212, 0.1); color: var(--cyan); }
 
-<style>
+        .status-glow { animation: blink 2s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-body{
-background:#020617;
-color:white;
-font-family:system-ui;
-}
+        .chat-box {
+            height: 350px; overflow-y: auto; background: rgba(0,0,0,0.3);
+            border-radius: 20px; padding: 20px; display: flex; flex-direction: column-reverse;
+        }
+        .msg { margin-bottom: 12px; padding: 12px 16px; border-radius: 16px; font-size: 13px; max-width: 80%; }
+        .msg.client { align-self: flex-end; background: var(--cyan); color: black; font-weight: 700; border-bottom-right-radius: 2px; }
+        .msg.ai { align-self: flex-start; background: var(--slate-900); border: 1px solid rgba(255,255,255,0.1); border-bottom-left-radius: 2px; }
 
-.sidebar{
-background:#0f172a;
-width:230px;
-height:100vh;
-position:fixed;
-padding:20px;
-border-right:1px solid #1e293b;
-}
-
-.main{
-margin-left:250px;
-padding:30px;
-}
-
-.card{
-background:#0f172a;
-border:1px solid #1e293b;
-border-radius:16px;
-padding:20px;
-}
-
-.menu{
-padding:10px;
-margin-top:10px;
-cursor:pointer;
-border-radius:8px;
-}
-
-.menu:hover{
-background:#1e293b;
-}
-
-.glow{
-color:#22c55e;
-}
-
-.chat{
-height:250px;
-overflow:auto;
-background:#020617;
-border:1px solid #1e293b;
-border-radius:12px;
-padding:10px;
-}
-
-.msg{
-padding:8px;
-margin-bottom:6px;
-border-radius:8px;
-}
-
-.client{
-background:#065f46;
-text-align:right;
-}
-
-.ai{
-background:#1e293b;
-}
-
-.vehicle{
-padding:8px;
-border-bottom:1px solid #1e293b;
-}
-
-</style>
-
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: var(--cyan); border-radius: 10px; }
+    </style>
 </head>
-
 <body>
 
-<!-- SIDEBAR -->
-
-<div class="sidebar">
-
-<h2 class="text-xl glow mb-6">
-TallerPRO360 AI
-</h2>
-
-<div class="menu" onclick="show('dashboard')">📊 Dashboard</div>
-<div class="menu" onclick="show('diagnostico')">🤖 Diagnóstico IA</div>
-<div class="menu" onclick="show('vehiculos')">🚗 Vehículos</div>
-<div class="menu" onclick="show('clientes')">💬 Clientes</div>
-<div class="menu" onclick="show('analytics')">📈 Analytics</div>
-
-</div>
-
-
-<div class="main">
-
-<!-- DASHBOARD -->
-
-<div id="dashboard">
-
-<h1 class="text-3xl glow mb-6">
-Dashboard Inteligente
-</h1>
-
-<div class="grid grid-cols-4 gap-6">
-
-<div class="card">
-Vehículos
-<div id="vehiculosKPI" class="text-2xl glow mt-2">0</div>
-</div>
-
-<div class="card">
-Órdenes
-<div id="ordenesKPI" class="text-2xl glow mt-2">0</div>
-</div>
-
-<div class="card">
-Clientes
-<div id="clientesKPI" class="text-2xl glow mt-2">0</div>
-</div>
-
-<div class="card">
-Ingresos
-<div id="ingresosKPI" class="text-2xl glow mt-2">$0</div>
-</div>
-
-</div>
-
-</div>
-
-
-<!-- DIAGNOSTICO IA -->
-
-<div id="diagnostico" style="display:none">
-
-<h1 class="text-3xl glow mb-6">
-Diagnóstico con IA
-</h1>
-
-<div id="diagnosticoIA" class="card"></div>
-
-</div>
-
-
-<!-- VEHICULOS -->
-
-<div id="vehiculos" style="display:none">
-
-<h1 class="text-3xl glow mb-6">
-Vehículos en taller
-</h1>
-
-<div id="listaVehiculos"></div>
-
-</div>
-
-
-<!-- CLIENTES CHAT -->
-
-<div id="clientes" style="display:none">
-
-<h1 class="text-3xl glow mb-6">
-Chat cliente
-</h1>
-
-<div id="chat" class="chat"></div>
-
-</div>
-
-
-<!-- ANALYTICS -->
-
-<div id="analytics" style="display:none">
-
-<h1 class="text-3xl glow mb-6">
-Analytics
-</h1>
-
-<canvas id="grafico"></canvas>
-
-</div>
-
-</div>
-
-
-<script>
-
-function show(id){
-
-const sections=["dashboard","diagnostico","vehiculos","clientes","analytics"]
-
-sections.forEach(s=>{
-document.getElementById(s).style.display="none"
-})
-
-document.getElementById(id).style.display="block"
-
-}
-
-
-let vehiculos=0
-let ordenes=0
-let clientes=0
-let ingresos=0
-
-const autos=["Toyota Hilux","Kia Rio","Mazda CX5","Renault Duster"]
-const fallas=["Sensor ABS","Frenos desgastados","Filtro sucio","Batería descargada"]
-
-const ctx=document.getElementById("grafico")
-
-const chart=new Chart(ctx,{
-type:"line",
-data:{
-labels:[],
-datasets:[{
-label:"Ingresos",
-data:[],
-borderColor:"#22c55e"
-}]
-}
-})
-
-
-function chat(msg,type){
-
-const c=document.getElementById("chat")
-
-const m=document.createElement("div")
-
-m.className="msg "+type
-
-m.innerHTML=msg
-
-c.prepend(m)
-
-}
-
-
-function simulate(){
-
-const auto=autos[Math.floor(Math.random()*autos.length)]
-const falla=fallas[Math.floor(Math.random()*fallas.length)]
-
-const precio=Math.floor(Math.random()*200000)+100000
-
-vehiculos++
-ordenes++
-clientes++
-ingresos+=precio
-
-
-document.getElementById("vehiculosKPI").innerText=vehiculos
-document.getElementById("ordenesKPI").innerText=ordenes
-document.getElementById("clientesKPI").innerText=clientes
-document.getElementById("ingresosKPI").innerText="$"+ingresos.toLocaleString()
-
-
-const v=document.createElement("div")
-
-v.className="vehicle"
-
-v.innerHTML="🚗 "+auto+" — "+falla
-
-document.getElementById("listaVehiculos").prepend(v)
-
-
-document.getElementById("diagnosticoIA").innerHTML=
-"IA detectó <span class='glow'>"+falla+"</span> en "+auto
-
-
-chat("Cliente: Traje mi "+auto,"client")
-
-chat("IA: Detectamos "+falla,"ai")
-
-chat("Sistema: Reparación estimada $"+precio.toLocaleString(),"ai")
-
-
-chart.data.labels.push(new Date().toLocaleTimeString())
-chart.data.datasets[0].data.push(ingresos)
-
-chart.update()
-
-}
-
-setInterval(simulate,5000)
-
-</script>
-
+    <aside class="sidebar p-6">
+        <div class="mb-10 px-2">
+            <h2 class="orbitron text-xl font-black italic tracking-tighter text-white">TALLER<span class="text-cyan-500 text-2xl">PRO</span></h2>
+            <p class="text-[8px] mono text-slate-500 uppercase tracking-[0.3em]">AI OS v18.5 Terminal</p>
+        </div>
+
+        <nav>
+            <div class="nav-item active" onclick="show('dashboard')"><i class="fas fa-th-large"></i> Dashboard</div>
+            <div class="nav-item" onclick="show('diagnostico')"><i class="fas fa-microchip"></i> Diagnóstico IA</div>
+            <div class="nav-item" onclick="show('vehiculos')"><i class="fas fa-truck-monster"></i> Flota Nexus</div>
+            <div class="nav-item" onclick="show('clientes')"><i class="fas fa-comments"></i> Comms Center</div>
+            <div class="nav-item" onclick="show('analytics')"><i class="fas fa-chart-line"></i> Reportes</div>
+        </nav>
+
+        <div class="mt-20 p-4 glass-card border-cyan-500/20">
+            <p class="text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-2">Enlace Satelital</p>
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 bg-emerald-500 rounded-full status-glow"></div>
+                <span class="text-[10px] mono text-slate-400">Charlotte Hub: Online</span>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <section id="dashboard" class="space-y-8">
+            <header>
+                <h1 class="orbitron text-4xl font-black uppercase italic text-white tracking-tighter">Command <span class="text-cyan-500">Center</span></h1>
+                <p class="text-slate-500 text-sm mt-2">Monitoreo de operaciones en tiempo real Ibagué — International.</p>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="glass-card">
+                    <p class="text-[10px] text-slate-500 font-black uppercase mb-2">Unidades Activas</p>
+                    <div id="vehiculosKPI" class="orbitron text-3xl font-black text-white">0</div>
+                </div>
+                <div class="glass-card">
+                    <p class="text-[10px] text-slate-500 font-black uppercase mb-2">Misiones/Órdenes</p>
+                    <div id="ordenesKPI" class="orbitron text-3xl font-black text-white">0</div>
+                </div>
+                <div class="glass-card border-emerald-500/20">
+                    <p class="text-[10px] text-emerald-500 font-black uppercase mb-2">Ingresos Netos</p>
+                    <div id="ingresosKPI" class="orbitron text-3xl font-black text-emerald-400">$ 0</div>
+                </div>
+                <div class="glass-card">
+                    <p class="text-[10px] text-slate-500 font-black uppercase mb-2">IA Predictiva</p>
+                    <div class="text-xs text-cyan-400 font-bold uppercase tracking-widest">Sincronizada</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="glass-card">
+                    <h3 class="orbitron text-xs font-black text-white uppercase mb-6 flex items-center gap-2">
+                        <i class="fas fa-radar text-cyan-500"></i> Flujo de Ingresos
+                    </h3>
+                    <canvas id="grafico"></canvas>
+                </div>
+                <div class="glass-card">
+                    <h3 class="orbitron text-xs font-black text-white uppercase mb-6">Logs del Sistema</h3>
+                    <div id="logSistema" class="space-y-3 max-h-[300px] overflow-y-auto pr-2"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="diagnostico" style="display:none" class="space-y-8">
+            <h1 class="orbitron text-4xl font-black uppercase text-white tracking-tighter">Análisis <span class="text-cyan-500">Predictivo</span></h1>
+            <div id="diagnosticoIA" class="glass-card border-cyan-500/30 min-h-[200px] flex items-center justify-center">
+                <p class="mono text-slate-500">Esperando señal de escáner...</p>
+            </div>
+        </section>
+
+        <section id="vehiculos" style="display:none" class="space-y-8">
+            <h1 class="orbitron text-4xl font-black uppercase text-white tracking-tighter text-cyan-500">Flota en Taller</h1>
+            <div id="listaVehiculos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <section id="clientes" style="display:none" class="space-y-8 max-w-3xl">
+            <h1 class="orbitron text-4xl font-black uppercase text-white tracking-tighter">Comms <span class="text-cyan-500">Center</span></h1>
+            <div id="chat" class="chat-box glass-card border-white/5"></div>
+        </section>
+    </main>
+
+    <script>
+        function show(id) {
+            const sections = ["dashboard", "diagnostico", "vehiculos", "clientes", "analytics"];
+            sections.forEach(s => {
+                const el = document.getElementById(s);
+                if(el) el.style.display = "none";
+            });
+            document.getElementById(id).style.display = "block";
+            
+            // Actualizar menú activo
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if(item.innerText.toLowerCase().includes(id.toLowerCase())) item.classList.add('active');
+            });
+        }
+
+        let totalVehiculos = 0, totalIngresos = 0;
+        const autos = ["Kenworth T800", "Chevrolet Silverado", "Toyota Hilux 4x4", "Caterpillar 320D"];
+        const fallas = ["Fuga Sistema Hidráulico", "Fallo Inyector Bosch", "Error ECU P0300", "Desgaste Turbo Garrett"];
+
+        // Configuración Gráfico Elite
+        const ctx = document.getElementById("grafico").getContext('2d');
+        const chart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [{
+                    label: "Revenue Tracker",
+                    data: [],
+                    borderColor: "#06b6d4",
+                    backgroundColor: "rgba(6, 182, 212, 0.1)",
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { display: false },
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#475569', font: { family: 'JetBrains Mono' } } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        function simulate() {
+            const auto = autos[Math.floor(Math.random() * autos.length)];
+            const falla = fallas[Math.floor(Math.random() * fallas.length)];
+            const precio = Math.floor(Math.random() * 850000) + 150000;
+
+            totalVehiculos++;
+            totalIngresos += precio;
+
+            // Update KPIs
+            document.getElementById("vehiculosKPI").innerText = totalVehiculos;
+            document.getElementById("ordenesKPI").innerText = totalVehiculos + 2;
+            document.getElementById("ingresosKPI").innerText = "$ " + totalIngresos.toLocaleString();
+
+            // Log de Sistema
+            const log = document.getElementById("logSistema");
+            const entry = document.createElement("div");
+            entry.className = "flex justify-between items-center text-[10px] mono border-b border-white/5 pb-2";
+            entry.innerHTML = `<span><i class="fas fa-check-circle text-emerald-500 mr-2"></i>${auto}</span> <span class="text-slate-500">${new Date().toLocaleTimeString()}</span>`;
+            log.prepend(entry);
+
+            // Diagnóstico IA
+            document.getElementById("diagnosticoIA").innerHTML = `
+                <div class="text-center">
+                    <p class="text-[10px] text-cyan-400 orbitron uppercase mb-2">Escaneo Completo</p>
+                    <h2 class="text-2xl font-black uppercase italic">${auto}</h2>
+                    <p class="text-xl text-red-400 orbitron font-black mt-2">${falla}</p>
+                    <div class="mt-6 p-4 bg-white/5 rounded-2xl inline-block">
+                        <span class="text-[8px] mono text-slate-500">Estimación Reparación:</span>
+                        <p class="text-lg font-bold">$${precio.toLocaleString()}</p>
+                    </div>
+                </div>
+            `;
+
+            // Agregar a lista de vehículos
+            const lista = document.getElementById("listaVehiculos");
+            const vCard = document.createElement("div");
+            vCard.className = "glass-card group";
+            vCard.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <i class="fas fa-truck text-2xl text-cyan-500"></i>
+                    <span class="text-[8px] px-2 py-1 bg-cyan-500/10 text-cyan-400 rounded-full font-black">ACTIVE</span>
+                </div>
+                <h4 class="font-black uppercase">${auto}</h4>
+                <p class="text-[10px] text-slate-500 mb-4">${falla}</p>
+                <div class="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div class="bg-cyan-500 h-full w-[45%]"></div>
+                </div>
+            `;
+            lista.prepend(vCard);
+
+            // Chat Sim
+            const chatBox = document.getElementById("chat");
+            const m1 = document.createElement("div");
+            m1.className = "msg client"; m1.innerText = `Ingresé mi ${auto} por ${falla}`;
+            const m2 = document.createElement("div");
+            m2.className = "msg ai"; m2.innerText = `Nexus-X detectó la anomalía. Presupuesto estimado: $${precio.toLocaleString()}. ¿Procedemos?`;
+            chatBox.prepend(m2); chatBox.prepend(m1);
+
+            // Chart Update
+            chart.data.labels.push("");
+            chart.data.datasets[0].data.push(totalIngresos);
+            if(chart.data.labels.length > 10) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
+            chart.update();
+        }
+
+        setInterval(simulate, 6000);
+        simulate(); // Inicio inmediato
+    </script>
 </body>
-
 </html>
