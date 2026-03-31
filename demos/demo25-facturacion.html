@@ -1,137 +1,231 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TallerPRO360 | Facturación Elite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Outfit:wght@300;400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root { --cyan: #06b6d4; --emerald: #10b981; --dark: #020617; }
+        body { background: var(--dark); color: white; font-family: 'Outfit', sans-serif; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
 
-<title>Facturación TallerPRO360</title>
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px; padding: 25px;
+        }
 
-<script src="https://cdn.tailwindcss.com"></script>
+        .input-billing {
+            background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white; border-radius: 12px; padding: 12px; width: 100%;
+            transition: 0.3s;
+        }
+        .input-billing:focus { border-color: var(--cyan); outline: none; background: rgba(30, 41, 59, 0.5); }
 
+        /* Estilo Recibo */
+        .receipt-area {
+            background: #f8fafc; color: #0f172a; border-radius: 12px;
+            padding: 20px; font-family: 'JetBrains Mono', monospace;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .receipt-area::before {
+            content: ""; position: absolute; top: -10px; left: 0; right: 0;
+            height: 10px; background: linear-gradient(-45deg, transparent 5px, #f8fafc 5px), linear-gradient(45deg, transparent 5px, #f8fafc 5px);
+            background-size: 10px 10px;
+        }
+
+        .item-row {
+            border-bottom: 1px dashed #cbd5e1; padding: 8px 0;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .btn-add {
+            background: var(--cyan); color: var(--dark); font-weight: 800;
+            border-radius: 12px; width: 100%; padding: 14px; transition: 0.3s;
+        }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(6, 182, 212, 0.3); }
+
+        .btn-generate {
+            background: var(--emerald); color: var(--dark); font-weight: 800;
+            border-radius: 12px; width: 100%; padding: 16px; margin-top: 20px;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+    </style>
 </head>
+<body class="p-6 md:p-12">
 
-<body class="bg-slate-950 text-white p-8">
+    <div class="max-w-5xl mx-auto">
+        
+        <header class="flex justify-between items-center mb-10">
+            <div>
+                <h1 class="orbitron text-2xl font-black italic tracking-tighter uppercase">
+                    BILLING<span class="text-cyan-500">SYSTEM</span>
+                </h1>
+                <p class="text-[9px] mono text-slate-500 uppercase tracking-[0.4em]">Nexus-X Starlink Logistics Node</p>
+            </div>
+            <div class="text-right">
+                <p class="text-[10px] font-bold text-slate-400">FECHA: 31/03/2026</p>
+                <p class="text-[10px] font-bold text-cyan-500">ID: #TP-8842</p>
+            </div>
+        </header>
 
-<h1 class="text-4xl text-green-400 mb-8">
-Facturación del Taller
-</h1>
+        <div class="grid lg:grid-cols-2 gap-10">
+            
+            <section class="space-y-6">
+                <div class="glass-card">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <i class="fas fa-plus-circle text-cyan-500"></i> Cargar Servicio / Repuesto
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-[10px] text-slate-500 font-bold uppercase ml-1">Descripción</label>
+                            <input id="servicio" type="text" placeholder="Ej: Kit de Embrague" class="input-billing">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-500 font-bold uppercase ml-1">Costo Unitario (COP)</label>
+                            <input id="precio" type="number" placeholder="0.00" class="input-billing">
+                        </div>
+                        <button onclick="agregarItem()" class="btn-add orbitron text-xs">
+                            Insertar en Factura
+                        </button>
+                    </div>
+                </div>
 
+                <div class="p-6 border border-white/5 bg-white/5 rounded-2xl">
+                    <p class="text-xs text-slate-400 leading-relaxed italic">
+                        <i class="fas fa-info-circle mr-2 text-cyan-500"></i>
+                        Recuerde que los precios para <b>Colombian Trucks Logistics LLC</b> incluyen el descuento corporativo de flota.
+                    </p>
+                </div>
+            </section>
 
-<div class="grid md:grid-cols-2 gap-8">
+            <section>
+                <div class="glass-card">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Vista Previa del Documento</h3>
+                    
+                    <div class="receipt-area">
+                        <div class="text-center border-b border-slate-300 pb-4 mb-4">
+                            <h2 class="font-black text-sm">TALLERPRO360 S.A.S</h2>
+                            <p class="text-[9px]">NIT: 900.XXX.XXX-1</p>
+                            <p class="text-[9px]">Ibagué, Tolima - Colombia</p>
+                        </div>
 
+                        <div id="factura-items" class="min-h-[150px] text-[11px] space-y-1">
+                            <div class="text-slate-400 italic py-4 text-center">Esperando items...</div>
+                        </div>
 
-<div class="bg-slate-900 p-6 rounded">
+                        <div class="mt-4 pt-4 border-t-2 border-slate-900">
+                            <div class="flex justify-between text-xs font-bold">
+                                <span>SUBTOTAL</span>
+                                <span id="subtotal">$ 0</span>
+                            </div>
+                            <div class="flex justify-between text-[10px] text-slate-500">
+                                <span>IVA (19%)</span>
+                                <span id="iva">$ 0</span>
+                            </div>
+                            <div class="flex justify-between text-sm font-black mt-2 text-emerald-700">
+                                <span>TOTAL NETO</span>
+                                <span id="total">$ 0</span>
+                            </div>
+                        </div>
 
-<h2 class="text-xl text-blue-400 mb-4">
-Agregar servicio
-</h2>
+                        <div class="mt-6 text-center text-[8px] text-slate-400 uppercase">
+                            *** Gracias por confiar en Nexus-X ***
+                        </div>
+                    </div>
 
-<input
-id="servicio"
-placeholder="Servicio o repuesto"
-class="w-full p-2 mb-3 text-black rounded"
->
+                    <button onclick="generarFactura()" class="btn-generate orbitron text-xs">
+                        <i class="fas fa-file-invoice-dollar mr-2"></i> Emitir Factura Legal
+                    </button>
+                </div>
+            </section>
 
-<input
-id="precio"
-type="number"
-placeholder="Precio"
-class="w-full p-2 mb-3 text-black rounded"
->
-
-<button
-onclick="agregarItem()"
-class="bg-green-500 px-6 py-2 rounded"
->
-Agregar
-</button>
-
-</div>
-
-
-<div class="bg-slate-900 p-6 rounded">
-
-<h2 class="text-xl text-yellow-400 mb-4">
-Factura
-</h2>
-
-<div id="factura" class="space-y-2 mb-4"></div>
-
-<h3 class="text-xl text-green-400">
-Total: $<span id="total">0</span>
-</h3>
-
-<button
-onclick="generarFactura()"
-class="mt-4 bg-blue-500 px-6 py-2 rounded"
->
-Generar factura
-</button>
-
-</div>
-
-
-</div>
-
+        </div>
+    </div>
 
 <script>
+    const items = [];
 
-const items=[]
+    function agregarItem() {
+        const desc = document.getElementById("servicio").value;
+        const price = parseInt(document.getElementById("precio").value);
 
-function agregarItem(){
+        if(!desc || !price) return;
 
-const servicio=document.getElementById("servicio").value
-const precio=parseInt(document.getElementById("precio").value)
+        items.push({ desc, price, id: Date.now() });
+        
+        document.getElementById("servicio").value = "";
+        document.getElementById("precio").value = "";
+        
+        renderFactura();
+    }
 
-if(!servicio||!precio)return
+    function eliminarItem(id) {
+        const index = items.findIndex(i => i.id === id);
+        if(index > -1) {
+            items.splice(index, 1);
+            renderFactura();
+        }
+    }
 
-items.push({servicio,precio})
+    function renderFactura() {
+        const contenedor = document.getElementById("factura-items");
+        contenedor.innerHTML = "";
+        
+        let subtotal = 0;
 
-mostrarFactura()
+        if(items.length === 0) {
+            contenedor.innerHTML = `<div class="text-slate-400 italic py-4 text-center">Esperando items...</div>`;
+        }
 
-}
+        items.forEach(item => {
+            subtotal += item.price;
+            const div = document.createElement("div");
+            div.className = "item-row";
+            div.innerHTML = `
+                <div class="flex flex-col">
+                    <span class="font-bold">${item.desc}</span>
+                    <button onclick="eliminarItem(${item.id})" class="text-[8px] text-red-500 uppercase text-left">[Quitar]</button>
+                </div>
+                <span class="font-bold">$ ${item.price.toLocaleString("es-CO")}</span>
+            `;
+            contenedor.appendChild(div);
+        });
 
+        const iva = subtotal * 0.19;
+        const total = subtotal + iva;
 
-function mostrarFactura(){
+        document.getElementById("subtotal").innerText = "$ " + subtotal.toLocaleString("es-CO");
+        document.getElementById("iva").innerText = "$ " + Math.round(iva).toLocaleString("es-CO");
+        document.getElementById("total").innerText = "$ " + Math.round(total).toLocaleString("es-CO");
+    }
 
-const contenedor=document.getElementById("factura")
-
-contenedor.innerHTML=""
-
-let total=0
-
-items.forEach(i=>{
-
-total+=i.precio
-
-const div=document.createElement("div")
-
-div.className="bg-slate-800 p-2 rounded"
-
-div.innerHTML=
-`
-🔧 ${i.servicio} — $${i.precio}
-`
-
-contenedor.appendChild(div)
-
-})
-
-document.getElementById("total").innerText=total
-
-}
-
-
-function generarFactura(){
-
-alert("Factura generada correctamente")
-
-}
-
+    function generarFactura() {
+        if(items.length === 0) {
+            alert("William, la factura está vacía.");
+            return;
+        }
+        
+        // Efecto visual de proceso
+        const btn = document.querySelector('.btn-generate');
+        btn.innerText = "PROCESANDO FIRMA DIGITAL...";
+        btn.style.opacity = "0.7";
+        
+        setTimeout(() => {
+            alert("FACTURA TP-8842 EMITIDA CON ÉXITO.\nEnviada a: Colombian Trucks Logistics LLC");
+            btn.innerText = "EMITIR FACTURA LEGAL";
+            btn.style.opacity = "1";
+            items.length = 0;
+            renderFactura();
+        }, 2000);
+    }
 </script>
 
 </body>
-
 </html>
