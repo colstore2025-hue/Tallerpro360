@@ -44,7 +44,6 @@
         }
         .btn-trial:hover { background: var(--cyan); color: black; box-shadow: 0 0 30px var(--cyan); }
 
-        /* Efecto Escáner */
         .scan-line {
             position: absolute; width: 100%; height: 2px; background: var(--cyan);
             top: 0; left: 0; opacity: 0.3; animation: scan 4s linear infinite;
@@ -54,10 +53,14 @@
         .reveal { opacity: 0; transform: translateY(40px); transition: 1s all ease; }
         .reveal.active { opacity: 1; transform: translateY(0); }
 
-        /* Botones Demo Especiales */
-        .demo-badge {
-            background: linear-gradient(90deg, #1e293b, #0f172a);
+        .select-nexus {
+            background: rgba(0,0,0,0.5);
             border: 1px solid rgba(255,255,255,0.1);
+            color: #06b6d4;
+            font-size: 10px;
+            padding: 5px;
+            border-radius: 8px;
+            outline: none;
         }
     </style>
 </head>
@@ -71,13 +74,13 @@
             <div class="w-10 h-10 bg-cyan-500 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-500/50">
                 <i class="fas fa-satellite-dish text-black text-xl"></i>
             </div>
-            <span class="orbitron text-xl font-black tracking-tighter uppercase italic">Taller<span class="text-cyan-400">PRO360</span></span>
+            <span class="orbitron text-xl font-black tracking-tighter uppercase italic text-white">Taller<span class="text-cyan-400">PRO360</span></span>
         </div>
         <div class="flex items-center gap-4">
-            <button onclick="abrirDemos()" class="demo-badge px-6 py-2 rounded-full orbitron text-[9px] font-bold text-slate-300 hover:text-cyan-400 transition uppercase tracking-widest">
+            <button onclick="window.location.href='demos.html'" class="px-6 py-2 rounded-full orbitron text-[9px] font-bold text-slate-300 hover:text-cyan-400 transition uppercase tracking-widest border border-white/5">
                 <i class="fas fa-play-circle mr-2"></i> Ver Demos
             </button>
-            <a href="login.html?mode=trial" class="btn-trial orbitron text-[10px] font-black px-8 py-3 rounded-full tracking-widest uppercase">
+            <a href="login.html?mode=trial" class="btn-trial orbitron text-[10px] font-black px-8 py-3 rounded-full tracking-widest uppercase text-white">
                 Probar Gratis
             </a>
         </div>
@@ -87,11 +90,11 @@
         <div class="inline-block px-6 py-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 mb-8">
             <span class="text-[10px] orbitron font-black text-cyan-400 tracking-[0.4em] uppercase italic">Operación Abril 2026: Despliegue Nacional</span>
         </div>
-        <h1 class="text-6xl md:text-8xl font-black mb-10 leading-none tracking-tighter uppercase italic">
+        <h1 class="text-6xl md:text-8xl font-black mb-10 leading-none tracking-tighter uppercase italic text-white">
             LOGÍSTICA <br> <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-emerald-400">AEROESPACIAL</span>
         </h1>
         <p class="text-slate-400 text-lg md:text-2xl max-w-3xl mx-auto mb-16 font-light italic">
-            "No es un software. Es el motor <span class="text-white font-bold">Nexus-X</span> que conecta tu taller con la rentabilidad absoluta."
+            "No es un software. Es el motor <span class="text-white font-bold italic">Nexus-X</span> que conecta tu taller con la rentabilidad absoluta."
         </p>
     </header>
 
@@ -100,7 +103,15 @@
             
             <div class="card-nexus glass p-8 rounded-[3rem] flex flex-col reveal">
                 <div class="flex-grow">
-                    <span class="orbitron text-cyan-500 text-[10px] font-black tracking-widest">NIVEL 01</span>
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="orbitron text-cyan-500 text-[10px] font-black tracking-widest">NIVEL 01</span>
+                        <select id="meses-basico" class="select-nexus orbitron">
+                            <option value="1">1 Mes</option>
+                            <option value="3">3 Meses (10% OFF)</option>
+                            <option value="6">6 Meses (20% OFF)</option>
+                            <option value="12">1 Año (30% OFF)</option>
+                        </select>
+                    </div>
                     <h3 class="orbitron text-2xl font-black mb-6 uppercase italic">Básico</h3>
                     <div class="text-4xl font-black mb-8 italic">$49.900 <span class="text-xs text-slate-500 not-italic uppercase tracking-widest">/ Mes</span></div>
                     <ul class="space-y-4 text-[11px] font-bold text-slate-400 uppercase">
@@ -115,8 +126,16 @@
             <div class="card-nexus glass p-8 rounded-[3rem] border-cyan-500/40 bg-cyan-950/10 scale-105 z-10 flex flex-col reveal shadow-2xl">
                 <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-cyan-500 text-black px-4 py-1 rounded-full text-[9px] font-black orbitron uppercase">Recomendado</div>
                 <div class="flex-grow">
-                    <span class="orbitron text-cyan-400 text-[10px] font-black tracking-widest">NIVEL 02</span>
-                    <h3 class="orbitron text-3xl font-black mb-6 uppercase italic">Pro</h3>
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="orbitron text-cyan-400 text-[10px] font-black tracking-widest">NIVEL 02</span>
+                        <select id="meses-pro" class="select-nexus orbitron border-cyan-500/30 text-white">
+                            <option value="1">1 Mes</option>
+                            <option value="3">3 Meses (10% OFF)</option>
+                            <option value="6">6 Meses (20% OFF)</option>
+                            <option value="12">1 Año (30% OFF)</option>
+                        </select>
+                    </div>
+                    <h3 class="orbitron text-3xl font-black mb-6 uppercase italic text-cyan-400">Pro</h3>
                     <div class="text-4xl font-black mb-8 italic">$79.900 <span class="text-xs text-slate-400 not-italic uppercase tracking-widest">/ Mes</span></div>
                     <ul class="space-y-4 text-[11px] font-bold text-slate-200 uppercase tracking-tighter">
                         <li><i class="fas fa-robot text-cyan-400 mr-2"></i> IA Gerencial Nexus-X</li>
@@ -124,20 +143,29 @@
                         <li><i class="fas fa-credit-card text-blue-400 mr-2"></i> Integración BOLD Pro</li>
                     </ul>
                 </div>
-                <button onclick="irABold('pro')" class="mt-10 w-full py-5 bg-cyan-500 text-black rounded-2xl orbitron text-[10px] font-black uppercase shadow-lg shadow-cyan-500/20">Desplegar Pro (BOLD)</button>
+                <button onclick="irABold('pro')" class="mt-10 w-full py-5 bg-cyan-500 text-black rounded-2xl orbitron text-[10px] font-black uppercase shadow-lg shadow-cyan-500/20">Desplegar Pro</button>
             </div>
 
             <div class="card-nexus glass p-8 rounded-[3rem] border-purple-500/30 flex flex-col reveal">
                 <div class="flex-grow">
-                    <span class="orbitron text-purple-400 text-[10px] font-black tracking-widest">NIVEL 03</span>
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="orbitron text-purple-400 text-[10px] font-black tracking-widest">NIVEL 03</span>
+                        <select id="meses-elite" class="select-nexus orbitron">
+                            <option value="1">1 Mes</option>
+                            <option value="3">3 Meses (10% OFF)</option>
+                            <option value="6">6 Meses (20% OFF)</option>
+                            <option value="12">1 Año (30% OFF)</option>
+                        </select>
+                    </div>
                     <h3 class="orbitron text-2xl font-black mb-6 uppercase italic">Elite</h3>
                     <div class="text-4xl font-black mb-8 italic">$129.000 <span class="text-xs text-slate-500 not-italic uppercase tracking-widest">/ Mes</span></div>
                     <ul class="space-y-4 text-[11px] font-bold text-slate-300 uppercase">
                         <li><i class="fas fa-infinity text-purple-400 mr-2"></i> Órdenes Ilimitadas</li>
                         <li><i class="fas fa-store text-purple-400 mr-2"></i> Marketplace Nexus-X</li>
+                        <li><i class="fas fa-shield-alt text-purple-400 mr-2"></i> Soporte Prioritario</li>
                     </ul>
                 </div>
-                <button onclick="irABold('elite')" class="mt-10 w-full py-4 border border-purple-500/30 text-purple-400 rounded-2xl orbitron text-[9px] font-black uppercase hover:bg-purple-500 hover:text-white transition-all">Elite Access</button>
+                <button onclick="irABold('elite')" class="mt-10 w-full py-4 border border-purple-500/30 text-purple-400 rounded-2xl orbitron text-[9px] font-black uppercase hover:bg-purple-500 hover:text-white transition-all text-white">Elite Access</button>
             </div>
 
             <div class="card-nexus glass p-8 rounded-[3rem] border-white/20 xl:col-span-2 flex flex-col md:flex-row gap-8 reveal">
@@ -145,7 +173,7 @@
                     <span class="orbitron text-slate-400 text-[10px] font-black tracking-widest">CORPORATIVO</span>
                     <h3 class="orbitron text-3xl font-black mb-4 uppercase italic">Enterprise</h3>
                     <p class="text-xs text-slate-500 mb-6 uppercase font-bold tracking-widest italic">Flotas y cadenas multiciudad.</p>
-                    <div class="text-5xl font-black mb-6 italic">$299.900 <span class="text-[10px] text-slate-500 not-italic uppercase">Desde</span></div>
+                    <div class="text-5xl font-black mb-6 italic text-white">$299.900 <span class="text-[10px] text-slate-500 not-italic uppercase">Desde</span></div>
                 </div>
                 <div class="flex flex-col justify-center min-w-[200px]">
                     <button onclick="window.location.href='https://wa.me/17049419163?text=Quiero_Info_Enterprise'" class="w-full py-8 bg-white text-black rounded-[2rem] orbitron text-[10px] font-black uppercase tracking-widest hover:bg-cyan-400 transition-all">Consultar</button>
@@ -155,13 +183,11 @@
     </section>
 
     <footer class="py-20 text-center border-t border-white/5 relative">
-        <div class="orbitron text-[10px] text-slate-600 tracking-[0.8em] uppercase mb-4">TallerPRO360 · Colombian Trucks Logistics LLC · NC</div>
+        <div class="orbitron text-[10px] text-slate-600 tracking-[0.8em] uppercase mb-4 italic">TallerPRO360 · Colombian Trucks Logistics LLC · 2026</div>
     </footer>
 
     <script>
-        // --- 195 LINEAS DE LOGICA REFORMADA ---
-        
-        // 1. Reveal Animation
+        // 1. Reveal Animation Engine
         window.addEventListener('scroll', () => {
             document.querySelectorAll('.reveal').forEach(el => {
                 if(el.getBoundingClientRect().top < window.innerHeight - 100) el.classList.add('active');
@@ -169,39 +195,55 @@
         });
         window.dispatchEvent(new Event('scroll'));
 
-        // 2. Lógica de Pasarela BOLD
-        const boldLinks = {
-            basico: "https://bold.co/p/tallerpro360-basico", // Reemplazar con tus links reales
-            pro: "https://bold.co/p/tallerpro360-pro",
-            elite: "https://bold.co/p/tallerpro360-elite"
-        };
+        // 2. Lógica de Pasarela Dinámica (Conexión con api/create-bold-checkout.js)
+        async function irABold(plan) {
+            const selectId = `meses-${plan}`;
+            const meses = document.getElementById(selectId).value;
+            
+            // Simulación de datos de sesión (En producción estos vienen de Firebase Auth)
+            const userData = {
+                uid: localStorage.getItem("nexus_uid") || "USER_PROSPECTO",
+                empresaId: localStorage.getItem("nexus_empresa") || "EMPRESA_NUEVA",
+                email: localStorage.getItem("nexus_email") || ""
+            };
 
-        function irABold(plan) {
-            console.log(`Iniciando despliegue de plan: ${plan}`);
-            localStorage.setItem("nexus_pending_activation", plan);
-            // Redirección a BOLD
-            window.location.href = boldLinks[plan];
-        }
+            console.log(`🛰️ Nexus-X: Generando cobro BOLD para Plan: ${plan} | Meses: ${meses}`);
 
-        // 3. Sistema de Demos (Integrado)
-        function abrirDemos() {
-            // Aquí puedes abrir un modal con los 6 demos que creamos
-            alert("Iniciando entorno de simulación Nexus-X...\nRedirigiendo a demos.html");
-            window.location.href = "demos.html";
-        }
+            try {
+                const response = await fetch('/api/create-bold-checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        planId: plan,
+                        meses: parseInt(meses),
+                        uid: userData.uid,
+                        empresaId: userData.empresaId,
+                        emailCliente: userData.email
+                    })
+                });
 
-        // 4. Logística de Email (Post-Pago Simulación)
-        function verificarPagoExitocito() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if(urlParams.get('status') === 'success') {
-                console.log("Pago confirmado. Disparando credenciales a email...");
-                // Aquí se llamaría a tu API de correo
+                const data = await response.json();
+
+                if (data.url) {
+                    // Redirección directa a la pasarela dinámica generada
+                    window.location.href = data.url;
+                } else {
+                    alert("Error en el motor Nexus-X: " + (data.error || "Fallo de conexión"));
+                }
+            } catch (error) {
+                console.error("❌ Fallo crítico en el túnel de pago:", error);
+                alert("Error de red: No se pudo contactar con la pasarela.");
             }
         }
-        verificarPagoExitocito();
 
-        // [Aquí continuarían las líneas de lógica técnica de Nexus-X hasta completar el stack solicitado]
-        console.log("Sistema Nexus-X Starlink Operativo 100%");
+        // 3. Verificación de Post-Pago (Post-Bold Redirection)
+        function verificarEstatus() {
+            const params = new URLSearchParams(window.location.search);
+            if(params.get('status') === 'success') {
+                alert("¡Despliegue Exitoso! Revisa tu email para las credenciales de Nexus-X.");
+            }
+        }
+        verificarEstatus();
     </script>
 </body>
 </html>
