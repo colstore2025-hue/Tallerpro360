@@ -1,284 +1,222 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TallerPRO360 · Demo 27 | Super AI Dashboard</title>
-<meta name="description" content="Demo futurista del panel inteligente de TallerPRO360 con predicción de ingresos, carga de trabajo y recomendaciones automáticas.">
-<link rel="icon" href="/assets/logo-192.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TallerPRO360 | Super AI Dashboard</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<!-- Fuente moderna estilo Tesla/Apple -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #16a34a; --accent: #22c55e; --dark: #0b0f19; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark);
+            color: #ffffff;
+            overflow-x: hidden;
+        }
 
-<!-- Tailwind CSS CDN -->
-<script src="https://cdn.tailwindcss.com"></script>
+        .orbitron { font-family: 'Orbitron', sans-serif; }
 
-<style>
-body {
-    font-family: 'Inter', sans-serif;
-    background: #0b0f19;
-    color: #ffffff;
-    margin: 0;
-    overflow-x: hidden;
-}
+        /* Fondo dinámico de alta tecnología */
+        .hero-bg {
+            background: 
+                radial-gradient(circle at 10% 10%, rgba(22, 163, 74, 0.15), transparent 30%),
+                radial-gradient(circle at 90% 80%, rgba(37, 99, 235, 0.1), transparent 30%),
+                linear-gradient(180deg, #0b0f19 0%, #111827 100%);
+        }
 
-nav {
-    position: fixed;
-    width: 100%;
-    top: 0;
-    background: rgba(10,10,20,.8);
-    backdrop-filter: blur(12px);
-    padding: 18px 40px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    z-index: 100;
-}
+        /* Tarjetas con efecto de cristal */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .glass-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.06);
+            border-color: var(--accent);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
 
-nav a {
-    color: white;
-    text-decoration: none;
-    margin-left: 25px;
-    font-weight: 600;
-    opacity: .9;
-}
+        /* Botón estilo Neumórfico-Futurista */
+        .btn-glow {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            box-shadow: 0 0 20px rgba(22, 163, 74, 0.4);
+            transition: 0.3s;
+        }
+        .btn-glow:hover {
+            box-shadow: 0 0 35px rgba(34, 197, 94, 0.6);
+            transform: scale(1.05);
+        }
 
-nav a:hover {
-    opacity: 1;
-}
+        .ai-recommendation {
+            border-left: 3px solid var(--accent);
+            background: rgba(22, 163, 74, 0.05);
+        }
 
-.hero {
-    height: 80vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    background:
-        radial-gradient(circle at 20% 20%, #16a34a33, transparent 40%),
-        radial-gradient(circle at 80% 30%, #2563eb33, transparent 40%),
-        linear-gradient(180deg, #0b0f19 0%, #111827 100%);
-}
-
-.hero h1 {
-    font-size: 64px;
-    font-weight: 900;
-    margin-bottom: 20px;
-    background: linear-gradient(90deg, #16a34a, #22c55e);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.subtitle {
-    font-size: 22px;
-    color: #cbd5e1;
-    max-width: 700px;
-    margin: auto;
-}
-
-.btn {
-    background: linear-gradient(135deg, #16a34a, #22c55e);
-    border: none;
-    padding: 16px 32px;
-    border-radius: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    color: white;
-    margin-top: 25px;
-    font-size: 18px;
-    transition: .25s;
-}
-
-.btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 15px 40px rgba(0,0,0,.4);
-}
-
-.section {
-    padding: 100px 20px;
-}
-
-.container {
-    max-width: 1200px;
-    margin: auto;
-}
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 40px;
-    margin-top: 60px;
-}
-
-.card {
-    background: rgba(255,255,255,.03);
-    border: 1px solid rgba(255,255,255,.06);
-    padding: 30px;
-    border-radius: 20px;
-    transition: .3s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.card:hover {
-    transform: translateY(-6px);
-    background: rgba(255,255,255,.05);
-}
-
-.card h3 {
-    font-size: 24px;
-    font-weight: 800;
-    margin-bottom: 12px;
-    color: #22c55e;
-}
-
-.card p {
-    text-align: center;
-    font-size: 16px;
-    color: #cbd5e1;
-}
-
-.chart {
-    width: 100%;
-    height: 220px;
-}
-
-.recommendation {
-    background: #111827;
-    padding: 20px;
-    border-radius: 16px;
-    text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,.5);
-    font-size: 16px;
-    margin-top: 20px;
-}
-
-footer {
-    text-align: center;
-    padding: 40px;
-    color: #9ca3af;
-    border-top: 1px solid rgba(255,255,255,.08);
-}
-</style>
-
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        canvas { max-height: 220px; }
+    </style>
 </head>
+<body class="hero-bg">
 
-<body>
+    <nav class="fixed w-full top-0 z-50 bg-slate-950/50 backdrop-blur-xl border-b border-white/5 px-8 py-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center shadow-lg shadow-green-500/20">
+                    <i class="fas fa-microchip text-slate-950 text-sm"></i>
+                </div>
+                <span class="orbitron tracking-tighter text-lg font-black italic">TALLER<span class="text-green-500">PRO360</span></span>
+            </div>
+            <div class="hidden md:flex gap-8 text-xs font-bold uppercase tracking-widest text-slate-400">
+                <a href="#" class="hover:text-green-400 transition">Dashboard</a>
+                <a href="#" class="hover:text-green-400 transition">Telemetría</a>
+                <a href="#" class="hover:text-green-400 transition">Configuración</a>
+            </div>
+        </div>
+    </nav>
 
-<nav>
-<div style="display:flex;align-items:center;gap:10px">
-<img src="/assets/logo-192.png" width="34">
-<strong>TallerPRO360</strong>
-</div>
-<div>
-<a href="/index.html">Inicio</a>
-<a href="/demos">Demos</a>
-</div>
-</nav>
+    <section class="pt-32 pb-20 px-6 text-center">
+        <div class="inline-block px-4 py-1 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 text-[10px] font-bold tracking-widest uppercase mb-6">
+            Inteligencia Artificial Activa
+        </div>
+        <h1 class="text-5xl md:text-7xl font-black mb-6 tracking-tighter">
+            Super <span class="text-green-500">AI</span> Dashboard
+        </h1>
+        <p class="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto font-light leading-relaxed">
+            Predicción de ingresos, análisis de carga de trabajo y recomendaciones automáticas optimizadas por Nexus-X.
+        </p>
+        <div class="mt-10">
+            <button class="btn-glow px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest">
+                Explorar Módulos
+            </button>
+        </div>
+    </section>
 
-<section class="hero">
-<div>
-<h1>Super AI Dashboard</h1>
-<p class="subtitle">Predicción de ingresos, carga de trabajo y recomendaciones automáticas para tu taller.</p>
-<a href="/demos">
-<button class="btn">Ver todos los demos</button>
-</a>
-</div>
-</section>
+    <section class="max-w-7xl mx-auto px-6 pb-32">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <div class="glass-card p-8 flex flex-col justify-between">
+                <div>
+                    <h3 class="orbitron text-xs text-green-500 mb-2 uppercase tracking-widest">Predicción</h3>
+                    <h4 class="text-2xl font-bold mb-6">Ingresos Proyectados</h4>
+                    <canvas id="chartIngresos"></canvas>
+                </div>
+                <p class="text-slate-500 text-xs mt-6 leading-relaxed">
+                    Basado en el historial de **Colombian Trucks Logistics**, se estima un crecimiento del 15% para el próximo trimestre.
+                </p>
+            </div>
 
-<section class="section container">
-<h2 class="text-center text-4xl font-bold mb-12">Panel Futurista</h2>
+            <div class="glass-card p-8 flex flex-col justify-between">
+                <div>
+                    <h3 class="orbitron text-xs text-blue-500 mb-2 uppercase tracking-widest">Capacidad</h3>
+                    <h4 class="text-2xl font-bold mb-6">Carga de Trabajo</h4>
+                    <canvas id="chartCarga"></canvas>
+                </div>
+                <p class="text-slate-500 text-xs mt-6 leading-relaxed">
+                    Monitoreo de bahías en tiempo real. Capacidad actual optimizada al 82%.
+                </p>
+            </div>
 
-<div class="grid">
+            <div class="glass-card p-8">
+                <h3 class="orbitron text-xs text-purple-500 mb-2 uppercase tracking-widest">Smart Core</h3>
+                <h4 class="text-2xl font-bold mb-8">AI Recommendations</h4>
+                
+                <div class="space-y-4">
+                    <div class="ai-recommendation p-4 rounded-r-xl">
+                        <p class="text-xs font-bold text-green-400 mb-1 italic">Optimización</p>
+                        <p class="text-xs text-slate-300">Reajustar turnos técnicos para el pico de demanda de los lunes.</p>
+                    </div>
+                    <div class="ai-recommendation p-4 rounded-r-xl border-blue-500/50">
+                        <p class="text-xs font-bold text-blue-400 mb-1 italic">Inventario</p>
+                        <p class="text-xs text-slate-300">Solicitar pastillas de freno; stock por debajo del margen de seguridad.</p>
+                    </div>
+                    <div class="ai-recommendation p-4 rounded-r-xl border-purple-500/50">
+                        <p class="text-xs font-bold text-purple-400 mb-1 italic">Prioridad</p>
+                        <p class="text-xs text-slate-300">Asignar bahía 4 para el mantenimiento preventivo de Flota Starlink.</p>
+                    </div>
+                </div>
 
-<div class="card">
-<h3>Predicción de ingresos</h3>
-<canvas id="chartIngresos" class="chart"></canvas>
-<p>Visualiza tus ingresos proyectados para los próximos 6 meses.</p>
-</div>
+                <button class="w-full mt-8 py-3 rounded-xl border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition">
+                    Ejecutar Todo
+                </button>
+            </div>
 
-<div class="card">
-<h3>Carga de trabajo</h3>
-<canvas id="chartCarga" class="chart"></canvas>
-<p>Monitorea la carga de trabajo de tu taller en tiempo real.</p>
-</div>
+        </div>
+    </section>
 
-<div class="card">
-<h3>Recomendaciones automáticas</h3>
-<div class="recommendation" id="recomendaciones">
-- Optimizar el horario de técnicos<br>
-- Revisar repuestos con stock bajo<br>
-- Priorizar vehículos VIP
-</div>
-</div>
+    <footer class="py-12 border-t border-white/5 text-center">
+        <div class="flex justify-center items-center gap-3 mb-4 opacity-50">
+            <div class="w-6 h-6 bg-slate-700 rounded-md"></div>
+            <span class="orbitron text-sm font-bold tracking-tighter italic">TALLERPRO360</span>
+        </div>
+        <p class="text-slate-600 text-[10px] uppercase tracking-[0.4em]">ERP Inteligente · USA - COLOMBIA · 2026</p>
+    </footer>
 
-</div>
-</section>
+    <script>
+        // Configuración de Estilo para Chart.js
+        Chart.defaults.color = 'rgba(255,255,255,0.4)';
+        Chart.defaults.font.family = "'Inter', sans-serif";
 
-<footer>
-<img src="/assets/logo-192.png" width="50">
-<p>TallerPRO360 © 2026 · ERP Inteligente para talleres automotrices</p>
-</footer>
+        // Gráfico de Ingresos
+        const ctxIng = document.getElementById('chartIngresos').getContext('2d');
+        const gradIng = ctxIng.createLinearGradient(0, 0, 0, 200);
+        gradIng.addColorStop(0, 'rgba(22, 163, 74, 0.3)');
+        gradIng.addColorStop(1, 'rgba(22, 163, 74, 0)');
 
-<script>
-// Datos simulados para charts
-const ingresosData = [1200, 1500, 1800, 2000, 2300, 2500];
-const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
+        new Chart(ctxIng, {
+            type: 'line',
+            data: {
+                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+                datasets: [{
+                    data: [1200, 1550, 1400, 1900, 2200, 2600],
+                    borderColor: '#16a34a',
+                    borderWidth: 3,
+                    fill: true,
+                    backgroundColor: gradIng,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointHoverBackgroundColor: '#22c55e'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, border: { display: false } },
+                    y: { display: false }
+                }
+            }
+        });
 
-const cargaData = [30, 50, 45, 60, 70, 65];
-
-// Chart de ingresos
-new Chart(document.getElementById('chartIngresos'), {
-    type: 'line',
-    data: {
-        labels: meses,
-        datasets: [{
-            label: 'Ingresos (USD)',
-            data: ingresosData,
-            borderColor: '#16a34a',
-            backgroundColor: 'rgba(22,163,74,0.2)',
-            tension: 0.4,
-            fill: true,
-            pointRadius: 6,
-            pointBackgroundColor: '#22c55e'
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-            y: { beginAtZero: true },
-            x: { grid: { display: false } }
-        }
-    }
-});
-
-// Chart de carga de trabajo
-new Chart(document.getElementById('chartCarga'), {
-    type: 'bar',
-    data: {
-        labels: meses,
-        datasets: [{
-            label: 'Vehículos por mes',
-            data: cargaData,
-            backgroundColor: '#2563eb',
-            borderRadius: 10
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-            y: { beginAtZero: true },
-            x: { grid: { display: false } }
-        }
-    }
-});
-</script>
-
+        // Gráfico de Carga de Trabajo
+        new Chart(document.getElementById('chartCarga'), {
+            type: 'bar',
+            data: {
+                labels: ['L', 'M', 'M', 'J', 'V', 'S'],
+                datasets: [{
+                    data: [65, 80, 45, 90, 75, 60],
+                    backgroundColor: '#2563eb',
+                    borderRadius: 12,
+                    barThickness: 15
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, border: { display: false } },
+                    y: { display: false }
+                }
+            }
+        });
+    </script>
 </body>
 </html>
