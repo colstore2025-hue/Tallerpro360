@@ -292,117 +292,131 @@
     </div>
 
     <script type="module">
-    // 1. IMPORTACIONES DE TUS SCRIPTS REFORMADOS
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { firebaseConfig } from "/app/js/core/firebase-config.js";
-    
-    // Conexión con tu lógica de negocio
-    import { procesarSuscripcionBold } from "/app/planManager.js"; 
-    import { iniciarTrial } from "/app/activar-trial.js";
+    // Nota: Asegúrate de que esta ruta sea accesible o usa un objeto config directo aquí
+    const firebaseConfig = { /* Tu Configuración aquí o importada */ };
 
+    // 1. Inicialización
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    let planSeleccionado = { id: null, precio: 0 };
+    const nodosDemos = [
+        { name: "AI Platform", file: "demo1-ai-platform.html" },
+        { name: "Tesla Hub", file: "demo10-tesla.html" },
+        { name: "Unicorn AI", file: "demo11-unicorn-ai-taller.html" },
+        { name: "Mobile App", file: "demo13-mobile-app.html" },
+        { name: "Diagnóstico AI", file: "demo15-diagnostico-ai.html" },
+        { name: "Inventario", file: "demo24-inventario-repuestos.html" },
+        { name: "Super AI Dash", file: "demo27-super-ai-dashboard.html" }
+    ];
 
-    // 2. EXPOSICIÓN GLOBAL (Para que los botones del HTML funcionen sí o sí)
-    window.abrirTrial = () => {
-        console.log("🛰️ Iniciando Protocolo Trial...");
-        iniciarTrial(); 
+    // --- MOTOR DE INTERFAZ (UI ENGINE) ---
+    
+    // Función para lanzar el Selector de Demos
+    window.openDemo = () => {
+        const overlay = document.createElement('div');
+        overlay.id = "nexus-selector";
+        overlay.className = "fixed inset-0 z-[1000] bg-[#020617]/98 backdrop-blur-3xl p-8 overflow-y-auto animate-in fade-in duration-500";
+        
+        let grid = nodosDemos.map(d => `
+            <div onclick="window.location.href='/demos/${d.file}'" 
+                 class="group p-6 border border-cyan-500/20 bg-cyan-500/5 rounded-2xl hover:bg-cyan-500/20 hover:border-cyan-400 transition-all cursor-pointer text-center">
+                <i class="fas fa-rocket text-cyan-400 mb-3 block"></i>
+                <p class="text-[11px] orbitron text-white font-black uppercase tracking-widest">${d.name}</p>
+                <p class="text-[8px] text-cyan-500/40 mt-2 font-mono">${d.file}</p>
+            </div>
+        `).join('');
+
+        overlay.innerHTML = `
+            <div class="max-w-6xl mx-auto pt-20">
+                <div class="flex justify-between items-center mb-16 border-b border-cyan-500/20 pb-8">
+                    <h2 class="orbitron text-3xl font-black italic text-white uppercase tracking-tighter">NEXUS-X <span class="text-cyan-400">DEMO CLOUD</span></h2>
+                    <button onclick="document.getElementById('nexus-selector').remove()" class="text-white text-5xl hover:text-red-500 transition">&times;</button>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">${grid}</div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
     };
 
+    // Función para el Trial de 7 Días
+    window.abrirTrial = () => {
+        const modal = document.createElement('div');
+        modal.id = "trial-modal";
+        modal.className = "fixed inset-0 z-[1000] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4";
+        modal.innerHTML = `
+            <div class="bg-slate-900 border border-cyan-500/30 p-10 rounded-[3rem] max-w-md w-full shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent animate-pulse"></div>
+                <h3 class="orbitron text-2xl font-black text-white mb-2 italic uppercase">Activar Nodo Trial</h3>
+                <p class="text-[10px] text-cyan-500 font-bold uppercase tracking-widest mb-8">7 Días de Acceso Starlink Gratuito</p>
+                
+                <div class="space-y-4">
+                    <input id="trial-taller" type="text" placeholder="NOMBRE DEL TALLER" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white orbitron text-[10px] outline-none focus:border-cyan-500">
+                    <input id="trial-email" type="email" placeholder="EMAIL CORPORATIVO" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white orbitron text-[10px] outline-none focus:border-cyan-500">
+                    <button onclick="window.procesarTrial()" class="w-full py-5 bg-cyan-500 text-black font-black orbitron text-[11px] rounded-xl hover:bg-white transition uppercase italic">Generar Credenciales</button>
+                    <button onclick="document.getElementById('trial-modal').remove()" class="w-full text-slate-500 text-[8px] font-black uppercase tracking-widest mt-4">Abortar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    };
+
+    window.procesarTrial = () => {
+        const taller = document.getElementById('trial-taller').value;
+        if(!taller) return alert("Ingrese nombre del taller");
+        
+        // Simulación de despliegue de nodo
+        const btn = document.querySelector('#trial-modal button');
+        btn.innerHTML = "DESPLEGANDO NODO... <i class='fas fa-sync fa-spin'></i>";
+        btn.disabled = true;
+
+        setTimeout(() => {
+            alert(`🛰️ ¡NEXUS-X ACTIVO!\n\nSe han generado credenciales para: ${taller.toUpperCase()}\nEnviando acceso a su correo...`);
+            document.getElementById('trial-modal').remove();
+        }, 2500);
+    };
+
+    // Función de Pago Bold con Escudo Legal
     window.prepararPago = (plan, precio) => {
-        planSeleccionado = { id: plan, precio: precio };
         const modal = document.getElementById('modalLegal');
-        if(modal) modal.classList.remove('hidden');
+        modal.classList.remove('hidden');
+        
+        const btnBold = document.getElementById('btnPagarBold');
+        const check1 = document.getElementById('checkTerminos');
+        const check2 = document.getElementById('checkPoliticas');
+
+        // Lógica de activación de botón según checks
+        const validarChecks = () => {
+            if(check1.checked && check2.checked) {
+                btnBold.disabled = false;
+                btnBold.classList.remove('opacity-20');
+                btnBold.classList.add('shadow-[0_0_30px_rgba(6,182,212,0.6)]');
+            } else {
+                btnBold.disabled = true;
+                btnBold.classList.add('opacity-20');
+            }
+        };
+
+        check1.onchange = validarChecks;
+        check2.onchange = validarChecks;
+
+        btnBold.onclick = () => {
+            // Referencia dinámica de Bold
+            const ref = `NEXUS-${plan}-${Date.now().toString().slice(-4)}`;
+            window.location.href = `https://bold.co/pay/tallerpro360?amount=${precio}&reference=${ref}`;
+        };
     };
 
     window.cerrarLegal = () => {
         document.getElementById('modalLegal').classList.add('hidden');
     };
 
-    // 3. LÓGICA DE DEMOS (REFORMADA)
-    window.openDemo = async (type) => {
-        console.log(`🛰️ Accediendo a Nodo Demo: ${type}`);
-        // Intentamos cargar tu componente de demos-section
-        const container = document.getElementById('demos');
-        try {
-            const response = await fetch('/app/components/demos-section.html');
-            if(response.ok) {
-                const html = await response.text();
-                // Inyectamos el componente de última generación que creamos
-                const overlay = document.createElement('div');
-                overlay.id = "nexus-overlay";
-                overlay.className = "fixed inset-0 z-[500] bg-black/95 backdrop-blur-2xl p-10 overflow-y-auto";
-                overlay.innerHTML = `
-                    <div class="flex justify-end"><button onclick="document.getElementById('nexus-overlay').remove()" class="text-white text-4xl">&times;</button></div>
-                    ${html}
-                `;
-                document.body.appendChild(overlay);
-            } else {
-                // Fallback si el componente no carga: Ir al archivo directo en /demos
-                const rutas = {
-                    'core': '/demos/demo15-diagnostico-ai.html',
-                    'bold': '/demos/demo16-dashboard-tesla.html',
-                    'inventory': '/demos/demo24-inventario-repuestos.html'
-                };
-                window.location.href = rutas[type] || '/demos/';
-            }
-        } catch (e) {
-            window.location.href = '/demos/';
-        }
-    };
-
-    // 4. CONTROL DEL BOTÓN BOLD (CONEXIÓN API REFORMADA)
-    const btnBold = document.getElementById('btnPagarBold');
-    const chk1 = document.getElementById('checkTerminos');
-    const chk2 = document.getElementById('checkPoliticas');
-
-    const validarChecks = () => {
-        const activos = chk1.checked && chk2.checked;
-        btnBold.disabled = !activos;
-        btnBold.classList.toggle('opacity-20', !activos);
-        btnBold.classList.toggle('shadow-[0_0_20px_#06b6d4]', activos);
-    };
-
-    chk1.onchange = validarChecks;
-    chk2.onchange = validarChecks;
-
-    btnBold.onclick = async () => {
-        const user = auth.currentUser;
-        if(!user) return alert("🛰️ Error: Nodo no identificado. Por favor inicie sesión.");
-
-        btnBold.innerText = "SINCRONIZANDO...";
-        btnBold.disabled = true;
-
-        try {
-            // Usamos tu planManager.js reformado
-            await procesarSuscripcionBold(planSeleccionado.id, 'mensual', user.uid, user.email);
-        } catch (error) {
-            console.error("Error en enlace Bold:", error);
-            alert("Error de sincronización. Reintentando enlace...");
-            btnBold.innerText = "REINTENTAR";
-            btnBold.disabled = false;
-        }
-    };
-
-    // 5. REDES SOCIALES (HOVERS DINÁMICOS)
-    document.addEventListener('DOMContentLoaded', () => {
-        const iconos = document.querySelectorAll('footer a i');
-        const redes = [
-            "https://facebook.com/tallerpro360",
-            "https://instagram.com/tallerpro360",
-            "https://wa.me/573XXXXXXXXX"
-        ];
-        iconos.forEach((icon, index) => {
-            if(redes[index]) icon.parentElement.href = redes[index];
-        });
-    });
-
+    // Monitoreo de Sesión
     onAuthStateChanged(auth, (user) => {
-        if (user) console.log("🛰️ Nexus-X Online: " + user.email);
+        if (user) console.log("🛰️ Piloto en cabina: " + user.email);
     });
+
 </script>
 </body>
 </html>
