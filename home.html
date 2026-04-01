@@ -292,111 +292,101 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { firebaseConfig } from "/app/js/core/firebase-config.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { firebaseConfig } from "/app/js/core/firebase-config.js";
 
-        // Inicialización Silenciosa de Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-        let selPlan = null;
-        let selPrecio = 0;
+    // --- CONFIGURACIÓN DE REDES SOCIALES (HOVERS LISTOS) ---
+    const socialLinks = {
+        facebook: "https://facebook.com/tallerpro360",
+        instagram: "https://instagram.com/tallerpro360",
+        whatsapp: "https://wa.me/573XXXXXXXXX"
+    };
 
-        // Monitoreo de Estado
-        onAuthStateChanged(auth, (user) => {
-            if (user) console.log("🛰️ Nexus-X Link: " + user.email);
-        });
+    // --- MOTOR DINÁMICO DE DEMOS NEXUS-X ---
+    // Esta lista mapea tus archivos reales de la carpeta raíz /demos
+    const ecosistemaDemos = [
+        { id: 1, name: "AI Platform", file: "demo1-ai-platform.html", icon: "fa-brain" },
+        { id: 10, name: "Tesla Interface", file: "demo10-tesla.html", icon: "fa-car-side" },
+        { id: 15, name: "Diagnóstico AI", file: "demo15-diagnostico-ai.html", icon: "fa-microchip" },
+        { id: 16, name: "Dashboard Pro", file: "demo16-dashboard-tesla.html", icon: "fa-chart-line" },
+        { id: 17, name: "Simulador Taller", file: "demo17-simulador-taller.html", icon: "fa-tools" },
+        { id: 21, name: "Control Center", file: "demo21-control-center.html", icon: "fa-satellite" },
+        { id: 24, name: "Inventario Realtime", file: "demo24-inventario-repuestos.html", icon: "fa-boxes" },
+        { id: 27, name: "Super AI Dashboard", file: "demo27-super-ai-dashboard.html", icon: "fa-rocket" }
+    ];
 
-        // UI Helpers
-        window.abrirTrial = () => alert("Módulo Trial v15.0: Redirigiendo a registro de taller...");
-        window.cerrarLegal = () => document.getElementById('modalLegal').classList.add('hidden');
+    // --- FUNCIONALIDAD CORE ---
+
+    window.openDemoSelector = () => {
+        const modal = document.createElement('div');
+        modal.id = "nexus-selector";
+        modal.className = "fixed inset-0 z-[500] bg-[#020617]/fb backdrop-blur-xl flex items-center justify-center p-4";
         
-        window.prepararPago = (plan, precio) => {
-            selPlan = plan;
-            selPrecio = precio;
-            document.getElementById('modalLegal').classList.remove('hidden');
-        };
+        let demoCards = ecosistemaDemos.map(demo => `
+            <div onclick="window.location.href='/demos/${demo.file}'" 
+                 class="group cursor-pointer p-6 border border-white/5 bg-white/5 rounded-3xl hover:border-cyan-500 hover:bg-cyan-500/10 transition-all duration-500">
+                <i class="fas ${demo.icon} text-2xl text-cyan-400 group-hover:scale-125 mb-4 block transition"></i>
+                <h4 class="orbitron text-[10px] font-black text-white uppercase tracking-tighter">${demo.name}</h4>
+                <p class="text-[8px] text-slate-500 mt-2">NODO ${demo.id} ACTIVO</p>
+            </div>
+        `).join('');
 
-        // Lógica de Validación Legal
-        const chkT = document.getElementById('checkTerminos');
-        const chkP = document.getElementById('checkPoliticas');
-        const btnB = document.getElementById('btnPagarBold');
-
-        const validateInputs = () => {
-            if(chkT.checked && chkP.checked) {
-                btnB.disabled = false;
-                btnB.classList.remove('opacity-20');
-                btnB.classList.add('shadow-[0_0_20px_#06b6d4]');
-            } else {
-                btnB.disabled = true;
-                btnB.classList.add('opacity-20');
-                btnB.classList.remove('shadow-[0_0_20px_#06b6d4]');
-            }
-        };
-
-        chkT.onchange = validateInputs;
-        chkP.onchange = validateInputs;
-
-        // Integración Bold API (Mock-up funcional)
-        btnB.onclick = async () => {
-            const user = auth.currentUser;
-            if(!user) {
-                alert("🛰️ Error de Nodo: Debe estar autenticado para procesar pagos.");
-                return;
-            }
-
-            try {
-                btnB.innerText = "Sincronizando...";
-                btnB.disabled = true;
-
-                const response = await fetch('/api/bold-gateway', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        plan: selPlan,
-                        amount: selPrecio,
-                        email: user.email,
-                        timestamp: new Date().toISOString()
-                    })
-                });
-
-                const data = await response.json();
-                if(data.checkoutUrl) {
-                    window.location.href = data.checkoutUrl;
-                } else {
-                    alert("Bold Node Offline: Usando modo contingencia...");
-                }
-            } catch(e) {
-                console.error("Link Fail:", e);
-                btnB.innerText = "REINTENTAR ENLACE";
-                btnB.disabled = false;
-            }
-        };
-
-        // Sistema de Demos Dinámicas
-        window.openDemo = (type) => {
-            const config = {
-                'core': { title: 'PRO360 CORE', info: 'Gestión de flujo vehicular en tiempo real.' },
-                'bold': { title: 'CAJA BOLD', info: 'Módulo de conciliación y links de pago PSE.' },
-                'inventory': { title: 'STOCK AI', info: 'Control de repuestos con alertas automáticas.' }
-            };
-            const item = config[type];
-            
-            const overlay = document.createElement('div');
-            overlay.style = "position:fixed; inset:0; background:rgba(2,6,23,0.98); z-index:1000; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(20px);";
-            overlay.innerHTML = `
-                <div class="text-center p-12 border border-cyan-500/30 rounded-[3rem] bg-slate-900 max-w-lg">
-                    <h2 class="orbitron text-2xl text-cyan-400 font-black mb-4 uppercase">${item.title}</h2>
-                    <p class="text-slate-400 text-sm italic mb-8">${item.info}</p>
-                    <div class="h-48 bg-black/50 rounded-2xl mb-8 flex items-center justify-center border border-white/5">
-                        <i class="fas fa-microchip text-cyan-500 text-5xl animate-pulse"></i>
-                    </div>
-                    <button onclick="this.parentElement.parentElement.remove()" class="orbitron text-[10px] font-black text-black bg-white px-10 py-4 rounded-full uppercase italic hover:bg-cyan-400 transition">Cerrar Demo</button>
+        modal.innerHTML = `
+            <div class="max-w-4xl w-full">
+                <div class="flex justify-between items-center mb-10">
+                    <h2 class="orbitron text-2xl font-black italic text-white uppercase tracking-widest">Nexus-X <span class="text-cyan-400">Demos Cloud</span></h2>
+                    <button onclick="document.getElementById('nexus-selector').remove()" class="text-white/50 hover:text-white transition text-2xl">&times;</button>
                 </div>
-            `;
-            document.body.appendChild(overlay);
-        };
-    </script>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    ${demoCards}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    };
+
+    // --- INTEGRACIÓN BOLD Y LEGAL ---
+    let selPlan = null;
+    let selPrecio = 0;
+
+    window.prepararPago = (plan, precio) => {
+        selPlan = plan;
+        selPrecio = precio;
+        document.getElementById('modalLegal').classList.remove('hidden');
+    };
+
+    const btnB = document.getElementById('btnPagarBold');
+    btnB.onclick = async () => {
+        const user = auth.currentUser;
+        if(!user) return alert("🛰️ Error: Nodo no autenticado.");
+        
+        btnB.innerText = "DESPLEGANDO BOLD...";
+        // Redirección directa al checkout con parámetros de seguimiento
+        window.location.href = `https://bold.co/pay/tallerpro?amount=${selPrecio}&email=${user.email}&id=${user.uid}_${selPlan}`;
+    };
+
+    // --- AUTO-INJECT HOVERS SOCIALES ---
+    window.addEventListener('DOMContentLoaded', () => {
+        const footerLinks = document.querySelectorAll('footer .flex.justify-center.gap-12 a');
+        if(footerLinks.length >= 3) {
+            footerLinks[0].href = socialLinks.facebook;
+            footerLinks[1].href = socialLinks.instagram;
+            footerLinks[2].href = socialLinks.whatsapp;
+        }
+        
+        // Re-mapear botones de demo del HTML para abrir el selector dinámico
+        document.querySelectorAll('button[onclick^="openDemo"]').forEach(btn => {
+            btn.setAttribute('onclick', 'openDemoSelector()');
+        });
+    });
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) console.log("🛰️ Nexus-X Link: " + user.email);
+    });
+</script>
 </body>
 </html>
