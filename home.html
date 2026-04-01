@@ -348,32 +348,43 @@
     };
 
     window.prepararPago = (plan, precio) => {
-        const modal = document.getElementById('modalLegal');
-        modal.classList.remove('hidden');
-        
-        // Listener para habilitar botón Bold
-        const btn = document.getElementById('btnPagarBold');
-        const chk1 = document.getElementById('checkTerminos');
-        const chk2 = document.getElementById('checkPoliticas');
+    const modal = document.getElementById('modalLegal');
+    modal.classList.remove('hidden');
+    
+    const btnBold = document.getElementById('btnPagarBold');
+    const check1 = document.getElementById('checkTerminos');
+    const check2 = document.getElementById('checkPoliticas');
 
-        const validar = () => {
-            if(chk1.checked && chk2.checked) {
-                btn.disabled = false;
-                btn.classList.remove('opacity-20');
-                btn.classList.add('bg-cyan-500', 'text-black');
-            } else {
-                btn.disabled = true;
-                btn.classList.add('opacity-20');
-            }
-        };
-
-        chk1.onchange = validar;
-        chk2.onchange = validar;
-
-        btn.onclick = () => {
-            window.location.href = `https://bold.co/pay/tallerpro360?amount=${precio}&reference=${plan}-${Date.now()}`;
-        };
+    // Escuchador para habilitar el botón solo si acepta términos
+    const validarChecks = () => {
+        if(check1.checked && check2.checked) {
+            btnBold.disabled = false;
+            btnBold.classList.remove('opacity-20');
+        } else {
+            btnBold.disabled = true;
+            btnBold.classList.add('opacity-20');
+        }
     };
+
+    check1.onchange = validarChecks;
+    check2.onchange = validarChecks;
+
+    // AQUÍ VA TU CÓDIGO DE BOLD ACTUALIZADO
+    btnBold.onclick = () => {
+        // 1. Obtener ID del usuario de Firebase Auth
+        const userId = auth.currentUser ? auth.currentUser.uid : "INVITADO";
+        
+        // 2. Definir duración (puedes cambiarlo a 12M si es anual)
+        const meses = "1M"; 
+        
+        // 3. Construir referencia para el Webhook (NEXUS_ID_PLAN_MESES)
+        const ref = `NEXUS_${userId}_${plan}_${meses}`;
+        
+        // 4. Redirección final a la pasarela
+        console.log("Redirigiendo a Bold con Ref:", ref);
+        window.location.href = `https://bold.co/pay/tallerpro360?amount=${precio}&reference=${ref}`;
+    };
+};
 
     window.cerrarLegal = () => document.getElementById('modalLegal').classList.add('hidden');
 
