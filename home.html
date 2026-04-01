@@ -294,13 +294,16 @@
     <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    // Nota: Asegúrate de que esta ruta sea accesible o usa un objeto config directo aquí
-    const firebaseConfig = { /* Tu Configuración aquí o importada */ };
 
-    // 1. Inicialización
+    // --- CONFIGURACIÓN DE NÚCLEO ---
+    const firebaseConfig = { 
+        /* Mantén aquí tus credenciales actuales */ 
+    };
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
+    // --- BASE DE DATOS DE NODOS (DEMOS) ---
     const nodosDemos = [
         { name: "AI Platform", file: "demo1-ai-platform.html" },
         { name: "Tesla Hub", file: "demo10-tesla.html" },
@@ -311,9 +314,9 @@
         { name: "Super AI Dash", file: "demo27-super-ai-dashboard.html" }
     ];
 
-    // --- MOTOR DE INTERFAZ (UI ENGINE) ---
+    // --- EXPOSICIÓN GLOBAL (Para que los botones funcionen) ---
     
-    // Función para lanzar el Selector de Demos
+    // 1. Selector de Demos Galáctico
     window.openDemo = () => {
         const overlay = document.createElement('div');
         overlay.id = "nexus-selector";
@@ -322,16 +325,19 @@
         let grid = nodosDemos.map(d => `
             <div onclick="window.location.href='/demos/${d.file}'" 
                  class="group p-6 border border-cyan-500/20 bg-cyan-500/5 rounded-2xl hover:bg-cyan-500/20 hover:border-cyan-400 transition-all cursor-pointer text-center">
-                <i class="fas fa-rocket text-cyan-400 mb-3 block"></i>
-                <p class="text-[11px] orbitron text-white font-black uppercase tracking-widest">${d.name}</p>
-                <p class="text-[8px] text-cyan-500/40 mt-2 font-mono">${d.file}</p>
+                <i class="fas fa-rocket text-cyan-400 mb-3 block text-xl group-hover:animate-bounce"></i>
+                <p class="text-[10px] orbitron text-white font-black uppercase tracking-widest">${d.name}</p>
+                <p class="text-[7px] text-cyan-500/40 mt-2 font-mono italic">${d.file}</p>
             </div>
         `).join('');
 
         overlay.innerHTML = `
             <div class="max-w-6xl mx-auto pt-20">
                 <div class="flex justify-between items-center mb-16 border-b border-cyan-500/20 pb-8">
-                    <h2 class="orbitron text-3xl font-black italic text-white uppercase tracking-tighter">NEXUS-X <span class="text-cyan-400">DEMO CLOUD</span></h2>
+                    <div>
+                        <h2 class="orbitron text-3xl font-black italic text-white uppercase tracking-tighter">NEXUS-X <span class="text-cyan-400">DEMO CLOUD</span></h2>
+                        <p class="text-[9px] text-slate-500 uppercase tracking-[0.4em] mt-2">Acceso a terminales remotas activas</p>
+                    </div>
                     <button onclick="document.getElementById('nexus-selector').remove()" class="text-white text-5xl hover:text-red-500 transition">&times;</button>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">${grid}</div>
@@ -340,22 +346,29 @@
         document.body.appendChild(overlay);
     };
 
-    // Función para el Trial de 7 Días
+    // 2. Motor de Trial de 7 Días con Efecto de Despliegue
     window.abrirTrial = () => {
         const modal = document.createElement('div');
         modal.id = "trial-modal";
-        modal.className = "fixed inset-0 z-[1000] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4";
+        modal.className = "fixed inset-0 z-[1000] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4";
         modal.innerHTML = `
-            <div class="bg-slate-900 border border-cyan-500/30 p-10 rounded-[3rem] max-w-md w-full shadow-2xl relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent animate-pulse"></div>
-                <h3 class="orbitron text-2xl font-black text-white mb-2 italic uppercase">Activar Nodo Trial</h3>
-                <p class="text-[10px] text-cyan-500 font-bold uppercase tracking-widest mb-8">7 Días de Acceso Starlink Gratuito</p>
-                
-                <div class="space-y-4">
-                    <input id="trial-taller" type="text" placeholder="NOMBRE DEL TALLER" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white orbitron text-[10px] outline-none focus:border-cyan-500">
-                    <input id="trial-email" type="email" placeholder="EMAIL CORPORATIVO" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white orbitron text-[10px] outline-none focus:border-cyan-500">
-                    <button onclick="window.procesarTrial()" class="w-full py-5 bg-cyan-500 text-black font-black orbitron text-[11px] rounded-xl hover:bg-white transition uppercase italic">Generar Credenciales</button>
-                    <button onclick="document.getElementById('trial-modal').remove()" class="w-full text-slate-500 text-[8px] font-black uppercase tracking-widest mt-4">Abortar</button>
+            <div class="bg-[#0b111e] border border-cyan-500/30 p-12 rounded-[3rem] max-w-md w-full shadow-2xl relative overflow-hidden">
+                <div id="trial-content">
+                    <h3 class="orbitron text-2xl font-black text-white mb-2 italic uppercase">Activar Nodo Trial</h3>
+                    <p class="text-[9px] text-cyan-500 font-bold uppercase tracking-widest mb-10">Iniciando protocolo de 7 días gratuitos</p>
+                    
+                    <div class="space-y-6">
+                        <input id="trial-taller" type="text" placeholder="NOMBRE DEL TALLER" class="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-white orbitron text-[10px] outline-none focus:border-cyan-500 transition-all uppercase">
+                        <input id="trial-email" type="email" placeholder="EMAIL DE CONTACTO" class="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-white orbitron text-[10px] outline-none focus:border-cyan-500 transition-all">
+                        <button onclick="window.procesarTrial()" class="w-full py-6 bg-cyan-500 text-black font-black orbitron text-[11px] rounded-[2rem] hover:bg-white transition-all uppercase italic shadow-lg">Generar Credenciales</button>
+                        <button onclick="document.getElementById('trial-modal').remove()" class="w-full text-slate-600 text-[8px] font-black uppercase tracking-[0.3em] mt-4 hover:text-white transition">Abortar Misión</button>
+                    </div>
+                </div>
+                <div id="trial-loading" class="hidden text-center py-20">
+                    <div class="orbitron text-cyan-400 text-[10px] animate-pulse mb-6">ESTABLECIENDO ENLACE STARLINK...</div>
+                    <div class="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                        <div class="h-full bg-cyan-500 animate-[scan_2s_infinite]"></div>
+                    </div>
                 </div>
             </div>
         `;
@@ -364,20 +377,19 @@
 
     window.procesarTrial = () => {
         const taller = document.getElementById('trial-taller').value;
-        if(!taller) return alert("Ingrese nombre del taller");
-        
-        // Simulación de despliegue de nodo
-        const btn = document.querySelector('#trial-modal button');
-        btn.innerHTML = "DESPLEGANDO NODO... <i class='fas fa-sync fa-spin'></i>";
-        btn.disabled = true;
+        const email = document.getElementById('trial-email').value;
+        if(!taller || !email) return alert("COMPLETE TODOS LOS CAMPOS DE ÓRBITA");
+
+        document.getElementById('trial-content').classList.add('hidden');
+        document.getElementById('trial-loading').classList.remove('hidden');
 
         setTimeout(() => {
-            alert(`🛰️ ¡NEXUS-X ACTIVO!\n\nSe han generado credenciales para: ${taller.toUpperCase()}\nEnviando acceso a su correo...`);
+            alert(`🛰️ ¡NEXUS-X DESPLEGADO!\n\nTaller: ${taller.toUpperCase()}\nSe han enviado las llaves de acceso a: ${email}\nBienvenido al ecosistema.`);
             document.getElementById('trial-modal').remove();
-        }, 2500);
+        }, 3000);
     };
 
-    // Función de Pago Bold con Escudo Legal
+    // 3. Integración Bold con Validación Legal
     window.prepararPago = (plan, precio) => {
         const modal = document.getElementById('modalLegal');
         modal.classList.remove('hidden');
@@ -386,24 +398,22 @@
         const check1 = document.getElementById('checkTerminos');
         const check2 = document.getElementById('checkPoliticas');
 
-        // Lógica de activación de botón según checks
-        const validarChecks = () => {
+        const actualizarBoton = () => {
             if(check1.checked && check2.checked) {
                 btnBold.disabled = false;
                 btnBold.classList.remove('opacity-20');
-                btnBold.classList.add('shadow-[0_0_30px_rgba(6,182,212,0.6)]');
+                btnBold.classList.add('hover:scale-105', 'shadow-2xl');
             } else {
                 btnBold.disabled = true;
                 btnBold.classList.add('opacity-20');
             }
         };
 
-        check1.onchange = validarChecks;
-        check2.onchange = validarChecks;
+        check1.onchange = actualizarBoton;
+        check2.onchange = actualizarBoton;
 
         btnBold.onclick = () => {
-            // Referencia dinámica de Bold
-            const ref = `NEXUS-${plan}-${Date.now().toString().slice(-4)}`;
+            const ref = `${plan}-${Date.now().toString().slice(-4)}`;
             window.location.href = `https://bold.co/pay/tallerpro360?amount=${precio}&reference=${ref}`;
         };
     };
@@ -412,9 +422,9 @@
         document.getElementById('modalLegal').classList.add('hidden');
     };
 
-    // Monitoreo de Sesión
+    // Eventos Globales de Sistema
     onAuthStateChanged(auth, (user) => {
-        if (user) console.log("🛰️ Piloto en cabina: " + user.email);
+        if (user) console.log("🛰️ Piloto Nexus-X Identificado: " + user.email);
     });
 
 </script>
