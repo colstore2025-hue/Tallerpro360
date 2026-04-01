@@ -60,11 +60,10 @@
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#064e3b,transparent)] opacity-20"></div>
 
     <script>
-        // Extraer referencia de la URL si Bold la envía
-        const params = new URLSearchParams(window.location.search);
-        if (params.has('order_id')) {
-            document.getElementById('refId').innerText = params.get('order_id');
-        }
-    </script>
+    // Automatismo: Redirigir al dashboard tras 5 segundos
+    setTimeout(() => {
+        window.location.href = "/app/dashboard.html";
+    }, 5000);
+</script>
 </body>
 </html>
