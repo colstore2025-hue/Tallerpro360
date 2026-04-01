@@ -29,6 +29,11 @@
         .tech-list li { font-size: 10px; margin-bottom: 12px; text-transform: uppercase; font-weight: 700; color: #94a3b8; display: flex; align-items: start; gap: 10px; line-height: 1.4; }
         .badge-tech { font-size: 8px; font-weight: 900; padding: 4px 12px; border-radius: 99px; text-transform: uppercase; letter-spacing: 2px; }
 
+        /* Demos Section Styles */
+        .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-top: 50px; }
+        .btn-demo-wa { background: #25d366; color: white; padding: 15px; border-radius: 12px; font-weight: 900; text-align: center; display: block; margin-top: 20px; transition: 0.3s; }
+        .btn-demo-wa:hover { background: #128c7e; transform: scale(1.05); }
+
         /* Animaciones */
         @keyframes scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
         .scanner-line { position: absolute; width: 100%; height: 2px; background: var(--cyan); box-shadow: 0 0 15px var(--cyan); animation: scan 3s infinite linear; opacity: 0.3; }
@@ -49,6 +54,7 @@
         </div>
         <div class="flex items-center gap-6">
             <a href="#planes" class="hidden md:block text-[10px] orbitron font-black hover:text-cyan-400 tracking-widest uppercase italic transition">Suscripciones</a>
+            <a href="#demos" class="hidden md:block text-[10px] orbitron font-black hover:text-cyan-400 tracking-widest uppercase italic transition">Demos</a>
             <button onclick="abrirTrial()" class="bg-white text-black px-6 py-2.5 rounded-full orbitron text-[10px] font-black hover:bg-cyan-400 transition-all duration-300">Prueba Gratis</button>
         </div>
     </nav>
@@ -61,7 +67,7 @@
             NEXUS-<span class="text-cyan-400">X</span>
         </h1>
         <p class="text-slate-400 text-lg md:text-2xl max-w-3xl mx-auto italic font-light leading-relaxed mb-12">
-            Gestión Automotriz de <span class="text-white font-bold underline decoration-cyan-500">Grado Aeroespacial</span>. Integración Bold en cada bit.
+            Gestión Automotriz de <span class="text-white font-bold underline decoration-cyan-500">Grado Aeroespacial</span>. Integración Bold y Conciliación Automática.
         </p>
 
         <div class="mt-20 bg-cyan-500/5 border border-cyan-500/20 rounded-[3rem] p-10 max-w-4xl mx-auto relative overflow-hidden">
@@ -76,111 +82,144 @@
                     <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
                         <div class="w-2/3 h-full bg-cyan-500 shadow-[0_0_10px_#06b6d4]"></div>
                     </div>
-                    <p class="text-[9px] text-slate-500 uppercase font-black">IA detectando abolladuras y estado de pintura...</p>
                 </div>
                 <div class="space-y-4">
                     <p class="text-xs font-bold text-slate-300 uppercase italic"><i class="fas fa-microchip mr-2 text-purple-400"></i> Análisis de Inventario</p>
                     <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
                         <div class="w-full h-full bg-purple-500 shadow-[0_0_10px_#a855f7]"></div>
                     </div>
-                    <p class="text-[9px] text-slate-500 uppercase font-black">Sincronización de repuestos con Nexus-X Starlink.</p>
                 </div>
             </div>
         </div>
     </header>
 
-    <section id="planes" class="py-32 px-4 max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+    <section id="planes" class="py-32 px-4 max-w-[1600px] mx-auto">
+        <div class="text-center mb-20">
+            <h2 class="orbitron text-4xl font-black italic uppercase">Planes de Suscripción</h2>
+            <p class="text-slate-500 orbitron text-[10px] tracking-[0.3em] mt-4 uppercase">Elija su nivel de dominio en el mercado</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            <div class="card-nexus p-8 rounded-[2.5rem] border-slate-700/30">
+                <div class="flex-grow">
+                    <span class="badge-tech bg-slate-800 text-slate-400 mb-6 inline-block">Sandbox v3.0</span>
+                    <h3 class="orbitron text-xl font-black italic text-white mb-2 uppercase">Prueba Gratis</h3>
+                    <div class="text-4xl font-black mb-8 text-white">$0 <span class="text-[10px] text-slate-600">7 DÍAS</span></div>
+                    <ul class="tech-list">
+                        <li><i class="fas fa-check-circle text-cyan-500"></i> Registro de 20 Órdenes</li>
+                        <li><i class="fas fa-credit-card text-cyan-500"></i> Simulación Link Bold</li>
+                        <li><i class="fas fa-microchip text-cyan-500"></i> Dashboard de Control</li>
+                    </ul>
+                </div>
+                <button onclick="abrirTrial()" class="mt-10 w-full py-5 border border-white/10 rounded-2xl orbitron text-[10px] font-black hover:bg-white hover:text-black transition italic uppercase">Activar Nodo</button>
+            </div>
+
+            <div class="card-nexus p-8 rounded-[2.5rem] border-emerald-900/30">
+                <div class="flex-grow">
+                    <span class="badge-tech bg-emerald-500/20 text-emerald-400 mb-6 inline-block">Operativo</span>
+                    <h3 class="orbitron text-xl font-black italic text-white mb-2 uppercase">Básico</h3>
+                    <div class="text-4xl font-black mb-8 text-white">$49.900 <span class="text-[10px] text-slate-600">/ MES</span></div>
+                    <ul class="tech-list">
+                        <li><i class="fas fa-link text-emerald-500"></i> **Bold: Link de Pago**</li>
+                        <li><i class="fas fa-check text-emerald-500"></i> 100 Órdenes al Mes</li>
+                        <li><i class="fas fa-check text-emerald-500"></i> Facturación PDF</li>
+                    </ul>
+                </div>
+                <button onclick="prepararPago('BASIC', 49900)" class="mt-10 w-full py-5 bg-emerald-600 text-black rounded-2xl orbitron text-[10px] font-black italic hover:bg-emerald-400 transition uppercase">Suscribir</button>
+            </div>
+
+            <div class="card-nexus p-8 rounded-[2.5rem] border-blue-900/30">
+                <div class="flex-grow">
+                    <span class="badge-tech bg-blue-500/20 text-blue-400 mb-6 inline-block">Escalable</span>
+                    <h3 class="orbitron text-xl font-black italic text-blue-400 mb-2 uppercase">Profesional</h3>
+                    <div class="text-4xl font-black mb-8 text-white">$79.900 <span class="text-[10px] text-slate-600">/ MES</span></div>
+                    <ul class="tech-list">
+                        <li><i class="fas fa-link text-blue-400"></i> **Bold: Conciliación**</li>
+                        <li><i class="fas fa-robot text-blue-400"></i> IA: Dictado de Voz</li>
+                        <li><i class="fas fa-layer-group text-blue-400"></i> 500 Órdenes al Mes</li>
+                    </ul>
+                </div>
+                <button onclick="prepararPago('PRO', 79900)" class="mt-10 w-full py-5 bg-blue-600 text-white rounded-2xl orbitron text-[10px] font-black italic hover:bg-blue-400 transition uppercase">Activar Pro</button>
+            </div>
+
+            <div class="card-nexus p-8 rounded-[2.5rem] border-2 border-cyan-500 scale-110 z-10 shadow-[0_0_50px_rgba(6,182,212,0.4)] bg-cyan-900/20">
+                <div class="absolute top-0 right-0 bg-cyan-500 text-black px-6 py-2 text-[9px] font-black orbitron rounded-bl-3xl uppercase italic">Full Automático</div>
+                <div class="flex-grow">
+                    <span class="badge-tech bg-cyan-500 text-black mb-6 inline-block">Dominio Total</span>
+                    <h3 class="orbitron text-2xl font-black italic text-cyan-400 mb-2 uppercase">Elite Nexus</h3>
+                    <div class="text-4xl font-black mb-8 text-white">$129.000 <span class="text-[10px] text-slate-300">/ MES</span></div>
+                    <ul class="tech-list text-white">
+                        <li><i class="fas fa-sync animate-spin-slow text-cyan-400"></i> **Bold: Webhook Automático**</li>
+                        <li><i class="fas fa-brain text-cyan-400"></i> IA Predictiva Starlink</li>
+                        <li><i class="fas fa-infinity text-cyan-400"></i> Órdenes Ilimitadas</li>
+                    </ul>
+                </div>
+                <button onclick="prepararPago('ELITE', 129000)" class="mt-10 w-full py-6 bg-cyan-500 text-black rounded-2xl orbitron text-[11px] font-black italic hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] transition uppercase">Dominar Mercado</button>
+            </div>
+
+            <div class="card-nexus p-8 rounded-[2.5rem] border-purple-900/30">
+                <div class="flex-grow">
+                    <span class="badge-tech bg-purple-500/20 text-purple-400 mb-6 inline-block">Corporativo</span>
+                    <h3 class="orbitron text-xl font-black italic text-white mb-2 uppercase">Enterprise</h3>
+                    <div class="text-xl font-black my-10 text-purple-400 italic uppercase">A Medida</div>
+                    <ul class="tech-list">
+                        <li><i class="fas fa-network-wired text-purple-500"></i> Ecosistema Multi-Taller</li>
+                        <li><i class="fas fa-code text-purple-500"></i> API Nexus-X Full</li>
+                    </ul>
+                </div>
+                <button onclick="window.location.href='https://wa.me/573XXXXXXXXX?text=Hola%20Nexus-X,%20quiero%20una%20solución%20Enterprise'" class="mt-10 w-full py-5 border border-purple-500/40 text-purple-400 rounded-2xl orbitron text-[10px] font-black italic hover:bg-purple-900 transition uppercase">Consultar</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="demos" class="py-32 px-6 max-w-6xl mx-auto">
+        <div class="text-center mb-16">
+            <h2 class="orbitron text-4xl font-black italic uppercase">Demos del Ecosistema</h2>
+            <p class="text-slate-500 orbitron text-[10px] tracking-[0.3em] mt-4 uppercase">Pruebe la tecnología antes del despliegue</p>
+        </div>
         
-        <div class="card-nexus p-8 rounded-[2.5rem] border-slate-700/30">
-            <div class="flex-grow">
-                <span class="badge-tech bg-slate-800 text-slate-400 mb-6 inline-block">Sandbox v3.0</span>
-                <h3 class="orbitron text-xl font-black italic text-white mb-2 uppercase">Prueba Gratis</h3>
-                <div class="text-4xl font-black mb-8 text-white">$0 <span class="text-[10px] text-slate-600">7 DÍAS</span></div>
-                <ul class="tech-list">
-                    <li><i class="fas fa-check-circle text-cyan-500"></i> Registro de 20 Órdenes</li>
-                    <li><i class="fas fa-credit-card text-cyan-500"></i> Simulación Link Bold</li>
-                    <li><i class="fas fa-microchip text-cyan-500"></i> Dashboard de Control</li>
-                </ul>
+        <div class="demo-grid">
+            <div class="card-nexus p-8 rounded-3xl text-center">
+                <i class="fas fa-desktop text-cyan-400 text-4xl mb-4"></i>
+                <h3 class="orbitron font-black uppercase text-sm mb-4 italic">PRO360CORE</h3>
+                <p class="text-xs text-slate-400 mb-6">Panel administrativo y gestión de flujo vehicular.</p>
+                <button onclick="openDemo('core')" class="w-full py-3 border border-cyan-500/50 text-cyan-400 rounded-xl orbitron text-[10px] font-black italic hover:bg-cyan-500 hover:text-black transition uppercase">Ver Simulación</button>
             </div>
-            <button onclick="abrirTrial()" class="mt-10 w-full py-5 border border-white/10 rounded-2xl orbitron text-[10px] font-black hover:bg-white hover:text-black transition italic uppercase">Activar Nodo</button>
-        </div>
 
-        <div class="card-nexus p-8 rounded-[2.5rem] border-emerald-900/30">
-            <div class="flex-grow">
-                <span class="badge-tech bg-emerald-500/20 text-emerald-400 mb-6 inline-block">Operativo</span>
-                <h3 class="orbitron text-xl font-black italic text-white mb-2 uppercase italic">Básico</h3>
-                <div class="text-4xl font-black mb-8 text-white">$49.900 <span class="text-[10px] text-slate-600">/ MES</span></div>
-                <ul class="tech-list">
-                    <li><i class="fas fa-link text-emerald-500"></i> **Pasarela Bold Incluida**</li>
-                    <li><i class="fas fa-check text-emerald-500"></i> 100 Órdenes al Mes</li>
-                    <li><i class="fas fa-check text-emerald-500"></i> Gestión de Clientes</li>
-                    <li><i class="fas fa-check text-emerald-500"></i> Facturación PDF</li>
-                </ul>
+            <div class="card-nexus p-8 rounded-3xl text-center">
+                <i class="fas fa-file-invoice-dollar text-emerald-400 text-4xl mb-4"></i>
+                <h3 class="orbitron font-black uppercase text-sm mb-4 italic">Caja Bold</h3>
+                <p class="text-xs text-slate-400 mb-6">Conciliación automática y links de pago PSE.</p>
+                <button onclick="openDemo('bold')" class="w-full py-3 border border-emerald-500/50 text-emerald-400 rounded-xl orbitron text-[10px] font-black italic hover:bg-emerald-500 hover:text-black transition uppercase">Ver Flujo</button>
             </div>
-            <button onclick="prepararPago('basico', 49900)" class="mt-10 w-full py-5 bg-emerald-600 text-black rounded-2xl orbitron text-[10px] font-black italic hover:bg-emerald-400 transition uppercase">Suscribir</button>
-        </div>
 
-        <div class="card-nexus p-8 rounded-[2.5rem] border-blue-900/30">
-            <div class="flex-grow">
-                <span class="badge-tech bg-blue-500/20 text-blue-400 mb-6 inline-block">Escalable</span>
-                <h3 class="orbitron text-xl font-black italic text-blue-400 mb-2 uppercase italic">Profesional</h3>
-                <div class="text-4xl font-black mb-8 text-white">$79.900 <span class="text-[10px] text-slate-600">/ MES</span></div>
-                <ul class="tech-list">
-                    <li><i class="fas fa-link text-blue-400"></i> **Bold: Conciliación**</li>
-                    <li><i class="fas fa-robot text-blue-400"></i> IA: Dictado de Diagnóstico</li>
-                    <li><i class="fas fa-layer-group text-blue-400"></i> 500 Órdenes al Mes</li>
-                    <li><i class="fab fa-whatsapp text-blue-400"></i> Avisos Cloud</li>
-                </ul>
+            <div class="card-nexus p-8 rounded-3xl text-center">
+                <i class="fas fa-boxes text-purple-400 text-4xl mb-4"></i>
+                <h3 class="orbitron font-black uppercase text-sm mb-4 italic">Stock Starlink</h3>
+                <p class="text-xs text-slate-400 mb-6">Inventario inteligente sincronizado en la nube.</p>
+                <button onclick="openDemo('inventory')" class="w-full py-3 border border-purple-500/50 text-purple-400 rounded-xl orbitron text-[10px] font-black italic hover:bg-purple-500 hover:text-black transition uppercase">Ver Stock</button>
             </div>
-            <button onclick="prepararPago('pro', 79900)" class="mt-10 w-full py-5 bg-blue-600 text-white rounded-2xl orbitron text-[10px] font-black italic hover:bg-blue-400 transition uppercase">Activar Pro</button>
-        </div>
 
-        <div class="card-nexus p-8 rounded-[2.5rem] border-2 border-cyan-500 scale-110 z-10 shadow-[0_0_50px_rgba(6,182,212,0.4)] bg-cyan-900/20">
-            <div class="absolute top-0 right-0 bg-cyan-500 text-black px-6 py-2 text-[9px] font-black orbitron rounded-bl-3xl uppercase italic">Full Automático</div>
-            <div class="flex-grow">
-                <span class="badge-tech bg-cyan-500 text-black mb-6 inline-block">Dominio Total</span>
-                <h3 class="orbitron text-2xl font-black italic text-cyan-400 mb-2 uppercase italic">Elite Nexus</h3>
-                <div class="text-4xl font-black mb-8 text-white">$129.000 <span class="text-[10px] text-slate-300">/ MES</span></div>
-                <ul class="tech-list text-white">
-                    <li><i class="fas fa-sync animate-spin-slow text-cyan-400"></i> **Bold: Webhook Automático**</li>
-                    <li><i class="fas fa-infinity text-cyan-400"></i> Órdenes Ilimitadas</li>
-                    <li><i class="fas fa-brain text-cyan-400"></i> IA Predictiva de Repuestos</li>
-                    <li><i class="fas fa-shield-alt text-cyan-400"></i> Soporte VIP</li>
-                </ul>
+            <div class="card-nexus p-8 rounded-3xl text-center border-2 border-emerald-500/50">
+                <i class="fab fa-whatsapp text-emerald-500 text-5xl mb-4"></i>
+                <h3 class="orbitron font-black uppercase text-sm mb-4 italic">Bot Nexus-X</h3>
+                <p class="text-xs text-slate-200 mb-2">¿Necesita una clave de prueba?</p>
+                <a href="https://wa.me/573XXXXXXXXX?text=Hola%20Nexus-X,%20necesito%20mi%20clave%20demo%20para%20TallerPRO360" class="btn-demo-wa orbitron text-[10px]">PEDIR CLAVE DEMO (+57)</a>
             </div>
-            <button onclick="prepararPago('elite', 129000)" class="mt-10 w-full py-6 bg-cyan-500 text-black rounded-2xl orbitron text-[11px] font-black italic hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] transition uppercase">Dominar Mercado</button>
-        </div>
-
-        <div class="card-nexus p-8 rounded-[2.5rem] border-purple-900/30">
-            <div class="flex-grow">
-                <span class="badge-tech bg-purple-500/20 text-purple-400 mb-6 inline-block">Corporativo</span>
-                <h3 class="orbitron text-xl font-black italic text-white mb-2 uppercase italic">Enterprise</h3>
-                <div class="text-xl font-black my-10 text-purple-400 italic uppercase">A Medida</div>
-                <ul class="tech-list">
-                    <li><i class="fas fa-network-wired text-purple-500"></i> Ecosistema Multi-Taller</li>
-                    <li><i class="fas fa-server text-purple-500"></i> Servidor Dedicado</li>
-                    <li><i class="fas fa-code text-purple-500"></i> API Nexus-X Full</li>
-                </ul>
-            </div>
-            <button onclick="window.location.href='https://wa.me/17049419163'" class="mt-10 w-full py-5 border border-purple-500/40 text-purple-400 rounded-2xl orbitron text-[10px] font-black italic hover:bg-purple-900 transition uppercase">Consultar</button>
         </div>
     </section>
 
     <footer class="py-20 text-center glass mt-20 border-t border-cyan-500/10">
         <div class="flex justify-center gap-12 mb-16">
-            <a href="#" class="text-slate-600 text-3xl hover:text-cyan-400 transition-all transform hover:scale-125"><i class="fab fa-facebook-f"></i></a>
-            <a href="#" class="text-slate-600 text-3xl hover:text-pink-500 transition-all transform hover:scale-125"><i class="fab fa-instagram"></i></a>
-            <a href="https://wa.me/17049419163" class="text-slate-600 text-3xl hover:text-emerald-500 transition-all transform hover:scale-125"><i class="fab fa-whatsapp"></i></a>
+            <a href="#" class="text-slate-600 text-3xl hover:text-cyan-400 transition-all"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" class="text-slate-600 text-3xl hover:text-pink-500 transition-all"><i class="fab fa-instagram"></i></a>
+            <a href="https://wa.me/573XXXXXXXXX" class="text-slate-600 text-3xl hover:text-emerald-500 transition-all"><i class="fab fa-whatsapp"></i></a>
         </div>
-        
         <div class="flex flex-wrap justify-center gap-6 mb-12 text-[10px] font-black uppercase tracking-[0.25em]">
-            <a href="/manual-operacion.html" class="text-emerald-500 hover:bg-emerald-500 hover:text-black border border-emerald-500 px-8 py-3 rounded-full transition-all duration-300 italic">Manual Operación</a>
-            <a href="/politicas.html" class="text-cyan-400 hover:bg-cyan-400 hover:text-black border border-cyan-400 px-8 py-3 rounded-full transition-all duration-300 italic">Políticas Nexus</a>
-            <a href="/terminos.html" class="text-purple-400 hover:bg-purple-400 hover:text-black border border-purple-400 px-8 py-3 rounded-full transition-all duration-300 italic">Términos Legales</a>
+            <a href="/manual-operacion.html" class="text-emerald-500 border border-emerald-500 px-8 py-3 rounded-full hover:bg-emerald-500 hover:text-black transition italic">Manual Operación</a>
+            <a href="/politicas.html" class="text-cyan-400 border border-cyan-400 px-8 py-3 rounded-full hover:bg-cyan-400 hover:text-black transition italic">Políticas Nexus</a>
         </div>
-        
         <div class="orbitron text-[10px] text-slate-700 tracking-[0.5em] uppercase font-bold">
-            © 2026 TallerPRO360 · Nexus-X Starlink · Charlotte - Ibagué - Armenia
+            © 2026 TallerPRO360 · Nexus-X Starlink · Colombia - USA
         </div>
     </footer>
 
@@ -188,11 +227,11 @@
         <div class="bg-[#0b111e] max-w-md w-full rounded-[3.5rem] border border-cyan-500/40 p-12 shadow-[0_0_120px_rgba(6,182,212,0.25)]">
             <h3 class="orbitron text-2xl font-black uppercase italic text-white mb-10 text-center">Protocolo de Pago</h3>
             <div class="space-y-8 mb-12">
-                <label class="flex items-start gap-4 cursor-pointer group">
+                <label class="flex items-start gap-4 cursor-pointer">
                     <input type="checkbox" id="checkTerminos" class="mt-1 accent-cyan-500 w-6 h-6">
                     <span class="text-[11px] text-slate-400 font-bold uppercase tracking-widest italic leading-relaxed">Acepto los <span class="text-cyan-400 underline">Términos de Suscripción</span>.</span>
                 </label>
-                <label class="flex items-start gap-4 cursor-pointer group">
+                <label class="flex items-start gap-4 cursor-pointer">
                     <input type="checkbox" id="checkPoliticas" class="mt-1 accent-cyan-500 w-6 h-6">
                     <span class="text-[11px] text-slate-400 font-bold uppercase tracking-widest italic leading-relaxed">Autorizo Tratamiento de Datos para <span class="text-purple-400 underline">Nexus-X</span>.</span>
                 </label>
@@ -202,20 +241,9 @@
         </div>
     </div>
 
-    <div id="modalTrial" class="fixed inset-0 bg-black/98 z-[150] hidden flex items-center justify-center p-6 backdrop-blur-3xl">
-        <div class="bg-[#0b111e] max-w-sm w-full rounded-[3.5rem] border border-emerald-500/40 p-12 text-center shadow-[0_0_120px_rgba(16,185,129,0.2)]">
-            <i class="fas fa-rocket text-emerald-500 text-4xl mb-6"></i>
-            <h3 class="orbitron text-xl font-black uppercase italic mb-10 tracking-widest">Activación Trial</h3>
-            <input type="text" id="trialTaller" placeholder="NOMBRE DEL TALLER" class="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-white text-xs mb-4 outline-none focus:border-emerald-500 orbitron">
-            <input type="email" id="trialEmail" placeholder="EMAIL CORPORATIVO" class="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-white text-xs mb-8 outline-none focus:border-emerald-500 orbitron">
-            <button id="btnEjecutarTrial" onclick="activarNexus()" class="w-full py-6 bg-emerald-500 text-black font-black rounded-2xl text-[11px] uppercase orbitron italic hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] transition-all">Desplegar Nodo Gratis</button>
-            <button onclick="cerrarTrial()" class="mt-8 text-slate-600 text-[9px] uppercase font-black tracking-widest italic">Cerrar Sesión</button>
-        </div>
-    </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { firebaseConfig } from "/app/js/core/firebase-config.js";
 
         const app = initializeApp(firebaseConfig);
@@ -224,10 +252,16 @@
         let selPlan = null;
         let selPrecio = 0;
 
-        // Inyección a Global Scope para botones HTML
+        // Persistencia de sesión
+        onAuthStateChanged(auth, (user) => {
+            if (user) console.log("🛰️ Nodo Activo:", user.email);
+        });
+
+        // Funciones Globales
         window.abrirTrial = () => document.getElementById('modalTrial').classList.remove('hidden');
         window.cerrarTrial = () => document.getElementById('modalTrial').classList.add('hidden');
         window.cerrarLegal = () => document.getElementById('modalLegal').classList.add('hidden');
+        
         window.prepararPago = (plan, precio) => {
             selPlan = plan;
             selPrecio = precio;
@@ -252,70 +286,28 @@
         chkT.onchange = vLegal;
         chkP.onchange = vLegal;
 
-        // ACTIVACIÓN DE TRIAL (API NEXUS)
-        window.activarNexus = async () => {
-            const email = document.getElementById('trialEmail').value;
-            const taller = document.getElementById('trialTaller').value;
-            const btn = document.getElementById('btnEjecutarTrial');
-
-            if(!email || !taller) return alert("⚠️ Identificación requerida.");
-
-            try {
-                btn.innerText = "DESPLEGANDO EN STARLINK...";
-                btn.disabled = true;
-
-                // Crear usuario base
-                const cred = await createUserWithEmailAndPassword(auth, email, "Nexus2026*");
-                
-                // Llamar a tu API de provisión
-                const res = await fetch('/api/activar-trial', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        email, 
-                        empresaId: "NX-" + Date.now(), 
-                        nombreEmpresa: taller, 
-                        usuarioId: cred.user.uid 
-                    })
-                });
-
-                const data = await res.json();
-                if(data.status === "success") {
-                    localStorage.setItem("nexus_empresa_id", data.empresaId);
-                    alert("🚀 Nodo Activado. Contraseña Temporal: Nexus2026*");
-                    window.location.href = "/dashboard.html";
-                }
-            } catch(e) { 
-                alert("❌ Error Crítico: " + e.message); 
-                btn.innerText = "REINTENTAR DESPLIEGUE";
-                btn.disabled = false;
-            }
-        };
-
-        // PAGO DINÁMICO BOLD
+        // PAGO DINÁMICO BOLD (API Vercel Integrada)
         btnB.onclick = async () => {
             const user = auth.currentUser;
             if(!user) {
                 alert("🛰️ Debe activar un Nodo Gratis primero para identificar su taller.");
-                cerrarLegal();
-                abrirTrial();
+                window.cerrarLegal();
+                window.abrirTrial();
                 return;
             }
 
             try {
-                btnB.innerText = "GENERANDO LINK BOLD...";
+                btnB.innerText = "Sincronizando con Bold...";
                 btnB.disabled = true;
 
-                // Paso a paso: Generar el cobro dinámico
-                const res = await fetch('/api/create-bold-checkout', {
+                const res = await fetch('/api/create-payment', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         planId: selPlan,
-                        meses: 1, // Por defecto 1 mes desde el botón rápido
-                        uid: user.uid,
-                        empresaId: localStorage.getItem("nexus_empresa_id"),
-                        emailCliente: user.email
+                        months: 1, 
+                        userEmail: user.email,
+                        userId: user.uid
                     })
                 });
 
@@ -323,7 +315,7 @@
                 if(data.url) {
                     window.location.href = data.url;
                 } else {
-                    throw new Error("Bold Offline");
+                    throw new Error(data.error || "Bold Offline");
                 }
             } catch(e) { 
                 alert("❌ Fallo de Conexión Bold: " + e.message); 
@@ -332,30 +324,28 @@
             }
         };
 
-// Agrega esto al final de tu archivo de scripts
-function openDemoVideo(type) {
-    const demos = {
-        'core': { title: 'PRO360CORE', img: 'img/demo-core.jpg', desc: 'Panel de control central para la entrada de vehículos.' },
-        'bold': { title: 'Caja Express', img: 'img/demo-bold.jpg', desc: 'Integración automática con links de pago Bold.' },
-        'inventory': { title: 'Inventario', img: 'img/demo-inv.jpg', desc: 'Control de stock con tecnología Starlink.' }
-    };
-    
-    const selected = demos[type];
-    
-    // Crear un modal sencillo al vuelo
-    const modalHTML = `
-        <div id="demoModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; align-items:center; justify-content:center;">
-            <div style="background:#1a1a1a; padding:20px; border-radius:15px; max-width:80%; border:1px solid #00d2ff; text-align:center;">
-                <h2 style="color:#00d2ff;">${selected.title}</h2>
-                <img src="${selected.img}" style="width:100%; border-radius:10px; margin:15px 0;" alt="Captura de Pantalla">
-                <p style="color:white;">${selected.desc}</p>
-                <button onclick="document.getElementById('demoModal').remove()" style="background:#00d2ff; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; margin-top:10px;">Cerrar Vista</button>
-            </div>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-}
-
+        // SIMULADOR DE DEMOS
+        window.openDemo = (type) => {
+            const demos = {
+                'core': { title: 'PRO360CORE', desc: 'Panel administrativo de alta precisión. Controle órdenes y técnicos en un solo lugar.' },
+                'bold': { title: 'CAJA EXPRESS BOLD', desc: 'Genere un link, envíelo al cliente y reciba el dinero por PSE al instante.' },
+                'inventory': { title: 'STOCK STARLINK', desc: 'Inventario en la nube con alertas de reabastecimiento automático.' }
+            };
+            const sel = demos[type];
+            const modalHTML = `
+                <div id="demoModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
+                    <div style="background:#0b111e; padding:40px; border-radius:30px; max-width:500px; border:1px solid #00d2ff; text-align:center;">
+                        <h2 class="orbitron" style="color:#00d2ff; font-weight:900; margin-bottom:20px;">${sel.title}</h2>
+                        <div style="width:100%; height:200px; background:#1e293b; border-radius:15px; margin-bottom:20px; display:flex; align-items:center; justify-content:center;">
+                            <i class="fas fa-image text-slate-500 text-4xl"></i>
+                        </div>
+                        <p style="color:#94a3b8; font-size:12px; margin-bottom:30px; line-height:1.6;">${sel.desc}</p>
+                        <button onclick="document.getElementById('demoModal').remove()" class="orbitron" style="background:#00d2ff; color:black; border:none; padding:15px 30px; border-radius:10px; font-weight:900; cursor:pointer;">Cerrar Simulación</button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        };
     </script>
 </body>
 </html>
