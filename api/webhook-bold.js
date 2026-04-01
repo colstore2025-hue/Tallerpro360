@@ -1,33 +1,56 @@
 import { PLANS_CONFIG } from './plans-config.js';
-// Aquí importarías tu lógica de admin de Firebase para actualizar Firestore
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+
+// Inicializar Firebase Admin (Usa variables de entorno para seguridad)
+if (!getApps().length) {
+    initializeApp({
+        credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+    });
+}
+const db = getFirestore();
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).end();
 
     const paymentData = req.body;
 
-    // Bold envía el estado en el campo 'status' o 'data.status' según versión
+    // 1. Verificar si el pago fue aprobado por Bold
     if (paymentData.status === 'APPROVED') {
-        const reference = paymentData.reference; // Ej: T360_USR123_PRO_6M_12345
+        const reference = paymentData.reference; // Ej: T360_USR123_PRO_6M_1711920000
         
-        // 1. Descomponer la referencia para saber qué activar
-        const parts = reference.split('_');
-        const userId = parts[1];
-        const planId = parts[2];
-        const months = parseInt(parts[3].replace('M', ''));
+        try {
+            // 2. Extraer datos de la referencia
+            const [prefix, userId, planId, monthsRaw] = reference.split('_');
+            const months = parseInt(monthsRaw.replace('M', ''));
 
-        // 2. Calcular nueva fecha de vencimiento
-        const expireDate = new Date();
-        expireDate.setMonth(expireDate.getMonth() + months);
+            // 3. Calcular fecha de vencimiento
+            const now = new Date();
+            const expireDate = new Date(now.setMonth(now.getMonth() + months));
 
-        // 3. LOGICA DE ACTUALIZACIÓN EN FIRESTORE
-        // Aquí conectas con tu DB para poner al usuario como "ACTIVE" 
-        // y guardar su vencimiento: expireDate.toISOString()
+            // 4. Actualizar el documento del Taller en Firestore
+            const shopRef = db.collection('talleres').doc(userId);
+            
+            await shopRef.update({
+                subscription: {
+                    plan: planId,
+                    status: 'ACTIVE',
+                    startDate: new Date().toISOString(),
+                    endDate: expireDate.toISOString(),
+                    lastPaymentRef: reference,
+                    updatedAt: new Date().toISOString()
+                }
+            });
 
-        console.log(`✅ Pago Aprobado: Usuario ${userId} activado por ${months} meses.`);
-        
-        return res.status(200).json({ received: true });
+            console.log(`✅ Taller ${userId} activado hasta ${expireDate.toLocaleDateString()}`);
+            return res.status(200).json({ success: true });
+
+        } catch (error) {
+            console.error("❌ Error actualizando Firestore:", error);
+            return res.status(500).json({ error: "Error interno al activar suscripción" });
+        }
     }
 
+    // Si el pago es rechazado o pendiente, solo respondemos 200 para que Bold no reintente
     res.status(200).json({ status: 'ignored' });
 }
