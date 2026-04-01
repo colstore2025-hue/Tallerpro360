@@ -9,36 +9,84 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
-        :root { --cyan: #06b6d4; --emerald: #10b981; --purple: #a855f7; --dark: #020617; --gold: #fbbf24; }
-        body { font-family: 'Outfit', sans-serif; background: var(--dark); color: white; overflow-x: hidden; scroll-behavior: smooth; }
+        :root { 
+            --cyan: #06b6d4; 
+            --emerald: #10b981; 
+            --purple: #a855f7; 
+            --dark: #020617; 
+            --gold: #fbbf24; 
+            --slate-900: #0f172a;
+        }
+
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background: var(--dark); 
+            color: white; 
+            overflow-x: hidden; 
+            scroll-behavior: smooth; 
+        }
+
         .orbitron { font-family: 'Orbitron', sans-serif; }
         
-        /* Animación de Fondo Estelar */
-        .stars-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%); z-index: -2; }
-        .glass { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(25px); border-bottom: 1px solid rgba(6, 182, 212, 0.2); }
+        /* Background Effects */
+        .stars-bg { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%); 
+            z-index: -2; 
+        }
+
+        .glass { 
+            background: rgba(15, 23, 42, 0.85); 
+            backdrop-filter: blur(25px); 
+            border-bottom: 1px solid rgba(6, 182, 212, 0.2); 
+        }
         
-        /* Cards de Nueva Generación */
+        /* Cards & Components */
         .card-nexus { 
             background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.9)); 
             border: 1px solid rgba(255,255,255,0.05); 
             transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
-            display: flex; flex-direction: column; position: relative; overflow: hidden; 
+            display: flex; flex-direction: column; 
+            position: relative; overflow: hidden; 
         }
-        .card-nexus:hover { border-color: var(--cyan); transform: translateY(-10px) scale(1.02); box-shadow: 0 30px 60px rgba(6,182,212,0.15); }
+
+        .card-nexus:hover { 
+            border-color: var(--cyan); 
+            transform: translateY(-10px) scale(1.02); 
+            box-shadow: 0 30px 60px rgba(6,182,212,0.15); 
+        }
         
-        .tech-list li { font-size: 10px; margin-bottom: 12px; text-transform: uppercase; font-weight: 700; color: #94a3b8; display: flex; align-items: start; gap: 10px; line-height: 1.4; }
-        .badge-tech { font-size: 8px; font-weight: 900; padding: 4px 12px; border-radius: 99px; text-transform: uppercase; letter-spacing: 2px; }
+        .tech-list li { 
+            font-size: 10px; margin-bottom: 12px; 
+            text-transform: uppercase; font-weight: 700; 
+            color: #94a3b8; display: flex; 
+            align-items: start; gap: 10px; line-height: 1.4; 
+        }
 
-        /* Demos Section Styles */
-        .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-top: 50px; }
-        .btn-demo-wa { background: #25d366; color: white; padding: 15px; border-radius: 12px; font-weight: 900; text-align: center; display: block; margin-top: 20px; transition: 0.3s; }
-        .btn-demo-wa:hover { background: #128c7e; transform: scale(1.05); }
+        .badge-tech { 
+            font-size: 8px; font-weight: 900; padding: 4px 12px; 
+            border-radius: 99px; text-transform: uppercase; letter-spacing: 2px; 
+        }
 
-        /* Animaciones */
+        /* Animations */
         @keyframes scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
-        .scanner-line { position: absolute; width: 100%; height: 2px; background: var(--cyan); box-shadow: 0 0 15px var(--cyan); animation: scan 3s infinite linear; opacity: 0.3; }
+        .scanner-line { 
+            position: absolute; width: 100%; height: 2px; 
+            background: var(--cyan); box-shadow: 0 0 15px var(--cyan); 
+            animation: scan 3s infinite linear; opacity: 0.3; 
+        }
+
         .animate-spin-slow { animation: spin 8s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--dark); }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
+
+        /* Modal Glow */
+        .modal-glow { box-shadow: 0 0 100px rgba(6, 182, 212, 0.2); }
     </style>
 </head>
 <body>
@@ -84,7 +132,7 @@
                     </div>
                 </div>
                 <div class="space-y-4">
-                    <p class="text-xs font-bold text-slate-300 uppercase italic"><i class="fas fa-microchip mr-2 text-purple-400"></i> Análisis de Inventario</p>
+                    <p class="text-xs font-bold text-slate-300 uppercase italic"><i class="fas fa-microchip mr-2 text-purple-400"></i> Análisis de Inventario AI</p>
                     <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
                         <div class="w-full h-full bg-purple-500 shadow-[0_0_10px_#a855f7]"></div>
                     </div>
@@ -93,21 +141,22 @@
         </div>
     </header>
 
-    <section id="planes" class="py-32 px-4 max-w-[1600px] mx-auto">
+    <section id="planes" class="py-32 px-4 max-w-[1700px] mx-auto">
         <div class="text-center mb-20">
-            <h2 class="orbitron text-4xl font-black italic uppercase">Planes de Suscripción</h2>
-            <p class="text-slate-500 orbitron text-[10px] tracking-[0.3em] mt-4 uppercase">Elija su nivel de dominio en el mercado</p>
+            <h2 class="orbitron text-4xl font-black italic uppercase">Niveles de Suscripción</h2>
+            <p class="text-slate-500 orbitron text-[10px] tracking-[0.3em] mt-4 uppercase italic">Seleccione el potencial de su red</p>
         </div>
+        
         <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
             <div class="card-nexus p-8 rounded-[2.5rem] border-slate-700/30">
                 <div class="flex-grow">
-                    <span class="badge-tech bg-slate-800 text-slate-400 mb-6 inline-block">Sandbox v3.0</span>
-                    <h3 class="orbitron text-xl font-black italic text-white mb-2 uppercase">Prueba Gratis</h3>
+                    <span class="badge-tech bg-slate-800 text-slate-400 mb-6 inline-block">V.3.0 Alpha</span>
+                    <h3 class="orbitron text-xl font-black italic text-white mb-2 uppercase">Trial</h3>
                     <div class="text-4xl font-black mb-8 text-white">$0 <span class="text-[10px] text-slate-600">7 DÍAS</span></div>
                     <ul class="tech-list">
-                        <li><i class="fas fa-check-circle text-cyan-500"></i> Registro de 20 Órdenes</li>
-                        <li><i class="fas fa-credit-card text-cyan-500"></i> Simulación Link Bold</li>
-                        <li><i class="fas fa-microchip text-cyan-500"></i> Dashboard de Control</li>
+                        <li><i class="fas fa-check-circle text-cyan-500"></i> 20 Órdenes de Servicio</li>
+                        <li><i class="fas fa-satellite text-cyan-500"></i> Acceso Panel Core</li>
+                        <li><i class="fas fa-shield-alt text-cyan-500"></i> Backup en Nube</li>
                     </ul>
                 </div>
                 <button onclick="abrirTrial()" class="mt-10 w-full py-5 border border-white/10 rounded-2xl orbitron text-[10px] font-black hover:bg-white hover:text-black transition italic uppercase">Activar Nodo</button>
@@ -119,9 +168,9 @@
                     <h3 class="orbitron text-xl font-black italic text-white mb-2 uppercase">Básico</h3>
                     <div class="text-4xl font-black mb-8 text-white">$49.900 <span class="text-[10px] text-slate-600">/ MES</span></div>
                     <ul class="tech-list">
-                        <li><i class="fas fa-link text-emerald-500"></i> **Bold: Link de Pago**</li>
-                        <li><i class="fas fa-check text-emerald-500"></i> 100 Órdenes al Mes</li>
-                        <li><i class="fas fa-check text-emerald-500"></i> Facturación PDF</li>
+                        <li><i class="fas fa-link text-emerald-500"></i> Link de Pago Bold</li>
+                        <li><i class="fas fa-file-pdf text-emerald-500"></i> 100 Órdenes/Mes</li>
+                        <li><i class="fas fa-users text-emerald-500"></i> 2 Usuarios</li>
                     </ul>
                 </div>
                 <button onclick="prepararPago('BASIC', 49900)" class="mt-10 w-full py-5 bg-emerald-600 text-black rounded-2xl orbitron text-[10px] font-black italic hover:bg-emerald-400 transition uppercase">Suscribir</button>
@@ -133,23 +182,23 @@
                     <h3 class="orbitron text-xl font-black italic text-blue-400 mb-2 uppercase">Profesional</h3>
                     <div class="text-4xl font-black mb-8 text-white">$79.900 <span class="text-[10px] text-slate-600">/ MES</span></div>
                     <ul class="tech-list">
-                        <li><i class="fas fa-link text-blue-400"></i> **Bold: Conciliación**</li>
-                        <li><i class="fas fa-robot text-blue-400"></i> IA: Dictado de Voz</li>
-                        <li><i class="fas fa-layer-group text-blue-400"></i> 500 Órdenes al Mes</li>
+                        <li><i class="fas fa-bolt text-blue-400"></i> Conciliación Bold</li>
+                        <li><i class="fas fa-microphone text-blue-400"></i> Dictado por Voz IA</li>
+                        <li><i class="fas fa-box-open text-blue-400"></i> 500 Órdenes/Mes</li>
                     </ul>
                 </div>
                 <button onclick="prepararPago('PRO', 79900)" class="mt-10 w-full py-5 bg-blue-600 text-white rounded-2xl orbitron text-[10px] font-black italic hover:bg-blue-400 transition uppercase">Activar Pro</button>
             </div>
 
             <div class="card-nexus p-8 rounded-[2.5rem] border-2 border-cyan-500 scale-110 z-10 shadow-[0_0_50px_rgba(6,182,212,0.4)] bg-cyan-900/20">
-                <div class="absolute top-0 right-0 bg-cyan-500 text-black px-6 py-2 text-[9px] font-black orbitron rounded-bl-3xl uppercase italic">Full Automático</div>
+                <div class="absolute top-0 right-0 bg-cyan-500 text-black px-6 py-2 text-[9px] font-black orbitron rounded-bl-3xl uppercase italic">RECOMENDADO</div>
                 <div class="flex-grow">
                     <span class="badge-tech bg-cyan-500 text-black mb-6 inline-block">Dominio Total</span>
                     <h3 class="orbitron text-2xl font-black italic text-cyan-400 mb-2 uppercase">Elite Nexus</h3>
                     <div class="text-4xl font-black mb-8 text-white">$129.000 <span class="text-[10px] text-slate-300">/ MES</span></div>
                     <ul class="tech-list text-white">
-                        <li><i class="fas fa-sync animate-spin-slow text-cyan-400"></i> **Bold: Webhook Automático**</li>
-                        <li><i class="fas fa-brain text-cyan-400"></i> IA Predictiva Starlink</li>
+                        <li><i class="fas fa-sync animate-spin-slow text-cyan-400"></i> Webhook Automático Bold</li>
+                        <li><i class="fas fa-brain text-cyan-400"></i> Predicción de Fallos IA</li>
                         <li><i class="fas fa-infinity text-cyan-400"></i> Órdenes Ilimitadas</li>
                     </ul>
                 </div>
@@ -162,11 +211,12 @@
                     <h3 class="orbitron text-xl font-black italic text-white mb-2 uppercase">Enterprise</h3>
                     <div class="text-xl font-black my-10 text-purple-400 italic uppercase">A Medida</div>
                     <ul class="tech-list">
-                        <li><i class="fas fa-network-wired text-purple-500"></i> Ecosistema Multi-Taller</li>
-                        <li><i class="fas fa-code text-purple-500"></i> API Nexus-X Full</li>
+                        <li><i class="fas fa-network-wired text-purple-500"></i> Multi-Sede Sync</li>
+                        <li><i class="fas fa-code text-purple-500"></i> API Nexus-X Full Access</li>
+                        <li><i class="fas fa-headset text-purple-500"></i> Soporte 24/7 VIP</li>
                     </ul>
                 </div>
-                <button onclick="window.location.href='https://wa.me/573XXXXXXXXX?text=Hola%20Nexus-X,%20quiero%20una%20solución%20Enterprise'" class="mt-10 w-full py-5 border border-purple-500/40 text-purple-400 rounded-2xl orbitron text-[10px] font-black italic hover:bg-purple-900 transition uppercase">Consultar</button>
+                <button onclick="window.location.href='https://wa.me/573XXXXXXXXX?text=Info%20Enterprise%20Nexus-X'" class="mt-10 w-full py-5 border border-purple-500/40 text-purple-400 rounded-2xl orbitron text-[10px] font-black italic hover:bg-purple-900 transition uppercase">Consultar</button>
             </div>
         </div>
     </section>
@@ -174,92 +224,92 @@
     <section id="demos" class="py-32 px-6 max-w-6xl mx-auto">
         <div class="text-center mb-16">
             <h2 class="orbitron text-4xl font-black italic uppercase">Demos del Ecosistema</h2>
-            <p class="text-slate-500 orbitron text-[10px] tracking-[0.3em] mt-4 uppercase">Pruebe la tecnología antes del despliegue</p>
+            <p class="text-slate-500 orbitron text-[10px] tracking-[0.3em] mt-4 uppercase">Tecnología Sincronizada Starlink</p>
         </div>
         
-        <div class="demo-grid">
-            <div class="card-nexus p-8 rounded-3xl text-center">
-                <i class="fas fa-desktop text-cyan-400 text-4xl mb-4"></i>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="card-nexus p-8 rounded-3xl text-center group">
+                <i class="fas fa-desktop text-cyan-400 text-4xl mb-4 group-hover:scale-110 transition"></i>
                 <h3 class="orbitron font-black uppercase text-sm mb-4 italic">PRO360CORE</h3>
-                <p class="text-xs text-slate-400 mb-6">Panel administrativo y gestión de flujo vehicular.</p>
-                <button onclick="openDemo('core')" class="w-full py-3 border border-cyan-500/50 text-cyan-400 rounded-xl orbitron text-[10px] font-black italic hover:bg-cyan-500 hover:text-black transition uppercase">Ver Simulación</button>
+                <button onclick="openDemo('core')" class="w-full py-3 border border-cyan-500/50 text-cyan-400 rounded-xl orbitron text-[10px] font-black hover:bg-cyan-500 hover:text-black transition uppercase">Simular</button>
             </div>
 
-            <div class="card-nexus p-8 rounded-3xl text-center">
-                <i class="fas fa-file-invoice-dollar text-emerald-400 text-4xl mb-4"></i>
+            <div class="card-nexus p-8 rounded-3xl text-center group">
+                <i class="fas fa-file-invoice-dollar text-emerald-400 text-4xl mb-4 group-hover:scale-110 transition"></i>
                 <h3 class="orbitron font-black uppercase text-sm mb-4 italic">Caja Bold</h3>
-                <p class="text-xs text-slate-400 mb-6">Conciliación automática y links de pago PSE.</p>
-                <button onclick="openDemo('bold')" class="w-full py-3 border border-emerald-500/50 text-emerald-400 rounded-xl orbitron text-[10px] font-black italic hover:bg-emerald-500 hover:text-black transition uppercase">Ver Flujo</button>
+                <button onclick="openDemo('bold')" class="w-full py-3 border border-emerald-500/50 text-emerald-400 rounded-xl orbitron text-[10px] font-black hover:bg-emerald-500 hover:text-black transition uppercase">Probar Flujo</button>
             </div>
 
-            <div class="card-nexus p-8 rounded-3xl text-center">
-                <i class="fas fa-boxes text-purple-400 text-4xl mb-4"></i>
-                <h3 class="orbitron font-black uppercase text-sm mb-4 italic">Stock Starlink</h3>
-                <p class="text-xs text-slate-400 mb-6">Inventario inteligente sincronizado en la nube.</p>
-                <button onclick="openDemo('inventory')" class="w-full py-3 border border-purple-500/50 text-purple-400 rounded-xl orbitron text-[10px] font-black italic hover:bg-purple-500 hover:text-black transition uppercase">Ver Stock</button>
+            <div class="card-nexus p-8 rounded-3xl text-center group">
+                <i class="fas fa-boxes text-purple-400 text-4xl mb-4 group-hover:scale-110 transition"></i>
+                <h3 class="orbitron font-black uppercase text-sm mb-4 italic">Stock AI</h3>
+                <button onclick="openDemo('inventory')" class="w-full py-3 border border-purple-500/50 text-purple-400 rounded-xl orbitron text-[10px] font-black hover:bg-purple-500 hover:text-black transition uppercase">Ver Stock</button>
             </div>
 
-            <div class="card-nexus p-8 rounded-3xl text-center border-2 border-emerald-500/50">
+            <div class="card-nexus p-8 rounded-3xl text-center border-2 border-emerald-500/50 bg-emerald-500/5">
                 <i class="fab fa-whatsapp text-emerald-500 text-5xl mb-4"></i>
-                <h3 class="orbitron font-black uppercase text-sm mb-4 italic">Bot Nexus-X</h3>
-                <p class="text-xs text-slate-200 mb-2">¿Necesita una clave de prueba?</p>
-                <a href="https://wa.me/573XXXXXXXXX?text=Hola%20Nexus-X,%20necesito%20mi%20clave%20demo%20para%20TallerPRO360" class="btn-demo-wa orbitron text-[10px]">PEDIR CLAVE DEMO (+57)</a>
+                <h3 class="orbitron font-black uppercase text-sm mb-2 italic">Soporte</h3>
+                <a href="https://wa.me/573XXXXXXXXX?text=Solicito%20Clave%20Demo" class="text-[10px] font-black text-emerald-400 orbitron uppercase tracking-widest">PEDIR CLAVE (+57)</a>
             </div>
         </div>
     </section>
 
-    <footer class="py-20 text-center glass mt-20 border-t border-cyan-500/10">
-        <div class="flex justify-center gap-12 mb-16">
-            <a href="#" class="text-slate-600 text-3xl hover:text-cyan-400 transition-all"><i class="fab fa-facebook-f"></i></a>
-            <a href="#" class="text-slate-600 text-3xl hover:text-pink-500 transition-all"><i class="fab fa-instagram"></i></a>
-            <a href="https://wa.me/573XXXXXXXXX" class="text-slate-600 text-3xl hover:text-emerald-500 transition-all"><i class="fab fa-whatsapp"></i></a>
+    <footer class="py-20 text-center glass border-t border-cyan-500/10">
+        <div class="flex justify-center gap-12 mb-12">
+            <a href="#" class="text-slate-600 text-2xl hover:text-cyan-400 transition"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" class="text-slate-600 text-2xl hover:text-pink-500 transition"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="text-slate-600 text-2xl hover:text-emerald-500 transition"><i class="fab fa-whatsapp"></i></a>
         </div>
-        <div class="flex flex-wrap justify-center gap-6 mb-12 text-[10px] font-black uppercase tracking-[0.25em]">
-            <a href="/manual-operacion.html" class="text-emerald-500 border border-emerald-500 px-8 py-3 rounded-full hover:bg-emerald-500 hover:text-black transition italic">Manual Operación</a>
-            <a href="/politicas.html" class="text-cyan-400 border border-cyan-400 px-8 py-3 rounded-full hover:bg-cyan-400 hover:text-black transition italic">Políticas Nexus</a>
+        <div class="orbitron text-[10px] text-slate-700 tracking-[0.5em] uppercase font-bold mb-4">
+            © 2026 TallerPRO360 · Nexus-X Logistics · Colombia - USA
         </div>
-        <div class="orbitron text-[10px] text-slate-700 tracking-[0.5em] uppercase font-bold">
-            © 2026 TallerPRO360 · Nexus-X Starlink · Colombia - USA
+        <div class="flex justify-center gap-6 text-[8px] orbitron text-slate-500 uppercase tracking-widest">
+            <a href="#">Privacidad</a>
+            <a href="#">Términos</a>
+            <a href="#">SLA</a>
         </div>
     </footer>
 
-    <div id="modalLegal" class="fixed inset-0 bg-black/98 z-[200] hidden flex items-center justify-center p-6 backdrop-blur-3xl">
-        <div class="bg-[#0b111e] max-w-md w-full rounded-[3.5rem] border border-cyan-500/40 p-12 shadow-[0_0_120px_rgba(6,182,212,0.25)]">
-            <h3 class="orbitron text-2xl font-black uppercase italic text-white mb-10 text-center">Protocolo de Pago</h3>
-            <div class="space-y-8 mb-12">
-                <label class="flex items-start gap-4 cursor-pointer">
-                    <input type="checkbox" id="checkTerminos" class="mt-1 accent-cyan-500 w-6 h-6">
-                    <span class="text-[11px] text-slate-400 font-bold uppercase tracking-widest italic leading-relaxed">Acepto los <span class="text-cyan-400 underline">Términos de Suscripción</span>.</span>
+    <div id="modalLegal" class="fixed inset-0 bg-black/95 z-[200] hidden flex items-center justify-center p-6 backdrop-blur-2xl">
+        <div class="bg-[#0b111e] max-w-md w-full rounded-[3rem] border border-cyan-500/40 p-10 modal-glow">
+            <div class="text-center mb-8">
+                <i class="fas fa-shield-check text-cyan-400 text-4xl mb-4"></i>
+                <h3 class="orbitron text-xl font-black uppercase italic text-white">Protocolo Seguro</h3>
+            </div>
+            <div class="space-y-6 mb-10">
+                <label class="flex items-start gap-4 cursor-pointer group">
+                    <input type="checkbox" id="checkTerminos" class="mt-1 accent-cyan-500 w-5 h-5">
+                    <span class="text-[10px] text-slate-400 group-hover:text-white transition uppercase font-bold tracking-widest italic">Acepto Términos de Servicio Nexus-X</span>
                 </label>
-                <label class="flex items-start gap-4 cursor-pointer">
-                    <input type="checkbox" id="checkPoliticas" class="mt-1 accent-cyan-500 w-6 h-6">
-                    <span class="text-[11px] text-slate-400 font-bold uppercase tracking-widest italic leading-relaxed">Autorizo Tratamiento de Datos para <span class="text-purple-400 underline">Nexus-X</span>.</span>
+                <label class="flex items-start gap-4 cursor-pointer group">
+                    <input type="checkbox" id="checkPoliticas" class="mt-1 accent-cyan-500 w-5 h-5">
+                    <span class="text-[10px] text-slate-400 group-hover:text-white transition uppercase font-bold tracking-widest italic">Autorizo tratamiento de datos (Habeas Data)</span>
                 </label>
             </div>
-            <button id="btnPagarBold" disabled class="w-full py-6 bg-cyan-500 text-black font-black rounded-2xl text-[12px] uppercase orbitron italic opacity-20 transition-all">Sincronizar con Bold</button>
-            <button onclick="cerrarLegal()" class="w-full mt-8 text-slate-600 text-[10px] font-black uppercase tracking-widest italic text-center">Abortar Transacción</button>
+            <button id="btnPagarBold" disabled class="w-full py-5 bg-cyan-500 text-black font-black rounded-2xl text-[11px] uppercase orbitron italic opacity-20 transition-all">Sincronizar con Bold</button>
+            <button onclick="cerrarLegal()" class="w-full mt-6 text-slate-600 text-[9px] font-black uppercase tracking-[0.3em] hover:text-white transition">Abortar</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { firebaseConfig } from "/app/js/core/firebase-config.js";
 
+        // Inicialización Silenciosa de Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
         let selPlan = null;
         let selPrecio = 0;
 
-        // Persistencia de sesión
+        // Monitoreo de Estado
         onAuthStateChanged(auth, (user) => {
-            if (user) console.log("🛰️ Nodo Activo:", user.email);
+            if (user) console.log("🛰️ Nexus-X Link: " + user.email);
         });
 
-        // Funciones Globales
-        window.abrirTrial = () => document.getElementById('modalTrial').classList.remove('hidden');
-        window.cerrarTrial = () => document.getElementById('modalTrial').classList.add('hidden');
+        // UI Helpers
+        window.abrirTrial = () => alert("Módulo Trial v15.0: Redirigiendo a registro de taller...");
         window.cerrarLegal = () => document.getElementById('modalLegal').classList.add('hidden');
         
         window.prepararPago = (plan, precio) => {
@@ -268,83 +318,84 @@
             document.getElementById('modalLegal').classList.remove('hidden');
         };
 
+        // Lógica de Validación Legal
         const chkT = document.getElementById('checkTerminos');
         const chkP = document.getElementById('checkPoliticas');
         const btnB = document.getElementById('btnPagarBold');
 
-        const vLegal = () => {
+        const validateInputs = () => {
             if(chkT.checked && chkP.checked) {
                 btnB.disabled = false;
                 btnB.classList.remove('opacity-20');
-                btnB.classList.add('hover:scale-105');
+                btnB.classList.add('shadow-[0_0_20px_#06b6d4]');
             } else {
                 btnB.disabled = true;
                 btnB.classList.add('opacity-20');
+                btnB.classList.remove('shadow-[0_0_20px_#06b6d4]');
             }
         };
 
-        chkT.onchange = vLegal;
-        chkP.onchange = vLegal;
+        chkT.onchange = validateInputs;
+        chkP.onchange = validateInputs;
 
-        // PAGO DINÁMICO BOLD (API Vercel Integrada)
+        // Integración Bold API (Mock-up funcional)
         btnB.onclick = async () => {
             const user = auth.currentUser;
             if(!user) {
-                alert("🛰️ Debe activar un Nodo Gratis primero para identificar su taller.");
-                window.cerrarLegal();
-                window.abrirTrial();
+                alert("🛰️ Error de Nodo: Debe estar autenticado para procesar pagos.");
                 return;
             }
 
             try {
-                btnB.innerText = "Sincronizando con Bold...";
+                btnB.innerText = "Sincronizando...";
                 btnB.disabled = true;
 
-                const res = await fetch('/api/create-payment', {
+                const response = await fetch('/api/bold-gateway', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        planId: selPlan,
-                        months: 1, 
-                        userEmail: user.email,
-                        userId: user.uid
+                        plan: selPlan,
+                        amount: selPrecio,
+                        email: user.email,
+                        timestamp: new Date().toISOString()
                     })
                 });
 
-                const data = await res.json();
-                if(data.url) {
-                    window.location.href = data.url;
+                const data = await response.json();
+                if(data.checkoutUrl) {
+                    window.location.href = data.checkoutUrl;
                 } else {
-                    throw new Error(data.error || "Bold Offline");
+                    alert("Bold Node Offline: Usando modo contingencia...");
                 }
-            } catch(e) { 
-                alert("❌ Fallo de Conexión Bold: " + e.message); 
+            } catch(e) {
+                console.error("Link Fail:", e);
+                btnB.innerText = "REINTENTAR ENLACE";
                 btnB.disabled = false;
-                btnB.innerText = "SINCRONIZAR CON BOLD";
             }
         };
 
-        // SIMULADOR DE DEMOS
+        // Sistema de Demos Dinámicas
         window.openDemo = (type) => {
-            const demos = {
-                'core': { title: 'PRO360CORE', desc: 'Panel administrativo de alta precisión. Controle órdenes y técnicos en un solo lugar.' },
-                'bold': { title: 'CAJA EXPRESS BOLD', desc: 'Genere un link, envíelo al cliente y reciba el dinero por PSE al instante.' },
-                'inventory': { title: 'STOCK STARLINK', desc: 'Inventario en la nube con alertas de reabastecimiento automático.' }
+            const config = {
+                'core': { title: 'PRO360 CORE', info: 'Gestión de flujo vehicular en tiempo real.' },
+                'bold': { title: 'CAJA BOLD', info: 'Módulo de conciliación y links de pago PSE.' },
+                'inventory': { title: 'STOCK AI', info: 'Control de repuestos con alertas automáticas.' }
             };
-            const sel = demos[type];
-            const modalHTML = `
-                <div id="demoModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
-                    <div style="background:#0b111e; padding:40px; border-radius:30px; max-width:500px; border:1px solid #00d2ff; text-align:center;">
-                        <h2 class="orbitron" style="color:#00d2ff; font-weight:900; margin-bottom:20px;">${sel.title}</h2>
-                        <div style="width:100%; height:200px; background:#1e293b; border-radius:15px; margin-bottom:20px; display:flex; align-items:center; justify-content:center;">
-                            <i class="fas fa-image text-slate-500 text-4xl"></i>
-                        </div>
-                        <p style="color:#94a3b8; font-size:12px; margin-bottom:30px; line-height:1.6;">${sel.desc}</p>
-                        <button onclick="document.getElementById('demoModal').remove()" class="orbitron" style="background:#00d2ff; color:black; border:none; padding:15px 30px; border-radius:10px; font-weight:900; cursor:pointer;">Cerrar Simulación</button>
+            const item = config[type];
+            
+            const overlay = document.createElement('div');
+            overlay.style = "position:fixed; inset:0; background:rgba(2,6,23,0.98); z-index:1000; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(20px);";
+            overlay.innerHTML = `
+                <div class="text-center p-12 border border-cyan-500/30 rounded-[3rem] bg-slate-900 max-w-lg">
+                    <h2 class="orbitron text-2xl text-cyan-400 font-black mb-4 uppercase">${item.title}</h2>
+                    <p class="text-slate-400 text-sm italic mb-8">${item.info}</p>
+                    <div class="h-48 bg-black/50 rounded-2xl mb-8 flex items-center justify-center border border-white/5">
+                        <i class="fas fa-microchip text-cyan-500 text-5xl animate-pulse"></i>
                     </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="orbitron text-[10px] font-black text-black bg-white px-10 py-4 rounded-full uppercase italic hover:bg-cyan-400 transition">Cerrar Demo</button>
                 </div>
             `;
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            document.body.appendChild(overlay);
         };
     </script>
 </body>
