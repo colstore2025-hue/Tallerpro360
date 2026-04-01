@@ -331,6 +331,31 @@
                 btnB.innerText = "SINCRONIZAR CON BOLD";
             }
         };
+
+// Agrega esto al final de tu archivo de scripts
+function openDemoVideo(type) {
+    const demos = {
+        'core': { title: 'PRO360CORE', img: 'img/demo-core.jpg', desc: 'Panel de control central para la entrada de vehículos.' },
+        'bold': { title: 'Caja Express', img: 'img/demo-bold.jpg', desc: 'Integración automática con links de pago Bold.' },
+        'inventory': { title: 'Inventario', img: 'img/demo-inv.jpg', desc: 'Control de stock con tecnología Starlink.' }
+    };
+    
+    const selected = demos[type];
+    
+    // Crear un modal sencillo al vuelo
+    const modalHTML = `
+        <div id="demoModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; align-items:center; justify-content:center;">
+            <div style="background:#1a1a1a; padding:20px; border-radius:15px; max-width:80%; border:1px solid #00d2ff; text-align:center;">
+                <h2 style="color:#00d2ff;">${selected.title}</h2>
+                <img src="${selected.img}" style="width:100%; border-radius:10px; margin:15px 0;" alt="Captura de Pantalla">
+                <p style="color:white;">${selected.desc}</p>
+                <button onclick="document.getElementById('demoModal').remove()" style="background:#00d2ff; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; margin-top:10px;">Cerrar Vista</button>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
     </script>
 </body>
 </html>
