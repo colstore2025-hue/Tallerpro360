@@ -1,4 +1,3 @@
-// api/plans-config.js
 export const PLANS_CONFIG = {
     BASIC: {
         id: "BASIC",
