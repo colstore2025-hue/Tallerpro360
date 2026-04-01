@@ -347,41 +347,34 @@
         // Aquí puedes inyectar el HTML del modal dinámicamente
     };
 
-    window.prepararPago = (plan, precio) => {
+    // Dentro de tu lógica de suscripción en home.html
+window.prepararPago = (plan, precio) => {
     const modal = document.getElementById('modalLegal');
     modal.classList.remove('hidden');
     
     const btnBold = document.getElementById('btnPagarBold');
-    const check1 = document.getElementById('checkTerminos');
-    const check2 = document.getElementById('checkPoliticas');
+    
+    // IMPORTANTE: Limpiamos eventos previos para evitar duplicados
+    btnBold.onclick = null; 
 
-    // Escuchador para habilitar el botón solo si acepta términos
-    const validarChecks = () => {
-        if(check1.checked && check2.checked) {
-            btnBold.disabled = false;
-            btnBold.classList.remove('opacity-20');
-        } else {
-            btnBold.disabled = true;
-            btnBold.classList.add('opacity-20');
-        }
-    };
-
-    check1.onchange = validarChecks;
-    check2.onchange = validarChecks;
-
-    // AQUÍ VA TU CÓDIGO DE BOLD ACTUALIZADO
     btnBold.onclick = () => {
-        // 1. Obtener ID del usuario de Firebase Auth
+        // 1. Obtener ID del usuario (Si no está logueado, redirigir o marcar como INVITADO)
         const userId = auth.currentUser ? auth.currentUser.uid : "INVITADO";
         
-        // 2. Definir duración (puedes cambiarlo a 12M si es anual)
+        if(userId === "INVITADO") {
+            alert("⚠️ Debes iniciar sesión para activar tu suscripción.");
+            return;
+        }
+
+        // 2. Definir duración del plan (1M para mensual, 12M para anual)
         const meses = "1M"; 
         
-        // 3. Construir referencia para el Webhook (NEXUS_ID_PLAN_MESES)
+        // 3. Construir la referencia maestra: PREFIJO_USERID_PLAN_MESES
         const ref = `NEXUS_${userId}_${plan}_${meses}`;
         
-        // 4. Redirección final a la pasarela
-        console.log("Redirigiendo a Bold con Ref:", ref);
+        console.log(`🛰️ Nexus-X: Generando orden para ${userId} - Plan: ${plan}`);
+
+        // 4. Redirección a la pasarela Bold
         window.location.href = `https://bold.co/pay/tallerpro360?amount=${precio}&reference=${ref}`;
     };
 };
