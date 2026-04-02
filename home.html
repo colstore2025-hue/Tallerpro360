@@ -292,10 +292,9 @@
     </div>
 
         <script type="module">
-        /**
-     * TALLERPRO360 - FRONTEND CORE v1.7.0
-     * Auditoría Forense: Aplicada
-     * Fix: Error 400 payload & DOM Conflict
+    /**
+     * TALLERPRO360 - NEXUS-X STARLINK ENGINE v1.7.5
+     * Optimización: William J. Urquijo
      */
 
     const nodosDemos = [
@@ -320,7 +319,6 @@
         { n: "Super AI Dash", f: "demo27-super-ai-dashboard.html" }
     ];
 
-    // Selector de Demos
     window.openDemo = () => {
         const overlay = document.createElement('div');
         overlay.id = "nexus-selector";
@@ -333,92 +331,94 @@
             </div>`).join('');
         overlay.innerHTML = `<div class="max-w-6xl mx-auto">
             <div class="flex justify-between items-center mb-10 border-b border-white/10 pb-5">
-                <h2 class="orbitron text-xl font-black italic text-cyan-400 uppercase tracking-widest">Nexus-X Cloud Terminal</h2>
-                <button onclick="document.getElementById('nexus-selector').remove()" class="text-white text-3xl hover:text-cyan-400">&times;</button>
+                <h2 class="orbitron text-xl font-black italic text-cyan-400 uppercase">Nexus-X Cloud Terminal</h2>
+                <button onclick="document.getElementById('nexus-selector').remove()" class="text-white text-3xl">&times;</button>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">${grid}</div>
         </div>`;
         document.body.appendChild(overlay);
     };
 
-    // Motor de Pagos (Corregido)
     window.prepararPago = async (planId, meses = 1) => {
-        try {
-            const configRes = await fetch('/api/plans-config');
-            const PLANS_CONFIG = await configRes.json();
-            const planData = PLANS_CONFIG[planId.toLowerCase()];
-            if (!planData) return alert("Error: Plan no reconocido.");
+        const btn = document.getElementById('btnPagarBold');
+        const modal = document.getElementById('modalLegal');
+        const chk1 = document.getElementById('checkTerminos');
+        const chk2 = document.getElementById('checkPoliticas');
 
-            const precio = planData.prices[meses];
-            const modal = document.getElementById('modalLegal');
-            
-            // Inyectamos la info en el modal que ya existe en el HTML
-            document.getElementById('btnPagarBold').innerText = `Sincronizar con Bold ($${precio.toLocaleString()})`;
-            modal.classList.remove('hidden');
+        modal.classList.remove('hidden');
 
-            const chk1 = document.getElementById('checkTerminos');
-            const chk2 = document.getElementById('checkPoliticas');
-            const btn = document.getElementById('btnPagarBold');
+        const validar = () => {
+            const ok = chk1.checked && chk2.checked;
+            btn.disabled = !ok;
+            btn.style.opacity = ok ? "1" : "0.2";
+            if(ok) btn.classList.add('shadow-[0_0_20px_#06b6d4]');
+        };
 
-            const validar = () => {
-                const activo = chk1.checked && chk2.checked;
-                btn.disabled = !activo;
-                btn.style.opacity = activo ? "1" : "0.2";
-                btn.className = activo ? "w-full py-5 bg-cyan-500 text-black font-black rounded-2xl text-[11px] uppercase orbitron italic cursor-pointer shadow-[0_0_20px_#06b6d4]" : "w-full py-5 bg-cyan-500 text-black font-black rounded-2xl text-[11px] uppercase orbitron italic opacity-20";
-            };
+        chk1.onchange = validar;
+        chk2.onchange = validar;
 
-            chk1.onchange = validar;
-            chk2.onchange = validar;
-
-            btn.onclick = async () => {
-                btn.innerText = "ESTABLECIENDO LINK...";
-                btn.disabled = true;
+        btn.onclick = async () => {
+            btn.innerText = "SINCRONIZANDO...";
+            btn.disabled = true;
+            try {
                 const res = await fetch('/api/create-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ planId, months: meses, userEmail: "pago@tallerpro360.com", empresaId: "NX-" + Date.now() })
+                    body: JSON.stringify({ 
+                        planId: planId.toString(), 
+                        months: meses, 
+                        userEmail: "pago@tallerpro360.com", 
+                        timestamp: Date.now() 
+                    })
                 });
                 const data = await res.json();
                 if (data.url) window.location.href = data.url;
-                else alert("Fallo en pasarela Bold.");
-            };
-        } catch (e) { console.error("Nexus-X Error:", e); }
+                else throw new Error("Url no recibida");
+            } catch (e) {
+                btn.innerText = "ERROR DE CONEXIÓN BOLD";
+                btn.classList.replace('bg-cyan-500', 'bg-red-500');
+            }
+        };
     };
 
-    window.cerrarLegal = () => document.getElementById('modalLegal').classList.add('hidden');
-
-    // Reparación de Error 400 (Trial)
     window.abrirTrial = async () => {
-        const nombre = prompt("Nombre de su Taller para el Nodo:");
+        const nombre = prompt("Nombre de su Taller:");
         if (!nombre) return;
         
-        // Payload Exacto para evitar el Error 400 detectado en logs
-        const payload = {
-            empresaId: "TR-" + Math.random().toString(36).substr(2, 9),
-            nombreEmpresa: nombre,
-            usuarioId: "USR-" + Date.now(), // Campo faltante que causaba el error
-            email: "trial@nexus-x.com"
-        };
-
         try {
             const res = await fetch('/api/activar-trial', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ 
+                    empresaId: "TR-" + Date.now(), 
+                    nombreEmpresa: nombre,
+                    email: "trial@nexus-x.com",
+                    usuarioId: "USR-TRIAL" 
+                })
             });
+            
             const data = await res.json();
+            
             if (res.ok) {
-                alert(`🛰️ Trial Activado.\nExpira: ${data.expira}`);
-                window.location.href = "/manual-operacion.html";
-            } else {
-                alert("El servidor rechazó la conexión. Verifique logs.");
+                // REEMPLAZO QUIRÚRGICO DEL MODAL PARA SEGUIR ADELANTE
+                const modal = document.getElementById('modalLegal');
+                modal.classList.remove('hidden');
+                modal.innerHTML = `
+                    <div class="bg-[#0b111e] max-w-md w-full rounded-[3rem] border border-emerald-500/40 p-10 text-center shadow-[0_0_50px_rgba(16,185,129,0.2)]">
+                        <i class="fas fa-check-circle text-emerald-400 text-6xl mb-6"></i>
+                        <h3 class="orbitron text-2xl font-black text-white italic mb-2">APROBADO</h3>
+                        <p class="text-slate-400 text-xs mb-8 uppercase tracking-widest">Nodo Trial Activado hasta: <br><span class="text-emerald-400">${data.expira || '7 días'}</span></p>
+                        <button onclick="window.location.href='/dashboard'" class="w-full py-5 bg-emerald-500 text-black font-black rounded-2xl orbitron italic uppercase shadow-[0_0_20px_#10b981]">Entrar al Sistema</button>
+                    </div>
+                `;
             }
-        } catch (e) { alert("Error de red en el despliegue del Nodo."); }
+        } catch (e) { alert("Fallo en el despliegue del Nodo Trial."); }
     };
 
+    window.cerrarLegal = () => document.getElementById('modalLegal').classList.add('hidden');
     window.contactarSoporte = () => window.open(`https://wa.me/17049419163?text=Hola%20Nexus-X`, '_blank');
 
-    console.log("🚀 Auditoría Nexus-X v1.7.0: All Systems Green");
-    </script>
+    console.log("🚀 Nexus-X v1.7.5 Online | Auditoría Forense Aplicada");
+</script>
 </body>
 </html>
