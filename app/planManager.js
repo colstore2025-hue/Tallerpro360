@@ -1,47 +1,45 @@
+import { PLANS_CONFIG } from '../api/plans-config.js';
+
 /**
- * planManager.js - TallerPRO360 V14.5.0 🛰️
- * Motor Unificado Nexus-X Starlink
+ * Procesa la suscripción generando la referencia exacta para el Webhook
  */
-
-export const PLANES_CONFIG = {
-    basico: { nombre: "Básico", mensual: 49900 },
-    pro: { nombre: "PRO", mensual: 79900 },
-    elite: { nombre: "ELITE", mensual: 129000 }
-};
-
-// 1. FUNCIÓN PARA COBRAR PLANES (BOLD)
-export async function procesarSuscripcionBold(planId, periodo, uid) {
+export async function procesarSuscripcionBold(planId, meses, uid) {
     try {
-        const plan = PLANES_CONFIG[planId.toLowerCase()];
-        const monto = plan.mensual; // O la lógica de periodo que prefieras
+        const planKey = planId.toUpperCase();
+        const plan = PLANS_CONFIG[planKey];
         
-        // LA REFERENCIA DEBE COINCIDIR CON EL WEBHOOK
-        // Formato: NEXUS_USERID_PLAN_MESES
-        const referenciaNexus = `NEXUS_${uid}_${planId.toUpperCase()}_1M`;
+        if (!plan) throw new Error(`Plan ${planId} no existe en la configuración.`);
 
-        console.log("🛰️ Redirigiendo a Pasarela Nexus-X...");
-        
-        // Usamos URL Directa (más segura que el SDK para evitar bloqueos de script)
+        const monto = plan.prices[meses];
+        if (!monto) throw new Error(`El periodo de ${meses} mes(es) no es válido.`);
+
+        // 🛰️ REFERENCIA MAESTRA (Crucial para el Webhook-Bold.js)
+        const referenciaNexus = `NEXUS_${uid}_${planKey}_${meses}M`;
+
+        console.log(`🚀 Iniciando Checkout Nexus-X: ${plan.name}`);
+
+        // Redirección directa para evitar bloqueos de scripts de terceros
         const urlBold = `https://bold.co/pay/tallerpro360?amount=${monto}&reference=${referenciaNexus}`;
         
         window.location.href = urlBold;
+
     } catch (error) {
-        console.error("❌ FALLA EN PROCESO BOLD:", error);
-        alert("Error al generar el enlace de pago.");
+        console.error("❌ FALLA CRÍTICA NEXUS-X:", error.message);
+        alert("Error de conexión con la pasarela. Intente nuevamente.");
     }
 }
 
-// 2. FUNCIÓN PARA EL TRIAL (PRUEBA GRATIS)
-export function iniciarTrial(uid, email) {
-    if(!uid || uid === "GUEST") {
-        alert("Por favor inicia sesión para activar tu prueba gratis.");
-        return;
-    }
+/**
+ * Motor de Activación de Prueba Gratis (Trial)
+ */
+export function iniciarTrial() {
+    // Verificamos si el modal de trial existe en el DOM (creado en pasos anteriores)
+    const modalTrial = document.getElementById('trial-modal') || document.querySelector('[onclick*="abrirTrial"]');
     
-    // Aquí disparamos el modal que creamos en los pasos anteriores
     if (window.abrirTrial) {
         window.abrirTrial();
     } else {
-        console.error("Nodo de Trial no cargado en el DOM");
+        alert("🛰️ Sincronizando módulo de prueba... Intente en 2 segundos.");
+        location.reload(); // Recarga para asegurar que los scripts de UI cargaron
     }
 }
