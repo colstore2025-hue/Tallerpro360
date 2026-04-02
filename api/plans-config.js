@@ -1,20 +1,30 @@
+// api/plans-config.js
 export const PLANS_CONFIG = {
-    BASIC: {
-        id: "BASIC",
-        name: "Plan Básico - Nexus-X",
-        prices: { 1: 49900, 3: 134700, 6: 239500, 12: 419200 },
-        desc: "Suscripción al motor PRO360CORE. Gestión básica de órdenes e inventarios."
+    basico: {
+        name: "Plan Básico",
+        prices: {
+            "1": 49900,
+            "3": 134700, // 10% OFF incluido
+            "6": 239500, // 20% OFF incluido
+            "12": 419000 // 30% OFF incluido
+        }
     },
-    PRO: {
-        id: "PRO",
-        name: "Plan PRO - Nexus-X",
-        prices: { 1: 79900, 3: 215700, 6: 383500, 12: 671200 },
-        desc: "Suscripción al motor PRO360CORE. Gestión avanzada y soporte técnico."
+    pro: {
+        name: "Plan Pro",
+        prices: {
+            "1": 79900,
+            "3": 215700,
+            "6": 383500,
+            "12": 671000
+        }
     },
-    ELITE: {
-        id: "ELITE",
-        name: "Plan ELITE - Nexus-X",
-        prices: { 1: 129000, 3: 348300, 6: 619200, 12: 1083600 },
-        desc: "Suscripción al motor PRO360CORE. Funcionalidades Premium e IA de voz."
+    elite: {
+        name: "Plan Élite",
+        prices: {
+            "1": 129000,
+            "3": 348300,
+            "6": 619200,
+            "12": 1083600
+        }
     }
 };
