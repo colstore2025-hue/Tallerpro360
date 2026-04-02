@@ -292,11 +292,13 @@
     </div>
 
     <script type="module">
-    // 1. IMPORTACIÓN DEL MOTOR (Asegura que estas rutas sean correctas)
-    import { PLANS_CONFIG } from './api/plans-config.js';
-    import { procesarSuscripcionBold } from './app/planManager.js';
+    /**
+     * TALLERPRO360 - FRONTEND CORE
+     * Versión: 1.6.0-production (Nexus-X)
+     * Descripción: Motor de Demos, Pagos y Activación de Trial
+     */
 
-    // 2. CONFIGURACIÓN DE NODOS (27 Demos)
+    // 1. CONFIGURACIÓN DE NODOS (Mantenemos tus 27 Demos)
     const nodosDemos = [
         { n: "AI Platform", f: "demo1-ai-platform.html" },
         { n: "Tesla Hub", f: "demo10-tesla.html" },
@@ -319,13 +321,13 @@
         { n: "Super AI Dash", f: "demo27-super-ai-dashboard.html" }
     ];
 
-    // 3. GLOBALIZACIÓN DE FUNCIONES (Para que el HTML las vea)
-    
-    // Selector de Demos
+    // 2. GLOBALIZACIÓN DE FUNCIONES (Nexus-X Interface)
+
+    // Selector de Demos (Tu terminal Cloud)
     window.openDemo = () => {
         const overlay = document.createElement('div');
         overlay.id = "nexus-selector";
-        overlay.className = "fixed inset-0 z-[2000] bg-black/95 backdrop-blur-3xl p-8 overflow-y-auto animate-in fade-in";
+        overlay.className = "fixed inset-0 z-[2000] bg-black/95 backdrop-blur-3xl p-8 overflow-y-auto";
         
         let grid = nodosDemos.map(d => `
             <div onclick="window.location.href='/demos/${d.f}'" 
@@ -347,91 +349,117 @@
         document.body.appendChild(overlay);
     };
 
-    // Motor de Pagos con Aceptación Legal
-    window.prepararPago = (planId, meses = 1) => {
-        const planData = PLANS_CONFIG[planId.toUpperCase()];
-        const precio = planData.prices[meses];
+    // Motor de Pagos Sincronizado con API Vercel
+    window.prepararPago = async (planId, meses = 1) => {
+        // En lugar de import, consultamos nuestra nueva API de configuración
+        try {
+            const configRes = await fetch('/api/plans-config');
+            const PLANS_CONFIG = await configRes.json();
+            const planData = PLANS_CONFIG[planId.toLowerCase()];
 
-        // Inyectamos el modal si no existe
-        if (!document.getElementById('modalLegal')) {
-            const modalHTML = `
-            <div id="modalLegal" class="fixed inset-0 z-[3000] hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                <div class="bg-slate-900 border border-cyan-500/30 p-8 rounded-3xl max-w-lg w-full shadow-2xl">
-                    <h3 class="orbitron text-cyan-400 text-xl font-black mb-4">PROTOCOLO DE ADQUISICIÓN</h3>
-                    <p id="planInfo" class="text-white/70 text-sm mb-6"></p>
-                    
-                    <div class="space-y-4 mb-8">
-                        <label class="flex items-center space-x-3 cursor-pointer">
-                            <input type="checkbox" id="chkTerminos" class="form-checkbox h-5 w-5 text-cyan-500">
-                            <span class="text-xs text-white/60">Acepto los <a href="/terminos.html" target="_blank" class="text-cyan-400 underline">Términos de Servicio</a></span>
-                        </label>
-                        <label class="flex items-center space-x-3 cursor-pointer">
-                            <input type="checkbox" id="chkPoliticas" class="form-checkbox h-5 w-5 text-cyan-500">
-                            <span class="text-xs text-white/60">Acepto la <a href="/politicas.html" target="_blank" class="text-cyan-400 underline">Política de Privacidad</a></span>
-                        </label>
-                    </div>
+            if (!planData) return alert("Error: Plan no reconocido.");
 
-                    <div class="flex flex-col space-y-3">
-                        <button id="btnConfirmarPago" disabled class="w-full bg-cyan-500/20 text-cyan-500 py-4 rounded-xl font-black orbitron uppercase tracking-widest opacity-50 cursor-not-allowed transition-all hover:bg-cyan-500 hover:text-black">
+            const precio = planData.prices[meses];
+
+            // Inyectamos el modal si no existe
+            if (!document.getElementById('modalLegal')) {
+                const modalHTML = `
+                <div id="modalLegal" class="fixed inset-0 z-[3000] hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div class="bg-slate-900 border border-cyan-500/30 p-8 rounded-3xl max-w-lg w-full shadow-2xl">
+                        <h3 class="orbitron text-cyan-400 text-xl font-black mb-4">PROTOCOLO DE ADQUISICIÓN</h3>
+                        <p id="planInfo" class="text-white/70 text-sm mb-6"></p>
+                        <div class="space-y-4 mb-8">
+                            <label class="flex items-center space-x-3 cursor-pointer">
+                                <input type="checkbox" id="chkTerminos" class="form-checkbox h-5 w-5 text-cyan-500">
+                                <span class="text-xs text-white/60">Acepto los Términos de Servicio</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer">
+                                <input type="checkbox" id="chkPoliticas" class="form-checkbox h-5 w-5 text-cyan-500">
+                                <span class="text-xs text-white/60">Acepto la Política de Privacidad</span>
+                            </label>
+                        </div>
+                        <button id="btnConfirmarPago" disabled class="w-full bg-cyan-500/20 text-cyan-500 py-4 rounded-xl font-black orbitron uppercase tracking-widest opacity-50 cursor-not-allowed transition-all">
                             Sincronizar con Bold
                         </button>
-                        <button onclick="window.cerrarLegal()" class="text-white/40 text-xs hover:text-white transition-colors">CANCELAR</button>
+                        <button onclick="window.cerrarLegal()" class="w-full text-white/40 text-xs mt-4 hover:text-white">CANCELAR</button>
                     </div>
-                </div>
-            </div>`;
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
-        }
-
-        const modal = document.getElementById('modalLegal');
-        const info = document.getElementById('planInfo');
-        const btn = document.getElementById('btnConfirmarPago');
-        const chk1 = document.getElementById('chkTerminos');
-        const chk2 = document.getElementById('chkPoliticas');
-
-        info.innerHTML = `Está por activar el <strong>${planData.name}</strong> por un valor de <strong>$${precio.toLocaleString()} COP</strong>. Este plan incluye integración directa de WhatsApp con sus clientes.`;
-        
-        modal.classList.remove('hidden');
-
-        // Lógica de habilitación
-        const validar = () => {
-            if(chk1.checked && chk2.checked) {
-                btn.disabled = false;
-                btn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-cyan-500/20');
-            } else {
-                btn.disabled = true;
-                btn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-cyan-500/20');
+                </div>`;
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
             }
-        };
 
-        chk1.onchange = validar;
-        chk2.onchange = validar;
+            const modal = document.getElementById('modalLegal');
+            const info = document.getElementById('planInfo');
+            const btn = document.getElementById('btnConfirmarPago');
+            const chk1 = document.getElementById('chkTerminos');
+            const chk2 = document.getElementById('chkPoliticas');
 
-        btn.onclick = () => {
-            const userId = auth.currentUser ? auth.currentUser.uid : "INVITADO";
-            if(userId === "INVITADO") return alert("Inicie sesión para continuar.");
-            procesarSuscripcionBold(planId, meses, userId);
-        };
+            info.innerHTML = `Activando <strong>${planData.name}</strong> por <strong>$${precio.toLocaleString()} COP</strong>.`;
+            modal.classList.remove('hidden');
+
+            const validar = () => {
+                btn.disabled = !(chk1.checked && chk2.checked);
+                btn.className = btn.disabled ? "w-full bg-cyan-500/20 text-cyan-500 py-4 rounded-xl font-black orbitron opacity-50 cursor-not-allowed" : "w-full bg-cyan-500 text-black py-4 rounded-xl font-black orbitron cursor-pointer hover:bg-cyan-400";
+            };
+
+            chk1.onchange = validar;
+            chk2.onchange = validar;
+
+            btn.onclick = async () => {
+                btn.innerHTML = "PROCESANDO...";
+                btn.disabled = true;
+                
+                // Disparo a tu API real de Vercel
+                const res = await fetch('/api/create-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        planId: planId,
+                        months: meses,
+                        userEmail: "pago@tallerpro360.com", // Aquí puedes capturar el real
+                        empresaId: "DEMO_NEXUS" // Reemplazar con el ID real si el usuario está logueado
+                    })
+                });
+                
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+                else alert("Error al conectar con la pasarela.");
+            };
+
+        } catch (e) {
+            console.error("Fallo de comunicación Nexus-X:", e);
+        }
     };
 
     window.cerrarLegal = () => document.getElementById('modalLegal').classList.add('hidden');
 
-    // Soporte WhatsApp (Bot implementado)
+    // Botón Trial (Conectado a activar-trial.js)
+    window.abrirTrial = async () => {
+        const nombre = prompt("Nombre de su Taller:");
+        if (!nombre) return;
+
+        const res = await fetch('/api/activar-trial', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                empresaId: "trial_" + Date.now(),
+                nombreEmpresa: nombre,
+                usuarioId: "user_" + Date.now(),
+                email: "trial@nexus-x.com"
+            })
+        });
+
+        const data = await res.json();
+        if (data.status === "success") {
+            alert(`🛰️ Trial Activado. Su nodo expira el: ${data.expira}`);
+            window.location.href = "/manual-operacion.html";
+        }
+    };
+
     window.contactarSoporte = () => {
-        const msg = encodeURIComponent("Hola Nexus-X, necesito asistencia técnica con mi taller.");
-        window.open(`https://wa.me/17049419163?text=${msg}`, '_blank');
+        window.open(`https://wa.me/17049419163?text=Hola%20Nexus-X`, '_blank');
     };
 
-    // Trial de 7 días
-    window.abrirTrial = () => {
-        const userId = auth.currentUser ? auth.currentUser.uid : "INVITADO";
-        if(userId === "INVITADO") return alert("Inicie sesión para activar su prueba gratuita.");
-        
-        // Aquí puedes redirigir a un formulario o activar directamente
-        alert("🛰️ Protocolo Trial activado. Redirigiendo a terminal de configuración...");
-        window.location.href = "/manual-operacion.html";
-    };
-
-    console.log("🚀 Nexus-X Core V15.0 Operativo | Soporte: +1 704 941 9163");
+    console.log("🚀 Nexus-X Core V1.6.0 Operativo");
 </script>
 </body>
 </html>
