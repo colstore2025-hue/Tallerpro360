@@ -1,69 +1,79 @@
 /**
- * cobrar-factura-taller.js - TallerPRO360 🛰️
- * Este script permite que CADA TALLER cobre con SU PROPIA cuenta de Bold.
+ * TALLERPRO360 - NODO NEXUS-X
+ * Versión: 2.0.0-production
+ * Descripción: Pasarela delegada. Permite que cada taller use SU PROPIA cuenta de Bold.
+ * Última Modificación: Abril 2026
  */
 
 import admin from "firebase-admin";
 
+// 1. Inicialización Unificada Nexus-X
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    }),
-  });
+    admin.initializeApp({
+        credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+    });
 }
 
 const db = admin.firestore();
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido" });
+    if (req.method !== "POST") return res.status(405).json({ error: "Protocolo requiere POST" });
 
-  const { empresaId, facturaId, monto, descripcion } = req.body;
+    const { empresaId, facturaId, monto, descripcion, emailCliente } = req.body;
 
-  try {
-    // 1. BUSCAR LAS LLAVES DEL TALLER EN FIRESTORE
-    const empresaDoc = await db.collection("empresas").doc(empresaId).get();
-    
-    if (!empresaDoc.exists) {
-      return res.status(404).json({ error: "Empresa no encontrada" });
-    }
-
-    const configBold = empresaDoc.data().configuracion?.bold;
-
-    if (!configBold || !configBold.apiKey || !configBold.identity) {
-      return res.status(400).json({ error: "El taller no ha configurado su pasarela Bold" });
-    }
-
-    // 2. GENERAR EL CHECKOUT CON LAS LLAVES DEL CLIENTE
-    const boldResponse = await fetch("https://api.bold.co/v2/checkout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-KEY": configBold.apiKey,      // Llave del Dueño del Taller
-        "X-IDENTITY": configBold.identity    // Identidad del Dueño del Taller
-      },
-      body: JSON.stringify({
-        amount: monto,
-        currency: "COP",
-        description: `Factura ${facturaId} - ${empresaDoc.data().nombre}`,
-        order_id: `FACT-${facturaId}-${Date.now()}`,
-        notification_url: "https://tallerpro360.vercel.app/api/webhook-taller",
-        redirection_url: `https://tallerpro360.vercel.app/app/factura.html?id=${facturaId}&pago=exitoso`,
-        metadata: {
-          tipo_pago: "servicio_taller",
-          facturaId: facturaId,
-          empresaId: empresaId
+    try {
+        // 2. BUSCAR LAS LLAVES PRIVADAS DEL TALLER EN FIRESTORE
+        // Buscamos en la colección 'empresas' el documento del taller específico
+        const empresaDoc = await db.collection("empresas").doc(empresaId).get();
+        
+        if (!empresaDoc.exists) {
+            return res.status(404).json({ error: "Taller no registrado en Nexus-X" });
         }
-      })
-    });
 
-    const data = await boldResponse.json();
-    return res.status(200).json({ url: data.payment_url || data.url });
+        const configBold = empresaDoc.data().configuracion?.bold;
 
-  } catch (error) {
-    console.error("Error cobro taller:", error);
-    return res.status(500).json({ error: "Error conectando con la pasarela del taller" });
-  }
+        // Si el taller no ha pegado sus llaves de Bold en su perfil, no puede cobrar
+        if (!configBold?.apiKey || !configBold?.identity) {
+            return res.status(400).json({ error: "El taller no ha vinculado su cuenta de Bold en la configuración." });
+        }
+
+        // 3. GENERAR LINK DE PAGO USANDO LAS CREDENCIALES DEL TALLER
+        // Nota: Aquí NO usamos tus variables de entorno, usamos las del documento de la DB
+        const boldResponse = await fetch("https://api.bold.co/v2/payment-links", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${configBold.apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                description: descripcion || `Servicio Técnico - Factura ${facturaId}`,
+                amount: Math.round(monto),
+                currency: "COP",
+                order_id: `FACT-${facturaId}-${Date.now()}`,
+                notification_url: "https://tallerpro360.vercel.app/api/webhook-bold", // El mismo webhook procesa todo
+                redirect_url: `https://tallerpro360.vercel.app/factura-confirmada.html?id=${facturaId}`,
+                customer_email: emailCliente || "",
+                metadata: {
+                    tipo_pago: "SERVICIO_TALLER", // Metadata vital para el webhook
+                    facturaId: String(facturaId),
+                    empresaId: String(empresaId),
+                    v_nexus: "2.0.0"
+                }
+            })
+        });
+
+        const data = await boldResponse.json();
+
+        if (data.payload && data.payload.payment_url) {
+            console.log(`🔧 [NEXUS-TALLER] Link generado para taller: ${empresaId}`);
+            return res.status(200).json({ url: data.payload.payment_url });
+        } else {
+            console.error("❌ Error API Bold Taller:", data);
+            return res.status(400).json({ error: "La pasarela del taller rechazó la solicitud." });
+        }
+
+    } catch (error) {
+        console.error("❌ Fallo Cobro Taller:", error.message);
+        return res.status(500).json({ error: "Error interno en el Nodo de Cobro." });
+    }
 }
