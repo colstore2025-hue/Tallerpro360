@@ -362,104 +362,123 @@
             const precio = planData.prices[meses];
 
             // Inyectamos el modal si no existe
-            if (!document.getElementById('modalLegal')) {
-                const modalHTML = `
-                <div id="modalLegal" class="fixed inset-0 z-[3000] hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div class="bg-slate-900 border border-cyan-500/30 p-8 rounded-3xl max-w-lg w-full shadow-2xl">
-                        <h3 class="orbitron text-cyan-400 text-xl font-black mb-4">PROTOCOLO DE ADQUISICIÓN</h3>
-                        <p id="planInfo" class="text-white/70 text-sm mb-6"></p>
-                        <div class="space-y-4 mb-8">
-                            <label class="flex items-center space-x-3 cursor-pointer">
-                                <input type="checkbox" id="chkTerminos" class="form-checkbox h-5 w-5 text-cyan-500">
-                                <span class="text-xs text-white/60">Acepto los Términos de Servicio</span>
-                            </label>
-                            <label class="flex items-center space-x-3 cursor-pointer">
-                                <input type="checkbox" id="chkPoliticas" class="form-checkbox h-5 w-5 text-cyan-500">
-                                <span class="text-xs text-white/60">Acepto la Política de Privacidad</span>
-                            </label>
-                        </div>
-                        <button id="btnConfirmarPago" disabled class="w-full bg-cyan-500/20 text-cyan-500 py-4 rounded-xl font-black orbitron uppercase tracking-widest opacity-50 cursor-not-allowed transition-all">
-                            Sincronizar con Bold
-                        </button>
-                        <button onclick="window.cerrarLegal()" class="w-full text-white/40 text-xs mt-4 hover:text-white">CANCELAR</button>
-                    </div>
-                </div>`;
-                document.body.insertAdjacentHTML('beforeend', modalHTML);
-            }
+if (!document.getElementById('modalLegal')) {
+    const modalHTML = `
+    <div id="modalLegal" class="fixed inset-0 z-[3000] hidden flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
+        <div class="bg-slate-900 border border-cyan-500/30 p-8 rounded-3xl max-w-lg w-full shadow-2xl">
+            <h3 class="orbitron text-cyan-400 text-xl font-black mb-4 uppercase italic">PROTOCOLO DE ADQUISICIÓN</h3>
+            <p id="planInfo" class="text-white/70 text-sm mb-6 leading-relaxed"></p>
+            
+            <div class="space-y-4 mb-8">
+                <label class="flex items-center space-x-3 cursor-pointer group">
+                    <input type="checkbox" id="chkTerminos" class="form-checkbox h-5 w-5 text-cyan-500 accent-cyan-500">
+                    <span class="text-xs text-white/60 group-hover:text-white transition">Acepto los <a href="/terminos.html" class="text-cyan-400 underline font-bold">Términos de Servicio</a></span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer group">
+                    <input type="checkbox" id="chkPoliticas" class="form-checkbox h-5 w-5 text-cyan-500 accent-cyan-500">
+                    <span class="text-xs text-white/60 group-hover:text-white transition">Acepto la <a href="/politicas.html" class="text-cyan-400 underline font-bold">Política de Privacidad</a></span>
+                </label>
+            </div>
 
-            const modal = document.getElementById('modalLegal');
-            const info = document.getElementById('planInfo');
-            const btn = document.getElementById('btnConfirmarPago');
-            const chk1 = document.getElementById('chkTerminos');
-            const chk2 = document.getElementById('chkPoliticas');
+            <button id="btnConfirmarPago" disabled class="w-full bg-cyan-500/10 text-cyan-500/40 py-4 rounded-xl font-black orbitron uppercase tracking-widest opacity-50 cursor-not-allowed transition-all">
+                Sincronizar con Bold
+            </button>
+            <button onclick="window.cerrarLegal()" class="w-full text-white/40 text-[10px] mt-6 hover:text-white transition-colors orbitron">CANCELAR OPERACIÓN</button>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
 
-            info.innerHTML = `Activando <strong>${planData.name}</strong> por <strong>$${precio.toLocaleString()} COP</strong>.`;
-            modal.classList.remove('hidden');
+const modal = document.getElementById('modalLegal');
+const info = document.getElementById('planInfo');
+const btn = document.getElementById('btnConfirmarPago');
+const chk1 = document.getElementById('chkTerminos');
+const chk2 = document.getElementById('chkPoliticas');
 
-            const validar = () => {
-                btn.disabled = !(chk1.checked && chk2.checked);
-                btn.className = btn.disabled ? "w-full bg-cyan-500/20 text-cyan-500 py-4 rounded-xl font-black orbitron opacity-50 cursor-not-allowed" : "w-full bg-cyan-500 text-black py-4 rounded-xl font-black orbitron cursor-pointer hover:bg-cyan-400";
-            };
+// Configuración visual del modal según el plan
+info.innerHTML = `Está por activar el nodo <strong>${planData.name.toUpperCase()}</strong>.<br>Inversión: <strong>$${precio.toLocaleString()} COP</strong>.`;
+modal.classList.remove('hidden');
 
-            chk1.onchange = validar;
-            chk2.onchange = validar;
+// Lógica de validación en tiempo real (Reparado)
+const validar = () => {
+    if (chk1.checked && chk2.checked) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-cyan-500/10', 'text-cyan-500/40');
+        btn.classList.add('bg-cyan-500', 'text-black', 'shadow-[0_0_20px_rgba(6,182,212,0.5)]', 'cursor-pointer', 'hover:bg-cyan-400');
+    } else {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-cyan-500/10', 'text-cyan-500/40');
+        btn.classList.remove('bg-cyan-500', 'text-black', 'shadow-[0_0_20px_rgba(6,182,212,0.5)]');
+    }
+};
 
-            btn.onclick = async () => {
-                btn.innerHTML = "PROCESANDO...";
-                btn.disabled = true;
-                
-                // Disparo a tu API real de Vercel
-                const res = await fetch('/api/create-payment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        planId: planId,
-                        months: meses,
-                        userEmail: "pago@tallerpro360.com", // Aquí puedes capturar el real
-                        empresaId: "DEMO_NEXUS" // Reemplazar con el ID real si el usuario está logueado
-                    })
-                });
-                
-                const data = await res.json();
-                if (data.url) window.location.href = data.url;
-                else alert("Error al conectar con la pasarela.");
-            };
+chk1.onchange = validar;
+chk2.onchange = validar;
 
-        } catch (e) {
-            console.error("Fallo de comunicación Nexus-X:", e);
-        }
-    };
-
-    window.cerrarLegal = () => document.getElementById('modalLegal').classList.add('hidden');
-
-    // Botón Trial (Conectado a activar-trial.js)
-    window.abrirTrial = async () => {
-        const nombre = prompt("Nombre de su Taller:");
-        if (!nombre) return;
-
-        const res = await fetch('/api/activar-trial', {
+btn.onclick = async () => {
+    btn.innerHTML = "ESTABLECIENDO VÍNCULO...";
+    btn.disabled = true;
+    
+    try {
+        const res = await fetch('/api/create-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                empresaId: "trial_" + Date.now(),
-                nombreEmpresa: nombre,
-                usuarioId: "user_" + Date.now(),
-                email: "trial@nexus-x.com"
+                planId: planId,
+                months: meses,
+                userEmail: "pago@tallerpro360.com",
+                empresaId: "NX-" + Date.now()
             })
         });
-
+        
         const data = await res.json();
-        if (data.status === "success") {
-            alert(`🛰️ Trial Activado. Su nodo expira el: ${data.expira}`);
-            window.location.href = "/manual-operacion.html";
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            alert("Error: El nodo de Bold no respondió satisfactoriamente.");
+            btn.innerHTML = "Sincronizar con Bold";
+            btn.disabled = false;
         }
-    };
+    } catch (err) {
+        alert("Fallo crítico en la red de pagos.");
+        console.error(err);
+    }
+};
 
-    window.contactarSoporte = () => {
-        window.open(`https://wa.me/17049419163?text=Hola%20Nexus-X`, '_blank');
-    };
+// --- FUNCIONES GLOBALES COMPLEMENTARIAS ---
 
-    console.log("🚀 Nexus-X Core V1.6.0 Operativo");
-</script>
+window.cerrarLegal = () => {
+    const modal = document.getElementById('modalLegal');
+    if (modal) modal.classList.add('hidden');
+};
+
+window.abrirTrial = async () => {
+    const nombre = prompt("Nombre de su Taller (Identificación de Nodo):");
+    if (!nombre) return;
+
+    const res = await fetch('/api/activar-trial', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            empresaId: "trial_" + Math.random().toString(36).substr(2, 9),
+            nombreEmpresa: nombre,
+            usuarioId: "user_" + Date.now(),
+            email: "trial@nexus-x.com"
+        })
+    });
+
+    const data = await res.json();
+    if (data.status === "success") {
+        alert(`🛰️ Trial Activado.\nExpira el: ${data.expira}`);
+        window.location.href = "/manual-operacion.html";
+    }
+};
+
+window.contactarSoporte = () => {
+    window.open(`https://wa.me/17049419163?text=Hola%20Nexus-X%2C%20necesito%20asistencia%20técnica.`, '_blank');
+};
+
+console.log("🚀 Nexus-X Core V1.6.5 Operativo | Enlace Starlink Activo");
+
 </body>
 </html>
