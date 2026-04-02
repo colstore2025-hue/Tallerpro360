@@ -1,41 +1,47 @@
 /**
  * TALLERPRO360 - NODO NEXUS-X
- * Versión: 1.2.1-production
- * Descripción: Generador de links de pago Bold (Suscripciones)
+ * Versión: 1.3.0-production
+ * Descripción: Generador Maestro de links de pago Bold (Con descuentos integrados)
  * Última Modificación: Abril 2026
  */
 
 import { PLANS_CONFIG } from './plans-config.js';
 
 export default async function handler(req, res) {
-    // 1. Control de Método
-    if (req.method !== 'POST') return res.status(405).json({ error: 'POST_REQUIRED' });
+    // 1. Control de Protocolo
+    if (req.method !== 'POST') {
+        return res.status(405).json({ status: "NEXUS_DENIED", message: "Protocolo requiere POST" });
+    }
 
-    // 2. Extracción de datos del Body
+    // 2. Extracción de Datos
     const { planId, months, userEmail, userId, empresaId } = req.body;
 
+    if (!planId || !months || !empresaId) {
+        return res.status(400).json({ error: "Datos insuficientes (Falta planId, months o empresaId)" });
+    }
+
     try {
-        // 3. Validación de Variables de Entorno (Ajustadas a tu Vercel)
-        const BOLD_SECRET = process.env.BOLD_API_SECRET; // Cambiado de BOLD_API_KEY a BOLD_API_SECRET
+        // 3. Validación de Llaves (Usando SECRET según tu Vercel)
+        const BOLD_SECRET = process.env.BOLD_API_SECRET;
         
         if (!BOLD_SECRET) {
-            console.error("❌ ERROR: BOLD_API_SECRET no encontrada en Vercel.");
-            throw new Error("Configuración de servidor incompleta.");
+            console.error("❌ ERROR: BOLD_API_SECRET no configurada en Vercel.");
+            throw new Error("Error de configuración en el servidor.");
         }
 
-        // 4. Lógica de Negocio: Selección de Plan
+        // 4. Lógica de Precios Nexus-X
         const selectedPlan = PLANS_CONFIG[planId];
-        const amountTotal = selectedPlan?.prices[months];
+        if (!selectedPlan) throw new Error("El plan seleccionado no existe.");
 
-        if (!amountTotal) throw new Error("Plan o duración no válida en configuración.");
+        const amountTotal = selectedPlan.prices[String(months)];
+        if (!amountTotal) throw new Error("La duración (meses) no es válida para este plan.");
 
-        // Referencia única Nexus-X
-        const reference = `NEXUS_${empresaId || userId}_${Date.now()}`;
+        // 5. Preparación de Referencia y Montos
+        const reference = `NEXUS_${empresaId}_${Date.now()}`;
         const totalAmountRounded = Math.round(amountTotal);
 
         /**
-         * 5. CONEXIÓN API BOLD V2 (Ajustada)
-         * Usamos BOLD_API_SECRET según tu captura de Vercel
+         * 6. CONEXIÓN CON BOLD API V2
          */
         const boldResponse = await fetch('https://api.bold.co/v2/payment-links', {
             method: 'POST',
@@ -50,30 +56,31 @@ export default async function handler(req, res) {
                 order_id: reference,
                 notification_url: "https://tallerpro360.vercel.app/api/webhook-bold",
                 redirect_url: "https://tallerpro360.vercel.app/home.html?pago=exitoso",
-                customer_email: userEmail,
+                customer_email: userEmail || "pago@tallerpro360.com",
                 metadata: {
-                    empresaId: String(empresaId || userId),
+                    empresaId: String(empresaId),
                     planId: String(planId),
                     meses: String(months),
-                    usuarioId: String(userId),
-                    v_nexus: "1.2.1"
+                    usuarioId: String(userId || "N/A"),
+                    v_nexus: "1.3.0"
                 }
             })
         });
 
         const data = await boldResponse.json();
 
-        // 6. Respuesta al Frontend
+        // 7. Respuesta Final
         if (data.payload && data.payload.payment_url) {
-            console.log(`✅ [NEXUS-V1.2.1] Link Generado: ${reference}`);
+            console.log(`✅ [NEXUS-V1.3.0] Link Generado: ${reference} por $${totalAmountRounded}`);
             res.status(200).json({ 
                 url: data.payload.payment_url, 
                 reference: reference,
-                monto: totalAmountRounded 
+                monto: totalAmountRounded,
+                plan: selectedPlan.name
             });
         } else {
-            console.error("❌ [BOLD_ERROR]:", data);
-            throw new Error(data.message || "Error en la pasarela de pagos.");
+            console.error("❌ [BOLD_API_ERROR]:", data);
+            throw new Error(data.message || "La pasarela no pudo procesar la solicitud.");
         }
 
     } catch (error) {
