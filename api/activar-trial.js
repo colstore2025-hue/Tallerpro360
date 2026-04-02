@@ -1,32 +1,37 @@
+/**
+ * TALLERPRO360 - NODO NEXUS-X
+ * Versión: 1.5.0-production
+ * Descripción: Activación de Trial 7 días + Inicialización de Estructura Multitenant
+ */
+
 import admin from "firebase-admin";
 
-// Usamos tu JSON de Vercel para no fallar en la inicialización
 if (!admin.apps.length) {
     try {
         admin.initializeApp({
             credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
         });
     } catch (e) {
-        console.error("❌ Error Firebase:", e.message);
+        console.error("❌ Error Firebase en Trial:", e.message);
     }
 }
 const db = admin.firestore();
 
 export default async function handler(req, res) {
-    if (req.method !== "POST") return res.status(405).end();
+    if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
 
     const { empresaId, nombreEmpresa, usuarioId, email } = req.body;
-    const batch = db.batch();
     
-    // Configuración de Trial (7 días)
+    if (!empresaId || !usuarioId) return res.status(400).json({ error: "Faltan IDs críticos" });
+
+    const batch = db.batch();
     const ahora = admin.firestore.FieldValue.serverTimestamp();
-    const hoy = new Date();
-    const finTrialDate = new Date(hoy.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const finTrialDate = new Date();
+    finTrialDate.setDate(finTrialDate.getDate() + 7);
     const finTrialISO = finTrialDate.toISOString();
 
     try {
-        // 1. Registro en Colección Principal: 'empresas'
-        // Aquí es donde vive la configuración del taller
+        // 1. Registro en 'empresas' (Con estructura BOLD automática)
         const empresaRef = db.collection("empresas").doc(empresaId);
         batch.set(empresaRef, {
             nombre: nombreEmpresa,
@@ -38,46 +43,49 @@ export default async function handler(req, res) {
                 fecha_vencimiento: finTrialISO,
                 creado_en: ahora
             },
-            config: {
-                modulos_activos: ["ordenes", "inventario", "contabilidad", "ia_logs"],
-                notificaciones_ws: true
-            }
+            // AQUÍ SE CREA AUTOMÁTICAMENTE LO QUE VIMOS EN LA FOTO
+            configuracion: {
+                bold: {
+                    apiKey: "PENDIENTE",
+                    identity: "PENDIENTE"
+                },
+                modulos: ["ordenes", "inventario", "contabilidad"]
+            },
+            fecha_registro: ahora
         });
 
-        // 2. Registro en Colección Principal: 'usuarios'
-        // Vinculamos al dueño con su empresa
+        // 2. Vinculación de Usuario
         const usuarioRef = db.collection("usuarios").doc(usuarioId);
         batch.set(usuarioRef, {
             uid: usuarioId,
             empresaId: empresaId,
             rol: "dueno",
             email: email,
-            ultimo_acceso: ahora,
-            estado: "activo"
+            estado: "activo",
+            v_nexus: "1.5.0"
         }, { merge: true });
 
-        // 3. Inicialización de 'contabilidad' para el Trial
-        // Creamos un registro de "Apertura" en la colección raíz
+        // 3. Primer registro contable de sistema
         const contaRef = db.collection("contabilidad").doc();
         batch.set(contaRef, {
             empresaId: empresaId,
-            tipo: "sistema",
+            tipo: "SISTEMA",
             monto: 0,
-            concepto: "Inicialización de Nodo Nexus-X (Trial)",
+            concepto: "Apertura Nodo Nexus-X Trial",
             fecha: ahora
         });
 
         await batch.commit();
         
-        console.log(`🚀 Trial Activado para: ${nombreEmpresa} (ID: ${empresaId})`);
+        console.log(`🚀 [NEXUS] Trial Activado: ${nombreEmpresa}`);
         res.status(200).json({ 
             status: "success", 
             expira: finTrialISO,
-            nodo: "Nexus-X Starlink Operational" 
+            mensaje: "Estructura multitenant inicializada correctamente" 
         });
 
     } catch (e) {
-        console.error("❌ Error en Activación Trial:", e.message);
+        console.error("❌ [NEXUS_TRIAL_ERROR]:", e.message);
         res.status(500).json({ error: e.message });
     }
 }
