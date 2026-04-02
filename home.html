@@ -142,84 +142,84 @@
     </header>
 
     <section id="planes" class="py-32 px-4 max-w-[1700px] mx-auto">
-        <div class="text-center mb-20">
-            <h2 class="orbitron text-4xl font-black italic uppercase">Niveles de Suscripción</h2>
-            <p class="text-slate-500 orbitron text-[10px] tracking-[0.3em] mt-4 uppercase italic">Seleccione el potencial de su red</p>
+    <div class="text-center mb-20">
+        <h2 class="orbitron text-4xl font-black italic uppercase">Niveles de Suscripción</h2>
+        <p class="text-slate-500 orbitron text-[10px] tracking-[0.3em] mt-4 uppercase italic">Seleccione el potencial de su red</p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <div class="card-nexus p-8 rounded-[2.5rem] border-slate-700/30 flex flex-col h-full">
+            <div class="flex-grow">
+                <span class="badge-tech bg-slate-800 text-slate-400 mb-6 inline-block">V.3.0 Alpha</span>
+                <h3 class="orbitron text-xl font-black italic text-white mb-2 uppercase">Trial</h3>
+                <div class="text-4xl font-black mb-8 text-white">$0 <span class="text-[10px] text-slate-600">7 DÍAS</span></div>
+                <ul class="tech-list">
+                    <li><i class="fas fa-check-circle text-cyan-500"></i> 20 Órdenes de Servicio</li>
+                    <li><i class="fas fa-satellite text-cyan-500"></i> Acceso Panel Core</li>
+                    <li><i class="fas fa-shield-alt text-cyan-500"></i> Backup en Nube</li>
+                </ul>
+            </div>
+            <button onclick="abrirTrial()" class="mt-10 w-full py-5 border border-white/10 rounded-2xl orbitron text-[10px] font-black hover:bg-white hover:text-black transition italic uppercase">Activar Nodo</button>
         </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            <div class="card-nexus p-8 rounded-[2.5rem] border-slate-700/30">
-                <div class="flex-grow">
-                    <span class="badge-tech bg-slate-800 text-slate-400 mb-6 inline-block">V.3.0 Alpha</span>
-                    <h3 class="orbitron text-xl font-black italic text-white mb-2 uppercase">Trial</h3>
-                    <div class="text-4xl font-black mb-8 text-white">$0 <span class="text-[10px] text-slate-600">7 DÍAS</span></div>
-                    <ul class="tech-list">
-                        <li><i class="fas fa-check-circle text-cyan-500"></i> 20 Órdenes de Servicio</li>
-                        <li><i class="fas fa-satellite text-cyan-500"></i> Acceso Panel Core</li>
-                        <li><i class="fas fa-shield-alt text-cyan-500"></i> Backup en Nube</li>
-                    </ul>
-                </div>
-                <button onclick="abrirTrial()" class="mt-10 w-full py-5 border border-white/10 rounded-2xl orbitron text-[10px] font-black hover:bg-white hover:text-black transition italic uppercase">Activar Nodo</button>
-            </div>
 
-            <div class="card-nexus p-8 rounded-[2.5rem] border-emerald-900/30">
-                <div class="flex-grow">
-                    <span class="badge-tech bg-emerald-500/20 text-emerald-400 mb-6 inline-block">Operativo</span>
-                    <h3 class="orbitron text-xl font-black italic text-white mb-2 uppercase">Básico</h3>
-                    <div class="text-4xl font-black mb-8 text-white">$49.900 <span class="text-[10px] text-slate-600">/ MES</span></div>
-                    <ul class="tech-list">
-                        <li><i class="fas fa-link text-emerald-500"></i> Link de Pago Bold</li>
-                        <li><i class="fas fa-file-pdf text-emerald-500"></i> 100 Órdenes/Mes</li>
-                        <li><i class="fas fa-users text-emerald-500"></i> 2 Usuarios</li>
-                    </ul>
-                </div>
-                <button onclick="prepararPago('BASIC', 49900)" class="mt-10 w-full py-5 bg-emerald-600 text-black rounded-2xl orbitron text-[10px] font-black italic hover:bg-emerald-400 transition uppercase">Suscribir</button>
+        <div class="card-nexus p-8 rounded-[2.5rem] border-emerald-900/30 flex flex-col h-full">
+            <div class="flex-grow">
+                <span class="badge-tech bg-emerald-500/20 text-emerald-400 mb-6 inline-block">Operativo</span>
+                <h3 class="orbitron text-xl font-black italic text-white mb-2 uppercase">Básico</h3>
+                <div class="text-4xl font-black mb-8 text-white">$49.900 <span class="text-[10px] text-slate-600">/ MES</span></div>
+                <ul class="tech-list">
+                    <li><i class="fas fa-link text-emerald-500"></i> Link de Pago Bold</li>
+                    <li><i class="fas fa-file-pdf text-emerald-500"></i> 100 Órdenes/Mes</li>
+                    <li><i class="fas fa-users text-emerald-500"></i> 2 Usuarios</li>
+                </ul>
             </div>
-
-            <div class="card-nexus p-8 rounded-[2.5rem] border-blue-900/30">
-                <div class="flex-grow">
-                    <span class="badge-tech bg-blue-500/20 text-blue-400 mb-6 inline-block">Escalable</span>
-                    <h3 class="orbitron text-xl font-black italic text-blue-400 mb-2 uppercase">Profesional</h3>
-                    <div class="text-4xl font-black mb-8 text-white">$79.900 <span class="text-[10px] text-slate-600">/ MES</span></div>
-                    <ul class="tech-list">
-                        <li><i class="fas fa-bolt text-blue-400"></i> Conciliación Bold</li>
-                        <li><i class="fas fa-microphone text-blue-400"></i> Dictado por Voz IA</li>
-                        <li><i class="fas fa-box-open text-blue-400"></i> 500 Órdenes/Mes</li>
-                    </ul>
-                </div>
-                <button onclick="prepararPago('PRO', 79900)" class="mt-10 w-full py-5 bg-blue-600 text-white rounded-2xl orbitron text-[10px] font-black italic hover:bg-blue-400 transition uppercase">Activar Pro</button>
-            </div>
-
-            <div class="card-nexus p-8 rounded-[2.5rem] border-2 border-cyan-500 scale-110 z-10 shadow-[0_0_50px_rgba(6,182,212,0.4)] bg-cyan-900/20">
-                <div class="absolute top-0 right-0 bg-cyan-500 text-black px-6 py-2 text-[9px] font-black orbitron rounded-bl-3xl uppercase italic">RECOMENDADO</div>
-                <div class="flex-grow">
-                    <span class="badge-tech bg-cyan-500 text-black mb-6 inline-block">Dominio Total</span>
-                    <h3 class="orbitron text-2xl font-black italic text-cyan-400 mb-2 uppercase">Elite Nexus</h3>
-                    <div class="text-4xl font-black mb-8 text-white">$129.000 <span class="text-[10px] text-slate-300">/ MES</span></div>
-                    <ul class="tech-list text-white">
-                        <li><i class="fas fa-sync animate-spin-slow text-cyan-400"></i> Webhook Automático Bold</li>
-                        <li><i class="fas fa-brain text-cyan-400"></i> Predicción de Fallos IA</li>
-                        <li><i class="fas fa-infinity text-cyan-400"></i> Órdenes Ilimitadas</li>
-                    </ul>
-                </div>
-                <button onclick="prepararPago('ELITE', 129000)" class="mt-10 w-full py-6 bg-cyan-500 text-black rounded-2xl orbitron text-[11px] font-black italic hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] transition uppercase">Dominar Mercado</button>
-            </div>
-
-            <div class="card-nexus p-8 rounded-[2.5rem] border-purple-900/30">
-                <div class="flex-grow">
-                    <span class="badge-tech bg-purple-500/20 text-purple-400 mb-6 inline-block">Corporativo</span>
-                    <h3 class="orbitron text-xl font-black italic text-white mb-2 uppercase">Enterprise</h3>
-                    <div class="text-xl font-black my-10 text-purple-400 italic uppercase">A Medida</div>
-                    <ul class="tech-list">
-                        <li><i class="fas fa-network-wired text-purple-500"></i> Multi-Sede Sync</li>
-                        <li><i class="fas fa-code text-purple-500"></i> API Nexus-X Full Access</li>
-                        <li><i class="fas fa-headset text-purple-500"></i> Soporte 24/7 VIP</li>
-                    </ul>
-                </div>
-                <button onclick="window.location.href='https://wa.me/573XXXXXXXXX?text=Info%20Enterprise%20Nexus-X'" class="mt-10 w-full py-5 border border-purple-500/40 text-purple-400 rounded-2xl orbitron text-[10px] font-black italic hover:bg-purple-900 transition uppercase">Consultar</button>
-            </div>
+            <button onclick="prepararPago('basico', 1)" class="mt-10 w-full py-5 bg-emerald-600 text-black rounded-2xl orbitron text-[10px] font-black italic hover:bg-emerald-400 transition uppercase">Suscribir</button>
         </div>
-    </section>
+
+        <div class="card-nexus p-8 rounded-[2.5rem] border-blue-900/30 flex flex-col h-full">
+            <div class="flex-grow">
+                <span class="badge-tech bg-blue-500/20 text-blue-400 mb-6 inline-block">Escalable</span>
+                <h3 class="orbitron text-xl font-black italic text-blue-400 mb-2 uppercase">Profesional</h3>
+                <div class="text-4xl font-black mb-8 text-white">$79.900 <span class="text-[10px] text-slate-600">/ MES</span></div>
+                <ul class="tech-list">
+                    <li><i class="fas fa-bolt text-blue-400"></i> Conciliación Bold</li>
+                    <li><i class="fas fa-microphone text-blue-400"></i> Dictado por Voz IA</li>
+                    <li><i class="fas fa-box-open text-blue-400"></i> 500 Órdenes/Mes</li>
+                </ul>
+            </div>
+            <button onclick="prepararPago('pro', 1)" class="mt-10 w-full py-5 bg-blue-600 text-white rounded-2xl orbitron text-[10px] font-black italic hover:bg-blue-400 transition uppercase">Activar Pro</button>
+        </div>
+
+        <div class="card-nexus p-8 rounded-[2.5rem] border-2 border-cyan-500 scale-110 z-10 shadow-[0_0_50px_rgba(6,182,212,0.4)] bg-cyan-900/20 flex flex-col h-full">
+            <div class="absolute top-0 right-0 bg-cyan-500 text-black px-6 py-2 text-[9px] font-black orbitron rounded-bl-3xl uppercase italic">RECOMENDADO</div>
+            <div class="flex-grow">
+                <span class="badge-tech bg-cyan-500 text-black mb-6 inline-block">Dominio Total</span>
+                <h3 class="orbitron text-2xl font-black italic text-cyan-400 mb-2 uppercase">Elite Nexus</h3>
+                <div class="text-4xl font-black mb-8 text-white">$129.000 <span class="text-[10px] text-slate-300">/ MES</span></div>
+                <ul class="tech-list text-white">
+                    <li><i class="fas fa-sync animate-spin-slow text-cyan-400"></i> Webhook Automático Bold</li>
+                    <li><i class="fas fa-brain text-cyan-400"></i> Predicción de Fallos IA</li>
+                    <li><i class="fas fa-infinity text-cyan-400"></i> Órdenes Ilimitadas</li>
+                </ul>
+            </div>
+            <button onclick="prepararPago('elite', 1)" class="mt-10 w-full py-6 bg-cyan-500 text-black rounded-2xl orbitron text-[11px] font-black italic hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] transition uppercase">Dominar Mercado</button>
+        </div>
+
+        <div class="card-nexus p-8 rounded-[2.5rem] border-purple-900/30 flex flex-col h-full">
+            <div class="flex-grow">
+                <span class="badge-tech bg-purple-500/20 text-purple-400 mb-6 inline-block">Corporativo</span>
+                <h3 class="orbitron text-xl font-black italic text-white mb-2 uppercase">Enterprise</h3>
+                <div class="text-xl font-black my-10 text-purple-400 italic uppercase">A Medida</div>
+                <ul class="tech-list">
+                    <li><i class="fas fa-network-wired text-purple-500"></i> Multi-Sede Sync</li>
+                    <li><i class="fas fa-code text-purple-500"></i> API Nexus-X Full Access</li>
+                    <li><i class="fas fa-headset text-purple-500"></i> Soporte 24/7 VIP</li>
+                </ul>
+            </div>
+            <button onclick="contactarSoporte()" class="mt-10 w-full py-5 border border-purple-500/40 text-purple-400 rounded-2xl orbitron text-[10px] font-black italic hover:bg-purple-900 transition uppercase">Consultar</button>
+        </div>
+    </div>
+</section>
 
     <section id="demos" class="py-32 px-6 max-w-6xl mx-auto">
         <div class="text-center mb-16">
