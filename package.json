@@ -1,9 +1,14 @@
 {
   "name": "tallerpro360",
   "version": "1.1.0",
-  "description": "ERP SaaS para Talleres con IA",
+  "description": "ERP SaaS para Talleres con IA - Nodo Nexus-X",
   "type": "module",
+  "main": "index.js",
   "dependencies": {
-    "firebase": "^10.12.2"
+    "firebase-admin": "^11.11.1",
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }
