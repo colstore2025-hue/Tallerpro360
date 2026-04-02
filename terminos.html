@@ -2,38 +2,88 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Términos y Condiciones | TallerPRO360</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Términos y Condiciones | TallerPRO360 Nexus-X</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Outfit', sans-serif; background: #020617; color: #94a3b8; line-height: 1.6; }
-        .orbitron { font-family: 'Orbitron', sans-serif; color: white; }
-        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
-        h2 { color: #06b6d4; text-transform: uppercase; font-weight: 900; margin-top: 2rem; }
+        body { font-family: 'Outfit', sans-serif; background: #020617; color: #94a3b8; line-height: 1.7; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(6, 182, 212, 0.1); }
+        .nexus-border { border-left: 4px solid #06b6d4; padding-left: 1.5rem; margin-bottom: 2rem; }
+        h2 { color: #06b6d4; font-family: 'Orbitron'; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 3rem; margin-bottom: 1rem; }
+        strong { color: #f8fafc; }
+        .scroll-custom::-webkit-scrollbar { width: 6px; }
+        .scroll-custom::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
     </style>
 </head>
-<body class="p-6 md:p-20">
-    <div class="max-w-4xl mx-auto glass p-8 md:p-16 rounded-[3rem]">
-        <header class="text-center mb-12 border-b border-white/5 pb-8">
-            <h1 class="orbitron text-3xl font-black italic uppercase">Términos <span class="text-cyan-400">&</span> Condiciones</h1>
-            <p class="text-[10px] tracking-[0.5em] text-slate-500 uppercase mt-2">Versión 3.0 - Nexus-X Starlink</p>
+<body class="p-4 md:p-12 lg:p-20">
+    <div class="max-w-4xl mx-auto glass p-8 md:p-16 rounded-[2.5rem] shadow-2xl">
+        
+        <header class="text-center mb-16 border-b border-white/5 pb-10">
+            <div class="inline-block px-4 py-1 border border-cyan-500/30 rounded-full text-[10px] orbitron text-cyan-400 mb-4 animate-pulse">
+                SISTEMA LOGÍSTICO NEXUS-X STARLINK
+            </div>
+            <h1 class="orbitron text-3xl md:text-4xl font-black italic uppercase text-white">Términos <span class="text-cyan-500">de</span> Servicio</h1>
+            <p class="text-[10px] tracking-[0.4em] text-slate-500 uppercase mt-4">Última Actualización: Abril 2026 | Colombian Trucks Logistics LLC</p>
         </header>
 
-        <section class="space-y-6 text-sm">
-            <p><strong class="text-white uppercase tracking-widest">1. Aceptación del Servicio:</strong> Al suscribirse a TallerPRO360, el usuario acepta que está adquiriendo una licencia de uso de software para la gestión logística de talleres automotrices.</p>
+        <main class="text-sm md:text-base space-y-8 scroll-custom">
             
-            <h2>2. Planes y Pagos</h2>
-            <p>Los pagos se procesan a través de la pasarela autorizada <strong>BOLD®</strong>. La activación del servicio es automática tras la confirmación del pago. TallerPRO360 no almacena datos de tarjetas de crédito.</p>
+            <div class="nexus-border">
+                <p>El presente contrato regula el uso del ecosistema <strong>TallerPRO360</strong> y el motor <strong>PRO360CORE</strong>, operado por <strong>Colombian Trucks Logistics LLC</strong> (en adelante "La Compañía"), con domicilio legal en Charlotte, NC, USA, y representación operativa para el territorio colombiano.</p>
+            </div>
 
-            <h2>3. Propiedad Intelectual</h2>
-            <p>Todo el código fuente, diseño, logotipos y el motor <strong>PRO360CORE</strong> son propiedad exclusiva de <strong>Colombian Trucks Logistics LLC</strong>. Queda prohibida la ingeniería inversa o redistribución del software.</p>
+            <section>
+                <h2>1. Naturaleza del Servicio (SaaS)</h2>
+                <p>TallerPRO360 funciona bajo el modelo de <strong>Software as a Service (SaaS)</strong>. El usuario adquiere una licencia de uso temporal, no exclusiva y revocable para la gestión administrativa, logística y técnica de centros de servicio automotriz. No se transfiere la propiedad del software en ninguna circunstancia.</p>
+            </section>
 
-            <h2>4. Responsabilidad</h2>
-            <p>TallerPRO360 es una herramienta de gestión. La veracidad de la información ingresada (órdenes de servicio, inventarios) es responsabilidad absoluta del taller registrado.</p>
-        </section>
+            <section>
+                <h2>2. Pasarela de Pagos y Suscripciones</h2>
+                <p>Toda transacción financiera se realiza a través de la pasarela certificada <strong>BOLD® (Bold.co)</strong>. Al suscribirse, el usuario acepta que:</p>
+                <ul class="list-disc ml-6 mt-3 space-y-2 text-slate-400 italic">
+                    <li>La activación de los "Nodos de Servicio" es inmediata tras la aprobación de Bold.</li>
+                    <li>No existen reembolsos por periodos ya iniciados.</li>
+                    <li>El usuario es responsable de la correcta configuración de su API Key en los planes PRO y ELITE.</li>
+                </ul>
+            </section>
 
-        <footer class="mt-12 text-center">
-            <a href="/home.html" class="orbitron text-xs text-cyan-400 hover:text-white transition">Regresar al Ecosistema</a>
+            <section>
+                <h2>3. Protección de Datos (Habeas Data)</h2>
+                <p>En cumplimiento de la <strong>Ley 1581 de 2012 (Colombia)</strong> y estándares internacionales, La Compañía garantiza que los datos de los clientes finales del taller (Nombres, VIN, Placas) son propiedad del Usuario. TallerPRO360 actúa como <strong>Encargado del Tratamiento</strong>, implementando protocolos de cifrado de grado militar para la protección de dicha información.</p>
+            </section>
+
+            <section>
+                <h2>4. Propiedad Intelectual e Industrial</h2>
+                <p>El sistema <strong>Nexus-X</strong>, sus algoritmos en <code>quote.php</code> y <code>star.php</code>, interfaces y marcas registradas son propiedad intelectual protegida bajo las leyes de USA y convenios de la OMPI. Cualquier intento de descompilación, clonación o uso no autorizado del código fuente resultará en acciones legales civiles y penales inmediatas.</p>
+            </section>
+
+            <section>
+                <h2>5. Limitación de Responsabilidad</h2>
+                <p>TallerPRO360 no se hace responsable por:</p>
+                <ol class="list-decimal ml-6 mt-3 space-y-2">
+                    <li>Errores en el ingreso de inventarios o diagnósticos por parte del personal del taller.</li>
+                    <li>Interrupciones del servicio derivadas de fallos en proveedores de nube (Vercel/Firebase) o redes locales.</li>
+                    <li>Sanciones legales derivadas del incumplimiento de normativas de tránsito por parte de los clientes del Usuario.</li>
+                </ol>
+            </section>
+
+            <section>
+                <h2>6. Soporte y Canales Oficiales</h2>
+                <p>El soporte técnico se brinda exclusivamente a través de los canales digitales integrados (WhatsApp Bot +1 704 941 9163). El servicio no garantiza disponibilidad 24/7, ajustándose a horarios laborales de la sede central en Charlotte, NC.</p>
+            </section>
+
+        </main>
+
+        <footer class="mt-20 pt-10 border-t border-white/5 text-center">
+            <p class="text-[11px] text-slate-600 mb-8 uppercase tracking-widest italic">
+                Al hacer clic en "Sincronizar con Bold", usted declara haber leído y aceptado estos términos íntegramente.
+            </p>
+            <a href="/home.html" class="inline-flex items-center space-x-3 bg-cyan-500/10 hover:bg-cyan-500 hover:text-black text-cyan-400 px-8 py-3 rounded-full transition-all duration-500 orbitron text-[10px] font-black uppercase tracking-tighter">
+                <i class="fas fa-chevron-left text-xs"></i>
+                <span>Regresar al Panel Nexus-X</span>
+            </a>
         </footer>
     </div>
 </body>
