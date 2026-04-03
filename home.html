@@ -3,127 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TallerPRO360 | Nexus-X Starlink</title>
+    <title>TallerPRO360 | Nexus-X Ecosistema</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --cyan: #06b6d4; --dark: #020617; }
-        body { font-family: 'Outfit', sans-serif; background: var(--dark); color: white; overflow-x: hidden; scroll-behavior: smooth; }
+        :root { --cyan: #06b6d4; --emerald: #10b981; --dark: #020617; }
+        body { font-family: 'Outfit', sans-serif; background: var(--dark); color: white; scroll-behavior: smooth; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        .stars-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%); z-index: -2; }
-        .glass { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(25px); border-bottom: 1px solid rgba(6, 182, 212, 0.2); }
-        .card-nexus { background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.9)); border: 1px solid rgba(255,255,255,0.05); transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; height: 100%; }
-        .card-nexus:hover { border-color: var(--cyan); transform: translateY(-5px); box-shadow: 0 0 30px rgba(6,182,212,0.2); }
+        
+        /* Animación de fondo */
+        .stars-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1e293b 0%, #020617 100%); z-index: -2; }
+        
+        /* Cristalería */
+        .glass-nav { background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(15px); border-bottom: 1px solid rgba(6, 182, 212, 0.1); }
+        .nexus-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.5s ease; position: relative; overflow: hidden; }
+        .nexus-card:hover { border-color: var(--cyan); transform: translateY(-10px); box-shadow: 0 0 40px rgba(6, 182, 212, 0.1); }
+        
+        /* Efecto de escaneo */
+        .scanner { position: absolute; width: 100%; height: 1px; background: var(--cyan); top: 0; left: 0; animation: scan 4s infinite linear; opacity: 0.2; }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+
+        .btn-nexus { position: relative; transition: 0.3s; overflow: hidden; }
+        .btn-nexus:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
     <div class="stars-bg"></div>
 
-    <nav class="fixed w-full z-[100] glass py-4 px-8 flex justify-between items-center">
+    <nav class="fixed w-full z-[100] glass-nav py-5 px-10 flex justify-between items-center">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-cyan-500 rounded-lg flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.5)]">
+            <div class="p-2 bg-cyan-500 rounded-lg shadow-[0_0_15px_rgba(6,182,212,0.4)]">
                 <i class="fas fa-satellite-dish text-black text-xl"></i>
             </div>
-            <span class="orbitron text-xl font-black italic uppercase tracking-tighter text-white">Taller<span class="text-cyan-400">PRO360</span></span>
+            <span class="orbitron text-2xl font-black italic tracking-tighter uppercase text-white">Taller<span class="text-cyan-400">PRO360</span></span>
         </div>
-        <button onclick="window.location.href='#planes'" class="bg-white text-black px-6 py-2.5 rounded-full orbitron text-[10px] font-black hover:bg-cyan-400 transition-all uppercase">Activar Nodo</button>
+        <div class="hidden md:flex gap-8 text-[10px] orbitron font-bold uppercase tracking-[0.2em] text-slate-400">
+            <a href="#ecosistema" class="hover:text-cyan-400">Ecosistema</a>
+            <a href="#planes" class="hover:text-white border-b border-cyan-500 pb-1">Suscripciones</a>
+            <a href="/login" class="text-cyan-400">Terminal Login</a>
+        </div>
     </nav>
 
-    <header class="pt-56 pb-20 px-6 text-center max-w-6xl mx-auto">
-        <h1 class="text-6xl md:text-9xl font-black mb-8 leading-none tracking-tighter uppercase italic">NEXUS-<span class="text-cyan-400">X</span></h1>
-        <p class="text-slate-400 text-lg md:text-2xl max-w-3xl mx-auto italic mb-12 uppercase tracking-widest font-light">Ecosistema Aeroespacial para <span class="text-white font-bold">Talleres 360</span></p>
+    <header class="relative pt-64 pb-32 px-6 text-center">
+        <div class="absolute top-20 left-1/2 -translate-x-1/2 w-full max-w-4xl opacity-20 pointer-events-none">
+            <img src="https://www.bold.co/assets/img/logo-bold.svg" alt="" class="w-24 mx-auto mb-10 filter invert">
+        </div>
+        <h1 class="text-7xl md:text-[10rem] font-black orbitron italic leading-none tracking-tighter mb-6 uppercase">
+            NEXUS-<span class="text-cyan-500">X</span>
+        </h1>
+        <p class="text-xl md:text-3xl text-slate-400 max-w-3xl mx-auto font-light tracking-widest uppercase italic">
+            Control de <span class="text-white font-bold">Grado Aeroespacial</span> para tu Taller.
+        </p>
+        <div class="mt-16 flex justify-center gap-6">
+            <button onclick="document.getElementById('planes').scrollIntoView()" class="px-12 py-5 bg-white text-black orbitron font-black text-xs uppercase italic rounded-2xl hover:bg-cyan-400 transition-all">Desplegar Nodo</button>
+        </div>
     </header>
 
-    <section id="planes" class="py-20 px-4 max-w-[1700px] mx-auto grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        <div class="card-nexus p-8 rounded-[2.5rem] flex flex-col justify-between">
-            <div>
-                <h3 class="orbitron text-xl font-black italic mb-2 uppercase text-white">Básico</h3>
-                <div class="text-3xl font-black mb-6 text-emerald-400">$49.900 <span class="text-xs text-slate-500">COP/MES</span></div>
-            </div>
-            <button onclick="abrirModalLegal('basico')" class="w-full py-5 bg-emerald-600 text-black rounded-2xl orbitron text-[10px] font-black hover:bg-emerald-400 transition uppercase italic">Suscribir</button>
+    <section id="planes" class="py-32 px-6 max-w-7xl mx-auto">
+        <div class="text-center mb-20">
+            <h2 class="orbitron text-4xl font-black italic uppercase mb-4">Protocolos de Suscripción</h2>
+            <div class="w-24 h-1 bg-cyan-500 mx-auto"></div>
         </div>
 
-        <div class="card-nexus p-8 rounded-[2.5rem] border-2 border-cyan-500 bg-cyan-900/20 flex flex-col justify-between scale-105 shadow-2xl">
-            <div>
-                <h3 class="orbitron text-2xl font-black italic text-cyan-400 mb-2 uppercase">Elite Nexus</h3>
-                <div class="text-4xl font-black mb-6 text-white">$129.000 <span class="text-xs text-slate-500">COP/MES</span></div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <div class="nexus-card p-10 rounded-[3rem]">
+                <div class="scanner"></div>
+                <span class="text-[10px] orbitron text-slate-500 uppercase font-black">Nivel 01 · Básico</span>
+                <h3 class="text-3xl font-black italic mt-2 mb-6">START-UP</h3>
+                <div class="text-5xl font-black mb-8">$49.900 <span class="text-sm text-slate-500">/mes</span></div>
+                <ul class="space-y-4 mb-12 text-slate-400 text-sm font-bold uppercase italic">
+                    <li><i class="fas fa-check text-cyan-500 mr-2"></i> Gestión de Órdenes</li>
+                    <li><i class="fas fa-check text-cyan-500 mr-2"></i> 2 Usuarios</li>
+                    <li><i class="fas fa-check text-cyan-500 mr-2"></i> Base de Datos Cloud</li>
+                </ul>
+                <button onclick="prepararHandshake('basico')" class="w-full py-5 bg-slate-800 text-white orbitron font-black text-[10px] rounded-2xl hover:bg-white hover:text-black transition uppercase italic">Seleccionar Plan</button>
             </div>
-            <button onclick="abrirModalLegal('elite')" class="w-full py-6 bg-cyan-500 text-black rounded-2xl orbitron text-[11px] font-black hover:bg-white transition uppercase italic shadow-lg">Dominar Mercado</button>
-        </div>
 
-        <div class="card-nexus p-8 rounded-[2.5rem] border border-white/5 flex flex-col justify-between">
-            <h3 class="orbitron text-xl font-black italic mb-2 uppercase text-slate-400">Demo</h3>
-            <button onclick="window.location.href='/demos/index.html'" class="w-full py-5 border border-white/20 text-white rounded-2xl orbitron text-[10px] font-black hover:bg-white hover:text-black transition uppercase italic">Probar Ecosistema</button>
+            <div class="nexus-card p-10 rounded-[3rem] border-cyan-500/50 bg-cyan-950/20 scale-105 shadow-2xl">
+                <div class="scanner"></div>
+                <div class="absolute top-6 right-10 bg-cyan-500 text-black text-[8px] font-black px-3 py-1 rounded-full uppercase">Recomendado</div>
+                <span class="text-[10px] orbitron text-cyan-400 uppercase font-black">Nivel 02 · Full Stack</span>
+                <h3 class="text-4xl font-black italic mt-2 mb-6 text-white uppercase">Elite Nexus</h3>
+                <div class="text-6xl font-black mb-8 text-white">$129.000 <span class="text-sm text-cyan-400">/mes</span></div>
+                <ul class="space-y-4 mb-12 text-white text-sm font-bold uppercase italic">
+                    <li><i class="fas fa-star text-cyan-400 mr-2"></i> Órdenes Ilimitadas</li>
+                    <li><i class="fas fa-star text-cyan-400 mr-2"></i> IA Gerencial por Voz</li>
+                    <li><i class="fas fa-star text-cyan-400 mr-2"></i> Pasarela Bold Integrada</li>
+                </ul>
+                <button onclick="prepararHandshake('elite')" class="w-full py-6 bg-cyan-500 text-black orbitron font-black text-[11px] rounded-2xl shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:bg-white transition uppercase italic">Dominar Mercado</button>
+            </div>
+
+            <div class="nexus-card p-10 rounded-[3rem]">
+                <div class="scanner"></div>
+                <span class="text-[10px] orbitron text-slate-500 uppercase font-black">Nivel 01.5 · Business</span>
+                <h3 class="text-3xl font-black italic mt-2 mb-6">PRO AI</h3>
+                <div class="text-5xl font-black mb-8">$79.900 <span class="text-sm text-slate-500">/mes</span></div>
+                <ul class="space-y-4 mb-12 text-slate-400 text-sm font-bold uppercase italic">
+                    <li><i class="fas fa-check text-cyan-500 mr-2"></i> WhatsApp Cloud</li>
+                    <li><i class="fas fa-check text-cyan-500 mr-2"></i> 5 Usuarios</li>
+                    <li><i class="fas fa-check text-cyan-500 mr-2"></i> Reportes Avanzados</li>
+                </ul>
+                <button onclick="prepararHandshake('pro')" class="w-full py-5 border border-white/10 text-white orbitron font-black text-[10px] rounded-2xl hover:bg-white hover:text-black transition uppercase italic">Seleccionar Plan</button>
+            </div>
         </div>
     </section>
 
-    <div id="modalLegal" class="fixed inset-0 bg-black/95 z-[200] hidden flex items-center justify-center p-6 backdrop-blur-2xl">
-        <div class="bg-[#0b111e] max-w-md w-full rounded-[3rem] border border-cyan-500/40 p-10 relative">
-            <div class="text-center mb-8">
-                <i class="fas fa-shield-check text-cyan-400 text-4xl mb-4"></i>
-                <h3 class="orbitron text-xl font-black uppercase italic text-white">Seguridad Nexus-X</h3>
+    <div id="modalBold" class="fixed inset-0 bg-black/98 z-[1000] hidden flex items-center justify-center p-6 backdrop-blur-3xl">
+        <div class="max-w-md w-full bg-[#0b111e] border border-cyan-500/40 rounded-[3rem] p-12 text-center">
+            <i class="fas fa-shield-halved text-cyan-400 text-5xl mb-6"></i>
+            <h3 class="orbitron text-2xl font-black text-white mb-4 italic uppercase">Sincronización Nexus</h3>
+            <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-10 leading-relaxed">
+                Vas a establecer un enlace seguro con la pasarela <span class="text-white">Bold</span>. Al proceder, aceptas nuestra política de datos y términos de servicio.
+            </p>
+            
+            <div class="space-y-4">
+                <button id="btnPagarBold" class="w-full py-5 bg-cyan-500 text-black orbitron font-black text-xs rounded-2xl uppercase italic flex items-center justify-center gap-3">
+                    <span>Sincronizar y Pagar</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <button onclick="cerrarModal()" class="w-full py-4 text-slate-600 text-[10px] orbitron font-black uppercase tracking-tighter hover:text-white">Abortar Conexión</button>
             </div>
-            <div class="space-y-4 mb-10">
-                <label class="flex items-start gap-4 cursor-pointer">
-                    <input type="checkbox" id="checkLegal" class="mt-1 w-5 h-5 accent-cyan-500">
-                    <span class="text-[10px] text-slate-400 uppercase font-bold tracking-widest italic">Acepto Términos, Condiciones y Habeas Data (Ley 1581)</span>
-                </label>
-            </div>
-            <button id="btnConfirmarPago" disabled class="w-full py-5 bg-cyan-500 text-black font-black rounded-2xl text-[11px] uppercase orbitron italic opacity-20 transition-all">Sincronizar con Bold</button>
-            <button onclick="cerrarModal()" class="w-full mt-6 text-slate-600 text-[9px] font-black uppercase hover:text-white">Cancelar</button>
         </div>
     </div>
 
-    <script type="module">
-        let planActivo = null;
+    <footer class="py-20 text-center border-t border-white/5 opacity-40">
+        <p class="orbitron text-[8px] tracking-[0.8em] uppercase">TallerPRO360 · Sistema Nexus-X · © 2026</p>
+    </footer>
 
-        window.abrirModalLegal = (planId) => {
-            planActivo = planId;
-            document.getElementById('modalLegal').classList.remove('hidden');
-        };
+    <script>
+        let planGlobal = null;
 
-        window.cerrarModal = () => {
-            document.getElementById('modalLegal').classList.add('hidden');
-        };
+        function prepararHandshake(id) {
+            planGlobal = id;
+            document.getElementById('modalBold').classList.remove('hidden');
+        }
 
-        const check = document.getElementById('checkLegal');
-        const btn = document.getElementById('btnConfirmarPago');
+        function cerrarModal() {
+            document.getElementById('modalBold').classList.add('hidden');
+        }
 
-        check.onchange = () => {
-            btn.disabled = !check.checked;
-            btn.style.opacity = check.checked ? "1" : "0.2";
-        };
-
-        btn.onclick = async () => {
-            btn.innerText = "⚡ ESTABLECIENDO ENLACE BOLD...";
+        document.getElementById('btnPagarBold').onclick = async function() {
+            const btn = this;
             btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner animate-spin"></i> ENLAZANDO...`;
 
             try {
-                // William, aquí está la conexión exacta con tu create-payment.js
+                // LLAMADA MAESTRA A TU API EN VERCEL
                 const response = await fetch('/api/create-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        planId: planActivo,
-                        months: 1, // Por defecto 1 mes
-                        empresaId: "NX-" + Math.floor(Math.random() * 9999),
-                        userEmail: "pago@tallerpro360.com" // Esto se puede capturar de un input
+                        planId: planGlobal,
+                        empresaId: "NX-" + Math.floor(Math.random() * 10000),
+                        userEmail: "interesado@tallerpro360.com",
+                        months: 1
                     })
                 });
 
                 const data = await response.json();
 
                 if (data.url) {
-                    window.location.href = data.url; // Redirección al checkout de Bold
+                    window.location.href = data.url; // REDIRECCIÓN A BOLD
                 } else {
-                    throw new Error(data.error || "Error en respuesta de Bold");
+                    throw new Error(data.error || "Fallo en el nodo central");
                 }
-            } catch (error) {
-                console.error("ERROR_NEXUS:", error);
-                alert("CONEXIÓN FALLIDA: " + error.message);
-                btn.innerText = "REINTENTAR SINCRONIZACIÓN";
+            } catch (err) {
+                console.error(err);
+                alert("⚠️ ERROR DE RED: El satélite Nexus no responde. Verifica tu conexión.");
                 btn.disabled = false;
+                btn.innerHTML = `Sincronizar y Pagar`;
             }
         };
     </script>
