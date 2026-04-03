@@ -295,9 +295,49 @@
     /**
      * TALLERPRO360 - NEXUS-X STARLINK ENGINE v1.7.6
      * Integración Quirúrgica con Bold API v2
-     */
+    */
 
-    // ... (Tu array de nodosDemos se mantiene igual)
+    const nodosDemos = [
+        { n: "AI Platform", f: "demo1-ai-platform.html" },
+        { n: "Tesla Hub", f: "demo10-tesla.html" },
+        { n: "Unicorn AI", f: "demo11-unicorn-ai-taller.html" },
+        { n: "Viral AI", f: "demo12-viral-ai-taller.html" },
+        { n: "Mobile App", f: "demo13-mobile-app.html" },
+        { n: "Mapa Nexus", f: "demo14-mapa.html" },
+        { n: "Diagnóstico AI", f: "demo15-diagnostico-ai.html" },
+        { n: "Dashboard Tesla", f: "demo16-dashboard-tesla.html" },
+        { n: "Simulador Taller", f: "demo17-simulador-taller.html" },
+        { n: "Recepción Inteligente", f: "demo18-recepcion-inteligente.html" },
+        { n: "App Cliente", f: "demo19-app-cliente.html" },
+        { n: "Red Talleres", f: "demo20-red-talleres-mapa.html" },
+        { n: "Control Center", f: "demo21-control-center.html" },
+        { n: "Análisis Foto IA", f: "demo22-analisis-foto-ia.html" },
+        { n: "Agenda Taller", f: "demo23-agenda-taller.html" },
+        { n: "Inventario", f: "demo24-inventario-repuestos.html" },
+        { n: "Facturación", f: "demo25-facturacion.html" },
+        { n: "Analítica", f: "demo26-analitica-taller.html" },
+        { n: "Super AI Dash", f: "demo27-super-ai-dashboard.html" }
+    ];
+
+    window.openDemo = () => {
+        const overlay = document.createElement('div');
+        overlay.id = "nexus-selector";
+        overlay.className = "fixed inset-0 z-[2000] bg-black/95 backdrop-blur-3xl p-8 overflow-y-auto";
+        let grid = nodosDemos.map(d => `
+            <div onclick="window.location.href='/demos/${d.f}'" 
+                 class="group p-5 border border-cyan-500/10 bg-white/5 rounded-2xl hover:border-cyan-400 transition-all cursor-pointer text-center">
+                <i class="fas fa-microchip text-cyan-500 mb-3 block opacity-50 group-hover:opacity-100"></i>
+                <p class="text-[9px] orbitron text-white font-black uppercase tracking-tighter">${d.n}</p>
+            </div>`).join('');
+        overlay.innerHTML = `<div class="max-w-6xl mx-auto">
+            <div class="flex justify-between items-center mb-10 border-b border-white/10 pb-5">
+                <h2 class="orbitron text-xl font-black italic text-cyan-400 uppercase">Nexus-X Cloud Terminal</h2>
+                <button onclick="document.getElementById('nexus-selector').remove()" class="text-white text-3xl">&times;</button>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">${grid}</div>
+        </div>`;
+        document.body.appendChild(overlay);
+    };
 
     window.prepararPago = async (planId, meses = 1) => {
         const btn = document.getElementById('btnPagarBold');
