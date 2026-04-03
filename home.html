@@ -339,66 +339,79 @@
         document.body.appendChild(overlay);
     };
 
+    <script type="module">
+
+    // FUNCIÓN PREPARAR PAGO (Corregida para Bold)
     window.prepararPago = async (planId, meses = 1) => {
-        const btn = document.getElementById('btnPagarBold');
         const modal = document.getElementById('modalLegal');
-        const chk1 = document.getElementById('checkTerminos');
-        const chk2 = document.getElementById('checkPoliticas');
-
+        const btnBold = document.getElementById('btnPagarBold');
+        
+        // Reset de UI y mostrar modal
         modal.classList.remove('hidden');
+        btnBold.disabled = true;
+        btnBold.innerText = "ESPERANDO APROBACIÓN TÉRMICOS";
 
+        // Lógica de validación de checks
         const validar = () => {
-            const ok = chk1.checked && chk2.checked;
-            btn.disabled = !ok;
-            btn.style.opacity = ok ? "1" : "0.2";
-            if(ok) btn.classList.add('shadow-[0_0_20px_#06b6d4]');
+            const ok = document.getElementById('checkTerminos').checked && 
+                       document.getElementById('checkPoliticas').checked;
+            btnBold.disabled = !ok;
+            btnBold.innerText = ok ? "PAGAR CON BOLD" : "ACEPTE TÉRMINOS";
         };
 
-        chk1.onchange = validar;
-        chk2.onchange = validar;
+        document.getElementById('checkTerminos').onchange = validar;
+        document.getElementById('checkPoliticas').onchange = validar;
 
-        btn.onclick = async () => {
-            btn.innerText = "ESTABLECIENDO ENLACE...";
-            btn.disabled = true;
-            
+        btnBold.onclick = async () => {
+            btnBold.innerText = "CONECTANDO CON BOLD...";
+            btnBold.disabled = true;
             try {
                 const res = await fetch('/api/create-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        planId: planId, 
-                        months: meses, 
-                        userEmail: "pago@tallerpro360.com",
-                        empresaId: "NX-" + Date.now(), // Identificador único de transacción
-                        userId: "USR-" + Math.floor(Math.random() * 1000)
-                    })
+                    body: JSON.stringify({ planId, months: meses, empresaId: "EM-" + Date.now() })
                 });
-
-                if (!res.ok) throw new Error("Error en servidor");
-                
                 const data = await res.json();
-                if (data.url) {
-                    window.location.href = data.url;
-                } else {
-                    throw new Error(data.error || "No se recibió URL");
-                }
+                if (data.url) window.location.href = data.url;
+                else throw new Error(data.error);
             } catch (e) {
-                console.error("Fallo de Pago:", e);
-                btn.innerText = "ERROR DE CONEXIÓN BOLD";
-                btn.classList.replace('bg-cyan-500', 'bg-red-500');
-                setTimeout(() => {
-                    btn.innerText = "Sincronizar con Bold";
-                    btn.disabled = false;
-                    btn.classList.replace('bg-red-500', 'bg-cyan-500');
-                }, 3000);
+                btnBold.innerText = "FALLO DE CONEXIÓN";
+                console.error(e);
             }
         };
     };
 
-    // ... (Tu función abrirTrial se mantiene igual, ya está perfecta)
+    // FUNCIÓN TRIAL (Recuperada y Mejorada)
+    window.abrirTrial = async () => {
+        const taller = prompt("Nombre de su Taller para el Nodo Trial:");
+        if (!taller) return;
+
+        try {
+            const res = await fetch('/api/activar-trial', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre: taller, fecha: new Date().toISOString() })
+            });
+
+            if (res.ok) {
+                const modal = document.getElementById('modalLegal');
+                modal.classList.remove('hidden');
+                // Inyectar contenido de éxito directamente
+                modal.innerHTML = `
+                    <div class="bg-slate-900 border border-emerald-500 p-10 rounded-[3rem] text-center max-w-sm mx-auto mt-20 shadow-[0_0_50px_#10b98144]">
+                        <i class="fas fa-check-circle text-emerald-500 text-5xl mb-4"></i>
+                        <h2 class="orbitron text-white text-xl font-black italic">TRIAL ACTIVADO</h2>
+                        <p class="text-slate-400 text-[10px] mt-2 mb-6">BIENVENIDO A LA RED NEXUS-X</p>
+                        <button onclick="window.location.href='/dashboard'" class="w-full py-4 bg-emerald-500 text-black font-black rounded-xl orbitron italic">INGRESAR AHORA</button>
+                    </div>
+                `;
+            }
+        } catch (e) {
+            alert("Error al activar Trial. Verifique conexión.");
+        }
+    };
 
     window.cerrarLegal = () => document.getElementById('modalLegal').classList.add('hidden');
-    console.log("🚀 Nexus-X v1.7.6 Online | Handshake con Vercel Corregido");
 </script>
 </body>
 </html>
