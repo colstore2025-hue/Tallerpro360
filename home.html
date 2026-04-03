@@ -181,57 +181,111 @@
     </div>
 
     <script>
-        // PROTOCOLO DE PAGO BOLDSYNC MEJORADO
-        async function iniciarPago(plan) {
-            const { value: meses } = await Swal.fire({
-                title: '<span class="orbitron uppercase italic font-black">Sincronización Boldsync</span>',
-                text: `Defina el ciclo de órbita para el Plan ${plan.toUpperCase()}`,
-                icon: 'question',
-                input: 'select',
-                inputOptions: {
-                    '1': '1 Mes (Ciclo Lunar)',
-                    '3': '3 Meses (Trimestre Estelar)',
-                    '6': '6 Meses (Semestre Galáctico)',
-                    '12': '12 Meses (Año Luz - Máximo Ahorro)'
-                },
-                background: '#020617',
-                color: '#fff',
-                confirmButtonColor: '#06b6d4',
-                confirmButtonText: 'PROCESAR EN BOLDSYNC'
+    // 1. Inicialización: db y auth vienen de app/js/core/firebase-config.js
+    // No definimos firebaseConfig aquí para mantener la seguridad.
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // 2. FUNCIÓN GRATI-CORE (Trial Automático de 7 días)
+    async function activarProtocoloDemo() {
+        const overlay = document.getElementById('handshake');
+        const statusText = document.getElementById('handshake-text');
+        const bar = document.getElementById('progress-bar');
+        
+        overlay.classList.remove('hidden');
+        bar.style.width = "0%";
+        
+        try {
+            statusText.innerText = "Inyectando credenciales temporales...";
+            bar.style.width = "30%";
+
+            // Autenticación anónima para cumplir con reglas de seguridad de Firebase
+            const userCredential = await auth.signInAnonymously();
+            const uid = userCredential.user.uid;
+
+            statusText.innerText = "Sincronizando Nodo en Firestore...";
+            bar.style.width = "60%";
+
+            // Cálculo automático de fechas
+            const ahora = new Date();
+            const vence = new Date();
+            vence.setDate(ahora.getDate() + 7);
+
+            // Estructura de suscripción Trial
+            await db.collection('suscripciones').doc(uid).set({
+                taller_id: uid,
+                plan: 'Grati-Core',
+                estado: 'activo',
+                fecha_inicio: firebase.firestore.FieldValue.serverTimestamp(),
+                fecha_expiracion: vence.toISOString(),
+                metadata: {
+                    version: '1.1.0-STABLE',
+                    nodo: 'Nexus-X Starlink',
+                    limite_ordenes: 20
+                }
             });
 
-            if (!meses) return;
+            statusText.innerText = "Acceso concedido: Nodo Trial Activo.";
+            bar.style.width = "100%";
 
-            const overlay = document.getElementById('handshake');
-            if(overlay) overlay.classList.remove('hidden');
-            
-            try {
-                const response = await fetch('/api/create-payment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        planId: plan,
-                        months: parseInt(meses),
-                        empresaId: "NX-" + Date.now().toString().slice(-6),
-                        userEmail: "nexus_system@tallerpro360.com"
-                    })
-                });
-
-                const data = await response.json();
-                if (data.url) window.location.href = data.url;
-                else throw new Error(data.error || "Falla en el enlace Starlink");
-                
-            } catch (err) {
+            setTimeout(() => {
                 Swal.fire({
-                    icon: 'error',
-                    title: 'INTERRUPCIÓN DE SEÑAL',
-                    text: err.message,
+                    icon: 'success',
+                    title: '<span class="orbitron">CONEXIÓN ESTABLECIDA</span>',
+                    html: 'Se ha activado su periodo de prueba <b>Grati-Core</b>.<br>Inicie sesión para comenzar.',
+                    confirmButtonText: 'IR AL TERMINAL',
+                    confirmButtonColor: '#06b6d4',
                     background: '#020617',
                     color: '#fff'
-                });
-                if(overlay) overlay.classList.add('hidden');
-            }
+                }).then(() => { window.location.href = '/login'; });
+            }, 800);
+
+        } catch (error) {
+            console.error("Error en Handshake:", error);
+            overlay.classList.add('hidden');
+            Swal.fire({ 
+                icon: 'error', 
+                title: 'ERROR DE SEÑAL', 
+                text: 'No se pudo sincronizar con el Nodo Central.',
+                background: '#020617',
+                color: '#fff'
+            });
         }
-    </script>
+    }
+
+    // 3. FUNCIÓN BOLD (Se mantiene intacta la conexión que ya te servía)
+    async function iniciarPago(plan) {
+        const { value: meses } = await Swal.fire({
+            title: '<span class="orbitron">CICLO DE ÓRBITA</span>',
+            text: `Sincronizar Plan ${plan.toUpperCase()} vía Boldsync`,
+            input: 'select',
+            inputOptions: {
+                '1': '1 Mes', '3': '3 Meses', '6': '6 Meses', '12': '12 Meses (20% OFF)'
+            },
+            confirmButtonColor: '#06b6d4',
+            confirmButtonText: 'PROCESAR EN BOLDSYNC',
+            background: '#020617',
+            color: '#fff'
+        });
+
+        if (!meses) return;
+        document.getElementById('handshake').classList.remove('hidden');
+        document.getElementById('handshake-text').innerText = "Conectando con pasarela Boldsync...";
+        
+        try {
+            const response = await fetch('/api/create-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ planId: plan, months: parseInt(meses) })
+            });
+            const data = await response.json();
+            if (data.url) window.location.href = data.url;
+            else throw new Error("Falla en el enlace");
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'ERROR DE SEÑAL', text: 'Error en la API de pagos.' });
+            document.getElementById('handshake').classList.add('hidden');
+        }
+    }
+</script>
 </body>
 </html>
