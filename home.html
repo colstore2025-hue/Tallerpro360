@@ -157,63 +157,85 @@
         </div>
     </div>
 
-    <script>
-        // CONFIGURACIÓN FIREBASE (Nexus-X Core)
+        <script>
+        // CONFIGURACIÓN CENTRALIZADA (Nexus-X Core)
         const firebaseConfig = {
-            apiKey: "TU_API_KEY", // Reemplazar con config real del proyecto
+            apiKey: "TU_API_KEY", 
             authDomain: "tallerpro360.firebaseapp.com",
             projectId: "tallerpro360",
             storageBucket: "tallerpro360.appspot.com",
             messagingSenderId: "TU_SENDER_ID",
             appId: "TU_APP_ID"
         };
-        firebase.initializeApp(firebaseConfig);
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const db = firebase.firestore();
 
-        function activarProtocoloDemo() {
+        // 1. PROTOCOLO GRATI-CORE (Trial Automático con campos completos)
+        async function activarProtocoloDemo() {
             const overlay = document.getElementById('handshake');
             const statusText = document.getElementById('handshake-text');
             const bar = document.getElementById('progress-bar');
             overlay.classList.remove('hidden');
             
-            let steps = [
-                { t: "Inyectando credenciales temporales...", p: "25%" },
-                { t: "Creando registro en Firestore...", p: "50%" },
-                { t: "Sincronizando con Nodo Starlink...", p: "75%" },
-                { t: "Acceso concedido: Nodo Trial Activo.", p: "100%" }
-            ];
+            try {
+                // Paso 1: Simulación de Handshake
+                statusText.innerText = "Inyectando credenciales temporales...";
+                bar.style.width = "30%";
+                await new Promise(r => setTimeout(r, 800));
 
-            steps.forEach((step, index) => {
-                setTimeout(async () => {
-                    statusText.innerText = step.t;
-                    bar.style.width = step.p;
-                    
-                    if(index === 1) { // Paso Firestore
-                        try {
-                            await db.collection('suscripciones').add({
-                                plan: 'trial',
-                                fecha_inicio: firebase.firestore.FieldValue.serverTimestamp(),
-                                estado: 'activo',
-                                expiracion: 7
-                            });
-                        } catch(e) { console.warn("Firestore Sync: Modo Offline activado"); }
-                    }
+                // Paso 2: Creación de Taller con campos AUTOMÁTICOS
+                statusText.innerText = "Sincronizando Nodo en Firestore...";
+                bar.style.width = "60%";
+                
+                // Generamos una expiración real (7 días exactos)
+                const hoy = new Date();
+                const vencimiento = new Date();
+                vencimiento.setDate(hoy.getDate() + 7);
 
-                    if(index === steps.length - 1) {
-                        setTimeout(() => {
-                            Swal.fire({
-                                icon: 'success',
-                                title: '<span class="orbitron">CONEXIÓN ESTABLECIDA</span>',
-                                html: 'Se ha activado su periodo de prueba <b>Grati-Core</b>.<br>Inicie sesión para comenzar.',
-                                confirmButtonText: 'IR AL TERMINAL',
-                                confirmButtonColor: '#06b6d4'
-                            }).then(() => { window.location.href = '/login'; });
-                        }, 500);
+                const nuevoTallerTrial = {
+                    plan: 'Grati-Core',
+                    tipo: 'TRIAL_7_DAYS',
+                    estado: 'activo',
+                    fecha_inicio: firebase.firestore.FieldValue.serverTimestamp(),
+                    fecha_vencimiento: vencimiento.toISOString(),
+                    metadata: {
+                        version_engine: '1.1.0-STABLE',
+                        region: 'LATAM-COL',
+                        nodo: 'Nexus-X Starlink',
+                        limite_ordenes: 20
                     }
-                }, (index + 1) * 1000);
-            });
+                };
+
+                // Guardamos en la colección principal
+                await db.collection('suscripciones').add(nuevoTallerTrial);
+
+                // Paso 3: Finalización
+                statusText.innerText = "Acceso concedido: Nodo Trial Activo.";
+                bar.style.width = "100%";
+                
+                setTimeout(() => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '<span class="orbitron">CONEXIÓN ESTABLECIDA</span>',
+                        html: 'Bienvenido al ecosistema <b>Nexus-X</b>.<br>Su taller de prueba ha sido configurado.',
+                        confirmButtonText: 'ENTRAR AL DASHBOARD',
+                        confirmButtonColor: '#06b6d4',
+                        background: '#020617',
+                        color: '#fff'
+                    }).then(() => { window.location.href = '/login'; });
+                }, 600);
+
+            } catch (error) {
+                console.error("Error Nexus-Handshake:", error);
+                overlay.classList.add('hidden');
+                Swal.fire({ icon: 'error', title: 'FALLA DE VÍNCULO', text: 'El servidor Firestore no respondió a tiempo.' });
+            }
         }
 
+        // 2. PROTOCOLO BOLD SYNC (Tu script funcional recuperado)
         async function iniciarPago(plan) {
             const { value: meses } = await Swal.fire({
                 title: '<span class="orbitron">CICLO DE ÓRBITA</span>',
@@ -226,25 +248,49 @@
                     '12': '12 Meses (Año Luz - 20% OFF)'
                 },
                 confirmButtonColor: '#06b6d4',
-                confirmButtonText: 'PROCESAR EN BOLDSYNC'
+                confirmButtonText: 'PROCESAR EN BOLDSYNC',
+                background: '#020617',
+                color: '#fff'
             });
 
             if (!meses) return;
+
+            // Mostramos el overlay de carga para mantener la estética
             document.getElementById('handshake').classList.remove('hidden');
-            document.getElementById('handshake-text').innerText = "Conectando con pasarela Boldsync...";
+            document.getElementById('handshake-text').innerText = "Estableciendo túnel con Boldsync...";
+            document.getElementById('progress-bar').style.width = "50%";
             
             try {
+                // LLAMADA A TU API BOLD (La que ya te funcionaba)
                 const response = await fetch('/api/create-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ planId: plan, months: parseInt(meses) })
+                    body: JSON.stringify({ 
+                        planId: plan, 
+                        months: parseInt(meses),
+                        timestamp: new Date().toISOString()
+                    })
                 });
+
                 const data = await response.json();
-                if (data.url) window.location.href = data.url;
-                else throw new Error("Falla en el enlace Starlink");
+
+                if (data.url) {
+                    document.getElementById('progress-bar').style.width = "100%";
+                    window.location.href = data.url;
+                } else {
+                    throw new Error("Respuesta de API inválida");
+                }
+
             } catch (err) {
-                Swal.fire({ icon: 'error', title: 'ERROR DE SEÑAL', text: 'Error en la API de pagos. Intente nuevamente.' });
+                console.error("Error Bold Sync:", err);
                 document.getElementById('handshake').classList.add('hidden');
+                Swal.fire({ 
+                    icon: 'error', 
+                    title: 'ERROR DE SEÑAL', 
+                    text: 'No se pudo conectar con la pasarela de pagos Bold.',
+                    background: '#020617',
+                    color: '#fff'
+                });
             }
         }
     </script>
