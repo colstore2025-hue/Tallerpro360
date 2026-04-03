@@ -42,17 +42,29 @@
     <section id="planes" class="py-20 px-4 max-w-[1700px] mx-auto grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
         <div class="card-nexus p-8 rounded-[2.5rem] flex flex-col justify-between">
             <h3 class="orbitron text-xl font-black italic mb-2 uppercase">Trial</h3>
+            <p class="text-[10px] text-slate-400 mb-6 uppercase tracking-widest italic">Acceso Temporal 7 Días</p>
             <button onclick="abrirTrial()" class="w-full py-5 border border-white/10 rounded-2xl orbitron text-[10px] font-black hover:bg-white hover:text-black transition uppercase italic">Activar Nodo</button>
         </div>
+
         <div class="card-nexus p-8 rounded-[2.5rem] flex flex-col justify-between">
             <h3 class="orbitron text-xl font-black italic mb-2 uppercase">Básico</h3>
-            <button onclick="prepararPago('basico')" class="w-full py-5 bg-emerald-600 text-black rounded-2xl orbitron text-[10px] font-black italic uppercase">Suscribir</button>
+            <p class="text-[10px] text-slate-400 mb-6 uppercase tracking-widest italic">Gestión Esencial</p>
+            <button onclick="abrirModalPago('basico')" class="w-full py-5 bg-emerald-600 text-black rounded-2xl orbitron text-[10px] font-black italic uppercase">Suscribir</button>
         </div>
+
         <div class="card-nexus p-8 rounded-[2.5rem] border-2 border-cyan-500 bg-cyan-900/20 flex flex-col justify-between">
+            <div class="scanner-line"></div>
             <h3 class="orbitron text-2xl font-black italic text-cyan-400 mb-2 uppercase">Elite Nexus</h3>
-            <button onclick="prepararPago('elite')" class="w-full py-6 bg-cyan-500 text-black rounded-2xl orbitron text-[11px] font-black italic uppercase shadow-lg">Dominar Mercado</button>
+            <p class="text-[10px] text-cyan-200/50 mb-6 uppercase tracking-widest italic">Full Power Starlink</p>
+            <button onclick="abrirModalPago('elite')" class="w-full py-6 bg-cyan-500 text-black rounded-2xl orbitron text-[11px] font-black italic uppercase shadow-lg">Dominar Mercado</button>
         </div>
-        </section>
+
+        <div class="card-nexus p-8 rounded-[2.5rem] flex flex-col justify-between">
+            <h3 class="orbitron text-xl font-black italic mb-2 uppercase">Demos</h3>
+            <p class="text-[10px] text-slate-400 mb-6 uppercase tracking-widest italic">Explorar Ecosistema</p>
+            <button onclick="openDemo()" class="w-full py-5 border border-cyan-500/30 text-cyan-400 rounded-2xl orbitron text-[10px] font-black italic uppercase">Abrir Terminal</button>
+        </div>
+    </section>
 
     <div id="modalLegal" class="fixed inset-0 bg-black/95 z-[200] hidden flex items-center justify-center p-6 backdrop-blur-2xl">
         <div id="modalContent" class="bg-[#0b111e] max-w-md w-full rounded-[3rem] border border-cyan-500/40 p-10 relative">
@@ -67,84 +79,101 @@
                 </label>
             </div>
             <button id="btnPagarBold" disabled class="w-full py-5 bg-cyan-500 text-black font-black rounded-2xl text-[11px] uppercase orbitron italic opacity-20 transition-all">Sincronizar con Bold</button>
-            <button onclick="cerrarLegal()" class="w-full mt-6 text-slate-600 text-[9px] font-black uppercase hover:text-white">Cancelar</button>
+            <button onclick="cerrarLegal()" class="w-full mt-6 text-slate-600 text-[9px] font-black uppercase hover:text-white">Cancelar Operación</button>
         </div>
     </div>
 
     <script type="module">
-        /** * NEXUS-X ENGINE v1.8.0 - CORE CONNECTIVITY 
-         * William, esta es la versión blindada.
+        /**
+         * NEXUS-X ENGINE v1.9.0 - INTEGRACIÓN TOTAL
+         * William, esta versión conecta directamente con api/create-payment.js
          */
 
-        // CONFIGURACIÓN DE DEMOS
-        const nodosDemos = [
-            { n: "AI Platform", f: "demo1-ai-platform.html" },
-            { n: "Tesla Hub", f: "demo10-tesla.html" }
-        ];
+        let planSeleccionado = null;
 
+        // 1. GESTIÓN DE DEMOS
         window.openDemo = () => {
+            const nodosDemos = [
+                { n: "AI Platform", f: "demo1-ai-platform.html" },
+                { n: "Tesla Hub", f: "demo10-tesla.html" },
+                { n: "Facturación", f: "demo25-facturacion.html" }
+            ];
             const overlay = document.createElement('div');
             overlay.id = "nexus-selector";
             overlay.className = "fixed inset-0 z-[2000] bg-black/95 backdrop-blur-3xl p-8 overflow-y-auto flex items-center justify-center";
-            let grid = nodosDemos.map(d => `<div onclick="window.location.href='/demos/${d.f}'" class="p-6 border border-cyan-500/20 bg-white/5 rounded-2xl hover:border-cyan-400 transition cursor-pointer text-center"><p class="orbitron text-white text-xs font-black uppercase">${d.n}</p></div>`).join('');
+            let grid = nodosDemos.map(d => `<div onclick="window.location.href='/demos/${d.f}'" class="p-6 border border-cyan-500/20 bg-white/5 rounded-2xl hover:border-cyan-400 transition cursor-pointer text-center"><p class="orbitron text-white text-[10px] font-black uppercase">${d.n}</p></div>`).join('');
             overlay.innerHTML = `<div class="max-w-4xl w-full text-center">
-                <h2 class="orbitron text-cyan-400 mb-10 font-black italic">TERMINAL DE ACCESO</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">${grid}</div>
-                <button onclick="document.getElementById('nexus-selector').remove()" class="mt-10 text-slate-500 hover:text-white">CERRAR</button>
+                <h2 class="orbitron text-cyan-400 mb-10 font-black italic tracking-widest">SISTEMA DE DEMOSTRACIÓN</h2>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">${grid}</div>
+                <button onclick="document.getElementById('nexus-selector').remove()" class="mt-10 text-slate-500 hover:text-white text-[10px] orbitron uppercase italic">Cerrar Terminal</button>
             </div>`;
             document.body.appendChild(overlay);
         };
 
-        // LÓGICA DE PAGO BOLD
-        window.prepararPago = (planId) => {
+        // 2. FUNCIÓN MAESTRA DE HANDSHAKE (CONEXIÓN CON API)
+        async function ejecutarHandshake(planId, meses = 1) {
+            const btn = document.getElementById('btnPagarBold');
+            const textoOriginal = btn.innerText;
+            
+            try {
+                btn.disabled = true;
+                btn.innerText = "⚡ ESTABLECIENDO ENLACE...";
+
+                // Generar ID de empresa para el handshake si no existe
+                const idEmpresa = localStorage.getItem('nexus_empresa_id') || "TPRO-" + Math.floor(Math.random() * 100000);
+
+                const response = await fetch('/api/create-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        planId: planId.toLowerCase(),
+                        months: meses,
+                        empresaId: idEmpresa,
+                        userEmail: "pago@tallerpro360.com" // Opcional: capturar en un input previo
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.url) {
+                    btn.innerText = "🚀 ENLACE ESTABLECIDO";
+                    window.location.href = data.url;
+                } else {
+                    throw new Error(data.error || "Fallo en Protocolo Bold");
+                }
+
+            } catch (error) {
+                console.error("NEXUS_FATAL_ERROR:", error);
+                alert(`⚠️ ERROR DE CONEXIÓN: ${error.message}`);
+                btn.disabled = false;
+                btn.innerText = "REINTENTAR SINCRONIZACIÓN";
+            }
+        }
+
+        // 3. CONTROL DEL MODAL DE PAGO
+        window.abrirModalPago = (planId) => {
+            planSeleccionado = planId;
             const modal = document.getElementById('modalLegal');
             const btnBold = document.getElementById('btnPagarBold');
             const check = document.getElementById('checkTerminos');
             
             modal.classList.remove('hidden');
-            
+            check.checked = false;
+            btnBold.disabled = true;
+            btnBold.style.opacity = "0.2";
+            btnBold.innerText = "Sincronizar con Bold";
+
             check.onchange = () => {
                 btnBold.disabled = !check.checked;
                 btnBold.style.opacity = check.checked ? "1" : "0.2";
             };
 
-            btnBold.onclick = async () => {
-                btnBold.innerText = "Sincronizando con Bold...";
-                btnBold.disabled = true;
-
-                try {
-                    console.log(`Intentando pago para: ${planId}`);
-                    const response = await fetch('/api/create-payment', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            planId: planId.toLowerCase(),
-                            empresaId: "NEXUS-" + Math.floor(Math.random() * 10000)
-                        })
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok && data.url) {
-                        window.location.href = data.url;
-                    } else {
-                        throw new Error(data.error || "Error desconocido en el servidor");
-                    }
-                } catch (error) {
-                    console.error("Error Nexus-X:", error);
-                    btnBold.innerText = "Error de Conexión";
-                    alert(`Fallo de Enlace: ${error.message}`);
-                    setTimeout(() => {
-                        btnBold.innerText = "Sincronizar con Bold";
-                        btnBold.disabled = false;
-                    }, 3000);
-                }
-            };
+            btnBold.onclick = () => ejecutarHandshake(planSeleccionado, 1);
         };
 
-        // LÓGICA DE TRIAL
+        // 4. LÓGICA DE TRIAL
         window.abrirTrial = async () => {
-            const taller = prompt("Nombre de su Taller:");
+            const taller = prompt("Nombre del Taller para el Nodo Trial:");
             if (!taller) return;
 
             try {
@@ -155,25 +184,26 @@
                 });
 
                 if (response.ok) {
-                    document.getElementById('modalLegal').classList.remove('hidden');
+                    const modal = document.getElementById('modalLegal');
+                    modal.classList.remove('hidden');
                     document.getElementById('modalContent').innerHTML = `
-                        <div class="text-center p-4">
-                            <i class="fas fa-check-circle text-emerald-500 text-6xl mb-6"></i>
-                            <h2 class="orbitron text-white text-2xl font-black italic">TRIAL ACTIVADO</h2>
-                            <p class="text-slate-400 mt-4 mb-8">Su nodo ha sido sincronizado correctamente.</p>
-                            <button onclick="window.location.href='/dashboard'" class="w-full py-4 bg-emerald-500 text-black font-black rounded-xl orbitron">ENTRAR AL DASHBOARD</button>
+                        <div class="text-center">
+                            <i class="fas fa-satellite text-emerald-500 text-5xl mb-6 animate-bounce"></i>
+                            <h2 class="orbitron text-white text-xl font-black mb-4">NODO TRIAL ACTIVADO</h2>
+                            <p class="text-slate-400 text-xs mb-8 uppercase italic tracking-tighter">Acceso concedido para: ${taller}</p>
+                            <button onclick="window.location.href='/dashboard'" class="w-full py-4 bg-emerald-500 text-black font-black rounded-xl orbitron uppercase text-[10px]">Entrar al Sistema</button>
                         </div>`;
                 } else {
-                    const errorData = await response.json();
-                    alert(`No se pudo activar: ${errorData.error || "Error de red"}`);
+                    alert("No se pudo activar el nodo. Intente de nuevo.");
                 }
             } catch (error) {
-                alert("Error crítico de comunicación con el nodo central.");
+                alert("Error crítico en el despliegue del Trial.");
             }
         };
 
         window.cerrarLegal = () => document.getElementById('modalLegal').classList.add('hidden');
-        console.log("Nexus-X Engine 1.8 Ready.");
+
+        console.log("Nexus-X Engine 1.9.0 Online");
     </script>
 </body>
 </html>
