@@ -6,49 +6,30 @@
     <title>TallerPRO360 | Nexus-X Starlink V1.1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root { --cyan: #06b6d4; --emerald: #10b981; --purple: #a855f7; --dark: #020617; --glow: rgba(6, 182, 212, 0.5); }
         body { font-family: 'Outfit', sans-serif; background: var(--dark); color: white; scroll-behavior: smooth; overflow-x: hidden; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        
-        /* Deep Space Visuals */
         .stars-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 20% 30%, #1e293b 0%, #020617 100%); z-index: -2; }
         .glass-nav { background: rgba(2, 6, 23, 0.9); backdrop-filter: blur(25px); border-bottom: 2px solid var(--glow); box-shadow: 0 4px 50px rgba(0,0,0,0.8); }
-        
-        .nexus-card { 
-            background: linear-gradient(145deg, rgba(15, 23, 42, 0.8), rgba(2, 6, 23, 0.9));
-            border: 2px solid rgba(255, 255, 255, 0.05); 
-            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); 
-            position: relative; 
-            overflow: hidden; 
-        }
-        .nexus-card:hover { 
-            border-color: var(--cyan); 
-            transform: translateY(-20px) scale(1.03); 
-            box-shadow: 0 0 70px rgba(6, 182, 212, 0.25); 
-        }
-        
-        /* UI Elements */
+        .nexus-card { background: linear-gradient(145deg, rgba(15, 23, 42, 0.8), rgba(2, 6, 23, 0.9)); border: 2px solid rgba(255, 255, 255, 0.05); transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); position: relative; overflow: hidden; }
+        .nexus-card:hover { border-color: var(--cyan); transform: translateY(-20px) scale(1.03); box-shadow: 0 0 70px rgba(6, 182, 212, 0.25); }
         .scanner { position: absolute; width: 100%; height: 4px; background: linear-gradient(to right, transparent, var(--cyan), transparent); top: 0; left: 0; animation: scan 3.5s infinite linear; opacity: 0.7; box-shadow: 0 0 20px var(--cyan); }
         @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
-
         .btn-nexus { transition: 0.4s; position: relative; overflow: hidden; font-style: italic; }
         .btn-nexus:hover { box-shadow: 0 0 35px var(--glow); filter: brightness(1.2); }
-        
         .social-link { font-size: 1.8rem; transition: 0.4s; color: #475569; }
         .social-link:hover { color: var(--cyan); transform: rotate(15deg) scale(1.3); text-shadow: 0 0 15px var(--cyan); }
-
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: var(--dark); }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
-
-        @keyframes progress-bar { 0% { width: 0%; } 100% { width: 100%; } }
         .animate-spin-slow { animation: spin 4s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        
         .swal2-popup { border: 1px solid var(--cyan) !important; background: #020617 !important; color: white !important; font-family: 'Outfit', sans-serif; }
     </style>
 </head>
@@ -65,7 +46,8 @@
         <div class="hidden lg:flex gap-12 text-[11px] orbitron font-bold uppercase tracking-[0.3em] text-slate-400">
             <a href="manual-operacion.html" class="hover:text-cyan-400 transition">Manual</a>
             <a href="#planes" class="hover:text-white border-b-2 border-cyan-500 pb-1">Suscripciones</a>
-            <a href="/demos" class="hover:text-cyan-400 transition italic"><i class="fas fa-folder-open mr-2"></i>Demos</a>
+            <span class="text-slate-700">|</span>
+            <span class="text-cyan-500/50 italic">Nexus-X Engine</span>
         </div>
         <button onclick="window.location.href='/login'" class="px-10 py-3.5 bg-cyan-500 text-black orbitron font-black text-[10px] uppercase rounded-full btn-nexus">Ingresar Terminal</button>
     </nav>
@@ -81,10 +63,10 @@
             Gestión <span class="text-white font-black underline decoration-cyan-500 decoration-4 underline-offset-8">Aeroespacial</span> Automotriz.
         </p>
         <div class="mt-24 flex flex-wrap justify-center gap-10">
-            <button onclick="activarProtocoloDemo()" class="px-16 py-7 bg-white text-black orbitron font-black text-xs uppercase rounded-2xl btn-nexus shadow-xl">
-                <i class="fas fa-play mr-2"></i> Activar Demo 7 Días
+            <button onclick="window.location.href='/demos'" class="px-16 py-7 bg-white text-black orbitron font-black text-xs uppercase rounded-2xl btn-nexus shadow-xl">
+                <i class="fas fa-folder-open mr-2"></i> Activar Demo 7 Días
             </button>
-            <button onclick="document.getElementById('planes').scrollIntoView()" class="px-16 py-7 border-2 border-cyan-500 text-cyan-400 orbitron font-black text-xs uppercase rounded-2xl hover:bg-cyan-500/10 transition shadow-[0_0_20px_rgba(6,182,212,0.2)]">
+            <button onclick="document.getElementById('planes').scrollIntoView()" class="px-16 py-7 border-2 border-cyan-500 text-cyan-400 orbitron font-black text-xs uppercase rounded-2xl hover:bg-cyan-500/10 transition shadow-[0_0_20px_rgba(6,182,212,0.25)]">
                 <i class="fas fa-terminal mr-3"></i>Explorar Planes
             </button>
         </div>
@@ -101,7 +83,7 @@
                 <div class="scanner"></div>
                 <span class="text-[10px] orbitron text-slate-500 font-black uppercase">Lv.00 · Discovery</span>
                 <h3 class="text-3xl font-black italic mt-4 mb-6 uppercase">Grati-Core</h3>
-                <div class="text-4xl font-black mb-8">$0 <span class="text-sm text-slate-600 uppercase">Life</span></div>
+                <div class="text-4xl font-black mb-8">$0 <span class="text-sm text-slate-600 uppercase">Trial</span></div>
                 <ul class="space-y-4 mb-12 text-slate-400 text-[10px] font-bold uppercase italic tracking-tighter">
                     <li><i class="fas fa-bolt text-cyan-500 mr-2"></i> 7 Días Full Access</li>
                     <li><i class="fas fa-microchip text-slate-700 mr-2"></i> 20 Órdenes Activas</li>
@@ -158,15 +140,13 @@
             <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
             <a href="https://wa.me/17049419163" class="social-link" style="color:#25d366;"><i class="fab fa-whatsapp"></i></a>
         </div>
-        
         <div class="flex flex-wrap justify-center gap-10 text-[11px] orbitron font-bold uppercase tracking-[0.2em] text-slate-500 mb-10">
             <a href="terminos.html" class="hover:text-cyan-400 transition underline underline-offset-4 decoration-cyan-500/30">Términos</a>
             <a href="politicas.html" class="hover:text-cyan-400 transition underline underline-offset-4 decoration-cyan-500/30">Privacidad</a>
             <a href="manual-operacion.html" class="hover:text-cyan-400 transition underline underline-offset-4 decoration-cyan-500/30">Manual Operativo</a>
         </div>
-
-        <p class="orbitron text-[9px] tracking-[1em] uppercase text-slate-800 mb-4">Nexus-X Starlink Saas· Colombia · 2026</p>
-        <p class="text-slate-600 text-[10px] orbitron uppercase font-black">Nexus-X Starlink Engine v1.1.0-STABLE</p>
+        <p class="orbitron text-[9px] tracking-[1em] uppercase text-slate-800 mb-4">Colombian Trucks Logistics LLC · Charlotte NC · 2026</p>
+        <p class="text-slate-600 text-[10px] orbitron uppercase font-black tracking-widest">Nexus-X Starlink Engine v1.1.0-STABLE</p>
     </footer>
 
     <div id="handshake" class="fixed inset-0 bg-black/95 z-[2000] hidden flex items-center justify-center backdrop-blur-2xl">
@@ -183,43 +163,62 @@
     </div>
 
     <script>
-        // Lógica de Demo 7 Días
+        // CONFIGURACIÓN FIREBASE (Nexus-X Core)
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY", // Reemplazar con config real del proyecto
+            authDomain: "tallerpro360.firebaseapp.com",
+            projectId: "tallerpro360",
+            storageBucket: "tallerpro360.appspot.com",
+            messagingSenderId: "TU_SENDER_ID",
+            appId: "TU_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         function activarProtocoloDemo() {
             const overlay = document.getElementById('handshake');
             const statusText = document.getElementById('handshake-text');
             const bar = document.getElementById('progress-bar');
-            
             overlay.classList.remove('hidden');
             
             let steps = [
-                { t: "Inyectando credenciales temporales...", p: "20%" },
-                { t: "Sincronizando con Nodo Starlink...", p: "50%" },
-                { t: "Validando entorno config.js...", p: "80%" },
-                { t: "Acceso concedido: 168 Horas.", p: "100%" }
+                { t: "Inyectando credenciales temporales...", p: "25%" },
+                { t: "Creando registro en Firestore...", p: "50%" },
+                { t: "Sincronizando con Nodo Starlink...", p: "75%" },
+                { t: "Acceso concedido: Nodo Trial Activo.", p: "100%" }
             ];
 
             steps.forEach((step, index) => {
-                setTimeout(() => {
+                setTimeout(async () => {
                     statusText.innerText = step.t;
                     bar.style.width = step.p;
+                    
+                    if(index === 1) { // Paso Firestore
+                        try {
+                            await db.collection('suscripciones').add({
+                                plan: 'trial',
+                                fecha_inicio: firebase.firestore.FieldValue.serverTimestamp(),
+                                estado: 'activo',
+                                expiracion: 7
+                            });
+                        } catch(e) { console.warn("Firestore Sync: Modo Offline activado"); }
+                    }
+
                     if(index === steps.length - 1) {
                         setTimeout(() => {
                             Swal.fire({
                                 icon: 'success',
-                                title: '<span class="orbitron">ACCESO TOTAL</span>',
-                                html: 'Se ha habilitado el modo <b>Pro AI</b> por 7 días.<br>Puede crear sus primeras órdenes ahora.',
-                                confirmButtonText: 'INGRESAR AL TERMINAL',
+                                title: '<span class="orbitron">CONEXIÓN ESTABLECIDA</span>',
+                                html: 'Se ha activado su periodo de prueba <b>Grati-Core</b>.<br>Inicie sesión para comenzar.',
+                                confirmButtonText: 'IR AL TERMINAL',
                                 confirmButtonColor: '#06b6d4'
-                            }).then(() => {
-                                window.location.href = '/app-demo-terminal'; 
-                            });
+                            }).then(() => { window.location.href = '/login'; });
                         }, 500);
                     }
-                }, (index + 1) * 800);
+                }, (index + 1) * 1000);
             });
         }
 
-        // Lógica Boldsync
         async function iniciarPago(plan) {
             const { value: meses } = await Swal.fire({
                 title: '<span class="orbitron">CICLO DE ÓRBITA</span>',
@@ -228,6 +227,7 @@
                 inputOptions: {
                     '1': '1 Mes (Ciclo Lunar)',
                     '3': '3 Meses (Trimestre Estelar)',
+                    '6': '6 Meses (Semestre Galáctico)',
                     '12': '12 Meses (Año Luz - 20% OFF)'
                 },
                 confirmButtonColor: '#06b6d4',
@@ -235,24 +235,20 @@
             });
 
             if (!meses) return;
-
             document.getElementById('handshake').classList.remove('hidden');
             document.getElementById('handshake-text').innerText = "Conectando con pasarela Boldsync...";
             
             try {
-                // Simulación de API call a tu backend (visto en tus correcciones anteriores)
                 const response = await fetch('/api/create-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ planId: plan, months: parseInt(meses) })
                 });
-
                 const data = await response.json();
                 if (data.url) window.location.href = data.url;
                 else throw new Error("Falla en el enlace Starlink");
-                
             } catch (err) {
-                Swal.fire({ icon: 'error', title: 'ERROR DE SEÑAL', text: 'No se pudo conectar con Boldsync.' });
+                Swal.fire({ icon: 'error', title: 'ERROR DE SEÑAL', text: 'Error en la API de pagos. Intente nuevamente.' });
                 document.getElementById('handshake').classList.add('hidden');
             }
         }
