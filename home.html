@@ -38,11 +38,17 @@
         .social-link { font-size: 1.8rem; transition: 0.4s; color: #475569; }
         .social-link:hover { color: var(--cyan); transform: rotate(15deg) scale(1.3); text-shadow: 0 0 15px var(--cyan); }
 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: var(--dark); }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
+
+        @keyframes progress { 0% { width: 0%; } 50% { width: 70%; } 100% { width: 100%; } }
+        .animate-spin-slow { animation: spin 4s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        .swal2-popup { border: 1px solid var(--cyan) !important; box-shadow: 0 0 50px rgba(6, 182, 212, 0.2) !important; }
+        .swal2-input { color: white !important; }
     </style>
 </head>
 <body>
@@ -58,7 +64,7 @@
         <div class="hidden lg:flex gap-12 text-[11px] orbitron font-bold uppercase tracking-[0.3em] text-slate-400">
             <a href="manual-operacion.html" class="hover:text-cyan-400 transition">Manual</a>
             <a href="#planes" class="hover:text-white border-b-2 border-cyan-500 pb-1">Suscripciones</a>
-            <a href="politicas.html" class="hover:text-cyan-400 transition">Legal</a>
+            <a href="/demos" class="hover:text-cyan-400 transition italic"><i class="fas fa-folder-open mr-2"></i>Demos</a>
         </div>
         <button onclick="window.location.href='/login'" class="px-10 py-3.5 bg-cyan-500 text-black orbitron font-black text-[10px] uppercase rounded-full btn-nexus">Ingresar Terminal</button>
     </nav>
@@ -74,8 +80,10 @@
             Gestión <span class="text-white font-black underline decoration-cyan-500 decoration-4 underline-offset-8">Aeroespacial</span> Automotriz.
         </p>
         <div class="mt-24 flex flex-wrap justify-center gap-10">
-            <button onclick="document.getElementById('planes').scrollIntoView()" class="px-16 py-7 bg-white text-black orbitron font-black text-xs uppercase rounded-2xl btn-nexus">Iniciar Despliegue</button>
-            <button onclick="activarProtocoloTrial()" class="px-16 py-7 border-2 border-cyan-500 text-cyan-400 orbitron font-black text-xs uppercase rounded-2xl hover:bg-cyan-500/10 transition">Activar Demo 7 Días</button>
+            <button onclick="document.getElementById('planes').scrollIntoView()" class="px-16 py-7 bg-white text-black orbitron font-black text-xs uppercase rounded-2xl btn-nexus shadow-xl">Iniciar Despliegue</button>
+            <button onclick="window.location.href='/demos'" class="px-16 py-7 border-2 border-cyan-500 text-cyan-400 orbitron font-black text-xs uppercase rounded-2xl hover:bg-cyan-500/10 transition shadow-[0_0_20px_rgba(6,182,212,0.2)]">
+                <i class="fas fa-terminal mr-3"></i>Explorar Demos
+            </button>
         </div>
     </header>
 
@@ -86,7 +94,6 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            
             <div class="nexus-card p-10 rounded-[3rem]">
                 <div class="scanner"></div>
                 <span class="text-[10px] orbitron text-slate-500 font-black uppercase">Lv.00 · Discovery</span>
@@ -96,7 +103,6 @@
                     <li><i class="fas fa-microchip text-slate-700 mr-2"></i> 20 Órdenes Activas</li>
                     <li><i class="fas fa-user text-slate-700 mr-2"></i> 1 Nodo Operativo</li>
                     <li><i class="fas fa-database text-slate-700 mr-2"></i> Backup Manual</li>
-                    <li><i class="fas fa-file-invoice text-slate-700 mr-2"></i> PDF Básico</li>
                 </ul>
                 <button class="w-full py-4 border border-slate-700 text-slate-500 orbitron font-black text-[9px] rounded-xl uppercase hover:bg-white hover:text-black transition">Vínculo Limitado</button>
             </div>
@@ -110,8 +116,6 @@
                     <li><i class="fas fa-check text-emerald-500 mr-2"></i> 100 Órdenes / Mes</li>
                     <li><i class="fas fa-users text-emerald-500 mr-2"></i> 3 Nodos Sincronizados</li>
                     <li><i class="fas fa-tools text-emerald-500 mr-2"></i> Gestión de Repuestos</li>
-                    <li><i class="fas fa-mobile-alt text-emerald-500 mr-2"></i> App Mobile Basic</li>
-                    <li><i class="fas fa-headset text-emerald-500 mr-2"></i> Soporte por Ticket</li>
                 </ul>
                 <button onclick="iniciarPago('basico')" class="w-full py-4 bg-emerald-600 text-black orbitron font-black text-[9px] rounded-xl btn-nexus uppercase">Iniciar Transmisión</button>
             </div>
@@ -122,11 +126,9 @@
                 <h3 class="text-3xl font-black italic mt-4 mb-6 uppercase">Pro AI</h3>
                 <div class="text-4xl font-black mb-8 text-white">$79.900 <span class="text-sm text-slate-600 uppercase">/mes</span></div>
                 <ul class="space-y-4 mb-12 text-slate-400 text-[10px] font-bold uppercase italic tracking-tighter">
-                    <li><i class="fas fa-bolt text-purple-500 mr-2"></i> 500 Órdenes / Mes</li>
-                    <li><i class="fas fa-brain text-purple-500 mr-2"></i> IA Predictiva (Diagnóstico)</li>
+                    <li><i class="fas fa-brain text-purple-500 mr-2"></i> IA Predictiva</li>
                     <li><i class="fas fa-comment-dots text-purple-500 mr-2"></i> WhatsApp Cloud Notify</li>
-                    <li><i class="fas fa-users-cog text-purple-500 mr-2"></i> 10 Nodos (Usuarios)</li>
-                    <li><i class="fas fa-chart-line text-purple-500 mr-2"></i> Dashboard Administrativo</li>
+                    <li><i class="fas fa-users-cog text-purple-500 mr-2"></i> 10 Nodos</li>
                 </ul>
                 <button onclick="iniciarPago('pro')" class="w-full py-4 bg-purple-600 text-white orbitron font-black text-[9px] rounded-xl btn-nexus uppercase">Inyectar Pro-AI</button>
             </div>
@@ -141,13 +143,9 @@
                     <li><i class="fas fa-infinity text-cyan-400 mr-2"></i> Órdenes Ilimitadas</li>
                     <li><i class="fas fa-satellite text-cyan-400 mr-2"></i> Bold Starlink Sync API</li>
                     <li><i class="fas fa-robot text-cyan-400 mr-2"></i> Nexus-AI Engine 2.0</li>
-                    <li><i class="fas fa-shield-alt text-cyan-400 mr-2"></i> Encriptación Militar</li>
-                    <li><i class="fas fa-globe text-cyan-400 mr-2"></i> Dominio Propio / CRM Full</li>
-                    <li><i class="fas fa-rocket text-cyan-400 mr-2"></i> Soporte 24/7 Prioridad 1</li>
                 </ul>
                 <button onclick="iniciarPago('elite')" class="w-full py-5 bg-cyan-500 text-black orbitron font-black text-[10px] rounded-xl btn-nexus uppercase">Activar Nodo Maestro</button>
             </div>
-
         </div>
     </section>
 
@@ -157,6 +155,14 @@
             <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
             <a href="https://wa.me/17049419163" class="social-link" style="color:#25d366;"><i class="fab fa-whatsapp"></i></a>
         </div>
+        
+        <div class="flex flex-wrap justify-center gap-10 text-[11px] orbitron font-bold uppercase tracking-[0.2em] text-slate-500 mb-10">
+            <a href="terminos.html" class="hover:text-cyan-400 transition decoration-cyan-500/30 underline-offset-4 hover:underline">Términos</a>
+            <a href="politicas.html" class="hover:text-cyan-400 transition decoration-cyan-500/30 underline-offset-4 hover:underline">Privacidad</a>
+            <a href="manual-operacion.html" class="hover:text-cyan-400 transition decoration-cyan-500/30 underline-offset-4 hover:underline">Manual Operativo</a>
+            <a href="/demos" class="text-cyan-500 hover:text-white transition italic"><i class="fas fa-folder mr-1"></i> Root / Demos</a>
+        </div>
+
         <p class="orbitron text-[9px] tracking-[1em] uppercase text-slate-800 mb-4">Colombian Trucks Logistics LLC · Charlotte NC · 2026</p>
         <p class="text-slate-600 text-[10px] orbitron uppercase font-black">Nexus-X Starlink Engine v1.1.0-STABLE</p>
     </footer>
@@ -175,66 +181,10 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN DE CONTACTO PARA TRIAL
-        const NEXUS_CONFIG = {
-            whatsappSoporte: "17049419163",
-            prefijoTrial: "TRIAL-NX-"
-        };
-
-        // PROTOCOLO TRIAL (Elite Demo 7 Días)
-        async function activarProtocoloTrial() {
-            const { value: formValues } = await Swal.fire({
-                title: '<span class="orbitron uppercase italic font-black">Activación de Demo Elite</span>',
-                html: `
-                    <div class="flex flex-col gap-4 p-4">
-                        <input id="swal-input1" class="swal2-input bg-slate-900 text-white border-cyan-500/50 orbitron text-xs" placeholder="NOMBRE DEL TALLER">
-                        <input id="swal-input2" class="swal2-input bg-slate-900 text-white border-cyan-500/50 orbitron text-xs" placeholder="WHATSAPP DE CONTACTO">
-                    </div>
-                `,
-                background: '#020617',
-                color: '#fff',
-                confirmButtonText: 'INICIAR PERÍODO DE PRUEBA',
-                confirmButtonColor: '#06b6d4',
-                showCancelButton: true,
-                cancelButtonText: 'CANCELAR',
-                focusConfirm: false,
-                preConfirm: () => {
-                    return [
-                        document.getElementById('swal-input1').value,
-                        document.getElementById('swal-input2').value
-                    ]
-                }
-            });
-
-            if (formValues && formValues[0] && formValues[1]) {
-                const [nombreTaller, whatsapp] = formValues;
-                const overlay = document.getElementById('handshake');
-                const text = document.getElementById('handshake-text');
-                
-                overlay.classList.remove('hidden');
-                text.innerText = "CONFIGURANDO ENTORNO ELITE PARA " + nombreTaller.toUpperCase() + "...";
-
-                // Simulamos la creación del Nodo Trial con datos predispuestos
-                setTimeout(() => {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'NODO TRIAL ACTIVADO',
-                        text: `Bienvenido Comandante de ${nombreTaller}. Tiene 7 días de acceso Elite con 2 órdenes de servicio de prueba.`,
-                        background: '#020617',
-                        color: '#fff',
-                        confirmButtonColor: '#06b6d4'
-                    }).then(() => {
-                        // Aquí rediriges a tu dashboard en modo demo
-                        window.location.href = "/dashboard?mode=trial&taller=" + btoa(nombreTaller);
-                    });
-                }, 3000);
-            }
-        }
-
-        // PROTOCOLO DE PAGO BOLDSYNC
+        // PROTOCOLO DE PAGO BOLDSYNC MEJORADO
         async function iniciarPago(plan) {
             const { value: meses } = await Swal.fire({
-                title: '<span class="orbitron uppercase">Sincronización Boldsync</span>',
+                title: '<span class="orbitron uppercase italic font-black">Sincronización Boldsync</span>',
                 text: `Defina el ciclo de órbita para el Plan ${plan.toUpperCase()}`,
                 icon: 'question',
                 input: 'select',
@@ -283,14 +233,5 @@
             }
         }
     </script>
-
-    <style>
-        @keyframes progress { 0% { width: 0%; } 50% { width: 70%; } 100% { width: 100%; } }
-        .animate-spin-slow { animation: spin 4s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        
-        .swal2-popup { border: 1px solid var(--cyan) !important; box-shadow: 0 0 50px rgba(6, 182, 212, 0.2) !important; }
-        .swal2-input { color: white !important; }
-    </style>
 </body>
 </html>
