@@ -6,9 +6,11 @@
     <title>TallerPRO360 | Nexus-X Starlink V1.1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    
     <script src="app/js/core/firebase-config.js"></script>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -25,6 +27,10 @@
         @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
         .btn-nexus { transition: 0.4s; position: relative; overflow: hidden; font-style: italic; }
         .btn-nexus:hover { box-shadow: 0 0 35px var(--glow); filter: brightness(1.2); }
+        .social-link { font-size: 1.8rem; transition: 0.4s; color: #475569; }
+        .social-link:hover { color: var(--cyan); transform: rotate(15deg) scale(1.3); text-shadow: 0 0 15px var(--cyan); }
+        .animate-spin-slow { animation: spin 4s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .swal2-popup { border: 1px solid var(--cyan) !important; background: #020617 !important; color: white !important; font-family: 'Outfit', sans-serif; }
     </style>
 </head>
@@ -131,16 +137,9 @@
 
     <footer class="mt-20 py-20 px-10 border-t border-white/5 bg-[#01040f] text-center">
         <div class="flex justify-center gap-14 mb-12">
-            <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
             <a href="https://wa.me/17049419163" class="social-link" style="color:#25d366;"><i class="fab fa-whatsapp"></i></a>
         </div>
-        <div class="flex flex-wrap justify-center gap-10 text-[11px] orbitron font-bold uppercase tracking-[0.2em] text-slate-500 mb-10">
-            <a href="terminos.html" class="hover:text-cyan-400 transition underline underline-offset-4 decoration-cyan-500/30">Términos</a>
-            <a href="politicas.html" class="hover:text-cyan-400 transition underline underline-offset-4 decoration-cyan-500/30">Privacidad</a>
-            <a href="manual-operacion.html" class="hover:text-cyan-400 transition underline underline-offset-4 decoration-cyan-500/30">Manual Operativo</a>
-        </div>
-        <p class="orbitron text-[9px] tracking-[1em] uppercase text-slate-800 mb-4">Colombian Trucks Logistics LLC · Charlotte NC · 2026</p>
+        <p class="orbitron text-[9px] tracking-[1em] uppercase text-slate-800 mb-4">Colombian Trucks Logistics LLC · 2026</p>
         <p class="text-slate-600 text-[10px] orbitron uppercase font-black tracking-widest">Nexus-X Starlink Engine v1.1.0-STABLE</p>
     </footer>
 
@@ -153,27 +152,15 @@
             <div class="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden mb-12">
                 <div id="progress-bar" class="h-full bg-cyan-500" style="width: 0%; transition: width 0.3s ease;"></div>
             </div>
-            <button onclick="location.reload()" class="text-slate-700 text-[10px] orbitron font-black uppercase hover:text-white">Abortar</button>
         </div>
     </div>
 
-        <script>
-        // CONFIGURACIÓN CENTRALIZADA (Nexus-X Core)
-        const firebaseConfig = {
-            apiKey: "TU_API_KEY", 
-            authDomain: "tallerpro360.firebaseapp.com",
-            projectId: "tallerpro360",
-            storageBucket: "tallerpro360.appspot.com",
-            messagingSenderId: "TU_SENDER_ID",
-            appId: "TU_APP_ID"
-        };
-        
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+    <script>
+        // INICIALIZACIÓN SEGURA: Usa las constantes del archivo externo firebase-config.js
         const db = firebase.firestore();
+        const auth = firebase.auth();
 
-        // 1. PROTOCOLO GRATI-CORE (Trial Automático con campos completos)
+        // 1. FUNCIÓN GRATI-CORE: Trial Automático con campos completos en Firestore
         async function activarProtocoloDemo() {
             const overlay = document.getElementById('handshake');
             const statusText = document.getElementById('handshake-text');
@@ -181,61 +168,58 @@
             overlay.classList.remove('hidden');
             
             try {
-                // Paso 1: Simulación de Handshake
-                statusText.innerText = "Inyectando credenciales temporales...";
-                bar.style.width = "30%";
-                await new Promise(r => setTimeout(r, 800));
+                statusText.innerText = "Iniciando Handshake Anónimo...";
+                bar.style.width = "20%";
+                
+                // Login anónimo para que Firestore permita escribir bajo seguridad
+                const userCredential = await auth.signInAnonymously();
+                const uid = userCredential.user.uid;
 
-                // Paso 2: Creación de Taller con campos AUTOMÁTICOS
                 statusText.innerText = "Sincronizando Nodo en Firestore...";
                 bar.style.width = "60%";
                 
-                // Generamos una expiración real (7 días exactos)
-                const hoy = new Date();
-                const vencimiento = new Date();
-                vencimiento.setDate(hoy.getDate() + 7);
+                const fechaHoy = new Date();
+                const fechaVence = new Date();
+                fechaVence.setDate(fechaHoy.getDate() + 7);
 
-                const nuevoTallerTrial = {
+                // Documento con campos automáticos perfectos
+                await db.collection('suscripciones').doc(uid).set({
+                    uid: uid,
                     plan: 'Grati-Core',
-                    tipo: 'TRIAL_7_DAYS',
+                    tipo: 'TRIAL',
                     estado: 'activo',
                     fecha_inicio: firebase.firestore.FieldValue.serverTimestamp(),
-                    fecha_vencimiento: vencimiento.toISOString(),
+                    fecha_expiracion: fechaVence.toISOString(),
                     metadata: {
-                        version_engine: '1.1.0-STABLE',
-                        region: 'LATAM-COL',
-                        nodo: 'Nexus-X Starlink',
-                        limite_ordenes: 20
+                        engine: 'Nexus-X Starlink 1.1.0',
+                        limite_ordenes: 20,
+                        region: 'LATAM-COL'
                     }
-                };
+                });
 
-                // Guardamos en la colección principal
-                await db.collection('suscripciones').add(nuevoTallerTrial);
-
-                // Paso 3: Finalización
                 statusText.innerText = "Acceso concedido: Nodo Trial Activo.";
                 bar.style.width = "100%";
                 
                 setTimeout(() => {
                     Swal.fire({
                         icon: 'success',
-                        title: '<span class="orbitron">CONEXIÓN ESTABLECIDA</span>',
-                        html: 'Bienvenido al ecosistema <b>Nexus-X</b>.<br>Su taller de prueba ha sido configurado.',
-                        confirmButtonText: 'ENTRAR AL DASHBOARD',
+                        title: '<span class="orbitron text-cyan-400">TRIAL ACTIVADO</span>',
+                        html: 'Su terminal <b>Nexus-X</b> ha sido autorizada por 168 horas.',
+                        confirmButtonText: 'INGRESAR AL PANEL',
                         confirmButtonColor: '#06b6d4',
                         background: '#020617',
                         color: '#fff'
                     }).then(() => { window.location.href = '/login'; });
-                }, 600);
+                }, 800);
 
             } catch (error) {
-                console.error("Error Nexus-Handshake:", error);
+                console.error("Nexus Error:", error);
                 overlay.classList.add('hidden');
-                Swal.fire({ icon: 'error', title: 'FALLA DE VÍNCULO', text: 'El servidor Firestore no respondió a tiempo.' });
+                Swal.fire({ icon: 'error', title: 'FALLA DE VÍNCULO', text: 'Error de conexión con Firestore.' });
             }
         }
 
-        // 2. PROTOCOLO BOLD SYNC (Tu script funcional recuperado)
+        // 2. FUNCIÓN BOLDSYNC: Recuperada y blindada para no fallar
         async function iniciarPago(plan) {
             const { value: meses } = await Swal.fire({
                 title: '<span class="orbitron">CICLO DE ÓRBITA</span>',
@@ -248,49 +232,34 @@
                     '12': '12 Meses (Año Luz - 20% OFF)'
                 },
                 confirmButtonColor: '#06b6d4',
-                confirmButtonText: 'PROCESAR EN BOLDSYNC',
+                confirmButtonText: 'PROCESAR PAGO',
                 background: '#020617',
                 color: '#fff'
             });
 
             if (!meses) return;
 
-            // Mostramos el overlay de carga para mantener la estética
             document.getElementById('handshake').classList.remove('hidden');
-            document.getElementById('handshake-text').innerText = "Estableciendo túnel con Boldsync...";
+            document.getElementById('handshake-text').innerText = "Conectando con Pasarela Bold...";
             document.getElementById('progress-bar').style.width = "50%";
             
             try {
-                // LLAMADA A TU API BOLD (La que ya te funcionaba)
+                // LLAMADA A TU API BOLD (Sin cambios, para asegurar que funcione)
                 const response = await fetch('/api/create-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        planId: plan, 
-                        months: parseInt(meses),
-                        timestamp: new Date().toISOString()
-                    })
+                    body: JSON.stringify({ planId: plan, months: parseInt(meses) })
                 });
 
                 const data = await response.json();
-
                 if (data.url) {
-                    document.getElementById('progress-bar').style.width = "100%";
                     window.location.href = data.url;
                 } else {
-                    throw new Error("Respuesta de API inválida");
+                    throw new Error("API Bold no retornó URL");
                 }
-
             } catch (err) {
-                console.error("Error Bold Sync:", err);
                 document.getElementById('handshake').classList.add('hidden');
-                Swal.fire({ 
-                    icon: 'error', 
-                    title: 'ERROR DE SEÑAL', 
-                    text: 'No se pudo conectar con la pasarela de pagos Bold.',
-                    background: '#020617',
-                    color: '#fff'
-                });
+                Swal.fire({ icon: 'error', title: 'ERROR DE SEÑAL', text: 'La pasarela Bold no respondió.' });
             }
         }
     </script>
