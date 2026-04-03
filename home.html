@@ -13,6 +13,7 @@
         body { font-family: 'Outfit', sans-serif; background: var(--dark); color: white; scroll-behavior: smooth; overflow-x: hidden; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
         
+        /* Deep Space Visuals */
         .stars-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 20% 30%, #1e293b 0%, #020617 100%); z-index: -2; }
         .glass-nav { background: rgba(2, 6, 23, 0.9); backdrop-filter: blur(25px); border-bottom: 2px solid var(--glow); box-shadow: 0 4px 50px rgba(0,0,0,0.8); }
         
@@ -29,6 +30,7 @@
             box-shadow: 0 0 70px rgba(6, 182, 212, 0.25); 
         }
         
+        /* UI Elements */
         .scanner { position: absolute; width: 100%; height: 4px; background: linear-gradient(to right, transparent, var(--cyan), transparent); top: 0; left: 0; animation: scan 3.5s infinite linear; opacity: 0.7; box-shadow: 0 0 20px var(--cyan); }
         @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
 
@@ -43,12 +45,11 @@
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
 
-        @keyframes progress { 0% { width: 0%; } 50% { width: 70%; } 100% { width: 100%; } }
+        @keyframes progress-bar { 0% { width: 0%; } 100% { width: 100%; } }
         .animate-spin-slow { animation: spin 4s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         
-        .swal2-popup { border: 1px solid var(--cyan) !important; box-shadow: 0 0 50px rgba(6, 182, 212, 0.2) !important; }
-        .swal2-input { color: white !important; }
+        .swal2-popup { border: 1px solid var(--cyan) !important; background: #020617 !important; color: white !important; font-family: 'Outfit', sans-serif; }
     </style>
 </head>
 <body>
@@ -80,13 +81,11 @@
             Gestión <span class="text-white font-black underline decoration-cyan-500 decoration-4 underline-offset-8">Aeroespacial</span> Automotriz.
         </p>
         <div class="mt-24 flex flex-wrap justify-center gap-10">
-            <button onclick="document.getElementById('planes').scrollIntoView()" class="px-16 py-7 bg-white text-black orbitron font-black text-xs uppercase rounded-2xl btn-nexus shadow-xl">Iniciar Despliegue</button>
-  <button onclick="activarProtocoloTrial()" class="px-16 py-7 border-2 border-cyan-500 text-cyan-400 orbitron font-black text-xs uppercase rounded-2xl hover:bg-cyan-500/10 transition">Activar Demo 7 Días</button>
-        </div>
-    </header>
-            <button
- onclick="window.location.href='/demos'" class="px-16 py-7 border-2 border-cyan-500 text-cyan-400 orbitron font-black text-xs uppercase rounded-2xl hover:bg-cyan-500/10 transition shadow-[0_0_20px_rgba(6,182,212,0.2)]">
-                <i class="fas fa-terminal mr-3"></i>Explorar Demos
+            <button onclick="activarProtocoloDemo()" class="px-16 py-7 bg-white text-black orbitron font-black text-xs uppercase rounded-2xl btn-nexus shadow-xl">
+                <i class="fas fa-play mr-2"></i> Activar Demo 7 Días
+            </button>
+            <button onclick="document.getElementById('planes').scrollIntoView()" class="px-16 py-7 border-2 border-cyan-500 text-cyan-400 orbitron font-black text-xs uppercase rounded-2xl hover:bg-cyan-500/10 transition shadow-[0_0_20px_rgba(6,182,212,0.2)]">
+                <i class="fas fa-terminal mr-3"></i>Explorar Planes
             </button>
         </div>
     </header>
@@ -104,11 +103,11 @@
                 <h3 class="text-3xl font-black italic mt-4 mb-6 uppercase">Grati-Core</h3>
                 <div class="text-4xl font-black mb-8">$0 <span class="text-sm text-slate-600 uppercase">Life</span></div>
                 <ul class="space-y-4 mb-12 text-slate-400 text-[10px] font-bold uppercase italic tracking-tighter">
+                    <li><i class="fas fa-bolt text-cyan-500 mr-2"></i> 7 Días Full Access</li>
                     <li><i class="fas fa-microchip text-slate-700 mr-2"></i> 20 Órdenes Activas</li>
                     <li><i class="fas fa-user text-slate-700 mr-2"></i> 1 Nodo Operativo</li>
-                    <li><i class="fas fa-database text-slate-700 mr-2"></i> Backup Manual</li>
                 </ul>
-                <button class="w-full py-4 border border-slate-700 text-slate-500 orbitron font-black text-[9px] rounded-xl uppercase hover:bg-white hover:text-black transition">Vínculo Limitado</button>
+                <button onclick="activarProtocoloDemo()" class="w-full py-4 border border-slate-700 text-slate-500 orbitron font-black text-[9px] rounded-xl uppercase hover:bg-white hover:text-black transition">Iniciar Prueba</button>
             </div>
 
             <div class="nexus-card p-10 rounded-[3rem] border-emerald-500/20">
@@ -161,10 +160,9 @@
         </div>
         
         <div class="flex flex-wrap justify-center gap-10 text-[11px] orbitron font-bold uppercase tracking-[0.2em] text-slate-500 mb-10">
-            <a href="terminos.html" class="hover:text-cyan-400 transition decoration-cyan-500/30 underline-offset-4 hover:underline">Términos</a>
-            <a href="politicas.html" class="hover:text-cyan-400 transition decoration-cyan-500/30 underline-offset-4 hover:underline">Privacidad</a>
-            <a href="manual-operacion.html" class="hover:text-cyan-400 transition decoration-cyan-500/30 underline-offset-4 hover:underline">Manual Operativo</a>
-            <a href="/demos" class="text-cyan-500 hover:text-white transition italic"><i class="fas fa-folder mr-1"></i> Root / Demos</a>
+            <a href="terminos.html" class="hover:text-cyan-400 transition underline underline-offset-4 decoration-cyan-500/30">Términos</a>
+            <a href="politicas.html" class="hover:text-cyan-400 transition underline underline-offset-4 decoration-cyan-500/30">Privacidad</a>
+            <a href="manual-operacion.html" class="hover:text-cyan-400 transition underline underline-offset-4 decoration-cyan-500/30">Manual Operativo</a>
         </div>
 
         <p class="orbitron text-[9px] tracking-[1em] uppercase text-slate-800 mb-4">Colombian Trucks Logistics LLC · Charlotte NC · 2026</p>
@@ -175,65 +173,87 @@
         <div class="max-w-md w-full p-12 text-center border-2 border-cyan-500/30 rounded-[4rem] bg-[#020617] shadow-2xl relative">
             <div class="scanner"></div>
             <i class="fas fa-sync-alt text-cyan-500 text-6xl mb-8 animate-spin-slow"></i>
-            <h4 class="orbitron text-2xl font-black italic text-white mb-6 uppercase">Nexus-X Bold Sync</h4>
+            <h4 class="orbitron text-2xl font-black italic text-white mb-6 uppercase">Nexus-X Handshake</h4>
             <p id="handshake-text" class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-10">Estableciendo túnel seguro...</p>
             <div class="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden mb-12">
-                <div class="h-full bg-cyan-500 animate-[progress_3s_ease-in-out_infinite]"></div>
+                <div id="progress-bar" class="h-full bg-cyan-500" style="width: 0%; transition: width 0.3s ease;"></div>
             </div>
             <button onclick="location.reload()" class="text-slate-700 text-[10px] orbitron font-black uppercase hover:text-white">Abortar</button>
         </div>
     </div>
 
     <script>
-        // PROTOCOLO DE PAGO BOLDSYNC MEJORADO
+        // Lógica de Demo 7 Días
+        function activarProtocoloDemo() {
+            const overlay = document.getElementById('handshake');
+            const statusText = document.getElementById('handshake-text');
+            const bar = document.getElementById('progress-bar');
+            
+            overlay.classList.remove('hidden');
+            
+            let steps = [
+                { t: "Inyectando credenciales temporales...", p: "20%" },
+                { t: "Sincronizando con Nodo Starlink...", p: "50%" },
+                { t: "Validando entorno config.js...", p: "80%" },
+                { t: "Acceso concedido: 168 Horas.", p: "100%" }
+            ];
+
+            steps.forEach((step, index) => {
+                setTimeout(() => {
+                    statusText.innerText = step.t;
+                    bar.style.width = step.p;
+                    if(index === steps.length - 1) {
+                        setTimeout(() => {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '<span class="orbitron">ACCESO TOTAL</span>',
+                                html: 'Se ha habilitado el modo <b>Pro AI</b> por 7 días.<br>Puede crear sus primeras órdenes ahora.',
+                                confirmButtonText: 'INGRESAR AL TERMINAL',
+                                confirmButtonColor: '#06b6d4'
+                            }).then(() => {
+                                window.location.href = '/app-demo-terminal'; 
+                            });
+                        }, 500);
+                    }
+                }, (index + 1) * 800);
+            });
+        }
+
+        // Lógica Boldsync
         async function iniciarPago(plan) {
             const { value: meses } = await Swal.fire({
-                title: '<span class="orbitron uppercase italic font-black">Sincronización Boldsync</span>',
-                text: `Defina el ciclo de órbita para el Plan ${plan.toUpperCase()}`,
-                icon: 'question',
+                title: '<span class="orbitron">CICLO DE ÓRBITA</span>',
+                text: `Sincronizar Plan ${plan.toUpperCase()} vía Boldsync`,
                 input: 'select',
                 inputOptions: {
                     '1': '1 Mes (Ciclo Lunar)',
                     '3': '3 Meses (Trimestre Estelar)',
-                    '6': '6 Meses (Semestre Galáctico)',
-                    '12': '12 Meses (Año Luz - Máximo Ahorro)'
+                    '12': '12 Meses (Año Luz - 20% OFF)'
                 },
-                background: '#020617',
-                color: '#fff',
                 confirmButtonColor: '#06b6d4',
                 confirmButtonText: 'PROCESAR EN BOLDSYNC'
             });
 
             if (!meses) return;
 
-            const overlay = document.getElementById('handshake');
-            if(overlay) overlay.classList.remove('hidden');
+            document.getElementById('handshake').classList.remove('hidden');
+            document.getElementById('handshake-text').innerText = "Conectando con pasarela Boldsync...";
             
             try {
+                // Simulación de API call a tu backend (visto en tus correcciones anteriores)
                 const response = await fetch('/api/create-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        planId: plan,
-                        months: parseInt(meses),
-                        empresaId: "NX-" + Date.now().toString().slice(-6),
-                        userEmail: "nexus_system@tallerpro360.com"
-                    })
+                    body: JSON.stringify({ planId: plan, months: parseInt(meses) })
                 });
 
                 const data = await response.json();
                 if (data.url) window.location.href = data.url;
-                else throw new Error(data.error || "Falla en el enlace Starlink");
+                else throw new Error("Falla en el enlace Starlink");
                 
             } catch (err) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'INTERRUPCIÓN DE SEÑAL',
-                    text: err.message,
-                    background: '#020617',
-                    color: '#fff'
-                });
-                if(overlay) overlay.classList.add('hidden');
+                Swal.fire({ icon: 'error', title: 'ERROR DE SEÑAL', text: 'No se pudo conectar con Boldsync.' });
+                document.getElementById('handshake').classList.add('hidden');
             }
         }
     </script>
