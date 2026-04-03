@@ -168,37 +168,79 @@
 
     <script>
         async function iniciarPago(plan) {
+            // 1. Preguntar al usuario cuántos meses desea (Menú de Selección)
+            const { value: meses } = await Swal.fire({
+                title: 'Configuración de Suscripción',
+                text: `Seleccione el tiempo de activación para el ${plan.toUpperCase()}`,
+                icon: 'info',
+                input: 'select',
+                inputOptions: {
+                    '1': '1 Mes (Precio Base)',
+                    '3': '3 Meses (Ahorro Trimestral)',
+                    '6': '6 Meses (Ahorro Semestral)',
+                    '12': '12 Meses (Ahorro Anual)'
+                },
+                inputPlaceholder: 'Seleccione la duración',
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Generar Link de Pago',
+                cancelButtonText: 'Cancelar'
+            });
+
+            // Si el usuario cancela o no selecciona nada, salimos
+            if (!meses) return;
+
+            // 2. Activar el overlay de carga (Handshake)
             const overlay = document.getElementById('handshake');
-            overlay.classList.remove('hidden');
+            if(overlay) overlay.classList.remove('hidden');
             
             try {
-                // William, aquí usamos las variables mapeadas en tu Vercel
+                // 3. Handshake con el Nodo Nexus-X en Vercel
                 const response = await fetch('/api/create-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         planId: plan,
-                        months: 1,
+                        months: parseInt(meses), // Enviamos el valor elegido (1, 3, 6 o 12)
                         empresaId: "NX-" + Date.now().toString().slice(-6),
-                        userEmail: "nexus_system@tallerpro360.com"
+                        userEmail: "nexus_system@tallerpro360.com" // Opcional: capturar email del usuario
                     })
                 });
 
                 const data = await response.json();
-                if (data.url) window.location.href = data.url;
-                else throw new Error("Nodo Bold no disponible");
+
+                if (data.url) {
+                    // Redirección inmediata al checkout de Bold con el precio dinámico
+                    window.location.href = data.url;
+                } else {
+                    throw new Error(data.error || "Nodo Bold no disponible");
+                }
                 
             } catch (err) {
                 console.error("Handshake Error:", err);
-                alert("Error de enlace: El satélite Nexus-X no pudo conectar con Bold.");
-                overlay.classList.add('hidden');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de Enlace',
+                    text: 'El satélite Nexus-X no pudo conectar con Bold. Verifique su conexión.',
+                    confirmButtonColor: '#2563eb'
+                });
+                if(overlay) overlay.classList.add('hidden');
             }
         }
     </script>
+
     <style>
+        /* Estilos de animación para el handshake */
         @keyframes progress { 0% { width: 0%; } 50% { width: 70%; } 100% { width: 100%; } }
         .animate-spin-slow { animation: spin 4s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        /* Personalización del modal para que combine con TallerPRO360 */
+        .swal2-popup {
+            font-family: 'Inter', sans-serif !important;
+            border-radius: 15px !important;
+        }
     </style>
 </body>
 </html>
