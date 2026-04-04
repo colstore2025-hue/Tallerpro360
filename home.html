@@ -93,22 +93,28 @@
             <p class="text-slate-500 orbitron text-xs tracking-[0.5em] uppercase">Seleccione su nivel de acceso al Nodo Central</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="nexus-card p-10 rounded-[3rem]">
-                <div class="scanner"></div>
-                <span class="text-[10px] orbitron text-slate-500 font-black uppercase">Lv.00 · Discovery</span>
-                <h3 class="text-3xl font-black italic mt-4 mb-6 uppercase">Grati-Core</h3>
-                <div class="text-4xl font-black mb-8">$0 <span class="text-sm text-slate-600 uppercase">Life</span></div>
-                <ul class="space-y-4 mb-12 text-slate-400 text-[10px] font-bold uppercase italic tracking-tighter">
-                    <li><i class="fas fa-microchip text-slate-700 mr-2"></i> 20 Órdenes Activas</li>
-                    <li><i class="fas fa-user text-slate-700 mr-2"></i> 1 Nodo Operativo</li>
-                    <li><i class="fas fa-database text-slate-700 mr-2"></i> Backup Manual</li>
-                </ul>
-<button onclick="activarProtocoloDemo()" class="w-full py-4 border border-cyan-500/50 text-cyan-400 orbitron font-black text-[9px] rounded-xl uppercase hover:bg-cyan-500 hover:text-black transition shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-    Activar Protocolo Demo
-</button>
-                <button class="w-full py-4 border border-slate-700 text-slate-500 orbitron font-black text-[9px] rounded-xl uppercase hover:bg-white hover:text-black transition">Vínculo Limitado</button>
+        <div class="nexus-card p-10 rounded-[3rem] relative overflow-hidden bg-black/40 border border-slate-800">
+    <div class="scanner"></div>
+    <span class="text-[10px] orbitron text-cyan-500 font-black uppercase tracking-widest">Lv.00 · Discovery</span>
+    <h3 class="text-3xl font-black italic mt-4 mb-2 uppercase text-white">Grati-Core</h3>
+    <p class="text-[9px] text-slate-500 mb-6 orbitron uppercase">Nexus-X Startlink System</p>
+    
+    <div class="text-4xl font-black mb-8 text-white">$0 <span class="text-sm text-slate-600 uppercase">Demo</span></div>
+    
+    <ul class="space-y-4 mb-12 text-slate-400 text-[10px] font-bold uppercase italic tracking-tighter">
+        <li><i class="fas fa-microchip text-cyan-500 mr-2"></i> 5 Órdenes de Prueba (Elite)</li>
+        <li><i class="fas fa-truck-loading text-cyan-500 mr-2"></i> Nodo Logistics Activo</li>
+        <li><i class="fas fa-shield-alt text-cyan-500 mr-2"></i> TallerPRO360 Unlock</li>
+    </ul>
 
+    <button id="btn-protocolo-demo" onclick="ejecutarProtocoloNexus()" class="w-full py-4 mb-4 border border-cyan-500/50 text-cyan-400 orbitron font-black text-[9px] rounded-xl uppercase hover:bg-cyan-500 hover:text-black transition-all duration-300 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+        Activar Protocolo Demo
+    </button>
+    
+    <button class="w-full py-4 border border-slate-700 text-slate-600 orbitron font-black text-[8px] rounded-xl uppercase cursor-not-allowed">
+        Vínculo Limitado (TallerPRO360)
+    </button>
+</div>
             <div class="nexus-card p-10 rounded-[3rem] border-emerald-500/20">
                 <div class="scanner" style="background:var(--emerald); box-shadow:0 0 20px var(--emerald);"></div>
                 <span class="text-[10px] orbitron text-emerald-500 font-black uppercase">Lv.01 · Cruise</span>
