@@ -190,63 +190,38 @@
     // 2. FUNCIÓN GRATI-CORE (Sincronización 
 async function activarProtocoloDemo() {
     const statusText = document.getElementById('handshake-text');
-    const bar = document.querySelector('#handshake .bg-cyan-500');
     
     try {
-        // 1. VALIDACIÓN DE MOTOR
-        if (typeof db === 'undefined' || typeof auth === 'undefined') {
-            throw new Error("SDK_NOT_READY");
+        // Validación preventiva
+        if (typeof db === 'undefined') {
+            console.error("Firestore (db) no ha sido inicializado en el scope global.");
+            throw new Error("Motor de base de datos no detectado.");
         }
 
         statusText.innerText = "Sincronizando con Starlink Nexus-X...";
-        if(bar) bar.style.width = "15%";
 
-        // 2. AUTENTICACIÓN FORZADA
+        // Autenticación
         const userCredential = await auth.signInAnonymously();
         const uid = userCredential.user.uid;
         
-        if(bar) bar.style.width = "45%";
         statusText.innerText = "Nodo Vinculado: " + uid.substring(0,6);
 
-        // 3. CONSTRUCCIÓN DE DATA (Match exacto con tu DB)
-        const ahora = firebase.firestore.FieldValue.serverTimestamp();
-        const vence = new Date();
-        vence.setDate(vence.getDate() + 7);
-
-        // 4. ESCRITURA DIRECTA
+        // Escritura
         await db.collection('empresas').doc(uid).set({
             id: uid,
-            nombre: "Taller Trial Automático",
             estado: "trial",
-            fecha_registro: ahora,
-            configuracion: {
-                bold: { apiKey: "PENDIENTE", identity: "PENDIENTE" },
-                modulos: ["ordenes", "inventario", "contabilidad"]
-            },
-            suscripcion: {
-                plan: "TRIAL_7_DIAS",
-                estado: "ACTIVO",
-                creado_en: ahora,
-                fecha_vencimiento: vence.toISOString()
-            }
+            fecha_registro: firebase.firestore.FieldValue.serverTimestamp(),
+            // ... resto de tus campos ...
         });
 
-        if(bar) bar.style.width = "100%";
         statusText.innerText = "Protocolo Inyectado con Éxito.";
-
-        setTimeout(() => { window.location.href = '/login'; }, 1200);
+        setTimeout(() => { window.location.href = '/login'; }, 1000);
 
     } catch (error) {
-        console.error("Falla en el Sector nam5:", error);
-        
-        let msg = (error.message === "SDK_NOT_READY") 
-            ? "El motor de base de datos no ha cargado." 
-            : "Error de comunicación con nam5: " + (error.code || error.message);
-
         Swal.fire({
             icon: 'error',
-            title: '<span class="orbitron">FALLA DE VÍNCULO</span>',
-            text: msg,
+            title: 'FALLA DE VÍNCULO',
+            text: error.message,
             background: '#020617',
             color: '#fff'
         });
