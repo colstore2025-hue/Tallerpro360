@@ -187,91 +187,68 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
 
-    // 2. FUNCIÓN GRATI-CORE (Sincronización Automática con Estructura de Mapas)
+    // 2. FUNCIÓN GRATI-CORE (Sincronización 
 async function activarProtocoloDemo() {
-    const overlay = document.getElementById('handshake');
     const statusText = document.getElementById('handshake-text');
     const bar = document.querySelector('#handshake .bg-cyan-500');
     
-    overlay.classList.remove('hidden');
-    if(bar) { 
-        bar.style.animation = 'none'; 
-        bar.style.width = "5%"; 
-    }
-    
     try {
-        statusText.innerText = "Inyectando credenciales temporales...";
+        // 1. Fase de Autenticación Crítica
+        statusText.innerText = "Estableciendo conexión segura...";
         
-        // 1. Autenticación Anónima
-        let user = auth.currentUser;
-        if (!user) {
-            const userCredential = await auth.signInAnonymously();
-            user = userCredential.user;
-        }
+        // Forzamos la espera de la autenticación
+        const userCredential = await auth.signInAnonymously();
+        const uid = userCredential.user.uid;
         
-        // Usamos el UID de Firebase como ID de documento (el TR-xxxx automático)
-        const uid = user.uid; 
-        if(bar) bar.style.width = "40%";
+        if(bar) bar.style.width = "30%";
+        statusText.innerText = "Identidad validada: Nodo " + uid.substring(0,6);
 
-        statusText.innerText = "Sincronizando con Nodo Central...";
+        // 2. Preparación de Metadatos
+        const fechaRegistro = firebase.firestore.FieldValue.serverTimestamp();
+        const fechaVence = new Date();
+        fechaVence.setDate(fechaVence.getDate() + 7);
 
-        const ahora = new Date();
-        const vence = new Date();
-        vence.setDate(ahora.getDate() + 7);
+        // 3. Inyección en Firestore (Estructura Mapas)
+        statusText.innerText = "Escribiendo en nodo principal (nam5)...";
 
-        // 2. Escritura con Estructura Exacta (Maps y Arrays)
         await db.collection('empresas').doc(uid).set({
             id: uid,
-            nombre: "Taller Demo Nexus-X",
+            nombre: "Taller Trial " + uid.substring(0,4),
             estado: "trial",
-            fecha_registro: firebase.firestore.FieldValue.serverTimestamp(),
-            // Estructura de Mapas detectada en tu consola
+            fecha_registro: fechaRegistro,
             configuracion: {
-                bold: {
-                    apiKey: "PENDIENTE",
-                    identity: "PENDIENTE"
-                },
+                bold: { apiKey: "PENDIENTE", identity: "PENDIENTE" },
                 modulos: ["ordenes", "inventario", "contabilidad"]
             },
             suscripcion: {
                 plan: "TRIAL_7_DIAS",
                 estado: "ACTIVO",
-                creado_en: firebase.firestore.FieldValue.serverTimestamp(),
-                fecha_vencimiento: vence.toISOString()
+                creado_en: fechaRegistro,
+                fecha_vencimiento: fechaVence.toISOString()
             }
-        }, { merge: true });
+        });
 
+        // 4. Finalización de Handshake
         if(bar) bar.style.width = "100%";
-        statusText.innerText = "Acceso concedido: Nodo Maestro Activo.";
+        statusText.innerText = "Sincronización Exitosa.";
 
-        // 3. Notificación de Éxito
         setTimeout(() => {
-            Swal.fire({
-                icon: 'success',
-                title: '<span class="orbitron text-cyan-400">CONEXIÓN ESTABLECIDA</span>',
-                html: 'El protocolo <b>Grati-Core</b> ha sido inyectado.<br>Vínculo activo por 168 horas.',
-                confirmButtonText: 'INGRESAR AL TERMINAL',
-                confirmButtonColor: '#06b6d4',
-                background: '#020617',
-                color: '#fff',
-                allowOutsideClick: false
-            }).then(() => { 
-                window.location.href = '/login'; 
-            });
+            window.location.href = '/login'; 
         }, 1000);
 
     } catch (error) {
-        console.error("Falla Crítica Nexus:", error);
-        overlay.classList.add('hidden');
-        Swal.fire({ 
-            icon: 'error', 
-            title: '<span class="orbitron text-red-500">FALLA DE SEÑAL</span>', 
-            text: 'No se pudo escribir en el nodo principal (nam5). Revise reglas de seguridad.',
+        console.error("Error en Handshake:", error);
+        // Si entra aquí, es que Firestore rechazó la escritura por Reglas o Auth
+        Swal.fire({
+            icon: 'error',
+            title: 'FALLA DE SEÑAL',
+            text: 'Error de comunicación con nam5: ' + error.code,
             background: '#020617',
             color: '#fff'
         });
     }
 }
+
     // 3. FUNCIÓN BOLD (Se mantiene intacta la conexión que ya te servía)
     async function iniciarPago(plan) {
         const { value: meses } = await Swal.fire({
