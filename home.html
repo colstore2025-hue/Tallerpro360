@@ -185,7 +185,7 @@
     </div>
 
     <script>
-    // 1. Datos obtenidos de Firebase Console > Configuración del proyecto
+     // 1. CONFIGURACIÓN CENTRAL NEXUS-X
     const firebaseConfig = {
       apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
       authDomain: "tallerpro360.firebaseapp.com",
@@ -196,77 +196,75 @@
       measurementId: "G-VEC2C0QX2G"
     };
 
-    // Inicialización Garantizada
-    if (!firebase.apps.length) {
+     // Inicialización al vuelo
+    if (typeof firebase !== 'undefined' && !firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
 
+    // --- PROTOCOLO A: TRIAL GRATUITO (GRATI-CORE) ---
     async function activarProtocoloDemo() {
-        // Aseguramos que los elementos existan en el DOM
         const overlay = document.getElementById('handshake');
         const statusText = document.getElementById('handshake-text');
-        const bar = document.querySelector('#handshake .bg-cyan-500');
+        
+        if (!overlay || !statusText) return;
 
         overlay.classList.remove('hidden');
-
+        
         try {
             const db = firebase.firestore();
             const auth = firebase.auth();
 
-            statusText.innerText = "Sincronizando con Starlink...";
-            
+            statusText.innerText = "Sincronizando con Starlink Nexus-X...";
+
             // Autenticación Anónima
             const userCredential = await auth.signInAnonymously();
             const uid = userCredential.user.uid;
             
-            if(bar) bar.style.width = "50%";
             statusText.innerText = "Nodo Vinculado: " + uid.substring(0,6);
 
-            // Registro de Empresa
+            // Inyección de datos de prueba
             await db.collection('empresas').doc(uid).set({
                 id: uid,
-                nombre: "Taller Trial Nexus",
+                nombre: "Taller Demo Nexus",
                 estado: "trial",
                 fecha_registro: firebase.firestore.FieldValue.serverTimestamp(),
                 configuracion: {
-                    bold: { apiKey: "PENDIENTE", identity: "PENDIENTE" },
-                    modulos: ["ordenes", "inventario", "contabilidad"]
+                    modulos: ["ordenes", "inventario", "clientes"]
                 },
                 suscripcion: {
                     plan: "TRIAL_7_DIAS",
                     estado: "ACTIVO",
-                    creado_en: firebase.firestore.FieldValue.serverTimestamp(),
                     fecha_vencimiento: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
                 }
             }, { merge: true });
 
-            if(bar) bar.style.width = "100%";
-            statusText.innerText = "Conexión Exitosa.";
-
+            statusText.innerText = "Protocolo Inyectado con Éxito.";
             setTimeout(() => { window.location.href = '/login'; }, 1000);
 
         } catch (error) {
-            console.error(error);
+            console.error("Error Nexus:", error);
+            overlay.classList.add('hidden');
             Swal.fire({
                 icon: 'error',
                 title: 'FALLA DE VÍNCULO',
-                text: 'Error: ' + error.message,
+                text: error.message,
                 background: '#020617',
                 color: '#fff'
             });
-            overlay.classList.add('hidden');
         }
     }
-</script>
 
-    // 3. FUNCIÓN BOLD (Se mantiene intacta la conexión que ya te servía)
+    // --- PROTOCOLO B: PASARELA BOLD (PLANES DE PAGO) ---
     async function iniciarPago(plan) {
         const { value: meses } = await Swal.fire({
             title: '<span class="orbitron">CICLO DE ÓRBITA</span>',
-            text: `Sincronizar Plan ${plan.toUpperCase()} vía Boldsync`,
+            text: `Sincronizar Plan ${plan.toUpperCase()} vía BoldSync`,
             input: 'select',
             inputOptions: {
-                '1': '1 Mes', '3': '3 Meses', '6': '6 Meses', '12': '12 Meses (20% OFF)'
+                '1': '1 Mes',
+                '3': '3 Meses',
+                '6': '6 Meses',
+                '12': '12 Meses (20% OFF)'
             },
             confirmButtonColor: '#06b6d4',
             confirmButtonText: 'PROCESAR EN BOLDSYNC',
@@ -275,21 +273,39 @@
         });
 
         if (!meses) return;
-        document.getElementById('handshake').classList.remove('hidden');
-        document.getElementById('handshake-text').innerText = "Conectando con pasarela Boldsync...";
+
+        const overlay = document.getElementById('handshake');
+        const statusText = document.getElementById('handshake-text');
         
+        overlay.classList.remove('hidden');
+        statusText.innerText = "Conectando con pasarela BoldSync...";
+
         try {
+            // Llamada a tu API de pagos en Vercel
             const response = await fetch('/api/create-payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ planId: plan, months: parseInt(meses) })
             });
+
             const data = await response.json();
-            if (data.url) window.location.href = data.url;
-            else throw new Error("Falla en el enlace");
+
+            if (data.url) {
+                window.location.href = data.url; 
+            } else {
+                throw new Error("Falla en el enlace de pago.");
+            }
+
         } catch (err) {
-            Swal.fire({ icon: 'error', title: 'ERROR DE SEÑAL', text: 'Error en la API de pagos.' });
-            document.getElementById('handshake').classList.add('hidden');
+            console.error("Error Bold:", err);
+            overlay.classList.add('hidden');
+            Swal.fire({
+                icon: 'error',
+                title: 'ERROR DE SEÑAL',
+                text: 'No se pudo contactar con el terminal de pagos.',
+                background: '#020617',
+                color: '#fff'
+            });
         }
     }
 </script>
