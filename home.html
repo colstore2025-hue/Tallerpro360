@@ -117,6 +117,9 @@
                     <li><i class="fas fa-users text-emerald-500 mr-2"></i> 3 Nodos Sincronizados</li>
                     <li><i class="fas fa-tools text-emerald-500 mr-2"></i> Gestión de Repuestos</li>
                 </ul>
+<button onclick="activarProtocoloDemo()" class="w-full py-4 border border-cyan-500/50 text-cyan-400 orbitron font-black text-[9px] rounded-xl uppercase hover:bg-cyan-500 hover:text-black transition shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+    Activar Protocolo Demo
+</button>
                 <button onclick="iniciarPago('basico')" class="w-full py-4 bg-emerald-600 text-black orbitron font-black text-[9px] rounded-xl btn-nexus uppercase">Iniciar Transmisión</button>
             </div>
 
@@ -186,72 +189,85 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
 
-    // 2. FUNCIÓN GRATI-CORE (Trial Automático de 7 días)
-    async function activarProtocoloDemo() {
-        const overlay = document.getElementById('handshake');
-        const statusText = document.getElementById('handshake-text');
-        const bar = document.getElementById('progress-bar');
+    // 2. FUNCIÓN GRATI-CORE (Trial Automático de 7 días - Sincronizado con Empresas)
+async function activarProtocoloDemo() {
+    const overlay = document.getElementById('handshake');
+    const statusText = document.getElementById('handshake-text');
+    // Seleccionamos la barra por clase si el ID no está definido en el HTML
+    const bar = document.querySelector('#progress-bar') || document.querySelector('.h-full.bg-cyan-500');
+    
+    overlay.classList.remove('hidden');
+    if(bar) bar.style.width = "10%";
+    
+    try {
+        statusText.innerText = "Inyectando credenciales temporales...";
         
-        overlay.classList.remove('hidden');
-        bar.style.width = "0%";
-        
-        try {
-            statusText.innerText = "Inyectando credenciales temporales...";
-            bar.style.width = "30%";
-
-            // Autenticación anónima para cumplir con reglas de seguridad de Firebase
+        // 1. Obtener UID (Anónimo o Existente)
+        let user = auth.currentUser;
+        if (!user) {
             const userCredential = await auth.signInAnonymously();
-            const uid = userCredential.user.uid;
+            user = userCredential.user;
+        }
+        const uid = user.uid;
+        if(bar) bar.style.width = "40%";
 
-            statusText.innerText = "Sincronizando Nodo en Firestore...";
-            bar.style.width = "60%";
+        statusText.innerText = "Sincronizando Nodo en Empresas...";
 
-            // Cálculo automático de fechas
-            const ahora = new Date();
-            const vence = new Date();
-            vence.setDate(ahora.getDate() + 7);
+        // 2. Cálculo de fechas (7 días exactos)
+        const ahora = new Date();
+        const vence = new Date();
+        vence.setDate(ahora.getDate() + 7);
 
-            // Estructura de suscripción Trial
-            await db.collection('suscripciones').doc(uid).set({
-                taller_id: uid,
+        // 3. Escritura en la colección 'empresas' (Estructura compatible con Dashboard)
+        // Usamos .set con merge:true para no borrar otros datos si ya existen
+        await db.collection('empresas').doc(uid).set({
+            config: {
+                nombre_taller: "Taller Demo Nexus-X",
                 plan: 'Grati-Core',
                 estado: 'activo',
+                creado_el: firebase.firestore.FieldValue.serverTimestamp()
+            },
+            suscripcion: {
+                tipo: 'TRIAL',
                 fecha_inicio: firebase.firestore.FieldValue.serverTimestamp(),
                 fecha_expiracion: vence.toISOString(),
-                metadata: {
-                    version: '1.1.0-STABLE',
-                    nodo: 'Nexus-X Starlink',
-                    limite_ordenes: 20
-                }
-            });
+                activo: true,
+                limite_ordenes: 20
+            },
+            metadata: {
+                uid: uid,
+                engine_v: '1.1.0-STABLE',
+                nodo: 'Nexus-X Starlink'
+            }
+        }, { merge: true });
 
-            statusText.innerText = "Acceso concedido: Nodo Trial Activo.";
-            bar.style.width = "100%";
+        if(bar) bar.style.width = "100%";
+        statusText.innerText = "Acceso concedido: Nodo Maestro Activo.";
 
-            setTimeout(() => {
-                Swal.fire({
-                    icon: 'success',
-                    title: '<span class="orbitron">CONEXIÓN ESTABLECIDA</span>',
-                    html: 'Se ha activado su periodo de prueba <b>Grati-Core</b>.<br>Inicie sesión para comenzar.',
-                    confirmButtonText: 'IR AL TERMINAL',
-                    confirmButtonColor: '#06b6d4',
-                    background: '#020617',
-                    color: '#fff'
-                }).then(() => { window.location.href = '/login'; });
-            }, 800);
-
-        } catch (error) {
-            console.error("Error en Handshake:", error);
-            overlay.classList.add('hidden');
-            Swal.fire({ 
-                icon: 'error', 
-                title: 'ERROR DE SEÑAL', 
-                text: 'No se pudo sincronizar con el Nodo Central.',
+        setTimeout(() => {
+            Swal.fire({
+                icon: 'success',
+                title: '<span class="orbitron text-cyan-400">CONEXIÓN ESTABLECIDA</span>',
+                html: 'El protocolo <b>Grati-Core</b> ha sido inyectado con éxito.<br>Vínculo activo por 168 horas.',
+                confirmButtonText: 'INGRESAR AL TERMINAL',
+                confirmButtonColor: '#06b6d4',
                 background: '#020617',
                 color: '#fff'
-            });
-        }
+            }).then(() => { window.location.href = '/login'; });
+        }, 800);
+
+    } catch (error) {
+        console.error("Falla de Handshake:", error);
+        overlay.classList.add('hidden');
+        Swal.fire({ 
+            icon: 'error', 
+            title: 'FALLA DE VÍNCULO', 
+            text: 'El servidor Firestore no respondió. Verifique su conexión.',
+            background: '#020617',
+            color: '#fff'
+        });
     }
+}
 
     // 3. FUNCIÓN BOLD (Se mantiene intacta la conexión que ya te servía)
     async function iniciarPago(plan) {
