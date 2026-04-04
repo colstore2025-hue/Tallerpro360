@@ -254,60 +254,59 @@
         }
     }
 
-    // --- PROTOCOLO B: PASARELA BOLD (PLANES DE PAGO) ---
-    async function iniciarPago(plan) {
-        const { value: meses } = await Swal.fire({
-            title: '<span class="orbitron">CICLO DE ÓRBITA</span>',
-            text: `Sincronizar Plan ${plan.toUpperCase()} vía BoldSync`,
-            input: 'select',
-            inputOptions: {
-                '1': '1 Mes',
-                '3': '3 Meses',
-                '6': '6 Meses',
-                '12': '12 Meses (20% OFF)'
-            },
-            confirmButtonColor: '#06b6d4',
-            confirmButtonText: 'PROCESAR EN BOLDSYNC',
-            background: '#020617',
-            color: '#fff'
-        });
-
-        if (!meses) return;
-
-        const overlay = document.getElementById('handshake');
-        const statusText = document.getElementById('handshake-text');
-        
-        overlay.classList.remove('hidden');
-        statusText.innerText = "Conectando con pasarela BoldSync...";
-
-        try {
-            // Llamada a tu API de pagos en Vercel
-            const response = await fetch('/api/create-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ planId: plan, months: parseInt(meses) })
-            });
-
-            const data = await response.json();
-
-            if (data.url) {
-                window.location.href = data.url; 
-            } else {
-                throw new Error("Falla en el enlace de pago.");
-            }
-
-        } catch (err) {
-            console.error("Error Bold:", err);
-            overlay.classList.add('hidden');
-            Swal.fire({
-                icon: 'error',
-                title: 'ERROR DE SEÑAL',
-                text: 'No se pudo contactar con el terminal de pagos.',
+      <script>
+        // PROTOCOLO DE PAGO BOLDSYNC MEJORADO
+        async function iniciarPago(plan) {
+            const { value: meses } = await Swal.fire({
+                title: '<span class="orbitron uppercase italic font-black">Sincronización Boldsync</span>',
+                text: `Defina el ciclo de órbita para el Plan ${plan.toUpperCase()}`,
+                icon: 'question',
+                input: 'select',
+                inputOptions: {
+                    '1': '1 Mes (Ciclo Lunar)',
+                    '3': '3 Meses (Trimestre Estelar)',
+                    '6': '6 Meses (Semestre Galáctico)',
+                    '12': '12 Meses (Año Luz - Máximo Ahorro)'
+                },
                 background: '#020617',
-                color: '#fff'
+                color: '#fff',
+                confirmButtonColor: '#06b6d4',
+                confirmButtonText: 'PROCESAR EN BOLDSYNC'
             });
+
+            if (!meses) return;
+
+            const overlay = document.getElementById('handshake');
+            if(overlay) overlay.classList.remove('hidden');
+            
+            try {
+                const response = await fetch('/api/create-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        planId: plan,
+                        months: parseInt(meses),
+                        empresaId: "NX-" + Date.now().toString().slice(-6),
+                        userEmail: "nexus_system@tallerpro360.com"
+                    })
+                });
+
+                const data = await response.json();
+                if (data.url) window.location.href = data.url;
+                else throw new Error(data.error || "Falla en el enlace Starlink");
+                
+            } catch (err) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'INTERRUPCIÓN DE SEÑAL',
+                    text: err.message,
+                    background: '#020617',
+                    color: '#fff'
+                });
+                if(overlay) overlay.classList.add('hidden');
+            }
         }
-    }
-</script>
+    </script>
 </body>
 </html>
+
