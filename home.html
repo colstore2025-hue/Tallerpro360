@@ -182,57 +182,49 @@
     </div>
 
     <script>
-    // 1. INICIALIZACIÓN SEGURA (Previene el error de initialization)
-    // Intentamos capturar las variables si ya existen, si no, esperamos un ciclo
-    let db, auth;
+    // 1. Datos obtenidos de Firebase Console > Configuración del proyecto
+    const firebaseConfig = {
+      apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+      authDomain: "tallerpro360.firebaseapp.com",
+      projectId: "tallerpro360",
+      storageBucket: "tallerpro360.firebasestorage.app",
+      messagingSenderId: "636224778184",
+      appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
+      measurementId: "G-VEC2C0QX2G"
+    };
 
-    function inicializarMotor() {
-        try {
-            db = firebase.firestore();
-            auth = firebase.auth();
-            console.log("Nexus-X Engine: Online");
-        } catch (e) {
-            console.error("Error cargando SDK:", e);
-        }
+    // Inicialización Garantizada
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
     }
 
-    // Ejecutamos la carga inicial
-    window.onload = inicializarMotor;
-
-    // 2. FUNCIÓN GRATI-CORE (Nexus-X Handshake)
     async function activarProtocoloDemo() {
+        // Aseguramos que los elementos existan en el DOM
         const overlay = document.getElementById('handshake');
         const statusText = document.getElementById('handshake-text');
         const bar = document.querySelector('#handshake .bg-cyan-500');
-        
-        // Re-aseguramos que db y auth estén listos por si acaso
-        if (!db || !auth) inicializarMotor();
 
         overlay.classList.remove('hidden');
-        if(bar) bar.style.width = "10%";
-        
-        try {
-            statusText.innerText = "Sincronizando con Starlink Nexus-X...";
 
+        try {
+            const db = firebase.firestore();
+            const auth = firebase.auth();
+
+            statusText.innerText = "Sincronizando con Starlink...";
+            
             // Autenticación Anónima
             const userCredential = await auth.signInAnonymously();
             const uid = userCredential.user.uid;
             
-            if(bar) bar.style.width = "40%";
+            if(bar) bar.style.width = "50%";
             statusText.innerText = "Nodo Vinculado: " + uid.substring(0,6);
 
-            const ahora = firebase.firestore.FieldValue.serverTimestamp();
-            const vence = new Date();
-            vence.setDate(vence.getDate() + 7);
-
-            // Escritura en la colección 'empresas' (nam5)
-            statusText.innerText = "Inyectando Protocolo en Empresas...";
-            
+            // Registro de Empresa
             await db.collection('empresas').doc(uid).set({
                 id: uid,
-                nombre: "Taller Demo Nexus-X",
+                nombre: "Taller Trial Nexus",
                 estado: "trial",
-                fecha_registro: ahora,
+                fecha_registro: firebase.firestore.FieldValue.serverTimestamp(),
                 configuracion: {
                     bold: { apiKey: "PENDIENTE", identity: "PENDIENTE" },
                     modulos: ["ordenes", "inventario", "contabilidad"]
@@ -240,31 +232,29 @@
                 suscripcion: {
                     plan: "TRIAL_7_DIAS",
                     estado: "ACTIVO",
-                    creado_en: ahora,
-                    fecha_vencimiento: vence.toISOString()
+                    creado_en: firebase.firestore.FieldValue.serverTimestamp(),
+                    fecha_vencimiento: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
                 }
             }, { merge: true });
 
             if(bar) bar.style.width = "100%";
-            statusText.innerText = "Acceso Concedido: Nodo Maestro.";
+            statusText.innerText = "Conexión Exitosa.";
 
-            setTimeout(() => {
-                window.location.href = '/login'; 
-            }, 1200);
+            setTimeout(() => { window.location.href = '/login'; }, 1000);
 
         } catch (error) {
-            console.error("Error en Handshake:", error);
-            overlay.classList.add('hidden');
-            
+            console.error(error);
             Swal.fire({
                 icon: 'error',
-                title: '<span class="orbitron">FALLA DE VÍNCULO</span>',
-                text: 'Error de comunicación con nam5: ' + (error.code || error.message),
+                title: 'FALLA DE VÍNCULO',
+                text: 'Error: ' + error.message,
                 background: '#020617',
                 color: '#fff'
             });
+            overlay.classList.add('hidden');
         }
     }
+</script>
 
     // 3. FUNCIÓN BOLD (Se mantiene intacta la conexión que ya te servía)
     async function iniciarPago(plan) {
