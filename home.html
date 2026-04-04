@@ -191,11 +191,16 @@
 async function activarProtocoloDemo() {
     const overlay = document.getElementById('handshake');
     const statusText = document.getElementById('handshake-text');
-    // Seleccionamos la barra por clase si el ID no está definido en el HTML
-    const bar = document.querySelector('#progress-bar') || document.querySelector('.h-full.bg-cyan-500');
+    // Buscamos el div que tiene el color de la barra (el hijo del contenedor de progreso)
+    const bar = document.querySelector('#handshake .bg-cyan-500');
     
     overlay.classList.remove('hidden');
-    if(bar) bar.style.width = "10%";
+    
+    // Quitamos la animación infinita para controlar el progreso manualmente
+    if(bar) {
+        bar.style.animation = 'none'; 
+        bar.style.width = "5%";
+    }
     
     try {
         statusText.innerText = "Inyectando credenciales temporales...";
@@ -207,7 +212,7 @@ async function activarProtocoloDemo() {
             user = userCredential.user;
         }
         const uid = user.uid;
-        if(bar) bar.style.width = "40%";
+        if(bar) bar.style.width = "45%";
 
         statusText.innerText = "Sincronizando Nodo en Empresas...";
 
@@ -216,8 +221,7 @@ async function activarProtocoloDemo() {
         const vence = new Date();
         vence.setDate(ahora.getDate() + 7);
 
-        // 3. Escritura en la colección 'empresas' (Estructura compatible con Dashboard)
-        // Usamos .set con merge:true para no borrar otros datos si ya existen
+        // 3. Escritura en 'empresas' - ESTRUCTURA MAESTRA
         await db.collection('empresas').doc(uid).set({
             config: {
                 nombre_taller: "Taller Demo Nexus-X",
@@ -233,15 +237,17 @@ async function activarProtocoloDemo() {
                 limite_ordenes: 20
             },
             metadata: {
-                uid: uid,
+                uid: uid, // Importante para búsquedas cruzadas
                 engine_v: '1.1.0-STABLE',
-                nodo: 'Nexus-X Starlink'
+                nodo: 'Nexus-X Starlink',
+                handshake_date: ahora.toISOString()
             }
         }, { merge: true });
 
         if(bar) bar.style.width = "100%";
         statusText.innerText = "Acceso concedido: Nodo Maestro Activo.";
 
+        // Feedback visual de éxito
         setTimeout(() => {
             Swal.fire({
                 icon: 'success',
@@ -250,19 +256,25 @@ async function activarProtocoloDemo() {
                 confirmButtonText: 'INGRESAR AL TERMINAL',
                 confirmButtonColor: '#06b6d4',
                 background: '#020617',
-                color: '#fff'
-            }).then(() => { window.location.href = '/login'; });
-        }, 800);
+                color: '#fff',
+                allowOutsideClick: false
+            }).then(() => { 
+                window.location.href = '/login'; 
+            });
+        }, 1000);
 
     } catch (error) {
-        console.error("Falla de Handshake:", error);
+        console.error("Falla de Handshake Nexus:", error);
         overlay.classList.add('hidden');
+        
+        // Error estético tipo Nexus-X
         Swal.fire({ 
             icon: 'error', 
-            title: 'FALLA DE VÍNCULO', 
-            text: 'El servidor Firestore no respondió. Verifique su conexión.',
+            title: '<span class="orbitron text-red-500">FALLA DE VÍNCULO</span>', 
+            text: 'El servidor Firestore no respondió. Verifique su conexión o permisos de Firebase.',
             background: '#020617',
-            color: '#fff'
+            color: '#fff',
+            confirmButtonColor: '#ef4444'
         });
     }
 }
