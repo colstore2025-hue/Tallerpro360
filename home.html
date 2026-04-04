@@ -187,94 +187,76 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
 
-    // 2. FUNCIÓN GRATI-CORE (Trial Automático de 7 días - Sincronizado con Empresas)
+    // 2. FUNCIÓN GRATI-CORE (Versión Sincronizada con Estructura TR-xxxx)
 async function activarProtocoloDemo() {
     const overlay = document.getElementById('handshake');
     const statusText = document.getElementById('handshake-text');
-    // Buscamos el div que tiene el color de la barra (el hijo del contenedor de progreso)
     const bar = document.querySelector('#handshake .bg-cyan-500');
     
     overlay.classList.remove('hidden');
-    
-    // Quitamos la animación infinita para controlar el progreso manualmente
-    if(bar) {
-        bar.style.animation = 'none'; 
-        bar.style.width = "5%";
-    }
+    if(bar) { bar.style.animation = 'none'; bar.style.width = "5%"; }
     
     try {
         statusText.innerText = "Inyectando credenciales temporales...";
         
-        // 1. Obtener UID (Anónimo o Existente)
         let user = auth.currentUser;
         if (!user) {
             const userCredential = await auth.signInAnonymously();
             user = userCredential.user;
         }
-        const uid = user.uid;
-        if(bar) bar.style.width = "45%";
+        const uid = user.uid; // O puedes usar tu lógica de ID manual si prefieres
+        if(bar) bar.style.width = "40%";
 
-        statusText.innerText = "Sincronizando Nodo en Empresas...";
+        statusText.innerText = "Sincronizando con Nodo Central...";
 
-        // 2. Cálculo de fechas (7 días exactos)
         const ahora = new Date();
         const vence = new Date();
         vence.setDate(ahora.getDate() + 7);
 
-        // 3. Escritura en 'empresas' - ESTRUCTURA MAESTRA
+        // MAPEO EXACTO SEGÚN TU DATA ENVIADA
         await db.collection('empresas').doc(uid).set({
-            config: {
-                nombre_taller: "Taller Demo Nexus-X",
-                plan: 'Grati-Core',
-                estado: 'activo',
-                creado_el: firebase.firestore.FieldValue.serverTimestamp()
+            id: uid,
+            nombre: "Taller M (Demo)",
+            estado: "trial",
+            fecha_registro: firebase.firestore.FieldValue.serverTimestamp(),
+            configuracion: {
+                bold: {
+                    apiKey: "PENDIENTE",
+                    identity: "PENDIENTE"
+                },
+                modulos: ["ordenes", "inventario", "contabilidad"]
             },
             suscripcion: {
-                tipo: 'TRIAL',
-                fecha_inicio: firebase.firestore.FieldValue.serverTimestamp(),
-                fecha_expiracion: vence.toISOString(),
-                activo: true,
-                limite_ordenes: 20
-            },
-            metadata: {
-                uid: uid, // Importante para búsquedas cruzadas
-                engine_v: '1.1.0-STABLE',
-                nodo: 'Nexus-X Starlink',
-                handshake_date: ahora.toISOString()
+                plan: "TRIAL_7_DIAS",
+                estado: "ACTIVO",
+                creado_en: firebase.firestore.FieldValue.serverTimestamp(),
+                fecha_vencimiento: vence.toISOString()
             }
         }, { merge: true });
 
         if(bar) bar.style.width = "100%";
         statusText.innerText = "Acceso concedido: Nodo Maestro Activo.";
 
-        // Feedback visual de éxito
         setTimeout(() => {
             Swal.fire({
                 icon: 'success',
                 title: '<span class="orbitron text-cyan-400">CONEXIÓN ESTABLECIDA</span>',
-                html: 'El protocolo <b>Grati-Core</b> ha sido inyectado con éxito.<br>Vínculo activo por 168 horas.',
+                html: 'Protocolo <b>Grati-Core</b> inyectado.<br>Vínculo activo hasta: ' + vence.toLocaleDateString(),
                 confirmButtonText: 'INGRESAR AL TERMINAL',
                 confirmButtonColor: '#06b6d4',
                 background: '#020617',
-                color: '#fff',
-                allowOutsideClick: false
-            }).then(() => { 
-                window.location.href = '/login'; 
-            });
+                color: '#fff'
+            }).then(() => { window.location.href = '/login'; });
         }, 1000);
 
     } catch (error) {
-        console.error("Falla de Handshake Nexus:", error);
+        console.error("Error Nexus-X:", error);
         overlay.classList.add('hidden');
-        
-        // Error estético tipo Nexus-X
         Swal.fire({ 
             icon: 'error', 
-            title: '<span class="orbitron text-red-500">FALLA DE VÍNCULO</span>', 
-            text: 'El servidor Firestore no respondió. Verifique su conexión o permisos de Firebase.',
-            background: '#020617',
-            color: '#fff',
-            confirmButtonColor: '#ef4444'
+            title: 'FALLA DE SEÑAL', 
+            text: 'Error al escribir en el nodo nam5.',
+            background: '#020617', color: '#fff' 
         });
     }
 }
