@@ -193,29 +193,32 @@ async function activarProtocoloDemo() {
     const bar = document.querySelector('#handshake .bg-cyan-500');
     
     try {
-        // 1. Fase de Autenticación Crítica
-        statusText.innerText = "Estableciendo conexión segura...";
-        
-        // Forzamos la espera de la autenticación
+        // 1. VALIDACIÓN DE MOTOR
+        if (typeof db === 'undefined' || typeof auth === 'undefined') {
+            throw new Error("SDK_NOT_READY");
+        }
+
+        statusText.innerText = "Sincronizando con Starlink Nexus-X...";
+        if(bar) bar.style.width = "15%";
+
+        // 2. AUTENTICACIÓN FORZADA
         const userCredential = await auth.signInAnonymously();
         const uid = userCredential.user.uid;
         
-        if(bar) bar.style.width = "30%";
-        statusText.innerText = "Identidad validada: Nodo " + uid.substring(0,6);
+        if(bar) bar.style.width = "45%";
+        statusText.innerText = "Nodo Vinculado: " + uid.substring(0,6);
 
-        // 2. Preparación de Metadatos
-        const fechaRegistro = firebase.firestore.FieldValue.serverTimestamp();
-        const fechaVence = new Date();
-        fechaVence.setDate(fechaVence.getDate() + 7);
+        // 3. CONSTRUCCIÓN DE DATA (Match exacto con tu DB)
+        const ahora = firebase.firestore.FieldValue.serverTimestamp();
+        const vence = new Date();
+        vence.setDate(vence.getDate() + 7);
 
-        // 3. Inyección en Firestore (Estructura Mapas)
-        statusText.innerText = "Escribiendo en nodo principal (nam5)...";
-
+        // 4. ESCRITURA DIRECTA
         await db.collection('empresas').doc(uid).set({
             id: uid,
-            nombre: "Taller Trial " + uid.substring(0,4),
+            nombre: "Taller Trial Automático",
             estado: "trial",
-            fecha_registro: fechaRegistro,
+            fecha_registro: ahora,
             configuracion: {
                 bold: { apiKey: "PENDIENTE", identity: "PENDIENTE" },
                 modulos: ["ordenes", "inventario", "contabilidad"]
@@ -223,26 +226,27 @@ async function activarProtocoloDemo() {
             suscripcion: {
                 plan: "TRIAL_7_DIAS",
                 estado: "ACTIVO",
-                creado_en: fechaRegistro,
-                fecha_vencimiento: fechaVence.toISOString()
+                creado_en: ahora,
+                fecha_vencimiento: vence.toISOString()
             }
         });
 
-        // 4. Finalización de Handshake
         if(bar) bar.style.width = "100%";
-        statusText.innerText = "Sincronización Exitosa.";
+        statusText.innerText = "Protocolo Inyectado con Éxito.";
 
-        setTimeout(() => {
-            window.location.href = '/login'; 
-        }, 1000);
+        setTimeout(() => { window.location.href = '/login'; }, 1200);
 
     } catch (error) {
-        console.error("Error en Handshake:", error);
-        // Si entra aquí, es que Firestore rechazó la escritura por Reglas o Auth
+        console.error("Falla en el Sector nam5:", error);
+        
+        let msg = (error.message === "SDK_NOT_READY") 
+            ? "El motor de base de datos no ha cargado." 
+            : "Error de comunicación con nam5: " + (error.code || error.message);
+
         Swal.fire({
             icon: 'error',
-            title: 'FALLA DE SEÑAL',
-            text: 'Error de comunicación con nam5: ' + error.code,
+            title: '<span class="orbitron">FALLA DE VÍNCULO</span>',
+            text: msg,
             background: '#020617',
             color: '#fff'
         });
