@@ -1,15 +1,23 @@
 /**
  * dashboard.js - NEXUS-X AEGIS V32.6 🛰️
- * NÚCLEO DE INTELIGENCIA TÁCTICA (EDICIÓN PENTÁGONO FINAL)
- * Optimizado para Resiliencia de Enlace Starlink & Google Firebase
+ * NÚCLEO DE INTELIGENCIA TÁCTICA - VERSIÓN ESTABLE
  */
-
 import { getClientes, getOrdenes, getInventario } from "../services/dataService.js";
 import superAI from "../ai/superAI-orchestrator.js";
 
-// ... dentro de export default async function dashboard(container, state) ...
+export default async function dashboard(container, state) {
+    // 🛡️ RECOLECTOR DE IDENTIDAD
+    const empresaId = state?.empresaId || localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
+    
+    if (!empresaId || empresaId === "PENDIENTE") {
+        return showSystemCrash(container, "BUSCANDO ÓRBITA...");
+    }
+
+    // 1. Renderizado Inmediato (El Banner está oculto por defecto)
+    renderPentagonInterface(container);
 
     try {
+        // 2. Carga de Datos
         const [clientes, ordenes, inventario] = await Promise.all([
             getClientes(empresaId).catch(() => []),
             getOrdenes(empresaId).catch(() => []),
@@ -18,26 +26,75 @@ import superAI from "../ai/superAI-orchestrator.js";
 
         const data = { clientes, ordenes, inventario };
 
-        // --- BLOQUE GRATI-CORE: LIMPIO Y SEGURO ---
-        // Buscamos si la empresa actual es de prueba
-        const db = window.db;
-        if (db && empresaId) {
-            import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js").then(async ({ doc, getDoc }) => {
-                const empSnap = await getDoc(doc(db, "empresas", empresaId));
-                if (empSnap.exists() && empSnap.data().plan === "GRATI-CORE") {
-                    const banner = document.getElementById('banner-demo');
-                    if (banner) {
-                        banner.classList.remove('hidden');
-                        // El límite es 5, restamos las órdenes actuales
-                        const restantes = 5 - data.ordenes.length;
-                        document.getElementById('dias-restantes').innerText = restantes > 0 ? restantes : 0;
-                        // Cambiamos el texto dinámicamente para que diga "Órdenes" en vez de "Días" si prefieres
-                        banner.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i> MODO DISCOVERY: Te restan <span class="font-black text-white">${restantes}</span> órdenes de prueba. <a href="#planes" class="underline ml-2 font-black">Subir a Pro AI</a>`;
-                    }
-                }
-            });
+        // 3. LÓGICA GRATI-CORE SIMPLE (No bloquea el Dashboard)
+        // Solo actúa si hay exactamente 2 o menos órdenes (como el demo)
+        const banner = document.getElementById('banner-demo');
+        if (banner && ordenes.length <= 5 && empresaId !== "TU_ID_DE_ADMIN_AQUI") {
+             const restantes = 5 - ordenes.length;
+             document.getElementById('ordenes-restantes').innerText = restantes;
+             banner.classList.remove('hidden');
         }
-        // --- FIN BLOQUE GRATI-CORE ---
+
+        // 4. Procesamiento de Métricas
+        const metrics = processStrategicMetrics(data);
+        updateTacticalHUD(metrics);
+        
+        setTimeout(() => {
+            if (window.Chart) renderNeuralGrowthChart(metrics.tendencia);
+            renderTechEfficiencyMatrix(data.ordenes);
+            deployAIOrchestrator(data);
+        }, 100);
+
+    } catch (err) {
+        console.error("🚨 Error:", err);
+        // Si falla la carga de datos, al menos mostramos la interfaz base
+    }
+}
+
+function renderPentagonInterface(container) {
+    container.innerHTML = `
+    <div id="banner-demo" class="hidden bg-yellow-500 text-black text-[10px] orbitron p-1 text-center font-black">
+        MODO DISCOVERY: QUEDAN <span id="ordenes-restantes">X</span> ÓRDENES. <a href="#planes" class="underline ml-2">SUBIR A PRO</a>
+    </div>
+
+    <div class="p-4 lg:p-10 space-y-10 animate-in fade-in duration-700 pb-32 max-w-[1800px] mx-auto bg-[#02040a] min-h-screen text-white">
+        <div class="flex flex-col lg:flex-row justify-between items-center gap-8 border-b-2 border-cyan-500/20 pb-10">
+            <div class="relative group">
+                <div class="absolute -inset-1 bg-gradient-to-r from-cyan-600 to-red-600 rounded-lg blur opacity-25"></div>
+                <div class="relative bg-black px-8 py-4 rounded-lg border border-white/10 text-center">
+                    <h1 class="text-5xl lg:text-7xl font-black orbitron italic tracking-tighter uppercase">
+                        NEXUS<span class="text-cyan-400">_AEGIS</span><span class="text-red-500">.X</span>
+                    </h1>
+                    <p class="text-[9px] text-cyan-500 font-bold orbitron tracking-[0.6em] uppercase mt-2">SISTEMA DE CONTROL PENTAGONAL V32.6</p>
+                </div>
+            </div>
+            
+            <div class="flex gap-4">
+                <div class="bg-[#0d1117] border-l-4 border-amber-500 p-6 rounded-r-2xl">
+                    <p class="text-[8px] text-amber-500 font-black orbitron uppercase">Nivel Alerta</p>
+                    <p class="text-xl font-black orbitron">DEFCON 1</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="hudKpis" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="h-32 bg-white/5 animate-pulse rounded-[2.5rem]"></div>
+            <div class="h-32 bg-white/5 animate-pulse rounded-[2.5rem]"></div>
+            <div class="h-32 bg-white/5 animate-pulse rounded-[2.5rem]"></div>
+            <div class="h-32 bg-white/5 animate-pulse rounded-[2.5rem]"></div>
+        </div>
+        
+        <div class="grid lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-8 bg-[#0d1117] border border-white/5 rounded-[3rem] p-12">
+                <div class="h-[400px]"><canvas id="neuralChart"></canvas></div>
+            </div>
+            <div class="lg:col-span-4 space-y-8">
+                <div id="aiAnalysis" class="bg-[#0d1117] p-10 rounded-[3rem] border border-cyan-500/30">Cargando IA...</div>
+                <div id="techMatrix" class="bg-[#0d1117] p-10 rounded-[3rem] border border-white/5"></div>
+            </div>
+        </div>
+    </div>`;
+}
 
         // 3. Procesamiento de Métricas Estratégicas
         const metrics = processStrategicMetrics(data);
