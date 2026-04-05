@@ -1,83 +1,83 @@
-// app/js/core/nexus-demo.js
-import { db } from './firebase-config.js'; 
+/**
+ * app/js/core/nexus-demo.js - PROTOCOLO DE VÍNCULO NEXUS-X
+ * Sincronizado con Firebase v10 Modular
+ */
 import { collection, addDoc, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-async function ejecutarProtocoloNexus() {
+export async function ejecutarProtocoloNexus() {
+    // 1. Acceso al Nodo Central (Referencia Global de Base de Datos)
+    const db = window.db; 
     const btn = document.getElementById('btn-protocolo-demo');
     const overlay = document.getElementById('handshake');
     const statusText = document.getElementById('handshake-text');
 
-    // 1. UI Feedback Instantáneo
+    if (!db) {
+        console.error("CRITICAL: Nodo Firestore no detectado en el espacio global.");
+        Swal.fire({
+            icon: 'error',
+            title: 'ERROR DE NODO',
+            text: 'La base de datos no se inicializó correctamente.',
+            background: '#020617',
+            color: '#ff4444'
+        });
+        return;
+    }
+
+    // 2. Feedback Visual de Handshake
     if(overlay) overlay.classList.remove('hidden');
-    if(statusText) statusText.innerText = "ACCEDIENDO AL NODO GRATI-CORE...";
+    if(statusText) statusText.innerText = "ESTABLECIENDO TÚNEL SEGURO GRATI-CORE...";
     btn.disabled = true;
-    btn.innerHTML = "PROCESANDO...";
 
     try {
-        // Verificamos conexión con Firestore (db debe venir de firebase-config.js)
-        if (!db) throw new Error("Nodo Firestore no inicializado");
-
-        // 2. Traemos la configuración maestra que creaste en Firestore
-        const planDoc = await db.collection("planes").doc("GRATI-CORE").get();
-        
-        if (!planDoc.exists) {
-            throw new Error("El protocolo GRATI-CORE no existe en la base de datos.");
-        }
-
-        const planData = planDoc.data();
-
-        // 3. Calculamos la expiración de 7 días
+        // 3. Cálculo de Ciclo Orbital (7 días de Trial)
         const hoy = new Date();
         const expiracion = new Date();
         expiracion.setDate(hoy.getDate() + 7);
 
-        // 4. Creamos la nueva empresa (Instancia del cliente)
-        // Usamos un ID aleatorio para el nuevo cliente
-        const nuevaEmpresaRef = db.collection("empresas").doc();
-
-        const payloadCliente = {
-            id: nuevaEmpresaRef.id,
+        // 4. Inyección de Datos en Colección 'empresas'
+        const docRef = await addDoc(collection(db, "empresas"), {
             plan: "GRATI-CORE",
-            sello: "Nexus-X Starlink SaaS",
-            status: planData.status || "ELITE_TRIAL",
-            limite_ordenes: planData.limite_ordenes || 5,
+            status: "ELITE_TRIAL",
+            creado_el: serverTimestamp(),
+            expira_el: Timestamp.fromDate(expiracion),
+            limite_ordenes: 5,
             ordenes_creadas: 0,
-            creado_el: firebase.firestore.FieldValue.serverTimestamp(), // Sello de tiempo oficial
-            expira_el: firebase.firestore.Timestamp.fromDate(expiracion),
-            config_elite: true
-        };
+            config_elite: true,
+            sello: "Nexus-X Starlink V1.1",
+            metadata: {
+                origen: "Landing_Discovery",
+                handshake: "Success"
+            }
+        });
 
-        await nuevaEmpresaRef.set(payloadCliente);
-
-        // 5. ÉXITO: Sincronización completa
-        if(statusText) statusText.innerText = "VÍNCULO EXITOSO. INYECTANDO MODO ELITE...";
+        // 5. Éxito de Transmisión
+        if(statusText) statusText.innerText = "VÍNCULO EXITOSO. NODO VIRTUAL CREADO.";
         
         setTimeout(() => {
             if(overlay) overlay.classList.add('hidden');
             Swal.fire({
                 icon: 'success',
-                title: 'SISTEMA VINCULADO',
-                text: 'Has activado 7 días de acceso Elite (Grati-Core).',
+                title: 'PROTOCOLO ACTIVADO',
+                html: `<p class="orbitron text-[10px]">ID DE TRANSMISIÓN:<br><span class="text-cyan-400 font-bold">${docRef.id}</span></p>`,
                 background: '#020617',
-                color: '#06b6d4',
-                confirmButtonColor: '#06b6d4'
+                color: '#fff',
+                confirmButtonColor: '#06b6d4',
+                confirmButtonText: 'INGRESAR A TERMINAL'
             }).then(() => {
-                // Redirección al área de trabajo
-                window.location.href = "/login"; 
+                // Redirección definitiva al login del SaaS
+                window.location.href = "https://tallerpro360.vercel.app/login";
             });
         }, 1500);
 
     } catch (error) {
-        console.error("Critical System Error:", error);
+        console.error("Protocol Error:", error);
         if(overlay) overlay.classList.add('hidden');
-        
         btn.disabled = false;
-        btn.innerHTML = "REINTENTAR VÍNCULO";
-
+        
         Swal.fire({
             icon: 'error',
-            title: 'ERROR DE VÍNCULO',
-            text: error.message || 'Falla en la comunicación con el Nodo Central.',
+            title: 'INTERRUPCIÓN DE SEÑAL',
+            text: 'Falla de Handshake: ' + error.message,
             background: '#020617',
             color: '#ff4444'
         });
