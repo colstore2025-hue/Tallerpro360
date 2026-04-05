@@ -74,24 +74,32 @@ export async function ejecutarProtocoloNexus() {
         tecnico: "IA Nexus-X"
     });
 
+        // ... (viene de la inyección de la Orden 2)
     if(statusText) statusText.innerText = "NODO Y DATOS SINCRONIZADOS.";
-    
-    // ... sigue con el Swal.fire que definimos antes ...
-            Swal.fire({
-    icon: 'success',
-    title: 'PROTOCOLO ACTIVADO',
-    html: `
-        <div class="text-left orbitron p-4 bg-slate-900 rounded-lg border border-cyan-500/30">
-            <p class="text-[10px] text-cyan-400 mb-2 font-bold uppercase">Acceso Satelital:</p>
-            <p class="text-[12px] text-white mb-1">USUARIO: <span class="text-yellow-400">discovery@tallerpro360.com</span></p>
-            <p class="text-[12px] text-white">LLAVE: <span class="text-yellow-400">nexus2026</span></p>
-            <hr class="my-3 border-slate-700">
-            <p class="text-[9px] text-slate-400 italic">ID de Transmisión: ${docRef.id}</p>
-        </div>
-    `,
-    background: '#020617',
-    confirmButtonText: 'INGRESAR A TERMINAL',
-    confirmButtonColor: '#06b6d4'
-}).then(() => {
-    window.location.href = "https://tallerpro360.vercel.app/login";
-});
+
+    // USAR empresaId EN LUGAR DE docRef.id
+    Swal.fire({
+        icon: 'success',
+        title: 'PROTOCOLO ACTIVADO',
+        html: `
+            <div class="text-left orbitron p-4 bg-slate-900 rounded-lg border border-cyan-500/30">
+                <p class="text-[10px] text-cyan-400 mb-2 font-bold uppercase">Acceso Satelital:</p>
+                <p class="text-[12px] text-white mb-1">USUARIO: <span class="text-yellow-400">discovery@tallerpro360.com</span></p>
+                <p class="text-[12px] text-white">LLAVE: <span class="text-yellow-400">nexus2026</span></p>
+                <hr class="my-3 border-slate-700">
+                <p class="text-[9px] text-slate-400 italic">ID de Transmisión: ${empresaId}</p>
+            </div>
+        `,
+        background: '#020617',
+        confirmButtonText: 'INGRESAR A TERMINAL',
+        confirmButtonColor: '#06b6d4'
+    }).then(() => {
+        window.location.href = "https://tallerpro360.vercel.app/login";
+    });
+
+    } catch (error) {
+        console.error("Error Nexus:", error);
+        if(overlay) overlay.classList.add('hidden');
+        Swal.fire({ icon: 'error', title: 'FALLA DE VÍNCULO', text: error.message, background: '#020617', color: '#fff' });
+    }
+}
