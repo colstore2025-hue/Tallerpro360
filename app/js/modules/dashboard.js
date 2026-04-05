@@ -1,27 +1,19 @@
 /**
  * dashboard.js - NEXUS-X AEGIS V32.6 🛰️
- * NÚCLEO DE INTELIGENCIA TÁCTICA (EDICIÓN PENTÁGONO FINAL)
- * Optimizado para Resiliencia de Enlace Starlink & Google Firebase
+ * NÚCLEO DE INTELIGENCIA TÁCTICA
  */
-
 import { getClientes, getOrdenes, getInventario } from "../services/dataService.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"; // Importación necesaria para el control
 import superAI from "../ai/superAI-orchestrator.js";
 
 export default async function dashboard(container, state) {
-    // 🛡️ RECOLECTOR DE IDENTIDAD
-    const empresaId = state?.empresaId || localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
+    const empresaId = state?.empresaId || localStorage.getItem("empresaId");
     
-    if (!empresaId || empresaId === "PENDIENTE") {
-        console.warn("🚨 Nexus-X: Identidad no encontrada.");
-        return;
-    }
+    if (!empresaId) return;
 
-    // 1. Renderizado de Interfaz Aeroespacial
+    // 1. Renderizado de Interfaz (Aviso incluido aquí de forma pasiva)
     renderPentagonInterface(container);
 
     try {
-        // 2. Carga de Datos
         const [clientes, ordenes, inventario] = await Promise.all([
             getClientes(empresaId).catch(() => []),
             getOrdenes(empresaId).catch(() => []),
@@ -30,13 +22,18 @@ export default async function dashboard(container, state) {
 
         const data = { clientes, ordenes, inventario };
 
-        // 3. CONTROL DE PROTOCOLO GRATI-CORE (Lógica Discovery)
-        await verificarProtocoloGratiCore(empresaId, data.ordenes.length);
+        // 2. AVISO GRATI-CORE SIMPLE (Sin consultas extra a Firebase)
+        // Si el plan es GRATI-CORE o el total de órdenes es bajo (como en tu demo)
+        if (ordenes.length <= 5) {
+            const banner = document.getElementById('banner-demo');
+            if (banner) {
+                banner.classList.remove('hidden');
+                document.getElementById('ordenes-restantes').innerText = (5 - ordenes.length);
+            }
+        }
 
-        // 4. Procesamiento de Métricas
+        // 3. Procesamiento y HUD
         const metrics = processStrategicMetrics(data);
-
-        // 5. Inyección Dinámica
         updateTacticalHUD(metrics);
         
         setTimeout(() => {
@@ -46,78 +43,27 @@ export default async function dashboard(container, state) {
         }, 100);
 
     } catch (err) {
-        console.error("🚨 Fallo en Command Center:", err);
-    }
-}
-
-// --- LÓGICA DE CONTROL DISCOVERY ---
-async function verificarProtocoloGratiCore(empresaId, totalOrdenesActuales) {
-    // 🛡️ VALIDACIÓN DE SEGURIDAD: Si no hay DB, no romper el dashboard
-    const db = window.db; 
-    if (!db) {
-        console.warn("⚠️ Nexus-X: Nodo DB no detectado. Saltando validación Discovery.");
-        return; 
-    }
-
-    try {
-        const docRef = doc(db, "empresas", empresaId);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-            const empresaData = docSnap.data();
-
-            if (empresaData.plan === "GRATI-CORE") {
-                const banner = document.getElementById('banner-demo');
-                const diasSpan = document.getElementById('dias-restantes');
-                const ordenesRestantesSpan = document.getElementById('ordenes-restantes');
-
-                // Cálculo de tiempo y órdenes
-                const hoy = new Date();
-                const expira = empresaData.expira_el.toDate();
-                const diffDays = Math.ceil((expira - hoy) / (1000 * 60 * 60 * 24));
-                const restantes = 5 - totalOrdenesActuales;
-
-                if (banner) banner.classList.remove('hidden');
-                if (diasSpan) diasSpan.innerText = diffDays;
-                if (ordenesRestantesSpan) ordenesRestantesSpan.innerText = restantes > 0 ? restantes : 0;
-
-                // Bloqueo de botón "Nueva Misión"
-                if (totalOrdenesActuales >= 5) {
-                    const btnNuevaMision = document.querySelector('.btn-nueva-mision');
-                    if (btnNuevaMision) {
-                        btnNuevaMision.disabled = true;
-                        btnNuevaMision.innerHTML = '<i class="fas fa-lock mr-2"></i> LÍMITE ALCANZADO';
-                        btnNuevaMision.classList.add('opacity-50', 'cursor-not-allowed');
-                    }
-                }
-            }
-        }
-    } catch (error) {
-        console.error("🚨 Error en validación Grati-Core:", error);
+        console.error("🚨 Nexus-X Error:", err);
     }
 }
 
 function renderPentagonInterface(container) {
     container.innerHTML = `
-    <div id="banner-demo" class="hidden bg-yellow-500/10 border-b border-yellow-500/50 p-3 text-center text-[11px] orbitron text-yellow-500 animate-pulse">
-        <i class="fas fa-satellite-dish mr-2"></i>
-        PROTOCOLO DISCOVERY: Te quedan <span id="ordenes-restantes" class="font-black text-white">X</span> órdenes y <span id="dias-restantes" class="font-black text-white">X</span> días. 
-        <a href="#planes" class="underline ml-3 font-black text-cyan-400 hover:text-white transition">SUBIR A PRO AI</a>
+    <div id="banner-demo" class="hidden bg-red-600 text-white text-[10px] orbitron p-2 text-center font-bold tracking-widest">
+        <i class="fas fa-exclamation-triangle mr-2"></i>
+        MODO DISCOVERY: TE RESTAN <span id="ordenes-restantes">X</span> ÓRDENES DE PRUEBA. 
+        <a href="#planes" class="ml-4 underline">ADQUIRIR LICENCIA PRO AI</a>
     </div>
 
-    <div class="p-4 lg:p-10 space-y-10 animate-in fade-in zoom-in duration-700 pb-32 max-w-[1800px] mx-auto bg-[#02040a] min-h-screen text-white">
-        
+    <div class="p-4 lg:p-10 space-y-10 animate-in fade-in duration-700 pb-32 max-w-[1800px] mx-auto bg-[#02040a] min-h-screen text-white">
         <div class="flex flex-col lg:flex-row justify-between items-center gap-8 border-b-2 border-cyan-500/20 pb-10">
-            <div class="relative group">
-                <div class="absolute -inset-1 bg-gradient-to-r from-cyan-600 to-red-600 rounded-lg blur opacity-25"></div>
-                <div class="relative bg-black px-8 py-4 rounded-lg border border-white/10">
-                    <h1 class="text-5xl lg:text-7xl font-black orbitron italic tracking-tighter uppercase">
-                        NEXUS<span class="text-cyan-400">_AEGIS</span><span class="text-red-500">.X</span>
-                    </h1>
-                    <p class="text-[9px] text-cyan-500 font-bold orbitron tracking-[0.6em] uppercase mt-2 text-center">SISTEMA DE CONTROL PENTAGONAL V32.6</p>
-                </div>
+            <div class="relative group text-center lg:text-left">
+                <h1 class="text-5xl lg:text-7xl font-black orbitron italic tracking-tighter uppercase">
+                    NEXUS<span class="text-cyan-400">_AEGIS</span><span class="text-red-500">.X</span>
+                </h1>
+                <p class="text-[9px] text-cyan-500 font-bold orbitron tracking-[0.6em] uppercase mt-2">SISTEMA DE CONTROL PENTAGONAL V32.6</p>
             </div>
-            </div>
+        </div>
     </div>`;
 }
             
