@@ -8,6 +8,8 @@
     <script type="module">
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    
+    // Importamos la función del archivo
     import { ejecutarProtocoloNexus } from "./app/js/core/nexus-demo.js";
 
     const firebaseConfig = {
@@ -20,15 +22,14 @@
         measurementId: "G-VEC2C0QX2G"
     };
 
-    // Inicialización de Emergencia en el Head
     const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
     const db = getFirestore(app);
 
-    // Exportación Global para compatibilidad con botones y BoldSync
+    // CRÍTICO: Asignar al objeto window para que el onclick del botón la encuentre
     window.db = db;
     window.ejecutarProtocoloNexus = ejecutarProtocoloNexus;
     
-    console.log("🛰️ Nexus-X Starlink: Nodo Maestro Vinculado");
+    console.log("🛰️ Nexus-X Starlink: Nodo Maestro y Protocolo Demo Vinculados");
 </script>
 
     <script src="app/js/core/nexus-demo.js"></script>
