@@ -1,19 +1,26 @@
 /**
  * dashboard.js - NEXUS-X AEGIS V32.6 🛰️
- * NÚCLEO DE INTELIGENCIA TÁCTICA
+ * NÚCLEO DE INTELIGENCIA TÁCTICA (EDICIÓN PENTÁGONO FINAL)
+ * Optimizado para Resiliencia de Enlace Starlink & Google Firebase
  */
+
 import { getClientes, getOrdenes, getInventario } from "../services/dataService.js";
 import superAI from "../ai/superAI-orchestrator.js";
 
 export default async function dashboard(container, state) {
-    const empresaId = state?.empresaId || localStorage.getItem("empresaId");
+    // 🛡️ RECOLECTOR DE IDENTIDAD (Evita el Protocol Broken)
+    const empresaId = state?.empresaId || localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
     
-    if (!empresaId) return;
+    if (!empresaId || empresaId === "PENDIENTE") {
+        console.warn("🚨 Nexus-X: Identidad no encontrada. Reintentando enlace...");
+        return showSystemCrash(container, "BUSCANDO ÓRBITA...");
+    }
 
-    // 1. Renderizado de Interfaz (Aviso incluido aquí de forma pasiva)
+    // 1. Renderizado de Interfaz Aeroespacial Inmediato
     renderPentagonInterface(container);
 
     try {
+        // 2. Carga de Datos con Manejo de Silencio (Evita el Crash si una falla)
         const [clientes, ordenes, inventario] = await Promise.all([
             getClientes(empresaId).catch(() => []),
             getOrdenes(empresaId).catch(() => []),
@@ -22,20 +29,13 @@ export default async function dashboard(container, state) {
 
         const data = { clientes, ordenes, inventario };
 
-        // 2. AVISO GRATI-CORE SIMPLE (Sin consultas extra a Firebase)
-        // Si el plan es GRATI-CORE o el total de órdenes es bajo (como en tu demo)
-        if (ordenes.length <= 5) {
-            const banner = document.getElementById('banner-demo');
-            if (banner) {
-                banner.classList.remove('hidden');
-                document.getElementById('ordenes-restantes').innerText = (5 - ordenes.length);
-            }
-        }
-
-        // 3. Procesamiento y HUD
+        // 3. Procesamiento de Métricas Estratégicas
         const metrics = processStrategicMetrics(data);
+
+        // 4. Inyección Dinámica de Datos (Sin destruir el DOM)
         updateTacticalHUD(metrics);
         
+        // Esperar a que el DOM esté listo para Chart.js
         setTimeout(() => {
             if (window.Chart) renderNeuralGrowthChart(metrics.tendencia);
             renderTechEfficiencyMatrix(data.ordenes);
@@ -43,29 +43,30 @@ export default async function dashboard(container, state) {
         }, 100);
 
     } catch (err) {
-        console.error("🚨 Nexus-X Error:", err);
+        console.error("🚨 Fallo Crítico en Command Center:", err);
+        showSystemCrash(container, "LINK PROTOCOL BROKEN: DASHBOARD");
     }
 }
 
 function renderPentagonInterface(container) {
     container.innerHTML = `
-    <div id="banner-demo" class="hidden bg-red-600 text-white text-[10px] orbitron p-2 text-center font-bold tracking-widest">
-        <i class="fas fa-exclamation-triangle mr-2"></i>
-        MODO DISCOVERY: TE RESTAN <span id="ordenes-restantes">X</span> ÓRDENES DE PRUEBA. 
-        <a href="#planes" class="ml-4 underline">ADQUIRIR LICENCIA PRO AI</a>
-    </div>
-
-    <div class="p-4 lg:p-10 space-y-10 animate-in fade-in duration-700 pb-32 max-w-[1800px] mx-auto bg-[#02040a] min-h-screen text-white">
+    <div class="p-4 lg:p-10 space-y-10 animate-in fade-in zoom-in duration-700 pb-32 max-w-[1800px] mx-auto bg-[#02040a] min-h-screen text-white">
+        
         <div class="flex flex-col lg:flex-row justify-between items-center gap-8 border-b-2 border-cyan-500/20 pb-10">
-            <div class="relative group text-center lg:text-left">
-                <h1 class="text-5xl lg:text-7xl font-black orbitron italic tracking-tighter uppercase">
-                    NEXUS<span class="text-cyan-400">_AEGIS</span><span class="text-red-500">.X</span>
-                </h1>
-                <p class="text-[9px] text-cyan-500 font-bold orbitron tracking-[0.6em] uppercase mt-2">SISTEMA DE CONTROL PENTAGONAL V32.6</p>
+            <div class="relative group">
+                <div class="absolute -inset-1 bg-gradient-to-r from-cyan-600 to-red-600 rounded-lg blur opacity-25"></div>
+                <div class="relative bg-black px-8 py-4 rounded-lg border border-white/10">
+                    <h1 class="text-5xl lg:text-7xl font-black orbitron italic tracking-tighter uppercase">
+<div id="banner-demo" class="hidden bg-yellow-500/10 border-b border-yellow-500/50 p-2 text-center text-[10px] orbitron text-yellow-500">
+    <i class="fas fa-exclamation-triangle mr-2"></i>
+    MODO DISCOVERY: Tu acceso expira en <span id="dias-restantes">X</span> días. 
+    <a href="#planes" class="underline ml-2 font-black">Subir a Pro AI</a>
+</div>
+                        NEXUS<span class="text-cyan-400">_AEGIS</span><span class="text-red-500">.X</span>
+                    </h1>
+                    <p class="text-[9px] text-cyan-500 font-bold orbitron tracking-[0.6em] uppercase mt-2">SISTEMA DE CONTROL PENTAGONAL V32.6</p>
+                </div>
             </div>
-        </div>
-    </div>`;
-}
             
             <div class="flex gap-4">
                 <div class="bg-[#0d1117] border-l-4 border-amber-500 p-6 rounded-r-2xl">
