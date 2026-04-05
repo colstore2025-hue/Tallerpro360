@@ -52,41 +52,48 @@ export default async function dashboard(container, state) {
 
 // --- LÓGICA DE CONTROL DISCOVERY ---
 async function verificarProtocoloGratiCore(empresaId, totalOrdenesActuales) {
-    // window.db debe estar inicializado en tu index/app principal
-    const docRef = doc(window.db, "empresas", empresaId);
-    const docSnap = await getDoc(docRef);
+    // 🛡️ VALIDACIÓN DE SEGURIDAD: Si no hay DB, no romper el dashboard
+    const db = window.db; 
+    if (!db) {
+        console.warn("⚠️ Nexus-X: Nodo DB no detectado. Saltando validación Discovery.");
+        return; 
+    }
 
-    if (docSnap.exists()) {
-        const empresaData = docSnap.data();
+    try {
+        const docRef = doc(db, "empresas", empresaId);
+        const docSnap = await getDoc(docRef);
 
-        if (empresaData.plan === "GRATI-CORE") {
-            const banner = document.getElementById('banner-demo');
-            const diasSpan = document.getElementById('dias-restantes');
-            const ordenesRestantesSpan = document.getElementById('ordenes-restantes');
+        if (docSnap.exists()) {
+            const empresaData = docSnap.data();
 
-            // Calcular días restantes
-            const hoy = new Date();
-            const expira = empresaData.expira_el.toDate();
-            const diffDays = Math.ceil((expira - hoy) / (1000 * 60 * 60 * 24));
-            
-            // Calcular órdenes restantes (Límite 5)
-            const restantes = 5 - totalOrdenesActuales;
+            if (empresaData.plan === "GRATI-CORE") {
+                const banner = document.getElementById('banner-demo');
+                const diasSpan = document.getElementById('dias-restantes');
+                const ordenesRestantesSpan = document.getElementById('ordenes-restantes');
 
-            // Mostrar Banner y Actualizar Datos
-            if (banner) banner.classList.remove('hidden');
-            if (diasSpan) diasSpan.innerText = diffDays;
-            if (ordenesRestantesSpan) ordenesRestantesSpan.innerText = restantes > 0 ? restantes : 0;
+                // Cálculo de tiempo y órdenes
+                const hoy = new Date();
+                const expira = empresaData.expira_el.toDate();
+                const diffDays = Math.ceil((expira - hoy) / (1000 * 60 * 60 * 24));
+                const restantes = 5 - totalOrdenesActuales;
 
-            // Bloqueo de seguridad si llegó al límite
-            if (totalOrdenesActuales >= 5) {
-                const btnNuevaMision = document.querySelector('.btn-nueva-mision');
-                if (btnNuevaMision) {
-                    btnNuevaMision.disabled = true;
-                    btnNuevaMision.innerHTML = '<i class="fas fa-lock mr-2"></i> LÍMITE ALCANZADO';
-                    btnNuevaMision.classList.add('opacity-50', 'cursor-not-allowed');
+                if (banner) banner.classList.remove('hidden');
+                if (diasSpan) diasSpan.innerText = diffDays;
+                if (ordenesRestantesSpan) ordenesRestantesSpan.innerText = restantes > 0 ? restantes : 0;
+
+                // Bloqueo de botón "Nueva Misión"
+                if (totalOrdenesActuales >= 5) {
+                    const btnNuevaMision = document.querySelector('.btn-nueva-mision');
+                    if (btnNuevaMision) {
+                        btnNuevaMision.disabled = true;
+                        btnNuevaMision.innerHTML = '<i class="fas fa-lock mr-2"></i> LÍMITE ALCANZADO';
+                        btnNuevaMision.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
                 }
             }
         }
+    } catch (error) {
+        console.error("🚨 Error en validación Grati-Core:", error);
     }
 }
 
