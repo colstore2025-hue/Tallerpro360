@@ -1,13 +1,10 @@
 /**
  * firebase-config.js - TallerPRO360 🚀
- * BYPASS TEMPORAL: Se desactiva App Check para evitar bloqueos de Google Cloud MFA.
+ * NÚCLEO SINCRONIZADO (ESM MODE)
  */
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-// Importación de App Check comentada para no generar peso innecesario
-// import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
@@ -19,18 +16,19 @@ const firebaseConfig = {
   measurementId: "G-VEC2C0QX2G"
 };
 
-// Inicialización única y segura
+// 1. Inicialización Única
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
-/* 🛡️ APP CHECK DESACTIVADO TEMPORALMENTE 
-   Motivo: Bloqueo de acceso a Google Cloud Console (MFA Requerido).
-   Esto permitirá que el sistema cargue sin esperar validaciones externas.
-*/
-
+// 2. Instancias de Servicio
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Exportación limpia (Sin appCheck)
+// 3. PUENTE CRÍTICO: Exponer a Global para nexus-demo.js y otros scripts
+window.db = db;
+window.auth = auth;
+window.firebaseApp = app;
+
+// Exportación para módulos modernos
 export { app, auth, db };
 
-console.log("🚀 TallerPRO360: Núcleo Firebase cargado en modo Rescate (Sin App Check).");
+console.log("🚀 TallerPRO360: Núcleo Firebase v10 activo y vinculado globalmente.");
