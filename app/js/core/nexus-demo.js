@@ -85,7 +85,7 @@ export async function ejecutarProtocoloNexus() {
             <div class="text-left orbitron p-4 bg-slate-900 rounded-lg border border-cyan-500/30">
                 <p class="text-[10px] text-cyan-400 mb-2 font-bold uppercase">Acceso Satelital:</p>
                 <p class="text-[12px] text-white mb-1">USUARIO: <span class="text-yellow-400">discovery@tallerpro360.com</span></p>
-                <p class="text-[12px] text-white">LLAVE: <span class="text-yellow-400">nexus2026</span></p>
+                <p class="text-[12px] text-white">LLAVE: <span class="text-yellow-400">Demo2026</span></p>
                 <hr class="my-3 border-slate-700">
                 <p class="text-[9px] text-slate-400 italic">ID de Transmisión: ${empresaId}</p>
             </div>
