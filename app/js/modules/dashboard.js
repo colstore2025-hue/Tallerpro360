@@ -5,22 +5,23 @@
  */
 
 import { getClientes, getOrdenes, getInventario } from "../services/dataService.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"; // Importación necesaria para el control
 import superAI from "../ai/superAI-orchestrator.js";
 
 export default async function dashboard(container, state) {
-    // 🛡️ RECOLECTOR DE IDENTIDAD (Evita el Protocol Broken)
+    // 🛡️ RECOLECTOR DE IDENTIDAD
     const empresaId = state?.empresaId || localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
     
     if (!empresaId || empresaId === "PENDIENTE") {
-        console.warn("🚨 Nexus-X: Identidad no encontrada. Reintentando enlace...");
-        return showSystemCrash(container, "BUSCANDO ÓRBITA...");
+        console.warn("🚨 Nexus-X: Identidad no encontrada.");
+        return;
     }
 
-    // 1. Renderizado de Interfaz Aeroespacial Inmediato
+    // 1. Renderizado de Interfaz Aeroespacial
     renderPentagonInterface(container);
 
     try {
-        // 2. Carga de Datos con Manejo de Silencio (Evita el Crash si una falla)
+        // 2. Carga de Datos
         const [clientes, ordenes, inventario] = await Promise.all([
             getClientes(empresaId).catch(() => []),
             getOrdenes(empresaId).catch(() => []),
@@ -29,13 +30,15 @@ export default async function dashboard(container, state) {
 
         const data = { clientes, ordenes, inventario };
 
-        // 3. Procesamiento de Métricas Estratégicas
+        // 3. CONTROL DE PROTOCOLO GRATI-CORE (Lógica Discovery)
+        await verificarProtocoloGratiCore(empresaId, data.ordenes.length);
+
+        // 4. Procesamiento de Métricas
         const metrics = processStrategicMetrics(data);
 
-        // 4. Inyección Dinámica de Datos (Sin destruir el DOM)
+        // 5. Inyección Dinámica
         updateTacticalHUD(metrics);
         
-        // Esperar a que el DOM esté listo para Chart.js
         setTimeout(() => {
             if (window.Chart) renderNeuralGrowthChart(metrics.tendencia);
             renderTechEfficiencyMatrix(data.ordenes);
@@ -43,13 +46,58 @@ export default async function dashboard(container, state) {
         }, 100);
 
     } catch (err) {
-        console.error("🚨 Fallo Crítico en Command Center:", err);
-        showSystemCrash(container, "LINK PROTOCOL BROKEN: DASHBOARD");
+        console.error("🚨 Fallo en Command Center:", err);
+    }
+}
+
+// --- LÓGICA DE CONTROL DISCOVERY ---
+async function verificarProtocoloGratiCore(empresaId, totalOrdenesActuales) {
+    // window.db debe estar inicializado en tu index/app principal
+    const docRef = doc(window.db, "empresas", empresaId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+        const empresaData = docSnap.data();
+
+        if (empresaData.plan === "GRATI-CORE") {
+            const banner = document.getElementById('banner-demo');
+            const diasSpan = document.getElementById('dias-restantes');
+            const ordenesRestantesSpan = document.getElementById('ordenes-restantes');
+
+            // Calcular días restantes
+            const hoy = new Date();
+            const expira = empresaData.expira_el.toDate();
+            const diffDays = Math.ceil((expira - hoy) / (1000 * 60 * 60 * 24));
+            
+            // Calcular órdenes restantes (Límite 5)
+            const restantes = 5 - totalOrdenesActuales;
+
+            // Mostrar Banner y Actualizar Datos
+            if (banner) banner.classList.remove('hidden');
+            if (diasSpan) diasSpan.innerText = diffDays;
+            if (ordenesRestantesSpan) ordenesRestantesSpan.innerText = restantes > 0 ? restantes : 0;
+
+            // Bloqueo de seguridad si llegó al límite
+            if (totalOrdenesActuales >= 5) {
+                const btnNuevaMision = document.querySelector('.btn-nueva-mision');
+                if (btnNuevaMision) {
+                    btnNuevaMision.disabled = true;
+                    btnNuevaMision.innerHTML = '<i class="fas fa-lock mr-2"></i> LÍMITE ALCANZADO';
+                    btnNuevaMision.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        }
     }
 }
 
 function renderPentagonInterface(container) {
     container.innerHTML = `
+    <div id="banner-demo" class="hidden bg-yellow-500/10 border-b border-yellow-500/50 p-3 text-center text-[11px] orbitron text-yellow-500 animate-pulse">
+        <i class="fas fa-satellite-dish mr-2"></i>
+        PROTOCOLO DISCOVERY: Te quedan <span id="ordenes-restantes" class="font-black text-white">X</span> órdenes y <span id="dias-restantes" class="font-black text-white">X</span> días. 
+        <a href="#planes" class="underline ml-3 font-black text-cyan-400 hover:text-white transition">SUBIR A PRO AI</a>
+    </div>
+
     <div class="p-4 lg:p-10 space-y-10 animate-in fade-in zoom-in duration-700 pb-32 max-w-[1800px] mx-auto bg-[#02040a] min-h-screen text-white">
         
         <div class="flex flex-col lg:flex-row justify-between items-center gap-8 border-b-2 border-cyan-500/20 pb-10">
@@ -57,16 +105,14 @@ function renderPentagonInterface(container) {
                 <div class="absolute -inset-1 bg-gradient-to-r from-cyan-600 to-red-600 rounded-lg blur opacity-25"></div>
                 <div class="relative bg-black px-8 py-4 rounded-lg border border-white/10">
                     <h1 class="text-5xl lg:text-7xl font-black orbitron italic tracking-tighter uppercase">
-<div id="banner-demo" class="hidden bg-yellow-500/10 border-b border-yellow-500/50 p-2 text-center text-[10px] orbitron text-yellow-500">
-    <i class="fas fa-exclamation-triangle mr-2"></i>
-    MODO DISCOVERY: Tu acceso expira en <span id="dias-restantes">X</span> días. 
-    <a href="#planes" class="underline ml-2 font-black">Subir a Pro AI</a>
-</div>
                         NEXUS<span class="text-cyan-400">_AEGIS</span><span class="text-red-500">.X</span>
                     </h1>
-                    <p class="text-[9px] text-cyan-500 font-bold orbitron tracking-[0.6em] uppercase mt-2">SISTEMA DE CONTROL PENTAGONAL V32.6</p>
+                    <p class="text-[9px] text-cyan-500 font-bold orbitron tracking-[0.6em] uppercase mt-2 text-center">SISTEMA DE CONTROL PENTAGONAL V32.6</p>
                 </div>
             </div>
+            </div>
+    </div>`;
+}
             
             <div class="flex gap-4">
                 <div class="bg-[#0d1117] border-l-4 border-amber-500 p-6 rounded-r-2xl">
