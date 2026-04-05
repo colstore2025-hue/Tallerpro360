@@ -29,32 +29,54 @@ export async function ejecutarProtocoloNexus() {
     btn.disabled = true;
 
     try {
-        // 3. Cálculo de Ciclo Orbital (7 días de Trial)
-        const hoy = new Date();
-        const expiracion = new Date();
-        expiracion.setDate(hoy.getDate() + 7);
+    const hoy = new Date();
+    const expiracion = new Date();
+    expiracion.setDate(hoy.getDate() + 7);
 
-        // 4. Inyección de Datos en Colección 'empresas'
-        const docRef = await addDoc(collection(db, "empresas"), {
-            plan: "GRATI-CORE",
-            status: "ELITE_TRIAL",
-            creado_el: serverTimestamp(),
-            expira_el: Timestamp.fromDate(expiracion),
-            limite_ordenes: 5,
-            ordenes_creadas: 0,
-            config_elite: true,
-            sello: "Nexus-X Starlink V1.1",
-            metadata: {
-                origen: "Landing_Discovery",
-                handshake: "Success"
-            }
-        });
+    // A. CREAR EMPRESA DEMO
+    const empresaRef = await addDoc(collection(db, "empresas"), {
+        plan: "GRATI-CORE",
+        status: "ELITE_TRIAL",
+        creado_el: serverTimestamp(),
+        expira_el: Timestamp.fromDate(expiracion),
+        limite_ordenes: 5,
+        ordenes_creadas: 2, // Marcamos 2 porque las inyectaremos ahora
+        sello: "Nexus-X Starlink V1.1",
+        config_elite: true
+    });
 
-        // 5. Éxito de Transmisión
-        if(statusText) statusText.innerText = "VÍNCULO EXITOSO. NODO VIRTUAL CREADO.";
-        
-        setTimeout(() => {
-            if(overlay) overlay.classList.add('hidden');
+    const empresaId = empresaRef.id;
+
+    // B. INYECTAR ÓRDENES SEMILLA (Data Pre-cargada)
+    const ordenesRef = collection(db, "ordenes");
+
+    // Orden 1: Finalizada para mostrar historial
+    await addDoc(ordenesRef, {
+        empresaId: empresaId,
+        cliente: "CLIENTE DE PRUEBA NEXUS",
+        vehiculo: "TESLA MODEL 3 / PLACA: NEX-001",
+        servicio: "Sincronización de Sensores Starlink",
+        estado: "FINALIZADO",
+        total: 150000,
+        fecha: serverTimestamp(),
+        tecnico: "IA Nexus-X"
+    });
+
+    // Orden 2: En proceso para mostrar seguimiento real
+    await addDoc(ordenesRef, {
+        empresaId: empresaId,
+        cliente: "NEXUS DISCOVERY USER",
+        vehiculo: "BMW M4 / PLACA: STAR-999",
+        servicio: "Diagnóstico de Inyección Electrónica",
+        estado: "EN PROCESO",
+        total: 85000,
+        fecha: serverTimestamp(),
+        tecnico: "IA Nexus-X"
+    });
+
+    if(statusText) statusText.innerText = "NODO Y DATOS SINCRONIZADOS.";
+    
+    // ... sigue con el Swal.fire que definimos antes ...
             Swal.fire({
     icon: 'success',
     title: 'PROTOCOLO ACTIVADO',
