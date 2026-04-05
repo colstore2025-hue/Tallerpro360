@@ -7,20 +7,9 @@
 import { getClientes, getOrdenes, getInventario } from "../services/dataService.js";
 import superAI from "../ai/superAI-orchestrator.js";
 
-export default async function dashboard(container, state) {
-    // 🛡️ RECOLECTOR DE IDENTIDAD (Evita el Protocol Broken)
-    const empresaId = state?.empresaId || localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
-    
-    if (!empresaId || empresaId === "PENDIENTE") {
-        console.warn("🚨 Nexus-X: Identidad no encontrada. Reintentando enlace...");
-        return showSystemCrash(container, "BUSCANDO ÓRBITA...");
-    }
-
-    // 1. Renderizado de Interfaz Aeroespacial Inmediato
-    renderPentagonInterface(container);
+// ... dentro de export default async function dashboard(container, state) ...
 
     try {
-        // 2. Carga de Datos con Manejo de Silencio (Evita el Crash si una falla)
         const [clientes, ordenes, inventario] = await Promise.all([
             getClientes(empresaId).catch(() => []),
             getOrdenes(empresaId).catch(() => []),
@@ -28,6 +17,27 @@ export default async function dashboard(container, state) {
         ]);
 
         const data = { clientes, ordenes, inventario };
+
+        // --- BLOQUE GRATI-CORE: LIMPIO Y SEGURO ---
+        // Buscamos si la empresa actual es de prueba
+        const db = window.db;
+        if (db && empresaId) {
+            import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js").then(async ({ doc, getDoc }) => {
+                const empSnap = await getDoc(doc(db, "empresas", empresaId));
+                if (empSnap.exists() && empSnap.data().plan === "GRATI-CORE") {
+                    const banner = document.getElementById('banner-demo');
+                    if (banner) {
+                        banner.classList.remove('hidden');
+                        // El límite es 5, restamos las órdenes actuales
+                        const restantes = 5 - data.ordenes.length;
+                        document.getElementById('dias-restantes').innerText = restantes > 0 ? restantes : 0;
+                        // Cambiamos el texto dinámicamente para que diga "Órdenes" en vez de "Días" si prefieres
+                        banner.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i> MODO DISCOVERY: Te restan <span class="font-black text-white">${restantes}</span> órdenes de prueba. <a href="#planes" class="underline ml-2 font-black">Subir a Pro AI</a>`;
+                    }
+                }
+            });
+        }
+        // --- FIN BLOQUE GRATI-CORE ---
 
         // 3. Procesamiento de Métricas Estratégicas
         const metrics = processStrategicMetrics(data);
