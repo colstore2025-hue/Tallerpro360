@@ -57,6 +57,15 @@ function renderPentagonInterface(container) {
                 <div class="absolute -inset-1 bg-gradient-to-r from-cyan-600 to-red-600 rounded-lg blur opacity-25"></div>
                 <div class="relative bg-black px-8 py-4 rounded-lg border border-white/10">
                     <h1 class="text-5xl lg:text-7xl font-black orbitron italic tracking-tighter uppercase">
+<div id="banner-demo" class="hidden bg-yellow-500/10 border-b border-yellow-500/50 p-2 text-center text-[10px] orbitron text-yellow-500">
+    <i class="fas fa-exclamation-triangle mr-2"></i>
+    MODO DISCOVERY: Tu acceso expira en <span id="dias-restantes">X</span> días. 
+    <a href="#planes" class="underline ml-2 font-black">Subir a Pro AI</a>
+</div>
+
+<div class="text-center mt-4">
+    <h1 class="nexus-title">NEXUS_AEGIS.X</h1>
+</div>
                         NEXUS<span class="text-cyan-400">_AEGIS</span><span class="text-red-500">.X</span>
                     </h1>
                     <p class="text-[9px] text-cyan-500 font-bold orbitron tracking-[0.6em] uppercase mt-2">SISTEMA DE CONTROL PENTAGONAL V32.6</p>
