@@ -1,14 +1,14 @@
 /**
  * dashboard.js - NEXUS-X AEGIS V32.6 🛰️
  * NÚCLEO DE INTELIGENCIA TÁCTICA (EDICIÓN PENTÁGONO FINAL)
- * Optimizado para Resiliencia de Enlace Starlink & Google Firebase
+ * Integración: Grati-Core Discovery + Navegación de Módulos Starlink
  */
 
 import { getClientes, getOrdenes, getInventario } from "../services/dataService.js";
 import superAI from "../ai/superAI-orchestrator.js";
 
 export default async function dashboard(container, state) {
-    // 🛡️ RECOLECTOR DE IDENTIDAD (Evita el Protocol Broken)
+    // 🛡️ RECOLECTOR DE IDENTIDAD (Resiliencia de Enlace)
     const empresaId = state?.empresaId || localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
     
     if (!empresaId || empresaId === "PENDIENTE") {
@@ -16,11 +16,14 @@ export default async function dashboard(container, state) {
         return showSystemCrash(container, "BUSCANDO ÓRBITA...");
     }
 
+    // 📡 DETECTOR DE NODO DEMO (Inyección Grati-Core)
+    const isDemo = localStorage.getItem("isDemo") === "true";
+    
     // 1. Renderizado de Interfaz Aeroespacial Inmediato
-    renderPentagonInterface(container);
+    renderPentagonInterface(container, isDemo);
 
     try {
-        // 2. Carga de Datos con Manejo de Silencio (Evita el Crash si una falla)
+        // 2. Carga de Datos con Manejo de Silencio
         const [clientes, ordenes, inventario] = await Promise.all([
             getClientes(empresaId).catch(() => []),
             getOrdenes(empresaId).catch(() => []),
@@ -32,14 +35,20 @@ export default async function dashboard(container, state) {
         // 3. Procesamiento de Métricas Estratégicas
         const metrics = processStrategicMetrics(data);
 
-        // 4. Inyección Dinámica de Datos (Sin destruir el DOM)
+        // 4. Inyección Dinámica de Datos
         updateTacticalHUD(metrics);
         
-        // Esperar a que el DOM esté listo para Chart.js
+        // 5. Inicialización de Componentes Visuales
         setTimeout(() => {
             if (window.Chart) renderNeuralGrowthChart(metrics.tendencia);
             renderTechEfficiencyMatrix(data.ordenes);
             deployAIOrchestrator(data);
+            
+            // Si es demo, podemos ajustar el contador de días dinámicamente si fuera necesario
+            if (isDemo) {
+                const diasTag = document.getElementById("dias-restantes");
+                if (diasTag) diasTag.innerText = "7";
+            }
         }, 100);
 
     } catch (err) {
@@ -48,8 +57,14 @@ export default async function dashboard(container, state) {
     }
 }
 
-function renderPentagonInterface(container) {
+function renderPentagonInterface(container, isDemo) {
     container.innerHTML = `
+    <div id="banner-demo" class="${isDemo ? '' : 'hidden'} bg-yellow-500/10 border-b border-yellow-500/50 p-3 text-center text-[10px] orbitron text-yellow-500 sticky top-0 z-[1000] backdrop-blur-md">
+        <i class="fas fa-exclamation-triangle mr-2"></i>
+        MODO DISCOVERY: Tu nodo trial expira en <span id="dias-restantes">7</span> días. 
+        <a href="#planes" class="underline ml-2 font-black hover:text-white">ADQUIRIR LICENCIA PRO</a>
+    </div>
+
     <div class="p-4 lg:p-10 space-y-10 animate-in fade-in zoom-in duration-700 pb-32 max-w-[1800px] mx-auto bg-[#02040a] min-h-screen text-white">
         
         <div class="flex flex-col lg:flex-row justify-between items-center gap-8 border-b-2 border-cyan-500/20 pb-10">
@@ -57,11 +72,6 @@ function renderPentagonInterface(container) {
                 <div class="absolute -inset-1 bg-gradient-to-r from-cyan-600 to-red-600 rounded-lg blur opacity-25"></div>
                 <div class="relative bg-black px-8 py-4 rounded-lg border border-white/10">
                     <h1 class="text-5xl lg:text-7xl font-black orbitron italic tracking-tighter uppercase">
-<div id="banner-demo" class="hidden bg-yellow-500/10 border-b border-yellow-500/50 p-2 text-center text-[10px] orbitron text-yellow-500">
-    <i class="fas fa-exclamation-triangle mr-2"></i>
-    MODO DISCOVERY: Tu acceso expira en <span id="dias-restantes">X</span> días. 
-    <a href="#planes" class="underline ml-2 font-black">Subir a Pro AI</a>
-</div>
                         NEXUS<span class="text-cyan-400">_AEGIS</span><span class="text-red-500">.X</span>
                     </h1>
                     <p class="text-[9px] text-cyan-500 font-bold orbitron tracking-[0.6em] uppercase mt-2">SISTEMA DE CONTROL PENTAGONAL V32.6</p>
@@ -78,6 +88,33 @@ function renderPentagonInterface(container) {
                     <p class="text-xl font-black orbitron text-emerald-400">NOMINAL</p>
                 </div>
             </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <button onclick="location.hash='#inventario'" class="p-4 bg-[#0d1117] border border-white/5 rounded-2xl hover:border-cyan-500/50 transition-all group">
+                <i class="fas fa-boxes text-cyan-500 mb-2 group-hover:scale-110 transition"></i>
+                <p class="orbitron text-[8px] font-bold uppercase">Inventario</p>
+            </button>
+            <button onclick="location.hash='#contabilidad'" class="p-4 bg-[#0d1117] border border-white/5 rounded-2xl hover:border-cyan-500/50 transition-all group">
+                <i class="fas fa-calculator text-cyan-500 mb-2 group-hover:scale-110 transition"></i>
+                <p class="orbitron text-[8px] font-bold uppercase">Contabilidad</p>
+            </button>
+            <button onclick="location.hash='#staff'" class="p-4 bg-[#0d1117] border border-white/5 rounded-2xl hover:border-cyan-500/50 transition-all group">
+                <i class="fas fa-users-cog text-cyan-500 mb-2 group-hover:scale-110 transition"></i>
+                <p class="orbitron text-[8px] font-bold uppercase">Staff</p>
+            </button>
+            <button onclick="location.hash='#nomina'" class="p-4 bg-[#0d1117] border border-white/5 rounded-2xl hover:border-cyan-500/50 transition-all group">
+                <i class="fas fa-file-invoice-dollar text-cyan-500 mb-2 group-hover:scale-110 transition"></i>
+                <p class="orbitron text-[8px] font-bold uppercase">Nómina</p>
+            </button>
+            <button onclick="location.hash='#reportes'" class="p-4 bg-[#0d1117] border border-white/5 rounded-2xl hover:border-cyan-500/50 transition-all group">
+                <i class="fas fa-chart-pie text-cyan-500 mb-2 group-hover:scale-110 transition"></i>
+                <p class="orbitron text-[8px] font-bold uppercase">Reportes</p>
+            </button>
+            <button onclick="location.hash='#finanzas_elite'" class="p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl hover:bg-cyan-500 hover:text-black transition-all group">
+                <i class="fas fa-crown mb-2 group-hover:scale-110 transition"></i>
+                <p class="orbitron text-[8px] font-bold uppercase">Elite Finanzas</p>
+            </button>
         </div>
 
         <div id="hudKpis" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -126,22 +163,14 @@ function renderPentagonInterface(container) {
     </div>`;
 }
 
+// --- TODAS TUS FUNCIONES ORIGINALES SE MANTIENEN INTACTAS ABAJO ---
+
 function processStrategicMetrics(data) {
     const revenue = data.ordenes.reduce((acc, o) => acc + Number(o.total || o.valor || 0), 0);
     const count = data.ordenes.length;
     const criticos = data.inventario.filter(i => Number(i.cantidad || 0) <= Number(i.stockMinimo || 5)).length;
-    
-    // Tendencia para la gráfica
     const tendencia = { "LUN": revenue*0.2, "MAR": revenue*0.4, "MIE": revenue*0.3, "JUE": revenue*0.6, "VIE": revenue };
-
-    return {
-        revenue,
-        count,
-        avgTicket: count > 0 ? revenue / count : 0,
-        clients: data.clientes.length,
-        criticos,
-        tendencia
-    };
+    return { revenue, count, avgTicket: count > 0 ? revenue / count : 0, clients: data.clientes.length, criticos, tendencia };
 }
 
 function updateTacticalHUD(m) {
@@ -152,7 +181,6 @@ function updateTacticalHUD(m) {
         { label: "Alertas Stock", val: m.criticos, icon: "fa-exclamation-triangle", col: "text-red-500" },
         { label: "Estatus Nodo", val: "ONLINE", icon: "fa-satellite-dish", col: "text-emerald-400" }
     ];
-
     hud.innerHTML = cards.map(c => `
         <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 hover:border-cyan-500/30 transition-all">
             <p class="orbitron text-[8px] text-slate-500 font-black uppercase tracking-[0.3em] mb-4">${c.label}</p>
@@ -160,9 +188,7 @@ function updateTacticalHUD(m) {
                 <div class="text-3xl font-black orbitron ${c.col}">${c.val}</div>
                 <i class="fas ${c.icon} text-xl opacity-20"></i>
             </div>
-        </div>
-    `).join("");
-
+        </div>`).join("");
     document.getElementById("valTicket").innerText = `$ ${Math.round(m.avgTicket).toLocaleString()}`;
     document.getElementById("valRevenue").innerText = `$ ${m.revenue.toLocaleString()}`;
     document.getElementById("valProfit").innerText = `$ ${Math.round(m.revenue * 0.35).toLocaleString()}`;
@@ -171,7 +197,6 @@ function updateTacticalHUD(m) {
 function renderNeuralGrowthChart(tendencia) {
     const ctx = document.getElementById("neuralChart");
     if (!ctx) return;
-    
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -185,14 +210,8 @@ function renderNeuralGrowthChart(tendencia) {
                 backgroundColor: 'rgba(0, 242, 255, 0.05)'
             }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { grid: { display: false }, ticks: { color: '#475569', font: { family: 'Orbitron', size: 9 } } },
-                y: { display: false }
-            }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { x: { grid: { display: false }, ticks: { color: '#475569', font: { family: 'Orbitron', size: 9 } } }, y: { display: false } }
         }
     });
 }
@@ -200,14 +219,12 @@ function renderNeuralGrowthChart(tendencia) {
 function renderTechEfficiencyMatrix(ordenes) {
     const container = document.getElementById("techMatrix");
     if (!container) return;
-
     const stats = {};
     ordenes.forEach(o => {
         const t = o.tecnico || "Personal";
         if (!stats[t]) stats[t] = 0;
         stats[t] += Number(o.total || o.valor || 0);
     });
-
     container.innerHTML = Object.entries(stats).slice(0, 4).map(([name, val]) => `
         <div class="space-y-2">
             <div class="flex justify-between text-[10px] orbitron uppercase">
@@ -217,21 +234,14 @@ function renderTechEfficiencyMatrix(ordenes) {
             <div class="h-1 bg-white/5 rounded-full overflow-hidden">
                 <div class="h-full bg-cyan-500 shadow-glow-cyan" style="width: ${Math.min((val/1000000)*100, 100)}%"></div>
             </div>
-        </div>
-    `).join("");
+        </div>`).join("");
 }
 
 async function deployAIOrchestrator(data) {
     const analysis = document.getElementById("aiAnalysis");
     const buttons = document.getElementById("aiButtons");
-    
-    // Obtener insights reales de la SuperAI
     const insights = await superAI.getDashboardInsights();
-
-    analysis.innerHTML = `
-        "Nexus-X detecta un ROI de <b>${insights.optimizationRate || 85}%</b>. ${insights.recommendation || 'Iniciando fase de optimización.'}"
-    `;
-    
+    analysis.innerHTML = `"Nexus-X detecta un ROI de <b>${insights.optimizationRate || 85}%</b>. ${insights.recommendation || 'Iniciando fase de optimización.'}"`;
     buttons.innerHTML = `
         <button class="py-4 bg-cyan-500 text-black orbitron text-[9px] font-black rounded-xl uppercase hover:scale-105 transition-transform">Optimizar Ingresos</button>
         <button onclick="location.hash='#ajustes'" class="py-4 bg-white/5 text-white border border-white/10 orbitron text-[9px] font-black rounded-xl uppercase">Configuración Nodo</button>
