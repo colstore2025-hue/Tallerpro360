@@ -11,9 +11,11 @@
     <script src="app/js/core/firebase-config.js"></script>
 
     <script>
-        // Si firebase-config.js no lo define globalmente, lo forzamos aquí:
-        const db = firebase.firestore();
-    </script>
+        // Si por alguna razón firebase-config falló, intentamos rescatar db aquí
+    if (typeof db === 'undefined') {
+        var db = firebase.firestore();
+    }
+</script>
 
     <script src="app/js/core/nexus-demo.js"></script>
 
