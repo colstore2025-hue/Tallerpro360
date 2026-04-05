@@ -56,30 +56,20 @@ export async function ejecutarProtocoloNexus() {
         setTimeout(() => {
             if(overlay) overlay.classList.add('hidden');
             Swal.fire({
-                icon: 'success',
-                title: 'PROTOCOLO ACTIVADO',
-                html: `<p class="orbitron text-[10px]">ID DE TRANSMISIÓN:<br><span class="text-cyan-400 font-bold">${docRef.id}</span></p>`,
-                background: '#020617',
-                color: '#fff',
-                confirmButtonColor: '#06b6d4',
-                confirmButtonText: 'INGRESAR A TERMINAL'
-            }).then(() => {
-                // Redirección definitiva al login del SaaS
-                window.location.href = "https://tallerpro360.vercel.app/login";
-            });
-        }, 1500);
-
-    } catch (error) {
-        console.error("Protocol Error:", error);
-        if(overlay) overlay.classList.add('hidden');
-        btn.disabled = false;
-        
-        Swal.fire({
-            icon: 'error',
-            title: 'INTERRUPCIÓN DE SEÑAL',
-            text: 'Falla de Handshake: ' + error.message,
-            background: '#020617',
-            color: '#ff4444'
-        });
-    }
-}
+    icon: 'success',
+    title: 'PROTOCOLO ACTIVADO',
+    html: `
+        <div class="text-left orbitron p-4 bg-slate-900 rounded-lg border border-cyan-500/30">
+            <p class="text-[10px] text-cyan-400 mb-2 font-bold uppercase">Acceso Satelital:</p>
+            <p class="text-[12px] text-white mb-1">USUARIO: <span class="text-yellow-400">discovery@tallerpro360.com</span></p>
+            <p class="text-[12px] text-white">LLAVE: <span class="text-yellow-400">nexus2026</span></p>
+            <hr class="my-3 border-slate-700">
+            <p class="text-[9px] text-slate-400 italic">ID de Transmisión: ${docRef.id}</p>
+        </div>
+    `,
+    background: '#020617',
+    confirmButtonText: 'INGRESAR A TERMINAL',
+    confirmButtonColor: '#06b6d4'
+}).then(() => {
+    window.location.href = "https://tallerpro360.vercel.app/login";
+});
