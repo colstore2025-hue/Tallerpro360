@@ -1,4 +1,6 @@
 // app/js/core/nexus-demo.js
+import { db } from './firebase-config.js'; 
+import { collection, addDoc, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 async function ejecutarProtocoloNexus() {
     const btn = document.getElementById('btn-protocolo-demo');
