@@ -1,96 +1,59 @@
-/**
- * app/js/core/nexus-demo.js - PROTOCOLO DE VÍNCULO NEXUS-X
- * Edición Estándar para TallerPRO360 (Grati-Core)
- */
 import { collection, addDoc, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export async function ejecutarProtocoloNexus() {
     const db = window.db; 
-    const btn = document.getElementById('btn-protocolo-demo');
-    const overlay = document.getElementById('handshake');
     const statusText = document.getElementById('handshake-text');
+    const overlay = document.getElementById('handshake');
 
-    if (!db) {
-        Swal.fire({ icon: 'error', title: 'NODO NO ENCONTRADO', background: '#020617', color: '#ff4444' });
-        return;
-    }
+    if (!db) return Swal.fire({ icon: 'error', title: 'NODO NO VINCULADO' });
 
     if(overlay) overlay.classList.remove('hidden');
-    if(statusText) statusText.innerText = "SINCRONIZANDO NODO GRATI-CORE...";
-    btn.disabled = true;
-
+    
     try {
-        const expiracion = new Date();
-        expiracion.setDate(expiracion.getDate() + 7);
-
-        // A. CREAR EMPRESA DEMO (ID Aleatorio de Firebase)
+        // A. CREAR EMPRESA GRATI-CORE
         const empresaRef = await addDoc(collection(db, "empresas"), {
             plan: "GRATI-CORE",
-            status: "ELITE_TRIAL",
-            creado_el: serverTimestamp(),
-            expira_el: Timestamp.fromDate(expiracion),
             limite_ordenes: 5,
-            ordenes_creadas: 2, // Se sincroniza con las 2 órdenes de abajo
-            sello: "Nexus-X Starlink V1.1",
-            config_elite: true
+            config_elite: true,
+            status: "ACTIVE",
+            creado_el: serverTimestamp()
         });
 
-        const empresaId = empresaRef.id;
+        const nuevoEmpresaId = empresaRef.id;
 
-        // B. INYECTAR ÓRDENES SEMILLA ASOCIADAS AL ID GENERADO
+        // B. INYECTAR LAS 2 ÓRDENES SEMILLA
         const ordenesRef = collection(db, "ordenes");
+        const seedData = {
+            empresaId: nuevoEmpresaId,
+            fecha: serverTimestamp(),
+            tecnico: "IA NEXUS-X",
+            total: 0
+        };
 
         await Promise.all([
-            addDoc(ordenesRef, {
-                empresaId: empresaId,
-                cliente: "CLIENTE DE PRUEBA NEXUS",
-                vehiculo: "TESLA MODEL 3 / PLACA: NEX-001",
-                servicio: "Sincronización de Sensores Starlink",
-                estado: "FINALIZADO",
-                total: 150000,
-                fecha: serverTimestamp(),
-                tecnico: "IA Nexus-X"
-            }),
-            addDoc(ordenesRef, {
-                empresaId: empresaId,
-                cliente: "NEXUS DISCOVERY USER",
-                vehiculo: "BMW M4 / PLACA: STAR-999",
-                servicio: "Diagnóstico de Inyección Electrónica",
-                estado: "EN PROCESO",
-                total: 85000,
-                fecha: serverTimestamp(),
-                tecnico: "IA Nexus-X"
-            })
+            addDoc(ordenesRef, { ...seedData, cliente: "DEMO USER 1", servicio: "Sincronización Starlink", estado: "FINALIZADO" }),
+            addDoc(ordenesRef, { ...seedData, cliente: "DEMO USER 2", servicio: "Diagnóstico de Red", estado: "EN PROCESO" })
         ]);
 
-        // C. GUARDADO DE IDENTIDAD PARA EL DASHBOARD
-        localStorage.setItem("nexus_empresaId", empresaId);
-        localStorage.setItem("empresaId", empresaId);
+        // C. EL TRUCO MAESTRO: Guardar el ID antes de ir al Login
+        // Esto hace que el Dashboard original (v32.6) lea este ID sin modificaciones
+        localStorage.setItem("empresaId", nuevoEmpresaId);
+        localStorage.setItem("nexus_empresaId", nuevoEmpresaId);
 
-        if(statusText) statusText.innerText = "ACCESO SATELITAL CONCEDIDO.";
+        if(statusText) statusText.innerText = "SISTEMA SINCRONIZADO. REDIRECCIONANDO...";
 
         Swal.fire({
             icon: 'success',
-            title: 'PROTOCOLO ACTIVADO',
-            html: `
-                <div class="text-left orbitron p-4 bg-slate-900 rounded-lg border border-cyan-500/30">
-                    <p class="text-[10px] text-cyan-400 mb-2 font-bold uppercase text-center">Acceso Discovery:</p>
-                    <p class="text-[12px] text-white mb-1">USUARIO: <span class="text-yellow-400">discovery@tallerpro360.com</span></p>
-                    <p class="text-[12px] text-white">LLAVE: <span class="text-yellow-400">Demo2026</span></p>
-                    <hr class="my-3 border-slate-700">
-                    <p class="text-[8px] text-slate-500 text-center uppercase tracking-widest italic">ID Transmisión: ${empresaId}</p>
-                </div>
-            `,
+            title: 'ACCESO CONCEDIDO',
+            html: `<p class="orbitron text-xs">ID ASIGNADO: ${nuevoEmpresaId}</p>`,
             background: '#020617',
-            confirmButtonText: 'INGRESAR A TERMINAL',
-            confirmButtonColor: '#06b6d4'
+            confirmButtonText: 'ENTRAR A TERMINAL'
         }).then(() => {
-            window.location.href = "/login";
+            window.location.href = "/login"; // O la ruta de tu login
         });
 
     } catch (error) {
-        console.error("Error Nexus:", error);
         if(overlay) overlay.classList.add('hidden');
-        Swal.fire({ icon: 'error', title: 'FALLA DE VÍNCULO', text: error.message, background: '#020617' });
+        console.error("Fallo Nexus:", error);
     }
 }
