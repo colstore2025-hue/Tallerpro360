@@ -73,7 +73,7 @@ function renderPentagonInterface(container, isDemo, planActual) {
 <script>
 function contactarVentasNexus() {
     const mensaje = encodeURIComponent("🛰️ PROTOCOLO NEXUS_AEGIS.X: Hola William, mi terminal Discovery está activa y quiero adquirir la LICENCIA FULL para mi taller.");
-    window.open(`https://wa.me/57TU_NUMERO_AQUI?text=${mensaje}`, '_blank');
+    window.open(`https://wa.me/1 704 941 9163?text=${mensaje}`, '_blank');
 }
 </script>
 
