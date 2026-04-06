@@ -268,11 +268,14 @@ href="manifest.json">
     };
 
     function saveSession(uid, data) {
-    // Llaves estándar que busca tu app/index.html
+    // Estas son las 3 llaves que tu app/index.html lee en el onAuthStateChanged
     localStorage.setItem("uid", uid);
     localStorage.setItem("empresaId", data.empresaId);
     localStorage.setItem("rol", data.rolGlobal || "ADMIN");
-    localStorage.setItem("planTipo", "ENTERPRISE");
+    
+    // Identificador para que el dashboard sepa que NO es demo
+    localStorage.setItem("planTipo", "PRO-ADMIN"); 
+}
     
     // Llaves con prefijo para el dashboard
     localStorage.setItem("nexus_userName", data.nombre || "Comandante");
