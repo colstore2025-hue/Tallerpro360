@@ -7,19 +7,37 @@
 import { getClientes, getOrdenes, getInventario } from "../services/dataService.js";
 import superAI from "../ai/superAI-orchestrator.js";
 
+// 🛡️ 1. LÓGICA GLOBAL DE PROTECCIÓN (PAYWALL)
+window.restrictedAccess = () => {
+    Swal.fire({
+        title: '<span class="orbitron text-lg text-white">ACCESO RESTRINGIDO</span>',
+        html: '<p class="text-slate-400 text-sm">Los módulos de gestión operativa (ERP/CRM) requieren un <b>Nodo de Pago</b> activo para procesar información real del taller.</p>',
+        icon: 'lock',
+        background: '#020617',
+        color: '#fff',
+        confirmButtonText: 'REVISAR PLANES',
+        confirmButtonColor: '#06b6d4',
+        showCancelButton: true,
+        cancelButtonText: 'LUEGO',
+        customClass: { popup: 'rounded-[2rem] border border-white/10' }
+    }).then((result) => {
+        if (result.isConfirmed) location.hash = '#planes';
+    });
+};
+
 export default async function dashboard(container, state) {
-    // 🛡️ 1. Detectamos quién entra (Demo o Pro)
+    // 📡 Detección de Identidad y Plan
     const empresaId = state?.empresaId || localStorage.getItem("empresaId");
     const planActual = localStorage.getItem("planTipo") || "GRATI-CORE";
     const isDemo = planActual === "GRATI-CORE";
 
     if (!empresaId) return showSystemCrash(container, "BUSCANDO ÓRBITA...");
 
-    // 2. Pintamos la carcasa (la interfaz Pentágono)
+    // Renderizado inicial de la interfaz
     renderPentagonInterface(container, isDemo, planActual);
 
     try {
-        // 3. Traemos los datos de la base de datos
+        // Carga de Datos en paralelo
         const [clientes, ordenes, inventario] = await Promise.all([
             getClientes(empresaId).catch(() => []),
             getOrdenes(empresaId).catch(() => []),
@@ -29,14 +47,14 @@ export default async function dashboard(container, state) {
         const data = { clientes, ordenes, inventario };
         const metrics = processStrategicMetrics(data);
 
-        // 4. Llenamos los números en el tablero
-        updateTacticalHUD(metrics, isDemo);
+        // Actualización del HUD y métricas
+        updateTacticalHUD(metrics);
         
-        // 5. Animamos gráficos e IA
+        // Inicialización diferida de componentes visuales
         setTimeout(() => {
             if (window.Chart) renderNeuralGrowthChart(metrics.tendencia);
             renderTechEfficiencyMatrix(data.ordenes);
-            deployAIOrchestrator(data, isDemo);
+            deployAIOrchestrator(data);
             
             if (isDemo) {
                 const diasTag = document.getElementById("dias-restantes");
@@ -45,10 +63,12 @@ export default async function dashboard(container, state) {
         }, 150);
 
     } catch (err) {
-        showSystemCrash(container, "LINK PROTOCOL BROKEN");
+        console.error("🚨 Fallo Crítico:", err);
+        showSystemCrash(container, "LINK PROTOCOL BROKEN: DATA_SYNC");
     }
 }
 
+// 📐 2. COMPONENTES DE INTERFAZ
 function renderPentagonInterface(container, isDemo, planActual) {
     container.innerHTML = `
     <div id="banner-demo" class="${isDemo ? '' : 'hidden'} bg-gradient-to-r from-amber-600/20 to-red-600/20 border-b border-amber-500/50 p-3 text-center text-[10px] orbitron text-amber-500 sticky top-0 z-[1000] backdrop-blur-md">
@@ -56,24 +76,6 @@ function renderPentagonInterface(container, isDemo, planActual) {
         MODO DISCOVERY: Módulos ERP bloqueados. Expira en <span id="dias-restantes">--</span> días. 
         <a href="#planes" class="underline ml-2 font-black hover:text-white transition-all">ADQUIRIR LICENCIA FULL</a>
     </div>
-window.restrictedAccess = () => {
-    Swal.fire({
-        title: '<span class="orbitron text-white">NEXUS_AEGIS.X RESTRINGIDO</span>',
-        html: `
-            <p class="text-slate-400 text-sm">Este módulo ERP/CRM requiere una <b>Licencia Full</b>.</p>
-            <p class="text-cyan-500 text-[10px] mt-2 orbitron">SISTEMA PENTAGONAL V32.9</p>
-        `,
-        icon: 'lock',
-        background: '#020617',
-        color: '#fff',
-        showCancelButton: true,
-        confirmButtonText: 'VER PLANES ELITE',
-        cancelButtonText: 'CONTINUAR DEMO',
-        confirmButtonColor: '#06b6d4'
-    }).then((result) => {
-        if (result.isConfirmed) location.hash = '#planes';
-    });
-};
 
     <div class="p-4 lg:p-10 space-y-10 animate-in fade-in zoom-in duration-700 pb-32 max-w-[1800px] mx-auto bg-[#02040a] min-h-screen text-white">
         
@@ -81,10 +83,10 @@ window.restrictedAccess = () => {
             <div class="relative group">
                 <div class="absolute -inset-1 bg-gradient-to-r from-cyan-600 to-red-600 rounded-lg blur opacity-25"></div>
                 <div class="relative bg-black px-8 py-4 rounded-lg border border-white/10">
-                    <h1 class="text-5xl lg:text-7xl font-black orbitron italic tracking-tighter uppercase">
+                    <h1 class="text-4xl lg:text-7xl font-black orbitron italic tracking-tighter uppercase">
                         NEXUS<span class="text-cyan-400">_AEGIS</span><span class="text-red-500">.X</span>
                     </h1>
-                    <p class="text-[9px] text-cyan-500 font-bold orbitron tracking-[0.6em] uppercase mt-2 italic">SISTEMA DE CONTROL PENTAGONAL V32.9</p>
+                    <p class="text-[9px] text-cyan-500 font-bold orbitron tracking-[0.6em] uppercase mt-2 italic">SISTEMA PENTAGONAL V32.9</p>
                 </div>
             </div>
             
@@ -154,51 +156,24 @@ window.restrictedAccess = () => {
             </div>
         </div>
     </div>`;
-
-    // 🛡️ LÓGICA DE PROTECCIÓN ERP (PAYWALL)
-    window.restrictedAccess = () => {
-        Swal.fire({
-            title: '<span class="orbitron text-lg text-white">ACCESO RESTRINGIDO</span>',
-            html: '<p class="text-slate-400 text-sm">Los módulos de gestión operativa (ERP/CRM) requieren un <b>Nodo de Pago</b> activo para procesar información real del taller.</p>',
-            icon: 'lock',
-            background: '#020617',
-            color: '#fff',
-            confirmButtonText: 'REVISAR PLANES',
-            confirmButtonColor: '#06b6d4',
-            showCancelButton: true,
-            cancelButtonText: 'LUEGO',
-            customClass: { popup: 'rounded-[2rem] border border-white/10' }
-        }).then((result) => {
-            if (result.isConfirmed) location.hash = '#planes';
-        });
-    };
 }
 
 function renderModuleBtn(name, icon, hash, isDemo, isElite = false) {
-    // Definimos qué puede ver el cliente "Gratis" (Discovery)
-    const modulosAbiertos = ['#reportes', '#inventario']; 
-    const estaBloqueado = isDemo && !modulosAbiertos.includes(hash);
-
-    // Si está bloqueado, dispara la alerta de pago. Si no, navega normal.
-    const action = estaBloqueado ? `onclick="window.restrictedAccess()"` : `onclick="location.hash='${hash}'"`;
-    
-    // Estilo visual: Rojo tenue para bloqueados, Cyan brillante para abiertos
-    const style = estaBloqueado 
-        ? 'border-red-500/20 bg-red-500/5 text-slate-500 opacity-60' 
-        : 'border-cyan-500/40 bg-cyan-500/5 text-cyan-400 hover:scale-105';
-
-    const lockIcon = estaBloqueado ? '<i class="fas fa-lock absolute top-2 right-2 text-[8px] text-red-500"></i>' : '';
+    const action = isDemo ? `onclick="window.restrictedAccess()"` : `onclick="location.hash='${hash}'"`;
+    const style = isElite 
+        ? 'border-cyan-500/40 bg-cyan-500/5 text-cyan-400' 
+        : 'border-white/5 bg-[#0d1117] text-slate-400 hover:border-white/20';
+    const lockIcon = isDemo ? '<i class="fas fa-lock absolute top-3 right-3 text-[7px] text-amber-500 opacity-60"></i>' : '';
 
     return `
-    <button ${action} class="relative p-5 rounded-2xl border ${style} transition-all group overflow-hidden">
+    <button ${action} class="relative p-5 rounded-2xl border ${style} hover:scale-105 active:scale-95 transition-all group overflow-hidden">
         ${lockIcon}
-        <i class="fas ${icon} text-xl mb-3 group-hover:rotate-12 transition-transform"></i>
-        <p class="orbitron text-[8px] font-bold uppercase">${name}</p>
+        <i class="fas ${icon} text-xl mb-3 group-hover:scale-110 transition-transform"></i>
+        <p class="orbitron text-[8px] font-bold uppercase tracking-[0.2em]">${name}</p>
     </button>`;
 }
 
-// --- NÚCLEO DE PROCESAMIENTO (Original & Estabilizado) ---
-
+// 🧠 3. NÚCLEO DE PROCESAMIENTO
 function processStrategicMetrics(data) {
     const revenue = data.ordenes.reduce((acc, o) => acc + Number(o.total || o.valor || 0), 0);
     const count = data.ordenes.length;
@@ -209,12 +184,15 @@ function processStrategicMetrics(data) {
 
 function updateTacticalHUD(m) {
     const hud = document.getElementById("hudKpis");
+    if (!hud) return;
+
     const cards = [
         { label: "Capital Operativo", val: `$ ${m.revenue.toLocaleString()}`, icon: "fa-shield-alt", col: "text-white" },
         { label: "Base Clientes", val: m.clients, icon: "fa-users-cog", col: "text-cyan-400" },
         { label: "Alertas Stock", val: m.criticos, icon: "fa-exclamation-triangle", col: "text-red-500" },
         { label: "Estatus Nodo", val: "ONLINE", icon: "fa-satellite-dish", col: "text-emerald-400" }
     ];
+
     hud.innerHTML = cards.map(c => `
         <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 hover:border-cyan-500/30 transition-all group">
             <p class="orbitron text-[8px] text-slate-500 font-black uppercase tracking-[0.3em] mb-4 group-hover:text-cyan-500 transition-colors">${c.label}</p>
@@ -224,9 +202,13 @@ function updateTacticalHUD(m) {
             </div>
         </div>`).join("");
     
-    document.getElementById("valTicket").innerText = `$ ${Math.round(m.avgTicket).toLocaleString()}`;
-    document.getElementById("valRevenue").innerText = `$ ${m.revenue.toLocaleString()}`;
-    document.getElementById("valProfit").innerText = `$ ${Math.round(m.revenue * 0.35).toLocaleString()}`;
+    const tkt = document.getElementById("valTicket");
+    const rev = document.getElementById("valRevenue");
+    const prf = document.getElementById("valProfit");
+
+    if (tkt) tkt.innerText = `$ ${Math.round(m.avgTicket).toLocaleString()}`;
+    if (rev) rev.innerText = `$ ${m.revenue.toLocaleString()}`;
+    if (prf) prf.innerText = `$ ${Math.round(m.revenue * 0.35).toLocaleString()}`;
 }
 
 function renderNeuralGrowthChart(tendencia) {
@@ -281,6 +263,8 @@ function renderTechEfficiencyMatrix(ordenes) {
 async function deployAIOrchestrator(data) {
     const analysis = document.getElementById("aiAnalysis");
     const buttons = document.getElementById("aiButtons");
+    if (!analysis || !buttons) return;
+
     const insights = await superAI.getDashboardInsights();
     analysis.innerHTML = `"Nexus-X detecta un ROI de <b>${insights.optimizationRate || 85}%</b>. ${insights.recommendation || 'Iniciando fase de optimización estratégica.'}"`;
     buttons.innerHTML = `
