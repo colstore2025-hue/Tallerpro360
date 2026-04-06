@@ -1,17 +1,9 @@
 {
   "cleanUrls": true,
-  "headers": [
-    {
-      "source": "/app/js/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-        { "key": "Content-Type", "value": "application/javascript" }
-      ]
-    }
-  ],
   "rewrites": [
     { "source": "/home", "destination": "/home.html" },
     { "source": "/login", "destination": "/login.html" },
+    { "source": "/app", "destination": "/app/index.html" },
     { "source": "/app/(.*)", "destination": "/app/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
