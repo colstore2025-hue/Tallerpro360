@@ -26,25 +26,43 @@ window.restrictedAccess = () => {
 };
 
 export default async function dashboard(container, state) {
-    // 📡 Detección de Identidad y Plan
-    const empresaId = state?.empresaId || localStorage.getItem("empresaId");
+    // 📡 Prioridad de Identidad: 1. Estado, 2. LocalStorage, 3. Hardcoded para Demo
+    let empresaId = state?.empresaId || localStorage.getItem("empresaId");
     const planActual = localStorage.getItem("planTipo") || "GRATI-CORE";
     const isDemo = planActual === "GRATI-CORE";
 
-    if (!empresaId) return showSystemCrash(container, "BUSCANDO ÓRBITA...");
+    // Si es Demo y no hay ID, asignamos un ID de órbita temporal para que no falle
+    if (isDemo && !empresaId) {
+        empresaId = "DEMO-NEXUS-001";
+        localStorage.setItem("empresaId", empresaId);
+    }
 
-    // Renderizado inicial de la interfaz
+    if (!empresaId) return showSystemCrash(container, "LINK PROTOCOL BROKEN: NO_SESSION");
+
     renderPentagonInterface(container, isDemo, planActual);
 
     try {
-        // Carga de Datos en paralelo
-        const [clientes, ordenes, inventario] = await Promise.all([
-            getClientes(empresaId).catch(() => []),
-            getOrdenes(empresaId).catch(() => []),
-            getInventario(empresaId).catch(() => [])
-        ]);
+        let data;
+        if (isDemo) {
+            // Datos simulados para que Grati-Core abra instantáneamente
+            data = { 
+                clientes: new Array(15), 
+                ordenes: [{total: 500000}, {total: 1200000}], 
+                inventario: [] 
+            };
+        } else {
+            // Carga real para SuperAdmin
+            const [clientes, ordenes, inventario] = await Promise.all([
+                getClientes(empresaId).catch(() => []),
+                getOrdenes(empresaId).catch(() => []),
+                getInventario(empresaId).catch(() => [])
+            ]);
+            data = { clientes, ordenes, inventario };
+        }
 
-        const data = { clientes, ordenes, inventario };
+        const metrics = processStrategicMetrics(data);
+        updateTacticalHUD(metrics);
+        // ... resto del código (charts, AI, etc)
         const metrics = processStrategicMetrics(data);
 
         // Actualización del HUD y métricas
