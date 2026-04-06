@@ -22,61 +22,53 @@
 
     // 4. LÓGICA DEL PROTOCOLO NEXUS-X
     async function ejecutarProtocoloNexus() {
-    // 1. Pequeña pausa para que Firebase sincronice la sesión
+    console.log("🛰️ Verificando estado de la terminal...");
+
+    // 1. ESPERA ACTIVA: Esto le da tiempo a Firebase de reconocer al usuario
     await auth.authStateReady(); 
     
     const user = auth.currentUser;
     
     if (!user) {
         Swal.fire({
-            icon: 'error',
-            title: 'ACCESO DENEGADO',
-            text: 'Terminal no autenticada. Reingresa por el área de Login.',
-            footer: '<a href="/login">Ir al Login ahora</a>',
+            icon: 'info',
+            title: 'Sincronización Requerida',
+            text: 'La sesión no se ha detectado. Redireccionando a la terminal de ingreso...',
+            timer: 2000,
+            showConfirmButton: false,
             background: '#020617',
             color: '#fff'
+        }).then(() => {
+            window.location.href = "/login";
         });
         return;
     }
 
-        try {
-            console.log("🛰️ Sincronizando con Nodo Maestro: taller_002...");
-            
-            const userRef = doc(db, "usuarios", user.uid);
+    try {
+        // 2. Si hay usuario, procedemos con la vinculación
+        const userRef = doc(db, "usuarios", user.uid);
+        await updateDoc(userRef, {
+            empresaId: "taller_002",
+            planType: "GRATI-CORE",
+            status: "ACTIVE",
+            protocolo: "NEXUS-X-DEMO"
+        });
 
-            // Inyección de credenciales en el perfil del usuario
-            await updateDoc(userRef, {
-                empresaId: "taller_002",
-                planType: "GRATI-CORE",
-                status: "ACTIVE",
-                protocolo: "NEXUS-X-DEMO",
-                lastSync: new Date().toISOString()
-            });
+        Swal.fire({
+            icon: 'success',
+            title: 'PROTOCOLO ACTIVADO',
+            text: 'Conexión con Nodo Maestro: OK',
+            timer: 1500,
+            showConfirmButton: false
+        }).then(() => {
+            window.location.href = "/dashboard";
+        });
 
-            Swal.fire({
-                icon: 'success',
-                title: 'PROTOCOLO ACTIVADO',
-                text: 'Sincronización Exitosa. Abriendo Dashboard...',
-                timer: 2000,
-                showConfirmButton: false,
-                background: '#020617',
-                color: '#fff'
-            }).then(() => {
-                // Redirección al archivo físico
-                window.location.href = "dashboard.html";
-            });
-
-        } catch (error) {
-            console.error("❌ Error en Protocolo:", error);
-            Swal.fire({
-                icon: 'error',
-                title: 'FALLO DE TRANSMISIÓN',
-                text: 'No se pudo vincular al Nodo Maestro. Verifica tu conexión a la red.',
-                background: '#020617',
-                color: '#fff'
-            });
-        }
+    } catch (error) {
+        console.error("❌ Error:", error);
+        Swal.fire({ icon: 'error', title: 'FALLO DE TRANSMISIÓN' });
     }
+}
 
     // 5. EXPORTACIÓN GLOBAL (Para que el onclick lo vea)
     window.db = db;
