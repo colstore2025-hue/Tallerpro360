@@ -22,20 +22,22 @@
 
     // 4. LÓGICA DEL PROTOCOLO NEXUS-X
     async function ejecutarProtocoloNexus() {
-        // Verificamos si la terminal tiene un usuario activo
-        const user = auth.currentUser;
-        
-        if (!user) {
-            Swal.fire({
-                icon: 'error',
-                title: 'ACCESO DENEGADO',
-                text: 'Terminal no autenticada. Por favor, inicia sesión para vincular el nodo.',
-                background: '#020617',
-                color: '#fff',
-                confirmButtonColor: '#06b6d4'
-            });
-            return;
-        }
+    // 1. Pequeña pausa para que Firebase sincronice la sesión
+    await auth.authStateReady(); 
+    
+    const user = auth.currentUser;
+    
+    if (!user) {
+        Swal.fire({
+            icon: 'error',
+            title: 'ACCESO DENEGADO',
+            text: 'Terminal no autenticada. Reingresa por el área de Login.',
+            footer: '<a href="/login">Ir al Login ahora</a>',
+            background: '#020617',
+            color: '#fff'
+        });
+        return;
+    }
 
         try {
             console.log("🛰️ Sincronizando con Nodo Maestro: taller_002...");
