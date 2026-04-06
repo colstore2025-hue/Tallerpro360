@@ -1,16 +1,7 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TallerPRO360 | Nexus-X Starlink V1.1.0</title>
-
-    <script type="module">
+<script type="module">
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    
-    // Importamos la función del archivo
-    import { ejecutarProtocoloNexus } from "./app/js/core/nexus-demo.js";
+    import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
@@ -24,12 +15,62 @@
 
     const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
-    // CRÍTICO: Asignar al objeto window para que el onclick del botón la encuentre
+    // --- PROTOCOLO NEXUS-X: VINCULACIÓN DIRECTA ---
+    async function ejecutarProtocoloNexus() {
+        const user = auth.currentUser;
+        
+        if (!user) {
+            Swal.fire({
+                icon: 'error',
+                title: 'ACCESO DENEGADO',
+                text: 'Debes iniciar sesión para activar el protocolo demo.',
+                background: '#020617',
+                color: '#fff'
+            });
+            return;
+        }
+
+        try {
+            console.log("🛰️ Iniciando Sincronización con Nodo Maestro: taller_002");
+            
+            const userRef = doc(db, "usuarios", user.uid);
+
+            // Vinculamos al usuario al taller_002 que ya existe
+            await updateDoc(userRef, {
+                empresaId: "taller_002",
+                planType: "GRATI-CORE",
+                status: "ACTIVE",
+                protocolo: "NEXUS-X-DEMO"
+            });
+
+            Swal.fire({
+                icon: 'success',
+                title: 'PROTOCOLO ACTIVADO',
+                text: 'Sincronización con Nodo Maestro Exitosa. Redireccionando...',
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.href = "dashboard.html";
+            });
+
+        } catch (error) {
+            console.error("❌ Error en Protocolo:", error);
+            Swal.fire({
+                icon: 'error',
+                title: 'FALLO DE TRANSMISIÓN',
+                text: 'No se pudo vincular el nodo. Revisa tu conexión a Starlink.'
+            });
+        }
+    }
+
+    // CRÍTICO: Exportar a Window para que el 'onclick' del HTML funcione
     window.db = db;
+    window.auth = auth;
     window.ejecutarProtocoloNexus = ejecutarProtocoloNexus;
     
-    console.log("🛰️ Nexus-X Starlink: Nodo Maestro y Protocolo Demo Vinculados");
+    console.log("🛰️ Nexus-X Starlink: Nodo Maestro Vinculado al Kernel");
 </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
