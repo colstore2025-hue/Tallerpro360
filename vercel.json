@@ -1,17 +1,8 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { 
-      "source": "/dashboard", 
-      "destination": "/app/#dashboard" 
-    },
-    { 
-      "source": "/home", 
-      "destination": "/home.html" 
-    },
-    { 
-      "source": "/login", 
-      "destination": "/login.html" 
-    }
+    { "source": "/dashboard", "destination": "/app/#dashboard" },
+    { "source": "/home", "destination": "/home.html" },
+    { "source": "/login", "destination": "/login.html" }
   ]
 }
