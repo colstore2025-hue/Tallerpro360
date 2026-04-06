@@ -268,11 +268,15 @@ href="manifest.json">
     };
 
     function saveSession(uid, data) {
-    // 🛡️ Identificadores de Usuario
-    localStorage.setItem("nexus_uid", uid);
-    localStorage.setItem("nexus_empresaId", data.empresaId);
-    localStorage.setItem("nexus_rol", data.rolGlobal || "operador");
+    // Llaves estándar que busca tu app/index.html
+    localStorage.setItem("uid", uid);
+    localStorage.setItem("empresaId", data.empresaId);
+    localStorage.setItem("rol", data.rolGlobal || "ADMIN");
+    localStorage.setItem("planTipo", "ENTERPRISE");
+    
+    // Llaves con prefijo para el dashboard
     localStorage.setItem("nexus_userName", data.nombre || "Comandante");
+}
 
     // 🚀 Control de Acceso y Plan (CRÍTICO)
     // Esto le dirá al dashboard.js que cargue datos reales de Firebase
