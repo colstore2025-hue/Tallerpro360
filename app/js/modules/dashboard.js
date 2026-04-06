@@ -8,23 +8,18 @@ import { getClientes, getOrdenes, getInventario } from "../services/dataService.
 import superAI from "../ai/superAI-orchestrator.js";
 
 export default async function dashboard(container, state) {
-    // 🛡️ RECOLECTOR DE IDENTIDAD (Resiliencia de Enlace Starlink)
-    const empresaId = state?.empresaId || localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
-    
-    if (!empresaId || empresaId === "PENDIENTE") {
-        console.warn("🚨 Nexus-X: Identidad no encontrada. Reintentando enlace...");
-        return showSystemCrash(container, "BUSCANDO ÓRBITA...");
-    }
-
-    // 📡 STATUS CHECK: GRATI-CORE (Detección de Plan)
+    // 🛡️ 1. Detectamos quién entra (Demo o Pro)
+    const empresaId = state?.empresaId || localStorage.getItem("empresaId");
     const planActual = localStorage.getItem("planTipo") || "GRATI-CORE";
-    const isDemo = planActual === "GRATI-CORE" || localStorage.getItem("isDemo") === "true";
-    
-    // 1. Renderizado de Interfaz Aeroespacial Inmediato
+    const isDemo = planActual === "GRATI-CORE";
+
+    if (!empresaId) return showSystemCrash(container, "BUSCANDO ÓRBITA...");
+
+    // 2. Pintamos la carcasa (la interfaz Pentágono)
     renderPentagonInterface(container, isDemo, planActual);
 
     try {
-        // 2. Carga de Datos con Manejo de Silencio (Anticrash)
+        // 3. Traemos los datos de la base de datos
         const [clientes, ordenes, inventario] = await Promise.all([
             getClientes(empresaId).catch(() => []),
             getOrdenes(empresaId).catch(() => []),
@@ -32,29 +27,25 @@ export default async function dashboard(container, state) {
         ]);
 
         const data = { clientes, ordenes, inventario };
-
-        // 3. Procesamiento de Métricas Estratégicas
         const metrics = processStrategicMetrics(data);
 
-        // 4. Inyección Dinámica de Datos en el HUD
-        updateTacticalHUD(metrics);
+        // 4. Llenamos los números en el tablero
+        updateTacticalHUD(metrics, isDemo);
         
-        // 5. Inicialización de Capas Visuales & AI
+        // 5. Animamos gráficos e IA
         setTimeout(() => {
             if (window.Chart) renderNeuralGrowthChart(metrics.tendencia);
             renderTechEfficiencyMatrix(data.ordenes);
-            deployAIOrchestrator(data);
+            deployAIOrchestrator(data, isDemo);
             
-            // Sincronización de reloj de expiración para Demos
             if (isDemo) {
                 const diasTag = document.getElementById("dias-restantes");
-                if (diasTag) diasTag.innerText = "7"; // Valor por defecto o calculado
+                if (diasTag) diasTag.innerText = "7";
             }
         }, 150);
 
     } catch (err) {
-        console.error("🚨 Fallo Crítico en Command Center:", err);
-        showSystemCrash(container, "LINK PROTOCOL BROKEN: DATA_SYNC");
+        showSystemCrash(container, "LINK PROTOCOL BROKEN");
     }
 }
 
@@ -65,6 +56,24 @@ function renderPentagonInterface(container, isDemo, planActual) {
         MODO DISCOVERY: Módulos ERP bloqueados. Expira en <span id="dias-restantes">--</span> días. 
         <a href="#planes" class="underline ml-2 font-black hover:text-white transition-all">ADQUIRIR LICENCIA FULL</a>
     </div>
+window.restrictedAccess = () => {
+    Swal.fire({
+        title: '<span class="orbitron text-white">NEXUS_AEGIS.X RESTRINGIDO</span>',
+        html: `
+            <p class="text-slate-400 text-sm">Este módulo ERP/CRM requiere una <b>Licencia Full</b>.</p>
+            <p class="text-cyan-500 text-[10px] mt-2 orbitron">SISTEMA PENTAGONAL V32.9</p>
+        `,
+        icon: 'lock',
+        background: '#020617',
+        color: '#fff',
+        showCancelButton: true,
+        confirmButtonText: 'VER PLANES ELITE',
+        cancelButtonText: 'CONTINUAR DEMO',
+        confirmButtonColor: '#06b6d4'
+    }).then((result) => {
+        if (result.isConfirmed) location.hash = '#planes';
+    });
+};
 
     <div class="p-4 lg:p-10 space-y-10 animate-in fade-in zoom-in duration-700 pb-32 max-w-[1800px] mx-auto bg-[#02040a] min-h-screen text-white">
         
@@ -166,17 +175,25 @@ function renderPentagonInterface(container, isDemo, planActual) {
 }
 
 function renderModuleBtn(name, icon, hash, isDemo, isElite = false) {
-    const action = isDemo ? `onclick="window.restrictedAccess()"` : `onclick="location.hash='${hash}'"`;
-    const style = isElite 
-        ? 'border-cyan-500/40 bg-cyan-500/5 text-cyan-400' 
-        : 'border-white/5 bg-[#0d1117] text-slate-400 hover:border-white/20';
-    const lockIcon = isDemo ? '<i class="fas fa-lock absolute top-3 right-3 text-[7px] text-amber-500 opacity-60"></i>' : '';
+    // Definimos qué puede ver el cliente "Gratis" (Discovery)
+    const modulosAbiertos = ['#reportes', '#inventario']; 
+    const estaBloqueado = isDemo && !modulosAbiertos.includes(hash);
+
+    // Si está bloqueado, dispara la alerta de pago. Si no, navega normal.
+    const action = estaBloqueado ? `onclick="window.restrictedAccess()"` : `onclick="location.hash='${hash}'"`;
+    
+    // Estilo visual: Rojo tenue para bloqueados, Cyan brillante para abiertos
+    const style = estaBloqueado 
+        ? 'border-red-500/20 bg-red-500/5 text-slate-500 opacity-60' 
+        : 'border-cyan-500/40 bg-cyan-500/5 text-cyan-400 hover:scale-105';
+
+    const lockIcon = estaBloqueado ? '<i class="fas fa-lock absolute top-2 right-2 text-[8px] text-red-500"></i>' : '';
 
     return `
-    <button ${action} class="relative p-5 rounded-2xl border ${style} hover:scale-105 active:scale-95 transition-all group overflow-hidden">
+    <button ${action} class="relative p-5 rounded-2xl border ${style} transition-all group overflow-hidden">
         ${lockIcon}
-        <i class="fas ${icon} text-xl mb-3 group-hover:scale-110 transition-transform"></i>
-        <p class="orbitron text-[8px] font-bold uppercase tracking-[0.2em]">${name}</p>
+        <i class="fas ${icon} text-xl mb-3 group-hover:rotate-12 transition-transform"></i>
+        <p class="orbitron text-[8px] font-bold uppercase">${name}</p>
     </button>`;
 }
 
