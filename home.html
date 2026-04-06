@@ -1,8 +1,10 @@
 <script type="module">
+    // 1. Importaciones del Kernel de Firebase
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
+    // 2. Configuración de la Terminal
     const firebaseConfig = {
         apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
         authDomain: "tallerpro360.firebaseapp.com",
@@ -13,45 +15,52 @@
         measurementId: "G-VEC2C0QX2G"
     };
 
+    // 3. Inicialización de Sistemas
     const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // --- PROTOCOLO NEXUS-X: VINCULACIÓN DIRECTA ---
+    // 4. LÓGICA DEL PROTOCOLO NEXUS-X
     async function ejecutarProtocoloNexus() {
+        // Verificamos si la terminal tiene un usuario activo
         const user = auth.currentUser;
         
         if (!user) {
             Swal.fire({
                 icon: 'error',
                 title: 'ACCESO DENEGADO',
-                text: 'Debes iniciar sesión para activar el protocolo demo.',
+                text: 'Terminal no autenticada. Por favor, inicia sesión para vincular el nodo.',
                 background: '#020617',
-                color: '#fff'
+                color: '#fff',
+                confirmButtonColor: '#06b6d4'
             });
             return;
         }
 
         try {
-            console.log("🛰️ Iniciando Sincronización con Nodo Maestro: taller_002");
+            console.log("🛰️ Sincronizando con Nodo Maestro: taller_002...");
             
             const userRef = doc(db, "usuarios", user.uid);
 
-            // Vinculamos al usuario al taller_002 que ya existe
+            // Inyección de credenciales en el perfil del usuario
             await updateDoc(userRef, {
                 empresaId: "taller_002",
                 planType: "GRATI-CORE",
                 status: "ACTIVE",
-                protocolo: "NEXUS-X-DEMO"
+                protocolo: "NEXUS-X-DEMO",
+                lastSync: new Date().toISOString()
             });
 
             Swal.fire({
                 icon: 'success',
                 title: 'PROTOCOLO ACTIVADO',
-                text: 'Sincronización con Nodo Maestro Exitosa. Redireccionando...',
+                text: 'Sincronización Exitosa. Abriendo Dashboard...',
                 timer: 2000,
-                showConfirmButton: false
+                showConfirmButton: false,
+                background: '#020617',
+                color: '#fff'
             }).then(() => {
+                // Redirección al archivo físico
                 window.location.href = "dashboard.html";
             });
 
@@ -60,12 +69,14 @@
             Swal.fire({
                 icon: 'error',
                 title: 'FALLO DE TRANSMISIÓN',
-                text: 'No se pudo vincular el nodo. Revisa tu conexión a Starlink.'
+                text: 'No se pudo vincular al Nodo Maestro. Verifica tu conexión a la red.',
+                background: '#020617',
+                color: '#fff'
             });
         }
     }
 
-    // CRÍTICO: Exportar a Window para que el 'onclick' del HTML funcione
+    // 5. EXPORTACIÓN GLOBAL (Para que el onclick lo vea)
     window.db = db;
     window.auth = auth;
     window.ejecutarProtocoloNexus = ejecutarProtocoloNexus;
