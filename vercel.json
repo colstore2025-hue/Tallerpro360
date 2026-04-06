@@ -2,8 +2,8 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/dashboard", "destination": "/dashboard.html" },
-    { "source": "/login", "destination": "/login.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/home", "destination": "/home.html" },
+    { "source": "/login", "destination": "/login.html" }
   ],
   "headers": [
     {
