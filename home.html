@@ -77,6 +77,32 @@
         }
     }
 
+// Detectar si es un usuario de prueba al cargar el dashboard
+auth.onAuthStateChanged(user => {
+    if (user) {
+        const userRef = doc(db, "usuarios", user.uid);
+        getDoc(userRef).then(docSnap => {
+            if (docSnap.exists() && docSnap.data().planType === "GRATI-CORE") {
+                Swal.fire({
+                    title: '🛰️ NODO DEMO ACTIVADO',
+                    html: `
+                        <p style="color: #94a3b8; font-size: 14px;">Bienvenido a la terminal de <b>TallerPRO360</b>.</p>
+                        <div style="text-align: left; background: #0f172a; padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid #06b6d4;">
+                            <p style="color: #fff; font-size: 12px; margin-bottom: 5px;"><i class="fas fa-check text-cyan-400"></i> Funciones Pro desbloqueadas.</p>
+                            <p style="color: #fff; font-size: 12px; margin-bottom: 5px;"><i class="fas fa-check text-cyan-400"></i> Sincronización Starlink Activa.</p>
+                            <p style="color: #fff; font-size: 12px;"><i class="fas fa-check text-cyan-400"></i> 7 días de acceso Discovery.</p>
+                        </div>
+                        <p style="color: #06b6d4; font-size: 11px; margin-top: 15px; font-weight: bold;">EXPLORA, CREA Y GESTIONA.</p>
+                    `,
+                    background: '#020617',
+                    confirmButtonText: 'INICIAR MISIÓN',
+                    confirmButtonColor: '#06b6d4'
+                });
+            }
+        });
+    }
+});
+
     // 3. EXPORTAR A WINDOW
     window.ejecutarProtocoloNexus = ejecutarProtocoloNexus;
 </script>
