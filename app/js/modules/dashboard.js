@@ -65,17 +65,6 @@ function renderPentagonInterface(container, isDemo, planActual) {
         MODO DISCOVERY: Módulos ERP bloqueados. Expira en <span id="dias-restantes">--</span> días. 
         <a href="#planes" class="underline ml-2 font-black hover:text-white transition-all">ADQUIRIR LICENCIA FULL</a>
     </div>
-<button onclick="contactarVentasNexus()" class="btn-discovery">
-    MODO DISCOVERY: Módulos ERP bloqueados. Expira en 7 días. 
-    <span class="text-cyan-400">ADQUIRIR LICENCIA FULL NEXUS_AEGIS.X</span>
-</button>
-
-<script>
-function contactarVentasNexus() {
-    const mensaje = encodeURIComponent("🛰️ PROTOCOLO NEXUS_AEGIS.X: Hola William, mi terminal Discovery está activa y quiero adquirir la LICENCIA FULL para mi taller.");
-    window.open(`https://wa.me/1 704 941 9163?text=${mensaje}`, '_blank');
-}
-</script>
 
     <div class="p-4 lg:p-10 space-y-10 animate-in fade-in zoom-in duration-700 pb-32 max-w-[1800px] mx-auto bg-[#02040a] min-h-screen text-white">
         
