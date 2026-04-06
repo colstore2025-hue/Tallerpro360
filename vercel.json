@@ -10,7 +10,7 @@
       ]
     },
     {
-      "source": "/(.*).(js|css|png|jpg|jpeg|svg|json)",
+      "source": "/(.*)\\.(js|css|png|jpg|jpeg|svg|json)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
       ]
@@ -21,6 +21,6 @@
     { "source": "/home", "destination": "/home.html" },
     { "source": "/login", "destination": "/login.html" },
     { "source": "/admin", "destination": "/login.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!app/js/|.*\\.(?:js|css|png|jpg|jpeg|svg|json)$).*)", "destination": "/index.html" }
   ]
 }
