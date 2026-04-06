@@ -3,16 +3,24 @@
   "trailingSlash": false,
   "headers": [
     {
-      "source": "/(.*).(js|css|json)",
+      "source": "/app/js/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Content-Type", "value": "application/javascript" }
+      ]
+    },
+    {
+      "source": "/(.*).(js|css|png|jpg|jpeg|svg|json)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
       ]
     }
   ],
   "rewrites": [
-    { "source": "/dashboard", "destination": "/app/#dashboard" },
+    { "source": "/dashboard", "destination": "/app/index.html" },
     { "source": "/home", "destination": "/home.html" },
     { "source": "/login", "destination": "/login.html" },
+    { "source": "/admin", "destination": "/login.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
