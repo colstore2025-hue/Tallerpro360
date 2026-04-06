@@ -201,15 +201,15 @@
     // GOBERNADOR DE VERSIÓN (Anti-Cache NASA)
     const CORE_VERSION = "V15.5.0-STRLNK-" + new Date().getTime();
     
-    // RUTAS MAESTRAS DE MÓDULOS (Ajustado a tu estructura real)
+        // RUTAS MAESTRAS: Forzamos ruta absoluta para evitar el "Link Protocol Broken"
     const routes = {
-        dashboard: () => import(`./js/modules/dashboard.js?v=${CORE_VERSION}`),
-        ordenes: () => import(`./js/modules/ordenes.js?v=${CORE_VERSION}`),
-        inventario: () => import(`./js/modules/inventario.js?v=${CORE_VERSION}`),
-        clientes: () => import(`./js/modules/clientes.js?v=${CORE_VERSION}`),
-        pagos: () => import(`./js/modules/pagosTaller.js?v=${CORE_VERSION}`),
-        contabilidad: () => import(`./js/modules/contabilidad.js?v=${CORE_VERSION}`),
-        configuracion: () => import(`./js/modules/config.js?v=${CORE_VERSION}`)
+        dashboard: () => import(`/app/js/modules/dashboard.js?v=${CORE_VERSION}`),
+        ordenes: () => import(`/app/js/modules/ordenes.js?v=${CORE_VERSION}`),
+        inventario: () => import(`/app/js/modules/inventario.js?v=${CORE_VERSION}`),
+        clientes: () => import(`/app/js/modules/clientes.js?v=${CORE_VERSION}`),
+        pagos: () => import(`/app/js/modules/pagosTaller.js?v=${CORE_VERSION}`),
+        contabilidad: () => import(`/app/js/modules/contabilidad.js?v=${CORE_VERSION}`),
+        configuracion: () => import(`/app/js/modules/config.js?v=${CORE_VERSION}`)
     };
 
     async function router() {
