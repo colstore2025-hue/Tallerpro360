@@ -4,14 +4,5 @@
     { "source": "/dashboard", "destination": "/dashboard.html" },
     { "source": "/home", "destination": "/home.html" },
     { "source": "/login", "destination": "/login.html" }
-  ],
-  "headers": [
-    {
-      "source": "/app/js/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-        { "key": "Content-Type", "value": "application/javascript" }
-      ]
-    }
   ]
 }
