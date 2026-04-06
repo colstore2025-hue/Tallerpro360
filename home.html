@@ -70,7 +70,12 @@
                 background: '#020617',
                 color: '#fff'
             }).then(() => {
-                window.location.href = "/app/#dashboard"; 
+function iniciarDemo() {
+    localStorage.setItem("planTipo", "GRATI-CORE");
+    localStorage.setItem("empresaId", "DEMO-NEXUS-001");
+    localStorage.setItem("rol", "GUEST");
+    window.location.href = "/app/#dashboard";
+}
             });
 
         } catch (error) {
