@@ -1,10 +1,9 @@
 <script type="module">
-    // 1. Importaciones del Kernel de Firebase
+    // 1. IMPORTACIONES (Asegúrate de incluir 'signInWithEmailAndPassword')
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    // 2. Configuración de la Terminal
     const firebaseConfig = {
         apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
         authDomain: "tallerpro360.firebaseapp.com",
@@ -15,58 +14,71 @@
         measurementId: "G-VEC2C0QX2G"
     };
 
-    // 3. Inicialización de Sistemas
     const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // 4. LÓGICA DEL PROTOCOLO NEXUS-X
+    // 2. FUNCIÓN DE ACCESO AUTOMÁTICO
     async function ejecutarProtocoloNexus() {
-    // Credenciales del "Avatar" de demostración
-    const demoEmail = "discovery@tallerpro360.com";
-    const demoPass = "Demo2026"; // Asegúrate que esta sea la clave en Auth
+        const demoEmail = "discovery@tallerpro360.com";
+        const demoPass = "NexusDemo2026*"; // Verifícala en tu Firebase Auth console
 
-    Swal.fire({
-        title: 'INICIANDO PROTOCOLO',
-        text: 'Sincronizando con Nodo Maestro...',
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); },
-        background: '#020617', color: '#fff'
-    });
-
-    try {
-        // 1. LOGIN AUTOMÁTICO (Invisible para el cliente)
-        const userCredential = await signInWithEmailAndPassword(auth, demoEmail, demoPass);
-        const user = userCredential.user;
-
-        // 2. VINCULACIÓN AL TALLER_002
-        const userRef = doc(db, "usuarios", user.uid);
-        await updateDoc(userRef, {
-            empresaId: "taller_002",
-            planType: "GRATI-CORE",
-            status: "ACTIVE",
-            modoVisitante: true // Etiqueta para control interno
-        });
-
-        // 3. SALTO AL DASHBOARD
-        window.location.href = "/dashboard";
-
-    } catch (error) {
-        console.error("Error en Protocolo:", error);
         Swal.fire({
-            icon: 'error',
-            title: 'FALLO DE CONEXIÓN',
-            text: 'El Nodo Maestro está saturado. Intenta en 1 minuto.',
-            background: '#020617', color: '#fff'
+            title: 'SINCRONIZANDO NODO',
+            text: 'Estableciendo enlace satelital con taller_002...',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            background: '#020617',
+            color: '#fff',
+            didOpen: () => { Swal.showLoading(); }
         });
+
+        try {
+            // A. LOGIN AUTOMÁTICO
+            const userCredential = await signInWithEmailAndPassword(auth, demoEmail, demoPass);
+            const user = userCredential.user;
+            console.log("🛰️ Autenticación Exitosa:", user.uid);
+
+            // B. VINCULACIÓN DE PERFIL
+            const userRef = doc(db, "usuarios", user.uid);
+            await updateDoc(userRef, {
+                empresaId: "taller_002",
+                planType: "GRATI-CORE",
+                status: "ACTIVE",
+                lastAccess: new Date().toISOString()
+            });
+
+            // C. ÉXITO Y REDIRECCIÓN
+            Swal.fire({
+                icon: 'success',
+                title: 'CONEXIÓN ESTABLECIDA',
+                text: 'Bienvenido a la terminal Nexus-X.',
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.href = "dashboard.html"; // Prueba con .html para asegurar
+            });
+
+        } catch (error) {
+            console.error("❌ Error en Protocolo:", error.code, error.message);
+            
+            let msg = "Error de enlace. Revisa tu conexión.";
+            if(error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                msg = "Credenciales del Nodo Maestro inválidas.";
+            }
+
+            Swal.fire({
+                icon: 'error',
+                title: 'FALLO DE TRANSMISIÓN',
+                text: msg,
+                background: '#020617',
+                color: '#fff'
+            });
+        }
     }
-}
-    // 5. EXPORTACIÓN GLOBAL (Para que el onclick lo vea)
-    window.db = db;
-    window.auth = auth;
+
+    // 3. EXPORTAR A WINDOW
     window.ejecutarProtocoloNexus = ejecutarProtocoloNexus;
-    
-    console.log("🛰️ Nexus-X Starlink: Nodo Maestro Vinculado al Kernel");
 </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
