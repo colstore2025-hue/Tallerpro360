@@ -47,7 +47,18 @@
                 status: "ACTIVE",
                 lastAccess: new Date().toISOString()
             });
+// Borrar rastros de sesiones anteriores antes de entrar para que siempre esté limpio
+const ordenesRef = collection(db, "ordenes");
+const q = query(ordenesRef, where("empresaId", "==", "taller_002"));
+const querySnapshot = await getDocs(q);
 
+querySnapshot.forEach(async (docOriginal) => {
+    // Si la placa NO es una de nuestras 3 maestras, se borra.
+    const placa = docOriginal.data().placa;
+    if (!['NEX-001', 'TRX-700', 'BAV-400'].includes(placa)) {
+        await deleteDoc(doc(db, "ordenes", docOriginal.id));
+    }
+});
             // C. ÉXITO Y REDIRECCIÓN
             Swal.fire({
                 icon: 'success',
