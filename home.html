@@ -22,54 +22,45 @@
 
     // 4. LÓGICA DEL PROTOCOLO NEXUS-X
     async function ejecutarProtocoloNexus() {
-    console.log("🛰️ Verificando estado de la terminal...");
+    // Credenciales del "Avatar" de demostración
+    const demoEmail = "discovery@tallerpro360.com";
+    const demoPass = "NexusDemo2026*"; // Asegúrate que esta sea la clave en Auth
 
-    // 1. ESPERA ACTIVA: Esto le da tiempo a Firebase de reconocer al usuario
-    await auth.authStateReady(); 
-    
-    const user = auth.currentUser;
-    
-    if (!user) {
-        Swal.fire({
-            icon: 'info',
-            title: 'Sincronización Requerida',
-            text: 'La sesión no se ha detectado. Redireccionando a la terminal de ingreso...',
-            timer: 2000,
-            showConfirmButton: false,
-            background: '#020617',
-            color: '#fff'
-        }).then(() => {
-            window.location.href = "/login";
-        });
-        return;
-    }
+    Swal.fire({
+        title: 'INICIANDO PROTOCOLO',
+        text: 'Sincronizando con Nodo Maestro...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); },
+        background: '#020617', color: '#fff'
+    });
 
     try {
-        // 2. Si hay usuario, procedemos con la vinculación
+        // 1. LOGIN AUTOMÁTICO (Invisible para el cliente)
+        const userCredential = await signInWithEmailAndPassword(auth, demoEmail, demoPass);
+        const user = userCredential.user;
+
+        // 2. VINCULACIÓN AL TALLER_002
         const userRef = doc(db, "usuarios", user.uid);
         await updateDoc(userRef, {
             empresaId: "taller_002",
             planType: "GRATI-CORE",
             status: "ACTIVE",
-            protocolo: "NEXUS-X-DEMO"
+            modoVisitante: true // Etiqueta para control interno
         });
 
-        Swal.fire({
-            icon: 'success',
-            title: 'PROTOCOLO ACTIVADO',
-            text: 'Conexión con Nodo Maestro: OK',
-            timer: 1500,
-            showConfirmButton: false
-        }).then(() => {
-            window.location.href = "/dashboard";
-        });
+        // 3. SALTO AL DASHBOARD
+        window.location.href = "/dashboard";
 
     } catch (error) {
-        console.error("❌ Error:", error);
-        Swal.fire({ icon: 'error', title: 'FALLO DE TRANSMISIÓN' });
+        console.error("Error en Protocolo:", error);
+        Swal.fire({
+            icon: 'error',
+            title: 'FALLO DE CONEXIÓN',
+            text: 'El Nodo Maestro está saturado. Intenta en 1 minuto.',
+            background: '#020617', color: '#fff'
+        });
     }
 }
-
     // 5. EXPORTACIÓN GLOBAL (Para que el onclick lo vea)
     window.db = db;
     window.auth = auth;
