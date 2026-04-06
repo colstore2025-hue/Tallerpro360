@@ -1,7 +1,7 @@
 <script type="module">
-    // 1. IMPORTACIONES (Asegúrate de incluir 'signInWithEmailAndPassword')
+    // 1. IMPORTACIONES COMPLETAS (Kernel de Firebase)
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, updateDoc, getDoc, collection, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
@@ -18,10 +18,10 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // 2. FUNCIÓN DE ACCESO AUTOMÁTICO
+    // 2. FUNCIÓN DE ACCESO AUTOMÁTICO Y RESET "FÉNIX"
     async function ejecutarProtocoloNexus() {
         const demoEmail = "discovery@tallerpro360.com";
-        const demoPass = "Demo2026"; // Verifícala en tu Firebase Auth console
+        const demoPass = "Demo2026"; 
 
         Swal.fire({
             title: 'SINCRONIZANDO NODO',
@@ -37,9 +37,21 @@
             // A. LOGIN AUTOMÁTICO
             const userCredential = await signInWithEmailAndPassword(auth, demoEmail, demoPass);
             const user = userCredential.user;
-            console.log("🛰️ Autenticación Exitosa:", user.uid);
 
-            // B. VINCULACIÓN DE PERFIL
+            // B. PROTOCOLO DE LIMPIEZA (RESET AUTOMÁTICO)
+            // Solo mantenemos las 3 placas maestras que creaste
+            const placasMaestras = ['NEX-001', 'TRX-700', 'BAV-400'];
+            const ordenesRef = collection(db, "ordenes");
+            const q = query(ordenesRef, where("empresaId", "==", "taller_002"));
+            const querySnapshot = await getDocs(q);
+
+            for (const documento of querySnapshot.docs) {
+                if (!placasMaestras.includes(documento.data().placa)) {
+                    await deleteDoc(doc(db, "ordenes", documento.id));
+                }
+            }
+
+            // C. VINCULACIÓN DE PERFIL
             const userRef = doc(db, "usuarios", user.uid);
             await updateDoc(userRef, {
                 empresaId: "taller_002",
@@ -48,25 +60,25 @@
                 lastAccess: new Date().toISOString()
             });
 
-            // C. ÉXITO Y REDIRECCIÓN
+            // D. ÉXITO Y REDIRECCIÓN LIMPIA
             Swal.fire({
                 icon: 'success',
                 title: 'CONEXIÓN ESTABLECIDA',
                 text: 'Bienvenido a la terminal Nexus-X.',
                 timer: 1500,
-                showConfirmButton: false
+                showConfirmButton: false,
+                background: '#020617',
+                color: '#fff'
             }).then(() => {
-                window.location.href = "/app/#dashboard"; // Prueba con .html para asegurar
+                window.location.href = "/app/#dashboard"; 
             });
 
         } catch (error) {
             console.error("❌ Error en Protocolo:", error.code, error.message);
-            
-            let msg = "Error de enlace. Revisa tu conexión.";
-            if(error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-                msg = "Credenciales del Nodo Maestro inválidas.";
+            let msg = "Error de enlace satelital. Revisa tu conexión.";
+            if(error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                msg = "Las credenciales del Nodo Maestro han cambiado.";
             }
-
             Swal.fire({
                 icon: 'error',
                 title: 'FALLO DE TRANSMISIÓN',
@@ -77,12 +89,14 @@
         }
     }
 
-// Detectar si es un usuario de prueba al cargar el dashboard
-auth.onAuthStateChanged(user => {
-    if (user) {
-        const userRef = doc(db, "usuarios", user.uid);
-        getDoc(userRef).then(docSnap => {
+    // 3. DETECTAR EL ESTADO AL CARGAR (MENSAJE DE BIENVENIDA)
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            const userRef = doc(db, "usuarios", user.uid);
+            const docSnap = await getDoc(userRef);
+            
             if (docSnap.exists() && docSnap.data().planType === "GRATI-CORE") {
+                // Solo mostrar si estamos en la página de inicio o dashboard
                 Swal.fire({
                     title: '🛰️ NODO DEMO ACTIVADO',
                     html: `
@@ -99,11 +113,10 @@ auth.onAuthStateChanged(user => {
                     confirmButtonColor: '#06b6d4'
                 });
             }
-        });
-    }
-});
+        }
+    });
 
-    // 3. EXPORTAR A WINDOW
+    // 4. EXPORTACIÓN GLOBAL
     window.ejecutarProtocoloNexus = ejecutarProtocoloNexus;
 </script>
 
