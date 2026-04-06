@@ -1,8 +1,18 @@
 {
   "cleanUrls": true,
+  "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/(.*).(js|css|json)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/dashboard", "destination": "/app/#dashboard" },
     { "source": "/home", "destination": "/home.html" },
-    { "source": "/login", "destination": "/login.html" }
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
