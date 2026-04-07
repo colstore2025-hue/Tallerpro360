@@ -106,7 +106,7 @@ function renderPentagonInterface(container, isDemo, planActual, userName, empres
             ${renderModuleBtn('Órdenes', 'fa-file-signature', '#ordenes', false)}
             ${renderModuleBtn('Staff', 'fa-users-cog', '#staff', isDemo)}
             ${renderModuleBtn('Nómina', 'fa-file-invoice-dollar', '#payroll', isDemo)}
-            ${renderModuleBtn('Contabilidad', 'fa-vault', '#conta', isDemo)}
+            ${renderModuleBtn('Contabilidad', 'fa-vault', '#contabilidad', isDemo)}
             ${renderModuleBtn('Reportes', 'fa-chart-network', '#reportes', isDemo)}
             ${renderModuleBtn('Config', 'fa-microchip', '#config', false, true)} 
             ${renderModuleBtn('Pagos', 'fa-credit-card', '#pagos', isDemo)}
