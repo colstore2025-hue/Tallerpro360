@@ -198,38 +198,36 @@
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // GOBERNADOR DE VERSIÓN (Anti-Cache NASA)
-    const CORE_VERSION = "V15.5.0-STRLNK-" + new Date().getTime();
+    const CORE_VERSION = "V17.0.0-PRO-" + new Date().getTime();
     
-        // RUTAS MAESTRAS: Forzamos ruta absoluta para evitar el "Link Protocol Broken"
+    // RUTAS MAESTRAS ACTUALIZADAS (Asegúrate que los nombres de archivo coincidan)
     const routes = {
-        dashboard: () => import(`/app/js/modules/dashboard.js?v=${CORE_VERSION}`),
-        ordenes: () => import(`/app/js/modules/ordenes.js?v=${CORE_VERSION}`),
-        inventario: () => import(`/app/js/modules/inventario.js?v=${CORE_VERSION}`),
-        clientes: () => import(`/app/js/modules/clientes.js?v=${CORE_VERSION}`),
-        pagos: () => import(`/app/js/modules/pagosTaller.js?v=${CORE_VERSION}`),
-        contabilidad: () => import(`/app/js/modules/contabilidad.js?v=${CORE_VERSION}`),
-        configuracion: () => import(`/app/js/modules/config.js?v=${CORE_VERSION}`)
+        dashboard: () => import(`./js/modules/dashboard.js?v=${CORE_VERSION}`),
+        ordenes: () => import(`./js/modules/ordenes.js?v=${CORE_VERSION}`),
+        inventario: () => import(`./js/modules/inventario.js?v=${CORE_VERSION}`),
+        clientes: () => import(`./js/modules/clientes.js?v=${CORE_VERSION}`),
+        pagos: () => import(`./js/modules/pagosTaller.js?v=${CORE_VERSION}`),
+        contabilidad: () => import(`./js/modules/contabilidad.js?v=${CORE_VERSION}`),
+        configuracion: () => import(`./js/modules/config.js?v=${CORE_VERSION}`),
+        staff: () => import(`./js/modules/staff.js?v=${CORE_VERSION}`), // Agregado
+        nomina: () => import(`./js/modules/nomina.js?v=${CORE_VERSION}`), // Agregado
+        finanzas_elite: () => import(`./js/modules/finanzas_elite.js?v=${CORE_VERSION}`) // Agregado
     };
 
     async function router() {
         const container = document.getElementById("appContainer");
         const hash = window.location.hash.replace("#", "") || "dashboard";
 
-        // Loading State: Estética Starlink
         container.innerHTML = `
             <div class="flex h-full flex-col items-center justify-center animate-in fade-in duration-700">
                 <div class="spinner mb-8"></div>
-                <div class="text-center">
-                    <p class="orbitron text-[8px] font-black uppercase text-cyan-400 tracking-[8px] animate-pulse">Syncing Nexus-X Core</p>
-                    <p class="text-[6px] text-slate-600 mt-2 uppercase tracking-[4px]">Uplink Terminal: ${hash}</p>
+                <div class="text-center orbitron">
+                    <p class="text-[8px] font-black uppercase text-cyan-400 tracking-[8px] animate-pulse">Sincronizando Nexus-X</p>
                 </div>
             </div>`;
 
-        // Update Nav UI
         document.querySelectorAll('.nav-link, .mobile-link').forEach(link => {
-            const isActive = link.getAttribute('href') === `#${hash}`;
-            link.classList.toggle('active', isActive);
+            link.classList.toggle('active', link.getAttribute('href') === `#${hash}`);
         });
 
         try {
@@ -239,8 +237,8 @@
             const state = {
                 empresaId: localStorage.getItem("empresaId"),
                 uid: localStorage.getItem("uid"),
-                rol: localStorage.getItem("rol") || "ADMIN",
-                version: CORE_VERSION
+                rol: localStorage.getItem("rol"),
+                planTipo: localStorage.getItem("planTipo")
             };
 
             container.innerHTML = ""; 
@@ -248,13 +246,14 @@
                 await module.default(container, state);
             }
         } catch (err) {
-            console.error("🔥 NEXUS ROUTER ERROR:", err);
+            console.error("🚨 NEXUS ROUTER ERROR:", err);
             container.innerHTML = `
                 <div class="h-full flex items-center justify-center p-10">
                     <div class="max-w-xs text-center border border-red-500/20 bg-red-500/5 p-8 rounded-[2rem] backdrop-blur-xl">
                         <i class="fas fa-triangle-exclamation text-red-500 text-3xl mb-4"></i>
-                        <p class="text-red-500 orbitron text-[9px] tracking-widest uppercase font-black">Link Protocol Broken: ${hash}</p>
-                        <button onclick="location.reload()" class="mt-6 px-6 py-3 bg-red-500/10 text-red-500 rounded-xl text-[8px] orbitron font-black uppercase hover:bg-red-500 hover:text-white transition-all">Reestablecer Órbita</button>
+                        <p class="text-red-500 orbitron text-[9px] tracking-widest uppercase font-black italic">Link Protocol Broken: ${hash}</p>
+                        <p class="text-[7px] text-slate-500 mt-2 uppercase">Verificar existencia de: js/modules/${hash}.js</p>
+                        <button onclick="location.hash='#dashboard'; location.reload();" class="mt-6 px-6 py-3 bg-red-500/10 text-red-500 rounded-xl text-[8px] orbitron font-black uppercase hover:bg-red-500 hover:text-white transition-all">Reestablecer Órbita</button>
                     </div>
                 </div>`;
         }
@@ -262,20 +261,20 @@
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            localStorage.setItem("uid", user.uid);
+            // Sincronización con colección correcta: "usuarios"
+            const userRef = doc(db, "usuarios", user.uid);
+            const userSnap = await getDoc(userRef);
             
-            // Inyección de Data Dinámica
-            if (!localStorage.getItem("empresaId")) {
-                const userRef = doc(db, "users", user.uid);
-                const userSnap = await getDoc(userRef);
-                if (userSnap.exists()) {
-                    localStorage.setItem("empresaId", userSnap.data().empresaId);
-                    localStorage.setItem("rol", userSnap.data().rol || "ADMIN");
-                }
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                localStorage.setItem("empresaId", data.empresaId || "BASE");
+                localStorage.setItem("rol", (data.role || data.rolGlobal || "OPERADOR").toUpperCase());
+                localStorage.setItem("planTipo", (data.planType || data.plantype || "GRATI-CORE").toUpperCase());
+                localStorage.setItem("nexus_userName", data.nombre || user.email.split('@')[0]);
             }
 
-            document.getElementById("userName").innerText = (user.displayName || user.email.split('@')[0]).toUpperCase();
-            document.getElementById("userRole").innerText = `Nodo: ${localStorage.getItem("empresaId") || 'Link-0'}`;
+            document.getElementById("userName").innerText = (localStorage.getItem("nexus_userName")).toUpperCase();
+            document.getElementById("userRole").innerText = `Nodo: ${localStorage.getItem("empresaId")}`;
             
             if (!window.location.hash) window.location.hash = "#dashboard";
             router();
@@ -294,28 +293,6 @@
             window.location.href = "../login.html";
         }
     };
-
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    // Aquí puedes mostrar un botón que diga "INSTALAR APP NEXUS"
-    console.log("PWA lista para instalar");
-});
-
-// Función para llamar cuando el usuario haga clic en tu botón de instalar
-function instalarApp() {
-    if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-                console.log('Usuario aceptó la instalación');
-            }
-            deferredPrompt = null;
-        });
-    }
-}
-
 </script>
 </body>
 </html>
