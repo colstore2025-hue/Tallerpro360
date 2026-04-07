@@ -143,7 +143,6 @@ href="manifest.json">
 
     const loginForm = document.getElementById('loginForm');
     const statusMsg = document.getElementById('statusMsg');
-    const btnText = document.getElementById('btnText');
     const submitBtn = document.getElementById('submitBtn');
     
     const splash = {
@@ -163,18 +162,26 @@ href="manifest.json">
     };
 
     /**
-     * DETECCIÓN AUTOMÁTICA DE FREEMIUM DESDE URL
-     * Si el usuario viene de home.html?mode=demo, disparamos el registro automático.
+     * PROTOCOLO DE PERSISTENCIA NEXUS-X
+     * Sincroniza LocalStorage con Firestore
      */
-    window.addEventListener('load', () => {
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('mode') === 'demo') {
-            window.iniciarPruebaExpress();
-        }
-    });
+    function saveSession(uid, data) {
+        localStorage.setItem("uid", uid);
+        localStorage.setItem("empresaId", data.empresaId || "BASE");
+        
+        // Normalización de Roles y Planes (Tolerante a mayúsculas/minúsculas)
+        const rolFinal = (data.role || data.rolGlobal || "operador").toUpperCase();
+        const planFinal = (data.planType || data.plantype || data.plan || "GRATI-CORE").toUpperCase();
+
+        localStorage.setItem("rol", rolFinal);
+        localStorage.setItem("planTipo", planFinal);
+        localStorage.setItem("nexus_userName", data.nombre || "Comandante");
+
+        console.log(`✅ NODO SINCRONIZADO: ${rolFinal} en plan ${planFinal}`);
+    }
 
     /**
-     * SECUENCIA DE ACCESO MANUAL
+     * SECUENCIA DE ACCESO
      */
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -191,23 +198,19 @@ href="manifest.json">
             splash.show();
             splash.update(20, "IDENTIDAD CONFIRMADA");
 
+            // BUSQUEDA EN COLECCIÓN 'usuarios' (Según tus capturas)
             const userSnap = await getDoc(doc(db, "usuarios", uid));
-            if (!userSnap.exists()) throw new Error("PERFIL NO ENCONTRADO EN LA RAÍZ.");
+            if (!userSnap.exists()) throw new Error("PERFIL NO ENCONTRADO EN NODO CENTRAL.");
 
             const userData = userSnap.data();
             saveSession(uid, userData);
 
-            splash.update(60, "SINCRONIZANDO TALLER: " + (userData.empresaId || 'BASE'));
+            splash.update(60, "SISTEMA OPERACIONAL: " + (userData.empresaId || 'BASE'));
             
-            let p = 60;
-            const timer = setInterval(() => {
-                p += 10;
-                splash.update(p, "CARGANDO MÓDULOS OPERATIVOS");
-                if(p >= 100) {
-                    clearInterval(timer);
-                    window.location.href = "app/index.html";
-                }
-            }, 400);
+            setTimeout(() => {
+                splash.update(100, "SALTO HIPERESPACIAL...");
+                window.location.href = "app/index.html";
+            }, 1000);
 
         } catch (error) {
             submitBtn.disabled = false;
@@ -217,8 +220,7 @@ href="manifest.json">
     });
 
     /**
-     * MOTOR FREEMIUM AUTOMÁTICO
-     * Crea usuario, empresa y loguea en un solo flujo.
+     * MOTOR FREEMIUM / DEMO
      */
     window.iniciarPruebaExpress = async () => {
         const emailDemo = prompt("INGRESE EMAIL PARA ACTIVAR LICENCIA DEMO (7 DÍAS):");
@@ -226,93 +228,48 @@ href="manifest.json">
 
         submitBtn.disabled = true;
         splash.show();
-        splash.update(10, "INICIANDO PROTOCOLO DEMO");
+        splash.update(10, "GENERANDO ACCESO TEMPORAL");
 
         try {
             const tempPass = "Nexus" + Math.floor(1000 + Math.random() * 9000);
             const userCred = await createUserWithEmailAndPassword(auth, emailDemo, tempPass);
             const uid = userCred.user.uid;
-            const empresaId = "DEMO_" + Math.floor(1000 + Math.random() * 9000);
+            const empresaId = "DEMO_" + Date.now().toString().slice(-4);
 
             const demoData = {
                 nombre: "Comandante Demo",
                 email: emailDemo,
                 empresaId: empresaId,
-                rolGlobal: "ADMIN",
-                plan: "FREEMIUM",
+                role: "dueno",
+                planType: "GRATI-CORE",
                 createdAt: serverTimestamp()
             };
 
-            // Registro en Raíz
             await setDoc(doc(db, "usuarios", uid), demoData);
-
-            // Registro de Empresa
             await setDoc(doc(db, "empresas", empresaId), {
-                nombreTaller: "Mi Taller Pro",
-                planTipo: "freemium",
+                nombreTaller: "Taller Pro Demo",
+                planTipo: "GRATI-CORE",
+                status: "TRIAL",
                 fechaActivacion: serverTimestamp()
             });
 
             saveSession(uid, demoData);
-            
-            splash.update(100, "CUENTA CREADA: CLAVE ES " + tempPass);
-            alert("TU CLAVE DE ACCESO ES: " + tempPass + "\nGuárdala para volver a entrar.");
-            
-            setTimeout(() => window.location.href = "app/index.html", 2000);
+            splash.update(100, "CUENTA CREADA");
+            alert("TU CLAVE ES: " + tempPass);
+            window.location.href = "app/index.html";
 
         } catch (error) {
             submitBtn.disabled = false;
             splash.el.classList.add('hidden');
-            alert("EL NODO NO PUDO SER CREADO: " + error.message);
+            alert("ERROR: " + error.message);
         }
     };
-
-     /**
- * PROTOCOLO DE PERSISTENCIA NEXUS-X (Revisado)
- * Asegura que no importa si el campo es planType o plantype, el sistema lo lea.
- */
-function saveSession(uid, data) {
-    // 1. Identificadores Base
-    localStorage.setItem("uid", uid);
-    localStorage.setItem("empresaId", data.empresaId || "BASE");
-    
-    // 2. Manejo de Roles (Soporta superadmin, dueno, operador)
-    const rolAsignado = data.role || data.rolGlobal || "operador";
-    localStorage.setItem("rol", rolAsignado.toUpperCase());
-
-    // 3. Normalización del Plan (Detecta planType o plantype)
-    const planDeteccion = data.planType || data.plantype || "GRATI-CORE";
-    localStorage.setItem("planTipo", planDeteccion.toUpperCase());
-    
-    // 4. Identidad Visual
-    localStorage.setItem("nexus_userName", data.nombre || "Comandante");
-
-    console.log("✅ SESIÓN SINCRONIZADA: Nodo " + (data.empresaId || "Global"));
-}
-
-        // 2. LLAVES DE IDENTIDAD (Para Personalización del Dashboard)
-        localStorage.setItem("nexus_userName", data.nombre || "Comandante");
-        
-        // 3. CONTROL DE PLANES Y CAPACIDADES (Nivel Grati-Core / Enterprise)
-        // Esto activa o desactiva módulos en el Dashboard
-        const planActual = data.planType || data.plan || "GRATI-CORE";
-        localStorage.setItem("planTipo", planActual);
-
-        console.log("🛰️ PROTOCOLO DE SESIÓN: Sincronización Exitosa para " + rolFinal);
-    }
-
 </script>
 
 <script>
-    /**
-     * REGISTRO DE SERVICE WORKER (PWA)
-     * Permite que Nexus-X funcione como App en el móvil de William
-     */
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(reg => console.log("🚀 Nexus-X PWA: Online"))
-                .catch(err => console.warn("🚨 Nexus-X PWA: Offline", err));
+            navigator.serviceWorker.register('/service-worker.js').catch(() => {});
         });
     }
 </script>
