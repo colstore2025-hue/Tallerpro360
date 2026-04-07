@@ -1,111 +1,138 @@
 /**
- * CustomerManager.js - TallerPRO360 V4 👥
- * Motor de Gestión de Identidad de Clientes & CRM
+ * CustomerManager.js - TALLERPRO360 NEXUS-X V4 👥
+ * MOTOR DE INTELIGENCIA DE CLIENTES Y FIDELIZACIÓN (CRM CORE)
+ * @author William Jeffry Urquijo Cubillos
  */
-import { db } from "../core/firebase-config.js";
+import { db } from "./firebase-config.js";
 import { 
-  collection, addDoc, getDocs, query, where, doc, updateDoc, orderBy, serverTimestamp, limit 
+  collection, addDoc, getDocs, query, where, doc, 
+  updateDoc, orderBy, serverTimestamp, limit, increment 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export default class CustomerManager {
-  constructor(empresaId) {
-    // Priorizamos el ID pasado por parámetro o buscamos en storage
-    this.empresaId = empresaId || localStorage.getItem("empresaId");
+  constructor() {
+    // Identidad única de la estación de trabajo
+    this.empresaId = localStorage.getItem("nexus_empresaId");
     
     if (!this.empresaId) {
-      console.error("❌ Error Crítico: Empresa no identificada en el CRM");
+      console.error("⚠️ CRITICAL_ERROR: Acceso denegado a la base de datos de clientes. Empresa no definida.");
     }
 
-    // Referencia limpia a la sub-colección de la empresa actual
+    // Ruta optimizada: empresas/{id}/clientes
     this.collectionRef = collection(db, "empresas", this.empresaId, "clientes");
   }
 
   /**
-   * Limpia espacios y caracteres para evitar duplicados por formato
+   * Normalización Nexus: Limpia ruidos en strings para búsquedas exactas
    */
   normalize(str) {
-    return (str || "").replace(/\s+/g, "").trim().toUpperCase();
+    if (!str) return "";
+    return str.toString().replace(/[^a-zA-Z0-9]/g, "").trim().toUpperCase();
   }
 
   /**
-   * Búsqueda Inteligente: Por Teléfono o Por Placa
+   * Búsqueda por radar: Localiza clientes por Placa o Teléfono
    */
-  async findCustomer(value, type = 'phone') {
+  async findCustomer(valor, criterio = 'plate') {
     try {
-      const cleanValue = this.normalize(value);
+      const cleanValue = this.normalize(valor);
       if (!cleanValue) return null;
 
-      const q = query(this.collectionRef, where(type, "==", cleanValue), limit(1));
-      const snapshot = await getDocs(q);
+      // Consulta de alto rendimiento limitada a 1 resultado
+      const q = query(this.collectionRef, where(criterio, "==", cleanValue), limit(1));
+      const snap = await getDocs(q);
 
-      if (snapshot.empty) return null;
+      if (snap.empty) return null;
 
-      const docSnap = snapshot.docs[0];
+      const docSnap = snap.docs[0];
       return { id: docSnap.id, ...docSnap.data() };
     } catch (e) {
-      console.error(`Error en búsqueda por ${type}:`, e);
+      console.error(`ERROR_RADAR_BUSQUEDA [${criterio}]:`, e);
       return null;
     }
   }
 
   /**
-   * Registra un nuevo cliente con metadatos de lealtad
+   * Registro y Vínculo: Crea o actualiza el nodo del cliente
    */
   async register(data) {
     try {
-      // Validar si ya existe por teléfono para evitar basura en DB
-      const existing = await this.findCustomer(data.phone, 'phone');
+      // 1. Evitar duplicidad táctica (Check por placa)
+      const existing = await this.findCustomer(data.plate, 'plate');
+      
       if (existing) {
+        // Si existe, solo actualizamos el contador de misiones
         await this.recordVisit(existing.id);
-        return existing.id;
+        return { id: existing.id, status: "VINCULADO_EXISTENTE" };
       }
 
-      const docRef = await addDoc(this.collectionRef, {
-        name: data.name || "Cliente Nuevo",
+      // 2. Creación de nuevo Operador (Cliente)
+      const payload = {
+        name: data.name?.toUpperCase() || "OPERADOR_ANONIMO",
         phone: this.normalize(data.phone),
-        email: data.email || "",
-        vehicle: data.vehicle || "No especificado",
+        email: data.email?.toLowerCase() || "",
         plate: this.normalize(data.plate),
-        totalSpent: 0,         // Para que la IA sepa quién es cliente VIP
-        visitCount: 1,         // Contador de fidelidad
-        createdAt: serverTimestamp(),
+        vehicleModel: data.vehicle || "N/A",
+        // Métricas de Fidelización (Efecto Terminator)
+        ltv: 0,                   // Life Time Value (Total gastado histórico)
+        missionCount: 1,          // Contador de órdenes finalizadas
         lastVisit: serverTimestamp(),
-        status: "ACTIVO"
-      });
+        createdAt: serverTimestamp(),
+        status: "ACTIVO",
+        rank: "OPERATOR"          // Rangos: OPERATOR, COMMANDER, VIP
+      };
 
-      return docRef.id;
+      const docRef = await addDoc(this.collectionRef, payload);
+      return { id: docRef.id, status: "NUEVO_VINCULO" };
+
     } catch (e) {
-      console.error("Error al registrar cliente:", e);
+      console.error("FALLO_SISTEMA_REGISTRO:", e);
       return null;
     }
   }
 
   /**
-   * Actualiza la fecha de visita y aumenta el contador de lealtad
+   * Actualización de Métricas Financieras (Ejecutada tras cada pago exitoso)
    */
-  async recordVisit(customerId, amount = 0) {
+  async updateFinances(customerId, amount) {
     try {
       const ref = doc(this.collectionRef, customerId);
-      // Nota: En una versión Pro, aquí usarías increment() de Firebase
+      
+      // Incremento atómico en Firebase (Seguridad total)
       await updateDoc(ref, {
-        lastVisit: serverTimestamp(),
-        // Podrías sumar el 'amount' al totalSpent aquí
+        ltv: increment(amount),
+        missionCount: increment(1),
+        lastVisit: serverTimestamp()
       });
+
+      // Lógica de Rango Automático
+      const snap = await getDocs(query(this.collectionRef, where("__name__", "==", customerId)));
+      const data = snap.docs[0].data();
+      
+      if (data.missionCount >= 5) {
+        await updateDoc(ref, { rank: "COMMANDER" });
+      }
     } catch (e) {
-      console.error("Error actualizando ciclo de visita:", e);
+      console.error("ERROR_ACTUALIZACION_FINANCIERA:", e);
     }
   }
 
   /**
-   * Obtiene la base de datos completa para el módulo de Marketing/Gerencia
+   * Obtener Directorio para el CRM
    */
-  async getDirectory() {
+  async getDirectory(filtro = null) {
     try {
-      const q = query(this.collectionRef, orderBy("lastVisit", "desc"));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      let q = query(this.collectionRef, orderBy("lastVisit", "desc"));
+      
+      // Filtro para clientes "Fuera de Radar" (Inactivos)
+      if (filtro === "INACTIVOS") {
+          // Aquí podrías filtrar por fecha de hace 3 meses
+      }
+
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
     } catch (e) {
-      console.error("Error en Directorio:", e);
+      console.error("ERROR_LECTURA_DIRECTORIO:", e);
       return [];
     }
   }
