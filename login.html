@@ -166,19 +166,21 @@ href="manifest.json">
      * Sincroniza LocalStorage con Firestore
      */
     function saveSession(uid, data) {
-        localStorage.setItem("uid", uid);
-        localStorage.setItem("empresaId", data.empresaId || "BASE");
-        
-        // Normalización de Roles y Planes (Tolerante a mayúsculas/minúsculas)
-        const rolFinal = (data.role || data.rolGlobal || "operador").toUpperCase();
-        const planFinal = (data.planType || data.plantype || data.plan || "GRATI-CORE").toUpperCase();
+    // ID de Empresa
+    localStorage.setItem("nexus_empresaId", data.empresaId || "taller_001");
+    localStorage.setItem("nexus_uid", uid);
+    
+    // Normalización para AEGIS V32.9
+    const planFinal = (data.planType || data.plan || "GRATI-CORE").toUpperCase();
+    const rolFinal = (data.role || data.rol || "OPERADOR").toUpperCase();
 
-        localStorage.setItem("rol", rolFinal);
-        localStorage.setItem("planTipo", planFinal);
-        localStorage.setItem("nexus_userName", data.nombre || "Comandante");
+    localStorage.setItem("nexus_plan", planFinal);
+    localStorage.setItem("nexus_rol", rolFinal);
+    localStorage.setItem("planTipo", planFinal); // Llave maestra de dashboard.js
+    localStorage.setItem("nexus_userName", data.nombre || "Comandante");
 
-        console.log(`✅ NODO SINCRONIZADO: ${rolFinal} en plan ${planFinal}`);
-    }
+    console.log(`📡 NODO SINCRONIZADO: ${rolFinal} | PLAN: ${planFinal}`);
+}
 
     /**
      * SECUENCIA DE ACCESO
