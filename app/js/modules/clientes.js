@@ -8,6 +8,14 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
+// Desde un archivo en app/js/modules/
+import CustomerManager from "../core/CustomerManager.js";
+
+// Instanciar el motor
+const crmMotor = new CustomerManager();
+
+// Ejemplo: Buscar una placa en el radar
+const cliente = await crmMotor.findCustomer("ABC123", "plate");
 
 export default async function clientesModule(container) {
   const empresaId = localStorage.getItem("nexus_empresaId");
