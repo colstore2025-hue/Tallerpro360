@@ -267,18 +267,28 @@ href="manifest.json">
         }
     };
 
-        /**
-     * SANEAMIENTO DE SESIÓN NEXUS-X V17.0
-     * Sincroniza las llaves de acceso para el Superadmin y Clientes
-     */
-    function saveSession(uid, data) {
-        // 1. LLAVES DE ACCESO UNIVERSAL (Para authGuard.js e index.html)
-        localStorage.setItem("uid", uid);
-        localStorage.setItem("empresaId", data.empresaId || uid);
-        
-        // Mapeo inteligente de Roles (Soporta 'role', 'rolGlobal' o default)
-        const rolFinal = data.rolGlobal || data.role || "operador";
-        localStorage.setItem("rol", rolFinal);
+     /**
+ * PROTOCOLO DE PERSISTENCIA NEXUS-X (Revisado)
+ * Asegura que no importa si el campo es planType o plantype, el sistema lo lea.
+ */
+function saveSession(uid, data) {
+    // 1. Identificadores Base
+    localStorage.setItem("uid", uid);
+    localStorage.setItem("empresaId", data.empresaId || "BASE");
+    
+    // 2. Manejo de Roles (Soporta superadmin, dueno, operador)
+    const rolAsignado = data.role || data.rolGlobal || "operador";
+    localStorage.setItem("rol", rolAsignado.toUpperCase());
+
+    // 3. Normalización del Plan (Detecta planType o plantype)
+    const planDeteccion = data.planType || data.plantype || "GRATI-CORE";
+    localStorage.setItem("planTipo", planDeteccion.toUpperCase());
+    
+    // 4. Identidad Visual
+    localStorage.setItem("nexus_userName", data.nombre || "Comandante");
+
+    console.log("✅ SESIÓN SINCRONIZADA: Nodo " + (data.empresaId || "Global"));
+}
 
         // 2. LLAVES DE IDENTIDAD (Para Personalización del Dashboard)
         localStorage.setItem("nexus_userName", data.nombre || "Comandante");
