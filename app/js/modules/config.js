@@ -11,7 +11,6 @@ import { hablar } from "../voice/voiceCore.js";
 
 export default async function configModule(container, state) {
     const empresaId = localStorage.getItem("nexus_empresaId");
-    const uid = localStorage.getItem("nexus_uid");
     let logoBase64 = null;
 
     const PLANES = {
@@ -33,7 +32,7 @@ export default async function configModule(container, state) {
                 </div>
                 <div class="bg-cyan-500/5 border border-cyan-500/20 px-8 py-4 rounded-2xl flex items-center gap-4">
                     <i class="fas fa-microchip text-cyan-500 animate-pulse"></i>
-                    <span class="text-[10px] orbitron font-black text-cyan-400 uppercase tracking-widest">NODO: ${empresaId}</span>
+                    <span class="text-[10px] orbitron font-black text-cyan-400 uppercase tracking-widest italic">NODO: ${empresaId}</span>
                 </div>
             </header>
 
@@ -46,13 +45,12 @@ export default async function configModule(container, state) {
 
             <div id="secGen" class="tab-content space-y-10">
                 <div class="bg-[#0d1117] border border-white/5 p-12 rounded-[4rem] shadow-inner relative overflow-hidden group">
-                    <div class="absolute -right-20 -top-20 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl"></div>
                     <div class="flex flex-col items-center mb-16">
                         <div id="logoDrop" class="w-56 h-56 bg-black rounded-[4rem] border-2 border-dashed border-white/10 flex items-center justify-center relative overflow-hidden group hover:border-cyan-500 transition-all cursor-pointer shadow-2xl">
                             <img id="prevLogo" src="" class="hidden w-full h-full object-cover">
                             <div class="flex flex-col items-center gap-3 text-slate-700 group-hover:text-cyan-500" id="camOverlay">
                                 <i class="fas fa-camera-retro text-4xl"></i>
-                                <span class="text-[8px] font-black uppercase tracking-widest">Digital Brand</span>
+                                <span class="text-[8px] font-black uppercase tracking-widest italic">Digital Brand</span>
                             </div>
                             <input type="file" id="inputLogo" class="absolute inset-0 opacity-0 cursor-pointer" accept="image/*">
                         </div>
@@ -64,7 +62,7 @@ export default async function configModule(container, state) {
                         </div>
                         <div class="space-y-4">
                             <label class="text-[9px] text-cyan-500 font-black uppercase tracking-widest ml-4 italic">Identificador Tributario (NIT/ID)</label>
-                            <input id="inNit" class="w-full bg-black/40 p-8 rounded-[2.5rem] border border-white/5 outline-none text-white font-mono focus:border-cyan-500 transition-all shadow-inner" placeholder="900000000-1">
+                            <input id="inNit" class="w-full bg-black/40 p-8 rounded-[2.5rem] border border-white/5 outline-none text-white font-mono focus:border-cyan-500 transition-all shadow-inner uppercase" placeholder="900000000-1">
                         </div>
                     </div>
                 </div>
@@ -82,7 +80,7 @@ export default async function configModule(container, state) {
                             <input id="inWs" type="number" class="w-full bg-transparent text-6xl font-black text-white outline-none tracking-tighter" placeholder="3200000000">
                         </div>
                         <p class="text-[9px] text-slate-600 mt-12 uppercase font-black tracking-[0.4em] leading-loose italic">
-                            Esta línea será el emisor satelital de reportes PDF y confirmaciones automáticas de misión.
+                            Esta línea será el emisor satelital de reportes PDF y confirmaciones automáticas de misión a sus clientes.
                         </p>
                     </div>
                 </div>
@@ -96,23 +94,23 @@ export default async function configModule(container, state) {
                                 <div class="w-16 h-16 bg-white rounded-3xl flex items-center justify-center shadow-lg">
                                     <img src="https://bold.co/wp-content/uploads/2021/04/Logo-Bold-Principal-Color.png" class="w-10">
                                 </div>
-                                <h3 class="orbitron text-xl font-black italic text-white uppercase">Neural <span class="text-cyan-400">Bold_Link</span></h3>
+                                <h3 class="orbitron text-xl font-black italic text-white uppercase tracking-tighter">Neural <span class="text-cyan-400">Bold_Link</span></h3>
                             </div>
                             <div class="space-y-6 bg-cyan-500/5 p-8 rounded-[2.5rem] border border-cyan-500/10">
-                                <p class="text-[10px] text-cyan-400 font-black uppercase tracking-widest italic">¿Cómo activar cobros en línea?</p>
+                                <p class="text-[10px] text-cyan-400 font-black uppercase tracking-widest italic font-black">Manual de Activación Táctica:</p>
                                 <ul class="space-y-4">
                                     <li class="flex gap-4 text-[11px] text-slate-400 leading-relaxed font-bold">
-                                        <span class="text-cyan-500 orbitron">01.</span> Accede a tu dashboard en <a href="https://bold.co" target="_blank" class="text-white underline">bold.co</a>
+                                        <span class="text-cyan-500 orbitron">01.</span> Inicie sesión en su portal <a href="https://bold.co" target="_blank" class="text-white underline italic">bold.co</a>
                                     </li>
                                     <li class="flex gap-4 text-[11px] text-slate-400 leading-relaxed font-bold">
-                                        <span class="text-cyan-500 orbitron">02.</span> Entra a la sección <b class="text-white italic">"Configuración" > "API"</b>.
+                                        <span class="text-cyan-500 orbitron">02.</span> Vaya a <b class="text-white italic">"Configuración"</b> y luego a <b class="text-white italic">"API"</b>.
                                     </li>
                                     <li class="flex gap-4 text-[11px] text-slate-400 leading-relaxed font-bold">
-                                        <span class="text-cyan-500 orbitron">03.</span> Copia la <b class="text-cyan-400">"API Key de Producción"</b> (Empieza por pk_live_).
+                                        <span class="text-cyan-500 orbitron">03.</span> Copie la <b class="text-cyan-400 font-black italic">API Key de Producción</b> (ej: pk_live_...).
                                     </li>
                                 </ul>
                                 <div class="pt-4 border-t border-cyan-500/10">
-                                    <p class="text-[9px] text-slate-500 italic uppercase">Al pegar esta llave, tu taller podrá recibir pagos con tarjeta de crédito, débito y PSE directamente desde las órdenes de servicio.</p>
+                                    <p class="text-[9px] text-slate-500 italic uppercase leading-relaxed font-bold">Al activar este nodo, el sistema generará botones de pago automático en cada PDF enviado por WhatsApp. Reciba dinero por tarjetas y PSE al instante.</p>
                                 </div>
                             </div>
                         </div>
@@ -121,8 +119,8 @@ export default async function configModule(container, state) {
                             <div class="bg-black/60 p-12 rounded-[3.5rem] border border-white/5 h-full flex flex-col justify-center shadow-2xl">
                                 <label class="text-[9px] text-slate-500 font-black uppercase tracking-[0.4em] mb-8 block italic">Cerebro de Pago (API KEY)</label>
                                 <div class="relative group">
-                                    <input id="inBoldKey" type="password" class="w-full bg-[#0d1117] p-8 rounded-[2rem] border border-white/10 text-cyan-400 font-mono text-xs outline-none focus:border-cyan-500 transition-all shadow-inner pr-20" placeholder="pk_live_xxxxxxxxxxxxxxxxxxxxxxxx">
-                                    <button onclick="const i = document.getElementById('inBoldKey'); i.type = i.type === 'password' ? 'text' : 'password';" class="absolute right-6 top-1/2 -translate-y-1/2 text-slate-600 hover:text-white transition-colors">
+                                    <input id="inBoldKey" type="password" class="w-full bg-[#0d1117] p-8 rounded-[2rem] border border-white/10 text-cyan-400 font-mono text-xs outline-none focus:border-cyan-500 transition-all shadow-inner pr-20 italic" placeholder="pk_live_xxxxxxxxxxxxxxxxxxxxxxxx">
+                                    <button type="button" id="toggleBold" class="absolute right-6 top-1/2 -translate-y-1/2 text-slate-600 hover:text-white transition-colors">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
@@ -158,7 +156,7 @@ export default async function configModule(container, state) {
                     </div>
                     <div class="relative py-12">
                         <p class="text-[10px] text-cyan-400 font-black uppercase tracking-[0.5em] mb-6 italic opacity-50">Costo de Sincronización Global</p>
-                        <h2 id="txtTotal" class="orbitron text-8xl font-black text-white italic tracking-tighter shadow-glow-cyan">$ 0</h2>
+                        <h2 id="txtTotal" class="orbitron text-7xl lg:text-8xl font-black text-white italic tracking-tighter">$ 0</h2>
                         <div id="txtAhorro" class="mt-12 inline-block px-10 py-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 orbitron text-[10px] font-black rounded-full uppercase tracking-widest"></div>
                     </div>
                 </div>
@@ -174,10 +172,8 @@ export default async function configModule(container, state) {
         <style>
             .orbitron { font-family: 'Orbitron', sans-serif; }
             .tab-btn { background: transparent; color: #475569; border: none; cursor: pointer; border-bottom: 2px solid transparent; }
-            .tab-btn.active { background: #06b6d4; color: #000; box-shadow: 0 10px 30px rgba(6,182,212,0.3); }
+            .tab-btn.active { background: #06b6d4 !important; color: #000 !important; box-shadow: 0 10px 30px rgba(6,182,212,0.3); }
             .tab-content.hidden { display: none; }
-            .shadow-glow-cyan { text-shadow: 0 0 30px rgba(6,182,212,0.5); }
-            .shadow-3xl { box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8); }
             input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
         </style>
         `;
@@ -195,13 +191,20 @@ export default async function configModule(container, state) {
             let descuento = (meses === 12) ? 0.70 : 1.0;
             const total = Math.round((plan.base * meses) * descuento);
             
-            txtAhorro.innerText = (meses === 12) ? "★ BENEFICIO ANUAL ACTIVADO ★" : "TARIFA DE ÓRBITA MENSUAL";
+            txtAhorro.innerText = (meses === 12) ? "★ BENEFICIO ANUAL ACTIVADO (30% OFF) ★" : "TARIFA DE ÓRBITA MENSUAL";
             txtTotal.innerText = `$ ${total.toLocaleString()}`;
         };
 
         selPlan.onchange = calcularPrecios;
         selMeses.onchange = calcularPrecios;
 
+        // Toggle Visibilidad Bold Key
+        document.getElementById("toggleBold").onclick = () => {
+            const i = document.getElementById('inBoldKey');
+            i.type = i.type === 'password' ? 'text' : 'password';
+        };
+
+        // Tab System
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.onclick = () => {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -211,6 +214,7 @@ export default async function configModule(container, state) {
             };
         });
 
+        // Logo Upload
         document.getElementById("inputLogo").onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -249,6 +253,7 @@ export default async function configModule(container, state) {
             } catch (e) { console.error("Load Error:", e); }
         };
 
+        // Guardado Maestro
         document.getElementById("btnSaveAll").onclick = async () => {
             const btn = document.getElementById("btnSaveAll");
             const boldKeyVal = document.getElementById("inBoldKey").value.trim();
@@ -267,19 +272,20 @@ export default async function configModule(container, state) {
                     bold_api_key: boldKeyVal,
                     logo: logoBase64,
                     lastUpdate: serverTimestamp(),
-                    empresaId: empresaId
+                    empresaId: empresaId,
+                    planNexus: selPlan.value
                 };
 
                 await setDoc(docRef, payload, { merge: true });
                 
-                // Persistencia inmediata para el Dashboard
+                // Persistencia inmediata
                 localStorage.setItem("nexus_empresaNombre", payload.nombre);
                 localStorage.setItem("nexus_bold_api_key", boldKeyVal);
 
                 btn.innerHTML = `SINCRO EXITOSA <i class="fas fa-check-circle"></i>`;
                 btn.style.background = "#10b981";
                 
-                hablar("Configuración de órbita sincronizada. Sistema financiero en línea.");
+                hablar("Nivel de órbita y configuración financiera actualizados. Reiniciando enlace.");
                 setTimeout(() => location.reload(), 1500);
             } catch (e) {
                 btn.disabled = false;
