@@ -106,6 +106,9 @@ function renderPentagonInterface(container, isDemo, planActual, userName) {
             ${renderModuleBtn('Staff', 'fa-users-cog', '#staff', isDemo)}
             ${renderModuleBtn('Nómina', 'fa-file-invoice-dollar', '#nomina', isDemo)}
             ${renderModuleBtn('Reportes', 'fa-chart-pie', '#reportes', isDemo)}
+            
+            ${renderModuleBtn('Configuración', 'fa-cogs', '#configuracion', false)} 
+            
             ${renderModuleBtn('Finanzas Elite', 'fa-crown', '#finanzas_elite', isDemo, true)}
         </div>
 
