@@ -267,37 +267,42 @@ href="manifest.json">
         }
     };
 
+        /**
+     * SANEAMIENTO DE SESIÓN NEXUS-X V17.0
+     * Sincroniza las llaves de acceso para el Superadmin y Clientes
+     */
     function saveSession(uid, data) {
-    // Estas son las 3 llaves que tu app/index.html lee en el onAuthStateChanged
-    localStorage.setItem("uid", uid);
-    localStorage.setItem("empresaId", data.empresaId);
-    localStorage.setItem("rol", data.rolGlobal || "ADMIN");
-    
-    // Identificador para que el dashboard sepa que NO es demo
-    localStorage.setItem("planTipo", "PRO-ADMIN"); 
-}
-    
-    // Llaves con prefijo para el dashboard
-    localStorage.setItem("nexus_userName", data.nombre || "Comandante");
-}
+        // 1. LLAVES DE ACCESO UNIVERSAL (Para authGuard.js e index.html)
+        localStorage.setItem("uid", uid);
+        localStorage.setItem("empresaId", data.empresaId || uid);
+        
+        // Mapeo inteligente de Roles (Soporta 'role', 'rolGlobal' o default)
+        const rolFinal = data.rolGlobal || data.role || "operador";
+        localStorage.setItem("rol", rolFinal);
 
-    // 🚀 Control de Acceso y Plan (CRÍTICO)
-    // Esto le dirá al dashboard.js que cargue datos reales de Firebase
-    localStorage.setItem("planTipo", "ENTERPRISE"); 
-    
-    // Legacy support: Si tu app usa las llaves viejas sin el prefijo "nexus_", 
-    // es mejor mantenerlas por ahora para evitar el "Link Protocol Broken"
-    localStorage.setItem("uid", uid);
-    localStorage.setItem("empresaId", data.empresaId);
-    localStorage.setItem("rol", data.rolGlobal || "operador");
-}
+        // 2. LLAVES DE IDENTIDAD (Para Personalización del Dashboard)
+        localStorage.setItem("nexus_userName", data.nombre || "Comandante");
+        
+        // 3. CONTROL DE PLANES Y CAPACIDADES (Nivel Grati-Core / Enterprise)
+        // Esto activa o desactiva módulos en el Dashboard
+        const planActual = data.planType || data.plan || "GRATI-CORE";
+        localStorage.setItem("planTipo", planActual);
+
+        console.log("🛰️ PROTOCOLO DE SESIÓN: Sincronización Exitosa para " + rolFinal);
+    }
+
 </script>
 
 <script>
-    // Registro de Service Worker para PWA
+    /**
+     * REGISTRO DE SERVICE WORKER (PWA)
+     * Permite que Nexus-X funcione como App en el móvil de William
+     */
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js');
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(reg => console.log("🚀 Nexus-X PWA: Online"))
+                .catch(err => console.warn("🚨 Nexus-X PWA: Offline", err));
         });
     }
 </script>
