@@ -1,107 +1,34 @@
-/**
- * authGuard.js
- * TallerPRO360 ERP SaaS
- * Protección de rutas autenticadas
- */
-
 import { auth } from "../core/firebase-config.js";
-import { obtenerEmpresaId } from "../core/empresa-context.js";
 
-import {
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-
-/* ===============================
-   PROTEGER APLICACIÓN
-=============================== */
-
-export function protegerApp(){
-
-  onAuthStateChanged(auth,(user)=>{
-
-    if(!user){
-
-      console.warn("⚠️ Usuario no autenticado");
-
-      window.location.href="/login.html";
-
-      return;
-
-    }
-
-    const empresaId = obtenerEmpresaId();
-
-    if(!empresaId){
-
-      console.warn("⚠️ Empresa no definida");
-
-      window.location.href="/login.html";
-
-      return;
-
-    }
-
-    console.log("✅ Usuario autenticado:",user.uid);
-    console.log("🏢 Empresa activa:",empresaId);
-
-  });
-
+export function protegerApp() {
+    auth.onAuthStateChanged((user) => {
+        if (!user) {
+            window.location.href = "/login.html";
+            return;
+        }
+        // Verificamos que existan los datos mínimos de sesión
+        const empresaId = localStorage.getItem("nexus_empresaId");
+        if (!empresaId) {
+            console.warn("⚠️ Sesión incompleta");
+            window.location.href = "/login.html";
+        }
+    });
 }
 
-
-/* ===============================
-   PROTEGER SOLO ADMIN
-=============================== */
-
-export function protegerAdmin(){
-
-  onAuthStateChanged(auth,(user)=>{
-
-    if(!user){
-
-      window.location.href="/login.html";
-      return;
-
+export function protegerAdmin() {
+    const rol = (localStorage.getItem("nexus_rol") || "").toUpperCase();
+    if (rol !== "ADMIN" && rol !== "DUENO") {
+        alert("ACCESO DENEGADO: REQUIERE RANGO DE COMANDANTE");
+        window.location.href = "/app/index.html";
     }
-
-    const rol = localStorage.getItem("rol");
-
-    if(rol !== "admin" && rol !== "dueno"){
-
-      alert("No tienes permisos para acceder");
-
-      window.location.href="/app/index.html";
-
-    }
-
-  });
-
 }
 
-
-/* ===============================
-   CERRAR SESIÓN
-=============================== */
-
-export async function cerrarSesion(){
-
-  try{
-
-    await signOut(auth);
-
-    localStorage.clear();
-
-    console.log("👋 Sesión cerrada");
-
-    window.location.href="/login.html";
-
-  }
-  catch(error){
-
-    console.error("❌ Error cerrando sesión:",error);
-
-  }
-
+export async function cerrarSesion() {
+    try {
+        await auth.signOut();
+        localStorage.clear();
+        window.location.href = "/login.html";
+    } catch (error) {
+        console.error("❌ Error:", error);
+    }
 }
