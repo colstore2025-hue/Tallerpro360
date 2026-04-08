@@ -96,6 +96,7 @@ function renderPentagonInterface(container, planActual, userName, empresaNombre,
             ${renderModuleBtn('Inventario', 'fa-boxes-stacked', '#inventario', true)}
             ${renderModuleBtn('Nómina', 'fa-users-gear', '#nomina', configPlan.nomina)}
             ${renderModuleBtn('Contabilidad', 'fa-vault', '#contabilidad', configPlan.contabilidad)}
+${renderModuleBtn('Audit Finanzas', 'fa-vault', '#finanzas', isDemo)}
             ${renderModuleBtn('Gerente AI', 'fa-brain', '#gerenteAI', configPlan.ai)}
             ${renderModuleBtn('Marketplace', 'fa-shop', '#marketplace', configPlan.mkt)}
             ${renderModuleBtn('Reportes', 'fa-chart-network', '#reportes', configPlan.ai)}
