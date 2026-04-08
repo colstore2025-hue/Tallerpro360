@@ -200,7 +200,7 @@
 
     const CORE_VERSION = "V17.0.0-PRO-" + new Date().getTime();
     
-    // RUTAS MAESTRAS ACTUALIZADAS (Asegúrate que los nombres de archivo coincidan)
+        // RUTAS MAESTRAS UNIFICADAS (NEXUS-X V33.0)
     const routes = {
         dashboard: () => import(`./js/modules/dashboard.js?v=${CORE_VERSION}`),
         ordenes: () => import(`./js/modules/ordenes.js?v=${CORE_VERSION}`),
@@ -208,10 +208,13 @@
         clientes: () => import(`./js/modules/clientes.js?v=${CORE_VERSION}`),
         pagos: () => import(`./js/modules/pagosTaller.js?v=${CORE_VERSION}`),
         contabilidad: () => import(`./js/modules/contabilidad.js?v=${CORE_VERSION}`),
-        configuracion: () => import(`./js/modules/config.js?v=${CORE_VERSION}`),
-        staff: () => import(`./js/modules/staff.js?v=${CORE_VERSION}`), // Agregado
-        nomina: () => import(`./js/modules/nomina.js?v=${CORE_VERSION}`), // Agregado
-        finanzas_elite: () => import(`./js/modules/finanzas_elite.js?v=${CORE_VERSION}`) // Agregado
+        config: () => import(`./js/modules/config.js?v=${CORE_VERSION}`), // Simplificado a #config
+        staff: () => import(`./js/modules/staff.js?v=${CORE_VERSION}`),
+        nomina: () => import(`./js/modules/nomina.js?v=${CORE_VERSION}`),
+        finanzas_elite: () => import(`./js/modules/finanzas_elite.js?v=${CORE_VERSION}`),
+        gerenteAI: () => import(`./js/modules/gerenteAI.js?v=${CORE_VERSION}`),
+        reportes: () => import(`./js/modules/reportes.js?v=${CORE_VERSION}`),
+        vehiculos: () => import(`./js/modules/vehiculos.js?v=${CORE_VERSION}`)
     };
 
     async function router() {
