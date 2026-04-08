@@ -277,130 +277,179 @@ export default async function ordenes(container) {
             </div>
         </div>`;
 
-        vincularAccionesTerminal();
-        recalcularFinanzas();
-    };
+        // --- 📱 MOTOR DE COMUNICACIÓN NEXUS-X ---
+const ejecutarProtocoloSalida = async (orden) => {
+    const { placa, cliente, telefono, costos_totales } = orden;
+    const saldo = costos_totales.saldo_pendiente;
+    
+    // 🔗 Link de Pago dinámico
+    const linkPago = `https://bold.co/pay/tallerpro360_${orden.id}`; 
+    
+    const mensaje = `*NEXUS-X AEGIS: INFORME DE MISIÓN*%0A%0A` +
+                    `Hola *${cliente.toUpperCase()}*, la misión con el vehículo *[${placa}]* ha finalizado.%0A%0A` +
+                    `💰 *Resumen Financiero:*%0A` +
+                    `- Total: $${costos_totales.gran_total.toLocaleString()}%0A` +
+                    `- Saldo Pendiente: *$${saldo.toLocaleString()}*%0A%0A` +
+                    `✅ *Paga aquí:* ${linkPago}%0A%0A` +
+                    `_Sistema de Gestión TallerPRO360_`;
 
-    const vincularAccionesTerminal = () => {
-        document.getElementById("btnCloseTerminal").onclick = () => {
-            document.getElementById("nexus-terminal").classList.add("hidden");
-            if(isRecording) recognition?.stop();
-        };
+    window.open(`https://wa.me/57${telefono}?text=${mensaje}`, '_blank');
+};
 
-        // --- 🚀 ACCIÓN PRINCIPAL: SINCRONIZACIÓN STARLINK ---
-        document.getElementById("btnSincronizar").onclick = async () => {
-            const btn = document.getElementById("btnSincronizar");
-            const originalText = btn.innerHTML;
-            btn.innerText = "ESTABLECIENDO ENLACE...";
-            
-            try {
-                const data = {
-                    ...ordenActiva,
-                    empresaId,
-                    placa: document.getElementById("f-placa").value.toUpperCase(),
-                    cliente: document.getElementById("f-cliente").value,
-                    telefono: document.getElementById("f-telefono").value,
-                    estado: document.getElementById("f-estado").value,
-                    bitacora_ia: document.getElementById("ai-log-display").value,
-                    finanzas: {
-                        gastos_varios: Number(document.getElementById("f-gastos-varios").value),
-                        adelanto_tecnico: Number(document.getElementById("f-adelanto-tecnico").value),
-                        anticipo_cliente: Number(document.getElementById("f-anticipo-cliente").value),
-                        impuesto_tipo: ordenActiva.finanzas.impuesto_tipo
-                    },
-                    updatedAt: serverTimestamp()
-                };
+// --- 🔄 SINCRONIZACIÓN TRANSVERSAL (FEEDBACK DE DATOS) ---
+const actualizarEcosistemaNexus = async (data) => {
+    try {
+        const batch = [];
+        // Actualizar Clientes
+        const clienteRef = doc(db, "clientes", data.telefono);
+        batch.push(setDoc(clienteRef, {
+            nombre: data.cliente,
+            telefono: data.telefono,
+            ultima_placa: data.placa,
+            ultimo_servicio: serverTimestamp()
+        }, { merge: true }));
 
-                // 1. Guardar Orden en Firestore
-                await setDoc(doc(db, "ordenes", ordenActiva.id || `OT_${Date.now()}`), data);
+        // Actualizar Vehículos
+        const vehiculoRef = doc(db, "vehiculos", data.placa);
+        batch.push(setDoc(vehiculoRef, {
+            placa: data.placa,
+            propietario: data.cliente,
+            ultima_visita: serverTimestamp()
+        }, { merge: true }));
 
-                // 2. 🛡️ LÓGICA DE ALMACÉN: Procesar repuestos del taller
-                for (const item of data.items) {
-                    if (item.tipo === "REPUESTO" && item.origen === "TALLER" && item.refId) {
-                        await descontarStock(item.refId, 1);
-                    }
-                }
+        await Promise.all(batch);
+    } catch (e) { console.error("⚠️ Error de replicación:", e); }
+};
 
-                // 3. 💰 LÓGICA FINANCIERA: Si está listo, crear asiento contable
-                if (data.estado === "LISTO") {
-                    await registrarMovimientoContable("INGRESO", data.costos_totales.gran_total, `CIERRE OT: ${data.placa}`, {
-                        modulo: "ORDENES",
-                        relacionId: data.id || `OT_${Date.now()}`
-                    });
-                }
+// --- 📸 PROTOCOLO MULTIMEDIA (EVIDENCIA RÁPIDA) ---
+const capturarEvidencia = (tipo) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = tipo === 'FOTO' ? 'image/*' : 'video/*';
+    input.capture = 'environment'; // Abre la cámara directamente en móviles
 
-                hablar("Misión sincronizada exitosamente.");
-                Swal.fire({ icon: 'success', title: 'SINCRONÍA EXITOSA', background: '#0d1117', color: '#fff', timer: 1500 });
-                document.getElementById("nexus-terminal").classList.add("hidden");
-            } catch (err) {
-                console.error(err);
-                btn.innerHTML = originalText;
-                Swal.fire('ERROR DE ENLACE', 'No se pudo sincronizar con Starlink.', 'error');
-            }
-        };
-
-        // ... (Vínculos de Dictar, Eliminar y Wpp se mantienen similares pero con UX mejorada)
-        document.getElementById("btnDictar").onclick = () => {
-            if(!isRecording) {
-                recognition?.start();
-                isRecording = true;
-                document.getElementById("rec-indicator").classList.remove("hidden");
-                document.getElementById("btnDictar").innerText = "🛑 DETENER ESCUCHA";
-            } else {
-                recognition?.stop();
-                isRecording = false;
-                document.getElementById("rec-indicator").classList.add("hidden");
-                document.getElementById("btnDictar").innerText = "🎤 INICIAR ESCUCHA NEURAL";
-            }
-        };
-
-        if(recognition) {
-            recognition.onresult = (e) => {
-                const text = Array.from(e.results).map(r => r[0].transcript).join('');
-                document.getElementById("ai-log-display").value = text;
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            hablar(`Enviando ${tipo.toLowerCase()} de evidencia al cliente.`);
+            const reader = new FileReader();
+            reader.onload = () => {
+                // Aquí simulamos el envío directo ya que no lo guardamos en Firestore por ahora
+                const mensaje = `*EVIDENCIA DE MISIÓN [${ordenActiva.placa}]*:%0ASe adjunta ${tipo.toLowerCase()} del estado técnico.`;
+                window.open(`https://wa.me/57${ordenActiva.telefono}?text=${mensaje}`, '_blank');
             };
+            reader.readAsDataURL(file);
         }
+    };
+    input.click();
+};
 
-        document.getElementById("btnAddRepuesto").onclick = () => { 
-            ordenActiva.items.push({ tipo: 'REPUESTO', desc: 'NUEVA PIEZA', costo: 0, venta: 0, origen: 'TALLER' }); 
-            recalcularFinanzas(); 
-        };
-        document.getElementById("btnAddMano").onclick = () => { 
-            ordenActiva.items.push({ tipo: 'MANO_OBRA', desc: 'SERVICIO TÉCNICO', costo: 0, venta: 0, origen: 'TALLER' }); 
-            recalcularFinanzas(); 
-        };
+const vincularAccionesTerminal = () => {
+    document.getElementById("btnCloseTerminal").onclick = () => {
+        document.getElementById("nexus-terminal").classList.add("hidden");
+        if(isRecording) recognition?.stop();
     };
 
-    // --- 🌍 FUNCIONES GLOBALES DE VENTANA ---
-    window.toggleOrigenItem = (idx) => {
-        const item = ordenActiva.items[idx];
-        item.origen = item.origen === 'TALLER' ? 'CLIENTE' : 'TALLER';
-        if(item.origen === 'CLIENTE') item.costo = 0; // El costo es 0 para el taller
-        recalcularFinanzas();
-    };
-
-    window.editItemNexus = (idx, campo, valor) => { 
-        ordenActiva.items[idx][campo] = valor; 
-        recalcularFinanzas(); 
-    };
-
-    window.removeItemNexus = (idx) => { 
-        ordenActiva.items.splice(idx, 1); 
-        recalcularFinanzas(); 
-    };
-
-    window.abrirTerminalNexus = (id) => abrirTerminal(id);
-    window.actualizarFinanzasDirecto = () => recalcularFinanzas();
-
-    const vincularNavegacion = () => {
-        document.getElementById("btnNewMission").onclick = () => abrirTerminal();
-        document.querySelectorAll(".fase-tab").forEach(tab => {
-            tab.onclick = () => {
-                faseActual = tab.dataset.fase;
-                renderBase(); // Refrescar vista
+    // 🚀 SINCRONIZACIÓN STARLINK (RECONSTRUIDA)
+    document.getElementById("btnSincronizar").onclick = async () => {
+        const btn = document.getElementById("btnSincronizar");
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<i class="fas fa-sync fa-spin"></i> ESTABLECIENDO ENLACE...`;
+        
+        try {
+            const data = {
+                ...ordenActiva,
+                empresaId: localStorage.getItem("empresaId"),
+                placa: document.getElementById("f-placa").value.toUpperCase(),
+                cliente: document.getElementById("f-cliente").value,
+                telefono: document.getElementById("f-telefono").value,
+                estado: document.getElementById("f-estado").value,
+                bitacora_ia: document.getElementById("ai-log-display").value,
+                updatedAt: serverTimestamp()
             };
-        });
+
+            await setDoc(doc(db, "ordenes", ordenActiva.id || `OT_${Date.now()}`), data);
+            await actualizarEcosistemaNexus(data);
+
+            if (data.estado === "LISTO") {
+                hablar("Misión finalizada. Ejecutando protocolo de salida.");
+                await registrarMovimientoContable("INGRESO", data.costos_totales.gran_total, `CIERRE OT: ${data.placa}`);
+                await ejecutarProtocoloSalida(data);
+            }
+
+            Swal.fire({ icon: 'success', title: 'SINCRONÍA EXITOSA', background: '#0d1117', color: '#fff' });
+            document.getElementById("nexus-terminal").classList.add("hidden");
+        } catch (err) {
+            btn.innerHTML = originalText;
+            Swal.fire('ERROR', 'Fallo en enlace satelital.', 'error');
+        }
     };
 
-    renderBase();
-}
+    // 📸 BOTONES MULTIMEDIA (AÑADIR AL HTML DE LA TERMINAL)
+    // Agrega estos IDs en los botones correspondientes de tu renderTerminal
+    document.getElementById("btnCapturePhoto").onclick = () => capturarEvidencia('FOTO');
+    document.getElementById("btnCaptureVideo").onclick = () => capturarEvidencia('VIDEO');
+
+    document.getElementById("btnDictar").onclick = () => {
+        if(!isRecording) {
+            recognition?.start();
+            isRecording = true;
+            document.getElementById("rec-indicator").classList.remove("hidden");
+            document.getElementById("btnDictar").innerText = "🛑 DETENER ESCUCHA";
+        } else {
+            recognition?.stop();
+            isRecording = false;
+            document.getElementById("rec-indicator").classList.add("hidden");
+            document.getElementById("btnDictar").innerText = "🎤 INICIAR ESCUCHA NEURAL";
+        }
+    };
+
+    if(recognition) {
+        recognition.onresult = (e) => {
+            const text = Array.from(e.results).map(r => r[0].transcript).join('');
+            document.getElementById("ai-log-display").value = text;
+        };
+    }
+
+    document.getElementById("btnAddRepuesto").onclick = () => { 
+        ordenActiva.items.push({ tipo: 'REPUESTO', desc: 'NUEVA PIEZA', costo: 0, venta: 0, origen: 'TALLER' }); 
+        recalcularFinanzas(); 
+    };
+    document.getElementById("btnAddMano").onclick = () => { 
+        ordenActiva.items.push({ tipo: 'MANO_OBRA', desc: 'SERVICIO TÉCNICO', costo: 0, venta: 0, origen: 'TALLER' }); 
+        recalcularFinanzas(); 
+    };
+};
+
+// --- 🌍 FUNCIONES GLOBALES ---
+window.toggleOrigenItem = (idx) => {
+    const item = ordenActiva.items[idx];
+    item.origen = item.origen === 'TALLER' ? 'CLIENTE' : 'TALLER';
+    if(item.origen === 'CLIENTE') item.costo = 0;
+    recalcularFinanzas();
+};
+
+window.editItemNexus = (idx, campo, valor) => { 
+    ordenActiva.items[idx][campo] = valor; 
+    recalcularFinanzas(); 
+};
+
+window.removeItemNexus = (idx) => { 
+    ordenActiva.items.splice(idx, 1); 
+    recalcularFinanzas(); 
+};
+
+window.abrirTerminalNexus = (id) => abrirTerminal(id);
+window.actualizarFinanzasDirecto = () => recalcularFinanzas();
+
+const vincularNavegacion = () => {
+    document.getElementById("btnNewMission").onclick = () => abrirTerminal();
+    document.querySelectorAll(".fase-tab").forEach(tab => {
+        tab.onclick = () => {
+            faseActual = tab.dataset.fase;
+            renderBase();
+        };
+    });
+};
+
+renderBase();
