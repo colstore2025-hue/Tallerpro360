@@ -2,15 +2,15 @@
  * inventario.js - NEXUS-X STOCK CONTROL V18.0 📦
  * SISTEMA DE GESTIÓN DE ACTIVOS Y LOGÍSTICA DE SUMINISTROS
  * Integrado con el Ecosistema de Órdenes y SuperAI
+ * @author William Jeffry Urquijo Cubillos & Gemini AI
  */
 import { 
-    collection, query, where, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc
+    collection, query, where, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc, getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
-import { createDocument } from "../services/dataService.js";
 
 export default async function inventario(container) {
-    const empresaId = localStorage.getItem("empresaId");
+    const empresaId = localStorage.getItem("nexus_empresaId");
     let filtroActual = "PROPIO"; 
     let unsubscribe = null;
 
@@ -44,23 +44,21 @@ export default async function inventario(container) {
                     <p id="statTotal" class="text-4xl font-black text-white orbitron">0</p>
                 </div>
                 <div id="valTotalContainer" class="bg-[#0d1117] border border-white/5 p-8 rounded-[3rem] shadow-xl">
-                    <p class="text-[8px] text-slate-500 orbitron uppercase mb-2 italic">Valorización de Activos</p>
+                    <p class="text-[8px] text-slate-500 orbitron uppercase mb-2 italic">Valorización de Activos (Venta)</p>
                     <p id="statValor" class="text-4xl font-black text-emerald-400 orbitron">$ 0</p>
                 </div>
                 <div class="bg-[#0d1117] border border-white/5 p-8 rounded-[3rem] hidden lg:block">
-                    <p class="text-[8px] text-slate-500 orbitron uppercase mb-2 italic">Estado del Sistema</p>
-                    <p class="text-xs font-black text-cyan-400 orbitron">SINCRO_OK</p>
+                    <p class="text-[8px] text-slate-500 orbitron uppercase mb-2 italic">Nivel de Salud</p>
+                    <p id="statSalud" class="text-xs font-black text-cyan-400 orbitron">OPERATIVO</p>
                 </div>
             </div>
 
-            <div id="gridStock" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                </div>
+            <div id="gridStock" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
 
             <button id="btnMainAdd" class="fixed bottom-10 right-10 w-24 h-24 bg-white text-black rounded-[3rem] shadow-[0_0_50px_rgba(255,255,255,0.2)] flex items-center justify-center z-50 hover:bg-cyan-400 hover:scale-110 active:scale-95 transition-all duration-500">
                 <i class="fas fa-plus text-3xl"></i>
             </button>
-        </div>
-        `;
+        </div>`;
 
         document.getElementById("tabPropio").onclick = () => switchTab("PROPIO");
         document.getElementById("tabCliente").onclick = () => switchTab("CLIENTE");
@@ -103,11 +101,7 @@ export default async function inventario(container) {
 
         unsubscribe = onSnapshot(q, (snap) => {
             if (snap.empty) {
-                grid.innerHTML = `
-                <div class="col-span-full py-40 text-center opacity-20">
-                    <i class="fas fa-microchip text-6xl mb-6 text-slate-500 animate-pulse"></i>
-                    <p class="orbitron text-[10px] tracking-[0.5em] uppercase italic">Esperando Suministros...</p>
-                </div>`;
+                grid.innerHTML = `<div class="col-span-full py-40 text-center opacity-20"><i class="fas fa-microchip text-6xl mb-6 text-slate-500 animate-pulse"></i><p class="orbitron text-[10px] tracking-[0.5em] uppercase italic">Esperando Suministros...</p></div>`;
                 actualizarEstadisticas(0, 0);
                 return;
             }
@@ -118,33 +112,33 @@ export default async function inventario(container) {
             grid.innerHTML = snap.docs.map(docSnap => {
                 const item = { id: docSnap.id, ...docSnap.data() };
                 const color = filtroActual === 'PROPIO' ? 'cyan-400' : 'amber-400';
-                const esCritico = item.cantidad <= (item.minimo || 2);
+                const esCritico = Number(item.cantidad) <= (Number(item.minimo) || 2);
                 
                 totalItems += Number(item.cantidad || 0);
                 valorAcumulado += (Number(item.precioVenta || 0) * Number(item.cantidad || 0));
 
                 return `
-                <div class="bg-[#0d1117] p-8 rounded-[3.5rem] border border-white/5 relative group hover:border-${color}/40 transition-all duration-500 overflow-hidden">
+                <div class="bg-[#0d1117] p-8 rounded-[3.5rem] border border-white/5 relative group hover:border-${color}/40 transition-all duration-500 overflow-hidden shadow-2xl">
                     ${esCritico ? '<div class="absolute top-0 left-0 w-full h-1 bg-red-600 animate-pulse"></div>' : ''}
                     
                     <div class="flex justify-between items-start mb-8">
                         <div class="space-y-2">
-                            <span class="text-[7px] text-${color} font-black uppercase tracking-[0.3em] orbitron italic">ACTIVO_ID: ${item.id.slice(-5)}</span>
+                            <span class="text-[7px] text-${color} font-black uppercase tracking-[0.3em] orbitron italic">ID: ${item.id.slice(-5)}</span>
                             <h3 class="text-white text-xl font-black uppercase leading-tight group-hover:text-${color} transition-colors">${item.nombre}</h3>
                         </div>
-                        <button onclick="window.eliminarActivo('${item.id}')" class="text-slate-700 hover:text-red-500 transition-colors">
-                            <i class="fas fa-times text-xs"></i>
+                        <button onclick="window.eliminarActivo('${item.id}')" class="w-10 h-10 bg-white/5 rounded-full text-slate-700 hover:text-red-500 hover:bg-red-500/10 transition-all flex items-center justify-center">
+                            <i class="fas fa-trash-alt text-xs"></i>
                         </button>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div class="bg-black/40 p-5 rounded-2xl border border-white/5 relative">
-                            <p class="text-[7px] text-slate-600 font-black orbitron mb-1">STOCK</p>
+                            <p class="text-[7px] text-slate-600 font-black orbitron mb-1 uppercase tracking-widest">STOCK</p>
                             <p class="text-3xl font-black ${esCritico ? 'text-red-500' : 'text-white'} orbitron">${item.cantidad}</p>
                             ${esCritico ? '<span class="absolute top-2 right-2 text-[6px] text-red-500 font-bold animate-bounce">BAJO</span>' : ''}
                         </div>
                         <div class="bg-black/40 p-5 rounded-2xl border border-white/5">
-                            <p class="text-[7px] text-slate-600 font-black orbitron mb-1">${filtroActual === 'PROPIO' ? 'PVP VENTA' : 'REF_PLACA'}</p>
+                            <p class="text-[7px] text-slate-600 font-black orbitron mb-1 uppercase tracking-widest">${filtroActual === 'PROPIO' ? 'PVP VENTA' : 'PLACA'}</p>
                             <p class="text-sm font-black ${filtroActual === 'PROPIO' ? 'text-emerald-400' : 'text-amber-500'} orbitron truncate uppercase mt-2">
                                 ${filtroActual === 'PROPIO' ? '$'+Number(item.precioVenta).toLocaleString() : item.placa}
                             </p>
@@ -152,8 +146,8 @@ export default async function inventario(container) {
                     </div>
 
                     <div class="mt-6 flex gap-2">
-                         <button onclick="window.ajustarStock('${item.id}', 1)" class="flex-1 py-3 bg-white/5 rounded-xl border border-white/5 text-[9px] font-black orbitron hover:bg-white/10 transition-all">+ ADD</button>
-                         <button onclick="window.ajustarStock('${item.id}', -1)" class="flex-1 py-3 bg-white/5 rounded-xl border border-white/5 text-[9px] font-black orbitron hover:bg-white/10 transition-all">- REM</button>
+                         <button onclick="window.ajustarStock('${item.id}', 1)" class="flex-1 py-4 bg-white/5 rounded-xl border border-white/5 text-[9px] font-black orbitron hover:bg-white/10 transition-all">+ UNIDAD</button>
+                         <button onclick="window.ajustarStock('${item.id}', -1)" class="flex-1 py-4 bg-white/5 rounded-xl border border-white/5 text-[9px] font-black orbitron hover:bg-white/10 transition-all">- UNIDAD</button>
                     </div>
                 </div>`;
             }).join("");
@@ -175,41 +169,67 @@ export default async function inventario(container) {
             title: isPropio ? 'NUEVO ACTIVO DE TALLER' : 'VINCULAR INSUMO CLIENTE',
             background: '#010409', 
             color: '#fff',
-            customClass: { popup: 'rounded-[3.5rem] border border-white/10' },
+            customClass: { popup: 'rounded-[3.5rem] border border-white/10 shadow-3xl' },
             html: `
-                <div class="space-y-4 p-4 mt-4">
-                    <input id="sw-nom" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none focus:border-[${accent}] uppercase font-bold" placeholder="DESCRIPCIÓN DEL ÍTEM">
+                <div class="space-y-4 p-4 mt-4 text-left">
+                    <label class="text-[9px] orbitron font-black text-slate-500 ml-4">DESCRIPCIÓN TÉCNICA</label>
+                    <input id="sw-nom" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none focus:border-[${accent}] uppercase font-bold" placeholder="EJ: DISCOS DE FRENO BREMBO">
+                    
                     <div class="grid grid-cols-2 gap-4">
-                        <input id="sw-can" type="number" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" placeholder="CANTIDAD">
-                        <input id="sw-val" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" placeholder="${isPropio ? 'PRECIO VENTA' : 'PLACA VEHÍCULO'}">
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[9px] orbitron font-black text-slate-500 ml-4">CANTIDAD INICIAL</label>
+                            <input id="sw-can" type="number" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" placeholder="0">
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[9px] orbitron font-black text-slate-500 ml-4">${isPropio ? 'PRECIO COSTO' : 'PLACA'}</label>
+                            <input id="sw-costo" type="number" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" placeholder="${isPropio ? 'VALOR COMPRA' : 'ABC-123'}">
+                        </div>
                     </div>
-                    ${isPropio ? '<input id="sw-min" type="number" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" placeholder="STOCK MÍNIMO (ALERTA)">' : ''}
+
+                    ${isPropio ? `
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[9px] orbitron font-black text-slate-500 ml-4">PRECIO VENTA</label>
+                            <input id="sw-venta" type="number" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" placeholder="VALOR CLIENTE">
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[9px] orbitron font-black text-slate-500 ml-4">STOCK MÍNIMO</label>
+                            <input id="sw-min" type="number" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" placeholder="ALERTA">
+                        </div>
+                    </div>` : ''}
                 </div>`,
             showCancelButton: true,
             confirmButtonText: 'DESPLEGAR EN BÓVEDA',
             preConfirm: () => {
-                const n = document.getElementById('sw-nom').value;
-                const v = document.getElementById('sw-val').value;
-                if(!n || !v) return window.Swal.showValidationMessage("Campos incompletos");
+                const nombre = document.getElementById('sw-nom').value;
+                if(!nombre) return window.Swal.showValidationMessage("La descripción es obligatoria");
+                
                 return {
-                    nombre: n.toUpperCase(),
+                    nombre: nombre.toUpperCase(),
                     cantidad: Number(document.getElementById('sw-can').value || 0),
-                    precioVenta: isPropio ? Number(v) : 0,
-                    placa: !isPropio ? v.toUpperCase() : 'INTERNO',
+                    precioCosto: isPropio ? Number(document.getElementById('sw-costo').value || 0) : 0,
+                    precioVenta: isPropio ? Number(document.getElementById('sw-venta').value || 0) : 0,
+                    placa: !isPropio ? document.getElementById('sw-costo').value.toUpperCase() : 'INTERNO',
                     minimo: isPropio ? Number(document.getElementById('sw-min').value || 2) : 0,
                     origen: filtroActual,
+                    empresaId: empresaId,
                     creadoEn: serverTimestamp()
                 }
             }
         });
 
         if(f) { 
-            await createDocument("inventario", f); 
-            window.Swal.fire({ icon: 'success', title: 'SINCRONIZADO', background: '#010409', color: '#fff', timer: 1500 });
+            try {
+                const { addDoc, collection } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+                await addDoc(collection(db, "inventario"), f);
+                window.Swal.fire({ icon: 'success', title: 'SINCRONIZADO', background: '#010409', color: '#fff', timer: 1500 });
+            } catch (e) {
+                console.error("Error guardando inventario:", e);
+                window.Swal.fire('ERROR', 'Fallo en la conexión neural', 'error');
+            }
         }
     }
 
-    // --- 🛠️ FUNCIONES DE CONTROL TÁCTICO ---
     window.ajustarStock = async (id, cambio) => {
         const docRef = doc(db, "inventario", id);
         const snap = await getDoc(docRef);
@@ -222,7 +242,7 @@ export default async function inventario(container) {
     window.eliminarActivo = async (id) => {
         const { isConfirmed } = await window.Swal.fire({
             title: '¿ELIMINAR ACTIVO?',
-            text: "Esta acción es irreversible en la base de datos.",
+            text: "Esta acción es irreversible en el núcleo de datos.",
             icon: 'warning',
             background: '#010409', color: '#fff',
             showCancelButton: true, confirmButtonColor: '#ef4444'
