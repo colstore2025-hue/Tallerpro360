@@ -200,21 +200,22 @@
 
     const CORE_VERSION = "V17.0.0-PRO-" + new Date().getTime();
     
-        // RUTAS MAESTRAS UNIFICADAS (NEXUS-X V33.0)
+            // RUTAS MAESTRAS UNIFICADAS (NEXUS-X V33.0 - NIVEL TERMINATOR)
+    // Asegura que los archivos existan en: /app/js/modules/
     const routes = {
-        dashboard: () => import(`./js/modules/dashboard.js?v=${CORE_VERSION}`),
-        ordenes: () => import(`./js/modules/ordenes.js?v=${CORE_VERSION}`),
-        inventario: () => import(`./js/modules/inventario.js?v=${CORE_VERSION}`),
-        clientes: () => import(`./js/modules/clientes.js?v=${CORE_VERSION}`),
-        pagos: () => import(`./js/modules/pagosTaller.js?v=${CORE_VERSION}`),
-        contabilidad: () => import(`./js/modules/contabilidad.js?v=${CORE_VERSION}`),
-        config: () => import(`./js/modules/config.js?v=${CORE_VERSION}`), // Simplificado a #config
-        staff: () => import(`./js/modules/staff.js?v=${CORE_VERSION}`),
-        nomina: () => import(`./js/modules/nomina.js?v=${CORE_VERSION}`),
-        finanzas_elite: () => import(`./js/modules/finanzas_elite.js?v=${CORE_VERSION}`),
-        gerenteAI: () => import(`./js/modules/gerenteAI.js?v=${CORE_VERSION}`),
-        reportes: () => import(`./js/modules/reportes.js?v=${CORE_VERSION}`),
-        vehiculos: () => import(`./js/modules/vehiculos.js?v=${CORE_VERSION}`)
+        dashboard: () => import(`/app/js/modules/dashboard.js?v=${CORE_VERSION}`),
+        ordenes: () => import(`/app/js/modules/ordenes.js?v=${CORE_VERSION}`),
+        inventario: () => import(`/app/js/modules/inventario.js?v=${CORE_VERSION}`),
+        clientes: () => import(`/app/js/modules/clientes.js?v=${CORE_VERSION}`),
+        pagos: () => import(`/app/js/modules/pagosTaller.js?v=${CORE_VERSION}`),
+        contabilidad: () => import(`/app/js/modules/contabilidad.js?v=${CORE_VERSION}`),
+        config: () => import(`/app/js/modules/config.js?v=${CORE_VERSION}`),
+        staff: () => import(`/app/js/modules/staff.js?v=${CORE_VERSION}`),
+        nomina: () => import(`/app/js/modules/nomina.js?v=${CORE_VERSION}`),
+        finanzas_elite: () => import(`/app/js/modules/finanzas_elite.js?v=${CORE_VERSION}`),
+        gerenteAI: () => import(`/app/js/modules/gerenteAI.js?v=${CORE_VERSION}`),
+        reportes: () => import(`/app/js/modules/reportes.js?v=${CORE_VERSION}`),
+        vehiculos: () => import(`/app/js/modules/vehiculos.js?v=${CORE_VERSION}`)
     };
 
     async function router() {
