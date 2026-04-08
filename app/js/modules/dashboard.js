@@ -89,20 +89,26 @@ function renderPentagonInterface(container, planActual, userName, empresaNombre,
             </div>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             ${renderModuleBtn('Clientes', 'fa-user-tie', '#clientes', true)}
             ${renderModuleBtn('Vehículos', 'fa-car-side', '#vehiculos', true)}
             ${renderModuleBtn('Órdenes', 'fa-file-signature', '#ordenes', true)}
             ${renderModuleBtn('Inventario', 'fa-boxes-stacked', '#inventario', true)}
             ${renderModuleBtn('Nómina', 'fa-users-gear', '#nomina', configPlan.nomina)}
-            ${renderModuleBtn('Contabilidad', 'fa-vault', '#contabilidad', configPlan.contabilidad)}
-${renderModuleBtn('Audit Finanzas', 'fa-vault', '#finanzas', isDemo)}
+            ${renderModuleBtn('Contabilidad', 'fa-calculator', '#contabilidad', configPlan.contabilidad)}
+
             ${renderModuleBtn('Gerente AI', 'fa-brain', '#gerenteAI', configPlan.ai)}
+            ${renderModuleBtn('Audit Finanzas', 'fa-vault', '#finanzas_elite', configPlan.contabilidad)}
             ${renderModuleBtn('Marketplace', 'fa-shop', '#marketplace', configPlan.mkt)}
             ${renderModuleBtn('Reportes', 'fa-chart-network', '#reportes', configPlan.ai)}
-            ${renderModuleBtn('Bold Pagos', 'fa-credit-card', '#pagos', configPlan.bold)}
             ${renderModuleBtn('WhatsApp', 'fa-brands fa-whatsapp', '#wsp', configPlan.wsp)}
-            ${renderModuleBtn('Config', 'fa-microchip', '#config', true, true)} 
+            ${renderModuleBtn('Inicio', 'fa-house', '#dashboard', true)}
+
+            <div class="col-span-2 md:col-span-4 lg:col-span-6 border-t border-white/5 mt-4 pt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                ${renderModuleBtn('Órdenes', 'fa-list-check', '#ordenes', true)}
+                ${renderModuleBtn('Pagos Taller', 'fa-credit-card', '#pagos', configPlan.bold)}
+                ${renderModuleBtn('Configuración', 'fa-gears', '#config', true, true)}
+            </div>
         </div>
 
         <div id="hudKpis" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"></div>
