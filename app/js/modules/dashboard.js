@@ -89,25 +89,28 @@ function renderPentagonInterface(container, planActual, userName, empresaNombre,
             </div>
         </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            ${renderModuleBtn('Clientes', 'fa-user-tie', '#clientes', true)}
-            ${renderModuleBtn('Vehículos', 'fa-car-side', '#vehiculos', true)}
-            ${renderModuleBtn('Órdenes', 'fa-file-signature', '#ordenes', true)}
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            
+            ${renderModuleBtn('Clientes', 'fa-user-gear', '#clientes', true)}
+            ${renderModuleBtn('Vehículos', 'fa-car-burst', '#vehiculos', true)}
             ${renderModuleBtn('Inventario', 'fa-boxes-stacked', '#inventario', true)}
-            ${renderModuleBtn('Nómina', 'fa-users-gear', '#nomina', configPlan.nomina)}
-            ${renderModuleBtn('Contabilidad', 'fa-calculator', '#contabilidad', configPlan.contabilidad)}
+            ${renderModuleBtn('Caja', 'fa-cash-register', '#pagos', configPlan.bold)}
+            ${renderModuleBtn('Nómina', 'fa-file-invoice-dollar', '#nomina', configPlan.nomina)}
+            ${renderModuleBtn('Contabilidad', 'fa-vault', '#contabilidad', configPlan.contabilidad)}
 
-            ${renderModuleBtn('Gerente AI', 'fa-brain', '#gerenteAI', configPlan.ai)}
-            ${renderModuleBtn('Audit Finanzas', 'fa-vault', '#finanzas_elite', configPlan.contabilidad)}
-            ${renderModuleBtn('Marketplace', 'fa-shop', '#marketplace', configPlan.mkt)}
-            ${renderModuleBtn('Reportes', 'fa-chart-network', '#reportes', configPlan.ai)}
-            ${renderModuleBtn('WhatsApp', 'fa-brands fa-whatsapp', '#wsp', configPlan.wsp)}
-            ${renderModuleBtn('Inicio', 'fa-house', '#dashboard', true)}
+            ${renderModuleBtn('Gerente AI', 'fa-brain-circuit', '#gerenteAI', configPlan.ai)}
+            ${renderModuleBtn('Audit Center', 'fa-shield-halved', '#finanzas_elite', configPlan.contabilidad)}
+            ${renderModuleBtn('Marketplace', 'fa-shop-lock', '/marketplace.html', configPlan.mkt, false, '_blank')}
+            ${renderModuleBtn('Reportes', 'fa-chart-pie', '#reportes', configPlan.ai)}
+            ${renderModuleBtn('Publish', 'fa-cloud-arrow-up', '/publish.html', configPlan.mkt, false, '_blank')}
+            ${renderModuleBtn('Soporte NXS', 'fa-satellite-dish', 'https://wa.me/573219876543', true, false, '_blank')}
 
-            <div class="col-span-2 md:col-span-4 lg:col-span-6 border-t border-white/5 mt-4 pt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                ${renderModuleBtn('Órdenes', 'fa-list-check', '#ordenes', true)}
-                ${renderModuleBtn('Pagos Taller', 'fa-credit-card', '#pagos', configPlan.bold)}
-                ${renderModuleBtn('Configuración', 'fa-gears', '#config', true, true)}
+            <div class="col-span-2 md:col-span-4 lg:col-span-6 border-t border-white/5 mt-6 pt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="relative group">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-orange-600 to-amber-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                    ${renderModuleBtn('Órdenes de Trabajo Activas', 'fa-screwdriver-wrench', '#ordenes', true)}
+                </div>
+                ${renderModuleBtn('Estado del Plan', 'fa-credit-card', '#pagos', true)}
             </div>
         </div>
 
