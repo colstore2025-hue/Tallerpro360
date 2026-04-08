@@ -145,16 +145,23 @@ function renderPentagonInterface(container, planActual, userName, empresaNombre,
     </div>`;
 }
 
-function renderModuleBtn(name, icon, hash, habilitado, isConfig = false) {
-    const action = habilitado ? `onclick="location.hash='${hash}'"` : `onclick="window.restrictedAccess('${name}')"`;
-    const opacity = habilitado ? 'opacity-100' : 'opacity-40';
-    const border = isConfig ? 'border-cyan-500/40 bg-cyan-500/10' : 'border-white/5 bg-[#0d1117]';
+function renderModuleBtn(name, icon, path, habilitado, isConfig = false, target = '_self') {
+    // Si el path es un hash (#), lo manejamos con location.hash, si no, es un enlace directo
+    const action = habilitado 
+        ? (path.startsWith('#') 
+            ? `onclick="location.hash='${path}'"` 
+            : `onclick="window.open('${path}', '${target}')"`)
+        : `onclick="window.restrictedAccess('${name}')"`;
+        
+    const opacity = habilitado ? 'opacity-100' : 'opacity-30';
+    const style = isConfig ? 'border-cyan-500/40 bg-cyan-500/10 text-cyan-400' : 'border-white/5 bg-[#0d1117] text-slate-400';
     
     return `
-    <button ${action} class="${opacity} relative p-8 rounded-3xl border ${border} hover:scale-105 hover:bg-white hover:text-black transition-all group overflow-hidden shadow-lg">
+    <button ${action} class="${opacity} relative p-8 rounded-3xl border ${style} hover:scale-105 hover:bg-white hover:text-black transition-all group overflow-hidden shadow-xl w-full h-full">
         ${!habilitado ? '<i class="fas fa-lock absolute top-4 right-4 text-[10px] text-orange-600"></i>' : ''}
-        <i class="${icon} text-2xl mb-4 text-orange-600 group-hover:text-black transition-colors"></i>
-        <p class="orbitron text-[9px] font-black uppercase tracking-tighter">${name}</p>
+        <i class="fas ${icon} text-3xl mb-4 text-orange-600 group-hover:text-black transition-colors"></i>
+        <p class="orbitron text-[9px] font-black uppercase tracking-tighter text-white group-hover:text-black">${name}</p>
+        <div class="absolute inset-0 bg-gradient-to-tr from-orange-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
     </button>`;
 }
 
