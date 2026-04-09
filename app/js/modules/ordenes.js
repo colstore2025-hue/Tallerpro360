@@ -376,58 +376,72 @@ export default async function ordenes(container) {
             if(isRecording) recognition?.stop();
         };
 
-        // 🛰️ ACCIÓN: SINCRONIZACIÓN STARLINK
+                // 🛰️ ACCIÓN: SINCRONIZACIÓN STARLINK - PROTOCOLO AUDITADO V4.1
         document.getElementById("btnSincronizar").onclick = async () => {
             const btn = document.getElementById("btnSincronizar");
             const originalText = btn.innerHTML;
             btn.innerHTML = `<i class="fas fa-sync fa-spin"></i> ENLAZANDO...`;
             
             try {
+                // 1. Limpieza radical de identificadores para evitar fallos de búsqueda
+                const placaLimpia = document.getElementById("f-placa").value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+                const idEmpresaFinal = localStorage.getItem("nexus_empresaId") || empresaId;
+
                 const data = {
                     ...ordenActiva,
-                    empresaId,
-                    placa: document.getElementById("f-placa").value.toUpperCase(),
-                    cliente: document.getElementById("f-cliente").value,
-                    telefono: document.getElementById("f-telefono").value,
+                    empresaId: idEmpresaFinal,
+                    placa: placaLimpia, // Guardamos la placa limpia para PAY_NEXUS
+                    cliente: document.getElementById("f-cliente").value.trim().toUpperCase(),
+                    telefono: document.getElementById("f-telefono").value.trim().replace(/\s+/g, ''),
                     estado: document.getElementById("f-estado").value,
                     bitacora_ia: document.getElementById("ai-log-display").value,
                     finanzas: {
-                        gastos_varios: Number(document.getElementById("f-gastos-varios").value),
-                        adelanto_tecnico: Number(document.getElementById("f-adelanto-tecnico").value),
-                        anticipo_cliente: Number(document.getElementById("f-anticipo-cliente").value),
-                        impuesto_tipo: ordenActiva.finanzas.impuesto_tipo
+                        gastos_varios: Number(document.getElementById("f-gastos-varios").value || 0),
+                        adelanto_tecnico: Number(document.getElementById("f-adelanto-tecnico").value || 0),
+                        anticipo_cliente: Number(document.getElementById("f-anticipo-cliente").value || 0),
+                        impuesto_tipo: ordenActiva.finanzas?.impuesto_tipo || 'IVA_19'
                     },
                     updatedAt: serverTimestamp()
                 };
 
-                // 1. Guardar OT
-                await setDoc(doc(db, "ordenes", ordenActiva.id || `OT_${Date.now()}`), data);
+                // 2. Ejecutar persistencia en Bóveda Firestore
+                // Usamos la placa limpia como parte del ID si es nueva, o mantenemos el ID existente
+                const docId = ordenActiva.id || `OT_${placaLimpia}_${Date.now().toString().slice(-4)}`;
+                await setDoc(doc(db, "ordenes", docId), data);
                 
-                // 2. Sincronizar con otros módulos
+                // 3. Sincronizar con Ecosistema (Hoja de Vida y Vehículos)
                 await actualizarEcosistemaNexus(data);
 
-                // 3. Procesar Almacén
+                // 4. Procesar Almacén (Si aplica)
                 for (const item of data.items) {
                     if (item.tipo === "REPUESTO" && item.origen === "TALLER" && item.refId) {
                         await descontarStock(item.refId, 1);
                     }
                 }
 
-                // 4. Si está LISTO, ejecutar protocolo de salida
+                // 5. Protocolo de salida según estado
                 if (data.estado === "LISTO") {
-                    await registrarMovimientoContable("INGRESO", data.costos_totales.gran_total, `CIERRE OT: ${data.placa}`);
                     await ejecutarProtocoloSalida(data);
-                    hablar("Misión sincronizada y reporte enviado.");
+                    hablar("Misión finalizada. Reporte enviado al cliente.");
                 } else {
-                    hablar("Datos guardados en la red Nexus.");
+                    hablar("Datos inyectados en la red Nexus exitosamente.");
                 }
 
-                Swal.fire({ icon: 'success', title: 'SINCRONÍA EXITOSA', background: '#0d1117', color: '#fff', timer: 1500 });
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: 'SINCRONÍA EXITOSA', 
+                    text: `Vehículo ${placaLimpia} actualizado.`,
+                    background: '#0d1117', 
+                    color: '#fff', 
+                    timer: 1500 
+                });
+                
                 document.getElementById("nexus-terminal").classList.add("hidden");
+
             } catch (err) {
-                console.error(err);
+                console.error("⚠️ Fallo Crítico Nexus:", err);
                 btn.innerHTML = originalText;
-                Swal.fire('ERROR DE ENLACE', 'Fallo en la conexión satelital.', 'error');
+                Swal.fire('ERROR DE ENLACE', 'No se pudo sincronizar con el satélite.', 'error');
             }
         };
 
