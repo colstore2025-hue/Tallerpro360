@@ -1,7 +1,6 @@
 /**
- * pagosTaller.js - NEXUS-X PAY_HUB V4.0 💳
- * PROTOCOLO DE RECAUDO INTELIGENTE TALLERPRO360
- * Integración Real Bold + Sincronía Aegis + Auditoría 
+ * pagosTaller.js - NEXUS-X PAY_HUB V4.5 💳 "THE TERMINATOR"
+ * Integración Real Bold + Selector de OT Inteligente + Blindaje de Deuda
  * @author William Jeffry Urquijo Cubillos
  */
 import { 
@@ -11,10 +10,9 @@ import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 
 export default async function pagosTaller(container, state) {
-  const empresaId = localStorage.getItem("empresaId"); // Clave corregida
+  const empresaId = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
   let ordenActiva = null;
 
-  // --- 🏗️ RENDERIZADO DE INTERFAZ HOLOGRÁFICA ---
   const renderLayout = () => {
     container.innerHTML = `
     <div class="p-6 lg:p-12 animate-in fade-in zoom-in duration-700 pb-40 bg-[#010409] min-h-screen">
@@ -24,12 +22,12 @@ export default async function pagosTaller(container, state) {
               <h1 class="orbitron text-5xl md:text-7xl font-black italic tracking-tighter text-white">
                 PAY<span class="text-cyan-400">_NEXUS</span><span class="text-red-500">.X</span>
               </h1>
-              <p class="text-[9px] orbitron tracking-[0.6em] text-slate-500 uppercase mt-4 italic">Neural Payment Terminal // TallerPRO360</p>
+              <p class="text-[9px] orbitron tracking-[0.6em] text-slate-500 uppercase mt-4 italic italic">Neural Payment Terminal // TallerPRO360</p>
           </div>
           <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 flex items-center gap-6 shadow-glow-cyan">
               <div class="h-3 w-3 bg-emerald-500 rounded-full animate-ping"></div>
               <div class="text-left">
-                <p class="text-[10px] orbitron font-black text-white">SISTEMA: OPERATIVO</p>
+                <p class="text-[10px] orbitron font-black text-white uppercase tracking-widest">SISTEMA: OPERATIVO 2030</p>
                 <p class="text-[8px] text-slate-500 font-bold uppercase">Nodo: Charlotte-Ibague</p>
               </div>
           </div>
@@ -40,7 +38,7 @@ export default async function pagosTaller(container, state) {
               <div class="bg-[#0d1117] p-12 rounded-[4rem] border border-white/5 shadow-2xl relative overflow-hidden">
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div class="bg-black/60 p-10 rounded-[2.5rem] border border-white/5 focus-within:border-cyan-500 transition-all group">
-                          <label class="text-[9px] text-slate-500 font-black orbitron mb-4 block tracking-[0.3em] uppercase italic">ID_VEHÍCULO (PLACA)</label>
+                          <label class="text-[9px] text-slate-500 font-black orbitron mb-4 block tracking-[0.3em] uppercase italic italic">ID_VEHÍCULO (PLACA)</label>
                           <div class="flex items-center gap-4">
                               <input id="refIn" placeholder="BCE670" class="bg-transparent border-none outline-none text-5xl font-black text-white w-full uppercase orbitron" value="${state?.placa || ''}">
                               <button id="btnFetchOrden" class="h-16 w-16 bg-cyan-500 text-black rounded-2xl hover:scale-110 transition-transform shadow-glow-cyan">
@@ -50,20 +48,25 @@ export default async function pagosTaller(container, state) {
                       </div>
 
                       <div class="bg-black/60 p-10 rounded-[2.5rem] border border-white/5">
-                          <label class="text-[9px] text-slate-500 font-black orbitron mb-4 block tracking-[0.3em] uppercase italic">MONTO_ABONO (COP)</label>
+                          <label class="text-[9px] text-slate-500 font-black orbitron mb-4 block tracking-[0.3em] uppercase italic italic">MONTO_ABONO (COP)</label>
                           <input id="montoIn" type="number" placeholder="0" class="bg-transparent border-none outline-none text-5xl font-black text-emerald-400 w-full orbitron">
                       </div>
+                  </div>
+
+                  <div id="ot-selector-container" class="hidden mt-8 p-6 bg-cyan-500/5 border border-cyan-500/20 rounded-[2.5rem] animate-in slide-in-from-right-4">
+                      <p class="text-[9px] orbitron text-cyan-500 font-black mb-4 tracking-widest">DETECTADAS MÚLTIPLES MISIONES ACTIVAS:</p>
+                      <div id="ot-list" class="grid grid-cols-1 gap-3"></div>
                   </div>
 
                   <div id="display-info" class="hidden mt-10 p-10 bg-white/5 border border-white/10 rounded-[3rem] animate-in slide-in-from-top-10">
                       <div class="flex justify-between items-center">
                           <div>
-                              <p id="txtCliente" class="text-white font-black orbitron text-xl uppercase tracking-tighter">BUSCANDO OPERADOR...</p>
+                              <p id="txtCliente" class="text-white font-black orbitron text-xl uppercase tracking-tighter italic">CARGANDO...</p>
                               <p id="txtMision" class="text-[10px] text-cyan-400 font-bold uppercase mt-2 tracking-widest italic"></p>
                           </div>
                           <div class="text-right">
                               <p class="text-[9px] text-red-500 font-black orbitron mb-2 uppercase tracking-widest">Saldo_Pendiente</p>
-                              <p id="label-monto" class="text-5xl font-black text-white orbitron italic">$ 0</p>
+                              <p id="label-monto" class="text-5xl font-black text-white orbitron italic italic">$ 0</p>
                           </div>
                       </div>
                   </div>
@@ -85,15 +88,15 @@ export default async function pagosTaller(container, state) {
 
           <div class="lg:col-span-5 space-y-8">
               <div class="bg-gradient-to-br from-[#0d1117] to-black p-12 rounded-[4rem] border border-white/5 shadow-2xl">
-                  <h4 class="text-[11px] font-black text-cyan-500 orbitron tracking-[0.5em] mb-10 uppercase italic">AUDITORÍA AEGIS_PRO</h4>
+                  <h4 class="text-[11px] font-black text-cyan-500 orbitron tracking-[0.5em] mb-10 uppercase italic italic">AUDITORÍA AEGIS_PRO</h4>
                   <ul class="space-y-8">
                       <li class="flex items-start gap-6">
                           <i class="fas fa-shield-alt text-emerald-500 text-xl mt-1"></i>
-                          <p class="text-xs text-slate-400 leading-relaxed"><b>Inyectando datos:</b> Cada abono se amarra a la Hoja de Vida imborrable del vehículo.</p>
+                          <p class="text-xs text-slate-400 leading-relaxed"><b>Protocolo Anti-Exceso:</b> El sistema bloquea abonos que superen la deuda de la OT.</p>
                       </li>
                       <li class="flex items-start gap-6">
-                          <i class="fas fa-chart-pie text-cyan-500 text-xl mt-1"></i>
-                          <p class="text-xs text-slate-400 leading-relaxed"><b>Caja en Tiempo Real:</b> El Dashboard actualiza ingresos brutos y saldo deudor al instante.</p>
+                          <i class="fas fa-check-double text-cyan-500 text-xl mt-1"></i>
+                          <p class="text-xs text-slate-400 leading-relaxed"><b>Confirmación Instantánea:</b> Generación de voucher digital post-pago para WhatsApp.</p>
                       </li>
                   </ul>
               </div>
@@ -102,166 +105,169 @@ export default async function pagosTaller(container, state) {
     </div>
     `;
 
-    // Vincular Eventos
-    document.getElementById("btnFetchOrden").onclick = buscarMision;
+    document.getElementById("btnFetchOrden").onclick = buscarMisionesPlaca;
     document.getElementById("btnCobrarBold").onclick = () => procesarPago('BOLD');
     document.getElementById("btnEfectivo").onclick = () => procesarPago('EFECTIVO');
     document.getElementById("btnSendLink").onclick = enviarLinkPago;
   };
 
-  // --- 🛰️ FUNCIÓN: BUSQUEDA RADIAL DE MISIÓN ---
-  async function buscarMision() {
-    // 1. Normalización total de la placa
-    const placaRaw = document.getElementById("refIn").value;
-    const placa = placaRaw.trim().toUpperCase().replace(/[^A-Z0-9]/g, ''); 
-    
-    // 2. Garantizar que el ID de empresa sea el correcto
-    const empresaIdCore = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
-
-    if(!placa || !empresaIdCore) {
-        return Swal.fire('SISTEMA', 'Falta Placa o ID de Empresa', 'warning');
-    }
+  // --- 🛰️ LOGICA 1: SELECTOR DE OT INTELIGENTE ---
+  async function buscarMisionesPlaca() {
+    const placa = document.getElementById("refIn").value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if(!placa) return;
 
     try {
-        // 3. Consulta simplificada (Quitamos filtros de estado para que encuentre la placa sí o sí)
-        const q = query(
-            collection(db, "ordenes"), 
-            where("empresaId", "==", empresaIdCore), 
-            where("placa", "==", placa)
-        );
-        
+        Swal.fire({ title: 'Escaneando Red Nexus...', didOpen: () => Swal.showLoading(), background: '#010409', color: '#fff' });
+
+        const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId), where("placa", "==", placa));
         const snap = await getDocs(q);
 
-        if(!snap.empty) {
-            // Traer la más reciente que NO esté finalizada preferiblemente
-            const docs = snap.docs.map(d => ({id: d.id, ...d.data()}))
-                             .sort((a,b) => b.updatedAt - a.updatedAt);
-            
-            // Priorizamos la que esté en proceso
-            ordenActiva = docs.find(d => d.estado !== "FINALIZADO") || docs[0];
-            
-            // 4. Sincronización de Interfaz
-            document.getElementById("display-info").classList.remove("hidden");
-            document.getElementById("txtCliente").innerText = (ordenActiva.cliente || "DESCONOCIDO").toUpperCase();
-            document.getElementById("txtMision").innerText = `OT: ${ordenActiva.id.slice(-6)} | ESTADO: ${ordenActiva.estado}`;
-            
-            const saldo = ordenActiva.costos_totales?.saldo_pendiente || 0;
-            document.getElementById("label-monto").innerText = `$ ${saldo.toLocaleString()}`;
-            document.getElementById("montoIn").value = saldo;
-            
-            hablar(`Misión ${placa} localizada.`);
+        if(snap.empty) {
+            return Swal.fire('NEXUS-X', `Sin misiones para ${placa}.`, 'error');
+        }
+
+        const ordenes = snap.docs.map(d => ({id: d.id, ...d.data()}))
+                            .filter(o => (o.costos_totales?.saldo_pendiente || 0) > 0)
+                            .sort((a,b) => b.updatedAt - a.updatedAt);
+
+        if(ordenes.length === 0) {
+            return Swal.fire('COMPLETADO', 'Este vehículo no tiene saldos pendientes.', 'success');
+        }
+
+        if(ordenes.length === 1) {
+            seleccionarOT(ordenes[0]);
+            Swal.close();
         } else {
-            ordenActiva = null;
-            Swal.fire('NEXUS-X', `La placa ${placa} no registra misiones en la base de datos.`, 'error');
+            // MOSTRAR SELECTOR
+            const selectorContainer = document.getElementById("ot-selector-container");
+            const otList = document.getElementById("ot-list");
+            otList.innerHTML = "";
+            selectorContainer.classList.remove("hidden");
+
+            ordenes.forEach(ot => {
+                const btn = document.createElement("button");
+                btn.className = "w-full p-5 bg-white/5 border border-white/10 rounded-2xl text-left hover:bg-cyan-500 hover:text-black transition-all group flex justify-between items-center";
+                btn.innerHTML = `
+                    <div>
+                        <p class="orbitron text-[10px] font-black italic italic">OT: ${ot.id.slice(-6)}</p>
+                        <p class="text-[9px] uppercase opacity-70">${ot.estado} - ${new Date(ot.updatedAt?.seconds*1000).toLocaleDateString()}</p>
+                    </div>
+                    <p class="orbitron font-black">$ ${ot.costos_totales.saldo_pendiente.toLocaleString()}</p>
+                `;
+                btn.onclick = () => {
+                    seleccionarOT(ot);
+                    selectorContainer.classList.add("hidden");
+                };
+                otList.appendChild(btn);
+            });
+            Swal.close();
+            hablar("Se han detectado múltiples misiones. Seleccione la OT a liquidar.");
         }
     } catch (e) {
-        console.error("Error en Auditoría Nexus:", e);
-        Swal.fire('ERROR DE NODO', 'Fallo de conexión. Verifique su señal Satelital.', 'error');
+        Swal.fire('ERROR', 'Fallo de enlace satelital.', 'error');
     }
-}
+  }
 
-  // --- 💳 FUNCIÓN: PROCESADOR DE PAGOS HÍBRIDO ---
+  function seleccionarOT(ot) {
+    ordenActiva = ot;
+    document.getElementById("display-info").classList.remove("hidden");
+    document.getElementById("txtCliente").innerText = ot.cliente.toUpperCase();
+    document.getElementById("txtMision").innerText = `MISIÓN ACTIVA: OT-${ot.id.slice(-6)}`;
+    document.getElementById("label-monto").innerText = `$ ${ot.costos_totales.saldo_pendiente.toLocaleString()}`;
+    document.getElementById("montoIn").value = ot.costos_totales.saldo_pendiente;
+    hablar(`Orden ${ot.id.slice(-6)} vinculada.`);
+  }
+
+  // --- 💳 LOGICA 2: PROCESO CON BLINDAJE DE DEUDA ---
   async function procesarPago(metodo) {
     const monto = Number(document.getElementById("montoIn").value);
-    
-    if(!ordenActiva || monto <= 0) {
-        hablar("Protocolo incompleto. Ingrese placa y monto.");
-        return Swal.fire('ERROR', 'Seleccione una misión y un monto válido.', 'warning');
+    const saldoActual = Number(ordenActiva?.costos_totales?.saldo_pendiente || 0);
+
+    if(!ordenActiva || monto <= 0) return Swal.fire('AVISO', 'Seleccione una misión válida.', 'warning');
+
+    // 🛡️ BLINDAJE DE DESBORDAMIENTO
+    if(monto > saldoActual) {
+        hablar("Error de seguridad. El monto supera la deuda actual.");
+        return Swal.fire({
+            icon: 'warning',
+            title: 'EXCESO DE ABONO',
+            text: `El saldo máximo permitido es $${saldoActual.toLocaleString()}.`,
+            background: '#0d1117', color: '#fff'
+        });
     }
 
     try {
-      if(metodo === 'BOLD') {
-        const empSnap = await getDoc(doc(db, "empresas", empresaId));
-        const boldKey = empSnap.data()?.bold_api_key || localStorage.getItem("nexus_boldKey");
+        if(metodo === 'BOLD') {
+            const empSnap = await getDoc(doc(db, "empresas", empresaId));
+            const boldKey = empSnap.data()?.bold_api_key;
+            
+            const bold = new window.BoldCheckout({
+                orderId: `NXS-${ordenActiva.placa}-${Date.now().toString().slice(-4)}`,
+                amount: monto,
+                currency: 'COP',
+                description: `TallerPRO360 - OT:${ordenActiva.id.slice(-5)}`,
+                apiKey: boldKey,
+                redirectionUrl: 'https://tallerpro360.vercel.app/success'
+            });
+            bold.open();
+        } else {
+            Swal.fire({ title: 'Inyectando Capital...', didOpen: () => Swal.showLoading(), background: '#010409' });
 
-        if(!boldKey) throw new Error("API KEY de Bold no detectada.");
+            const nuevoSaldo = saldoActual - monto;
+            const ordenRef = doc(db, "ordenes", ordenActiva.id);
 
-        const bold = new window.BoldCheckout({
-          orderId: `NXS-${ordenActiva.placa}-${Date.now().toString().slice(-4)}`,
-          amount: monto,
-          currency: 'COP',
-          description: `TallerPRO360 - Abono ${ordenActiva.placa}`,
-          apiKey: boldKey,
-          redirectionUrl: 'https://tallerpro360.vercel.app/success'
-        });
-        
-        hablar("Desplegando pasarela segura Bold.");
-        bold.open();
-        
-      } else {
-        // --- PROCESO EFECTIVO (SINCRO TOTAL) ---
-        Swal.fire({ title: 'Sincronizando Bóveda Aegis...', didOpen: () => Swal.showLoading(), background: '#010409', color: '#fff' });
+            // A. Actualización OT
+            await updateDoc(ordenRef, {
+                "finanzas.anticipo_cliente": increment(monto),
+                "costos_totales.saldo_pendiente": increment(-monto),
+                "estado": (nuevoSaldo <= 0) ? "LISTO" : ordenActiva.estado,
+                "pagoStatus": (nuevoSaldo <= 0) ? "PAGADO" : "ABONADO",
+                "updatedAt": serverTimestamp()
+            });
 
-        const ordenRef = doc(db, "ordenes", ordenActiva.id);
-        const vehiculoRef = doc(db, "vehiculos", ordenActiva.placa);
-        const nuevoSaldo = (ordenActiva.costos_totales?.saldo_pendiente || 0) - monto;
+            // B. Auditoría Aegis
+            await addDoc(collection(db, "contabilidad"), {
+                empresaId, referencia: ordenActiva.placa, monto, tipo: 'INGRESO', metodo: 'EFECTIVO',
+                concepto: `ABONO OT-${ordenActiva.id.slice(-5)}`, createdAt: serverTimestamp()
+            });
 
-        // 1. Actualización de Orden (Abonos de Cliente)
-        await updateDoc(ordenRef, {
-            "finanzas.anticipo_cliente": increment(monto),
-            "costos_totales.saldo_pendiente": increment(-monto),
-            "pagoStatus": (nuevoSaldo <= 0) ? "PAGADO" : "ABONADO",
-            "updatedAt": serverTimestamp()
-        });
+            hablar("Transacción finalizada. Generando voucher.");
+            
+            // C. VOUCHER DE CONFIRMACIÓN
+            await enviarVoucherConfirmacion(monto, nuevoSaldo);
 
-        // 2. Registro Contable para Dashboard
-        await addDoc(collection(db, "contabilidad"), {
-            empresaId,
-            referencia: ordenActiva.placa,
-            monto: monto,
-            tipo: 'INGRESO',
-            metodo: 'EFECTIVO',
-            concepto: `RECAUDO_CASH: Orden ${ordenActiva.id.slice(-5)}`,
-            createdAt: serverTimestamp()
-        });
-
-        // 3. Persistencia en Hoja de Vida
-        await addDoc(collection(vehiculoRef, "historial_servicios"), {
-            fecha: serverTimestamp(),
-            tipo_evento: "RECAUDO_FINANCIERO",
-            monto: monto,
-            descripcion: `Abono recibido en terminal PAY_NEXUS. Saldo restante: $${nuevoSaldo.toLocaleString()}`,
-            ordenId: ordenActiva.id
-        });
-
-        hablar("Abono registrado con éxito en el ecosistema.");
-        
-        await Swal.fire({
-            icon: 'success',
-            title: 'REGISTRO EXITOSO',
-            text: `Se abonaron $${monto.toLocaleString()} a la cuenta de ${ordenActiva.placa}.`,
-            background: '#0d1117', color: '#fff', confirmButtonColor: '#00f2ff'
-        });
-
-        buscarMision(); // Refrescar vista
-      }
-    } catch (err) {
-      console.error(err);
-      Swal.fire('FALLO CRÍTICO', err.message, 'error');
+            Swal.fire({ icon: 'success', title: 'PAGO REGISTRADO', background: '#0d1117', color: '#fff' });
+            buscarMisionesPlaca(); // Recargar
+        }
+    } catch (e) {
+        Swal.fire('ERROR', 'Fallo en la inyección de datos.', 'error');
     }
   }
 
-  // --- 📱 FUNCIÓN: WHATSAPP SMART-LINK ---
-  async function enviarLinkPago() {
-    if(!ordenActiva) return Swal.fire('AVISO', 'Busque una placa primero.', 'warning');
+  // --- 📱 LOGICA 3: VOUCHER DIGITAL WHATSAPP ---
+  async function enviarVoucherConfirmacion(monto, saldoRestante) {
+    if(!ordenActiva.telefono) return;
 
-    const monto = document.getElementById("montoIn").value;
-    const nombre = (ordenActiva.cliente || "Cliente").trim().toUpperCase();
-    const linkPago = `https://bold.co/pay/tallerpro360`; 
+    const mensaje = `*✅ NEXUS-X: COMPROBANTE DE PAGO*%0A%0A` +
+                    `Recibimos un abono de: *$${monto.toLocaleString()}*%0A` +
+                    `Para el vehículo: *${ordenActiva.placa.toUpperCase()}*%0A` +
+                    `Referencia OT: *${ordenActiva.id.slice(-6)}*%0A%0A` +
+                    `💰 *Saldo Restante:* $${saldoRestante.toLocaleString()}%0A%0A` +
+                    `_Gracias por confiar en TallerPRO360_`;
 
-    const mensaje = `*TallerPRO360 - NOTIFICACIÓN DE PAGO*%0A%0A` +
-                    `Hola *${nombre}*, se ha generado el reporte de pago para el vehículo *${ordenActiva.placa}*.%0A%0A` +
-                    `💰 *Monto Sugerido:* $${Number(monto).toLocaleString()}%0A%0A` +
-                    `✅ *Paga aquí de forma segura:*%0A${linkPago}%0A%0A` +
-                    `_Gestión financiera por Nexus-X System_`;
-    
-    if(!ordenActiva.telefono) return Swal.fire('ERROR', 'No hay teléfono de contacto.', 'error');
-
-    hablar("Enviando enlace de pago vía WhatsApp.");
-    window.open(`https://wa.me/57${ordenActiva.telefono.trim()}?text=${mensaje}`, '_blank');
+    window.open(`https://wa.me/57${ordenActiva.telefono}?text=${mensaje}`, '_blank');
   }
 
-  // --- 🏁 INICIO DE PROTOCOLO ---
+  async function enviarLinkPago() {
+    if(!ordenActiva) return Swal.fire('AVISO', 'Primero enlace una misión.', 'warning');
+    const linkPago = `https://bold.co/pay/tallerpro360`; 
+    const mensaje = `*🛰️ LINK DE PAGO SATELITAL*%0A%0A` +
+                    `Hola *${ordenActiva.cliente.toUpperCase()}*, puedes pagar tu abono de *$${Number(document.getElementById("montoIn").value).toLocaleString()}* aquí:%0A%0A` +
+                    `🔗 ${linkPago}%0A%0A` +
+                    `_Misión: ${ordenActiva.placa}_`;
+    window.open(`https://wa.me/57${ordenActiva.telefono}?text=${mensaje}`, '_blank');
+  }
+
   renderLayout();
-  if(state?.placa) setTimeout(() => buscarMision(), 500);
+  if(state?.placa) setTimeout(() => buscarMisionesPlaca(), 500);
 }
