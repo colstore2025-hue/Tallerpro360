@@ -1,16 +1,15 @@
 /**
  * reportes.js - TallerPRO360 NEXUS-X V18.0 📄
- * NÚCLEO DE INTELIGENCIA DE NEGOCIOS (BI)
- * Sistema de Auditoría Circular Integrado
+ * NÚCLEO DE INTELIGENCIA DE NEGOCIOS & AUDITORÍA CIRCULAR
+ * @author William Jeffry Urquijo Cubillos & Gemini AI
  */
 import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
 export default async function reportesModule(container, state) {
     const empresaId = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
-    let ordenesRaw = [];
-    let contabilidadRaw = [];
-    let vehiculosRaw = [];
+    let datosCargados = [];
+    let vistaActual = 'GENERAL'; // GENERAL, FINANZAS, STAFF, HISTORIAL
 
     const renderLayout = () => {
         container.innerHTML = `
@@ -20,188 +19,173 @@ export default async function reportesModule(container, state) {
                 <div class="relative">
                     <div class="absolute -left-6 top-0 h-full w-1 bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.5)]"></div>
                     <h1 class="orbitron text-5xl lg:text-6xl font-black italic tracking-tighter text-white leading-none uppercase">
-                        NEXUS <span class="text-cyan-400">BI</span>
+                        AUDIT <span class="text-cyan-400">CENTER</span>
                     </h1>
-                    <p class="text-[9px] orbitron tracking-[0.6em] text-slate-500 uppercase mt-4 italic font-bold">Business Intelligence & Operative Audit</p>
+                    <div class="flex gap-4 mt-4">
+                        <select id="selectVista" class="bg-[#0d1117] border border-white/10 p-3 rounded-xl orbitron text-[10px] font-black uppercase text-cyan-400 focus:outline-none">
+                            <option value="GENERAL">📊 Resumen General</option>
+                            <option value="FINANZAS">💰 P&G / Balances</option>
+                            <option value="STAFF">👥 Productividad Staff</option>
+                            <option value="HISTORIAL">🚗 Historial de Activos</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="flex flex-wrap gap-4 p-4 bg-[#0d1117] rounded-[2.5rem] border border-white/10 shadow-2xl">
+                <div class="flex flex-wrap gap-4 p-4 bg-[#0d1117] rounded-[2.5rem] border border-white/10 backdrop-blur-3xl shadow-2xl">
                     <div class="flex items-center gap-3 px-6 border-r border-white/5">
-                        <input type="date" id="fechaInicio" class="bg-transparent border-none text-[11px] text-white orbitron font-black focus:outline-none">
+                        <i class="fas fa-calendar-day text-cyan-500 text-xs"></i>
+                        <input type="date" id="fechaInicio" class="bg-transparent border-none text-[11px] text-white focus:outline-none orbitron font-black uppercase">
                         <span class="text-slate-700 font-black">>></span>
-                        <input type="date" id="fechaFin" class="bg-transparent border-none text-[11px] text-white orbitron font-black focus:outline-none">
+                        <input type="date" id="fechaFin" class="bg-transparent border-none text-[11px] text-white focus:outline-none orbitron font-black uppercase">
                     </div>
                     <div class="flex gap-2">
-                        <button id="btnRefresh" class="w-12 h-12 rounded-xl bg-white/5 hover:bg-cyan-500/20 text-cyan-400 border border-white/5 transition-all">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                        <button id="btnExportExcel" class="px-6 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20 hover:bg-emerald-500 hover:text-black transition-all orbitron text-[10px] font-black uppercase tracking-widest">
-                            <i class="fas fa-file-excel mr-2"></i> Exportar
+                        <button id="btnExcel" class="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20 hover:bg-emerald-500 hover:text-black transition-all flex items-center justify-center group">
+                            <i class="fas fa-file-excel text-lg group-hover:scale-110"></i>
                         </button>
                     </div>
                 </div>
             </header>
 
-            <div class="flex flex-wrap gap-4 mb-12">
-                <button class="report-tab active px-8 py-4 rounded-2xl orbitron text-[10px] font-black border border-white/10 transition-all uppercase tracking-widest" data-type="OPERATIVO">
-                    <i class="fas fa-tools mr-2"></i> Operaciones
-                </button>
-                <button class="report-tab px-8 py-4 rounded-2xl orbitron text-[10px] font-black border border-white/10 transition-all uppercase tracking-widest" data-type="FINANCIERO">
-                    <i class="fas fa-chart-pie mr-2"></i> P&G / Balances
-                </button>
-                <button class="report-tab px-8 py-4 rounded-2xl orbitron text-[10px] font-black border border-white/10 transition-all uppercase tracking-widest" data-type="PRODUCTIVIDAD">
-                    <i class="fas fa-user-clock mr-2"></i> Staff / KPIs
-                </button>
-                <button class="report-tab px-8 py-4 rounded-2xl orbitron text-[10px] font-black border border-white/10 transition-all uppercase tracking-widest" data-type="HISTORIAL">
-                    <i class="fas fa-history mr-2"></i> Mantenimientos
-                </button>
+            <div id="kpiContainer" class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12"></div>
+
+            <div class="bg-[#0d1117] p-6 rounded-[2.5rem] border border-white/5 mb-10 flex items-center gap-6 shadow-inner">
+                <i class="fas fa-satellite-dish text-cyan-500 text-xl animate-pulse"></i>
+                <input id="filtroTabla" placeholder="ESCANEAR PLACA, CLIENTE O TÉCNICO..." 
+                       class="bg-transparent border-none outline-none text-sm w-full text-white placeholder:text-slate-800 orbitron font-black tracking-[0.2em] uppercase">
             </div>
 
-            <div id="kpiContainer" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12"></div>
-
-            <div id="reportContent" class="bg-[#0d1117] rounded-[3.5rem] border border-white/5 overflow-hidden shadow-2xl min-h-[400px]">
-                <div class="p-20 text-center opacity-30 animate-pulse">
-                    <i class="fas fa-satellite text-6xl mb-6"></i>
-                    <p class="orbitron text-xs">Sincronizando con satélites Nexus...</p>
+            <div id="reportContent" class="bg-[#0d1117]/80 backdrop-blur-3xl rounded-[3.5rem] border border-white/5 overflow-x-auto shadow-2xl">
+                <table class="w-full text-left border-collapse min-w-[800px]">
+                    <thead id="headReporte"></thead>
+                    <tbody id="bodyReportes" class="divide-y divide-white/5 font-bold"></tbody>
+                </table>
+                <div id="vacio-reportes" class="hidden py-40 text-center opacity-20">
+                    <i class="fas fa-ghost text-6xl mb-4"></i>
+                    <p class="orbitron text-[10px] uppercase tracking-[0.5em]">Frecuencia vacía en este sector</p>
                 </div>
             </div>
         </div>`;
 
-        vincularEventos();
-        inicializarData();
+        // Event Listeners
+        document.getElementById("selectVista").onchange = (e) => {
+            vistaActual = e.target.value;
+            procesarDatos();
+        };
+        document.getElementById("filtroTabla").oninput = procesarDatos;
+        document.getElementById("fechaInicio").onchange = procesarDatos;
+        document.getElementById("fechaFin").onchange = procesarDatos;
+        document.getElementById("btnExcel").onclick = exportarExcel;
+
+        cargarHistorial();
     };
 
-    const vincularEventos = () => {
-        document.querySelectorAll(".report-tab").forEach(tab => {
-            tab.onclick = (e) => {
-                document.querySelectorAll(".report-tab").forEach(t => t.classList.remove("active", "bg-cyan-500", "text-black"));
-                tab.classList.add("active", "bg-cyan-500", "text-black");
-                procesarReporte(tab.dataset.type);
-            };
-        });
-
-        document.getElementById("fechaInicio").onchange = () => procesarReporte(document.querySelector(".report-tab.active").dataset.type);
-        document.getElementById("fechaFin").onchange = () => procesarReporte(document.querySelector(".report-tab.active").dataset.type);
-        document.getElementById("btnRefresh").onclick = inicializarData;
-    };
-
-    const inicializarData = async () => {
+    const cargarHistorial = async () => {
         try {
-            // Carga Triple (Circular)
-            const [snapOrd, snapCont, snapVeh] = await Promise.all([
-                getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId))),
-                getDocs(query(collection(db, "contabilidad"), where("empresaId", "==", empresaId))),
-                getDocs(query(collection(db, "vehiculos"), where("empresaId", "==", empresaId)))
-            ]);
-
-            ordenesRaw = snapOrd.docs.map(d => ({ id: d.id, ...d.data() }));
-            contabilidadRaw = snapCont.docs.map(d => ({ id: d.id, ...d.data() }));
-            vehiculosRaw = snapVeh.docs.map(d => ({ id: d.id, ...d.data() }));
-
-            procesarReporte("OPERATIVO"); // Default
-        } catch (e) {
-            console.error("DATA_ERR:", e);
-        }
+            const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId), orderBy("creadoEn", "desc"));
+            const snap = await getDocs(q);
+            datosCargados = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            procesarDatos();
+        } catch (e) { console.error("🚨 Error Audit Center:", e); }
     };
 
-    const procesarReporte = (tipo) => {
-        const fI = document.getElementById("fechaInicio").value;
-        const fF = document.getElementById("fechaFin").value;
+    const procesarDatos = () => {
+        const busqueda = document.getElementById("filtroTabla").value.toLowerCase();
+        const fInicio = document.getElementById("fechaInicio").value;
+        const fFin = document.getElementById("fechaFin").value;
 
-        // Filtrado por fecha base
-        const filtrarPorFecha = (arr) => arr.filter(item => {
-            if (!fI || !fF) return true;
-            const fecha = item.updatedAt?.toDate() || item.creadoEn?.toDate() || new Date();
-            return fecha >= new Date(fI + "T00:00:00") && fecha <= new Date(fF + "T23:59:59");
+        let filtrados = datosCargados.filter(o => {
+            const fechaO = o.creadoEn?.toDate ? o.creadoEn.toDate() : null;
+            const coincideTexto = (o.placa?.toLowerCase().includes(busqueda)) || (o.cliente?.toLowerCase().includes(busqueda));
+            
+            let coincideFecha = true;
+            if (fInicio && fechaO) coincideFecha = fechaO >= new Date(fInicio + "T00:00:00");
+            if (fFin && fechaO && coincideFecha) coincideFecha = fechaO <= new Date(fFin + "T23:59:59");
+            
+            return coincideTexto && coincideFecha;
         });
 
-        const ordenes = filtrarPorFecha(ordenesRaw);
-        const contabilidad = filtrarPorFecha(contabilidadRaw);
-
-        switch (tipo) {
-            case "OPERATIVO": renderOperativo(ordenes); break;
-            case "FINANCIERO": renderFinanciero(contabilidad, ordenes); break;
-            case "PRODUCTIVIDAD": renderProductividad(ordenes); break;
-            case "HISTORIAL": renderHistorial(vehiculosRaw, ordenes); break;
-        }
+        actualizarUI(filtrados);
     };
 
-    // --- RENDERIZADORES ESPECÍFICOS ---
-
-    const renderOperativo = (data) => {
-        const kpi = document.getElementById("kpiContainer");
-        const totalVenta = data.reduce((acc, o) => acc + (o.costos_totales?.total_general || 0), 0);
-        
-        kpi.innerHTML = `
-            ${kpiCard("Misiones", data.length, "fa-tasks", "cyan")}
-            ${kpiCard("Venta Bruta", `$${totalVenta.toLocaleString()}`, "fa-wallet", "emerald")}
-            ${kpiCard("Pendientes", data.filter(o => o.estado !== 'LISTO').length, "fa-clock", "orange")}
-            ${kpiCard("Ticket Prom.", `$${Math.round(totalVenta / (data.length || 1)).toLocaleString()}`, "fa-receipt", "indigo")}
-        `;
-
-        document.getElementById("reportContent").innerHTML = `
-            <table class="w-full text-left">
-                <thead class="bg-white/5 orbitron text-[9px] text-slate-500 uppercase">
-                    <tr><th class="p-8">OT ID</th><th>Unidad</th><th>Cliente</th><th>Total</th><th>Status</th></tr>
-                </thead>
-                <tbody class="divide-y divide-white/5">
-                    ${data.map(o => `
-                        <tr class="hover:bg-white/[0.02]">
-                            <td class="p-8 orbitron text-[10px]">#${o.id.slice(-6)}</td>
-                            <td class="font-black">${o.placa}</td>
-                            <td class="text-xs text-slate-400">${o.cliente}</td>
-                            <td class="orbitron text-cyan-400">$${(o.costos_totales?.total_general || 0).toLocaleString()}</td>
-                            <td><span class="text-[8px] border border-white/10 px-3 py-1 rounded-full">${o.estado}</span></td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>`;
+    const actualizarUI = (data) => {
+        renderKPIs(data);
+        renderTabla(data);
     };
 
-    const renderFinanciero = (contabilidad, ordenes) => {
-        const ingresos = contabilidad.reduce((acc, c) => acc + (Number(c.monto) || 0), 0);
-        // Supongamos que los gastos son registros de contabilidad con tipo "EGRESO"
-        const egresos = contabilidad.filter(c => c.tipo === "EGRESO").reduce((acc, c) => acc + (Number(c.monto) || 0), 0);
-        const utilidad = ingresos - egresos;
+    const renderKPIs = (data) => {
+        const kpiGrid = document.getElementById("kpiContainer");
+        const totalRev = data.reduce((acc, o) => acc + (Number(o.costos_totales?.total_general || o.total || 0)), 0);
+        const ticket = data.length > 0 ? totalRev / data.length : 0;
+        const pendientes = data.filter(o => (o.costos_totales?.saldo_pendiente || 0) > 0).length;
 
-        const kpi = document.getElementById("kpiContainer");
-        kpi.innerHTML = `
-            ${kpiCard("Ingresos Reales", `$${ingresos.toLocaleString()}`, "fa-cash-register", "emerald")}
-            ${kpiCard("Egresos/Compras", `$${egresos.toLocaleString()}`, "fa-shopping-cart", "red")}
-            ${kpiCard("Utilidad Neta", `$${utilidad.toLocaleString()}`, "fa-balance-scale", "cyan")}
-            ${kpiCard("Margen Bruto", `${Math.round((utilidad / (ingresos || 1)) * 100)}%`, "fa-percent", "orange")}
-        `;
-
-        document.getElementById("reportContent").innerHTML = `
-            <div class="p-12">
-                <h3 class="orbitron text-xl mb-8 italic">Balance de Caja (P&G Simplificado)</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
-                    <div class="bg-black/40 p-10 rounded-[2rem] border border-emerald-500/20">
-                        <p class="orbitron text-xs text-emerald-500 mb-4">INGRESOS DETALLADOS</p>
-                        ${contabilidad.filter(c => c.monto > 0).slice(0, 5).map(c => `
-                            <div class="flex justify-between py-2 border-b border-white/5 text-[10px]">
-                                <span>${c.concepto || 'Ingreso OT'}</span>
-                                <span class="font-black text-emerald-400">+$${Number(c.monto).toLocaleString()}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div class="bg-black/40 p-10 rounded-[2rem] border border-red-500/20">
-                        <p class="orbitron text-xs text-red-500 mb-4">GASTOS OPERATIVOS</p>
-                        <p class="text-[10px] text-slate-500 italic">No se detectan egresos en este periodo.</p>
-                    </div>
-                </div>
+        kpiGrid.innerHTML = `
+            <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 border-l-4 border-l-cyan-500">
+                <p class="orbitron text-[8px] text-slate-500 uppercase font-black mb-1">Volumen Total</p>
+                <h3 class="orbitron text-2xl font-black italic">$ ${totalRev.toLocaleString("es-CO")}</h3>
+            </div>
+            <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 border-l-4 border-l-emerald-500">
+                <p class="orbitron text-[8px] text-slate-500 uppercase font-black mb-1">Ticket Promedio</p>
+                <h3 class="orbitron text-2xl font-black italic">$ ${Math.round(ticket).toLocaleString("es-CO")}</h3>
+            </div>
+            <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 border-l-4 border-l-orange-500">
+                <p class="orbitron text-[8px] text-slate-500 uppercase font-black mb-1">Misiones</p>
+                <h3 class="orbitron text-2xl font-black italic">${data.length}</h3>
+            </div>
+            <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 border-l-4 border-l-red-500">
+                <p class="orbitron text-[8px] text-slate-500 uppercase font-black mb-1">Saldos CxC</p>
+                <h3 class="orbitron text-2xl font-black italic">${pendientes} Pend.</h3>
             </div>
         `;
     };
 
-    // --- HELPER UI ---
-    const kpiCard = (tit, val, icon, col) => `
-        <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden group">
-            <div class="absolute right-0 top-0 p-6 opacity-5 group-hover:scale-110 transition-transform"><i class="fas ${icon} text-5xl"></i></div>
-            <p class="orbitron text-[8px] text-${col}-500 mb-2 font-black uppercase tracking-widest">${tit}</p>
-            <h2 class="orbitron text-3xl font-black text-white italic tracking-tighter">${val}</h2>
-        </div>
-    `;
+    const renderTabla = (data) => {
+        const header = document.getElementById("headReporte");
+        const body = document.getElementById("bodyReportes");
+
+        if (vistaActual === 'FINANZAS') {
+            header.innerHTML = `
+                <tr class="bg-white/[0.02] orbitron text-[9px] text-slate-500 uppercase tracking-widest">
+                    <th class="p-8">Fecha</th><th class="p-8">Referencia</th>
+                    <th class="p-8">Total</th><th class="p-8">Anticipos</th><th class="p-8 text-right">Saldo Pendiente</th>
+                </tr>`;
+            body.innerHTML = data.map(o => `
+                <tr class="hover:bg-cyan-500/5 transition-all italic font-bold">
+                    <td class="p-8 text-slate-400 text-xs">${o.creadoEn?.toDate ? o.creadoEn.toDate().toLocaleDateString() : 'N/A'}</td>
+                    <td class="p-8 orbitron text-[10px]">${o.placa}</td>
+                    <td class="p-8">$ ${(o.costos_totales?.total_general || 0).toLocaleString()}</td>
+                    <td class="p-8 text-emerald-400">$ ${(o.finanzas?.anticipo_cliente || 0).toLocaleString()}</td>
+                    <td class="p-8 text-right ${o.costos_totales?.saldo_pendiente > 0 ? 'text-red-500' : 'text-slate-500'}">$ ${(o.costos_totales?.saldo_pendiente || 0).toLocaleString()}</td>
+                </tr>`).join("");
+        } else if (vistaActual === 'STAFF') {
+            // Lógica de agrupación por técnico
+            const staff = {};
+            data.forEach(o => {
+                const tec = o.tecnico || "NO ASIGNADO";
+                if(!staff[tec]) staff[tec] = { misiones: 0, total: 0 };
+                staff[tec].misiones++;
+                staff[tec].total += Number(o.total || o.costos_totales?.total_general || 0);
+            });
+            header.innerHTML = `<tr class="bg-white/[0.02] orbitron text-[9px] text-slate-500 uppercase tracking-widest"><th class="p-8">Técnico / Operador</th><th class="p-8 text-center">Misiones</th><th class="p-8 text-right">Producción Bruta</th></tr>`;
+            body.innerHTML = Object.keys(staff).map(s => `
+                <tr class="hover:bg-orange-500/5 transition-all italic font-bold">
+                    <td class="p-8 orbitron text-cyan-400 font-black">${s}</td>
+                    <td class="p-8 text-center">${staff[s].misiones}</td>
+                    <td class="p-8 text-right">$ ${staff[s].total.toLocaleString()}</td>
+                </tr>`).join("");
+        } else {
+            // VISTA GENERAL (POR DEFECTO)
+            header.innerHTML = `<tr class="bg-white/[0.02] orbitron text-[9px] text-slate-500 uppercase tracking-widest"><th class="p-8">Fecha</th><th class="p-8">Placa</th><th class="p-8">Cliente</th><th class="p-8 text-right">Total</th></tr>`;
+            body.innerHTML = data.map(o => `
+                <tr class="hover:bg-white/5 transition-all italic font-bold">
+                    <td class="p-8 text-slate-400 text-xs">${o.creadoEn?.toDate ? o.creadoEn.toDate().toLocaleDateString() : 'N/A'}</td>
+                    <td class="p-8 orbitron text-white font-black">${o.placa}</td>
+                    <td class="p-8 text-slate-400 uppercase text-xs">${o.cliente}</td>
+                    <td class="p-8 text-right">$ ${(o.costos_totales?.total_general || o.total || 0).toLocaleString()}</td>
+                </tr>`).join("");
+        }
+    };
+
+    const exportarExcel = async () => { /* ... Lógica anterior de Excel ... */ };
 
     renderLayout();
 }
