@@ -1,16 +1,16 @@
 /**
- * reportes.js - TallerPRO360 NEXUS-X V17.5 📄
- * NÚCLEO DE AUDITORÍA Y EXTRACCIÓN DE DATOS SENSITIVOS
- * Optimizado para: GRATI-CORE, BÁSICO, PRO y ELITE
+ * reportes.js - TallerPRO360 NEXUS-X V18.0 📄
+ * NÚCLEO DE INTELIGENCIA DE NEGOCIOS (BI)
+ * Sistema de Auditoría Circular Integrado
  */
 import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
 export default async function reportesModule(container, state) {
-    // Sincronización de Identidad
-    const empresaId = state?.empresaId || localStorage.getItem("empresaId");
-    let datosCargados = [];
-    let datosFiltrados = [];
+    const empresaId = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
+    let ordenesRaw = [];
+    let contabilidadRaw = [];
+    let vehiculosRaw = [];
 
     const renderLayout = () => {
         container.innerHTML = `
@@ -20,212 +20,188 @@ export default async function reportesModule(container, state) {
                 <div class="relative">
                     <div class="absolute -left-6 top-0 h-full w-1 bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.5)]"></div>
                     <h1 class="orbitron text-5xl lg:text-6xl font-black italic tracking-tighter text-white leading-none uppercase">
-                        AUDIT <span class="text-cyan-400">CENTER</span>
+                        NEXUS <span class="text-cyan-400">BI</span>
                     </h1>
-                    <p class="text-[9px] orbitron tracking-[0.6em] text-slate-500 uppercase mt-4 italic font-bold">Protocolo de Inteligencia de Negocios & BI</p>
+                    <p class="text-[9px] orbitron tracking-[0.6em] text-slate-500 uppercase mt-4 italic font-bold">Business Intelligence & Operative Audit</p>
                 </div>
 
-                <div class="flex flex-wrap gap-4 p-4 bg-[#0d1117] rounded-[2.5rem] border border-white/10 backdrop-blur-3xl shadow-2xl">
+                <div class="flex flex-wrap gap-4 p-4 bg-[#0d1117] rounded-[2.5rem] border border-white/10 shadow-2xl">
                     <div class="flex items-center gap-3 px-6 border-r border-white/5">
-                        <i class="fas fa-calendar-day text-cyan-500 text-xs"></i>
-                        <input type="date" id="fechaInicio" class="bg-transparent border-none text-[11px] text-white focus:outline-none orbitron font-black uppercase cursor-pointer">
+                        <input type="date" id="fechaInicio" class="bg-transparent border-none text-[11px] text-white orbitron font-black focus:outline-none">
                         <span class="text-slate-700 font-black">>></span>
-                        <input type="date" id="fechaFin" class="bg-transparent border-none text-[11px] text-white focus:outline-none orbitron font-black uppercase cursor-pointer">
+                        <input type="date" id="fechaFin" class="bg-transparent border-none text-[11px] text-white orbitron font-black focus:outline-none">
                     </div>
                     <div class="flex gap-2">
-                        <button id="btnExcel" class="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20 hover:bg-emerald-500 hover:text-black transition-all flex items-center justify-center shadow-lg group">
-                            <i class="fas fa-file-excel text-lg group-hover:scale-110"></i>
+                        <button id="btnRefresh" class="w-12 h-12 rounded-xl bg-white/5 hover:bg-cyan-500/20 text-cyan-400 border border-white/5 transition-all">
+                            <i class="fas fa-sync-alt"></i>
                         </button>
-                        <button id="btnPDF" class="w-14 h-14 bg-red-500/10 text-red-400 rounded-2xl border border-red-500/20 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center shadow-lg group">
-                            <i class="fas fa-file-pdf text-lg group-hover:scale-110"></i>
+                        <button id="btnExportExcel" class="px-6 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20 hover:bg-emerald-500 hover:text-black transition-all orbitron text-[10px] font-black uppercase tracking-widest">
+                            <i class="fas fa-file-excel mr-2"></i> Exportar
                         </button>
                     </div>
                 </div>
             </header>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                <div class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 relative overflow-hidden group">
-                    <div class="absolute right-0 top-0 p-6 opacity-5 group-hover:scale-110 transition-transform"><i class="fas fa-wallet text-5xl"></i></div>
-                    <p class="orbitron text-[9px] text-cyan-500 mb-2 font-black uppercase tracking-widest italic">Recaudo Bruto Operativo</p>
-                    <h2 id="valorFiltrado" class="orbitron text-4xl font-black text-white italic tracking-tighter">$ 0</h2>
-                </div>
-                <div class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 relative overflow-hidden group">
-                    <div class="absolute right-0 top-0 p-6 opacity-5 group-hover:scale-110 transition-transform"><i class="fas fa-microchip text-5xl"></i></div>
-                    <p class="orbitron text-[9px] text-orange-500 mb-2 font-black uppercase tracking-widest italic">Unidades Procesadas</p>
-                    <h2 id="totalMisiones" class="orbitron text-4xl font-black text-white italic">0</h2>
-                </div>
-                <div class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 relative overflow-hidden group">
-                    <div class="absolute right-0 top-0 p-6 opacity-5 group-hover:scale-110 transition-transform"><i class="fas fa-chart-line text-5xl"></i></div>
-                    <p class="orbitron text-[9px] text-emerald-500 mb-2 font-black uppercase tracking-widest italic">Eficiencia de Ticket</p>
-                    <h2 id="ticketPromedio" class="orbitron text-4xl font-black text-white italic tracking-tighter">$ 0</h2>
-                </div>
+            <div class="flex flex-wrap gap-4 mb-12">
+                <button class="report-tab active px-8 py-4 rounded-2xl orbitron text-[10px] font-black border border-white/10 transition-all uppercase tracking-widest" data-type="OPERATIVO">
+                    <i class="fas fa-tools mr-2"></i> Operaciones
+                </button>
+                <button class="report-tab px-8 py-4 rounded-2xl orbitron text-[10px] font-black border border-white/10 transition-all uppercase tracking-widest" data-type="FINANCIERO">
+                    <i class="fas fa-chart-pie mr-2"></i> P&G / Balances
+                </button>
+                <button class="report-tab px-8 py-4 rounded-2xl orbitron text-[10px] font-black border border-white/10 transition-all uppercase tracking-widest" data-type="PRODUCTIVIDAD">
+                    <i class="fas fa-user-clock mr-2"></i> Staff / KPIs
+                </button>
+                <button class="report-tab px-8 py-4 rounded-2xl orbitron text-[10px] font-black border border-white/10 transition-all uppercase tracking-widest" data-type="HISTORIAL">
+                    <i class="fas fa-history mr-2"></i> Mantenimientos
+                </button>
             </div>
 
-            <div class="bg-[#0d1117] p-6 rounded-[2.5rem] border border-white/5 mb-10 flex items-center gap-6 focus-within:border-cyan-500/50 transition-all shadow-inner">
-                <i class="fas fa-satellite-dish text-cyan-500 text-xl animate-pulse"></i>
-                <input id="filtroTabla" placeholder="ESCANEAR PLACA, CLIENTE O TÉCNICO..." 
-                       class="bg-transparent border-none outline-none text-sm w-full text-white placeholder:text-slate-800 orbitron font-black tracking-[0.2em] uppercase">
-            </div>
+            <div id="kpiContainer" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12"></div>
 
-            <div class="bg-[#0d1117]/80 backdrop-blur-3xl rounded-[3.5rem] border border-white/5 overflow-x-auto shadow-2xl">
-                <table class="w-full text-left border-collapse min-w-[800px]">
-                    <thead>
-                        <tr class="bg-white/[0.02] orbitron text-[9px] text-slate-500 uppercase tracking-[0.3em]">
-                            <th class="p-10 border-b border-white/5 italic">Time Stamp</th>
-                            <th class="p-10 border-b border-white/5 italic">Mission ID</th>
-                            <th class="p-10 border-b border-white/5 italic">Unidad / Cliente</th>
-                            <th class="p-10 border-b border-white/5 text-right italic">Inversión</th>
-                            <th class="p-10 border-b border-white/5 text-center italic">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bodyReportes" class="divide-y divide-white/5 font-bold">
-                        </tbody>
-                </table>
-                <div id="vacio-reportes" class="hidden py-40 text-center opacity-20 group">
-                    <i class="fas fa-ghost text-6xl mb-4 group-hover:scale-110 transition-transform duration-1000"></i>
-                    <p class="orbitron text-[10px] uppercase tracking-[0.5em]">No se han detectado registros en este cuadrante</p>
+            <div id="reportContent" class="bg-[#0d1117] rounded-[3.5rem] border border-white/5 overflow-hidden shadow-2xl min-h-[400px]">
+                <div class="p-20 text-center opacity-30 animate-pulse">
+                    <i class="fas fa-satellite text-6xl mb-6"></i>
+                    <p class="orbitron text-xs">Sincronizando con satélites Nexus...</p>
                 </div>
             </div>
         </div>`;
 
-        // Event Listeners
-        document.getElementById("filtroTabla").addEventListener("input", ejecutarFiltroCombinado);
-        document.getElementById("fechaInicio").addEventListener("change", ejecutarFiltroCombinado);
-        document.getElementById("fechaFin").addEventListener("change", ejecutarFiltroCombinado);
-        document.getElementById("btnExcel").onclick = exportarExcel;
-        document.getElementById("btnPDF").onclick = () => window.print();
-
-        cargarHistorial();
+        vincularEventos();
+        inicializarData();
     };
 
-    const cargarHistorial = async () => {
-        try {
-            // Consulta Universal compatible con todos los planes
-            const q = query(
-                collection(db, "ordenes"), 
-                where("empresaId", "==", empresaId),
-                orderBy("creadoEn", "desc")
-            );
-            
-            const snap = await getDocs(q);
-            datosCargados = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            datosFiltrados = [...datosCargados];
-            
-            ejecutarFiltroCombinado();
-        } catch (e) { 
-            console.error("🚨 Error Audit Center:", e);
-            const body = document.getElementById("bodyReportes");
-            if(body) body.innerHTML = `<tr class="text-red-500"><td colspan="5" class="p-10 text-center orbitron text-xs">FALLO DE PROTOCOLO: REVISE PERMISOS DE EMPRESA</td></tr>`;
-        }
-    };
-
-    function ejecutarFiltroCombinado() {
-        const busqueda = document.getElementById("filtroTabla").value.toLowerCase();
-        const fInicio = document.getElementById("fechaInicio").value;
-        const fFin = document.getElementById("fechaFin").value;
-
-        datosFiltrados = datosCargados.filter(o => {
-            const fechaO = o.creadoEn?.toDate ? o.creadoEn.toDate() : null;
-            const coincideTexto = (o.placa?.toLowerCase().includes(busqueda)) || 
-                                 (o.cliente?.toLowerCase().includes(busqueda)) ||
-                                 (o.tecnico?.toLowerCase().includes(busqueda));
-            
-            let coincideFecha = true;
-            if (fInicio && fechaO) {
-                const dInicio = new Date(fInicio + "T00:00:00");
-                coincideFecha = fechaO >= dInicio;
-            }
-            if (fFin && fechaO && coincideFecha) {
-                const dFin = new Date(fFin + "T23:59:59");
-                coincideFecha = fechaO <= dFin;
-            }
-
-            return coincideTexto && coincideFecha;
+    const vincularEventos = () => {
+        document.querySelectorAll(".report-tab").forEach(tab => {
+            tab.onclick = (e) => {
+                document.querySelectorAll(".report-tab").forEach(t => t.classList.remove("active", "bg-cyan-500", "text-black"));
+                tab.classList.add("active", "bg-cyan-500", "text-black");
+                procesarReporte(tab.dataset.type);
+            };
         });
 
-        renderTabla(datosFiltrados);
-        actualizarKPIs(datosFiltrados);
-    }
-
-    const renderTabla = (data) => {
-        const body = document.getElementById("bodyReportes");
-        const empty = document.getElementById("vacio-reportes");
-        if(!body) return;
-
-        if (data.length === 0) {
-            body.innerHTML = "";
-            empty.classList.remove("hidden");
-            return;
-        }
-
-        empty.classList.add("hidden");
-        body.innerHTML = data.map(o => {
-            const valorTotal = Number(o.total || 0);
-            return `
-            <tr class="hover:bg-white/[0.03] transition-all duration-500 group border-l-2 border-transparent hover:border-cyan-500">
-                <td class="p-10">
-                    <p class="text-slate-500 orbitron text-[10px] font-black">${o.creadoEn?.toDate ? o.creadoEn.toDate().toLocaleDateString() : '00/00/00'}</p>
-                    <p class="text-[8px] text-slate-700 orbitron font-bold mt-1">${o.creadoEn?.toDate ? o.creadoEn.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}</p>
-                </td>
-                <td class="p-10">
-                    <span class="px-4 py-2 bg-black rounded-lg text-white font-black orbitron text-[9px] border border-white/5 italic">
-                        #${o.id.substring(0, 6).toUpperCase()}
-                    </span>
-                </td>
-                <td class="p-10">
-                    <p class="font-black text-white orbitron text-sm tracking-tighter uppercase group-hover:text-cyan-400 transition-colors">${o.placa || 'N/A'}</p>
-                    <p class="text-[9px] text-slate-500 font-black orbitron uppercase italic mt-1 tracking-widest">${o.cliente || 'CLIENTE FINAL'}</p>
-                </td>
-                <td class="p-10 text-right">
-                    <p class="orbitron text-xl font-black text-white italic tracking-tighter">$ ${valorTotal.toLocaleString("es-CO")}</p>
-                </td>
-                <td class="p-10 text-center">
-                    <span class="px-5 py-2 ${o.estado === 'FINALIZADO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-orange-500/10 text-orange-400 border-orange-500/20'} border rounded-full text-[8px] font-black orbitron uppercase italic tracking-widest">
-                        ${o.estado || 'PROCESANDO'}
-                    </span>
-                </td>
-            </tr>`;
-        }).join("");
+        document.getElementById("fechaInicio").onchange = () => procesarReporte(document.querySelector(".report-tab.active").dataset.type);
+        document.getElementById("fechaFin").onchange = () => procesarReporte(document.querySelector(".report-tab.active").dataset.type);
+        document.getElementById("btnRefresh").onclick = inicializarData;
     };
 
-    const actualizarKPIs = (data) => {
-        const total = data.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
-        const ticket = data.length > 0 ? (total / data.length) : 0;
-        
-        const elValor = document.getElementById("valorFiltrado");
-        const elMisiones = document.getElementById("totalMisiones");
-        const elTicket = document.getElementById("ticketPromedio");
-
-        if(elValor) elValor.innerText = `$ ${total.toLocaleString("es-CO")}`;
-        if(elMisiones) elMisiones.innerText = data.length;
-        if(elTicket) elTicket.innerText = `$ ${Math.round(ticket).toLocaleString("es-CO")}`;
-    };
-
-    const exportarExcel = async () => {
-        const btn = document.getElementById("btnExcel");
-        btn.innerHTML = `<i class="fas fa-spinner animate-spin"></i>`;
-        
+    const inicializarData = async () => {
         try {
-            // Importación dinámica para optimizar carga
-            const XLSX = await import("https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js");
-            const ws = XLSX.utils.json_to_sheet(datosFiltrados.map(o => ({
-                ID_MISION: o.id.toUpperCase(),
-                TIMESTAMP: o.creadoEn?.toDate ? o.creadoEn.toDate().toLocaleString() : 'N/A',
-                IDENTIDAD: o.placa || 'N/A',
-                OPERADOR: o.tecnico || 'N/A',
-                INVERSION: o.total || 0,
-                ESTADO_ACTUAL: o.estado || 'RECIBIDO'
-            })));
-            
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "AUDITORIA");
-            XLSX.writeFile(wb, `Nexus_Audit_Export_${empresaId}.xlsx`);
-        } catch (err) {
-            console.error("Fallo de exportación:", err);
-        } finally {
-            btn.innerHTML = `<i class="fas fa-file-excel text-lg"></i>`;
+            // Carga Triple (Circular)
+            const [snapOrd, snapCont, snapVeh] = await Promise.all([
+                getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId))),
+                getDocs(query(collection(db, "contabilidad"), where("empresaId", "==", empresaId))),
+                getDocs(query(collection(db, "vehiculos"), where("empresaId", "==", empresaId)))
+            ]);
+
+            ordenesRaw = snapOrd.docs.map(d => ({ id: d.id, ...d.data() }));
+            contabilidadRaw = snapCont.docs.map(d => ({ id: d.id, ...d.data() }));
+            vehiculosRaw = snapVeh.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            procesarReporte("OPERATIVO"); // Default
+        } catch (e) {
+            console.error("DATA_ERR:", e);
         }
     };
+
+    const procesarReporte = (tipo) => {
+        const fI = document.getElementById("fechaInicio").value;
+        const fF = document.getElementById("fechaFin").value;
+
+        // Filtrado por fecha base
+        const filtrarPorFecha = (arr) => arr.filter(item => {
+            if (!fI || !fF) return true;
+            const fecha = item.updatedAt?.toDate() || item.creadoEn?.toDate() || new Date();
+            return fecha >= new Date(fI + "T00:00:00") && fecha <= new Date(fF + "T23:59:59");
+        });
+
+        const ordenes = filtrarPorFecha(ordenesRaw);
+        const contabilidad = filtrarPorFecha(contabilidadRaw);
+
+        switch (tipo) {
+            case "OPERATIVO": renderOperativo(ordenes); break;
+            case "FINANCIERO": renderFinanciero(contabilidad, ordenes); break;
+            case "PRODUCTIVIDAD": renderProductividad(ordenes); break;
+            case "HISTORIAL": renderHistorial(vehiculosRaw, ordenes); break;
+        }
+    };
+
+    // --- RENDERIZADORES ESPECÍFICOS ---
+
+    const renderOperativo = (data) => {
+        const kpi = document.getElementById("kpiContainer");
+        const totalVenta = data.reduce((acc, o) => acc + (o.costos_totales?.total_general || 0), 0);
+        
+        kpi.innerHTML = `
+            ${kpiCard("Misiones", data.length, "fa-tasks", "cyan")}
+            ${kpiCard("Venta Bruta", `$${totalVenta.toLocaleString()}`, "fa-wallet", "emerald")}
+            ${kpiCard("Pendientes", data.filter(o => o.estado !== 'LISTO').length, "fa-clock", "orange")}
+            ${kpiCard("Ticket Prom.", `$${Math.round(totalVenta / (data.length || 1)).toLocaleString()}`, "fa-receipt", "indigo")}
+        `;
+
+        document.getElementById("reportContent").innerHTML = `
+            <table class="w-full text-left">
+                <thead class="bg-white/5 orbitron text-[9px] text-slate-500 uppercase">
+                    <tr><th class="p-8">OT ID</th><th>Unidad</th><th>Cliente</th><th>Total</th><th>Status</th></tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    ${data.map(o => `
+                        <tr class="hover:bg-white/[0.02]">
+                            <td class="p-8 orbitron text-[10px]">#${o.id.slice(-6)}</td>
+                            <td class="font-black">${o.placa}</td>
+                            <td class="text-xs text-slate-400">${o.cliente}</td>
+                            <td class="orbitron text-cyan-400">$${(o.costos_totales?.total_general || 0).toLocaleString()}</td>
+                            <td><span class="text-[8px] border border-white/10 px-3 py-1 rounded-full">${o.estado}</span></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>`;
+    };
+
+    const renderFinanciero = (contabilidad, ordenes) => {
+        const ingresos = contabilidad.reduce((acc, c) => acc + (Number(c.monto) || 0), 0);
+        // Supongamos que los gastos son registros de contabilidad con tipo "EGRESO"
+        const egresos = contabilidad.filter(c => c.tipo === "EGRESO").reduce((acc, c) => acc + (Number(c.monto) || 0), 0);
+        const utilidad = ingresos - egresos;
+
+        const kpi = document.getElementById("kpiContainer");
+        kpi.innerHTML = `
+            ${kpiCard("Ingresos Reales", `$${ingresos.toLocaleString()}`, "fa-cash-register", "emerald")}
+            ${kpiCard("Egresos/Compras", `$${egresos.toLocaleString()}`, "fa-shopping-cart", "red")}
+            ${kpiCard("Utilidad Neta", `$${utilidad.toLocaleString()}`, "fa-balance-scale", "cyan")}
+            ${kpiCard("Margen Bruto", `${Math.round((utilidad / (ingresos || 1)) * 100)}%`, "fa-percent", "orange")}
+        `;
+
+        document.getElementById("reportContent").innerHTML = `
+            <div class="p-12">
+                <h3 class="orbitron text-xl mb-8 italic">Balance de Caja (P&G Simplificado)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div class="bg-black/40 p-10 rounded-[2rem] border border-emerald-500/20">
+                        <p class="orbitron text-xs text-emerald-500 mb-4">INGRESOS DETALLADOS</p>
+                        ${contabilidad.filter(c => c.monto > 0).slice(0, 5).map(c => `
+                            <div class="flex justify-between py-2 border-b border-white/5 text-[10px]">
+                                <span>${c.concepto || 'Ingreso OT'}</span>
+                                <span class="font-black text-emerald-400">+$${Number(c.monto).toLocaleString()}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="bg-black/40 p-10 rounded-[2rem] border border-red-500/20">
+                        <p class="orbitron text-xs text-red-500 mb-4">GASTOS OPERATIVOS</p>
+                        <p class="text-[10px] text-slate-500 italic">No se detectan egresos en este periodo.</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    };
+
+    // --- HELPER UI ---
+    const kpiCard = (tit, val, icon, col) => `
+        <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden group">
+            <div class="absolute right-0 top-0 p-6 opacity-5 group-hover:scale-110 transition-transform"><i class="fas ${icon} text-5xl"></i></div>
+            <p class="orbitron text-[8px] text-${col}-500 mb-2 font-black uppercase tracking-widest">${tit}</p>
+            <h2 class="orbitron text-3xl font-black text-white italic tracking-tighter">${val}</h2>
+        </div>
+    `;
 
     renderLayout();
 }
