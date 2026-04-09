@@ -376,76 +376,93 @@ export default async function ordenes(container) {
             if(isRecording) recognition?.stop();
         };
 
-                // 🛰️ ACCIÓN: SINCRONIZACIÓN STARLINK - PROTOCOLO AUDITADO V4.1
+                // 🛰️ ACCIÓN: SINCRONIZACIÓN STARLINK - PROTOCOLO AUDITADO V4.2 (FULL RADAR SYNC)
 document.getElementById("btnSincronizar").onclick = async () => {
     const btn = document.getElementById("btnSincronizar");
     const originalText = btn.innerHTML;
     btn.innerHTML = `<i class="fas fa-sync fa-spin"></i> ENLAZANDO...`;
     
     try {
-        // 1. Limpieza y Normalización de Identificadores
+        // 1. Normalización y Seguridad de Identidad
         const placaLimpia = document.getElementById("f-placa").value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
         const idEmpresaFinal = localStorage.getItem("nexus_empresaId") || empresaId;
         
-        // 2. Extracción de Valores Financieros
-        const gastosVarios = Number(document.getElementById("f-gastos-varios").value || 0);
-        const adelantoTecnico = Number(document.getElementById("f-adelanto-tecnico").value || 0);
-        const anticipoCliente = Number(document.getElementById("f-anticipo-cliente").value || 0);
+        // 2. Captura de Metadata Técnica (Para el Radar)
+        const marca = document.getElementById("f-marca")?.value.trim().toUpperCase() || ordenActiva.marca || "GENÉRICO";
+        const linea = document.getElementById("f-linea")?.value.trim().toUpperCase() || ordenActiva.linea || "";
+        const modelo = document.getElementById("f-modelo")?.value || ordenActiva.modelo || "";
+        const kmActual = Number(document.getElementById("f-km")?.value || ordenActiva.kilometraje || 0);
 
-        // 3. Recálculo Automático de Bóveda (Protección de Saldo)
-        // Sumamos repuestos + mano de obra de la orden activa
+        // 3. Cálculos Financieros Blindados
+        const gastosVarios = Number(document.getElementById("f-gastos-varios").value || 0);
+        const anticipoCliente = Number(document.getElementById("f-anticipo-cliente").value || 0);
         const subtotalServicios = (ordenActiva.items || []).reduce((acc, item) => acc + Number(item.precio || 0), 0);
         const totalBruto = subtotalServicios + gastosVarios;
         const saldoFinal = totalBruto - anticipoCliente;
 
-        const data = {
+        // 4. ESTRUCTURA A: LA MISIÓN (ORDEN DE TRABAJO)
+        const dataOrden = {
             ...ordenActiva,
             empresaId: idEmpresaFinal,
             placa: placaLimpia,
+            marca: marca,
+            linea: linea,
             cliente: document.getElementById("f-cliente").value.trim().toUpperCase(),
             telefono: document.getElementById("f-telefono").value.trim().replace(/\s+/g, ''),
             estado: document.getElementById("f-estado").value,
             bitacora_ia: document.getElementById("ai-log-display").value,
             finanzas: {
+                ...ordenActiva.finanzas,
                 gastos_varios: gastosVarios,
-                adelanto_tecnico: adelantoTecnico,
                 anticipo_cliente: anticipoCliente,
-                impuesto_tipo: ordenActiva.finanzas?.impuesto_tipo || 'IVA_19'
             },
             costos_totales: {
                 total_servicios: subtotalServicios,
                 total_general: totalBruto,
-                saldo_pendiente: saldoFinal // Clave para pagosTaller.js
+                saldo_pendiente: saldoFinal
             },
             updatedAt: serverTimestamp()
         };
 
-        // 4. Persistencia en Bóveda Firestore
-        const docId = ordenActiva.id || `OT_${placaLimpia}_${Date.now().toString().slice(-4)}`;
-        await setDoc(doc(db, "ordenes", docId), data);
-        
-        // 5. Sincronía con Ecosistema (Hoja de Vida)
-        if (typeof actualizarEcosistemaNexus === "function") {
-            await actualizarEcosistemaNexus(data);
-        }
+        // 5. ESTRUCTURA B: EL ACTIVO (PARA VEHICULOS.JS)
+        const dataVehiculo = {
+            placa: placaLimpia,
+            empresaId: idEmpresaFinal,
+            marca: marca,
+            linea: linea,
+            modelo: modelo,
+            kilometraje: kmActual,
+            clienteNombre: dataOrden.cliente,
+            creadoEn: ordenActiva.creadoEn || serverTimestamp(),
+            ultimaActualizacion: serverTimestamp(),
+            status: "OPERATIVO"
+        };
 
-        hablar(`Sincronía exitosa. Misión ${placaLimpia} asegurada.`);
+        // --- 🚀 EJECUCIÓN DE SINCRONÍA DUAL ---
+        
+        // A. Guardar Orden de Trabajo
+        const docId = ordenActiva.id || `OT_${placaLimpia}_${Date.now().toString().slice(-4)}`;
+        await setDoc(doc(db, "ordenes", docId), dataOrden);
+
+        // B. Inyectar/Actualizar en Radar de Flota (Clave para que aparezca en vehiculos.js)
+        // Usamos setDoc con ID = Placa para evitar duplicidad
+        await setDoc(doc(db, "vehiculos", placaLimpia), dataVehiculo, { merge: true });
+
+        hablar(`Sincronía exitosa. Activo ${placaLimpia} visible en radar.`);
 
         Swal.fire({ 
             icon: 'success', 
             title: 'NEXUS_SYNC_OK', 
-            text: `Datos de ${placaLimpia} inyectados correctamente.`,
+            text: `Orden y Activo ${placaLimpia} sincronizados.`,
             background: '#0d1117', color: '#fff', timer: 1500, showConfirmButton: false
         });
         
-        // Cerrar terminal si es necesario
-        const terminal = document.getElementById("nexus-terminal");
-        if(terminal) terminal.classList.add("hidden");
+        btn.innerHTML = originalText;
 
     } catch (err) {
-        console.error("⚠️ Fallo Crítico en Sincronía:", err);
+        console.error("⚠️ Fallo Crítico:", err);
         btn.innerHTML = originalText;
-        Swal.fire('ERROR DE NODO', 'No se pudo establecer conexión con el satélite.', 'error');
+        Swal.fire('ERROR DE NODO', 'Fallo de enlace satelital.', 'error');
     }
 };
 
