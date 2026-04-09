@@ -1,5 +1,5 @@
 /**
- * vehiculos.js - TallerPRO360 NEXUS-X V17.3 🏎️
+ * vehiculos.js - TallerPRO360 NEXUS-X V17.4 🏎️
  * NÚCLEO DE INTELIGENCIA DE ACTIVOS Y RADAR DE FLOTA
  * @author William Jeffry Urquijo Cubillos & Gemini AI
  */
@@ -10,9 +10,10 @@ import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 
 export default async function vehiculosModule(container, state) {
+    // 🛡️ Blindaje de Identidad de Empresa
     const empresaId = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
     let unsubscribe = null;
-    let todosLosVehiculos = []; // CORRECCIÓN: Variable normalizada
+    let todosLosVehiculos = [];
 
     const renderLayout = () => {
         container.innerHTML = `
@@ -62,9 +63,14 @@ export default async function vehiculosModule(container, state) {
     };
 
     function escucharVehiculos() {
+        // 🛡️ Limpieza de procesos previos para evitar fugas de memoria
         if (unsubscribe) unsubscribe();
         
-        // APUNTANDO A LA RAÍZ: Sincronía con Ordenes y Pagos
+        if (!empresaId) {
+            console.error("NEXUS_ERR: Identidad de empresa no detectada.");
+            return;
+        }
+
         const q = query(
             collection(db, "vehiculos"),
             where("empresaId", "==", empresaId),
@@ -75,7 +81,9 @@ export default async function vehiculosModule(container, state) {
             todosLosVehiculos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             renderCards(todosLosVehiculos);
             document.getElementById("countVehiculos").innerText = todosLosVehiculos.length;
-        }, (error) => console.error("RADAR_JAMMED:", error));
+        }, (error) => {
+            console.error("RADAR_JAMMED:", error);
+        });
     }
 
     function renderCards(data) {
@@ -178,8 +186,10 @@ export default async function vehiculosModule(container, state) {
             showCancelButton: true,
             confirmButtonText: 'INCORPORAR A FLOTA',
             preConfirm: () => {
-                const placa = document.getElementById('v-pla').value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+                const placaRaw = document.getElementById('v-pla').value;
+                const placa = placaRaw.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
                 if(!placa) return window.Swal.showValidationMessage("Placa requerida para rastreo");
+                
                 return {
                     placa: placa,
                     modelo: document.getElementById('v-mod').value,
@@ -196,6 +206,7 @@ export default async function vehiculosModule(container, state) {
 
         if(form) { 
             try {
+                // 🛠️ USAMOS LA PLACA COMO ID DEL DOCUMENTO PARA EVITAR DUPLICADOS
                 await setDoc(doc(db, "vehiculos", form.placa), form);
                 hablar(`Unidad ${form.placa} asimilada por Nexus X.`);
                 window.Swal.fire({ icon: 'success', title: 'SINCRO COMPLETADA', background: '#010409', color: '#fff' });
@@ -205,6 +216,11 @@ export default async function vehiculosModule(container, state) {
             }
         }
     }
+
+    // 🛡️ Limpieza al destruir el módulo (evita errores de navegación)
+    state.cleanup = () => {
+        if (unsubscribe) unsubscribe();
+    };
 
     renderLayout();
 }
