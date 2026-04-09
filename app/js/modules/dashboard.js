@@ -232,3 +232,4 @@ function showSystemCrash(container, message) {
         <button onclick="location.reload()" class="mt-12 px-12 py-5 bg-white text-black orbitron text-[10px] font-black rounded-full uppercase">REBOOT SYSTEM</button>
     </div>`;
 }
+
