@@ -131,83 +131,124 @@ export default async function pagosTaller(container, state) {
     }
   }
 
-  async function procesarPago(metodo) {
+    async function procesarPago(metodo) {
     const monto = Number(document.getElementById("montoIn").value);
-    if(!ordenActiva || monto <= 0) return Swal.fire('ERROR', 'Seleccione una misión válida y monto mayor a cero.', 'error');
+    
+    // 1. VALIDACIÓN DE SEGURIDAD (Cero Informalidad)
+    if(!ordenActiva || monto <= 0) {
+        hablar("Error de protocolo. Localice la placa antes de registrar un movimiento.");
+        return Swal.fire('ERROR DE NODO', 'No hay una misión activa vinculada.', 'error');
+    }
 
     try {
+      Swal.fire({ title: 'Sincronizando Bóveda Aegis...', didOpen: () => Swal.showLoading(), background: '#010409', color: '#fff' });
+
       if(metodo === 'BOLD') {
-          const empSnap = await getDoc(doc(db, "empresas", empresaId));
-          const boldKey = empSnap.data()?.bold_api_key || localStorage.getItem("nexus_boldKey");
+        // --- LÓGICA BOLD REAL ---
+        const empSnap = await getDoc(doc(db, "empresas", empresaId));
+        const boldKey = empSnap.data()?.bold_api_key || localStorage.getItem("nexus_boldKey");
 
-          if(!boldKey) {
-             hablar("Error. El taller no tiene configurada la llave de Bold.");
-             return Swal.fire('FALLO DE CONFIGURACIÓN', 'Este taller no tiene vinculada su API KEY de Bold.', 'warning');
-          }
+        if(!boldKey) throw new Error("API KEY de Bold no configurada en este taller.");
 
-          const bold = new window.BoldCheckout({
-              orderId: `NXS-${ordenActiva.placa}-${Date.now().toString().slice(-4)}`,
-              amount: monto,
-              currency: 'COP',
-              description: `TallerPRO360 - Liquidación ${ordenActiva.placa}`,
-              apiKey: boldKey,
-              redirectionUrl: 'https://tallerpro360.vercel.app/success'
-          });
-          bold.open();
+        const bold = new window.BoldCheckout({
+          orderId: `NXS-${ordenActiva.placa}-${Date.now().toString().slice(-4)}`,
+          amount: monto,
+          currency: 'COP',
+          description: `TallerPRO360 - Abono Placa ${ordenActiva.placa}`,
+          apiKey: boldKey,
+          redirectionUrl: 'https://tallerpro360.vercel.app/success'
+        });
+        
+        hablar("Desplegando pasarela Bold. El abono se registrará al confirmar la transacción.");
+        bold.open();
+        
       } else {
-          // --- CIERRE EFECTIVO REAL ---
-          Swal.fire({ title: 'Sincronizando Bóveda...', didOpen: () => Swal.showLoading(), background: '#010409', color: '#fff' });
+        // --- CIERRE EFECTIVO / ANTICIPO (REGISTRO DETALLADO) ---
+        const ordenRef = doc(db, "ordenes", ordenActiva.id);
+        const vehiculoRef = doc(db, "vehiculos", ordenActiva.placa);
+        const saldoActual = Number(ordenActiva.costos_totales?.saldo_pendiente || 0);
+        const nuevoSaldo = saldoActual - monto;
 
-          const ordenRef = doc(db, "ordenes", ordenActiva.id);
-          const vehiculoRef = doc(db, "vehiculos", ordenActiva.placa);
-          const nuevoSaldo = (ordenActiva.costos_totales?.saldo_pendiente || 0) - monto;
+        // A. Actualizamos la Orden (Para que la factura final reste estos valores)
+        await updateDoc(ordenRef, {
+            "finanzas.anticipo_cliente": increment(monto),
+            "costos_totales.saldo_pendiente": increment(-monto),
+            "estado": (nuevoSaldo <= 0) ? "ENTREGADO" : ordenActiva.estado,
+            "pagoStatus": (nuevoSaldo <= 0) ? "PAGADO" : "ABONADO",
+            "updatedAt": serverTimestamp()
+        });
 
-          // 1. Actualizar Orden y Dashboard
-          await updateDoc(ordenRef, {
-              "finanzas.anticipo_cliente": increment(monto),
-              "costos_totales.saldo_pendiente": increment(-monto),
-              "estado": (nuevoSaldo <= 0) ? "ENTREGADO" : ordenActiva.estado,
-              "pagoStatus": (nuevoSaldo <= 0) ? "PAGADO" : "ABONADO",
-              updatedAt: serverTimestamp()
-          });
+        // B. Registro en Libro Mayor (Para el Dashboard del Taller)
+        await addDoc(collection(db, "contabilidad"), {
+            empresaId,
+            referencia: ordenActiva.placa,
+            monto: monto,
+            tipo: 'INGRESO',
+            metodo: 'EFECTIVO',
+            concepto: `ABONO/LIQUIDACIÓN - Orden: ${ordenActiva.id.slice(-5)}`,
+            createdAt: serverTimestamp()
+        });
 
-          // 2. Libro Contable Aegis
-          await addDoc(collection(db, "contabilidad"), {
-              empresaId, referencia: ordenActiva.placa, monto,
-              metodo: 'EFECTIVO', tipo: 'INGRESO', concepto: `Liquidación Orden ${ordenActiva.placa}`,
-              createdAt: serverTimestamp()
-          });
+        // C. Registro en Hoja de Vida (La prueba para el cliente)
+        await addDoc(collection(vehiculoRef, "historial_servicios"), {
+            fecha: serverTimestamp(),
+            tipo_evento: "PAGO_RECIBIDO",
+            monto: monto,
+            descripcion: `Abono registrado en efectivo. Saldo restante: $${nuevoSaldo.toLocaleString()}`,
+            ordenId: ordenActiva.id
+        });
 
-          // 3. Persistencia Hoja de Vida
-          await addDoc(collection(vehiculoRef, "historial_servicios"), {
-              fecha: serverTimestamp(), tipo_evento: "PAGO_REGISTRADO",
-              monto, descripcion: `Pago recibido en terminal PAY_NEXUS`,
-              ordenId: ordenActiva.id
-          });
+        hablar("Sincronización exitosa. El abono ha sido inyectado en la hoja de vida.");
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'PAGO REGISTRADO',
+            text: `Se abonaron $${monto.toLocaleString()} a la placa ${ordenActiva.placa}. Confianza total Nexus.`,
+            background: '#0d1117', color: '#fff', confirmButtonColor: '#00f2ff'
+        });
 
-          hablar("Cierre exitoso. Hoja de vida y Dashboard actualizados.");
-          Swal.fire('EXITO', 'Misión liquidada y registrada en el ecosistema TallerPRO360', 'success');
-          buscarMision();
+        buscarMision(); // Refrescar UI para ver el nuevo saldo
       }
-    } catch (e) {
-      console.error(e);
-      Swal.fire('ERROR', 'Fallo crítico en la sincronización del nodo.', 'error');
+    } catch (err) {
+      console.error(err);
+      Swal.fire({ icon: 'error', title: 'FALLO DE NODO', text: err.message, background: '#0d1117', color: '#fff' });
     }
   }
 
-  async function enviarLinkPago() {
-    if(!ordenActiva) return;
+    async function enviarLinkPago() {
+    if(!ordenActiva) {
+        return Swal.fire('NEXUS-X', 'Primero localice la placa del vehículo.', 'warning');
+    }
+
     const monto = document.getElementById("montoIn").value;
-    // Link real del negocio (puedes parametrizarlo luego)
-    const linkPago = `https://bold.co/pay/tallerpro360`; 
-    const mensaje = `*TallerPRO360 - INFORME DE PAGO*%0A%0A` +
-                    `Hola *${ordenActiva.cliente}*, el saldo de tu vehículo *${ordenActiva.placa}* es de *$${Number(monto).toLocaleString()}*.%0A%0A` +
-                    `Paga aquí: ${linkPago}%0A%0A` +
-                    `_Misión gestionada por Nexus-X System_`;
     
-    window.open(`https://wa.me/57${ordenActiva.telefono}?text=${mensaje}`, '_blank');
+    // Limpieza de datos para un mensaje estético y funcional
+    const nombreCliente = (ordenActiva.cliente || "Cliente").trim();
+    const placaLimpia = (ordenActiva.placa || "").trim().toUpperCase();
+    const telefonoLimpio = (ordenActiva.telefono || "").trim().replace(/\s+/g, '');
+
+    // Link real del negocio
+    const linkPago = `https://bold.co/pay/tallerpro360`; 
+
+    const mensaje = `*TallerPRO360 - INFORME DE PAGO*%0A%0A` +
+                    `Hola *${nombreCliente}*, el saldo actual de tu vehículo *${placaLimpia}* es de *$${Number(monto).toLocaleString()}*.%0A%0A` +
+                    `✅ *Paga de forma segura aquí:*%0A${linkPago}%0A%0A` +
+                    `_Misión gestionada por Nexus-X Command Center_`;
+    
+    // Validamos que exista un teléfono antes de intentar abrir WhatsApp
+    if(!telefonoLimpio) {
+        return Swal.fire('DATOS FALTANTES', 'El cliente no tiene un número de contacto registrado.', 'error');
+    }
+
+    hablar("Abriendo canal de WhatsApp para envío de link de recaudo.");
+    window.open(`https://wa.me/57${telefonoLimpio}?text=${mensaje}`, '_blank');
   }
 
+  // --- RENDERIZADO FINAL DEL MÓDULO ---
   renderLayout();
-  if(state?.placa) buscarMision();
+  
+  // Si el estado ya trae una placa (desde otra pantalla), ejecutamos la búsqueda automática
+  if(state?.placa) {
+      setTimeout(() => buscarMision(), 500); // Pequeño delay para asegurar que el DOM esté listo
+  }
 }
