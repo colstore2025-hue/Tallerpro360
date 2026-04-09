@@ -7,7 +7,6 @@
 import { db } from "../core/firebase-config.js";
 import { collection, query, where, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// --- 🛡️ 1. CONFIGURACIÓN DE PERMISOS TÁCTICOS ---
 const PERMISOS = {
     "GRATI-CORE": { 
         limiteOrdenes: 10, 
@@ -16,13 +15,14 @@ const PERMISOS = {
     },
     "BASICO": { 
         limiteOrdenes: 50, 
+        // Se añade 'contabilidad' y 'pagos' para permitir facturación rápida
         modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'soporte'],
-        clase: "border-blue-500 text-blue-400"
+        clase: "border-blue-500 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.2)]"
     },
     "PRO": { 
         limiteOrdenes: 500, 
         modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace', 'publish', 'soporte'],
-        clase: "border-purple-500 text-purple-400"
+        clase: "border-purple-500 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
     },
     "ELITE": { 
         limiteOrdenes: Infinity, 
@@ -34,14 +34,25 @@ const PERMISOS = {
 window.restrictedAccess = (modulo) => {
     Swal.fire({
         title: `<span class="orbitron text-white">NIVEL DE ENLACE INSUFICIENTE</span>`,
-        html: `<p class="text-[11px] text-slate-400 mb-4 uppercase tracking-widest">El módulo <b class="text-cyan-400">${modulo}</b> requiere una actualización del núcleo de sistema.</p>`,
+        html: `
+            <div class="p-2">
+                <p class="text-[11px] text-slate-400 mb-4 uppercase tracking-[0.2em]">
+                    El módulo <b class="text-cyan-400">${modulo}</b> está bloqueado en su núcleo actual.
+                </p>
+                <p class="text-[9px] text-slate-500 italic">Sincronice con una licencia superior para desbloquear telemetría avanzada.</p>
+            </div>`,
         icon: 'lock',
         background: '#010409',
         color: '#fff',
-        confirmButtonText: 'UPGRADE TO ELITE',
+        confirmButtonText: 'UPGRADE SYSTEM',
         confirmButtonColor: '#06b6d4',
         showCancelButton: true,
-        cancelButtonText: 'VOLVER'
+        cancelButtonText: 'CANCELAR',
+        customClass: {
+            popup: 'border border-white/10 rounded-[2rem]',
+            confirmButton: 'orbitron font-black italic tracking-widest',
+            cancelButton: 'orbitron text-[10px]'
+        }
     }).then(r => { if(r.isConfirmed) location.hash = '#pagos'; });
 };
 
@@ -108,10 +119,10 @@ function renderInterface(container, plan, user, empresa, config) {
     ${renderBtn('Marketplace', 'fa-shop', '#marketplace', plan === 'ELITE' || plan === 'PRO')}
     ${renderBtn('Publish', 'fa-cloud-arrow-up', '#publish', plan === 'ELITE' || plan === 'PRO')}
     
-    <button onclick="window.open('https://wa.me/573115709730?text=SOPORTE_NXS:%20Solicito%20asistencia%20técnica', '_blank')" 
-        class="flex flex-col items-center justify-center p-6 bg-[#0d1117] border border-white/5 rounded-[2rem] hover:border-green-500/50 transition-all group">
-        <i class="fab fa-whatsapp text-2xl mb-3 text-slate-500 group-hover:text-green-400"></i>
-        <span class="orbitron text-[9px] font-black uppercase text-slate-500 group-hover:text-white">Soporte NXS</span>
+    <button onclick="window.open('https://wa.me/17049419163?text=SOPORTE_NXS:%20Protocolo%20de%20asistencia%20en%20espera...', '_blank')" 
+        class="flex flex-col items-center justify-center p-6 bg-[#0d1117] border border-white/5 rounded-2xl hover:bg-white hover:scale-[1.02] transition-all group">
+        <i class="fab fa-whatsapp text-xl mb-3 text-slate-500 group-hover:text-black transition-colors"></i>
+        <p class="orbitron text-[8px] font-black uppercase tracking-widest text-slate-500 group-hover:text-black">Soporte NXS</p>
     </button>
 
     ${renderBtn('Staff', 'fa-people-group', '#staff', config.modulos.includes('staff'))}
@@ -254,3 +265,21 @@ function deployAIAssistant(stats, hasAI) {
         btn.innerHTML = `<button onclick="location.hash='#gerenteAI'" class="w-full py-4 bg-white text-black orbitron text-[9px] font-black rounded-xl tracking-[0.2em] hover:bg-cyan-500 hover:text-white transition-all">ENTRAR AL CENTRO DE CONTROL AI</button>`;
     }
 }
+
+// --- 🛰️ 5. CONTROLADOR DE CARGA EXTERNA (ROUTER) ---
+window.addEventListener('hashchange', () => {
+    const hash = window.location.hash;
+    const container = document.getElementById("main-content") || document.querySelector(".pb-40").parentElement;
+
+    if (hash === '#marketplace') {
+        container.innerHTML = `<iframe src="marketplace.html" class="w-full h-screen border-none animate-in fade-in duration-500"></iframe>`;
+    } 
+    else if (hash === '#publish') {
+        container.innerHTML = `<iframe src="publish.html" class="w-full h-screen border-none animate-in fade-in duration-500"></iframe>`;
+    }
+    else if (hash === '#gerenteAI' || hash === '#finanzas-elite') {
+        // Esto asume que tienes un archivo finanzas_elite.js que exporta una función por defecto
+        import('./finanzas_elite.js').then(m => m.default(container));
+    }
+});
+
