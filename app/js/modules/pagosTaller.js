@@ -125,54 +125,92 @@ export default async function pagosTaller(container, state) {
     }
   }
 
-  async function procesarPago(metodo) {
+    async function procesarPago(metodo) {
     const monto = Number(document.getElementById("montoIn").value);
-    if(!ordenActiva || monto <= 0) return Swal.fire('ERROR', 'Defina un monto válido', 'error');
+    const btn = document.getElementById(metodo === 'BOLD' ? "btnCobrarBold" : "btnEfectivo");
 
-    if(metodo === 'BOLD') {
-        const linkBold = `https://bold.co/pay/tallerpro360_${ordenActiva.placa}`; 
-        window.open(linkBold, '_blank');
-        hablar("Abriendo terminal Bold.");
-    } else {
+    if (!ordenActiva || monto <= 0) {
+      return Swal.fire('ERROR', 'Debe localizar la misión con el escáner antes de liquidar.', 'error');
+    }
+
+    try {
+      btn.disabled = true;
+
+      if (metodo === 'BOLD') {
+        // --- FLUJO BOLD (RECAUDO EN SITIO) ---
+        // Recuperamos la llave maestra de la empresa
+        const empSnap = await getDoc(doc(db, "empresas", empresaId));
+        const boldKey = empSnap.data()?.bold_api_key || localStorage.getItem("nexus_boldKey");
+
+        if (!boldKey) throw new Error("Llave Bold no detectada en el nodo.");
+
+        const bold = new window.BoldCheckout({
+          orderId: `NXS-${ordenActiva.placa}-${Date.now().toString().slice(-5)}`,
+          amount: monto,
+          currency: 'COP',
+          description: `TallerPRO360 - Cierre Misión ${ordenActiva.placa}`,
+          apiKey: boldKey,
+          redirectionUrl: 'https://tallerpro360.vercel.app/success',
+          metadata: { empresaId, placa: ordenActiva.placa, ordenId: ordenActiva.id }
+        });
+        
+        hablar("Desplegando pasarela Bold. Complete el pago para sincronizar.");
+        bold.open();
+        
+      } else {
+        // --- CIERRE EN EFECTIVO (REGISTRO EN HOJA DE VIDA Y DASHBOARD) ---
         Swal.fire({ title: 'Sincronizando Bóveda...', didOpen: () => Swal.showLoading(), background: '#010409', color: '#fff' });
+        
+        const ordenRef = doc(db, "ordenes", ordenActiva.id);
+        const vehiculoRef = doc(db, "vehiculos", ordenActiva.placa);
+        const nuevoSaldo = (ordenActiva.costos_totales?.saldo_pendiente || 0) - monto;
 
-        try {
-            const ordenRef = doc(db, "ordenes", ordenActiva.id);
-            const vehiculoRef = doc(db, "vehiculos", ordenActiva.placa);
-            const nuevoSaldo = (ordenActiva.costos_totales?.saldo_pendiente || 0) - monto;
-            
-            // 1. Update de Orden
-            await updateDoc(ordenRef, {
-                "finanzas.anticipo_cliente": increment(monto),
-                "costos_totales.saldo_pendiente": increment(-monto),
-                "estado": (nuevoSaldo <= 0) ? "LISTO" : ordenActiva.estado,
-                "pagoStatus": (nuevoSaldo <= 0) ? "PAGADO" : "ABONADO",
-                updatedAt: serverTimestamp()
-            });
+        // 1. Actualizar Orden (Dashboard Aegis)
+        await updateDoc(ordenRef, { 
+            "estado": (nuevoSaldo <= 0) ? "ENTREGADO" : ordenActiva.estado,
+            "pagoStatus": (nuevoSaldo <= 0) ? "PAGADO" : "ABONADO",
+            "finanzas.anticipo_cliente": increment(monto),
+            "costos_totales.saldo_pendiente": increment(-monto),
+            "fechaCierre": serverTimestamp()
+        });
 
-            // 2. Ledger Contable
-            await addDoc(collection(db, "contabilidad"), {
-                concepto: `PAGO EFECTIVO - ${ordenActiva.placa}`,
-                monto, metodo: 'EFECTIVO', tipo: 'ingreso', ordenId: ordenActiva.id,
-                empresaId, creadoEn: serverTimestamp()
-            });
+        // 2. Registrar en Contabilidad Global (Dashboard Principal)
+        await addDoc(collection(db, "contabilidad"), {
+            empresaId,
+            referencia: ordenActiva.placa,
+            monto: monto,
+            tipo: 'INGRESO',
+            metodo: 'EFECTIVO',
+            concepto: `Liquidación Final Orden ${ordenActiva.placa}`,
+            createdAt: serverTimestamp()
+        });
 
-            // 3. Inyección en Hoja de Vida
-            await addDoc(collection(vehiculoRef, "historial_servicios"), {
-                fecha: serverTimestamp(),
-                tipo_evento: "PAGO_REGISTRADO",
-                monto,
-                descripcion: `Abono de $${monto.toLocaleString()} registrado en PAY_NEXUS`,
-                ordenId: ordenActiva.id
-            });
+        // 3. Inyectar en Hoja de Vida del Vehículo
+        await addDoc(collection(vehiculoRef, "historial_servicios"), {
+            fecha: serverTimestamp(),
+            tipo_evento: "PAGO_REGISTRADO",
+            monto: monto,
+            descripcion: `Recaudo en efectivo - Liquidación en terminal PAY_NEXUS`,
+            ordenId: ordenActiva.id
+        });
 
-            hablar("Pago procesado y hoja de vida actualizada.");
-            Swal.fire('ÉXITO', 'Datos inyectados en la hoja de vida', 'success');
-            buscarMision();
-        } catch (e) {
-            console.error(e);
-            Swal.fire('FALLO_SYNC', 'Error al replicar en la nube', 'error');
-        }
+        hablar("Misión liquidada y sincronizada con el Dashboard.");
+        
+        await Swal.fire({
+            icon: 'success',
+            title: 'CIERRE EXITOSO',
+            text: `Misión ${ordenActiva.placa} sincronizada en Hoja de Vida y Contabilidad.`,
+            background: '#0d1117', color: '#fff', confirmButtonColor: '#10b981'
+        });
+
+        buscarMision(); // Refrescar vista
+      }
+
+    } catch (err) {
+      console.error(err);
+      Swal.fire({ icon: 'error', title: 'FALLO DE NODO', text: err.message, background: '#0d1117', color: '#fff' });
+    } finally {
+      btn.disabled = false;
     }
   }
 
