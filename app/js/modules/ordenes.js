@@ -89,31 +89,52 @@ export default async function ordenes(container) {
         });
     };
 
-    // --- 💰 MOTOR FINANCIERO ---
+        // --- 💰 MOTOR FINANCIERO CORREGIDO (NEXUS-X V6.1) ---
     const recalcularFinanzas = () => {
         let sumaVentaBruta = 0;
         let sumaCostoTaller = 0;
 
+        // Sumar lo que viene de la lista de items (Repuestos y Mano de Obra)
         ordenActiva.items.forEach(i => {
             sumaVentaBruta += Number(i.venta || 0);
             if (i.origen === "TALLER") { sumaCostoTaller += Number(i.costo || 0); }
         });
 
-        const g_varios = Number(document.getElementById("f-gastos-varios")?.value || 0);
-        const a_tecnico = Number(document.getElementById("f-adelanto-tecnico")?.value || 0);
-        const a_cliente = Number(document.getElementById("f-anticipo-cliente")?.value || 0);
+        // 1. Capturamos los valores de las casillas de la terminal
+        const g_insumos = Number(document.getElementById("f-gastos-varios")?.value || 0); // Silicona, terceros, etc.
+        const a_tecnico = Number(document.getElementById("f-adelanto-tecnico")?.value || 0); // Nómina (Gasto interno)
+        const a_cliente = Number(document.getElementById("f-anticipo-cliente")?.value || 0); // Lo que ya pagó el cliente
         
-        let valorIVA = (ordenActiva.finanzas?.impuesto_tipo === 'IVA_19') ? sumaVentaBruta * 0.19 : 0;
-        const granTotal = sumaVentaBruta + valorIVA;
-        const utilidadNeta = sumaVentaBruta - (sumaCostoTaller + g_varios);
+        // 2. Cálculo de Impuestos (Sobre la venta total + insumos si se cobran)
+        let valorIVA = (ordenActiva.finanzas?.impuesto_tipo === 'IVA_19') ? (sumaVentaBruta + g_insumos) * 0.19 : 0;
+        
+        // 3. GRAN TOTAL (Lo que el cliente ve en factura)
+        // Sumamos Insumos aquí porque el cliente debe pagar por el material usado
+        const granTotal = sumaVentaBruta + g_insumos + valorIVA;
+
+        // 4. UTILIDAD REAL (Venta - Costos - Insumos - Adelanto Técnico)
+        // Aquí sí restamos el adelanto técnico porque sale de tu ganancia
+        const utilidadNeta = (sumaVentaBruta + g_insumos) - (sumaCostoTaller + g_insumos + a_tecnico);
+
+        // 5. SALDO DE MISIÓN (Lo que el cliente debe pagar en PAY_NEXUS)
+        // Solo restamos lo que el cliente ha abonado.
+        const saldoPendiente = granTotal - a_cliente;
 
         ordenActiva.costos_totales = {
-            total_venta: sumaVentaBruta,
-            total_costo: sumaCostoTaller + g_varios + a_tecnico,
+            total_venta: sumaVentaBruta + g_insumos,
+            total_costo: sumaCostoTaller + g_insumos + a_tecnico,
             iva: valorIVA,
             gran_total: granTotal,
             utilidad: utilidadNeta,
-            saldo_pendiente: granTotal - a_cliente
+            saldo_pendiente: saldoPendiente
+        };
+
+        // Guardamos los valores en el objeto de finanzas para que persistan
+        ordenActiva.finanzas = {
+            ...ordenActiva.finanzas,
+            gastos_varios: g_insumos,
+            adelanto_tecnico: a_tecnico,
+            anticipo_cliente: a_cliente
         };
 
         const totalEl = document.getElementById("total-factura");
@@ -121,7 +142,7 @@ export default async function ordenes(container) {
             totalEl.innerText = `$ ${granTotal.toLocaleString()}`;
             document.getElementById("saldo-display").innerHTML = `
                 <span class="text-slate-500 text-[10px] uppercase block tracking-widest font-black">Saldo de Misión</span>
-                $ ${ordenActiva.costos_totales.saldo_pendiente.toLocaleString()}
+                $ ${saldoPendiente.toLocaleString()}
             `;
         }
         renderItems();
@@ -261,36 +282,49 @@ export default async function ordenes(container) {
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <button id="btnCierreFinanciero" class="py-10 bg-gradient-to-br from-red-600 to-red-900 text-white rounded-[2.5rem] orbitron font-black text-[12px] uppercase shadow-[0_0_40px_rgba(220,38,38,0.2)] hover:scale-[1.02] transition-transform">
-                            <i class="fas fa-bolt mr-3"></i> EJECUTAR CIERRE FINANCIERO
-                        </button>
-                        <button id="btnSincronizar" class="group relative py-10 bg-white text-black rounded-[2.5rem] orbitron font-black text-[15px] uppercase tracking-[0.3em] overflow-hidden hover:scale-[1.02] transition-transform">
-                            <span class="relative z-10">🛰️ SINCRONIZAR NEXUS</span>
-                            <div class="absolute inset-0 bg-cyan-400 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
-                        </button>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <button id="btnCierreFinanciero" class="py-10 bg-gradient-to-br from-red-600 to-red-900 text-white rounded-[2.5rem] orbitron font-black text-[12px] uppercase shadow-[0_0_40px_rgba(220,38,38,0.2)] hover:scale-[1.02] transition-transform">
+                                <i class="fas fa-bolt mr-3"></i> EJECUTAR CIERRE FINANCIERO
+                            </button>
+                            
+                            <button id="btnSincronizar" class="group relative py-10 bg-white text-black rounded-[2.5rem] orbitron font-black text-[15px] uppercase tracking-[0.3em] overflow-hidden hover:scale-[1.02] transition-transform">
+                                <span class="relative z-10">🛰️ SINCRONIZAR NEXUS</span>
+                                <div class="absolute inset-0 bg-cyan-400 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>`;
+
         vincularAccionesTerminal();
         recalcularFinanzas();
     };
-    // --- 📱 MOTOR DE COMUNICACIÓN NEXUS-X ---
+
+    // --- 📱 MOTOR DE COMUNICACIÓN NEXUS-X (CORREGIDO) ---
     const ejecutarProtocoloSalida = async (orden) => {
-        const { placa, cliente, telefono, costos_totales } = orden;
-        const saldo = costos_totales.saldo_pendiente;
-        const linkPago = `https://bold.co/pay/tallerpro360_${orden.id}`; 
+        // Limpieza de datos para evitar errores en WhatsApp
+        const placa = (orden.placa || "").trim().toUpperCase();
+        const cliente = (orden.cliente || "CLIENTE").trim().toUpperCase();
+        const telefono = (orden.telefono || "").trim().replace(/\s+/g, '');
+        const saldo = orden.costos_totales?.saldo_pendiente || 0;
+        
+        // Link de Bold (Sin ID de orden para evitar el 404 que tenías)
+        const linkPago = `https://bold.co/pay/tallerpro360`; 
         
         const mensaje = `*NEXUS-X AEGIS: INFORME DE MISIÓN*%0A%0A` +
-                        `Hola *${cliente.toUpperCase()}*, la misión con el vehículo *[${placa}]* ha finalizado.%0A%0A` +
+                        `Hola *${cliente}*, la misión con el vehículo *[${placa}]* ha finalizado.%0A%0A` +
                         `💰 *Resumen Financiero:*%0A` +
-                        `- Total: $${costos_totales.gran_total.toLocaleString()}%0A` +
-                        `- Saldo Pendiente: *$${saldo.toLocaleString()}*%0A%0A` +
-                        `✅ *Paga aquí:* ${linkPago}%0A%0A` +
+                        `- Total Servicio: $${orden.costos_totales.gran_total.toLocaleString()}%0A` +
+                        `- Saldo a Pagar: *$${saldo.toLocaleString()}*%0A%0A` +
+                        `✅ *Paga aquí de forma segura:* ${linkPago}%0A%0A` +
                         `_Generado por Nexus-X Command Center_`;
 
-        window.open(`https://wa.me/57${telefono}?text=${mensaje}`, '_blank');
+        if(telefono) {
+            window.open(`https://wa.me/57${telefono}?text=${mensaje}`, '_blank');
+        } else {
+            Swal.fire('ERROR', 'No hay teléfono registrado para enviar el informe.', 'error');
+        }
     };
 
     // --- 🔄 SINCRONIZACIÓN TRANSVERSAL ---
