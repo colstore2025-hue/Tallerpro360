@@ -1,235 +1,249 @@
 /**
- * dashboard.js - NEXUS-X AEGIS V34.0 🛰️
- * SISTEMA UNIFICADO DE COMANDO CENTRAL - EDICIÓN GLOBAL
+ * dashboard.js - NEXUS-X AEGIS V35.0 🛰️
+ * SISTEMA UNIFICADO DE COMANDO CENTRAL - EDICIÓN 2030
  * @author William Jeffry Urquijo Cubillos & Gemini AI
  */
 
-import { getClientes, getOrdenes, getInventario } from "../services/dataService.js";
 import { db } from "../core/firebase-config.js";
-import { doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, query, where, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// --- 🛡️ 1. PROTOCOLO DE ACCESO Y SEGURIDAD ---
+// --- 🛡️ 1. CONFIGURACIÓN DE PERMISOS TÁCTICOS ---
 const PERMISOS = {
-    "GRATI-CORE": { ordenes: 10, ai: false, contabilidad: false, elite: false },
-    "BASICO": { ordenes: 50, ai: true, contabilidad: true, elite: false },
-    "PRO": { ordenes: 500, ai: true, contabilidad: true, elite: true },
-    "ELITE": { ordenes: Infinity, ai: true, contabilidad: true, elite: true }
+    "GRATI-CORE": { 
+        limiteOrdenes: 10, 
+        modulos: ['clientes', 'vehiculos', 'ordenes', 'soporte'],
+        clase: "border-slate-700 text-slate-400" 
+    },
+    "BASICO": { 
+        limiteOrdenes: 50, 
+        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'soporte'],
+        clase: "border-blue-500 text-blue-400"
+    },
+    "PRO": { 
+        limiteOrdenes: 500, 
+        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace', 'publish', 'soporte'],
+        clase: "border-purple-500 text-purple-400"
+    },
+    "ELITE": { 
+        limiteOrdenes: Infinity, 
+        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace', 'publish', 'staff', 'nomina', 'finanzas-elite', 'soporte'],
+        clase: "border-cyan-500 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.3)]"
+    }
 };
 
 window.restrictedAccess = (modulo) => {
     Swal.fire({
-        title: `<span class="orbitron text-white">ACCESO RESTRINGIDO</span>`,
-        html: `<p class="text-[10px] text-slate-400 mb-4">El módulo <b>${modulo.toUpperCase()}</b> requiere un nivel de enlace superior.</p>`,
+        title: `<span class="orbitron text-white">NIVEL DE ENLACE INSUFICIENTE</span>`,
+        html: `<p class="text-[11px] text-slate-400 mb-4 uppercase tracking-widest">El módulo <b class="text-cyan-400">${modulo}</b> requiere una actualización del núcleo de sistema.</p>`,
         icon: 'lock',
         background: '#010409',
         color: '#fff',
-        confirmButtonText: 'UPGRADE SYSTEM',
-        confirmButtonColor: '#6366f1'
+        confirmButtonText: 'UPGRADE TO ELITE',
+        confirmButtonColor: '#06b6d4',
+        showCancelButton: true,
+        cancelButtonText: 'VOLVER'
     }).then(r => { if(r.isConfirmed) location.hash = '#pagos'; });
 };
 
 // --- 🚀 2. MOTOR PRINCIPAL ---
-export default async function dashboard(container, state) {
+export default async function dashboard(container) {
     const empresaId = localStorage.getItem("nexus_empresaId");
     const planActual = (localStorage.getItem("nexus_plan") || "GRATI-CORE").toUpperCase();
-    const configPlan = PERMISOS[planActual];
-    const user = localStorage.getItem("nexus_userName") || "COMANDANTE";
+    const config = PERMISOS[planActual] || PERMISOS["GRATI-CORE"];
+    const user = localStorage.getItem("nexus_userName") || "OPERADOR_NXS";
     const empresaNombre = localStorage.getItem("nexus_empresaNombre") || "NEXUS LOGISTICS";
 
-    renderPentagonInterface(container, planActual, user, empresaNombre, configPlan);
+    renderInterface(container, planActual, user, empresaNombre, config);
 
     try {
-        // --- 📊 CARGA DE MÉTRICAS (CORRECCIÓN DE $0) ---
-        // Obtenemos órdenes reales para calcular ingresos genuinos
+        // --- 📊 EXTRACCIÓN DE TELEMETRÍA BI ---
         const qOrdenes = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
-        const snapOrdenes = await getDocs(qOrdenes);
-        const listaOrdenes = snapOrdenes.docs.map(d => ({ id: d.id, ...d.data() }));
+        const snap = await getDocs(qOrdenes);
+        const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-        const metricsData = processStrategicMetrics(listaOrdenes);
+        const stats = processBI(data);
 
-        // ⚡ Inyección de Vida al HUD
+        // --- ⚡ ACTUALIZACIÓN DINÁMICA DEL HUD ---
         setTimeout(() => {
-            updateTacticalHUD(metricsData, planActual);
-            renderTechEfficiencyMatrix(metricsData.rankingTecnicos);
-            if (window.Chart) renderNeuralGrowthChart(metricsData.tendencia);
-            deployAIOrchestrator(metricsData, configPlan);
-            
-            // Actualización de Números Maestros
-            document.getElementById("valTicket").innerText = `$ ${Math.round(metricsData.avgTicket).toLocaleString()}`;
-            document.getElementById("valRevenue").innerText = `$ ${metricsData.revenue.toLocaleString()}`;
-            document.getElementById("valProfit").innerText = `$ ${Math.round(metricsData.revenue * 0.30).toLocaleString()}`; // Margen estimado 30%
-        }, 200);
+            updateNumbers(stats, planActual);
+            renderStaffEfficiency(stats.staff);
+            if(planActual === 'ELITE' || planActual === 'PRO') {
+                deployAIAssistant(stats, true);
+            } else {
+                deployAIAssistant(stats, false);
+            }
+        }, 300);
 
     } catch (err) {
-        console.error("DASHBOARD_CRASH:", err);
-        showSystemCrash(container, "ERROR_SINCRONIA_DATOS");
+        console.error("DASHBOARD_CRITICAL_FAILURE", err);
     }
 }
 
-// --- 📐 3. ARQUITECTURA VISUAL (SIN DUPLICADOS) ---
-function renderPentagonInterface(container, plan, user, empresa, config) {
+// --- 📐 3. ARQUITECTURA VISUAL (DASHBOARD TOTAL) ---
+function renderInterface(container, plan, user, empresa, config) {
     container.innerHTML = `
-    <div class="p-4 lg:p-10 space-y-10 animate-in fade-in duration-1000 pb-32 max-w-[1800px] mx-auto bg-[#010409] text-white">
+    <div class="p-4 lg:p-10 space-y-10 animate-in fade-in duration-700 pb-40 max-w-[1600px] mx-auto bg-[#010409]">
         
-        <div class="flex flex-col lg:flex-row justify-between items-center gap-8 border-b border-white/5 pb-10">
-            <div class="bg-black/40 px-10 py-6 rounded-[2.5rem] border border-white/5 relative">
-                <div class="absolute -left-2 top-1/2 -translate-y-1/2 h-12 w-1 bg-indigo-500 shadow-[0_0_15px_#6366f1]"></div>
-                <h1 class="text-4xl lg:text-5xl font-black orbitron italic tracking-tighter uppercase">${empresa}</h1>
-                <p class="text-[9px] text-slate-500 font-bold orbitron tracking-[0.4em] mt-2">OPERADOR: ${user} // STATUS: ONLINE</p>
+        <div class="flex flex-col lg:flex-row justify-between items-center gap-6 border-b border-white/5 pb-10">
+            <div class="relative pl-6">
+                <div class="absolute left-0 top-0 h-full w-1 bg-cyan-500 shadow-[0_0_15px_#06b6d4]"></div>
+                <h1 class="orbitron text-4xl font-black italic uppercase tracking-tighter">${empresa}</h1>
+                <p class="text-[9px] text-slate-500 font-black orbitron tracking-[0.4em] mt-2">OPERADOR: ${user} // SYSTEM_V35.0</p>
             </div>
-            <div class="bg-[#0d1117] border-r-4 border-indigo-600 p-8 rounded-l-[2rem] shadow-2xl">
-                <p class="text-[8px] text-indigo-400 font-black orbitron uppercase mb-1">LICENCIA ACTIVE</p>
-                <p class="text-3xl font-black orbitron text-white">${plan}</p>
+            <div class="bg-[#0d1117] border ${config.clase} px-10 py-5 rounded-[2rem] text-center">
+                <p class="text-[8px] font-black orbitron uppercase mb-1 tracking-widest">Status de Licencia</p>
+                <p class="text-2xl font-black orbitron italic">${plan} ACTIVE</p>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-            ${renderModuleBtn('Clientes', 'fa-user-astronaut', '#clientes', true)}
-            ${renderModuleBtn('Vehículos', 'fa-car-side', '#vehiculos', true)}
-            ${renderModuleBtn('Inventario', 'fa-microchip', '#inventario', true)}
-            ${renderModuleBtn('Caja / Pagos', 'fa-vault', '#pagos', true)}
-            ${renderModuleBtn('Nómina', 'fa-users-gear', '#nomina', config.elite)}
-            ${renderModuleBtn('Audit Center', 'fa-wallet', '#finanzas-elite', config.elite)} </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            ${renderBtn('Clientes', 'fa-users', '#clientes', config.modulos.includes('clientes'))}
+            ${renderBtn('Vehículos', 'fa-car', '#vehiculos', config.modulos.includes('vehiculos'))}
+            ${renderBtn('Inventario', 'fa-box-open', '#inventario', config.modulos.includes('inventario'))}
+            ${renderBtn('Caja', 'fa-vault', '#pagos', config.modulos.includes('pagos'))}
+            ${renderBtn('Contabilidad', 'fa-file-invoice-dollar', '#contabilidad', config.modulos.includes('contabilidad'))}
+            ${renderBtn('Nómina', 'fa-user-tie', '#nomina', config.modulos.includes('nomina'))}
+            
+            ${renderBtn('Reportes', 'fa-chart-pie', '#reportes', config.modulos.includes('reportes'))}
+            ${renderBtn('Marketplace', 'fa-shop', '#marketplace', config.modulos.includes('marketplace'))}
+            ${renderBtn('Publish', 'fa-cloud-arrow-up', '#publish', config.modulos.includes('publish'))}
+            ${renderBtn('Soporte NXS', 'fa-headset', '#soporte', config.modulos.includes('soporte'))}
+            ${renderBtn('Staff', 'fa-people-group', '#staff', config.modulos.includes('staff'))}
+            ${renderBtn('Audit Center', 'fa-shield-halved', '#finanzas-elite', config.modulos.includes('finanzas-elite'))}
+        </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="relative group">
-                <div class="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[2.5rem] blur opacity-20 group-hover:opacity-50"></div>
-                ${renderModuleBtn('Órdenes de Trabajo (Misiones)', 'fa-screwdriver-wrench', '#ordenes', true, true)}
-            </div>
-            <div class="relative group">
-                <div class="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-red-600 rounded-[2.5rem] blur opacity-10 group-hover:opacity-40"></div>
-                ${renderModuleBtn('Predictive AI Advisor', 'fa-brain-circuit', '#gerenteAI', config.ai, true)}
-            </div>
-        </div>
-
-        <div id="hudKpis" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"></div>
-
-        <div class="grid lg:grid-cols-12 gap-10">
-            <div class="lg:col-span-8 bg-[#0d1117] border border-white/10 rounded-[4rem] p-12 relative overflow-hidden">
-                <h3 class="orbitron text-[10px] text-indigo-400 font-black uppercase mb-10 tracking-[0.5em]">Análisis de Flujo de Efectivo</h3>
-                <div class="h-[400px] w-full"><canvas id="neuralChart"></canvas></div>
-            </div>
-
-            <div class="lg:col-span-4 space-y-10">
-                <div class="bg-gradient-to-b from-[#111827] to-[#010409] rounded-[3.5rem] p-10 border border-white/5 relative group">
-                    <h4 class="orbitron text-[10px] font-black text-white mb-8 uppercase italic border-l-2 border-indigo-500 pl-4">NEXUS_AI TACTICAL</h4>
-                    <div id="aiAnalysis" class="text-xs text-slate-500 italic mb-10 leading-relaxed font-medium">Sincronizando con satélite financiero...</div>
-                    <div id="aiButtons"></div>
+            <div onclick="location.hash='#ordenes'" class="cursor-pointer bg-[#0d1117] border border-white/5 hover:border-cyan-500/50 p-10 rounded-[3rem] group transition-all relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 text-9xl text-white/5 rotate-12 group-hover:text-cyan-500/10 transition-colors"><i class="fas fa-screwdriver-wrench"></i></div>
+                <h3 class="orbitron text-xs font-black text-slate-500 mb-2 uppercase tracking-widest italic">Misiones en Proceso</h3>
+                <p class="text-4xl font-black orbitron text-white italic">ÓRDENES DE TRABAJO</p>
+                <div class="mt-6 flex items-center gap-4 text-cyan-500 font-bold text-[10px] orbitron">
+                    <span>EXPLORAR RADAR</span> <i class="fas fa-arrow-right"></i>
                 </div>
-                
-                <div id="techMatrix" class="bg-[#0d1117] rounded-[3.5rem] p-10 border border-white/5 space-y-8">
-                    <h4 class="orbitron text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Rendimiento de Staff</h4>
+            </div>
+
+            <div onclick="${config.modulos.includes('gerenteAI') ? "location.hash='#gerenteAI'" : "window.restrictedAccess('GERENTE AI')"}" class="cursor-pointer bg-gradient-to-br from-[#0d1117] to-black border border-white/5 hover:border-purple-500/50 p-10 rounded-[3rem] group transition-all relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 text-9xl text-purple-500/5 group-hover:text-purple-500/10 transition-colors"><i class="fas fa-brain"></i></div>
+                <h3 class="orbitron text-xs font-black text-slate-500 mb-2 uppercase tracking-widest italic">Análisis Predictivo</h3>
+                <p class="text-4xl font-black orbitron text-white italic">GERENTE <span class="text-purple-500">AI</span></p>
+                <div class="mt-6 flex items-center gap-4 text-purple-500 font-bold text-[10px] orbitron">
+                    <span>DESPLEGAR RED NEURONAL</span> <i class="fas fa-microchip"></i>
                 </div>
             </div>
         </div>
 
-        <div class="grid md:grid-cols-3 gap-10 pb-20">
-            ${renderKpiBottom('Ticket Promedio', 'valTicket', 'border-white/5')}
-            ${renderKpiBottom('Revenue Mensual', 'valRevenue', 'border-indigo-500/20 bg-indigo-500/5')}
-            ${renderKpiBottom('Utilidad Est. (30%)', 'valProfit', 'border-emerald-500/20 bg-emerald-500/5')}
+        <div id="hudKpis" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            </div>
+
+        <div class="grid lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-4 bg-[#0d1117] p-10 rounded-[3.5rem] border border-white/5">
+                <h4 class="orbitron text-[9px] font-black text-slate-500 uppercase tracking-[0.4em] mb-8 border-l-2 border-cyan-500 pl-4">Rendimiento Staff</h4>
+                <div id="techEfficiency" class="space-y-6"></div>
+            </div>
+
+            <div class="lg:col-span-8 bg-[#0d1117] p-10 rounded-[3.5rem] border border-white/5 relative overflow-hidden">
+                <div id="boxAI" class="relative z-10 h-full flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-10 h-10 bg-white text-black rounded-xl flex items-center justify-center text-xl"><i class="fas fa-robot"></i></div>
+                            <h5 class="orbitron text-xs font-black uppercase italic tracking-widest">Nexus Assistant</h5>
+                        </div>
+                        <p id="txtAI" class="text-slate-400 text-sm leading-relaxed max-w-2xl font-medium">Sincronizando flujo de caja real-time con proyecciones de rampa...</p>
+                    </div>
+                    <div id="btnAI" class="mt-8"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            ${renderFooterKpi('Ticket Promedio', 'valTicket')}
+            ${renderFooterKpi('Revenue Mensual', 'valRevenue')}
+            ${renderFooterKpi('Utilidad Estimada', 'valProfit')}
         </div>
     </div>`;
 }
 
-// --- 🧠 4. LÓGICA DE PROCESAMIENTO (DATOS REALES) ---
-function processStrategicMetrics(ordenes) {
-    let revenue = 0;
-    const techMap = {};
-    const tendencia = { "LUN": 0, "MAR": 0, "MIE": 0, "JUE": 0, "VIE": 0, "SAB": 0 };
+// --- 🧠 4. MOTOR DE PROCESAMIENTO BI ---
+function processBI(ordenes) {
+    let rev = 0;
+    const staff = {};
+    const validas = ordenes.filter(o => o.estado !== 'CANCELADO');
 
-    ordenes.forEach(o => {
-        // CORRECCIÓN CLAVE: Buscamos el valor en costos_totales.total_general o total
+    validas.forEach(o => {
         const monto = Number(o.costos_totales?.total_general || o.total || 0);
-        revenue += monto;
-
-        // Ranking Técnicos
-        const t = (o.tecnico || "Sin Asignar").toUpperCase();
-        techMap[t] = (techMap[t] || 0) + monto;
+        rev += monto;
+        const tec = o.tecnico || "S/N";
+        staff[tec] = (staff[tec] || 0) + monto;
     });
 
-    return { 
-        revenue, 
-        count: ordenes.length, 
-        avgTicket: ordenes.length > 0 ? revenue / ordenes.length : 0,
-        rankingTecnicos: Object.entries(techMap).sort((a,b) => b[1] - a[1]),
-        tendencia: { "LUN": revenue*0.1, "MAR": revenue*0.2, "MIE": revenue*0.4, "JUE": revenue*0.7, "VIE": revenue*0.9, "SAB": revenue }
+    return {
+        revenue: rev,
+        count: validas.length,
+        avgTicket: validas.length > 0 ? rev / validas.length : 0,
+        staff: Object.entries(staff).sort((a,b) => b[1] - a[1])
     };
 }
 
-// --- 🛠️ COMPONENTES DE UI ---
-function renderModuleBtn(name, icon, path, habilitado, fullWidth = false) {
+// --- 🛠️ COMPONENTES UI ATÓMICOS ---
+function renderBtn(name, icon, path, habilitado) {
     const action = habilitado ? `onclick="location.hash='${path}'"` : `onclick="window.restrictedAccess('${name}')"`;
-    const opacity = habilitado ? 'opacity-100' : 'opacity-25';
-    
     return `
-    <button ${action} class="${opacity} group relative ${fullWidth ? 'p-10' : 'p-8'} rounded-[2.5rem] border border-white/10 bg-[#0d1117] hover:bg-white transition-all duration-500 w-full">
-        <div class="relative z-10">
-            <i class="fas ${icon} ${fullWidth ? 'text-3xl' : 'text-xl'} mb-4 text-white group-hover:text-black transition-colors"></i>
-            <p class="orbitron ${fullWidth ? 'text-xs' : 'text-[9px]'} font-black uppercase tracking-widest text-slate-400 group-hover:text-black">${name}</p>
-        </div>
+    <button ${action} class="group p-6 rounded-2xl bg-[#0d1117] border border-white/5 hover:bg-white hover:scale-[1.02] transition-all duration-300">
+        <i class="fas ${icon} text-xl mb-3 ${habilitado ? 'text-white group-hover:text-black' : 'text-slate-800'} transition-colors"></i>
+        <p class="orbitron text-[8px] font-black uppercase tracking-widest ${habilitado ? 'text-slate-500 group-hover:text-black' : 'text-slate-800'}">${name}</p>
     </button>`;
 }
 
-function renderKpiBottom(label, id, extraClass) {
+function renderFooterKpi(label, id) {
     return `
-    <div class="p-12 rounded-[4rem] border ${extraClass} text-center shadow-2xl">
-        <p class="text-[8px] text-slate-600 font-black orbitron mb-6 uppercase tracking-[0.4em] italic">${label}</p>
-        <div class="text-4xl font-black orbitron text-white tracking-tighter italic" id="${id}">$ 0</div>
+    <div class="bg-black/40 border border-white/5 p-10 rounded-[3rem] text-center">
+        <p class="text-[8px] text-slate-600 orbitron font-black uppercase mb-4 tracking-widest">${label}</p>
+        <p id="${id}" class="text-3xl font-black orbitron text-white italic">$ 0</p>
     </div>`;
 }
 
-function updateTacticalHUD(m, plan) {
+function updateNumbers(s, plan) {
     const hud = document.getElementById("hudKpis");
-    if(!hud) return;
-    const cards = [
-        { label: "Volumen Caja", val: `$ ${m.revenue.toLocaleString()}`, icon: "fa-cash-register", col: "text-white" },
-        { label: "Misiones OT", val: m.count, icon: "fa-shield-check", col: "text-orange-500" },
-        { label: "Carga Sistema", val: plan, icon: "fa-bolt", col: "text-emerald-400" },
-        { label: "Ticket Prom.", val: `$ ${Math.round(m.avgTicket).toLocaleString()}`, icon: "fa-receipt", col: "text-indigo-400" }
+    const kpis = [
+        { l: "Caja Real", v: `$${s.revenue.toLocaleString()}`, i: "fa-sack-dollar", c: "text-emerald-400" },
+        { l: "Misiones OT", v: s.count, i: "fa-clipboard-check", c: "text-white" },
+        { l: "Nivel Enlace", v: plan, i: "fa-satellite", c: "text-cyan-400" },
+        { l: "Estado Plan", v: "ESTABLE", i: "fa-heart-pulse", c: "text-orange-500" }
     ];
-    hud.innerHTML = cards.map(c => `
-        <div class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 relative group overflow-hidden">
-            <div class="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform"><i class="fas ${c.icon} text-8xl"></i></div>
-            <p class="orbitron text-[8px] text-slate-600 font-black uppercase mb-4">${c.label}</p>
-            <div class="text-2xl font-black orbitron ${c.col} italic tracking-tighter relative z-10">${c.val}</div>
+    hud.innerHTML = kpis.map(k => `
+        <div class="bg-[#0d1117] p-6 rounded-3xl border border-white/5">
+            <p class="text-[7px] text-slate-600 orbitron font-black uppercase mb-2">${k.l}</p>
+            <p class="text-xl font-black orbitron ${k.c}">${k.v}</p>
+        </div>`).join("");
+
+    document.getElementById("valTicket").innerText = `$${Math.round(s.avgTicket).toLocaleString()}`;
+    document.getElementById("valRevenue").innerText = `$${s.revenue.toLocaleString()}`;
+    document.getElementById("valProfit").innerText = `$${Math.round(s.revenue * 0.35).toLocaleString()}`;
+}
+
+function renderStaffEfficiency(staff) {
+    const container = document.getElementById("techEfficiency");
+    if(!container) return;
+    container.innerHTML = staff.slice(0, 4).map(([name, val]) => `
+        <div class="space-y-2">
+            <div class="flex justify-between text-[9px] orbitron font-bold">
+                <span class="text-slate-400 uppercase">${name}</span>
+                <span class="text-white">$${val.toLocaleString()}</span>
+            </div>
+            <div class="h-1 bg-white/5 rounded-full overflow-hidden">
+                <div class="h-full bg-cyan-500 shadow-[0_0_10px_#06b6d4]" style="width: ${Math.min((val/2000000)*100, 100)}%"></div>
+            </div>
         </div>`).join("");
 }
 
-function renderTechEfficiencyMatrix(ranking) {
-    const container = document.getElementById("techMatrix");
-    if (!container) return;
-    container.innerHTML = `<h4 class="orbitron text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-6">Eficiencia Staff</h4>`;
-    container.innerHTML += ranking.slice(0, 3).map(([name, val]) => `
-        <div class="space-y-4">
-            <div class="flex justify-between text-[10px] orbitron font-black uppercase">
-                <span class="text-slate-400">${name}</span>
-                <span class="text-white italic">$${val.toLocaleString()}</span>
-            </div>
-            <div class="h-[3px] bg-white/5 rounded-full overflow-hidden">
-                <div class="h-full bg-indigo-600 shadow-[0_0_10px_#6366f1]" style="width: ${Math.min((val/1000000)*100, 100)}%"></div>
-            </div>
-        </div>`).join("");
-}
-
-async function deployAIOrchestrator(data, config) {
-    const analysis = document.getElementById("aiAnalysis");
-    const buttons = document.getElementById("aiButtons");
-    if(!analysis || !buttons) return;
-
-    if (!config.ai) {
-        analysis.innerText = "NEXUS-AI: El núcleo de predicción está bloqueado. Se requiere Plan PRO para análisis de retención.";
-        buttons.innerHTML = `<button onclick="location.hash='#pagos'" class="w-full py-5 bg-indigo-600 text-white orbitron text-[10px] font-black rounded-[1.5rem] tracking-widest">ACTIVAR IA ADVISOR</button>`;
+function deployAIAssistant(stats, hasAI) {
+    const txt = document.getElementById("txtAI");
+    const btn = document.getElementById("btnAI");
+    if(!hasAI) {
+        txt.innerHTML = "El protocolo predictivo <span class='text-white'>GERENTE AI</span> está desactivado en su plan actual. Actualice para recibir análisis de rentabilidad y alertas de fuga de capital.";
+        btn.innerHTML = `<button onclick="location.hash='#pagos'" class="w-full py-4 bg-purple-600 text-white orbitron text-[9px] font-black rounded-xl tracking-[0.2em] hover:bg-white hover:text-black transition-all">ACTIVAR INTELIGENCIA ARTIFICIAL</button>`;
     } else {
-        analysis.innerText = `NEXUS-AI: Operación estable. Revenue de $${data.revenue.toLocaleString()} detectado. El ticket promedio de $${Math.round(data.avgTicket).toLocaleString()} indica un margen de crecimiento del 12% en servicios adicionales.`;
-        buttons.innerHTML = `<button onclick="location.hash='#gerenteAI'" class="w-full py-5 bg-white text-black orbitron text-[10px] font-black rounded-[1.5rem] tracking-widest hover:bg-indigo-500 hover:text-white transition-all">ABRIR CENTRO TÁCTICO</button>`;
+        txt.innerHTML = `Nexus detecta un revenue de <span class='text-cyan-400 font-black'>$${stats.revenue.toLocaleString()}</span> con un ticket promedio de <span class='text-white'>$${Math.round(stats.avgTicket).toLocaleString()}</span>. El técnico más productivo es <span class='text-emerald-400'>${stats.staff[0]?.[0] || 'N/A'}</span>. Se recomienda incentivar ventas cruzadas para elevar el ticket un 15%.`;
+        btn.innerHTML = `<button onclick="location.hash='#gerenteAI'" class="w-full py-4 bg-white text-black orbitron text-[9px] font-black rounded-xl tracking-[0.2em] hover:bg-cyan-500 hover:text-white transition-all">ENTRAR AL CENTRO DE CONTROL AI</button>`;
     }
 }
-
-function showSystemCrash(container, message) {
-    container.innerHTML = `<div class="h-screen bg-[#010409] flex flex-col items-center justify-center text-center">
-        <i class="fas fa-radiation text-orange-600 text-6xl animate-pulse mb-6"></i>
-        <h2 class="orbitron text-white font-black uppercase tracking-widest">${message}</h2>
-        <button onclick="location.reload()" class="mt-12 px-12 py-5 bg-white text-black orbitron text-[10px] font-black rounded-full uppercase">REBOOT SYSTEM</button>
-    </div>`;
-}
-
