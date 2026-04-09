@@ -376,36 +376,38 @@ export default async function ordenes(container) {
             if(isRecording) recognition?.stop();
         };
 
-                // 🛰️ ACCIÓN: SINCRONIZACIÓN STARLINK - PROTOCOLO AUDITADO V4.3 (TOTAL ECOSYSTEM SYNC)
+                // 🛰️ ACCIÓN: SINCRONIZACIÓN STARLINK - PROTOCOLO CIRCULAR V5.0
 document.getElementById("btnSincronizar").onclick = async () => {
     const btn = document.getElementById("btnSincronizar");
     const originalText = btn.innerHTML;
     btn.innerHTML = `<i class="fas fa-sync fa-spin"></i> ENLAZANDO...`;
     
     try {
-        // 1. Extracción y Limpieza de Identidad Única
+        // 1. Identidad y Limpieza
         const placaLimpia = document.getElementById("f-placa").value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
         const idEmpresaFinal = localStorage.getItem("nexus_empresaId") || empresaId;
+        const estadoOrden = document.getElementById("f-estado").value;
         
-        // 2. Captura de Datos Técnicos y Financieros
+        // 2. Metadata Técnica
         const marca = document.getElementById("f-marca")?.value.trim().toUpperCase() || "UNIDAD";
         const linea = document.getElementById("f-linea")?.value.trim().toUpperCase() || "";
         const kmActual = Number(document.getElementById("f-km")?.value || 0);
         
+        // 3. Cálculos Financieros
         const gastosVarios = Number(document.getElementById("f-gastos-varios").value || 0);
         const anticipoCliente = Number(document.getElementById("f-anticipo-cliente").value || 0);
         const subtotalServicios = (ordenActiva.items || []).reduce((acc, item) => acc + Number(item.precio || 0), 0);
         const totalBruto = subtotalServicios + gastosVarios;
         const saldoFinal = totalBruto - anticipoCliente;
 
-        // 3. DATA ORDEN (Vínculo con pagosTaller.js)
+        // 4. DATA ORDEN (Alianza con pagosTaller.js)
         const dataOrden = {
             ...ordenActiva,
             empresaId: idEmpresaFinal,
             placa: placaLimpia,
             cliente: document.getElementById("f-cliente").value.trim().toUpperCase(),
             telefono: document.getElementById("f-telefono").value.trim().replace(/\s+/g, ''),
-            estado: document.getElementById("f-estado").value,
+            estado: estadoOrden,
             bitacora_ia: document.getElementById("ai-log-display").value,
             finanzas: {
                 ...ordenActiva.finanzas,
@@ -415,12 +417,12 @@ document.getElementById("btnSincronizar").onclick = async () => {
             costos_totales: {
                 total_servicios: subtotalServicios,
                 total_general: totalBruto,
-                saldo_pendiente: saldoFinal // ESTO MANTIENE VIVA LA ALIANZA CON PAGOS
+                saldo_pendiente: saldoFinal
             },
             updatedAt: serverTimestamp()
         };
 
-        // 4. DATA VEHÍCULO (Vínculo con vehiculos.js)
+        // 5. DATA VEHÍCULO (Radar de Flota)
         const dataVehiculo = {
             placa: placaLimpia,
             empresaId: idEmpresaFinal,
@@ -430,34 +432,54 @@ document.getElementById("btnSincronizar").onclick = async () => {
             kilometraje: kmActual,
             clienteNombre: dataOrden.cliente,
             ultimaActualizacion: serverTimestamp(),
-            status: "OPERATIVO",
-            creadoEn: ordenActiva.creadoEn || serverTimestamp()
+            ultima_mision: estadoOrden === 'LISTO' ? 'COMPLETADA' : 'EN PROCESO',
+            status: "OPERATIVO"
         };
 
-        // 5. PERSISTENCIA DUAL EN BÓVEDA
+        // 🚀 6. INYECCIÓN PARA DASHBOARD (EL ESLABÓN PERDIDO)
+        // Si la orden está 'LISTO' o hay un pago, alimentamos la colección de caja
+        let dataFinanciera = null;
+        if (estadoOrden === "LISTO" || anticipoCliente > 0) {
+            dataFinanciera = {
+                empresaId: idEmpresaFinal,
+                fecha: serverTimestamp(),
+                monto: anticipoCliente, // Registramos lo que entró físicamente
+                tipo: "INGRESO_ORDEN",
+                referencia: placaLimpia,
+                concepto: `Pago/Anticipo OT: ${placaLimpia}`
+            };
+        }
+
+        // --- EJECUCIÓN ATÓMICA ---
         const docId = ordenActiva.id || `OT_${placaLimpia}_${Date.now().toString().slice(-4)}`;
-        
-        // Ejecución en paralelo para máxima velocidad
-        await Promise.all([
+        const batch = [
             setDoc(doc(db, "ordenes", docId), dataOrden),
             setDoc(doc(db, "vehiculos", placaLimpia), dataVehiculo, { merge: true })
-        ]);
+        ];
 
-        hablar(`Sincronía exitosa. Activo ${placaLimpia} asegurado en el ecosistema.`);
+        // Solo inyectamos a contabilidad si hay dinero real fluyendo
+        if (dataFinanciera) {
+            const entryId = `ING_${Date.now()}`;
+            batch.push(setDoc(doc(db, "contabilidad", entryId), dataFinanciera));
+        }
+
+        await Promise.all(batch);
+
+        hablar(`Sincronía total aplicada. Activo ${placaLimpia} actualizado y caja alimentada.`);
 
         Swal.fire({ 
             icon: 'success', 
-            title: 'NEXUS_SYNC_OK', 
-            text: `Orden y Radar de ${placaLimpia} actualizados.`,
-            background: '#0d1117', color: '#fff', timer: 1500, showConfirmButton: false
+            title: 'NEXUS_FULL_SYNC', 
+            text: `Ecosistema actualizado: Orden, Radar y Contabilidad.`,
+            background: '#0d1117', color: '#fff', timer: 2000, showConfirmButton: false
         });
         
         btn.innerHTML = originalText;
 
     } catch (err) {
-        console.error("⚠️ ERROR DE NODO:", err);
+        console.error("⚠️ FALLO DE NODO:", err);
         btn.innerHTML = originalText;
-        Swal.fire('ERROR CRÍTICO', 'Fallo en la comunicación con la base de datos.', 'error');
+        Swal.fire('ERROR DE SINCRONÍA', 'El ecosistema no pudo cerrarse.', 'error');
     }
 };
 
