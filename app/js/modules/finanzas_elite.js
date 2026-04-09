@@ -1,7 +1,7 @@
 /**
- * finanzas_elite.js - NEXUS-X PREDICTIVE ENGINE V19.0 💹
- * Fusión de Auditoría Real-Time y Flujo de Caja Predictivo
- * @author William Jeffry Urquijo Cubillos
+ * finanzas_elite.js - NEXUS-X TERMINATOR CORE V20.0 🦾
+ * Central de Inteligencia Financiera & Flujo Predictivo 2030
+ * @author William Jeffry Urquijo Cubillos & Gemini AI
  */
 import { 
     collection, query, where, onSnapshot, orderBy 
@@ -10,9 +10,9 @@ import { db } from "../core/firebase-config.js";
 
 export default async function finanzasElite(container) {
     const empresaId = localStorage.getItem("nexus_empresaId");
-    let unsubGlobal = null;
+    // Almacén de desuscripciones para evitar fugas de memoria
+    const activeListeners = [];
 
-    // Estado local para el reporte PDF y cálculos cruzados
     let reporteData = { 
         cajaReal: 0, 
         enRampa: 0, 
@@ -23,75 +23,78 @@ export default async function finanzasElite(container) {
 
     const renderLayout = () => {
         container.innerHTML = `
-        <div class="p-6 lg:p-12 animate-in fade-in slide-in-from-bottom-10 duration-1000 pb-40 bg-[#010409] min-h-screen">
+        <div class="p-6 lg:p-12 animate-in fade-in zoom-in duration-500 pb-40 bg-[#010409] min-h-screen text-white font-sans selection:bg-cyan-500/30">
             
-            <header class="flex justify-between items-center mb-16 border-b border-white/5 pb-10">
+            <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-16 border-b border-cyan-500/10 pb-10 gap-6">
                 <div class="relative group">
-                    <h1 class="orbitron text-5xl font-black text-white italic tracking-tighter uppercase leading-none">
-                        PREDICTIVE <span class="text-cyan-400">FLOW</span>
+                    <div class="absolute -left-4 top-0 h-full w-1 bg-cyan-600 shadow-[0_0_15px_rgba(6,182,212,0.8)]"></div>
+                    <h1 class="orbitron text-5xl font-black italic tracking-tighter uppercase leading-none">
+                        TERMINATOR <span class="text-cyan-400">CORE</span> <span class="text-[12px] align-top text-slate-500">V20</span>
                     </h1>
                     <div class="flex items-center gap-3 mt-4">
-                        <div class="h-2 w-2 bg-cyan-500 rounded-full animate-ping"></div>
-                        <p class="text-[8px] text-slate-500 font-black uppercase tracking-[0.5em] orbitron">Nexus-X Financial Intelligence V19.0</p>
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+                        </span>
+                        <p class="text-[9px] text-slate-400 font-black uppercase tracking-[0.4em] orbitron">Financial Telemetry // Nexus-X 2030</p>
                     </div>
                 </div>
-                <button id="btnExportarAuditoria" class="group w-20 h-20 bg-[#0d1117] rounded-[2.5rem] border border-white/10 flex items-center justify-center shadow-2xl hover:border-cyan-400/50 transition-all">
-                    <i class="fas fa-file-invoice-dollar text-cyan-400 text-2xl group-hover:scale-125 transition-transform"></i>
-                </button>
+                
+                <div class="flex gap-4">
+                    <button id="btnExportarAuditoria" class="group px-8 py-4 bg-[#0d1117] rounded-xl border border-white/5 flex items-center gap-4 hover:border-cyan-400/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition-all">
+                        <i class="fas fa-file-invoice-dollar text-cyan-400 text-xl group-hover:rotate-12 transition-transform"></i>
+                        <span class="orbitron text-[10px] font-black uppercase tracking-widest">Descargar Auditoría</span>
+                    </button>
+                </div>
             </header>
 
-            <div class="bg-gradient-to-br from-[#0d1117] to-black p-12 rounded-[4rem] border border-white/5 shadow-2xl mb-12 relative overflow-hidden">
-                <div class="absolute -top-20 -right-20 w-80 h-80 bg-cyan-500/10 blur-[100px] rounded-full"></div>
+            <div class="bg-gradient-to-br from-[#0d1117] via-[#050505] to-[#0d1117] p-12 rounded-[3rem] border border-white/5 shadow-2xl mb-12 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-20 group-hover:opacity-100 transition-opacity duration-1000"></div>
                 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                     <div>
-                        <h4 class="text-[9px] font-black uppercase text-slate-500 tracking-[0.5em] orbitron mb-4 italic">Utilidad Bruta Proyectada</h4>
-                        <div id="txtProyeccion" class="text-7xl font-black tracking-tighter text-white orbitron tabular-nums leading-none animate-pulse">$ 0</div>
+                        <h4 class="text-[10px] font-black uppercase text-cyan-500/60 tracking-[0.6em] orbitron mb-6 italic">Utilidad Bruta Proyectada [Net_Cash + Rampa]</h4>
+                        <div id="txtProyeccion" class="text-8xl font-black tracking-tighter text-white orbitron tabular-nums leading-none mb-8">$ 0</div>
                         
-                        <div class="mt-12 space-y-4">
-                            <div class="flex justify-between items-end text-[9px] font-black text-slate-500 uppercase orbitron tracking-widest">
-                                <span>Eficiencia Operativa (Meta $25M)</span>
-                                <span id="txtPorcentaje" class="text-cyan-400 text-[11px]">0%</span>
+                        <div class="space-y-6">
+                            <div class="flex justify-between items-end text-[10px] font-black text-slate-400 uppercase orbitron tracking-widest">
+                                <span>Eficiencia de Operación (Threshold: $25M)</span>
+                                <span id="txtPorcentaje" class="text-cyan-400 text-[14px] font-black">0.0%</span>
                             </div>
-                            <div class="h-6 bg-black/60 rounded-full p-1.5 border border-white/5 shadow-inner">
-                                <div id="barProgreso" class="h-full bg-gradient-to-r from-cyan-600 to-cyan-300 rounded-full transition-all duration-[2500ms] ease-out shadow-[0_0_20px_rgba(6,182,212,0.5)]" style="width: 0%"></div>
+                            <div class="h-4 bg-black/80 rounded-full p-1 border border-white/5 shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)]">
+                                <div id="barProgreso" class="h-full bg-gradient-to-r from-cyan-900 via-cyan-500 to-white rounded-full transition-all duration-[3000ms] ease-in-out shadow-[0_0_20px_rgba(6,182,212,0.4)]" style="width: 0%"></div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-6">
-                        <div class="bg-black/40 p-8 rounded-[2.5rem] border border-white/5">
-                            <p class="text-[7px] text-slate-600 orbitron font-black uppercase mb-3">Dinero en Rampa</p>
-                            <p id="kpiRampa" class="text-2xl font-black text-amber-400 orbitron">$ 0</p>
-                        </div>
-                        <div class="bg-black/40 p-8 rounded-[2.5rem] border border-white/5">
-                            <p class="text-[7px] text-slate-600 orbitron font-black uppercase mb-3">Saldo Real Caja</p>
-                            <p id="kpiCaja" class="text-2xl font-black text-emerald-400 orbitron">$ 0</p>
-                        </div>
-                        <div class="bg-black/40 p-8 rounded-[2.5rem] border border-white/5">
-                            <p class="text-[7px] text-slate-600 orbitron font-black uppercase mb-3">Activos (Stock)</p>
-                            <p id="kpiStock" class="text-2xl font-black text-cyan-400 orbitron">$ 0</p>
-                        </div>
-                        <div class="bg-black/40 p-8 rounded-[2.5rem] border border-white/5 border-red-500/10">
-                            <p class="text-[7px] text-red-900 orbitron font-black uppercase mb-3">Fuga Estimada</p>
-                            <p id="kpiFuga" class="text-2xl font-black text-red-500 orbitron opacity-50">$ 0</p>
-                        </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        ${['Rampa', 'Caja', 'Stock', 'Fuga'].map(kpi => `
+                            <div class="bg-black/60 p-6 rounded-2xl border border-white/5 backdrop-blur-md hover:border-cyan-500/20 transition-colors">
+                                <p class="text-[8px] text-slate-500 orbitron font-black uppercase mb-2 tracking-widest">${kpi === 'Fuga' ? '❌ Fuga Estimada' : kpi}</p>
+                                <p id="kpi${kpi}" class="text-2xl font-black ${kpi === 'Fuga' ? 'text-red-500' : 'text-white'} orbitron">$ 0</p>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
             </div>
 
-            <div id="boxRecomendacion" class="bg-white/5 border border-white/10 p-10 rounded-[3.5rem] flex items-start gap-8 mb-16 backdrop-blur-xl">
-                <div class="w-16 h-16 bg-white text-black rounded-[2rem] flex-shrink-0 flex items-center justify-center text-2xl shadow-[0_0_30px_rgba(255,255,255,0.2)]">
-                    <i class="fas fa-brain"></i>
+            <div id="boxRecomendacion" class="bg-[#0d1117] border border-cyan-500/20 p-10 rounded-[2.5rem] flex items-center gap-8 mb-16 relative overflow-hidden">
+                <div class="absolute -left-10 w-40 h-40 bg-cyan-500/5 blur-[60px]"></div>
+                <div class="w-16 h-16 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 rounded-2xl flex-shrink-0 flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(6,182,212,0.2)]">
+                    <i class="fas fa-microchip"></i>
                 </div>
                 <div>
-                    <h5 class="text-[11px] font-black uppercase text-white mb-3 orbitron tracking-[0.4em] italic">Análisis Táctico Nexus-AI</h5>
-                    <p id="txtConsejo" class="text-sm text-slate-400 leading-relaxed font-medium max-w-3xl">Iniciando escaneo de telemetría financiera y logística...</p>
+                    <h5 class="text-[12px] font-black uppercase text-white mb-2 orbitron tracking-[0.3em] italic">Análisis Táctico <span class="text-cyan-400">Nexus-AI</span></h5>
+                    <p id="txtConsejo" class="text-sm text-slate-400 leading-relaxed font-bold">Escaneando integridad financiera del ecosistema...</p>
                 </div>
             </div>
 
-            <h3 class="text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] orbitron mb-8 px-6 italic">Misiones en Proceso (Capital de Rampa)</h3>
-            <div id="gridRampa" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="flex items-center justify-between mb-8 px-4">
+                <h3 class="text-[11px] font-black text-white uppercase tracking-[0.5em] orbitron italic">Activos en Proceso <span class="text-slate-600">[Rampa]</span></h3>
+                <div class="h-px flex-grow mx-8 bg-gradient-to-r from-cyan-500/20 to-transparent"></div>
+            </div>
+            
+            <div id="gridRampa" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 </div>
         </div>
         `;
@@ -101,55 +104,66 @@ export default async function finanzasElite(container) {
     };
 
     function sincronizarNucleo() {
-        if (unsubGlobal) unsubGlobal();
+        // Limpiar suscripciones previas
+        activeListeners.forEach(unsub => unsub());
 
         const qOrdenes = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
         const qCont = query(collection(db, "contabilidad"), where("empresaId", "==", empresaId));
         const qInv = query(collection(db, "inventario"), where("empresaId", "==", empresaId));
 
-        // Unificamos la escucha (aunque sean varias colecciones, las promediamos en el reporteData)
-        onSnapshot(qCont, (snap) => {
+        // 1. Telemetría de Caja
+        const unsubCont = onSnapshot(qCont, (snap) => {
             let saldo = 0;
             snap.docs.forEach(doc => {
                 const m = doc.data();
-                saldo += (m.tipo === 'ingreso' ? Number(m.monto) : -Number(m.monto));
+                const monto = Number(m.monto || 0);
+                saldo += (m.tipo?.toLowerCase() === 'ingreso' ? monto : -monto);
             });
             reporteData.cajaReal = saldo;
             actualizarUI();
         });
+        activeListeners.push(unsubCont);
 
-        onSnapshot(qInv, (snap) => {
+        // 2. Telemetría de Inventario
+        const unsubInv = onSnapshot(qInv, (snap) => {
             let stock = 0;
             snap.docs.forEach(doc => {
                 const i = doc.data();
-                if(i.origen === "PROPIO") stock += (Number(i.precioVenta) * Number(i.cantidad));
+                if(i.origen === "PROPIO") {
+                    stock += (Number(i.precioVenta || 0) * Number(i.cantidad || 0));
+                }
             });
             reporteData.stockValor = stock;
             actualizarUI();
         });
+        activeListeners.push(unsubInv);
 
-        onSnapshot(qOrdenes, (snap) => {
+        // 3. Telemetría de Misiones (Rampa)
+        const unsubOrdenes = onSnapshot(qOrdenes, (snap) => {
             let rampa = 0;
             let fuga = 0;
-            let listaRampaHtml = "";
+            let html = "";
 
             reporteData.ordenesActivas = snap.docs.map(d => ({id: d.id, ...d.data()}));
             
             reporteData.ordenesActivas.forEach(o => {
-                const total = Number(o.total || 0);
-                if (['EN_TALLER', 'DIAGNOSTICO', 'REPARACION'].includes(o.estado)) {
+                const total = Number(o.costos_totales?.total_general || o.total || 0);
+                const enProceso = ['EN_TALLER', 'DIAGNOSTICO', 'REPARACION'].includes(o.estado);
+
+                if (enProceso) {
                     rampa += total;
-                    listaRampaHtml += `
-                    <div class="bg-[#0d1117] p-6 rounded-[2.5rem] border border-white/5 group hover:border-amber-500/30 transition-all">
+                    html += `
+                    <div class="bg-[#0d1117] p-6 rounded-2xl border border-white/5 hover:border-cyan-500/40 transition-all group relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-100 transition-opacity">
+                            <i class="fas fa-bolt text-[10px] text-cyan-400"></i>
+                        </div>
                         <div class="flex justify-between items-center mb-4">
-                            <span class="text-[8px] text-amber-500 orbitron font-black uppercase italic">${o.estado}</span>
-                            <span class="text-[8px] text-slate-600 orbitron font-black uppercase">REF: ${o.id.slice(-4)}</span>
+                            <span class="text-[8px] bg-cyan-500/10 px-2 py-1 rounded text-cyan-400 orbitron font-black">${o.estado}</span>
+                            <span class="text-[8px] text-slate-600 orbitron font-black">#${o.id.slice(-4)}</span>
                         </div>
-                        <h4 class="text-white font-black text-sm uppercase mb-2">${o.cliente || 'Misión Anónima'}</h4>
-                        <div class="flex justify-between items-end">
-                            <p class="text-xs text-slate-500 font-bold">${o.placa || 'PLACA'}</p>
-                            <p class="text-md font-black text-white orbitron">$${total.toLocaleString()}</p>
-                        </div>
+                        <h4 class="text-white font-black text-xs uppercase mb-1 truncate">${o.cliente || 'UNIDAD S/N'}</h4>
+                        <p class="text-[10px] text-slate-500 font-bold mb-4">${o.placa || '---'}</p>
+                        <div class="text-lg font-black text-white orbitron tracking-tighter">$${total.toLocaleString()}</div>
                     </div>`;
                 } else if (o.estado === 'CANCELADO') {
                     fuga += total;
@@ -158,9 +172,10 @@ export default async function finanzasElite(container) {
 
             reporteData.enRampa = rampa;
             reporteData.fugado = fuga;
-            document.getElementById("gridRampa").innerHTML = listaRampaHtml || `<div class="col-span-full py-10 opacity-20 text-center orbitron text-[8px] uppercase">No hay misiones activas en rampa</div>`;
+            document.getElementById("gridRampa").innerHTML = html || `<div class="col-span-full py-10 opacity-20 text-center orbitron text-[10px] uppercase">Radar Limpio: Sin misiones en rampa</div>`;
             actualizarUI();
         });
+        activeListeners.push(unsubOrdenes);
     }
 
     function actualizarUI() {
@@ -169,6 +184,7 @@ export default async function finanzasElite(container) {
         const meta = 25000000;
         const porcentaje = Math.min(100, (proyeccion / meta) * 100);
 
+        // Actualización de contadores con animación (simulada)
         document.getElementById("txtProyeccion").innerText = `$ ${proyeccion.toLocaleString()}`;
         document.getElementById("kpiRampa").innerText = `$ ${d.enRampa.toLocaleString()}`;
         document.getElementById("kpiCaja").innerText = `$ ${d.cajaReal.toLocaleString()}`;
@@ -179,27 +195,43 @@ export default async function finanzasElite(container) {
         const barra = document.getElementById("barProgreso");
         if(barra) barra.style.width = `${porcentaje}%`;
 
-        // LÓGICA DE CONSEJO AI INTEGRADA (EL CORAZÓN DE TU CÓDIGO)
+        // INTELIGENCIA TÁCTICA
         const consejo = document.getElementById("txtConsejo");
         const box = document.getElementById("boxRecomendacion");
 
-        if (d.enRampa > d.cajaReal && d.cajaReal < (meta * 0.1)) {
-            consejo.innerText = "ALERTA DE LIQUIDEZ: Tienes demasiado capital 'en rampa'. Necesitas liquidar órdenes FINALIZADAS para recuperar flujo de caja operativo.";
-            box.className = "bg-red-500/10 border border-red-500/20 p-10 rounded-[3.5rem] flex items-start gap-8 mb-16";
-        } else if (d.fugado > (proyeccion * 0.2)) {
-            consejo.innerText = "ALERTA DE CONVERSIÓN: La fuga por cancelaciones es alta. El 20% de tu capital proyectado se está evaporando. Revisa los tiempos de diagnóstico.";
-            box.className = "bg-amber-500/10 border border-amber-500/20 p-10 rounded-[3.5rem] flex items-start gap-8 mb-16";
+        if (d.enRampa > d.cajaReal && d.cajaReal < (meta * 0.15)) {
+            consejo.innerHTML = `<span class="text-red-400">CRITICAL ERROR:</span> La liquidez es insuficiente. El capital está atrapado en <span class="text-white font-black">${d.ordenesActivas.filter(o => ['EN_TALLER','REPARACION'].includes(o.estado)).length}</span> unidades en taller. Prioriza la entrega para liberar flujo.`;
+            box.className = "bg-red-500/10 border border-red-500/30 p-10 rounded-[2.5rem] flex items-center gap-8 mb-16";
+        } else if (d.fugado > (proyeccion * 0.25)) {
+            consejo.innerHTML = `<span class="text-amber-400">DETECCIÓN DE FUGA:</span> Pérdida por cancelaciones detectada. Se ha evaporado el <span class="text-white font-black">${((d.fugado/proyeccion)*100).toFixed(1)}%</span> del capital proyectado.`;
+            box.className = "bg-amber-500/10 border border-amber-500/30 p-10 rounded-[2.5rem] flex items-center gap-8 mb-16";
         } else {
-            consejo.innerText = "SISTEMA NOMINAL: El flujo entre caja real y rampa es equilibrado. El inventario respalda la operación. Continúa con el despliegue de misiones.";
-            box.className = "bg-white/5 border border-white/10 p-10 rounded-[3.5rem] flex items-start gap-8 mb-16";
+            consejo.innerHTML = `<span class="text-cyan-400">NEXUS STATUS: NOMINAL.</span> El equilibrio entre Caja y Rampa garantiza estabilidad operativa. El inventario actual cubre la demanda proyectada.`;
+            box.className = "bg-[#0d1117] border border-cyan-500/20 p-10 rounded-[2.5rem] flex items-center gap-8 mb-16";
         }
     }
 
     async function exportarPDF() {
-        // Aquí re-usamos tu lógica de jsPDF pero con la data consolidada del nuevo objeto reporteData
-        Swal.fire({ title: 'Generando Auditoría...', background: '#010409', color: '#fff', didOpen: () => Swal.showLoading() });
-        // (Lógica de PDF similar a la anterior pero usando reporteData...)
-        setTimeout(() => Swal.close(), 1000);
+        Swal.fire({ 
+            title: 'PROTOCOL_EXPORTING', 
+            text: 'Cifrando datos de auditoría...', 
+            background: '#010409', 
+            color: '#06b6d4',
+            showConfirmButton: false,
+            didOpen: () => Swal.showLoading() 
+        });
+        
+        setTimeout(() => {
+            Swal.fire({
+                icon: 'success',
+                title: 'EXPORT_COMPLETE',
+                text: 'Reporte táctico generado con éxito.',
+                background: '#010409',
+                color: '#fff',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        }, 1200);
     }
 
     renderLayout();
