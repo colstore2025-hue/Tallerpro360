@@ -207,13 +207,36 @@ export default async function pagosTaller(container, state) {
             background: '#0d1117', color: '#fff', confirmButtonColor: '#00f2ff'
         });
 
-        buscarMision(); // Refrescar UI para ver el nuevo saldo
-      }
-    } catch (err) {
-      console.error(err);
-      Swal.fire({ icon: 'error', title: 'FALLO DE NODO', text: err.message, background: '#0d1117', color: '#fff' });
+        // --- CORRECCIÓN DE BÚSQUEDA Y RECAUDO ---
+async function buscarMision() {
+    // Limpieza radical de la placa para evitar fallos de coincidencia
+    const placaRaw = document.getElementById("refIn").value;
+    const placa = placaRaw.trim().toUpperCase().replace(/[^A-Z0-9]/g, ''); 
+    
+    if(!placa) return;
+
+    // Buscamos en la colección de órdenes del taller
+    const q = query(collection(db, "ordenes"), 
+              where("empresaId", "==", empresaId), 
+              where("placa", "==", placa),
+              where("estado", "!=", "FINALIZADO")); // Solo misiones activas
+    
+    const snap = await getDocs(q);
+
+    if(!snap.empty) {
+        ordenActiva = { id: snap.docs[0].id, ...snap.docs[0].data() };
+        
+        // Sincronización con la interfaz
+        document.getElementById("display-info").classList.remove("hidden");
+        document.getElementById("label-monto").innerText = `$ ${ordenActiva.costos_totales.saldo_pendiente.toLocaleString()}`;
+        document.getElementById("montoIn").value = ordenActiva.costos_totales.saldo_pendiente;
+        
+        hablar(`Misión ${placa} vinculada. Saldo pendiente detectado.`);
+    } else {
+        ordenActiva = null;
+        Swal.fire('NEXUS-X', `La placa ${placa} no tiene misiones activas.`, 'error');
     }
-  }
+}
 
     async function enviarLinkPago() {
     if(!ordenActiva) {
