@@ -97,40 +97,47 @@ function renderInterface(container, plan, user, empresa, config) {
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            ${renderBtn('Clientes', 'fa-users', '#clientes', config.modulos.includes('clientes'))}
-            ${renderBtn('Vehículos', 'fa-car', '#vehiculos', config.modulos.includes('vehiculos'))}
-            ${renderBtn('Inventario', 'fa-box-open', '#inventario', config.modulos.includes('inventario'))}
-            ${renderBtn('Caja', 'fa-vault', '#pagos', config.modulos.includes('pagos'))}
-            ${renderBtn('Contabilidad', 'fa-file-invoice-dollar', '#contabilidad', config.modulos.includes('contabilidad'))}
-            ${renderBtn('Nómina', 'fa-user-tie', '#nomina', config.modulos.includes('nomina'))}
-            
-            ${renderBtn('Reportes', 'fa-chart-pie', '#reportes', config.modulos.includes('reportes'))}
-            ${renderBtn('Marketplace', 'fa-shop', '#marketplace', config.modulos.includes('marketplace'))}
-            ${renderBtn('Publish', 'fa-cloud-arrow-up', '#publish', config.modulos.includes('publish'))}
-            ${renderBtn('Soporte NXS', 'fa-headset', '#soporte', config.modulos.includes('soporte'))}
-            ${renderBtn('Staff', 'fa-people-group', '#staff', config.modulos.includes('staff'))}
-            ${renderBtn('Audit Center', 'fa-shield-halved', '#finanzas-elite', config.modulos.includes('finanzas-elite'))}
-        </div>
+    ${renderBtn('Clientes', 'fa-users', '#clientes', config.modulos.includes('clientes'))}
+    ${renderBtn('Vehículos', 'fa-car', '#vehiculos', config.modulos.includes('vehiculos'))}
+    ${renderBtn('Inventario', 'fa-box-open', '#inventario', config.modulos.includes('inventario'))}
+    ${renderBtn('Caja', 'fa-vault', '#pagos', config.modulos.includes('pagos'))}
+    ${renderBtn('Contabilidad', 'fa-file-invoice-dollar', '#contabilidad', config.modulos.includes('contabilidad'))}
+    ${renderBtn('Nómina', 'fa-user-tie', '#nomina', config.modulos.includes('nomina'))}
+    
+    ${renderBtn('Reportes', 'fa-chart-pie', '#reportes', config.modulos.includes('reportes'))}
+    ${renderBtn('Marketplace', 'fa-shop', '#marketplace', plan === 'ELITE' || plan === 'PRO')}
+    ${renderBtn('Publish', 'fa-cloud-arrow-up', '#publish', plan === 'ELITE' || plan === 'PRO')}
+    
+    <button onclick="window.open('https://wa.me/573115709730?text=SOPORTE_NXS:%20Solicito%20asistencia%20técnica', '_blank')" 
+        class="flex flex-col items-center justify-center p-6 bg-[#0d1117] border border-white/5 rounded-[2rem] hover:border-green-500/50 transition-all group">
+        <i class="fab fa-whatsapp text-2xl mb-3 text-slate-500 group-hover:text-green-400"></i>
+        <span class="orbitron text-[9px] font-black uppercase text-slate-500 group-hover:text-white">Soporte NXS</span>
+    </button>
+
+    ${renderBtn('Staff', 'fa-people-group', '#staff', config.modulos.includes('staff'))}
+    ${renderBtn('Audit Center', 'fa-shield-halved', '#finanzas-elite', plan === 'ELITE' || plan === 'PRO')}
+</div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div onclick="location.hash='#ordenes'" class="cursor-pointer bg-[#0d1117] border border-white/5 hover:border-cyan-500/50 p-10 rounded-[3rem] group transition-all relative overflow-hidden">
-                <div class="absolute -right-10 -top-10 text-9xl text-white/5 rotate-12 group-hover:text-cyan-500/10 transition-colors"><i class="fas fa-screwdriver-wrench"></i></div>
-                <h3 class="orbitron text-xs font-black text-slate-500 mb-2 uppercase tracking-widest italic">Misiones en Proceso</h3>
-                <p class="text-4xl font-black orbitron text-white italic">ÓRDENES DE TRABAJO</p>
-                <div class="mt-6 flex items-center gap-4 text-cyan-500 font-bold text-[10px] orbitron">
-                    <span>EXPLORAR RADAR</span> <i class="fas fa-arrow-right"></i>
-                </div>
-            </div>
-
-            <div onclick="${config.modulos.includes('gerenteAI') ? "location.hash='#gerenteAI'" : "window.restrictedAccess('GERENTE AI')"}" class="cursor-pointer bg-gradient-to-br from-[#0d1117] to-black border border-white/5 hover:border-purple-500/50 p-10 rounded-[3rem] group transition-all relative overflow-hidden">
-                <div class="absolute -right-10 -top-10 text-9xl text-purple-500/5 group-hover:text-purple-500/10 transition-colors"><i class="fas fa-brain"></i></div>
-                <h3 class="orbitron text-xs font-black text-slate-500 mb-2 uppercase tracking-widest italic">Análisis Predictivo</h3>
-                <p class="text-4xl font-black orbitron text-white italic">GERENTE <span class="text-purple-500">AI</span></p>
-                <div class="mt-6 flex items-center gap-4 text-purple-500 font-bold text-[10px] orbitron">
-                    <span>DESPLEGAR RED NEURONAL</span> <i class="fas fa-microchip"></i>
-                </div>
-            </div>
+    <div onclick="location.hash='#vehiculos'" class="cursor-pointer bg-[#0d1117] border border-white/5 hover:border-cyan-500/50 p-10 rounded-[3rem] group transition-all relative overflow-hidden">
+        <div class="absolute -right-10 -top-10 text-9xl text-white/5 rotate-12 group-hover:text-cyan-500/10 transition-colors"><i class="fas fa-screwdriver-wrench"></i></div>
+        <h3 class="orbitron text-xs font-black text-slate-500 mb-2 uppercase tracking-widest italic">Misiones en Proceso</h3>
+        <p class="text-4xl font-black orbitron text-white italic tracking-tighter">ÓRDENES DE TRABAJO</p>
+        <div class="mt-6 flex items-center gap-4 text-cyan-500 font-bold text-[10px] orbitron group-hover:translate-x-2 transition-transform">
+            <span>EXPLORAR RADAR</span> <i class="fas fa-arrow-right"></i>
         </div>
+    </div>
+
+    <div onclick="${(plan === 'ELITE' || plan === 'PRO') ? "location.hash='#finanzas-elite'" : "window.restrictedAccess('GERENTE AI')"}" 
+        class="cursor-pointer bg-gradient-to-br from-[#0d1117] to-black border border-white/5 hover:border-purple-500/50 p-10 rounded-[3rem] group transition-all relative overflow-hidden">
+        <div class="absolute -right-10 -top-10 text-9xl text-purple-500/5 group-hover:text-purple-500/10 transition-colors"><i class="fas fa-brain"></i></div>
+        <h3 class="orbitron text-xs font-black text-slate-500 mb-2 uppercase tracking-widest italic">Análisis Predictivo</h3>
+        <p class="text-4xl font-black orbitron text-white italic tracking-tighter uppercase">Gerente <span class="text-purple-500">AI</span></p>
+        <div class="mt-6 flex items-center gap-4 text-purple-500 font-bold text-[10px] orbitron animate-pulse">
+            <span>DESPLEGAR RED NEURONAL</span> <i class="fas fa-microchip"></i>
+        </div>
+    </div>
+</div>
 
         <div id="hudKpis" class="grid grid-cols-2 md:grid-cols-4 gap-4">
             </div>
