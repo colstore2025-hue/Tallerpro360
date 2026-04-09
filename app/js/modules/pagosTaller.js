@@ -111,42 +111,54 @@ export default async function pagosTaller(container, state) {
 
   // --- 🛰️ FUNCIÓN: BUSQUEDA RADIAL DE MISIÓN ---
   async function buscarMision() {
+    // 1. Normalización total de la placa
     const placaRaw = document.getElementById("refIn").value;
     const placa = placaRaw.trim().toUpperCase().replace(/[^A-Z0-9]/g, ''); 
     
-    if(!placa) return;
+    // 2. Garantizar que el ID de empresa sea el correcto
+    const empresaIdCore = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
+
+    if(!placa || !empresaIdCore) {
+        return Swal.fire('SISTEMA', 'Falta Placa o ID de Empresa', 'warning');
+    }
 
     try {
-        const q = query(collection(db, "ordenes"), 
-                  where("empresaId", "==", empresaId), 
-                  where("placa", "==", placa),
-                  where("estado", "!=", "FINALIZADO"));
+        // 3. Consulta simplificada (Quitamos filtros de estado para que encuentre la placa sí o sí)
+        const q = query(
+            collection(db, "ordenes"), 
+            where("empresaId", "==", empresaIdCore), 
+            where("placa", "==", placa)
+        );
         
         const snap = await getDocs(q);
 
         if(!snap.empty) {
-            // Ordenar por fecha para traer la más reciente
-            const docs = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.updatedAt - a.updatedAt);
-            ordenActiva = docs[0];
+            // Traer la más reciente que NO esté finalizada preferiblemente
+            const docs = snap.docs.map(d => ({id: d.id, ...d.data()}))
+                             .sort((a,b) => b.updatedAt - a.updatedAt);
             
-            const saldo = Number(ordenActiva.costos_totales?.saldo_pendiente || 0);
+            // Priorizamos la que esté en proceso
+            ordenActiva = docs.find(d => d.estado !== "FINALIZADO") || docs[0];
             
+            // 4. Sincronización de Interfaz
             document.getElementById("display-info").classList.remove("hidden");
-            document.getElementById("txtCliente").innerText = (ordenActiva.cliente || "OPERADOR_DESCONOCIDO").toUpperCase();
-            document.getElementById("txtMision").innerText = `OT: ${ordenActiva.id.slice(-6)} // FASE: ${ordenActiva.estado}`;
+            document.getElementById("txtCliente").innerText = (ordenActiva.cliente || "DESCONOCIDO").toUpperCase();
+            document.getElementById("txtMision").innerText = `OT: ${ordenActiva.id.slice(-6)} | ESTADO: ${ordenActiva.estado}`;
+            
+            const saldo = ordenActiva.costos_totales?.saldo_pendiente || 0;
             document.getElementById("label-monto").innerText = `$ ${saldo.toLocaleString()}`;
             document.getElementById("montoIn").value = saldo;
             
-            hablar(`Vehículo ${placa} enlazado. Saldo detectado.`);
+            hablar(`Misión ${placa} localizada.`);
         } else {
             ordenActiva = null;
-            Swal.fire('NEXUS-X', `No hay misiones activas para la placa ${placa}.`, 'error');
+            Swal.fire('NEXUS-X', `La placa ${placa} no registra misiones en la base de datos.`, 'error');
         }
     } catch (e) {
-        console.error(e);
-        Swal.fire('ERROR DE NODO', 'Fallo en la conexión con la base de datos.', 'error');
+        console.error("Error en Auditoría Nexus:", e);
+        Swal.fire('ERROR DE NODO', 'Fallo de conexión. Verifique su señal Satelital.', 'error');
     }
-  }
+}
 
   // --- 💳 FUNCIÓN: PROCESADOR DE PAGOS HÍBRIDO ---
   async function procesarPago(metodo) {
