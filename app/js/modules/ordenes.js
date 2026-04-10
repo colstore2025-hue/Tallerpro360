@@ -271,7 +271,8 @@ export default async function ordenes(container) {
         recalcularFinanzas();
     };
 
-    // --- 📡 SINCRONIZACIÓN STARLINK (Protocolo Circular CRM/Ventas) ---
+        // --- 📡 SINCRONIZACIÓN STARLINK (Protocolo ERP Circular) ---
+    // REEMPLAZAR DESDE LÍNEA 218
     const ejecutarSincronizacionNexus = async () => {
         const btn = document.getElementById("btnSincronizar");
         const originalText = btn.innerHTML;
@@ -282,9 +283,10 @@ export default async function ordenes(container) {
             const estadoOrden = document.getElementById("f-estado").value;
             const docId = ordenActiva.id || `OT_${placaLimpia}_${Date.now().toString().slice(-4)}`;
 
-            // 1. Data de la Orden
+            // 1. Data Consolidada de la Orden
             const dataOrden = {
                 ...ordenActiva,
+                id: docId,
                 empresaId,
                 placa: placaLimpia,
                 cliente: document.getElementById("f-cliente").value.trim().toUpperCase(),
@@ -294,65 +296,93 @@ export default async function ordenes(container) {
                 updatedAt: serverTimestamp()
             };
 
-            // 2. Data para el Radar de Vehículos
-            const dataVehiculo = {
-                placa: placaLimpia,
-                empresaId,
-                clienteNombre: dataOrden.cliente,
+            // 2. Operaciones en Lote (Batch/Parallel)
+            await setDoc(doc(db, "ordenes", docId), dataOrden);
+            await setDoc(doc(db, "vehiculos", placaLimpia), {
+                placa: placaLimpia, empresaId, clienteNombre: dataOrden.cliente,
                 ultimaActualizacion: serverTimestamp(),
-                status: estadoOrden === 'GARANTIA' ? 'RE-INGRESO POR GARANTÍA' : (estadoOrden === 'LISTO' ? 'OPERATIVO' : 'EN PROCESO'),
-                ultimoServicio: { descripcion: dataOrden.items[0]?.desc || "Mantenimiento General", fecha: new Date().toISOString(), idOrden: docId }
-            };
+                status: estadoOrden === 'LISTO' ? 'OPERATIVO' : 'EN TALLER',
+                ultimoServicio: { desc: dataOrden.items[0]?.desc || "Revisión", idOrden: docId }
+            }, { merge: true });
 
-            // 3. Ejecución en Batch
-            const batchOps = [
-                setDoc(doc(db, "ordenes", docId), dataOrden),
-                setDoc(doc(db, "vehiculos", placaLimpia), dataVehiculo, { merge: true }),
-                setDoc(doc(db, "clientes", dataOrden.telefono), { nombre: dataOrden.cliente, telefono: dataOrden.telefono, ultima_placa: placaLimpia }, { merge: true })
-            ];
-
-            // 4. Inyección Contable Automática
-            if (estadoOrden !== "GARANTIA" && dataOrden.finanzas.anticipo_cliente > 0) {
-                batchOps.push(setDoc(doc(db, "contabilidad", `ING_${Date.now()}`), {
-                    empresaId, monto: dataOrden.finanzas.anticipo_cliente, tipo: "INGRESO_OT", referencia: placaLimpia, fecha: serverTimestamp(), concepto: `Anticipo OT: ${placaLimpia}`
-                }));
+            // 3. 🏁 DISPARADORES CONTABLES & INVENTARIO
+            
+            // A. Si hay anticipo, crear asiento automático en GLOBAL LEDGER
+            if (dataOrden.finanzas.anticipo_cliente > 0) {
+                await setDoc(doc(db, "contabilidad", `ANT_${docId}`), {
+                    empresaId, monto: dataOrden.finanzas.anticipo_cliente,
+                    tipo: "ingreso_ot", concepto: `ANTICIPO OT: ${placaLimpia}`,
+                    referencia: docId, creadoEn: serverTimestamp()
+                }, { merge: true });
             }
 
-            await Promise.all(batchOps);
-            hablar(`Sincronía total aplicada. Activo ${placaLimpia} actualizado.`);
-            
-            if (estadoOrden === "LISTO") generarCertificadoTecnico(dataOrden);
+            // B. Si la orden está LISTA, registrar el ingreso total y descontar Stock
+            if (estadoOrden === "LISTO") {
+                // Registro de Venta Final
+                await setDoc(doc(db, "contabilidad", `VENTA_${docId}`), {
+                    empresaId, monto: dataOrden.costos_totales.gran_total,
+                    tipo: "ingreso_ot", concepto: `CIERRE OT: ${placaLimpia}`,
+                    referencia: docId, creadoEn: serverTimestamp()
+                });
 
+                // Descuento de Inventario y Registro de Costo
+                for (const item of dataOrden.items) {
+                    if (item.tipo === 'REPUESTO' && item.sku && item.origen === 'TALLER') {
+                        // Descontar del almacén
+                        await updateDoc(doc(db, "inventario", item.sku), { stock: increment(-1) });
+                        // Registrar el gasto (Costo de venta) para utilidad real
+                        await addDoc(collection(db, "contabilidad"), {
+                            empresaId, monto: item.costo, tipo: "repuestos",
+                            concepto: `COSTO: ${item.desc} (OT ${placaLimpia})`,
+                            referencia: docId, creadoEn: serverTimestamp()
+                        });
+                    }
+                }
+                generarCertificadoTecnico(dataOrden);
+            }
+
+            hablar(`Sincronía total. Activo ${placaLimpia} actualizado.`);
             Swal.fire({ icon: 'success', title: 'NEXUS_FULL_SYNC', background: '#0d1117', color: '#fff', timer: 2000 });
             btn.innerHTML = originalText;
             document.getElementById("nexus-terminal").classList.add("hidden");
         } catch (err) {
+            console.error(err);
             btn.innerHTML = originalText;
-            Swal.fire('ERROR DE NODO', 'Fallo en enlace.', 'error');
+            Swal.fire('ERROR DE NODO', 'Fallo en enlace financiero.', 'error');
         }
     };
 
-    // --- 📦 INTEGRACIÓN DE INVENTARIO ---
+    // --- 📦 INTEGRACIÓN DE INVENTARIO ALFABÉTICO ---
     window.buscarEnInventario = async (idx) => {
-        const { value: sku } = await Swal.fire({
-            title: 'BUSCAR EN ALMACÉN',
-            input: 'text',
-            inputLabel: 'Nombre o Código SKU',
+        const { value: selectedItem } = await Swal.fire({
+            title: 'BÓVEDA DE SUMINISTROS',
             background: '#010409', color: '#fff',
-            showCancelButton: true
+            html: `<select id="swal-sku" class="w-full bg-[#0d1117] p-4 rounded-2xl text-white border border-white/10 orbitron text-[10px] uppercase"><option>Cargando...</option></select>`,
+            didOpen: async () => {
+                const snap = await getDocs(query(collection(db, "inventario"), where("empresaId", "==", empresaId)));
+                const select = document.getElementById("swal-sku");
+                select.innerHTML = '<option value="">-- SELECCIONE --</option>' + 
+                    snap.docs.map(d => ({id: d.id, ...d.data()}))
+                    .sort((a,b) => a.nombre.localeCompare(b.nombre))
+                    .map(d => `<option value='${JSON.stringify({id: d.id, n: d.nombre, c: d.costo, v: d.venta})}'>${d.nombre} (${d.stock} DISP)</option>`).join('');
+            },
+            preConfirm: () => {
+                const val = document.getElementById("swal-sku").value;
+                return val ? JSON.parse(val) : null;
+            }
         });
 
-        if (sku) {
-            const snap = await getDoc(doc(db, "inventario", sku.toUpperCase())); 
-            if (snap.exists()) {
-                const prod = snap.data();
-                if (prod.stock <= 0) { Swal.fire('SIN STOCK', `Existencias agotadas de ${prod.nombre}`, 'warning'); return; }
-                ordenActiva.items[idx] = { ...ordenActiva.items[idx], desc: prod.nombre, costo: prod.costo, venta: prod.precio_venta, sku: sku.toUpperCase(), tipo: 'REPUESTO' };
-                recalcularFinanzas();
-                hablar(`${prod.nombre} vinculado.`);
-            } else { Swal.fire('NO EXISTE', 'SKU no registrado en el sistema.', 'error'); }
+        if (selectedItem) {
+            ordenActiva.items[idx] = { 
+                ...ordenActiva.items[idx], 
+                desc: selectedItem.n, costo: selectedItem.c, venta: selectedItem.v, 
+                sku: selectedItem.id, tipo: 'REPUESTO', origen: 'TALLER' 
+            };
+            recalcularFinanzas();
+            hablar(`${selectedItem.n} vinculado.`);
         }
     };
+    // FIN DEL BLOQUE A REEMPLAZAR (Línea 285 aprox)
 
     // --- 📱 COMUNICACIÓN WHATSAPP ---
     const ejecutarProtocoloSalida = (o) => {
