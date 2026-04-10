@@ -352,22 +352,46 @@ export default async function ordenes(container) {
         }
     };
 
-    // --- 📦 INTEGRACIÓN DE INVENTARIO ALFABÉTICO (CIRUGÍA V20.0) ---
+    /**
+ * --- 📦 INTEGRACIÓN DE INVENTARIO ALFABÉTICO (CIRUGÍA V20.0) ---
+ * Este bloque conecta las Órdenes de Trabajo con la Bóveda de Firestore
+ * @param {number} idx - Índice de la fila en el array de items de la orden
+ */
 window.buscarEnInventario = async (idx) => {
-    // Aseguramos que empresaId exista en este contexto
+    // 1. Verificación de Seguridad: ID de Empresa
     const localEmpresaId = localStorage.getItem("nexus_empresaId");
     
     if (!localEmpresaId) {
-        return Swal.fire('ERROR DE SESIÓN', 'No se detectó ID de empresa. Reingresa al sistema.', 'error');
+        return Swal.fire({
+            icon: 'error',
+            title: 'SESIÓN EXPIRADA',
+            text: 'No se detectó el núcleo de la empresa. Reingresa al sistema.',
+            background: '#010409',
+            color: '#fff'
+        });
     }
 
+    // 2. Apertura del Portal de Suministros
     const { value: selectedItem } = await Swal.fire({
         title: 'BÓVEDA DE SUMINISTROS',
-        background: '#010409', color: '#fff',
-        html: `<select id="swal-sku" class="w-full bg-[#0d1117] p-4 rounded-2xl text-white border border-white/10 orbitron text-[10px] uppercase"><option>Conectando con Firestore...</option></select>`,
+        background: '#010409',
+        color: '#fff',
+        customClass: {
+            popup: 'rounded-[2.5rem] border border-white/10 shadow-2xl',
+            confirmButton: 'bg-cyan-500 text-black orbitron rounded-xl px-8 py-3'
+        },
+        html: `
+            <div class="p-2">
+                <p class="text-[8px] orbitron text-slate-500 mb-4 tracking-[0.3em] uppercase">Selección de Repuestos en Tiempo Real</p>
+                <select id="swal-sku" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/10 orbitron text-[11px] uppercase outline-none focus:border-cyan-500 transition-all">
+                    <option>Sincronizando con Firestore...</option>
+                </select>
+                <div id="stock-info" class="mt-4 text-[9px] orbitron text-cyan-400 italic"></div>
+            </div>
+        `,
         didOpen: async () => {
             try {
-                // Simplificamos la consulta para evitar errores de índice iniciales
+                // Consulta optimizada para evitar fallos de índice
                 const q = query(
                     collection(db, "inventario"), 
                     where("empresaId", "==", localEmpresaId)
@@ -377,41 +401,79 @@ window.buscarEnInventario = async (idx) => {
                 const select = document.getElementById("swal-sku");
                 
                 if (snap.empty) {
-                    select.innerHTML = '<option value="">-- INVENTARIO VACÍO EN NUBE --</option>';
+                    select.innerHTML = '<option value="">-- BÓVEDA VACÍA --</option>';
                     return;
                 }
 
-                // Filtrado y ordenado manual (más seguro que por consulta en este paso)
+                // Filtrado y ordenado manual (Protocolo Anti-Errores de Firebase Index)
                 const items = snap.docs
                     .map(d => ({id: d.id, ...d.data()}))
                     .filter(d => d.origen === "PROPIO")
                     .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
 
-                select.innerHTML = '<option value="">-- SELECCIONE --</option>' + 
+                if (items.length === 0) {
+                    select.innerHTML = '<option value="">-- SIN REPUESTOS PROPIOS --</option>';
+                    return;
+                }
+
+                select.innerHTML = '<option value="">-- SELECCIONE UN PRODUCTO --</option>' + 
                     items.map(d => {
-                        const val = JSON.stringify({id: d.id, n: d.nombre, c: d.costo || 0, v: d.precioVenta || 0});
-                        return `<option value='${val}'>${d.nombre} (${d.cantidad || 0} DISP)</option>`;
+                        const payload = JSON.stringify({
+                            id: d.id, 
+                            n: d.nombre, 
+                            c: Number(d.costo || 0), 
+                            v: Number(d.precioVenta || 0)
+                        });
+                        const stockText = d.cantidad > 0 ? `${d.cantidad} DISP` : 'AGOTADO';
+                        return `<option value='${payload}' ${d.cantidad <= 0 ? 'disabled' : ''}>${d.nombre} (${stockText})</option>`;
                     }).join('');
 
             } catch (err) {
-                console.error("Error crítico en Bóveda:", err);
-                document.getElementById("swal-sku").innerHTML = `<option value="">ERROR: ${err.message.substring(0,20)}...</option>`;
+                console.error("Error Crítico Bóveda:", err);
+                document.getElementById("swal-sku").innerHTML = `<option value="">ERROR DE CONEXIÓN</option>`;
             }
         },
         preConfirm: () => {
             const val = document.getElementById("swal-sku").value;
-            return val ? JSON.parse(val) : null;
+            if (!val) return Swal.showValidationMessage("Debes seleccionar una pieza");
+            return JSON.parse(val);
         }
     });
 
+    // 3. Inyección de Datos en la Orden Activa
     if (selectedItem) {
-        // ... (resto de tu lógica de actualización de ordenActiva e interfaz)
+        // Actualizamos el modelo de datos de la orden
         ordenActiva.items[idx] = { 
             ...ordenActiva.items[idx], 
-            desc: selectedItem.n, costo: selectedItem.c, venta: selectedItem.v, 
-            sku: selectedItem.id, tipo: 'REPUESTO', origen: 'TALLER' 
+            desc: selectedItem.n, 
+            costo: selectedItem.c, 
+            venta: selectedItem.v, 
+            sku: selectedItem.id, 
+            tipo: 'REPUESTO', 
+            origen: 'TALLER' 
         };
-        recalcularFinanzas();
+
+        // 4. Sincronización de UI y Finanzas
+        if (typeof recalcularFinanzas === 'function') {
+            recalcularFinanzas();
+        } else {
+            // Fallback si la función tiene otro nombre en tu script
+            recalcularTotalesMision(); 
+        }
+
+        // Feedback Auditivo/Visual
+        if (typeof hablar === 'function') hablar(`${selectedItem.n} vinculado.`);
+        
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'PIEZA VINCULADA',
+            background: '#010409',
+            color: '#fff',
+            showConfirmButton: false,
+            timer: 2000
+        });
     }
 };
 
