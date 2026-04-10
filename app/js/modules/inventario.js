@@ -1,6 +1,6 @@
 /**
  * inventario.js - NEXUS-X STOCK CONTROL V20.0 📦
- * ARQUITECTURA TIPO ERP PRO-2030 TERMINATOR - CORREGIDO
+ * ARQUITECTURA TIPO ERP PRO-2030 TERMINATOR - FULL SYNC
  * @author William Jeffry Urquijo Cubillos & Gemini AI
  */
 import { 
@@ -80,14 +80,11 @@ export default async function inventario(container) {
     const switchTab = (tipo) => {
         filtroActual = tipo;
         escucharStock();
-        
         const btnP = document.getElementById("tabPropio");
         const btnC = document.getElementById("tabCliente");
         const valCont = document.getElementById("valTotalContainer");
-        
         const active = "bg-white text-black shadow-2xl scale-105";
         const inactive = "text-slate-500 hover:text-white";
-
         if(btnP) btnP.className = `flex-1 lg:flex-none px-10 py-4 rounded-[2rem] text-[10px] font-black uppercase transition-all orbitron ${tipo === 'PROPIO' ? active : inactive}`;
         if(btnC) btnC.className = `flex-1 lg:flex-none px-10 py-4 rounded-[2rem] text-[10px] font-black uppercase transition-all orbitron ${tipo === 'CLIENTE' ? active : inactive}`;
         if(valCont) valCont.style.opacity = tipo === "PROPIO" ? "1" : "0.2";
@@ -96,47 +93,29 @@ export default async function inventario(container) {
     function escucharStock() {
         if (unsubscribe) unsubscribe();
         if (!empresaId) return;
-
-        const q = query(
-            collection(db, "inventario"),
-            where("empresaId", "==", empresaId),
-            where("origen", "==", filtroActual),
-            orderBy("nombre", "asc")
-        );
-
+        const q = query(collection(db, "inventario"), where("empresaId", "==", empresaId), where("origen", "==", filtroActual), orderBy("nombre", "asc"));
         unsubscribe = onSnapshot(q, (snap) => {
             renderGrid(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        }, (error) => {
-            console.error("Error en Snapshot:", error);
-        });
+        }, (err) => console.error("Error Streaming:", err));
     }
 
     const renderGrid = (data) => {
         const grid = document.getElementById("gridStock");
-        let totalItems = 0;
-        let valorAcumulado = 0;
-        let alertas = 0;
-
+        let totalItems = 0, valorAcumulado = 0, alertas = 0;
         if (!grid) return;
-
         if (data.length === 0) {
             grid.innerHTML = `<div class="col-span-full py-40 text-center opacity-20"><i class="fas fa-box-open text-6xl mb-6"></i><p class="orbitron text-[10px] tracking-widest uppercase italic">Vórtice de datos vacío</p></div>`;
             actualizarEstadisticas(0, 0, 0);
             return;
         }
-
         grid.innerHTML = data.map(item => {
-            // UNIFICACIÓN: Usamos siempre 'cantidad'
             const cant = Number(item.cantidad || 0);
             const min = Number(item.minimo || 2);
             const esCritico = cant <= min;
-            
             totalItems += cant;
             if (filtroActual === "PROPIO") valorAcumulado += (Number(item.precioVenta || 0) * cant);
             if (esCritico) alertas++;
-
             const accent = filtroActual === 'PROPIO' ? 'cyan-400' : 'amber-400';
-
             return `
             <div class="bg-[#0d1117] p-8 rounded-[3.5rem] border border-white/5 relative group hover:border-${accent}/40 transition-all duration-500 shadow-2xl">
                 <div class="flex justify-between items-start mb-6">
@@ -146,7 +125,6 @@ export default async function inventario(container) {
                     </div>
                     <button onclick="window.eliminarActivo('${item.id}')" class="text-slate-800 hover:text-red-500 transition-colors p-2"><i class="fas fa-trash-alt text-xs"></i></button>
                 </div>
-
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-black/40 p-5 rounded-2xl border border-white/5">
                         <p class="text-[7px] text-slate-500 orbitron mb-1 font-black">STOCK</p>
@@ -159,25 +137,22 @@ export default async function inventario(container) {
                         </p>
                     </div>
                 </div>
-
                 <div class="mt-6 flex gap-2">
                      <button onclick="window.ajustarStock('${item.id}', 1)" class="flex-1 py-4 bg-white/5 rounded-xl border border-white/5 text-[9px] font-black orbitron hover:bg-${accent}/10 transition-all">+ IN</button>
                      <button onclick="window.ajustarStock('${item.id}', -1)" class="flex-1 py-4 bg-white/5 rounded-xl border border-white/5 text-[9px] font-black orbitron hover:bg-red-500/10 transition-all">- OUT</button>
                 </div>
             </div>`;
         }).join("");
+        actualizarEstadisticas(totalItems, valorAcumulado, alertas);
+    };
 
-           // --- 📊 SISTEMA DE ESTADÍSTICAS ---
     const actualizarEstadisticas = (total, valor, alertas) => {
-        const t = document.getElementById("statTotal");
-        const v = document.getElementById("statValor");
-        const a = document.getElementById("statAlertas");
+        const t = document.getElementById("statTotal"), v = document.getElementById("statValor"), a = document.getElementById("statAlertas");
         if(t) t.innerText = total;
         if(v) v.innerText = `$ ${valor.toLocaleString()}`;
         if(a) a.innerText = alertas;
     };
 
-    // --- 💾 GRABACIÓN EN NÚCLEO ---
     async function abrirModalCarga() {
         const isPropio = filtroActual === "PROPIO";
         const { value: f } = await window.Swal.fire({
@@ -200,16 +175,9 @@ export default async function inventario(container) {
                             <input id="sw-costo" type="${isPropio ? 'number' : 'text'}" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" placeholder="${isPropio ? 'VALOR NETO' : 'AAA000'}">
                         </div>
                     </div>
-                    ${isPropio ? `
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-[9px] orbitron font-black text-slate-500 ml-4">PRECIO VENTA</label>
-                            <input id="sw-venta" type="number" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" placeholder="PVP">
-                        </div>
-                        <div>
-                            <label class="text-[9px] orbitron font-black text-slate-500 ml-4">STOCK ALERTA</label>
-                            <input id="sw-min" type="number" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" value="2">
-                        </div>
+                    ${isPropio ? `<div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-[9px] orbitron font-black text-slate-500 ml-4">PRECIO VENTA</label><input id="sw-venta" type="number" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" placeholder="PVP"></div>
+                        <div><label class="text-[9px] orbitron font-black text-slate-500 ml-4">STOCK ALERTA</label><input id="sw-min" type="number" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" value="2"></div>
                     </div>` : ''}
                 </div>`,
             showCancelButton: true,
@@ -230,115 +198,48 @@ export default async function inventario(container) {
                 }
             }
         });
-
         if (f) {
             try {
                 await addDoc(collection(db, "inventario"), f);
                 window.Swal.fire({ icon: 'success', title: 'SINCRONIZADO', background: '#010409', color: '#fff', timer: 1500 });
-            } catch (e) {
-                console.error("Error al grabar:", e);
-                window.Swal.fire('ERROR', 'Fallo de grabación en la nube', 'error');
-            }
+            } catch (e) { console.error(e); window.Swal.fire('ERROR', 'Fallo de núcleo', 'error'); }
         }
     }
 
-    // --- 🔍 VINCULACIÓN CON ORDENES.JS (PROTOLOCO ALFABÉTICO) ---
     window.buscarEnInventario = async (idx) => {
         try {
-            // Consulta simplificada para evitar errores de índice
-            const q = query(
-                collection(db, "inventario"), 
-                where("empresaId", "==", empresaId), 
-                where("origen", "==", "PROPIO")
-            );
-            
+            const q = query(collection(db, "inventario"), where("empresaId", "==", empresaId), where("origen", "==", "PROPIO"));
             const snap = await getDocs(q);
-
-            if (snap.empty) {
-                return window.Swal.fire({
-                    title: 'BÓVEDA VACÍA',
-                    text: 'No hay repuestos registrados para esta empresa.',
-                    icon: 'warning',
-                    background: '#010409', color: '#fff'
-                });
-            }
-
-            // Ordenamos alfabéticamente en el cliente para mayor estabilidad
-            const items = snap.docs
-                .map(d => ({ id: d.id, ...d.data() }))
-                .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
-
+            if (snap.empty) return window.Swal.fire({ title: 'BÓVEDA VACÍA', background: '#010409', color: '#fff' });
+            const items = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
             const options = {};
-            items.forEach(item => {
-                options[item.id] = `${item.nombre} [Cant: ${item.cantidad || 0}]`;
+            items.forEach(it => options[it.id] = `${it.nombre} [Stock: ${it.cantidad || 0}]`);
+            const { value: sid } = await window.Swal.fire({
+                title: 'SELECCIONAR REPUESTO', background: '#010409', color: '#fff',
+                input: 'select', inputOptions: options, showCancelButton: true,
+                confirmButtonText: 'VINCULAR A OT', customClass: { popup: 'rounded-[3rem] border border-white/10' }
             });
-
-            const { value: selectedId } = await window.Swal.fire({
-                title: 'SELECCIONAR REPUESTO',
-                background: '#010409', color: '#fff',
-                input: 'select',
-                inputOptions: options,
-                inputPlaceholder: 'Elija una pieza...',
-                showCancelButton: true,
-                confirmButtonText: 'VINCULAR A OT',
-                customClass: { popup: 'rounded-[3rem] border border-white/10' }
-            });
-
-            if (selectedId) {
-                const itemSnap = await getDoc(doc(db, "inventario", selectedId));
-                const item = itemSnap.data();
-                
-                if (Number(item.cantidad || 0) <= 0) {
-                    return window.Swal.fire('SIN STOCK', 'Esta pieza está agotada en la bóveda.', 'error');
-                }
-
-                // Disparar evento para que ordenes.js reciba la pieza
-                window.dispatchEvent(new CustomEvent('piezaSeleccionada', { 
-                    detail: { 
-                        idx, 
-                        item: { 
-                            id: selectedId,
-                            nombre: item.nombre,
-                            costo: item.costo || 0,
-                            precioVenta: item.precioVenta || 0,
-                            cantidad: item.cantidad
-                        } 
-                    } 
-                }));
+            if (sid) {
+                const isSnap = await getDoc(doc(db, "inventario", sid));
+                const item = isSnap.data();
+                if (Number(item.cantidad || 0) <= 0) return window.Swal.fire('SIN STOCK', '', 'error');
+                window.dispatchEvent(new CustomEvent('piezaSeleccionada', { detail: { idx, item: { id: sid, nombre: item.nombre, costo: item.costo || 0, precioVenta: item.precioVenta || 0, cantidad: item.cantidad } } }));
             }
-        } catch (err) {
-            console.error("Error en búsqueda:", err);
-            window.Swal.fire('ERROR', 'No se pudo conectar con la bóveda', 'error');
-        }
+        } catch (err) { console.error(err); }
     };
 
-    // --- ⚡ CONTROLES DE FLUJO ---
     window.ajustarStock = async (id, cambio) => {
-        try {
-            const docRef = doc(db, "inventario", id);
-            const snap = await getDoc(docRef);
-            if (!snap.exists()) return;
-            const data = snap.data();
-            const nuevaCantidad = Math.max(0, (Number(data.cantidad) || 0) + cambio);
-            await updateDoc(docRef, { cantidad: nuevaCantidad });
-        } catch (e) {
-            console.error("Error al ajustar:", e);
-        }
+        const docRef = doc(db, "inventario", id);
+        const snap = await getDoc(docRef);
+        if (!snap.exists()) return;
+        const nuevaCantidad = Math.max(0, (Number(snap.data().cantidad) || 0) + cambio);
+        await updateDoc(docRef, { cantidad: nuevaCantidad });
     };
 
     window.eliminarActivo = async (id) => {
-        const { isConfirmed } = await window.Swal.fire({
-            title: '¿BORRAR REGISTRO?',
-            text: "Esta acción es irreversible en el inventario",
-            icon: 'warning',
-            background: '#010409', color: '#fff',
-            showCancelButton: true, 
-            confirmButtonColor: '#ef4444',
-            confirmButtonText: 'ELIMINAR'
-        });
+        const { isConfirmed } = await window.Swal.fire({ title: '¿BORRAR?', background: '#010409', color: '#fff', showCancelButton: true, confirmButtonColor: '#ef4444' });
         if(isConfirmed) await deleteDoc(doc(db, "inventario", id));
     };
 
     renderLayout();
 }
- 
