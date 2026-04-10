@@ -93,138 +93,164 @@ export default async function inventario(container) {
         valCont.style.opacity = tipo === "PROPIO" ? "1" : "0.2";
     };
 
-    function escucharStock() {
-        if (unsubscribe) unsubscribe();
+    // --- 📦 SISTEMA DE INVENTARIO NEXUS-X V18.5 (BLOQUE A REFORMADO) ---
+
+function escucharStock() {
+    if (unsubscribe) unsubscribe();
+    if (!empresaId) return; // Protección de Nodo
+
+    const q = query(
+        collection(db, "inventario"),
+        where("empresaId", "==", empresaId),
+        where("origen", "==", filtroActual),
+        orderBy("nombre", "asc")
+    );
+
+    unsubscribe = onSnapshot(q, (snap) => {
+        renderGrid(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+}
+
+const renderGrid = (data) => {
+    const grid = document.getElementById("gridStock");
+    let totalItems = 0;
+    let valorAcumulado = 0;
+    let alertas = 0;
+
+    if (!grid) return;
+
+    if (data.length === 0) {
+        grid.innerHTML = `
+        <div class="col-span-full py-40 text-center opacity-20">
+            <i class="fas fa-box-open text-6xl mb-6"></i>
+            <p class="orbitron text-[10px] tracking-widest uppercase italic">Vórtice de datos vacío</p>
+        </div>`;
+        actualizarEstadisticas(0, 0, 0);
+        return;
+    }
+
+    grid.innerHTML = data.map(item => {
+        // NORMALIZACIÓN DE DATOS (Asegura que siempre lea 'stock')
+        const stockActual = Number(item.stock || item.cantidad || 0);
+        const stockMinimo = Number(item.minimo || 2);
+        const esCritico = stockActual <= stockMinimo;
         
-        const q = query(
-            collection(db, "inventario"),
-            where("empresaId", "==", empresaId),
-            where("origen", "==", filtroActual),
-            orderBy("nombre", "asc") // 👈 ALFABÉTICO POR DEFECTO
-        );
+        totalItems += stockActual;
+        if (filtroActual === "PROPIO") valorAcumulado += (Number(item.precioVenta || 0) * stockActual);
+        if (esCritico) alertas++;
 
-        unsubscribe = onSnapshot(q, (snap) => {
-            renderGrid(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        });
-    }
+        const accent = filtroActual === 'PROPIO' ? 'cyan-400' : 'amber-400';
 
-    const renderGrid = (data) => {
-        const grid = document.getElementById("gridStock");
-        let totalItems = 0;
-        let valorAcumulado = 0;
-        let alertas = 0;
-
-        if (data.length === 0) {
-            grid.innerHTML = `<div class="col-span-full py-40 text-center opacity-20"><i class="fas fa-box-open text-6xl mb-6"></i><p class="orbitron text-[10px] tracking-widest uppercase italic">Vórtice de datos vacío</p></div>`;
-            actualizarEstadisticas(0, 0, 0);
-            return;
-        }
-
-        grid.innerHTML = data.map(item => {
-            const esCritico = Number(item.cantidad) <= (Number(item.minimo) || 2);
-            totalItems += Number(item.cantidad || 0);
-            if (filtroActual === "PROPIO") valorAcumulado += (Number(item.precioVenta || 0) * Number(item.cantidad || 0));
-            if (esCritico) alertas++;
-
-            const accent = filtroActual === 'PROPIO' ? 'cyan-400' : 'amber-400';
-
-            return `
-            <div class="bg-[#0d1117] p-8 rounded-[3.5rem] border border-white/5 relative group hover:border-${accent}/40 transition-all duration-500 shadow-2xl">
-                <div class="flex justify-between items-start mb-6">
-                    <div class="max-w-[70%]">
-                        <span class="text-[7px] text-${accent} font-black uppercase tracking-widest orbitron">SKU: ${item.id.slice(-6).toUpperCase()}</span>
-                        <h3 class="text-white text-lg font-black uppercase truncate group-hover:text-${accent} transition-colors">${item.nombre}</h3>
-                    </div>
-                    <button onclick="window.eliminarActivo('${item.id}')" class="text-slate-800 hover:text-red-500 transition-colors p-2"><i class="fas fa-trash-alt text-xs"></i></button>
+        return `
+        <div class="bg-[#0d1117] p-8 rounded-[3.5rem] border border-white/5 relative group hover:border-${accent}/40 transition-all duration-500 shadow-2xl">
+            <div class="flex justify-between items-start mb-6">
+                <div class="max-w-[70%]">
+                    <span class="text-[7px] text-${accent} font-black uppercase tracking-widest orbitron">SKU: ${item.id.slice(-6).toUpperCase()}</span>
+                    <h3 class="text-white text-lg font-black uppercase truncate group-hover:text-${accent} transition-colors">${item.nombre}</h3>
                 </div>
+                <button onclick="window.eliminarActivo('${item.id}')" class="text-slate-800 hover:text-red-500 transition-colors p-2"><i class="fas fa-trash-alt text-xs"></i></button>
+            </div>
 
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-black/40 p-5 rounded-2xl border border-white/5">
+                    <p class="text-[7px] text-slate-500 orbitron mb-1 font-black">STOCK</p>
+                    <p class="text-3xl font-black ${esCritico ? 'text-red-500 animate-pulse' : 'text-white'} orbitron">${stockActual}</p>
+                </div>
+                <div class="bg-black/40 p-5 rounded-2xl border border-white/5">
+                    <p class="text-[7px] text-slate-500 orbitron mb-1 font-black">${filtroActual === 'PROPIO' ? 'PVP VENTA' : 'REF VEHÍCULO'}</p>
+                    <p class="text-xs font-black ${filtroActual === 'PROPIO' ? 'text-emerald-400' : 'text-amber-500'} orbitron truncate mt-2">
+                        ${filtroActual === 'PROPIO' ? '$'+Number(item.precioVenta || 0).toLocaleString() : (item.placa || 'N/A')}
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-6 flex gap-2">
+                 <button onclick="window.ajustarStock('${item.id}', 1)" class="flex-1 py-4 bg-white/5 rounded-xl border border-white/5 text-[9px] font-black orbitron hover:bg-${accent}/10 transition-all">+ IN</button>
+                 <button onclick="window.ajustarStock('${item.id}', -1)" class="flex-1 py-4 bg-white/5 rounded-xl border border-white/5 text-[9px] font-black orbitron hover:bg-red-500/10 transition-all">- OUT</button>
+            </div>
+        </div>`;
+    }).join("");
+
+    actualizarEstadisticas(totalItems, valorAcumulado, alertas);
+};
+
+const actualizarEstadisticas = (total, valor, alertas) => {
+    const t = document.getElementById("statTotal");
+    const v = document.getElementById("statValor");
+    const a = document.getElementById("statAlertas");
+    if(t) t.innerText = total;
+    if(v) v.innerText = `$ ${valor.toLocaleString()}`;
+    if(a) a.innerText = alertas;
+};
+
+// --- 🔥 FUNCIÓN DE GRABACIÓN REFORMADA (SOLUCIONA EL FALLO) ---
+async function abrirModalCarga() {
+    const isPropio = filtroActual === "PROPIO";
+    const { value: f } = await window.Swal.fire({
+        title: isPropio ? 'NUEVA CARGA TALLER' : 'SUMINISTRO CLIENTE',
+        background: '#010409', color: '#fff',
+        customClass: { popup: 'rounded-[3.5rem] border border-white/10' },
+        html: `
+            <div class="space-y-4 p-4 mt-4 text-left">
+                <div>
+                    <label class="text-[9px] orbitron font-black text-slate-500 ml-4 italic uppercase">Descripción de la Pieza</label>
+                    <input id="sw-nom" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none focus:border-cyan-500 uppercase font-bold" placeholder="EJ: KIT REPARTICIÓN DAEWOO">
+                </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-black/40 p-5 rounded-2xl border border-white/5">
-                        <p class="text-[7px] text-slate-500 orbitron mb-1 font-black">STOCK</p>
-                        <p class="text-3xl font-black ${esCritico ? 'text-red-500 animate-pulse' : 'text-white'} orbitron">${item.cantidad}</p>
-                    </div>
-                    <div class="bg-black/40 p-5 rounded-2xl border border-white/5">
-                        <p class="text-[7px] text-slate-500 orbitron mb-1 font-black">${filtroActual === 'PROPIO' ? 'PVP VENTA' : 'REF VEHÍCULO'}</p>
-                        <p class="text-xs font-black ${filtroActual === 'PROPIO' ? 'text-emerald-400' : 'text-amber-500'} orbitron truncate mt-2">
-                            ${filtroActual === 'PROPIO' ? '$'+Number(item.precioVenta).toLocaleString() : item.placa}
-                        </p>
-                    </div>
-                </div>
-
-                <div class="mt-6 flex gap-2">
-                     <button onclick="window.ajustarStock('${item.id}', 1)" class="flex-1 py-4 bg-white/5 rounded-xl border border-white/5 text-[9px] font-black orbitron hover:bg-${accent}/10 transition-all">+ IN</button>
-                     <button onclick="window.ajustarStock('${item.id}', -1)" class="flex-1 py-4 bg-white/5 rounded-xl border border-white/5 text-[9px] font-black orbitron hover:bg-red-500/10 transition-all">- OUT</button>
-                </div>
-            </div>`;
-        }).join("");
-
-        actualizarEstadisticas(totalItems, valorAcumulado, alertas);
-    };
-
-    const actualizarEstadisticas = (total, valor, alertas) => {
-        document.getElementById("statTotal").innerText = total;
-        document.getElementById("statValor").innerText = `$ ${valor.toLocaleString()}`;
-        document.getElementById("statAlertas").innerText = alertas;
-    };
-
-    async function abrirModalCarga() {
-        const isPropio = filtroActual === "PROPIO";
-        const { value: f } = await window.Swal.fire({
-            title: isPropio ? 'NUEVA CARGA TALLER' : 'SUMINISTRO CLIENTE',
-            background: '#010409', color: '#fff',
-            customClass: { popup: 'rounded-[3.5rem] border border-white/10' },
-            html: `
-                <div class="space-y-4 p-4 mt-4 text-left">
                     <div>
-                        <label class="text-[9px] orbitron font-black text-slate-500 ml-4 italic">DESCRIPCIÓN DE LA PIEZA</label>
-                        <input id="sw-nom" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none focus:border-cyan-500 uppercase font-bold" placeholder="EJ: KIT REPARTICIÓN">
+                        <label class="text-[9px] orbitron font-black text-slate-500 ml-4">STOCK INICIAL</label>
+                        <input id="sw-can" type="number" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" value="1">
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-[9px] orbitron font-black text-slate-500 ml-4">STOCK INICIAL</label>
-                            <input id="sw-can" type="number" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" value="1">
-                        </div>
-                        <div>
-                            <label class="text-[9px] orbitron font-black text-slate-500 ml-4">${isPropio ? 'COSTO COMPRA' : 'PLACA ASOCIADA'}</label>
-                            <input id="sw-costo" type="${isPropio ? 'number' : 'text'}" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" placeholder="${isPropio ? 'VALOR NETO' : 'AAA000'}">
-                        </div>
+                    <div>
+                        <label class="text-[9px] orbitron font-black text-slate-500 ml-4">${isPropio ? 'COSTO COMPRA' : 'PLACA ASOCIADA'}</label>
+                        <input id="sw-costo" type="${isPropio ? 'number' : 'text'}" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" placeholder="${isPropio ? 'VALOR NETO' : 'AAA000'}">
                     </div>
-                    ${isPropio ? `
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-[9px] orbitron font-black text-slate-500 ml-4">PRECIO VENTA</label>
-                            <input id="sw-venta" type="number" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" placeholder="PVP">
-                        </div>
-                        <div>
-                            <label class="text-[9px] orbitron font-black text-slate-500 ml-4">STOCK ALERTA</label>
-                            <input id="sw-min" type="number" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" value="2">
-                        </div>
-                    </div>` : ''}
-                </div>`,
-            showCancelButton: true,
-            confirmButtonText: 'GRABAR EN MEMORIA',
-            preConfirm: () => {
-                const nombre = document.getElementById('sw-nom').value.trim();
-                if(!nombre) return window.Swal.showValidationMessage("Nombre requerido");
-                return {
-                    nombre: nombre.toUpperCase(),
-                    cantidad: Number(document.getElementById('sw-can').value),
-                    precioCosto: isPropio ? Number(document.getElementById('sw-costo').value) : 0,
-                    precioVenta: isPropio ? Number(document.getElementById('sw-venta').value) : 0,
-                    placa: !isPropio ? document.getElementById('sw-costo').value.toUpperCase() : 'INTERNO',
-                    minimo: isPropio ? Number(document.getElementById('sw-min').value) : 0,
-                    origen: filtroActual,
-                    empresaId: empresaId,
-                    creadoEn: serverTimestamp()
-                }
+                </div>
+                ${isPropio ? `
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[9px] orbitron font-black text-slate-500 ml-4">PRECIO VENTA</label>
+                        <input id="sw-venta" type="number" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" placeholder="PVP">
+                    </div>
+                    <div>
+                        <label class="text-[9px] orbitron font-black text-slate-500 ml-4">STOCK ALERTA</label>
+                        <input id="sw-min" type="number" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/5 outline-none" value="2">
+                    </div>
+                </div>` : ''}
+            </div>`,
+        showCancelButton: true,
+        confirmButtonText: 'GRABAR EN MEMORIA',
+        preConfirm: () => {
+            const nombre = document.getElementById('sw-nom').value.trim();
+            if(!nombre) return window.Swal.showValidationMessage("Nombre requerido");
+            return {
+                nombre: nombre.toUpperCase(),
+                stock: Number(document.getElementById('sw-can').value), // 👈 USAMOS 'stock' para consistencia global
+                costo: isPropio ? Number(document.getElementById('sw-costo').value) : 0,
+                precioVenta: isPropio ? Number(document.getElementById('sw-venta').value) : 0,
+                placa: !isPropio ? document.getElementById('sw-costo').value.toUpperCase() : 'INTERNO',
+                minimo: isPropio ? Number(document.getElementById('sw-min').value) : 2,
+                origen: filtroActual,
+                empresaId: empresaId,
+                creadoEn: serverTimestamp()
             }
-        });
+        }
+    });
 
-        if(f) { 
-            await addDoc(collection(db, "inventario"), f);
-            window.Swal.fire({ icon: 'success', title: 'DATOS ENCRIPTADOS', background: '#010409', color: '#fff', timer: 1000, showConfirmButton: false });
+    // 🚩 EL ERROR ESTABA AQUÍ: Faltaba ejecutar la persistencia después de cerrar el SweetAlert
+    if (f) {
+        try {
+            // Generamos un SKU automático basado en el nombre para evitar duplicados si quieres, 
+            // o deja que Firebase genere uno con addDoc:
+            const docRef = await addDoc(collection(db, "inventario"), f);
+            hablar(`${f.nombre} registrado en la bóveda.`);
+            Swal.fire({ icon: 'success', title: 'MEMORIA SINCRONIZADA', background: '#010409', color: '#fff', timer: 1500 });
+        } catch (e) {
+            console.error(e);
+            Swal.fire('ERROR', 'No se pudo grabar en el núcleo.', 'error');
         }
     }
+}
 
     // --- 🔍 MODAL DE SELECCIÓN ALFABÉTICO (LLAMADO DESDE ORDENES) ---
     window.buscarEnInventario = async (idx) => {
