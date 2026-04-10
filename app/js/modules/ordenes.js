@@ -354,67 +354,64 @@ export default async function ordenes(container) {
 
     // --- 📦 INTEGRACIÓN DE INVENTARIO ALFABÉTICO (CIRUGÍA V20.0) ---
 window.buscarEnInventario = async (idx) => {
+    // Aseguramos que empresaId exista en este contexto
+    const localEmpresaId = localStorage.getItem("nexus_empresaId");
+    
+    if (!localEmpresaId) {
+        return Swal.fire('ERROR DE SESIÓN', 'No se detectó ID de empresa. Reingresa al sistema.', 'error');
+    }
+
     const { value: selectedItem } = await Swal.fire({
         title: 'BÓVEDA DE SUMINISTROS',
         background: '#010409', color: '#fff',
-        customClass: { popup: 'rounded-[3rem] border border-white/10' },
-        html: `<select id="swal-sku" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/10 orbitron text-xs uppercase outline-none focus:border-cyan-500"><option>Accediendo al núcleo...</option></select>`,
+        html: `<select id="swal-sku" class="w-full bg-[#0d1117] p-4 rounded-2xl text-white border border-white/10 orbitron text-[10px] uppercase"><option>Conectando con Firestore...</option></select>`,
         didOpen: async () => {
             try {
-                // Filtramos por empresa y solo lo que es del Taller (PROPIO)
+                // Simplificamos la consulta para evitar errores de índice iniciales
                 const q = query(
                     collection(db, "inventario"), 
-                    where("empresaId", "==", empresaId),
-                    where("origen", "==", "PROPIO")
+                    where("empresaId", "==", localEmpresaId)
                 );
+                
                 const snap = await getDocs(q);
                 const select = document.getElementById("swal-sku");
                 
                 if (snap.empty) {
-                    select.innerHTML = '<option value="">-- NO HAY STOCK --</option>';
+                    select.innerHTML = '<option value="">-- INVENTARIO VACÍO EN NUBE --</option>';
                     return;
                 }
 
-                select.innerHTML = '<option value="">-- SELECCIONE PIEZA --</option>' + 
-                    snap.docs.map(d => ({id: d.id, ...d.data()}))
-                    .sort((a,b) => (a.nombre || "").localeCompare(b.nombre || ""))
-                    .map(d => {
-                        // NORMALIZACIÓN DE CAMPOS: Aseguramos que lea lo que grabamos
-                        const dataString = JSON.stringify({
-                            id: d.id, 
-                            n: d.nombre, 
-                            c: d.costo || 0, 
-                            v: d.precioVenta || 0 // 👈 Aquí estaba el fallo (decía 'venta')
-                        });
-                        const stockActual = d.cantidad || 0; // 👈 Aquí estaba el fallo (decía 'stock')
-                        return `<option value='${dataString}'>${d.nombre} [STOCK: ${stockActual}]</option>`;
+                // Filtrado y ordenado manual (más seguro que por consulta en este paso)
+                const items = snap.docs
+                    .map(d => ({id: d.id, ...d.data()}))
+                    .filter(d => d.origen === "PROPIO")
+                    .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+
+                select.innerHTML = '<option value="">-- SELECCIONE --</option>' + 
+                    items.map(d => {
+                        const val = JSON.stringify({id: d.id, n: d.nombre, c: d.costo || 0, v: d.precioVenta || 0});
+                        return `<option value='${val}'>${d.nombre} (${d.cantidad || 0} DISP)</option>`;
                     }).join('');
+
             } catch (err) {
-                console.error("Error Bóveda:", err);
-                document.getElementById("swal-sku").innerHTML = '<option>ERROR DE CARGA</option>';
+                console.error("Error crítico en Bóveda:", err);
+                document.getElementById("swal-sku").innerHTML = `<option value="">ERROR: ${err.message.substring(0,20)}...</option>`;
             }
         },
         preConfirm: () => {
             const val = document.getElementById("swal-sku").value;
-            if(!val) return window.Swal.showValidationMessage("Selecciona un repuesto");
-            return JSON.parse(val);
+            return val ? JSON.parse(val) : null;
         }
     });
 
     if (selectedItem) {
-        // Actualizamos el ítem en la orden activa con los datos del inventario
+        // ... (resto de tu lógica de actualización de ordenActiva e interfaz)
         ordenActiva.items[idx] = { 
             ...ordenActiva.items[idx], 
-            desc: selectedItem.n, 
-            costo: Number(selectedItem.c), 
-            venta: Number(selectedItem.v), 
-            sku: selectedItem.id, 
-            tipo: 'REPUESTO', 
-            origen: 'TALLER' 
+            desc: selectedItem.n, costo: selectedItem.c, venta: selectedItem.v, 
+            sku: selectedItem.id, tipo: 'REPUESTO', origen: 'TALLER' 
         };
-        
-        recalcularFinanzas(); // Esta función refresca los totales en pantalla
-        if (typeof hablar === 'function') hablar(`${selectedItem.n} vinculado.`);
+        recalcularFinanzas();
     }
 };
 
