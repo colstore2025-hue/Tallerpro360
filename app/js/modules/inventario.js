@@ -167,9 +167,7 @@ export default async function inventario(container) {
             </div>`;
         }).join("");
 
-        actualizarEstadisticas(totalItems, valorAcumulado, alertas);
-    };
-
+           // --- 📊 SISTEMA DE ESTADÍSTICAS ---
     const actualizarEstadisticas = (total, valor, alertas) => {
         const t = document.getElementById("statTotal");
         const v = document.getElementById("statValor");
@@ -179,6 +177,7 @@ export default async function inventario(container) {
         if(a) a.innerText = alertas;
     };
 
+    // --- 💾 GRABACIÓN EN NÚCLEO ---
     async function abrirModalCarga() {
         const isPropio = filtroActual === "PROPIO";
         const { value: f } = await window.Swal.fire({
@@ -220,11 +219,11 @@ export default async function inventario(container) {
                 if(!nombre) return window.Swal.showValidationMessage("Nombre requerido");
                 return {
                     nombre: nombre.toUpperCase(),
-                    cantidad: Number(document.getElementById('sw-can').value),
-                    costo: isPropio ? Number(document.getElementById('sw-costo').value) : 0,
-                    precioVenta: isPropio ? Number(document.getElementById('sw-venta').value) : 0,
+                    cantidad: Number(document.getElementById('sw-can').value || 0),
+                    costo: isPropio ? Number(document.getElementById('sw-costo').value || 0) : 0,
+                    precioVenta: isPropio ? Number(document.getElementById('sw-venta').value || 0) : 0,
                     placa: !isPropio ? document.getElementById('sw-costo').value.toUpperCase() : 'INTERNO',
-                    minimo: isPropio ? Number(document.getElementById('sw-min').value) : 2,
+                    minimo: isPropio ? Number(document.getElementById('sw-min').value || 0) : 2,
                     origen: filtroActual,
                     empresaId: empresaId,
                     creadoEn: serverTimestamp()
@@ -237,74 +236,109 @@ export default async function inventario(container) {
                 await addDoc(collection(db, "inventario"), f);
                 window.Swal.fire({ icon: 'success', title: 'SINCRONIZADO', background: '#010409', color: '#fff', timer: 1500 });
             } catch (e) {
-                console.error(e);
-                window.Swal.fire('ERROR', 'Fallo de núcleo', 'error');
+                console.error("Error al grabar:", e);
+                window.Swal.fire('ERROR', 'Fallo de grabación en la nube', 'error');
             }
         }
     }
 
-    // --- 🔍 VINCULACIÓN CON ORDENES.JS ---
+    // --- 🔍 VINCULACIÓN CON ORDENES.JS (PROTOLOCO ALFABÉTICO) ---
     window.buscarEnInventario = async (idx) => {
-        const q = query(
-            collection(db, "inventario"), 
-            where("empresaId", "==", empresaId), 
-            where("origen", "==", "PROPIO"), 
-            orderBy("nombre", "asc")
-        );
-        
-        const snap = await getDocs(q); // 👈 CORREGIDO: getDocs para la lista
+        try {
+            // Consulta simplificada para evitar errores de índice
+            const q = query(
+                collection(db, "inventario"), 
+                where("empresaId", "==", empresaId), 
+                where("origen", "==", "PROPIO")
+            );
+            
+            const snap = await getDocs(q);
 
-        if (snap.empty) {
-            window.Swal.fire('BÓVEDA VACÍA', 'No hay repuestos registrados.', 'warning');
-            return;
-        }
-
-        const options = {};
-        snap.docs.forEach(d => {
-            const data = d.data();
-            options[d.id] = `${data.nombre} [Cant: ${data.cantidad}]`;
-        });
-
-        const { value: selectedId } = await window.Swal.fire({
-            title: 'SELECCIONAR REPUESTO',
-            background: '#010409', color: '#fff',
-            input: 'select',
-            inputOptions: options,
-            inputPlaceholder: 'Elija una pieza...',
-            showCancelButton: true,
-            confirmButtonText: 'VINCULAR A OT'
-        });
-
-        if (selectedId) {
-            const itemSnap = await getDoc(doc(db, "inventario", selectedId));
-            const item = itemSnap.data();
-            if (Number(item.cantidad) <= 0) {
-                window.Swal.fire('SIN STOCK', 'Esta pieza está agotada.', 'error');
-                return;
+            if (snap.empty) {
+                return window.Swal.fire({
+                    title: 'BÓVEDA VACÍA',
+                    text: 'No hay repuestos registrados para esta empresa.',
+                    icon: 'warning',
+                    background: '#010409', color: '#fff'
+                });
             }
-            // Emitir evento para que ordenes.js capture la pieza
-            window.dispatchEvent(new CustomEvent('piezaSeleccionada', { 
-                detail: { idx, item: { ...item, id: selectedId } } 
-            }));
+
+            // Ordenamos alfabéticamente en el cliente para mayor estabilidad
+            const items = snap.docs
+                .map(d => ({ id: d.id, ...d.data() }))
+                .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+
+            const options = {};
+            items.forEach(item => {
+                options[item.id] = `${item.nombre} [Cant: ${item.cantidad || 0}]`;
+            });
+
+            const { value: selectedId } = await window.Swal.fire({
+                title: 'SELECCIONAR REPUESTO',
+                background: '#010409', color: '#fff',
+                input: 'select',
+                inputOptions: options,
+                inputPlaceholder: 'Elija una pieza...',
+                showCancelButton: true,
+                confirmButtonText: 'VINCULAR A OT',
+                customClass: { popup: 'rounded-[3rem] border border-white/10' }
+            });
+
+            if (selectedId) {
+                const itemSnap = await getDoc(doc(db, "inventario", selectedId));
+                const item = itemSnap.data();
+                
+                if (Number(item.cantidad || 0) <= 0) {
+                    return window.Swal.fire('SIN STOCK', 'Esta pieza está agotada en la bóveda.', 'error');
+                }
+
+                // Disparar evento para que ordenes.js reciba la pieza
+                window.dispatchEvent(new CustomEvent('piezaSeleccionada', { 
+                    detail: { 
+                        idx, 
+                        item: { 
+                            id: selectedId,
+                            nombre: item.nombre,
+                            costo: item.costo || 0,
+                            precioVenta: item.precioVenta || 0,
+                            cantidad: item.cantidad
+                        } 
+                    } 
+                }));
+            }
+        } catch (err) {
+            console.error("Error en búsqueda:", err);
+            window.Swal.fire('ERROR', 'No se pudo conectar con la bóveda', 'error');
         }
     };
 
+    // --- ⚡ CONTROLES DE FLUJO ---
     window.ajustarStock = async (id, cambio) => {
-        const docRef = doc(db, "inventario", id);
-        const snap = await getDoc(docRef);
-        const data = snap.data();
-        const nuevaCantidad = Math.max(0, (Number(data.cantidad) || 0) + cambio);
-        await updateDoc(docRef, { cantidad: nuevaCantidad });
+        try {
+            const docRef = doc(db, "inventario", id);
+            const snap = await getDoc(docRef);
+            if (!snap.exists()) return;
+            const data = snap.data();
+            const nuevaCantidad = Math.max(0, (Number(data.cantidad) || 0) + cambio);
+            await updateDoc(docRef, { cantidad: nuevaCantidad });
+        } catch (e) {
+            console.error("Error al ajustar:", e);
+        }
     };
 
     window.eliminarActivo = async (id) => {
         const { isConfirmed } = await window.Swal.fire({
             title: '¿BORRAR REGISTRO?',
+            text: "Esta acción es irreversible en el inventario",
+            icon: 'warning',
             background: '#010409', color: '#fff',
-            showCancelButton: true, confirmButtonColor: '#ef4444'
+            showCancelButton: true, 
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'ELIMINAR'
         });
         if(isConfirmed) await deleteDoc(doc(db, "inventario", id));
     };
 
     renderLayout();
 }
+ 
