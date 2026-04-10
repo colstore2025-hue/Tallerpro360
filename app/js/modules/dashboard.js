@@ -109,8 +109,8 @@ function renderInterface(container, plan, user, empresa, config) {
             ${renderBtn('Contabilidad', 'fa-file-invoice-dollar', '#contabilidad', config.modulos.includes('contabilidad'))}
             ${renderBtn('Nómina', 'fa-user-tie', '#nomina', config.modulos.includes('nomina'))}
             ${renderBtn('Reportes', 'fa-chart-pie', '#reportes', config.modulos.includes('reportes'))}
-            ${renderBtn('Marketplace', 'fa-shop', '#marketplace', config.modulos.includes('marketplace'))}
-            ${renderBtn('Publish', 'fa-cloud-arrow-up', '#publish', config.modulos.includes('publish'))}
+            ${renderBtn('Marketplace', 'fa-shop', '#marketplace.html', config.modulos.includes('marketplace'))}
+            ${renderBtn('Publish', 'fa-cloud-arrow-up', '#publish', config.modulos.includes('publish.html'))}
             
             <button onclick="window.open('https://wa.me/17049419163?text=SOPORTE_NXS:%20Protocolo%20de%20asistencia...', '_blank')" 
                 class="flex flex-col items-center justify-center p-6 bg-[#0d1117] border border-white/5 rounded-2xl hover:bg-white hover:scale-[1.02] transition-all group">
