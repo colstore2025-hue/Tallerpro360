@@ -422,33 +422,52 @@ document.getElementById("btnSincronizar").onclick = async () => {
             updatedAt: serverTimestamp()
         };
 
-        // 5. DATA VEHÍCULO (Radar de Flota)
-        const dataVehiculo = {
-            placa: placaLimpia,
-            empresaId: idEmpresaFinal,
-            marca: marca,
-            linea: linea,
-            modelo: document.getElementById("f-modelo")?.value || "",
-            kilometraje: kmActual,
-            clienteNombre: dataOrden.cliente,
-            ultimaActualizacion: serverTimestamp(),
-            ultima_mision: estadoOrden === 'LISTO' ? 'COMPLETADA' : 'EN PROCESO',
-            status: "OPERATIVO"
-        };
+        // --- ⚙️ OPTIMIZACIÓN DE LOGICA CRM Y TRAZABILIDAD ---
+const dataVehiculo = {
+    placa: placaLimpia,
+    empresaId: idEmpresaFinal,
+    marca: marca,
+    linea: linea,
+    modelo: document.getElementById("f-modelo")?.value || "",
+    kilometraje: kmActual,
+    clienteNombre: dataOrden.cliente,
+    ultimaActualizacion: serverTimestamp(),
+    
+    // 🧠 BITÁCORA PARA CRM (Esto alimenta el historial en vehiculos.js)
+    ultimoServicio: {
+        descripcion: dataOrden.descripcion || "Mantenimiento General",
+        tecnico: dataOrden.tecnico || "S/N",
+        fecha: new Date().toISOString(),
+        idOrden: docId // Vínculo directo para auditoría
+    },
+    
+    // Status para Radar
+    ultima_mision: estadoOrden === 'LISTO' ? 'COMPLETADA' : 'EN PROCESO',
+    status: estadoOrden === 'GARANTIA' ? 'RE-INGRESO POR GARANTÍA' : 'OPERATIVO'
+};
 
-        // 🚀 6. INYECCIÓN PARA DASHBOARD (EL ESLABÓN PERDIDO)
-        // Si la orden está 'LISTO' o hay un pago, alimentamos la colección de caja
-        let dataFinanciera = null;
-        if (estadoOrden === "LISTO" || anticipoCliente > 0) {
-            dataFinanciera = {
-                empresaId: idEmpresaFinal,
-                fecha: serverTimestamp(),
-                monto: anticipoCliente, // Registramos lo que entró físicamente
-                tipo: "INGRESO_ORDEN",
-                referencia: placaLimpia,
-                concepto: `Pago/Anticipo OT: ${placaLimpia}`
-            };
-        }
+// 💰 GESTIÓN FINANCIERA (Evita duplicados en contabilidad si es garantía)
+let dataFinanciera = null;
+if ((estadoOrden === "LISTO" || anticipoCliente > 0) && estadoOrden !== "GARANTIA") {
+    dataFinanciera = {
+        empresaId: idEmpresaFinal,
+        fecha: serverTimestamp(),
+        monto: anticipoCliente,
+        tipo: "INGRESO_ORDEN",
+        referencia: placaLimpia,
+        concepto: `Pago OT: ${placaLimpia} - ${marca} ${linea}`
+    };
+} else if (estadoOrden === "GARANTIA") {
+    // Si es garantía, registramos un movimiento de $0 o un gasto de materiales si aplica
+    dataFinanciera = {
+        empresaId: idEmpresaFinal,
+        fecha: serverTimestamp(),
+        monto: 0, 
+        tipo: "GARANTIA_INTERNA",
+        referencia: placaLimpia,
+        concepto: `RE-INGRESO SIN COSTO: OT original ${docId}`
+    };
+}
 
         // --- EJECUCIÓN ATÓMICA ---
         const docId = ordenActiva.id || `OT_${placaLimpia}_${Date.now().toString().slice(-4)}`;
