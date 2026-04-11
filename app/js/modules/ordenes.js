@@ -420,64 +420,91 @@ const ejecutarSincronizacionNexus = async () => {
 
 /**
  * --- 📦 VINCULACIÓN DE BÓVEDA (ALGORITMO ALFABÉTICO) ---
- * Conecta la terminal con el inventario real.
+ * Conecta la terminal con el inventario real y vincula precios y SKUs.
  */
 window.buscarEnInventario = async (idx) => {
-    // Usamos la misma clave que definas en el login/init
     const localEmpresaId = localStorage.getItem("empresaId"); 
     
     const { value: selectedItem } = await Swal.fire({
         title: 'BÓVEDA TALLERPRO-360',
-        background: '#010409', color: '#fff',
+        background: '#010409', 
+        color: '#fff',
+        customClass: {
+            popup: 'rounded-[3rem] border border-white/10 shadow-glow-cyan',
+            title: 'orbitron text-lg font-black tracking-tighter'
+        },
         html: `
             <div class="p-4">
-                <p class="text-[9px] orbitron text-cyan-400 mb-2">SELECCIONE REPUESTO DISPONIBLE</p>
-                <select id="swal-sku-select" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/10 orbitron text-[11px] outline-none">
-                    <option>Consultando Stock...</option>
+                <p class="text-[9px] orbitron text-cyan-400 mb-4 tracking-[0.3em] uppercase italic">Seleccione Repuesto Disponible</p>
+                <select id="swal-sku-select" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/10 orbitron text-[11px] outline-none focus:border-cyan-500/50 transition-all">
+                    <option>Consultando Telemetría de Stock...</option>
                 </select>
             </div>
         `,
+        showCancelButton: true,
+        confirmButtonText: 'VINCULAR',
+        cancelButtonText: 'CANCELAR',
+        confirmButtonColor: '#06b6d4',
         didOpen: async () => {
             try {
+                // Consulta filtrada por empresa para evitar cruce de datos
                 const q = query(collection(db, "inventario"), where("empresaId", "==", localEmpresaId));
                 const snap = await getDocs(q);
                 const select = document.getElementById("swal-sku-select");
                 
-                // Mapeo y Filtro (Solo lo que tiene stock y es del taller)
+                // Mapeo, Filtro de stock positivo y Orden Alfabético
                 const items = snap.docs
                     .map(d => ({id: d.id, ...d.data()}))
-                    .filter(d => d.cantidad > 0)
+                    .filter(d => Number(d.cantidad || 0) > 0)
                     .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
 
                 if (items.length === 0) {
-                    select.innerHTML = '<option value="">BÓVEDA VACÍA</option>';
+                    select.innerHTML = '<option value="">BÓVEDA SIN EXISTENCIAS</option>';
                     return;
                 }
 
-                select.innerHTML = '<option value="">-- VINCULAR PIEZA --</option>' + 
-                    items.map(d => `<option value='${JSON.stringify({id: d.id, n: d.nombre, c: d.costo, v: d.precioVenta})}' class="py-2">${d.nombre} (DISP: ${d.cantidad})</option>`).join('');
+                select.innerHTML = '<option value="">-- SELECCIONE PIEZA --</option>' + 
+                    items.map(d => {
+                        const dataPayload = JSON.stringify({id: d.id, n: d.nombre, c: d.costo, v: d.precioVenta});
+                        return `<option value='${dataPayload}'>${d.nombre.toUpperCase()} (DISP: ${d.cantidad})</option>`;
+                    }).join('');
             } catch (err) {
-                console.error("Error Bóveda:", err);
+                console.error("Error Crítico de Bóveda:", err);
+                Swal.showValidationMessage(`Error de enlace: ${err.message}`);
             }
         },
         preConfirm: () => {
             const val = document.getElementById("swal-sku-select").value;
-            return (val && val !== "") ? JSON.parse(val) : null;
+            if (!val || val.includes("--") || val.includes("Consultando")) {
+                Swal.showValidationMessage('Debes seleccionar un ítem válido');
+                return false;
+            }
+            try {
+                return JSON.parse(val);
+            } catch (e) {
+                return null;
+            }
         }
     });
 
+    // Aplicación de datos a la Orden Activa
     if (selectedItem) {
         ordenActiva.items[idx] = { 
             ...ordenActiva.items[idx], 
-            desc: selectedItem.n, 
+            desc: selectedItem.n.toUpperCase(), 
             costo: Number(selectedItem.c || 0), 
             venta: Number(selectedItem.v || 0), 
             sku: selectedItem.id, 
             tipo: 'REPUESTO', 
             origen: 'TALLER' 
         };
+        
+        // Recalcular finanzas y actualizar interfaz
         recalcularFinanzas();
-        if (typeof hablar === 'function') hablar(`${selectedItem.n} enlazado.`);
+        
+        if (typeof hablar === 'function') {
+            hablar(`Enlazado: ${selectedItem.n}`);
+        }
     }
 };
 
