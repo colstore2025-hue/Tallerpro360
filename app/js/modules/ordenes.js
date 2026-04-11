@@ -5,8 +5,8 @@
  */
 
 import { 
-    collection, query, where, onSnapshot, doc, getDoc, 
-    setDoc, deleteDoc, serverTimestamp, increment 
+    collection, query, where, onSnapshot, doc, getDoc, getDocs,
+    setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, increment 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
@@ -110,10 +110,12 @@ const recalcularFinanzas = () => {
     const a_tecnico = Number(document.getElementById("f-adelanto-tecnico")?.value || 0); 
     const a_cliente = Number(document.getElementById("f-anticipo-cliente")?.value || 0); 
     
-    // Lógica de Impuestos (Regulada para el mercado local)
-    // Si la orden no tiene definido el tipo de impuesto, por defecto es SIN_IVA (Régimen Simplificado)
+        // Lógica Colombia: 19% si es Responsable de IVA, 0% si es Régimen Simplificado
     const tipoImpuesto = ordenActiva.finanzas?.impuesto_tipo || 'SIN_IVA';
-    let valorIVA = (tipoImpuesto === 'IVA_19') ? (sumaVentaBruta + g_insumos) * 0.19 : 0;
+    let porcentaje = (tipoImpuesto === 'IVA_19') ? 0.19 : 0;
+    
+    // El IVA se calcula sobre la suma de servicios, repuestos y gastos varios
+    let valorIVA = Math.round((sumaVentaBruta + g_insumos) * porcentaje);
     
     const granTotal = sumaVentaBruta + g_insumos + valorIVA;
     const utilidadNeta = (sumaVentaBruta + g_insumos) - (sumaCostoTaller + g_insumos + a_tecnico);
@@ -397,16 +399,17 @@ const ejecutarSincronizacionNexus = async () => {
  * Conecta la terminal con el inventario real.
  */
 window.buscarEnInventario = async (idx) => {
-    const localEmpresaId = localStorage.getItem("nexus_empresaId");
+    // Usamos la misma clave que definas en el login/init
+    const localEmpresaId = localStorage.getItem("empresaId"); 
     
     const { value: selectedItem } = await Swal.fire({
-        title: 'BÓVEDA NEXUS-X',
+        title: 'BÓVEDA TALLERPRO-360',
         background: '#010409', color: '#fff',
-        customClass: { popup: 'rounded-[3rem] border border-white/10' },
         html: `
             <div class="p-4">
+                <p class="text-[9px] orbitron text-cyan-400 mb-2">SELECCIONE REPUESTO DISPONIBLE</p>
                 <select id="swal-sku-select" class="w-full bg-[#0d1117] p-6 rounded-3xl text-white border border-white/10 orbitron text-[11px] outline-none">
-                    <option>Cargando Suministros...</option>
+                    <option>Consultando Stock...</option>
                 </select>
             </div>
         `,
@@ -416,25 +419,26 @@ window.buscarEnInventario = async (idx) => {
                 const snap = await getDocs(q);
                 const select = document.getElementById("swal-sku-select");
                 
+                // Mapeo y Filtro (Solo lo que tiene stock y es del taller)
                 const items = snap.docs
                     .map(d => ({id: d.id, ...d.data()}))
-                    .filter(d => d.origen === "PROPIO" && d.cantidad > 0)
+                    .filter(d => d.cantidad > 0)
                     .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
 
                 if (items.length === 0) {
-                    select.innerHTML = '<option value="">SIN STOCK DISPONIBLE</option>';
+                    select.innerHTML = '<option value="">BÓVEDA VACÍA</option>';
                     return;
                 }
 
-                select.innerHTML = '<option value="">-- SELECCIONE PIEZA --</option>' + 
-                    items.map(d => `<option value='${JSON.stringify({id: d.id, n: d.nombre, c: d.costo, v: d.precioVenta})}' class="py-2">${d.nombre} (${d.cantidad} DISP)</option>`).join('');
+                select.innerHTML = '<option value="">-- VINCULAR PIEZA --</option>' + 
+                    items.map(d => `<option value='${JSON.stringify({id: d.id, n: d.nombre, c: d.costo, v: d.precioVenta})}' class="py-2">${d.nombre} (DISP: ${d.cantidad})</option>`).join('');
             } catch (err) {
-                console.error(err);
+                console.error("Error Bóveda:", err);
             }
         },
         preConfirm: () => {
             const val = document.getElementById("swal-sku-select").value;
-            return val ? JSON.parse(val) : null;
+            return (val && val !== "") ? JSON.parse(val) : null;
         }
     });
 
@@ -442,14 +446,14 @@ window.buscarEnInventario = async (idx) => {
         ordenActiva.items[idx] = { 
             ...ordenActiva.items[idx], 
             desc: selectedItem.n, 
-            costo: selectedItem.c, 
-            venta: selectedItem.v, 
-            sku: selectedItem.id, // ID único de Firestore para el descuento final
+            costo: Number(selectedItem.c || 0), 
+            venta: Number(selectedItem.v || 0), 
+            sku: selectedItem.id, 
             tipo: 'REPUESTO', 
             origen: 'TALLER' 
         };
         recalcularFinanzas();
-        if (typeof hablar === 'function') hablar(`${selectedItem.n} vinculado.`);
+        if (typeof hablar === 'function') hablar(`${selectedItem.n} enlazado.`);
     }
 };
 
