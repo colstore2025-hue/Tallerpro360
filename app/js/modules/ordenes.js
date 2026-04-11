@@ -330,30 +330,53 @@ const renderTerminal = () => {
     recalcularFinanzas();
 };
 
-// --- 📡 SINCRONIZACIÓN STARLINK & DESCUENTO DE STOCK (CIRUGÍA MAESTRA) ---
+// --- 📡 SINCRONIZACIÓN Y PROTOCOLO DE EGRESO ---
 const ejecutarSincronizacionNexus = async () => {
     const btn = document.getElementById("btnSincronizar");
     const originalText = btn.innerHTML;
-    btn.innerHTML = `<i class="fas fa-circle-notch fa-spin mr-2"></i> ENLAZANDO...`;
+    btn.innerHTML = `<i class="fas fa-circle-notch fa-spin mr-2"></i> SINCRONIZANDO...`;
     
     try {
-        const placaLimpia = document.getElementById("f-placa").value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const placaLimpia = document.getElementById("f-placa").value.trim().toUpperCase();
         const estadoOrden = document.getElementById("f-estado").value;
         const docId = ordenActiva.id || `OT_${placaLimpia}_${Date.now().toString().slice(-4)}`;
 
-        // 1. Recopilación de Data Consolidada
         const dataOrden = {
             ...ordenActiva,
             id: docId,
             empresaId,
             placa: placaLimpia,
-            cliente: document.getElementById("f-cliente").value.trim().toUpperCase(),
-            telefono: document.getElementById("f-telefono").value.trim().replace(/\s+/g, ''),
+            cliente: document.getElementById("f-cliente").value.toUpperCase(),
+            telefono: document.getElementById("f-telefono").value,
             estado: estadoOrden,
             bitacora_ia: document.getElementById("ai-log-display").value,
             updatedAt: serverTimestamp()
         };
 
+        await setDoc(doc(db, "ordenes", docId), dataOrden);
+
+        // PROTOCOLO DE DESCUENTO: Solo si la orden se marca como ENTREGADA
+        if (estadoOrden === "ENTREGADO" || estadoOrden === "LISTO") {
+            for (const item of dataOrden.items) {
+                if (item.tipo === 'REPUESTO' && item.sku && item.origen === 'TALLER') {
+                    // Restamos stock físicamente en la colección inventario
+                    const invRef = doc(db, "inventario", item.sku);
+                    await updateDoc(invRef, { cantidad: increment(-1) });
+                }
+            }
+        }
+
+        Swal.fire({ icon: 'success', title: 'ORDEN SINCRONIZADA', background: '#0d1117', color: '#fff' });
+        document.getElementById("nexus-terminal").classList.add("hidden");
+        renderBase(); // Reset visual de la grilla
+
+    } catch (err) {
+        console.error("Sync Error:", err);
+        Swal.fire('ERROR DE NODO', 'Revisa la conexión a Firestore', 'error');
+    } finally {
+        btn.innerHTML = originalText;
+    }
+};
         // 2. Operación de Guardado en Firestore
         await setDoc(doc(db, "ordenes", docId), dataOrden);
         
