@@ -55,23 +55,29 @@ export default async function ordenes(container) {
         cargarEscuchaGlobal();
     };
 
-    // --- 🛰️ RADAR DE DATOS (Real-Time Feedback) ---
+        // --- 🛰️ RADAR DE DATOS (Real-Time Feedback) ---
     const cargarEscuchaGlobal = () => {
         const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
+        
         onSnapshot(q, (snap) => {
             const counts = { COTIZACION: 0, INGRESO: 0, DIAGNOSTICO: 0, REPARACION: 0, LISTO: 0 };
             const grilla = [];
+            
             snap.docs.forEach(d => {
                 const dt = d.data();
+                // 1. Actualizar contadores globales de la navegación
                 if(counts.hasOwnProperty(dt.estado)) counts[dt.estado]++;
+                // 2. Filtrar solo las órdenes de la fase que el usuario está viendo
                 if(dt.estado === faseActual) grilla.push({ id: d.id, ...dt });
             });
             
+            // Render de contadores en los botones superiores
             Object.keys(counts).forEach(f => { 
                 const el = document.getElementById(`count-${f}`);
                 if(el) el.innerText = counts[f]; 
             });
 
+            // Render de la Grilla Principal
             const gridContainer = document.getElementById("grid-ordenes");
             if(gridContainer) {
                 gridContainer.innerHTML = grilla.map(o => `
@@ -89,6 +95,24 @@ export default async function ordenes(container) {
             }
         });
     };
+
+    // --- 🏗️ SOPORTE DE NAVEGACIÓN Y PUENTE GLOBAL ---
+    const vincularNavegacion = () => {
+        // Vincula los botones de fase (COTIZACION, INGRESO, etc)
+        document.querySelectorAll('.fase-tab').forEach(btn => {
+            btn.onclick = () => {
+                faseActual = btn.dataset.fase;
+                renderBase(); // Reinicia el ciclo para aplicar el nuevo filtro del radar
+            };
+        });
+        
+        // Botón Nueva Misión
+        const btnNew = document.getElementById("btnNewMission");
+        if(btnNew) btnNew.onclick = () => abrirTerminal();
+    };
+
+    // Exponer la función al objeto window para que los onclick del HTML funcionen
+    window.abrirTerminalNexus = (id) => abrirTerminal(id);
 
     // --- 💰 MOTOR FINANCIERO NEXUS-X V6.5 PRO (COLOMBIA EDITION) ---
 // Maneja lógica de IVA, Utilidad Real y Sincronización de Bóveda
