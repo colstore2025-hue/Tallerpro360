@@ -2,12 +2,13 @@
  * dashboard.js - NEXUS-X AEGIS V35.5 🛰️
  * SISTEMA UNIFICADO DE COMANDO CENTRAL - EDICIÓN 2030
  * @author William Jeffry Urquijo Cubillos & Gemini AI
+ * @strategy Utility-First / AI-Driven Logistics
  */
 
 import { db } from "../core/firebase-config.js";
 import { collection, query, where, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// --- 🛡️ 1. CONFIGURACIÓN DE PERMISOS TÁCTICOS ---
+// --- 🛡️ 1. PROTOCOLO DE AUTORIZACIÓN DE NÚCLEO ---
 const PERMISOS = {
     "GRATI-CORE": { 
         limiteOrdenes: 10, 
@@ -17,48 +18,50 @@ const PERMISOS = {
     "BASICO": { 
         limiteOrdenes: 50, 
         modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'soporte'],
-        clase: "border-blue-500 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.2)]"
+        clase: "border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
     },
     "PRO": { 
         limiteOrdenes: 500, 
         modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace', 'publish', 'soporte'],
-        clase: "border-purple-500 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+        clase: "border-purple-500 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.2)]"
     },
     "ELITE": { 
         limiteOrdenes: Infinity, 
         modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace', 'publish', 'staff', 'nomina', 'finanzas-elite', 'soporte'],
-        clase: "border-cyan-500 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.3)]"
+        clase: "border-cyan-500 text-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.4)]"
     }
 };
 
-// --- 🚀 2. MOTOR PRINCIPAL (CON INTEGRACIÓN CRM/BI) ---
+// --- 🚀 2. INYECTOR DE INTERFAZ NEXUS ---
 export default async function dashboard(container) {
     const empresaId = localStorage.getItem("nexus_empresaId");
     const planActual = (localStorage.getItem("nexus_plan") || "GRATI-CORE").toUpperCase();
     const config = PERMISOS[planActual] || PERMISOS["GRATI-CORE"];
     
+    // Renderizado inmediato para evitar parpadeos (Zero-Latency UI)
     renderInterface(container, planActual, config);
 
     try {
-        // OPTIMIZACIÓN FIRESTORE: Una sola consulta para traer todo lo relevante
+        // Telemetría de una sola vía para optimizar cuotas de Firebase
         const qOrdenes = query(collection(db, "ordenes"), where("empresaId", "==", empresaId), limit(500));
         const snap = await getDocs(qOrdenes);
         const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
         const stats = processBI(data);
 
+        // Animación de entrada de datos
         setTimeout(() => {
             updateNumbers(stats, planActual);
             renderStaffEfficiency(stats.staff);
             deployAIAssistant(stats, config.modulos.includes('gerenteAI'));
-        }, 300);
+        }, 150);
 
     } catch (err) {
-        console.error("DASHBOARD_CRITICAL_FAILURE", err);
+        console.error("AEGIS_SHIELD_FAILURE", err);
     }
 }
 
-// --- 🧠 3. MOTOR DE PROCESAMIENTO BI & CRM ---
+// --- 🧠 3. INTELIGENCIA DE NEGOCIO (BI) ---
 function processBI(ordenes) {
     let rev = 0;
     const staff = {};
@@ -67,11 +70,11 @@ function processBI(ordenes) {
     validas.forEach(o => {
         const monto = Number(o.costos_totales?.total_general || o.total || 0);
         rev += monto;
-        const tec = o.tecnico || "S/N";
+        const tec = o.tecnico || "OPERADOR_S/N";
         staff[tec] = (staff[tec] || 0) + monto;
         
-        // AUTO-ALIMENTACIÓN CRM: Si la OT tiene cliente/placa, aseguramos que existan en la lógica local
-        if(o.placa) localStorage.setItem(`last_service_${o.placa}`, JSON.stringify({ fecha: o.fecha_apertura, id: o.id }));
+        // CRM Predictive Link
+        if(o.placa) localStorage.setItem(`nexus_v_trace_${o.placa}`, JSON.stringify({ last_service: o.fecha_apertura }));
     });
 
     return {
@@ -82,111 +85,112 @@ function processBI(ordenes) {
     };
 }
 
-// --- 🛠️ COMPONENTES UI ATÓMICOS ---
+// --- 🛠️ COMPONENTES DE COMANDO ---
 function renderBtn(name, icon, path, habilitado) {
-    const action = habilitado ? `onclick="location.hash='${path}'"` : `onclick="window.restrictedAccess('${name}')"`;
+    const action = habilitado ? `onclick="location.hash='${path}'"` : `onclick="Swal.fire('BLOQUEADO', 'Eleve su nivel de enlace para activar este módulo.', 'info')"`;
     return `
-    <button ${action} class="group p-6 rounded-2xl bg-[#0d1117] border border-white/5 hover:bg-white hover:scale-[1.05] transition-all duration-300">
-        <i class="fas ${icon} text-xl mb-3 ${habilitado ? 'text-white group-hover:text-black' : 'text-slate-800'}"></i>
-        <p class="orbitron text-[8px] font-black uppercase tracking-widest ${habilitado ? 'text-slate-500 group-hover:text-black' : 'text-slate-800'}">${name}</p>
+    <button ${action} class="group p-6 rounded-[2rem] bg-[#0d1117] border border-white/5 hover:border-cyan-500/50 hover:bg-white hover:scale-[1.03] transition-all duration-500 overflow-hidden relative">
+        <div class="absolute inset-0 bg-cyan-500 opacity-0 group-hover:opacity-5 transition-opacity"></div>
+        <i class="fas ${icon} text-xl mb-4 ${habilitado ? 'text-white group-hover:text-cyan-600' : 'text-slate-800'}"></i>
+        <p class="orbitron text-[8px] font-black uppercase tracking-[0.3em] ${habilitado ? 'text-slate-500 group-hover:text-black' : 'text-slate-800'}">${name}</p>
     </button>`;
 }
 
 // --- 📐 4. ARQUITECTURA VISUAL (DASHBOARD TOTAL) ---
 function renderInterface(container, plan, config) {
-    const user = localStorage.getItem("nexus_userName") || "OPERADOR_NXS";
+    const user = localStorage.getItem("nexus_userName") || "COMANDANTE";
     const empresa = localStorage.getItem("nexus_empresaNombre") || "NEXUS LOGISTICS";
 
     container.innerHTML = `
-    <div class="p-4 lg:p-10 space-y-10 animate-in fade-in duration-700 pb-40 max-w-[1600px] mx-auto bg-[#010409]">
+    <div class="p-6 lg:p-12 space-y-12 animate-in fade-in duration-1000 pb-48 max-w-[1800px] mx-auto bg-[#010409]">
         
-        <div class="flex flex-col lg:flex-row justify-between items-center gap-6 border-b border-white/5 pb-10">
-            <div class="relative pl-6">
-                <div class="absolute left-0 top-0 h-full w-1 bg-cyan-500 shadow-[0_0_15px_#06b6d4]"></div>
-                <h1 class="orbitron text-4xl font-black italic uppercase tracking-tighter">${empresa}</h1>
-                <p class="text-[9px] text-slate-500 font-black orbitron tracking-[0.4em] mt-2">OPERADOR: ${user} // AEGIS V35.5</p>
+        <header class="flex flex-col lg:flex-row justify-between items-center gap-8 border-b border-white/5 pb-12">
+            <div class="relative pl-8">
+                <div class="absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b from-cyan-500 to-blue-600 shadow-[0_0_25px_#06b6d4]"></div>
+                <h1 class="orbitron text-5xl font-black italic uppercase tracking-tighter text-white leading-none">${empresa}</h1>
+                <p class="text-[10px] text-slate-500 font-black orbitron tracking-[0.6em] mt-4 uppercase">Status: Operacional // Aegis V35.5 // User: ${user}</p>
             </div>
-            <div class="bg-[#0d1117] border ${config.clase} px-10 py-5 rounded-[2rem] text-center">
-                <p class="text-[8px] font-black orbitron uppercase mb-1 tracking-widest text-slate-500">Núcleo Activo</p>
-                <p class="text-2xl font-black orbitron italic">${plan}</p>
+            <div class="bg-[#0d1117] border ${config.clase} px-12 py-6 rounded-3xl text-center group cursor-help">
+                <p class="text-[8px] font-black orbitron uppercase mb-1 tracking-[0.5em] text-slate-500">Nivel de Enlace</p>
+                <p class="text-3xl font-black orbitron italic group-hover:scale-110 transition-transform">${plan}</p>
             </div>
-        </div>
+        </header>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            ${renderBtn('Clientes', 'fa-users', '#clientes', config.modulos.includes('clientes'))}
-            ${renderBtn('Vehículos', 'fa-car', '#vehiculos', config.modulos.includes('vehiculos'))}
-            ${renderBtn('Inventario', 'fa-box-open', '#inventario', config.modulos.includes('inventario'))}
-            ${renderBtn('Caja', 'fa-vault', '#pagos', config.modulos.includes('pagos'))}
-            ${renderBtn('Contabilidad', 'fa-file-invoice-dollar', '#contabilidad', config.modulos.includes('contabilidad'))}
-            ${renderBtn('Nómina', 'fa-user-tie', '#nomina', config.modulos.includes('nomina'))}
-            ${renderBtn('Reportes', 'fa-chart-pie', '#reportes', config.modulos.includes('reportes'))}
-            ${renderBtn('Marketplace', 'fa-shop', '#marketplace', config.modulos.includes('marketplace'))}
-            ${renderBtn('Publish', 'fa-cloud-arrow-up', '#publish', config.modulos.includes('publish'))}
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-6">
+            ${renderBtn('Clientes', 'fa-users-gear', '#clientes', config.modulos.includes('clientes'))}
+            ${renderBtn('Vehículos', 'fa-truck-fast', '#vehiculos', config.modulos.includes('vehiculos'))}
+            ${renderBtn('Inventario', 'fa-boxes-stacked', '#inventario', config.modulos.includes('inventario'))}
+            ${renderBtn('Caja Real', 'fa-money-bill-transfer', '#pagos', config.modulos.includes('pagos'))}
+            ${renderBtn('Libro Contable', 'fa-file-invoice-dollar', '#contabilidad', config.modulos.includes('contabilidad'))}
+            ${renderBtn('MarketX', 'fa-globe', '#marketplace', config.modulos.includes('marketplace'))}
+            ${renderBtn('Nueva Misión', 'fa-plus-circle', '#publish', config.modulos.includes('publish'))}
+            ${renderBtn('Reportes', 'fa-chart-simple', '#reportes', config.modulos.includes('reportes'))}
+            ${renderBtn('Nómina Staff', 'fa-id-badge', '#nomina', config.modulos.includes('nomina'))}
+            ${renderBtn('Gestión Staff', 'fa-people-group', '#staff', config.modulos.includes('staff'))}
+            ${renderBtn('Audit Core', 'fa-shield-halved', '#finanzas-elite', config.modulos.includes('finanzas-elite'))}
             
-            <button onclick="window.open('https://wa.me/17049419163?text=SOPORTE_NXS', '_blank')" 
-                class="flex flex-col items-center justify-center p-6 bg-[#0d1117] border border-white/5 rounded-2xl hover:bg-green-500 hover:scale-[1.05] transition-all group">
-                <i class="fab fa-whatsapp text-xl mb-3 text-slate-500 group-hover:text-white"></i>
-                <p class="orbitron text-[8px] font-black uppercase text-slate-500 group-hover:text-white">Soporte NXS</p>
+            <button onclick="window.open('https://wa.me/17049419163', '_blank')" 
+                class="flex flex-col items-center justify-center p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-[2rem] hover:bg-emerald-500 hover:text-white transition-all group">
+                <i class="fab fa-whatsapp text-xl mb-3 text-emerald-500 group-hover:text-white"></i>
+                <p class="orbitron text-[8px] font-black uppercase tracking-widest text-emerald-500 group-hover:text-white">Soporte Directo</p>
             </button>
-
-            ${renderBtn('Staff', 'fa-people-group', '#staff', config.modulos.includes('staff'))}
-            ${renderBtn('Audit Center', 'fa-shield-halved', '#finanzas-elite', config.modulos.includes('finanzas-elite'))}
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div onclick="location.hash='#vehiculos'" class="cursor-pointer bg-[#0d1117] border border-white/5 hover:border-cyan-500/50 p-10 rounded-[3rem] group relative overflow-hidden">
-                <div class="absolute -right-10 -top-10 text-9xl text-white/5 rotate-12 group-hover:text-cyan-500/10"><i class="fas fa-screwdriver-wrench"></i></div>
-                <h3 class="orbitron text-xs text-slate-500 mb-2 uppercase tracking-widest">Misiones Activas</h3>
-                <p class="text-4xl font-black orbitron text-white italic uppercase">Órdenes de Trabajo</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div onclick="location.hash='#vehiculos'" class="cursor-pointer bg-gradient-to-r from-[#0d1117] to-transparent border border-white/5 hover:border-cyan-500/50 p-12 rounded-[3.5rem] group relative overflow-hidden transition-all shadow-2xl">
+                <i class="fas fa-screwdriver-wrench absolute -right-8 -bottom-8 text-9xl text-white/5 rotate-12 group-hover:scale-110 transition-transform"></i>
+                <h3 class="orbitron text-[10px] text-cyan-500 mb-2 uppercase tracking-[0.4em] font-black">Control de Procesos</h3>
+                <p class="text-4xl font-black orbitron text-white italic uppercase tracking-tighter">Misiones en Rampa</p>
             </div>
 
-            <div onclick="${(config.modulos.includes('gerenteAI')) ? "location.hash='#gerenteAI'" : "window.restrictedAccess('GERENTE AI')"}" 
-                class="cursor-pointer bg-gradient-to-br from-[#0d1117] to-black border border-white/5 hover:border-purple-500/50 p-10 rounded-[3rem] group relative overflow-hidden">
-                <div class="absolute -right-10 -top-10 text-9xl text-purple-500/5 group-hover:text-purple-500/10"><i class="fas fa-brain"></i></div>
-                <h3 class="orbitron text-xs text-slate-500 mb-2 uppercase tracking-widest">Predictive Core</h3>
-                <p class="text-4xl font-black orbitron text-white italic uppercase uppercase">Gerente <span class="text-purple-500">AI</span></p>
+            <div onclick="${(config.modulos.includes('gerenteAI')) ? "location.hash='#gerenteAI'" : "Swal.fire('MÓDULO IA','Eleve a Plan ELITE para activar proyecciones predictivas.','warning')"}" 
+                class="cursor-pointer bg-gradient-to-br from-indigo-950/20 to-black border border-white/10 hover:border-purple-500/50 p-12 rounded-[3.5rem] group relative overflow-hidden transition-all">
+                <i class="fas fa-brain absolute -right-8 -bottom-8 text-9xl text-purple-500/10 group-hover:rotate-6 transition-transform"></i>
+                <h3 class="orbitron text-[10px] text-purple-400 mb-2 uppercase tracking-[0.4em] font-black">Inteligencia de Flota</h3>
+                <p class="text-4xl font-black orbitron text-white italic uppercase tracking-tighter">Gerente <span class="text-purple-500">AI</span> V6.0</p>
             </div>
         </div>
 
-        <div id="hudKpis" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+        <div id="hudKpis" class="grid grid-cols-2 md:grid-cols-4 gap-6"></div>
 
-        <div class="grid lg:grid-cols-12 gap-6">
-            <div class="lg:col-span-4 bg-[#0d1117] p-10 rounded-[3.5rem] border border-white/5">
-                <h4 class="orbitron text-[9px] font-black text-slate-500 uppercase tracking-[0.4em] mb-8 border-l-2 border-cyan-500 pl-4">Staff Performance</h4>
-                <div id="techEfficiency" class="space-y-6"></div>
+        <div class="grid lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-4 bg-[#0d1117] p-12 rounded-[4rem] border border-white/5">
+                <h4 class="orbitron text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] mb-10 border-l-4 border-cyan-500 pl-6">Productividad Técnica</h4>
+                <div id="techEfficiency" class="space-y-8"></div>
             </div>
 
-            <div class="lg:col-span-8 bg-[#0d1117] p-10 rounded-[3.5rem] border border-white/5 relative overflow-hidden">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="w-10 h-10 bg-white text-black rounded-xl flex items-center justify-center text-xl shadow-[0_0_15px_#fff]"><i class="fas fa-robot"></i></div>
-                    <h5 class="orbitron text-xs font-black uppercase italic tracking-widest">Nexus Assistant</h5>
+            <div class="lg:col-span-8 bg-[#0d1117] p-12 rounded-[4rem] border border-white/5 relative overflow-hidden flex flex-col justify-center min-h-[400px]">
+                <div class="absolute inset-0 bg-gradient-to-tr from-cyan-500/5 to-transparent"></div>
+                <div class="flex items-center gap-6 mb-8 relative z-10">
+                    <div class="w-14 h-14 bg-white text-black rounded-2xl flex items-center justify-center text-2xl shadow-[0_0_30px_rgba(255,255,255,0.2)]"><i class="fas fa-satellite-dish animate-pulse"></i></div>
+                    <h5 class="orbitron text-xl font-black uppercase italic tracking-tighter">Nexus Intelligence Feed</h5>
                 </div>
-                <p id="txtAI" class="text-slate-400 text-sm leading-relaxed max-w-2xl font-medium italic">Sincronizando telemetría...</p>
-                <div id="btnAI" class="mt-8"></div>
+                <p id="txtAI" class="text-slate-400 text-xl leading-relaxed max-w-3xl font-medium italic relative z-10">Analizando métricas de rendimiento...</p>
+                <div id="btnAI" class="mt-12 relative z-10"></div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            ${renderFooterKpi('Ticket Promedio', 'valTicket')}
-            ${renderFooterKpi('Revenue Total', 'valRevenue')}
-            ${renderFooterKpi('Utilidad Estimada', 'valProfit')}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            ${renderFooterKpi('Ticket Promedio (USD)', 'valTicket')}
+            ${renderFooterKpi('Flujo Bruto', 'valRevenue')}
+            ${renderFooterKpi('Margen Est. (30%)', 'valProfit')}
         </div>
     </div>`;
 }
 
-// --- 🛠️ FUNCIONES DE ACTUALIZACIÓN ---
+// --- 🛠️ 5. MOTOR DE ACTUALIZACIÓN DE DATOS ---
 function updateNumbers(s, plan) {
     const hud = document.getElementById("hudKpis");
     const kpis = [
-        { l: "Revenue", v: `$${s.revenue.toLocaleString()}`, c: "text-emerald-400" },
-        { l: "Misiones OT", v: s.count, c: "text-white" },
-        { l: "Nivel Enlace", v: plan, c: "text-cyan-400" },
-        { l: "Status", v: "ESTABLE", c: "text-orange-500" }
+        { l: "Revenue Total", v: `$${s.revenue.toLocaleString()}`, c: "text-emerald-400" },
+        { l: "Total Órdenes", v: s.count, c: "text-white" },
+        { l: "Licencia Actual", v: plan, c: "text-cyan-400" },
+        { l: "Salud del Sistema", v: "OPTIMAL", c: "text-orange-500" }
     ];
     hud.innerHTML = kpis.map(k => `
-        <div class="bg-[#0d1117] p-6 rounded-3xl border border-white/5">
-            <p class="text-[7px] text-slate-600 orbitron font-black uppercase mb-2">${k.l}</p>
-            <p class="text-xl font-black orbitron ${k.c}">${k.v}</p>
+        <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 hover:border-white/10 transition-colors">
+            <p class="text-[8px] text-slate-600 orbitron font-black uppercase mb-3 tracking-widest">${k.l}</p>
+            <p class="text-2xl font-black orbitron ${k.c}">${k.v}</p>
         </div>`).join("");
 
     document.getElementById("valTicket").innerText = `$${Math.round(s.avgTicket).toLocaleString()}`;
@@ -198,13 +202,13 @@ function renderStaffEfficiency(staff) {
     const container = document.getElementById("techEfficiency");
     if(!container) return;
     container.innerHTML = staff.slice(0, 4).map(([name, val]) => `
-        <div class="space-y-2">
-            <div class="flex justify-between text-[9px] orbitron font-bold">
-                <span class="text-slate-400 uppercase">${name}</span>
-                <span class="text-white font-black">$${val.toLocaleString()}</span>
+        <div class="space-y-3">
+            <div class="flex justify-between text-[10px] orbitron font-bold">
+                <span class="text-slate-500 uppercase">${name}</span>
+                <span class="text-white font-black italic">$${val.toLocaleString()}</span>
             </div>
-            <div class="h-1 bg-white/5 rounded-full overflow-hidden">
-                <div class="h-full bg-cyan-500 shadow-[0_0_10px_#06b6d4]" style="width: ${Math.min((val/1000000)*100, 100)}%"></div>
+            <div class="h-1.5 bg-black/80 rounded-full overflow-hidden p-[1px]">
+                <div class="h-full bg-gradient-to-r from-cyan-900 to-cyan-400 shadow-[0_0_15px_#06b6d4] transition-all duration-[2000ms]" style="width: ${Math.min((val/1500000)*100, 100)}%"></div>
             </div>
         </div>`).join("");
 }
@@ -213,46 +217,61 @@ function deployAIAssistant(stats, hasAI) {
     const txt = document.getElementById("txtAI");
     const btn = document.getElementById("btnAI");
     if(!hasAI) {
-        txt.innerHTML = "Protocolo <span class='text-purple-500'>GERENTE AI</span> inactivo. Actualice para activar proyecciones de rampa y alertas de fuga de capital.";
-        btn.innerHTML = `<button onclick="location.hash='#pagos'" class="px-8 py-3 bg-purple-600 text-white orbitron text-[9px] font-black rounded-xl hover:bg-white hover:text-black transition-all">ACTIVAR NÚCLEO AI</button>`;
+        txt.innerHTML = "Protocolo <span class='text-purple-500'>GERENTE AI</span> inactivo. Su plan actual no permite la autogestión de inventarios ni el análisis predictivo de rampa.";
+        btn.innerHTML = `<button onclick="location.hash='#pagos'" class="px-10 py-4 bg-purple-600 text-white orbitron text-[10px] font-black rounded-2xl hover:bg-white hover:text-black transition-all shadow-lg">UPGRADE A NÚCLEO AI</button>`;
     } else {
-        txt.innerHTML = `Nexus detecta un revenue de <span class='text-cyan-400 font-black'>$${stats.revenue.toLocaleString()}</span>. El técnico más productivo es <span class='text-emerald-400'>${stats.staff[0]?.[0] || 'S/N'}</span>. Se recomienda optimización del 15% mediante CRM preventivo.`;
-        btn.innerHTML = `<button onclick="location.hash='#gerenteAI'" class="px-8 py-3 bg-white text-black orbitron text-[9px] font-black rounded-xl hover:bg-cyan-500 hover:text-white transition-all">ABRIR CENTRO DE COMANDO AI</button>`;
+        txt.innerHTML = `Comandante, Nexus reporta ingresos de <span class='text-cyan-400 font-black'>$${stats.revenue.toLocaleString()}</span>. El análisis de flujo sugiere que <span class='text-white font-bold underline'>${stats.staff[0]?.[0] || 'la flota'}</span> tiene un potencial de escalado del 22%. ¿Desea ejecutar el briefing ejecutivo?`;
+        btn.innerHTML = `<button onclick="location.hash='#gerenteAI'" class="px-10 py-4 bg-white text-black orbitron text-[10px] font-black rounded-2xl hover:bg-cyan-500 hover:text-white transition-all shadow-xl">ABRIR COMANDO ESTRATÉGICO</button>`;
     }
 }
 
 function renderFooterKpi(label, id) {
     return `
-    <div class="bg-black/40 border border-white/5 p-10 rounded-[3rem] text-center">
-        <p class="text-[8px] text-slate-600 orbitron font-black uppercase mb-4 tracking-widest">${label}</p>
-        <p id="${id}" class="text-3xl font-black orbitron text-white italic">$ 0</p>
+    <div class="bg-black/20 border border-white/5 p-12 rounded-[4rem] text-center backdrop-blur-sm group hover:border-white/20 transition-all">
+        <p class="text-[9px] text-slate-600 orbitron font-black uppercase mb-4 tracking-[0.4em]">${label}</p>
+        <p id="${id}" class="text-4xl font-black orbitron text-white italic tracking-tighter group-hover:text-cyan-400 transition-colors">$ 0</p>
     </div>`;
 }
 
-// --- 🛰️ 5. CONTROLADOR DE CARGA EXTERNA (ROUTER TERMINATOR) ---
+// --- 🛰️ 6. ROUTER DINÁMICO (INTEGRACIÓN TOTAL) ---
 const ejecutarRouter = async () => {
     const hash = window.location.hash;
     const container = document.getElementById("main-content") || document.querySelector("#app");
     if (!container) return;
 
-    // Rutas Externas (Vercel)
+    // Rutas con Renderizado Externo
     if (hash === '#marketplace') {
-        container.innerHTML = `<iframe src="https://tallerpro360.vercel.app/marketplace.html" style="width:100%; height:100vh; border:none;" class="animate-in fade-in duration-500"></iframe>`;
+        container.innerHTML = `<iframe src="marketplace.html" style="width:100%; height:100vh; border:none;" class="animate-in fade-in duration-500"></iframe>`;
+        return;
     } 
-    else if (hash === '#publish') {
-        container.innerHTML = `<iframe src="https://tallerpro360.vercel.app/publish.html" style="width:100%; height:100vh; border:none;" class="animate-in fade-in duration-500"></iframe>`;
-    }
-    // Módulos de Inteligencia y Auditoría
-    else if (hash === '#gerenteAI' || hash === '#finanzas-elite') {
+    
+    if (hash === '#publish') {
+        // Cargamos el módulo JS de publicación que creamos antes
         try {
-            // Intentamos cargar el módulo gerenteAI.js primero por lógica de negocio
-            const modulo = await import('./gerenteAI.js').catch(() => import('./finanzas_elite.js'));
+            const modulo = await import('./modules/publish_mision.js');
+            modulo.default(container);
+        } catch(e) { console.error("Error cargando Módulo de Publicación", e); }
+        return;
+    }
+
+    // Rutas de Inteligencia de Negocios
+    if (hash === '#gerenteAI') {
+        try {
+            const modulo = await import('./modules/gerenteAI.js');
             modulo.default(container);
         } catch(e) { console.error("Error en Despliegue de Módulo AI", e); }
     }
-    else if (hash === '#staff') {
+    
+    if (hash === '#finanzas-elite') {
         try {
-            const modulo = await import('./staff.js');
+            const modulo = await import('./modules/finanzas_elite.js');
+            modulo.default(container);
+        } catch(e) { console.error("Error en Despliegue de Auditoría", e); }
+    }
+
+    if (hash === '#staff') {
+        try {
+            const modulo = await import('./modules/staff.js');
             modulo.default(container);
         } catch(e) { console.error("Error cargando Staff", e); }
     }
