@@ -2,15 +2,14 @@
  * dashboard.js - NEXUS-X AEGIS V35.5 🛰️
  * SISTEMA UNIFICADO DE COMANDO CENTRAL - EDICIÓN ERP EMPRESARIAL
  * @author William Jeffry Urquijo Cubillos & Gemini AI
- * @strategy Zero-Latency / ERP-Scaling / Data-Integrity
  */
 
 import { db } from "../core/firebase-config.js";
 import { 
-    collection, query, where, getDocs, orderBy, limit 
+    collection, query, where, getDocs, limit 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// --- 🛡️ 1. PROTOCOLO DE AUTORIZACIÓN Y ACCESO ---
+// --- 🛡️ 1. PROTOCOLO DE AUTORIZACIÓN (CORREGIDO) ---
 const PERMISOS = {
     "GRATI-CORE": { 
         modulos: ['clientes', 'vehiculos', 'ordenes', 'pagos', 'contabilidad', 'soporte'],
@@ -18,14 +17,15 @@ const PERMISOS = {
     },
     "BASICO": { 
         modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'soporte'],
-        clase: "border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
+        clase: "border-blue-500 text-blue-400"
     },
     "PRO": { 
         modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace', 'publish', 'soporte'],
-        clase: "border-purple-500 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.2)]"
+        clase: "border-purple-500 text-purple-400"
     },
     "ELITE": { 
-        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace, 'publish', 'staff', 'nomina', 'finanzas_elite', 'soporte'],
+        // 🚨 CORRECCIÓN: Se cerró la comilla en 'marketplace' y se alinearon nombres
+        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace', 'publish', 'staff', 'nomina', 'finanzas_elite', 'soporte'],
         clase: "border-cyan-500 text-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.4)]"
     }
 };
@@ -42,6 +42,7 @@ export default async function dashboard(container) {
     }
 
     renderInterface(container, planActual, config);
+    // Ejecutar router inicial por si ya viene con hash
     await ejecutarRouter();
 
     if (window.location.hash === "" || window.location.hash === "#dashboard") {
@@ -83,11 +84,11 @@ function processBI(ordenes) {
     };
 }
 
-// --- 🛠️ 4. ARQUITECTURA VISUAL ---
+// --- 🛠️ 4. ARQUITECTURA VISUAL (CORRECCIÓN DE LINKS) ---
 function renderBtn(name, icon, path, habilitado) {
     const action = habilitado 
         ? `onclick="location.hash='${path}'"` 
-        : `onclick="Swal.fire({icon:'lock', title:'ACCESO RESTRINGIDO', text:'Módulo exclusivo para planes PRO y ELITE.', background:'#0d1117', color:'#fff', confirmButtonColor:'#06b6d4'})"`;
+        : `onclick="Swal.fire({icon:'lock', title:'ACCESO RESTRINGIDO', text:'Módulo exclusivo para planes ELITE.', background:'#0d1117', color:'#fff', confirmButtonColor:'#06b6d4'})"`;
     
     return `
     <button ${action} class="group p-6 rounded-[2rem] bg-[#0d1117] border border-white/5 hover:border-cyan-500/50 hover:bg-white hover:scale-[1.03] transition-all duration-500 relative shadow-lg overflow-hidden">
@@ -120,12 +121,15 @@ function renderInterface(container, plan, config) {
                 ${renderBtn('Inventario', 'fa-boxes-stacked', '#inventario', config.modulos.includes('inventario'))}
                 ${renderBtn('Caja Real', 'fa-money-bill-transfer', '#pagos', config.modulos.includes('pagos'))}
                 ${renderBtn('Libro Contable', 'fa-file-invoice-dollar', '#contabilidad', config.modulos.includes('contabilidad'))}
-                ${renderBtn('MarketX', 'fa-globe', '#marketplace', config.modulos.includes('marketplace_bridge'))}
-                ${renderBtn('Nueva Misión', 'fa-plus-circle', '#publish', config.modulos.includes('publish_mision'))}
+                
+                ${renderBtn('MarketX', 'fa-globe', '#marketplace', config.modulos.includes('marketplace'))}
+                ${renderBtn('Nueva Misión', 'fa-plus-circle', '#publish', config.modulos.includes('publish'))}
+                
                 ${renderBtn('Reportes', 'fa-chart-simple', '#reportes', config.modulos.includes('reportes'))}
                 ${renderBtn('Nómina', 'fa-id-badge', '#nomina', config.modulos.includes('nomina'))}
                 ${renderBtn('Staff', 'fa-people-group', '#staff', config.modulos.includes('staff'))}
                 ${renderBtn('Audit Core', 'fa-shield-halved', '#finanzas_elite', config.modulos.includes('finanzas_elite'))}
+                
                 <button onclick="window.open('https://wa.me/17049419163', '_blank')" class="flex flex-col items-center justify-center p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-[2rem] hover:bg-emerald-500 hover:text-white transition-all group">
                     <i class="fab fa-whatsapp text-xl mb-3 text-emerald-500 group-hover:text-white"></i>
                     <p class="orbitron text-[8px] font-black uppercase tracking-widest text-emerald-500 group-hover:text-white">Soporte</p>
@@ -133,6 +137,7 @@ function renderInterface(container, plan, config) {
             </div>
 
             <div id="hudKpis" class="grid grid-cols-2 md:grid-cols-4 gap-6"></div>
+            
             <div class="grid lg:grid-cols-12 gap-8">
                 <div class="lg:col-span-4 bg-[#0d1117] p-12 rounded-[4rem] border border-white/5">
                     <h4 class="orbitron text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] mb-10 border-l-4 border-cyan-500 pl-6">Eficiencia del Staff</h4>
@@ -155,11 +160,11 @@ function renderInterface(container, plan, config) {
                 ${renderFooterKpi('Margen Est. (30%)', 'valProfit')}
             </div>
         </div>
-        <div id="nexus-module-container" class="hidden min-h-screen"></div>
+        <div id="nexus-module-container" class="hidden min-h-screen w-full"></div>
     </div>`;
 }
 
-// --- ⚙️ 5. ACTUALIZACIONES ---
+// --- ⚙️ 5. ACTUALIZACIONES DE UI ---
 function updateNumbers(s, plan) {
     const hud = document.getElementById("hudKpis");
     if(!hud) return;
@@ -205,7 +210,7 @@ function renderFooterKpi(label, id) {
     return `<div class="bg-black/20 border border-white/5 p-12 rounded-[4rem] text-center"><p class="text-[9px] text-slate-600 orbitron font-black uppercase mb-4 tracking-[0.4em]">${label}</p><p id="${id}" class="text-4xl font-black orbitron text-white italic">$ 0</p></div>`;
 }
 
-// --- 🛰️ 6. ROUTER QUIRÚRGICO (MAPEO DE NOMBRES REALES) ---
+// --- 🛰️ 6. ROUTER QUIRÚRGICO RECONSTRUIDO ---
 const ejecutarRouter = async () => {
     const hash = window.location.hash;
     const mainView = document.getElementById("main-content-area");
@@ -220,13 +225,14 @@ const ejecutarRouter = async () => {
         return;
     }
 
+    // Preparar UI de carga
     mainView.classList.add("hidden");
     modContainer.classList.remove("hidden");
-    modContainer.innerHTML = `<div class="w-full h-screen flex flex-col items-center justify-center bg-[#010409]"><div class="w-12 h-12 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div><p class="orbitron text-[8px] text-cyan-500 mt-6 tracking-[0.5em] animate-pulse">SINCRO NEXUS-X...</p></div>`;
+    modContainer.innerHTML = `<div class="w-full h-[80vh] flex flex-col items-center justify-center bg-[#010409]"><div class="w-12 h-12 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div><p class="orbitron text-[8px] text-cyan-500 mt-6 tracking-[0.5em] animate-pulse">CONECTANDO PROTOCOLO NEXUS-X...</p></div>`;
 
     try {
         let modulo;
-        // MANIOBRA QUIRÚRGICA: Mapeamos el ID del Dashboard al Nombre Real del Archivo JS
+        // 🚨 CORRECCIÓN TOTAL DE MAPEO: Aquí se resuelve el "Enlace Fallido"
         switch(hash) {
             case '#marketplace':
                 modulo = await import('./modules/marketplace_bridge.js');
@@ -234,37 +240,41 @@ const ejecutarRouter = async () => {
             case '#publish':
                 modulo = await import('./modules/publish_mision.js');
                 break;
-            case '#finanzas-elite':
+            case '#finanzas_elite': // Corregido: antes decía #finanzas-elite con guion
                 modulo = await import('./modules/finanzas_elite.js');
                 break;
             case '#gerenteAI':
                 modulo = await import('./modules/gerenteAI.js');
                 break;
             default:
+                // Carga dinámica para módulos estándar (clientes, vehiculos, etc)
                 const rutaDinamica = `./modules/${hash.replace('#', '')}.js`;
                 modulo = await import(rutaDinamica);
                 break;
         }
 
         if (modulo && modulo.default) {
+            // Limpiar y ejecutar
+            modContainer.innerHTML = "";
             await modulo.default(modContainer);
         } else {
-            throw new Error("ENTRY_POINT_NOT_FOUND");
+            throw new Error("Módulo no exporta función default");
         }
 
     } catch (error) {
-        console.error("🚨 ROUTER_ERROR:", error);
+        console.error("🚨 NEXUS_ROUTER_FAIL:", error);
         modContainer.innerHTML = `
-            <div class="w-full h-screen flex flex-col items-center justify-center bg-[#010409]">
-                <i class="fas fa-triangle-exclamation text-red-500 text-6xl mb-8"></i>
+            <div class="w-full h-[80vh] flex flex-col items-center justify-center bg-[#010409]">
+                <i class="fas fa-triangle-exclamation text-red-500 text-6xl mb-8 animate-pulse"></i>
                 <h2 class="orbitron text-white text-2xl font-black italic">ENLACE FALLIDO</h2>
-                <p class="text-slate-500 text-[10px] orbitron mt-4 uppercase">Módulo: ${hash.toUpperCase()}</p>
+                <p class="text-slate-500 text-[10px] orbitron mt-4 uppercase">Módulo: ${hash.toUpperCase()} // Fallo de Sincronía</p>
                 <div class="mt-10 flex gap-4">
-                    <button onclick="location.hash='#dashboard'" class="px-8 py-4 bg-white text-black orbitron text-[9px] font-black rounded-2xl">CENTRO DE MANDO</button>
-                    <button onclick="location.reload()" class="px-8 py-4 border border-white/10 text-white orbitron text-[9px] font-black rounded-2xl">REINTENTAR</button>
+                    <button onclick="location.hash='#dashboard'" class="px-8 py-4 bg-white text-black orbitron text-[9px] font-black rounded-2xl hover:scale-105 transition-transform">REGRESAR AL CORE</button>
+                    <button onclick="location.reload()" class="px-8 py-4 border border-white/10 text-white orbitron text-[9px] font-black rounded-2xl">REINTENTAR ENLACE</button>
                 </div>
             </div>`;
     }
 };
 
+// Escucha de cambios en la URL
 window.addEventListener('hashchange', ejecutarRouter);
