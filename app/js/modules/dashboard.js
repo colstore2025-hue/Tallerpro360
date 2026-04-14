@@ -210,6 +210,9 @@ const ejecutarRouter = async () => {
                 modContainer.innerHTML = "";
                 await modulo.default(modContainer);
             } else {
+// La lógica dinámica ya se encarga:
+const moduleKey = hash.replace('#', ''); // 'gerenteAI'
+const modulo = await import(`./modules/${moduleKey}.js`); // Carga modules/gerenteAI.js
                 throw new Error("Estructura de módulo inválida");
             }
         }
