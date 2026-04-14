@@ -171,44 +171,54 @@ export default async function ordenes(container) {
             </div>`).join('');
     };
 
-        // --- 🛰️ CABECERA DE TERMINAL Y MÓDULO VISUAL (RECONECTADO) ---
-modal.innerHTML = `
-<div class="max-w-[1500px] mx-auto pb-20 animate-in slide-in-from-bottom-10 duration-500">
-    <div class="flex flex-wrap justify-between items-center gap-6 mb-12 bg-[#0d1117] p-10 rounded-[4rem] border-2 border-cyan-500/20 shadow-[0_0_50px_rgba(0,0,0,0.5)] sticky top-0 z-50">
+     // --- 🎮 TERMINAL PENTAGON INTERFACE ---
+    const renderTerminal = () => {
+        const modal = document.getElementById("nexus-terminal");
         
-        <div class="flex items-center gap-8">
-            <div class="bg-black p-4 rounded-3xl border border-white/10">
-                <input id="f-placa" value="${ordenActiva.placa}" class="bg-transparent text-6xl font-black orbitron text-white outline-none w-64 uppercase text-center placeholder:text-white/10" placeholder="PLACA">
-            </div>
-            <select id="f-estado" class="bg-cyan-500 text-black orbitron text-xs font-black p-5 rounded-2xl border-none outline-none cursor-pointer hover:bg-white transition-colors">
-                ${['COTIZACION', 'INGRESO', 'DIAGNOSTICO', 'REPARACION', 'LISTO', 'ENTREGADO'].map(f => `<option value="${f}" ${ordenActiva.estado === f ? 'selected' : ''}>${f}</option>`).join('')}
-            </select>
-        </div>
+        // --- 🛰️ CABECERA DE TERMINAL Y MÓDULO VISUAL (RECONECTADO) ---
+        modal.innerHTML = `
+        <div class="max-w-[1500px] mx-auto pb-20 animate-in slide-in-from-bottom-10 duration-500">
+            <div class="flex flex-wrap justify-between items-center gap-6 mb-12 bg-[#0d1117] p-10 rounded-[4rem] border-2 border-cyan-500/20 shadow-[0_0_50px_rgba(0,0,0,0.5)] sticky top-0 z-50">
+                
+                <div class="flex items-center gap-8">
+                    <div class="bg-black p-4 rounded-3xl border border-white/10">
+                        <input id="f-placa" value="${ordenActiva.placa}" class="bg-transparent text-6xl font-black orbitron text-white outline-none w-64 uppercase text-center placeholder:text-white/10" placeholder="PLACA">
+                    </div>
+                    <select id="f-estado" class="bg-cyan-500 text-black orbitron text-xs font-black p-5 rounded-2xl border-none outline-none cursor-pointer hover:bg-white transition-colors">
+                        ${['COTIZACION', 'INGRESO', 'DIAGNOSTICO', 'REPARACION', 'LISTO', 'ENTREGADO'].map(f => `<option value="${f}" ${ordenActiva.estado === f ? 'selected' : ''}>${f}</option>`).join('')}
+                    </select>
+                </div>
 
-        <div id="camera-viewport" class="hidden absolute top-full left-0 w-full bg-black rounded-[3rem] border-4 border-cyan-500 mt-4 overflow-hidden z-[100] shadow-[0_0_100px_rgba(6,182,212,0.4)]">
-            <video id="video-feed" autoplay playsinline class="w-full h-[400px] object-cover"></video>
-            <canvas id="photo-canvas" class="hidden"></canvas>
-            <div class="absolute bottom-6 left-0 w-full flex justify-center gap-6">
-                <button id="btnShutter" class="px-10 py-4 bg-red-600 text-white orbitron text-xs font-black rounded-full shadow-xl hover:scale-110 transition-transform">CAPTURAR EVIDENCIA</button>
-                <button id="btnCancelCam" class="px-10 py-4 bg-white text-black orbitron text-xs font-black rounded-full">CANCELAR</button>
-            </div>
-        </div>
+                <div id="camera-viewport" class="hidden absolute top-full left-0 w-full bg-black rounded-[3rem] border-4 border-cyan-500 mt-4 overflow-hidden z-[100] shadow-[0_0_100px_rgba(6,182,212,0.4)]">
+                    <video id="video-feed" autoplay playsinline class="w-full h-[400px] object-cover"></video>
+                    <canvas id="photo-canvas" class="hidden"></canvas>
+                    <div class="absolute bottom-6 left-0 w-full flex justify-center gap-6">
+                        <button id="btnShutter" class="px-10 py-4 bg-red-600 text-white orbitron text-xs font-black rounded-full shadow-xl hover:scale-110 transition-transform">CAPTURAR EVIDENCIA</button>
+                        <button id="btnCancelCam" class="px-10 py-4 bg-white text-black orbitron text-xs font-black rounded-full">CANCELAR</button>
+                    </div>
+                </div>
 
-        <div class="flex gap-4">
-            <button id="btnCapturePhoto" class="w-20 h-20 rounded-3xl bg-white/5 text-white border border-white/10 hover:border-cyan-400 hover:text-cyan-400 transition-all flex flex-col items-center justify-center gap-2">
-                <i class="fas fa-camera text-2xl"></i>
-                <span class="text-[8px] orbitron font-black uppercase">Visual</span>
-            </button>
-            <button id="btnWppDirect" class="w-20 h-20 rounded-3xl bg-emerald-500 text-black border-none hover:bg-white transition-all flex flex-col items-center justify-center gap-2">
-                <i class="fab fa-whatsapp text-2xl"></i>
-                <span class="text-[8px] orbitron font-black uppercase">Report</span>
-            </button>
-            <button id="btnCloseTerminal" class="w-20 h-20 rounded-3xl bg-red-600 text-white font-black text-3xl hover:scale-110 transition-all shadow-lg shadow-red-600/20">✕</button>
-        </div>
-    </div>
-`;
+                <div class="flex gap-4">
+                    <button id="btnCapturePhoto" class="w-20 h-20 rounded-3xl bg-white/5 text-white border border-white/10 hover:border-cyan-400 hover:text-cyan-400 transition-all flex flex-col items-center justify-center gap-2">
+                        <i class="fas fa-camera text-2xl"></i>
+                        <span class="text-[8px] orbitron font-black uppercase">Visual</span>
+                    </button>
+                    <button id="btnWppDirect" class="w-20 h-20 rounded-3xl bg-emerald-500 text-black border-none hover:bg-white transition-all flex flex-col items-center justify-center gap-2">
+                        <i class="fab fa-whatsapp text-2xl"></i>
+                        <span class="text-[8px] orbitron font-black uppercase">Report</span>
+                    </button>
+                    <button id="btnCloseTerminal" class="w-20 h-20 rounded-3xl bg-red-600 text-white font-black text-3xl hover:scale-110 transition-all shadow-lg shadow-red-600/20">✕</button>
+                </div>
+            </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                </div>
+        </div>`;
+
+        vincularAccionesTerminal();
+        recalcularFinanzas();
+    };
+
                 <div class="lg:col-span-4 space-y-8">
                     <div class="bg-[#0d1117] p-10 rounded-[3.5rem] border border-white/5">
                         <label class="text-[10px] text-cyan-400 font-black uppercase mb-6 block tracking-[0.3em]">Owner ID & Contact</label>
