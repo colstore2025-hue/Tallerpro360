@@ -1,13 +1,14 @@
 /**
  * publish_mision.js - NEXUS-X 🛰️
  * Módulo Unificado de Lanzamiento de Activos (Misión Comercial)
- * Optimizado para TallerPRO360 ERP
+ * Optimizado para TallerPRO360 ERP - 100% Case Sensitive Compatible
  */
 import { db } from "../core/firebase-config.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export default async function publishMision(container) {
     const empresaId = localStorage.getItem("nexus_empresaId");
+    // Forzamos comparación en mayúsculas para la lógica, pero mantenemos rutas en minúsculas
     const plan = (localStorage.getItem("nexus_plan") || "GRATI-CORE").toUpperCase();
 
     // 🛡️ Validación de nivel de acceso (Solo PRO/ELITE)
@@ -92,7 +93,7 @@ export default async function publishMision(container) {
     const inputNombre = document.getElementById('pub_nombre');
     const hint = document.getElementById('aiHint');
 
-    if (inputNombre) {
+    if (inputNombre && hint) {
         inputNombre.addEventListener('input', (e) => {
             if (e.target.value.length > 5) {
                 hint.innerHTML = `Nexus detecta alta demanda de <span class="text-cyan-400 font-bold">${e.target.value.toUpperCase()}</span>. Probabilidad de venta rápida en Charlotte/Bogotá: <span class="text-emerald-400">88%</span>.`;
@@ -125,7 +126,6 @@ export default async function publishMision(container) {
             try {
                 await addDoc(collection(db, "marketplace"), payload);
                 
-                // Efecto visual de éxito
                 btn.classList.replace('bg-white', 'bg-emerald-500');
                 btn.classList.add('text-white');
                 btn.innerHTML = `<i class="fas fa-check-circle mr-2"></i> ÉXITO EN ÓRBITA`;
@@ -139,6 +139,7 @@ export default async function publishMision(container) {
                     });
                 }
                 
+                // Redirección con hash en minúscula para evitar fallos de ruta
                 location.hash = "#marketplace";
             } catch (err) {
                 console.error("FIREBASE_PUBLISH_ERROR:", err);
