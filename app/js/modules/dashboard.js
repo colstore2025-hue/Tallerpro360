@@ -209,7 +209,7 @@ function renderFooterKpi(label, id) {
     return `<div class="bg-black/20 border border-white/5 p-12 rounded-[4rem] text-center"><p class="text-[9px] text-slate-600 orbitron font-black uppercase mb-4 tracking-[0.4em]">${label}</p><p id="${id}" class="text-4xl font-black orbitron text-white italic">$ 0</p></div>`;
 }
 
-// --- 🛰️ 6. ROUTER QUIRÚRGICO (PRECISIÓN TOTAL) ---
+// --- 🛰️ ROUTER DE PRECISIÓN ABSOLUTA ---
 const ejecutarRouter = async () => {
     const hash = window.location.hash;
     const mainView = document.getElementById("main-content-area");
@@ -217,6 +217,7 @@ const ejecutarRouter = async () => {
 
     if (!mainView || !modContainer) return;
 
+    // Regresar al inicio si no hay hash o es #dashboard
     if (hash === "" || hash === "#dashboard") {
         mainView.classList.remove("hidden");
         modContainer.classList.add("hidden");
@@ -224,13 +225,18 @@ const ejecutarRouter = async () => {
         return;
     }
 
+    // Activar contenedor de módulos
     mainView.classList.add("hidden");
     modContainer.classList.remove("hidden");
-    modContainer.innerHTML = `<div class="w-full h-[80vh] flex flex-col items-center justify-center bg-[#010409]"><div class="w-12 h-12 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div><p class="orbitron text-[8px] text-cyan-500 mt-6 tracking-[0.5em] animate-pulse">SINCRO NEXUS-X...</p></div>`;
+    modContainer.innerHTML = `
+        <div class="w-full h-[70vh] flex flex-col items-center justify-center bg-[#010409]">
+            <div class="w-12 h-12 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
+            <p class="orbitron text-[8px] text-cyan-500 mt-6 tracking-[0.5em] animate-pulse">SINCRO NEXUS-X: ${hash.toUpperCase()}</p>
+        </div>`;
 
     try {
         let modulo;
-        // MAPEO QUIRÚRGICO DE ARCHIVOS FÍSICOS
+        // 🚨 AQUÍ SE DEFINE EL NOMBRE REAL DEL ARCHIVO SEGÚN EL BOTÓN
         switch(hash) {
             case '#marketplace':
                 modulo = await import('./modules/marketplace_bridge.js');
@@ -241,34 +247,27 @@ const ejecutarRouter = async () => {
             case '#finanzas_elite':
                 modulo = await import('./modules/finanzas_elite.js');
                 break;
-            case '#gerenteAI':
-                modulo = await import('./modules/gerenteAI.js');
-                break;
             default:
-                // Carga dinámica para módulos estándar (clientes, vehiculos, etc.)
-                // Asegura que el archivo se llame exactamente como el hash
+                // Para clientes, vehiculos, etc., busca el nombre exacto del hash
                 modulo = await import(`./modules/${hash.replace('#', '')}.js`);
                 break;
         }
 
         if (modulo && modulo.default) {
-            modContainer.innerHTML = "";
-            await modulo.default(modContainer);
+            modContainer.innerHTML = ""; // Limpiar loader
+            await modulo.default(modContainer); // Ejecutar el script cargado
         } else {
-            throw new Error("El módulo no exporta la función default correctamente.");
+            throw new Error("Módulo no exporta 'default function'");
         }
 
     } catch (error) {
-        console.error("🚨 ENLACE FALLIDO:", error);
+        console.error("🚨 ERROR DE CARGA:", error);
         modContainer.innerHTML = `
-            <div class="w-full h-[80vh] flex flex-col items-center justify-center bg-[#010409]">
-                <i class="fas fa-satellite-dish text-red-500 text-6xl mb-8 animate-pulse"></i>
-                <h2 class="orbitron text-white text-2xl font-black italic uppercase">ERROR DE ENLACE</h2>
-                <p class="text-slate-500 text-[10px] orbitron mt-4 uppercase">Protocolo: ${hash.toUpperCase()} // No detectado en /modules/</p>
-                <div class="mt-10 flex gap-4">
-                    <button onclick="location.hash='#dashboard'" class="px-8 py-4 bg-white text-black orbitron text-[9px] font-black rounded-2xl">REGRESAR AL CORE</button>
-                    <button onclick="location.reload()" class="px-8 py-4 border border-white/10 text-white orbitron text-[9px] font-black rounded-2xl">REINTENTAR</button>
-                </div>
+            <div class="w-full h-[70vh] flex flex-col items-center justify-center">
+                <i class="fas fa-microchip text-red-500 text-5xl mb-6"></i>
+                <h2 class="orbitron text-white text-xl font-black italic">ENLACE NO ENCONTRADO</h2>
+                <p class="text-slate-500 text-[9px] orbitron mt-2">VERIFICA: /modules/${hash.replace('#','')}.js</p>
+                <button onclick="location.hash='#dashboard'" class="mt-8 px-6 py-3 bg-white text-black orbitron text-[9px] font-black rounded-xl">RESET CORE</button>
             </div>`;
     }
 };
