@@ -171,140 +171,95 @@ export default async function ordenes(container) {
             </div>`).join('');
     };
 
-    // --- 🎮 TERMINAL PENTAGON INTERFACE ---
-    const renderTerminal = () => {
-        const modal = document.getElementById("nexus-terminal");
-        modal.innerHTML = `
-        <div class="max-w-[1500px] mx-auto pb-20 animate-in slide-in-from-bottom-10 duration-500">
-            <div class="flex flex-wrap justify-between items-center gap-6 mb-12 bg-[#0d1117] p-10 rounded-[4rem] border-2 border-cyan-500/20 shadow-[0_0_50px_rgba(0,0,0,0.5)] sticky top-0 z-50">
-                <div class="flex items-center gap-8">
-                    <div class="bg-black p-4 rounded-3xl border border-white/10">
-                        <input id="f-placa" value="${ordenActiva.placa}" class="bg-transparent text-6xl font-black orbitron text-white outline-none w-64 uppercase text-center placeholder:text-white/10" placeholder="PLACA">
-                    </div>
-                    <select id="f-estado" class="bg-cyan-500 text-black orbitron text-xs font-black p-5 rounded-2xl border-none outline-none cursor-pointer hover:bg-white transition-colors">
-                        ${['COTIZACION', 'INGRESO', 'DIAGNOSTICO', 'REPARACION', 'LISTO', 'ENTREGADO'].map(f => `<option value="${f}" ${ordenActiva.estado === f ? 'selected' : ''}>${f}</option>`).join('')}
-                    </select>
+    // --- 🎮 TERMINAL PENTAGON INTERFACE (OPTIMIZADO) ---
+const renderTerminal = () => {
+    const modal = document.getElementById("nexus-terminal");
+    modal.innerHTML = `
+    <div class="max-w-[1500px] mx-auto pb-20 animate-in slide-in-from-bottom-10 duration-500">
+        <div id="camera-viewport" class="hidden fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-4">
+            <video id="video-feed" autoplay playsinline class="w-full max-w-2xl rounded-[3rem] border-4 border-cyan-500 shadow-[0_0_50px_rgba(6,182,212,0.5)]"></video>
+            <canvas id="photo-canvas" class="hidden"></canvas>
+            <div class="flex gap-6 mt-8">
+                <button id="btnShutter" class="w-24 h-24 bg-white rounded-full border-8 border-slate-300 flex items-center justify-center shadow-xl active:scale-90 transition-all">
+                    <div class="w-16 h-16 bg-red-600 rounded-full"></div>
+                </button>
+                <button id="btnCancelCam" class="w-24 h-24 bg-slate-800 text-white rounded-full text-4xl hover:bg-red-600 transition-all">✕</button>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap justify-between items-center gap-6 mb-12 bg-[#0d1117] p-10 rounded-[4rem] border-2 border-cyan-500/20 shadow-[0_0_50px_rgba(0,0,0,0.5)] sticky top-0 z-50">
+            <div class="flex items-center gap-8">
+                <div class="bg-black p-4 rounded-3xl border border-white/10">
+                    <input id="f-placa" value="${ordenActiva.placa}" class="bg-transparent text-6xl font-black orbitron text-white outline-none w-64 uppercase text-center" placeholder="PLACA">
                 </div>
-                <div class="flex gap-4">
-                    <button id="btnCapturePhoto" class="w-20 h-20 rounded-3xl bg-white/5 text-white border border-white/10 hover:border-cyan-400 hover:text-cyan-400 transition-all flex flex-col items-center justify-center gap-2">
-                        <i class="fas fa-camera text-2xl"></i>
-                        <span class="text-[8px] orbitron font-black">VISUAL</span>
-                    </button>
+                <select id="f-estado" class="bg-cyan-500 text-black orbitron text-xs font-black p-5 rounded-2xl outline-none cursor-pointer hover:bg-white transition-colors">
+                    ${['COTIZACION', 'INGRESO', 'DIAGNOSTICO', 'REPARACION', 'LISTO', 'ENTREGADO'].map(f => `<option value="${f}" ${ordenActiva.estado === f ? 'selected' : ''}>${f}</option>`).join('')}
+                </select>
+            </div>
+            <div class="flex gap-4">
+                <button id="btnCapturePhoto" class="w-20 h-20 rounded-3xl bg-white/5 text-white border border-white/10 hover:border-cyan-400 hover:text-cyan-400 transition-all flex flex-col items-center justify-center gap-2">
+                    <i class="fas fa-camera text-2xl"></i>
+                    <span class="text-[8px] orbitron font-black">VISUAL</span>
+                </button>
+                <button id="btnWppDirect" class="w-20 h-20 rounded-3xl bg-emerald-500 text-black border-none hover:bg-white transition-all flex flex-col items-center justify-center gap-2">
+                    <i class="fab fa-whatsapp text-2xl"></i>
+                    <span class="text-[8px] orbitron font-black">REPORT</span>
+                </button>
+                <button id="btnCloseTerminal" class="w-20 h-20 rounded-3xl bg-red-600 text-white font-black text-3xl hover:scale-110 transition-all shadow-lg shadow-red-600/20">✕</button>
+            </div>
+        </div>
 
-// --- 📸 MÓDULO DE CAPTURA VISUAL ---
-const gestionarCamara = async (accion) => {
-    const video = document.getElementById('video-feed');
-    const viewport = document.getElementById('camera-viewport');
-    const canvas = document.getElementById('photo-canvas');
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <div class="lg:col-span-4 space-y-8">
+                <div class="bg-[#0d1117] p-10 rounded-[3.5rem] border border-white/5">
+                    <label class="text-[10px] text-cyan-400 font-black uppercase mb-6 block tracking-[0.3em]">Owner ID & Contact</label>
+                    <div class="space-y-6">
+                        <input id="f-cliente" value="${ordenActiva.cliente}" class="w-full bg-black p-6 rounded-3xl border border-white/5 outline-none font-black text-white focus:border-cyan-500 uppercase" placeholder="NOMBRE COMPLETO">
+                        <input id="f-telefono" value="${ordenActiva.telefono}" class="w-full bg-black p-6 rounded-3xl border border-white/5 outline-none font-black text-white focus:border-cyan-500" placeholder="TELÉFONO">
+                    </div>
+                </div>
 
-    if (accion === 'INICIAR') {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
-            video.srcObject = stream;
-            viewport.classList.remove('hidden');
-        } catch (err) {
-            Swal.fire({ icon: 'error', title: 'Error de Cámara', text: 'No se pudo acceder al hardware visual.', background: '#010409', color: '#ff0000' });
-        }
-    } else if (accion === 'CAPTURAR') {
-        const context = canvas.getContext('2d');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        // Convertir a Base64 para guardarlo en el objeto local antes de Sync
-        const fotoData = canvas.toDataURL('image/jpeg', 0.8);
-        ordenActiva.evidencia_visual = fotoData; // Se guarda en el objeto para enviarlo a Firestore
-        
-        // Detener cámara
-        video.srcObject.getTracks().forEach(track => track.stop());
-        viewport.classList.add('hidden');
-        hablar("Evidencia capturada");
-        Swal.fire({ icon: 'success', title: 'FOTO LISTA', text: 'Se sincronizará con el próximo Sync Nexus', background: '#010409', color: '#06b6d4', timer: 1500 });
-    } else {
-        if(video.srcObject) video.srcObject.getTracks().forEach(track => track.stop());
-        viewport.classList.add('hidden');
-    }
+                <div class="bg-black p-10 rounded-[3.5rem] border border-red-500/30">
+                    <span class="orbitron text-[11px] text-red-500 font-black italic tracking-widest uppercase mb-6 block">AI Bitácora Neural</span>
+                    <textarea id="ai-log-display" class="w-full bg-[#0d1117] p-6 rounded-3xl text-sm h-64 outline-none border border-white/5 italic text-slate-300 resize-none font-mono focus:border-red-500/50 transition-all">${ordenActiva.bitacora_ia || ''}</textarea>
+                    <button id="btnDictar" class="w-full mt-6 py-6 bg-red-600 text-white rounded-2xl orbitron text-xs font-black hover:bg-white hover:text-black transition-all">🎤 CAPTURAR VOZ</button>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 space-y-8">
+                <div class="bg-[#0d1117] p-12 rounded-[4.5rem] border border-white/10 shadow-2xl">
+                    <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
+                        <div>
+                            <p class="orbitron text-[14px] text-cyan-400 uppercase italic font-black tracking-[0.4em] mb-2">Total Misión Nexus</p>
+                            <h2 id="total-factura" class="orbitron text-7xl md:text-9xl font-black text-white italic tracking-tighter">$ 0</h2>
+                        </div>
+                        <div class="bg-white/5 p-8 rounded-[3rem] border border-white/10 min-w-[300px] text-right">
+                            <div id="saldo-display" class="text-4xl font-black orbitron italic mb-4 tracking-tighter"></div>
+                            <div class="relative bg-black p-4 rounded-2xl border border-white/5">
+                                <label class="text-[8px] text-slate-500 font-black uppercase absolute top-2 right-4">Abono Recibido</label>
+                                <input type="number" id="f-anticipo-cliente" value="${ordenActiva.finanzas?.anticipo_cliente || 0}" class="bg-transparent text-right text-emerald-400 font-black outline-none w-full text-3xl pt-2" onchange="window.actualizarFinanzasDirecto()">
+                            </div>
+                        </div>
+                    </div>
+                    <div id="items-container" class="space-y-6 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
+                        <button id="btnAddRepuesto" class="py-8 bg-white/5 rounded-3xl border-2 border-dashed border-white/10 orbitron text-xs font-black text-white hover:border-cyan-400 hover:text-cyan-400 transition-all">+ AÑADIR REPUESTO</button>
+                        <button id="btnAddMano" class="py-8 bg-cyan-500/5 rounded-3xl border-2 border-dashed border-cyan-500/30 text-cyan-400 orbitron text-xs font-black hover:bg-cyan-500/20 transition-all">+ AÑADIR LABOR</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <div class="bg-black p-8 rounded-[3rem] border border-white/5 grid grid-cols-2 gap-4">
+                        <input type="number" id="f-gastos-varios" value="${ordenActiva.finanzas?.gastos_varios || 0}" class="bg-[#0d1117] p-4 rounded-xl text-white border border-white/5 text-center font-bold" onchange="window.actualizarFinanzasDirecto()" placeholder="GASTOS">
+                        <input type="number" id="f-adelanto-tecnico" value="${ordenActiva.finanzas?.adelanto_tecnico || 0}" class="bg-[#0d1117] p-4 rounded-xl text-white border border-white/5 text-center font-bold" onchange="window.actualizarFinanzasDirecto()" placeholder="PAGO TEC">
+                     </div>
+                    <button id="btnSincronizar" class="py-10 bg-white text-black rounded-[3rem] orbitron font-black text-xl uppercase tracking-[0.2em] hover:bg-cyan-400 transition-all shadow-2xl">🛰️ SYNC NEXUS</button>
+                </div>
+            </div>
+        </div>
+    </div>`;
+    vincularAccionesTerminal();
+    recalcularFinanzas();
 };
-                    <button id="btnWppDirect" class="w-20 h-20 rounded-3xl bg-emerald-500 text-black border-none hover:bg-white transition-all flex flex-col items-center justify-center gap-2">
-                        <i class="fab fa-whatsapp text-2xl"></i>
-                        <span class="text-[8px] orbitron font-black">REPORT</span>
-                    </button>
-                    <button id="btnCloseTerminal" class="w-20 h-20 rounded-3xl bg-red-600 text-white font-black text-3xl hover:scale-110 transition-all shadow-lg shadow-red-600/20">✕</button>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                <div class="lg:col-span-4 space-y-8">
-                    <div class="bg-[#0d1117] p-10 rounded-[3.5rem] border border-white/5">
-                        <label class="text-[10px] text-cyan-400 font-black uppercase mb-6 block tracking-[0.3em]">Owner ID & Contact</label>
-                        <div class="space-y-6">
-                            <div class="relative">
-                                <i class="fas fa-user absolute left-6 top-1/2 -translate-y-1/2 text-cyan-500/50"></i>
-                                <input id="f-cliente" value="${ordenActiva.cliente}" class="w-full bg-black p-6 pl-14 rounded-3xl border border-white/5 outline-none font-black text-white focus:border-cyan-500 uppercase" placeholder="NOMBRE COMPLETO">
-                            </div>
-                            <div class="relative">
-                                <i class="fas fa-phone absolute left-6 top-1/2 -translate-y-1/2 text-cyan-500/50"></i>
-                                <input id="f-telefono" value="${ordenActiva.telefono}" class="w-full bg-black p-6 pl-14 rounded-3xl border border-white/5 outline-none font-black text-white focus:border-cyan-500" placeholder="TELÉFONO">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-black p-10 rounded-[3.5rem] border border-red-500/30">
-                        <div class="flex justify-between items-center mb-6">
-                            <span class="orbitron text-[11px] text-red-500 font-black italic tracking-widest uppercase">AI Bitácora Neural</span>
-                            <div id="rec-indicator" class="hidden flex gap-2 items-center bg-red-500/20 px-3 py-1 rounded-full border border-red-500/50">
-                                <div class="h-2 w-2 bg-red-600 rounded-full animate-ping"></div>
-                                <span class="text-[8px] orbitron font-black text-red-500">LIVE</span>
-                            </div>
-                        </div>
-                        <textarea id="ai-log-display" class="w-full bg-[#0d1117] p-6 rounded-3xl text-sm h-64 outline-none border border-white/5 italic text-slate-300 resize-none font-mono focus:border-red-500/50 transition-all">${ordenActiva.bitacora_ia || ''}</textarea>
-                        <button id="btnDictar" class="w-full mt-6 py-6 bg-red-600 text-white rounded-2xl orbitron text-xs font-black hover:bg-white hover:text-black transition-all">🎤 CAPTURAR VOZ</button>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-8 space-y-8">
-                    <div class="bg-[#0d1117] p-12 rounded-[4.5rem] border border-white/10 shadow-2xl relative">
-                        <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
-                            <div>
-                                <p class="orbitron text-[14px] text-cyan-400 uppercase italic font-black tracking-[0.4em] mb-2">Total Misión Nexus</p>
-                                <h2 id="total-factura" class="orbitron text-7xl md:text-9xl font-black text-white italic tracking-tighter drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]">$ 0</h2>
-                            </div>
-                            <div class="bg-white/5 p-8 rounded-[3rem] border border-white/10 min-w-[300px] text-right">
-                                <div id="saldo-display" class="text-4xl font-black orbitron italic mb-4 tracking-tighter"></div>
-                                <div class="relative bg-black p-4 rounded-2xl border border-white/5">
-                                    <label class="text-[8px] text-slate-500 font-black uppercase absolute top-2 right-4">Abono Recibido</label>
-                                    <input type="number" id="f-anticipo-cliente" value="${ordenActiva.finanzas?.anticipo_cliente || 0}" class="bg-transparent text-right text-emerald-400 font-black outline-none w-full text-3xl pt-2" onchange="window.actualizarFinanzasDirecto()">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="items-container" class="space-y-6 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar"></div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
-                            <button id="btnAddRepuesto" class="py-8 bg-white/5 rounded-3xl border-2 border-dashed border-white/10 orbitron text-xs font-black text-white hover:border-cyan-400 hover:text-cyan-400 transition-all">+ AÑADIR REPUESTO</button>
-                            <button id="btnAddMano" class="py-8 bg-cyan-500/5 rounded-3xl border-2 border-dashed border-cyan-500/30 text-cyan-400 orbitron text-xs font-black hover:bg-cyan-500/20 transition-all">+ AÑADIR LABOR</button>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                         <div class="bg-black p-8 rounded-[3rem] border border-white/5 grid grid-cols-2 gap-4">
-                            <div class="space-y-2">
-                                <label class="text-[8px] orbitron font-black text-slate-500 uppercase">Insumos/Varios</label>
-                                <input type="number" id="f-gastos-varios" value="${ordenActiva.finanzas?.gastos_varios || 0}" class="w-full bg-[#0d1117] p-4 rounded-xl text-white border border-white/5 text-center font-bold" onchange="window.actualizarFinanzasDirecto()">
-                            </div>
-                            <div class="space-y-2">
-                                <label class="text-[8px] orbitron font-black text-slate-500 uppercase">Pago Técnico</label>
-                                <input type="number" id="f-adelanto-tecnico" value="${ordenActiva.finanzas?.adelanto_tecnico || 0}" class="w-full bg-[#0d1117] p-4 rounded-xl text-white border border-white/5 text-center font-bold" onchange="window.actualizarFinanzasDirecto()">
-                            </div>
-                         </div>
-                        <button id="btnSincronizar" class="py-10 bg-white text-black rounded-[3rem] orbitron font-black text-xl uppercase tracking-[0.2em] hover:bg-cyan-400 transition-all shadow-2xl">🛰️ SYNC NEXUS</button>
-                    </div>
-                </div>
-            </div>
-        </div>`;
-        vincularAccionesTerminal();
-        recalcularFinanzas();
-    };
 
     // --- 🔗 ACTION LINKS & SECURITY ---
     const vincularAccionesTerminal = () => {
@@ -331,11 +286,43 @@ const gestionarCamara = async (accion) => {
             };
         }
 
-// --- 🔗 VINCULACIÓN DE CÁMARA (Añadir dentro de vincularAccionesTerminal) ---
-safeClick("btnCapturePhoto", () => gestionarCamara('INICIAR'));
-safeClick("btnShutter", () => gestionarCamara('CAPTURAR'));
-safeClick("btnCancelCam", () => gestionarCamara('CANCELAR'));
+// --- 📸 GESTIÓN DE CÁMARA Y DESCARGA LOCAL ---
+const gestionarCamara = async (accion) => {
+    const video = document.getElementById('video-feed');
+    const viewport = document.getElementById('camera-viewport');
+    const canvas = document.getElementById('photo-canvas');
 
+    if (accion === 'INICIAR') {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+            video.srcObject = stream;
+            viewport.classList.remove('hidden');
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'Hardware Error', text: 'No se detectó cámara activa.', background: '#010409', color: '#ff0000' });
+        }
+    } else if (accion === 'CAPTURAR') {
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Generar descarga automática
+        const link = document.createElement('a');
+        const placa = document.getElementById('f-placa').value || 'SIN_PLACA';
+        link.download = `EVIDENCIA_${placa}_${new Date().getTime()}.jpg`;
+        link.href = canvas.toDataURL('image/jpeg', 0.9);
+        link.click(); // Dispara la descarga en el equipo
+
+        // Limpieza y cierre
+        video.srcObject.getTracks().forEach(t => t.stop());
+        viewport.classList.add('hidden');
+        hablar("Foto descargada al dispositivo");
+        Swal.fire({ icon: 'success', title: 'DESCARGADA', text: 'La imagen se guardó en tu equipo.', background: '#010409', color: '#06b6d4', timer: 1500 });
+    } else {
+        if(video?.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+        viewport?.classList.add('hidden');
+    }
+};
         safeClick("btnWppDirect", () => {
             const tel = document.getElementById("f-telefono")?.value || "17049419163";
             const msg = `*NEXUS-X REPORT [${ordenActiva.placa}]*%0A✅ Status: ${ordenActiva.estado}%0A💰 Saldo: $${ordenActiva.costos_totales.saldo_pendiente.toLocaleString()}`;
