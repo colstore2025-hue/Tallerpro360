@@ -190,6 +190,41 @@ export default async function ordenes(container) {
                         <i class="fas fa-camera text-2xl"></i>
                         <span class="text-[8px] orbitron font-black">VISUAL</span>
                     </button>
+
+// --- 📸 MÓDULO DE CAPTURA VISUAL ---
+const gestionarCamara = async (accion) => {
+    const video = document.getElementById('video-feed');
+    const viewport = document.getElementById('camera-viewport');
+    const canvas = document.getElementById('photo-canvas');
+
+    if (accion === 'INICIAR') {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+            video.srcObject = stream;
+            viewport.classList.remove('hidden');
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'Error de Cámara', text: 'No se pudo acceder al hardware visual.', background: '#010409', color: '#ff0000' });
+        }
+    } else if (accion === 'CAPTURAR') {
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convertir a Base64 para guardarlo en el objeto local antes de Sync
+        const fotoData = canvas.toDataURL('image/jpeg', 0.8);
+        ordenActiva.evidencia_visual = fotoData; // Se guarda en el objeto para enviarlo a Firestore
+        
+        // Detener cámara
+        video.srcObject.getTracks().forEach(track => track.stop());
+        viewport.classList.add('hidden');
+        hablar("Evidencia capturada");
+        Swal.fire({ icon: 'success', title: 'FOTO LISTA', text: 'Se sincronizará con el próximo Sync Nexus', background: '#010409', color: '#06b6d4', timer: 1500 });
+    } else {
+        if(video.srcObject) video.srcObject.getTracks().forEach(track => track.stop());
+        viewport.classList.add('hidden');
+    }
+};
                     <button id="btnWppDirect" class="w-20 h-20 rounded-3xl bg-emerald-500 text-black border-none hover:bg-white transition-all flex flex-col items-center justify-center gap-2">
                         <i class="fab fa-whatsapp text-2xl"></i>
                         <span class="text-[8px] orbitron font-black">REPORT</span>
@@ -295,6 +330,11 @@ export default async function ordenes(container) {
                 if(log) log.value += " " + e.results[0][0].transcript; 
             };
         }
+
+// --- 🔗 VINCULACIÓN DE CÁMARA (Añadir dentro de vincularAccionesTerminal) ---
+safeClick("btnCapturePhoto", () => gestionarCamara('INICIAR'));
+safeClick("btnShutter", () => gestionarCamara('CAPTURAR'));
+safeClick("btnCancelCam", () => gestionarCamara('CANCELAR'));
 
         safeClick("btnWppDirect", () => {
             const tel = document.getElementById("f-telefono")?.value || "17049419163";
