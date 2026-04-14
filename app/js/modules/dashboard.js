@@ -9,10 +9,11 @@ import {
     collection, query, where, getDocs, limit, orderBy, onSnapshot, addDoc, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// --- 🛡️ 1. PROTOCOLO DE AUTORIZACIÓN & PERMISOS ---
+// --- 🛡️ 1. PROTOCOLO DE AUTORIZACIÓN & PERMISOS (REVISADO) ---
 const PERMISOS = {
     "GRATI-CORE": { 
-        modulos: ['clientes', 'vehiculos', 'ordenes', 'pagos', 'contabilidad', 'soporte'],
+        // Añadido inventario para que el usuario Discovery vea el potencial
+        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'soporte'],
         clase: "border-slate-700 text-slate-400" 
     },
     "BASICO": { 
@@ -20,10 +21,12 @@ const PERMISOS = {
         clase: "border-blue-500 text-blue-400"
     },
     "PRO": { 
+        // GerenteAI inyectado
         modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace_bridge', 'publish_mision', 'soporte'],
         clase: "border-purple-500 text-purple-400"
     },
     "ELITE": { 
+        // Acceso total
         modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace_bridge', 'publish_mision', 'staff', 'nomina', 'finanzas_elite', 'soporte'],
         clase: "border-cyan-500 text-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.4)]"
     }
