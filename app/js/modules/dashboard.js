@@ -210,9 +210,11 @@ function renderFooterKpi(label, id) {
     return `<div class="bg-black/20 border border-white/5 p-12 rounded-[4rem] text-center"><p class="text-[9px] text-slate-600 orbitron font-black uppercase mb-4 tracking-[0.4em]">${label}</p><p id="${id}" class="text-4xl font-black orbitron text-white italic">$ 0</p></div>`;
 }
 
-// --- 🛰️ 6. ROUTER QUIRÚRGICO RECONSTRUIDO ---
+// --- 🛰️ 6. ROUTER QUIRÚRGICO RECONSTRUIDO (ANTI-ERROR DE RUTA) ---
 const ejecutarRouter = async () => {
-    const hash = window.location.hash;
+    // 1. Limpiamos el hash de extensiones accidentales como .html o .js
+    let hash = window.location.hash.replace('.html', '').replace('.js', '');
+    
     const mainView = document.getElementById("main-content-area");
     const modContainer = document.getElementById("nexus-module-container");
 
@@ -225,14 +227,13 @@ const ejecutarRouter = async () => {
         return;
     }
 
-    // Preparar UI de carga
     mainView.classList.add("hidden");
     modContainer.classList.remove("hidden");
-    modContainer.innerHTML = `<div class="w-full h-[80vh] flex flex-col items-center justify-center bg-[#010409]"><div class="w-12 h-12 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div><p class="orbitron text-[8px] text-cyan-500 mt-6 tracking-[0.5em] animate-pulse">CONECTANDO PROTOCOLO NEXUS-X...</p></div>`;
+    modContainer.innerHTML = `<div class="w-full h-[80vh] flex flex-col items-center justify-center bg-[#010409]"><div class="w-12 h-12 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div><p class="orbitron text-[8px] text-cyan-500 mt-6 tracking-[0.5em] animate-pulse">SINCRO NEXUS-X...</p></div>`;
 
     try {
         let modulo;
-        // 🚨 CORRECCIÓN TOTAL DE MAPEO: Aquí se resuelve el "Enlace Fallido"
+        // 🚨 EL PUENTE MAESTRO: Mapeo exacto a los archivos en /modules/
         switch(hash) {
             case '#marketplace':
                 modulo = await import('./modules/marketplace_bridge.js');
@@ -240,37 +241,34 @@ const ejecutarRouter = async () => {
             case '#publish':
                 modulo = await import('./modules/publish_mision.js');
                 break;
-            case '#finanzas_elite': // Corregido: antes decía #finanzas-elite con guion
+            case '#finanzas_elite':
                 modulo = await import('./modules/finanzas_elite.js');
                 break;
-            case '#gerenteAI':
-                modulo = await import('./modules/gerenteAI.js');
-                break;
             default:
-                // Carga dinámica para módulos estándar (clientes, vehiculos, etc)
-                const rutaDinamica = `./modules/${hash.replace('#', '')}.js`;
-                modulo = await import(rutaDinamica);
+                // Carga genérica para los demás (clientes.js, vehiculos.js, etc)
+                modulo = await import(`./modules/${hash.replace('#', '')}.js`);
                 break;
         }
 
         if (modulo && modulo.default) {
-            // Limpiar y ejecutar
             modContainer.innerHTML = "";
+            // Ejecutamos la función exportada del archivo .js
             await modulo.default(modContainer);
         } else {
-            throw new Error("Módulo no exporta función default");
+            throw new Error("Módulo no exporta 'export default function...'");
         }
 
     } catch (error) {
-        console.error("🚨 NEXUS_ROUTER_FAIL:", error);
+        console.error("🚨 FALLO DE ENLACE:", error);
         modContainer.innerHTML = `
             <div class="w-full h-[80vh] flex flex-col items-center justify-center bg-[#010409]">
                 <i class="fas fa-triangle-exclamation text-red-500 text-6xl mb-8 animate-pulse"></i>
                 <h2 class="orbitron text-white text-2xl font-black italic">ENLACE FALLIDO</h2>
-                <p class="text-slate-500 text-[10px] orbitron mt-4 uppercase">Módulo: ${hash.toUpperCase()} // Fallo de Sincronía</p>
+                <p class="text-slate-500 text-[10px] orbitron mt-4 uppercase">Ruta original: ${window.location.hash}</p>
+                <p class="text-cyan-500 text-[8px] orbitron mt-2 uppercase tracking-widest">Verifica que el archivo JS en /modules/ exporte una función default</p>
                 <div class="mt-10 flex gap-4">
-                    <button onclick="location.hash='#dashboard'" class="px-8 py-4 bg-white text-black orbitron text-[9px] font-black rounded-2xl hover:scale-105 transition-transform">REGRESAR AL CORE</button>
-                    <button onclick="location.reload()" class="px-8 py-4 border border-white/10 text-white orbitron text-[9px] font-black rounded-2xl">REINTENTAR ENLACE</button>
+                    <button onclick="location.hash='#dashboard'" class="px-8 py-4 bg-white text-black orbitron text-[9px] font-black rounded-2xl">CORE</button>
+                    <button onclick="location.reload()" class="px-8 py-4 border border-white/10 text-white orbitron text-[9px] font-black rounded-2xl">REINTENTAR</button>
                 </div>
             </div>`;
     }
