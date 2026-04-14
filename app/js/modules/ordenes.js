@@ -290,7 +290,7 @@ export default async function ordenes(container) {
         }
     };
 
-    // --- 📦 INTEGRACIÓN CON BÓVEDA DE INVENTARIO ---
+        // --- 📦 INTEGRACIÓN CON BÓVEDA DE INVENTARIO ---
     window.buscarEnInventario = async (idx) => {
         const { value: selectedItem } = await Swal.fire({
             title: 'BÓVEDA DE SUMINISTROS',
@@ -313,44 +313,70 @@ export default async function ordenes(container) {
         });
 
         if (selectedItem) {
+            // Actualización directa del objeto en memoria
             ordenActiva.items[idx] = { 
                 ...ordenActiva.items[idx], 
-                desc: selectedItem.n, costo: selectedItem.c, venta: selectedItem.v, 
-                sku: selectedItem.id, tipo: 'REPUESTO', origen: 'TALLER' 
+                desc: selectedItem.n, 
+                costo: selectedItem.c, 
+                venta: selectedItem.v, 
+                sku: selectedItem.id, 
+                tipo: 'REPUESTO', 
+                origen: 'TALLER' 
             };
-            recalcularFinanzas(); // Reconecta el renderizado tras seleccionar
+            recalcularFinanzas(); // Esta función invoca a renderItems() internamente
         }
     };
 
     // --- 🔗 VINCULACIÓN DE EVENTOS DE TERMINAL ---
     const vincularAccionesTerminal = () => {
-        document.getElementById("btnSincronizar").onclick = ejecutarSincronizacionNexus;
-        document.getElementById("btnCloseTerminal").onclick = () => document.getElementById("nexus-terminal").classList.add("hidden");
+        // Asignación segura con encadenamiento opcional para evitar errores de referencia
+        const safeSetClick = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el) el.onclick = fn;
+        };
+
+        safeSetClick("btnSincronizar", ejecutarSincronizacionNexus);
+        safeSetClick("btnCloseTerminal", () => document.getElementById("nexus-terminal").classList.add("hidden"));
         
         // Dictado por voz
-        document.getElementById("btnDictar").onclick = () => {
-            if(!isRecording) { recognition?.start(); isRecording = true; document.getElementById("rec-indicator").classList.remove("hidden"); }
-            else { recognition?.stop(); isRecording = false; document.getElementById("rec-indicator").classList.add("hidden"); }
-        };
-        if(recognition) recognition.onresult = (e) => { document.getElementById("ai-log-display").value += " " + e.results[0][0].transcript; };
+        safeSetClick("btnDictar", () => {
+            if(!isRecording) { 
+                recognition?.start(); 
+                isRecording = true; 
+                document.getElementById("rec-indicator")?.classList.remove("hidden"); 
+            } else { 
+                recognition?.stop(); 
+                isRecording = false; 
+                document.getElementById("rec-indicator")?.classList.add("hidden"); 
+            }
+        });
 
-        // WhatsApp Directo con número configurado
-        document.getElementById("btnWppDirect").onclick = () => {
-            const telefono = document.getElementById("f-telefono").value.trim() || "17049419163";
-            const msg = `*TALLERPRO-360 [${ordenActiva.placa}]*%0A✅ Vehículo listo.%0A💰 Saldo: $${ordenActiva.costos_totales.saldo_pendiente.toLocaleString()}`;
+        if(recognition) {
+            recognition.onresult = (e) => { 
+                const log = document.getElementById("ai-log-display");
+                if (log) log.value += " " + e.results[0][0].transcript; 
+            };
+        }
+
+        // WhatsApp Directo
+        safeSetClick("btnWppDirect", () => {
+            const telInput = document.getElementById("f-telefono");
+            const telefono = telInput ? telInput.value.trim() : (ordenActiva.telefono || "17049419163");
+            const msg = `*NEXUS-X [${ordenActiva.placa}]*%0A✅ Reporte de Misión.%0A💰 Saldo: $${ordenActiva.costos_totales.saldo_pendiente.toLocaleString()}`;
             window.open(`https://wa.me/${telefono}?text=${msg}`, '_blank');
-        };
+        });
 
-        // RECONEXIÓN TOTAL DE BOTONES (+)
-        document.getElementById("btnAddRepuesto").onclick = () => { 
-            ordenActiva.items.push({ tipo: 'REPUESTO', desc: 'PIEZA NUEVA', costo: 0, venta: 0, origen: 'TALLER' }); 
-            recalcularFinanzas(); // Dispara renderItems()
-        };
+        // RECONEXIÓN TOTAL DE BOTONES (+) 
+        // Se asegura que el ítem se empuje al array y se fuerce el redibujado financiero
+        safeSetClick("btnAddRepuesto", () => { 
+            ordenActiva.items.push({ tipo: 'REPUESTO', desc: 'PIEZA NUEVA', costo: 0, venta: 0, origen: 'TALLER', sku: '' }); 
+            recalcularFinanzas(); 
+        });
         
-        document.getElementById("btnAddMano").onclick = () => { 
+        safeSetClick("btnAddMano", () => { 
             ordenActiva.items.push({ tipo: 'MANO_OBRA', desc: 'SERVICIO TÉCNICO', costo: 0, venta: 0, origen: 'TALLER' }); 
-            recalcularFinanzas(); // Dispara renderItems()
-        };
+            recalcularFinanzas(); 
+        });
     };
 
     // --- ⚙️ HELPERS GLOBALES ---
