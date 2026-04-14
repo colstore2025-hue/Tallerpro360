@@ -171,9 +171,6 @@ export default async function ordenes(container) {
             </div>`).join('');
     };
 
-    // --- 🎮 TERMINAL PENTAGON INTERFACE ---
-    const renderTerminal = () => {
-        const modal = document.getElementById("nexus-terminal");
         // --- 🛰️ CABECERA DE TERMINAL Y MÓDULO VISUAL ---
 modal.innerHTML = `
 <div class="max-w-[1500px] mx-auto pb-20 animate-in slide-in-from-bottom-10 duration-500">
