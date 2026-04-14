@@ -229,71 +229,81 @@ function renderFooterKpi(label, id) {
     </div>`;
 }
 
-// --- 🛰️ 6. ROUTER DINÁMICO INTEGRADO ---
+// --- 🛰️ ROUTER DE ALTA DISPONIBILIDAD (CORREGIDO) ---
 const ejecutarRouter = async () => {
     const hash = window.location.hash;
-    const mainView = document.getElementById("main-content-area");
-    const modContainer = document.getElementById("nexus-module-container");
+    const mainView = document.getElementById("main-content-area"); // Vista del Dashboard
+    const modContainer = document.getElementById("nexus-module-container"); // Contenedor de Módulos
 
     if (!mainView || !modContainer) return;
 
-    // Si volvemos al dashboard, mostramos la vista principal
+    // 1. Retorno al Centro de Mando (Home)
     if (hash === "" || hash === "#dashboard") {
         mainView.classList.remove("hidden");
         modContainer.classList.add("hidden");
+        modContainer.innerHTML = ""; // Limpieza de memoria
         return;
     }
 
-    // Ocultamos dashboard y preparamos contenedor de módulos
+    // 2. Preparación de Salto Cuántico (Carga de Módulo)
     mainView.classList.add("hidden");
     modContainer.classList.remove("hidden");
+    
+    // Loader Estético Nexus
     modContainer.innerHTML = `
         <div class="w-full h-screen flex flex-col items-center justify-center bg-[#010409]">
             <div class="w-12 h-12 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
-            <p class="orbitron text-[8px] text-cyan-500 mt-6 tracking-[0.5em] animate-pulse">SINCRO NEXUS-X...</p>
+            <p class="orbitron text-[8px] text-cyan-500 mt-6 tracking-[0.5em] animate-pulse">ESTABLECIENDO VÍNCULO NEXUS-X...</p>
         </div>`;
 
     try {
+        let modulo;
+        
         switch(hash) {
             case '#marketplace':
-                const modMkt = await import('./modules/marketplace_bridge.js');
-                await modMkt.default(modContainer);
+                // IMPORTANTE: Verifica que la carpeta sea './modules/' y el nombre exacto
+                modulo = await import('./modules/marketplace_bridge.js');
                 break;
             
             case '#publish':
-                const modPub = await import('./modules/publish_mision.js');
-                await modPub.default(modContainer);
+                modulo = await import('./modules/publish_mision.js');
+                break;
+
+            case '#finanzas-elite':
+                modulo = await import('./modules/finanzas_elite.js');
                 break;
 
             case '#gerenteAI':
-                const modAI = await import('./modules/gerenteAI.js');
-                await modAI.default(modContainer);
-                break;
-
-            case '#staff':
-                const modStaff = await import('./modules/staff.js');
-                await modStaff.default(modContainer);
-                break;
-            
-            case '#finanzas-elite':
-                const modFin = await import('./modules/finanzas_elite.js');
-                await modFin.default(modContainer);
+                modulo = await import('./modules/gerenteAI.js');
                 break;
 
             default:
-                // Carga genérica para módulos estándar
-                const moduloNombre = hash.replace('#', '');
-                const modGen = await import(`./modules/${moduloNombre}.js`);
-                await modGen.default(modContainer);
+                // Intento de carga dinámica para otros módulos (staff, clientes, etc)
+                const rutaDinamica = `./modules/${hash.replace('#', '')}.js`;
+                modulo = await import(rutaDinamica);
                 break;
         }
+
+        // Ejecución del módulo cargado
+        if (modulo && modulo.default) {
+            await modulo.default(modContainer);
+        } else {
+            throw new Error("Módulo no exporta función default");
+        }
+
     } catch (error) {
-        console.error("ROUTER_ERROR:", error);
+        console.error("🚨 NEXUS_ROUTER_CRITICAL_ERROR:", error);
+        
+        // Pantalla de Error que ves en tus capturas (Mejorada con botón de retorno seguro)
         modContainer.innerHTML = `
-            <div class="p-20 text-center">
-                <i class="fas fa-triangle-exclamation text-red-500 text-5xl mb-6"></i>
-                <h2 class="orbitron text-white text-xl font-black">ENLACE FALLIDO</h2>
-                <button onclick="location.hash='#dashboard'" class="mt-8 px-8 py-3 bg-white text-black orbitron text-[9px] font-black rounded-xl">REINTENTAR</button>
+            <div class="w-full h-screen flex flex-col items-center justify-center bg-[#010409] animate-in zoom-in duration-300">
+                <i class="fas fa-triangle-exclamation text-red-500 text-6xl mb-8 shadow-[0_0_30px_rgba(239,68,68,0.2)]"></i>
+                <h2 class="orbitron text-white text-2xl font-black italic tracking-tighter">ENLACE FALLIDO</h2>
+                <p class="text-slate-500 text-[10px] orbitron mt-4 tracking-widest uppercase">Módulo: ${hash.toUpperCase()}</p>
+                <div class="mt-10 flex gap-4">
+                    <button onclick="location.hash='#dashboard'" class="px-8 py-4 bg-white text-black orbitron text-[9px] font-black rounded-2xl hover:bg-cyan-500 hover:text-white transition-all">CENTRO DE MANDO</button>
+                    <button onclick="location.reload()" class="px-8 py-4 border border-white/10 text-white orbitron text-[9px] font-black rounded-2xl hover:bg-white/5">REINTENTAR SINCRO</button>
+                </div>
             </div>`;
     }
 };
