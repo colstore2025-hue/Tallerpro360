@@ -41,13 +41,9 @@ export default async function dashboard(container) {
         return;
     }
 
-    // Renderizado base inmediato
     renderInterface(container, planActual, config);
-
-    // Ejecución inicial del Router
     await ejecutarRouter();
 
-    // Carga de Business Intelligence si estamos en el Home del Dashboard
     if (window.location.hash === "" || window.location.hash === "#dashboard") {
         try {
             const snap = await getDocs(query(
@@ -68,19 +64,17 @@ export default async function dashboard(container) {
     }
 }
 
-// --- 🧠 3. MOTOR DE INTELIGENCIA DE NEGOCIO ---
+// --- 🧠 3. MOTOR BI ---
 function processBI(ordenes) {
     let rev = 0;
     const staff = {};
     const validas = ordenes.filter(o => o.estado !== 'CANCELADO');
-
     validas.forEach(o => {
         const monto = Number(o.costos_totales?.total_general || o.total || 0);
         rev += monto;
         const tec = o.tecnico || "OPERADOR_S/N";
         staff[tec] = (staff[tec] || 0) + monto;
     });
-
     return {
         revenue: rev,
         count: validas.length,
@@ -105,17 +99,15 @@ function renderBtn(name, icon, path, habilitado) {
 
 function renderInterface(container, plan, config) {
     const empresa = localStorage.getItem("nexus_empresaNombre") || "NEXUS ERP";
-
     container.innerHTML = `
     <div id="nexus-aegis-view" class="p-6 lg:p-12 space-y-12 animate-in fade-in duration-1000 pb-48 max-w-[1800px] mx-auto bg-[#010409]">
-        
         <header class="flex flex-col lg:flex-row justify-between items-center gap-8 border-b border-white/5 pb-12">
             <div class="relative pl-8">
                 <div class="absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b from-cyan-500 to-blue-600 shadow-[0_0_25px_#06b6d4]"></div>
                 <h1 class="orbitron text-5xl font-black italic uppercase tracking-tighter text-white leading-none">${empresa}</h1>
                 <p class="text-[10px] text-slate-500 font-black orbitron tracking-[0.6em] mt-4 uppercase">Status: Operacional // Aegis V35.5</p>
             </div>
-            <div class="bg-[#0d1117] border ${config.clase} px-12 py-6 rounded-3xl text-center group transition-all">
+            <div class="bg-[#0d1117] border ${config.clase} px-12 py-6 rounded-3xl text-center">
                 <p class="text-[8px] font-black orbitron uppercase mb-1 tracking-[0.5em] text-slate-500">Nivel de Enlace</p>
                 <p class="text-3xl font-black orbitron italic">${plan}</p>
             </div>
@@ -134,29 +126,25 @@ function renderInterface(container, plan, config) {
                 ${renderBtn('Nómina', 'fa-id-badge', '#nomina', config.modulos.includes('nomina'))}
                 ${renderBtn('Staff', 'fa-people-group', '#staff', config.modulos.includes('staff'))}
                 ${renderBtn('Audit Core', 'fa-shield-halved', '#finanzas-elite', config.modulos.includes('finanzas-elite'))}
-                
-                <button onclick="window.open('https://wa.me/17049419163', '_blank')" 
-                    class="flex flex-col items-center justify-center p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-[2rem] hover:bg-emerald-500 hover:text-white transition-all group">
+                <button onclick="window.open('https://wa.me/17049419163', '_blank')" class="flex flex-col items-center justify-center p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-[2rem] hover:bg-emerald-500 hover:text-white transition-all group">
                     <i class="fab fa-whatsapp text-xl mb-3 text-emerald-500 group-hover:text-white"></i>
                     <p class="orbitron text-[8px] font-black uppercase tracking-widest text-emerald-500 group-hover:text-white">Soporte</p>
                 </button>
             </div>
 
             <div id="hudKpis" class="grid grid-cols-2 md:grid-cols-4 gap-6"></div>
-
             <div class="grid lg:grid-cols-12 gap-8">
                 <div class="lg:col-span-4 bg-[#0d1117] p-12 rounded-[4rem] border border-white/5">
                     <h4 class="orbitron text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] mb-10 border-l-4 border-cyan-500 pl-6">Eficiencia del Staff</h4>
                     <div id="techEfficiency" class="space-y-8"></div>
                 </div>
-
                 <div class="lg:col-span-8 bg-[#0d1117] p-12 rounded-[4rem] border border-white/5 relative overflow-hidden flex flex-col justify-center min-h-[400px]">
                     <div class="absolute inset-0 bg-gradient-to-tr from-cyan-500/5 to-transparent"></div>
                     <div class="flex items-center gap-6 mb-8 relative z-10">
                         <div class="w-14 h-14 bg-white text-black rounded-2xl flex items-center justify-center text-2xl shadow-2xl shadow-white/10"><i class="fas fa-satellite-dish animate-pulse"></i></div>
                         <h5 class="orbitron text-xl font-black uppercase italic tracking-tighter">Nexus Intelligence Feed</h5>
                     </div>
-                    <p id="txtAI" class="text-slate-400 text-xl leading-relaxed max-w-3xl font-medium italic relative z-10">Iniciando protocolos de análisis...</p>
+                    <p id="txtAI" class="text-slate-400 text-xl leading-relaxed max-w-3xl font-medium italic relative z-10">Iniciando protocolos...</p>
                     <div id="btnAI" class="mt-12 relative z-10"></div>
                 </div>
             </div>
@@ -167,12 +155,11 @@ function renderInterface(container, plan, config) {
                 ${renderFooterKpi('Margen Est. (30%)', 'valProfit')}
             </div>
         </div>
-        
         <div id="nexus-module-container" class="hidden min-h-screen"></div>
     </div>`;
 }
 
-// --- ⚙️ 5. FUNCIONES DE ACTUALIZACIÓN ---
+// --- ⚙️ 5. ACTUALIZACIONES ---
 function updateNumbers(s, plan) {
     const hud = document.getElementById("hudKpis");
     if(!hud) return;
@@ -186,7 +173,6 @@ function updateNumbers(s, plan) {
             <p class="text-[8px] text-slate-600 orbitron font-black uppercase mb-3 tracking-widest">${k.l}</p>
             <p class="text-2xl font-black orbitron ${k.c}">${k.v}</p>
         </div>`).join("");
-
     document.getElementById("valTicket").innerText = `$${Math.round(s.avgTicket).toLocaleString()}`;
     document.getElementById("valRevenue").innerText = `$${s.revenue.toLocaleString()}`;
     document.getElementById("valProfit").innerText = `$${Math.round(s.revenue * 0.30).toLocaleString()}`;
@@ -197,13 +183,8 @@ function renderStaffEfficiency(staff) {
     if(!container) return;
     container.innerHTML = staff.slice(0, 4).map(([name, val]) => `
         <div class="space-y-3">
-            <div class="flex justify-between text-[10px] orbitron font-bold">
-                <span class="text-slate-500 uppercase">${name}</span>
-                <span class="text-white font-black italic">$${val.toLocaleString()}</span>
-            </div>
-            <div class="h-1 bg-black rounded-full overflow-hidden">
-                <div class="h-full bg-cyan-500 shadow-[0_0_10px_#06b6d4] transition-all duration-[1.5s]" style="width: ${Math.min((val/1500000)*100, 100)}%"></div>
-            </div>
+            <div class="flex justify-between text-[10px] orbitron font-bold"><span class="text-slate-500 uppercase">${name}</span><span class="text-white font-black italic">$${val.toLocaleString()}</span></div>
+            <div class="h-1 bg-black rounded-full overflow-hidden"><div class="h-full bg-cyan-500 shadow-[0_0_10px_#06b6d4]" style="width: ${Math.min((val/1500000)*100, 100)}%"></div></div>
         </div>`).join("");
 }
 
@@ -211,98 +192,76 @@ function deployAIAssistant(stats, hasAI) {
     const txt = document.getElementById("txtAI");
     const btn = document.getElementById("btnAI");
     if(!txt) return;
-
     if(!hasAI) {
-        txt.innerHTML = "Protocolo <span class='text-purple-500'>GERENTE AI</span> inactivo. Su plan actual no incluye proyecciones predictivas.";
-        btn.innerHTML = `<button onclick="location.hash='#pagos'" class="px-10 py-4 bg-purple-600 text-white orbitron text-[10px] font-black rounded-2xl hover:bg-white hover:text-black transition-all">UPGRADE AI</button>`;
+        txt.innerHTML = "Protocolo <span class='text-purple-500'>GERENTE AI</span> inactivo.";
+        btn.innerHTML = `<button onclick="location.hash='#pagos'" class="px-10 py-4 bg-purple-600 text-white orbitron text-[10px] font-black rounded-2xl">UPGRADE AI</button>`;
     } else {
-        txt.innerHTML = `Comandante, ingresos de <span class='text-cyan-400 font-black'>$${stats.revenue.toLocaleString()}</span> detectados. ¿Desea ejecutar el análisis de rampa?`;
-        btn.innerHTML = `<button onclick="location.hash='#gerenteAI'" class="px-10 py-4 bg-white text-black orbitron text-[10px] font-black rounded-2xl hover:bg-cyan-500 hover:text-white transition-all shadow-xl">CENTRO ESTRATÉGICO</button>`;
+        txt.innerHTML = `Comandante, ingresos de <span class='text-cyan-400 font-black'>$${stats.revenue.toLocaleString()}</span> detectados. ¿Desea ejecutar el análisis?`;
+        btn.innerHTML = `<button onclick="location.hash='#gerenteAI'" class="px-10 py-4 bg-white text-black orbitron text-[10px] font-black rounded-2xl">ABRIR COMANDO ESTRATÉGICO</button>`;
     }
 }
 
 function renderFooterKpi(label, id) {
-    return `
-    <div class="bg-black/20 border border-white/5 p-12 rounded-[4rem] text-center backdrop-blur-sm group hover:border-cyan-500/20 transition-all">
-        <p class="text-[9px] text-slate-600 orbitron font-black uppercase mb-4 tracking-[0.4em]">${label}</p>
-        <p id="${id}" class="text-4xl font-black orbitron text-white italic tracking-tighter group-hover:text-cyan-400 transition-colors">$ 0</p>
-    </div>`;
+    return `<div class="bg-black/20 border border-white/5 p-12 rounded-[4rem] text-center"><p class="text-[9px] text-slate-600 orbitron font-black uppercase mb-4 tracking-[0.4em]">${label}</p><p id="${id}" class="text-4xl font-black orbitron text-white italic">$ 0</p></div>`;
 }
 
-// --- 🛰️ ROUTER DE ALTA DISPONIBILIDAD (CORREGIDO) ---
+// --- 🛰️ 6. ROUTER QUIRÚRGICO (MAPEO DE NOMBRES REALES) ---
 const ejecutarRouter = async () => {
     const hash = window.location.hash;
-    const mainView = document.getElementById("main-content-area"); // Vista del Dashboard
-    const modContainer = document.getElementById("nexus-module-container"); // Contenedor de Módulos
+    const mainView = document.getElementById("main-content-area");
+    const modContainer = document.getElementById("nexus-module-container");
 
     if (!mainView || !modContainer) return;
 
-    // 1. Retorno al Centro de Mando (Home)
     if (hash === "" || hash === "#dashboard") {
         mainView.classList.remove("hidden");
         modContainer.classList.add("hidden");
-        modContainer.innerHTML = ""; // Limpieza de memoria
+        modContainer.innerHTML = "";
         return;
     }
 
-    // 2. Preparación de Salto Cuántico (Carga de Módulo)
     mainView.classList.add("hidden");
     modContainer.classList.remove("hidden");
-    
-    // Loader Estético Nexus
-    modContainer.innerHTML = `
-        <div class="w-full h-screen flex flex-col items-center justify-center bg-[#010409]">
-            <div class="w-12 h-12 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
-            <p class="orbitron text-[8px] text-cyan-500 mt-6 tracking-[0.5em] animate-pulse">ESTABLECIENDO VÍNCULO NEXUS-X...</p>
-        </div>`;
+    modContainer.innerHTML = `<div class="w-full h-screen flex flex-col items-center justify-center bg-[#010409]"><div class="w-12 h-12 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div><p class="orbitron text-[8px] text-cyan-500 mt-6 tracking-[0.5em] animate-pulse">SINCRO NEXUS-X...</p></div>`;
 
     try {
         let modulo;
-        
+        // MANIOBRA QUIRÚRGICA: Mapeamos el ID del Dashboard al Nombre Real del Archivo JS
         switch(hash) {
             case '#marketplace':
-                // IMPORTANTE: Verifica que la carpeta sea './modules/' y el nombre exacto
                 modulo = await import('./modules/marketplace_bridge.js');
                 break;
-            
             case '#publish':
                 modulo = await import('./modules/publish_mision.js');
                 break;
-
             case '#finanzas-elite':
                 modulo = await import('./modules/finanzas_elite.js');
                 break;
-
             case '#gerenteAI':
                 modulo = await import('./modules/gerenteAI.js');
                 break;
-
             default:
-                // Intento de carga dinámica para otros módulos (staff, clientes, etc)
                 const rutaDinamica = `./modules/${hash.replace('#', '')}.js`;
                 modulo = await import(rutaDinamica);
                 break;
         }
 
-        // Ejecución del módulo cargado
         if (modulo && modulo.default) {
             await modulo.default(modContainer);
         } else {
-            throw new Error("Módulo no exporta función default");
+            throw new Error("ENTRY_POINT_NOT_FOUND");
         }
 
     } catch (error) {
-        console.error("🚨 NEXUS_ROUTER_CRITICAL_ERROR:", error);
-        
-        // Pantalla de Error que ves en tus capturas (Mejorada con botón de retorno seguro)
+        console.error("🚨 ROUTER_ERROR:", error);
         modContainer.innerHTML = `
-            <div class="w-full h-screen flex flex-col items-center justify-center bg-[#010409] animate-in zoom-in duration-300">
-                <i class="fas fa-triangle-exclamation text-red-500 text-6xl mb-8 shadow-[0_0_30px_rgba(239,68,68,0.2)]"></i>
-                <h2 class="orbitron text-white text-2xl font-black italic tracking-tighter">ENLACE FALLIDO</h2>
-                <p class="text-slate-500 text-[10px] orbitron mt-4 tracking-widest uppercase">Módulo: ${hash.toUpperCase()}</p>
+            <div class="w-full h-screen flex flex-col items-center justify-center bg-[#010409]">
+                <i class="fas fa-triangle-exclamation text-red-500 text-6xl mb-8"></i>
+                <h2 class="orbitron text-white text-2xl font-black italic">ENLACE FALLIDO</h2>
+                <p class="text-slate-500 text-[10px] orbitron mt-4 uppercase">Módulo: ${hash.toUpperCase()}</p>
                 <div class="mt-10 flex gap-4">
-                    <button onclick="location.hash='#dashboard'" class="px-8 py-4 bg-white text-black orbitron text-[9px] font-black rounded-2xl hover:bg-cyan-500 hover:text-white transition-all">CENTRO DE MANDO</button>
-                    <button onclick="location.reload()" class="px-8 py-4 border border-white/10 text-white orbitron text-[9px] font-black rounded-2xl hover:bg-white/5">REINTENTAR SINCRO</button>
+                    <button onclick="location.hash='#dashboard'" class="px-8 py-4 bg-white text-black orbitron text-[9px] font-black rounded-2xl">CENTRO DE MANDO</button>
+                    <button onclick="location.reload()" class="px-8 py-4 border border-white/10 text-white orbitron text-[9px] font-black rounded-2xl">REINTENTAR</button>
                 </div>
             </div>`;
     }
