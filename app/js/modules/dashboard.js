@@ -21,7 +21,7 @@ const PERMISOS = {
         clase: "border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
     },
     "PRO": { 
-        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace_bridge', 'publish_mision', 'soporte'],
+        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace', 'publish', 'soporte'],
         clase: "border-purple-500 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.2)]"
     },
     "ELITE": { 
