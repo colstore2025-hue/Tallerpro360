@@ -1,5 +1,4 @@
 <script type="module">
-    // 1. IMPORTACIONES COMPLETAS (Kernel de Firebase)
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, doc, updateDoc, getDoc, collection, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -18,10 +17,10 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // 2. FUNCIÓN DE ACCESO AUTOMÁTICO Y RESET "FÉNIX"
     async function ejecutarProtocoloNexus() {
         const demoEmail = "discovery@tallerpro360.com";
         const demoPass = "Demo2026"; 
+        const ID_NODO_DEMO = "taller_002"; // ID Único Maestro en Firestore
 
         Swal.fire({
             title: 'SINCRONIZANDO NODO',
@@ -34,15 +33,13 @@
         });
 
         try {
-            // A. LOGIN AUTOMÁTICO
+            // A. LOGIN AUTOMÁTICO AL NODO DISCOVERY
             const userCredential = await signInWithEmailAndPassword(auth, demoEmail, demoPass);
             const user = userCredential.user;
 
-            // B. PROTOCOLO DE LIMPIEZA (RESET AUTOMÁTICO)
-            // Solo mantenemos las 3 placas maestras que creaste
+            // B. PROTOCOLO FÉNIX (Limpieza de órdenes excedentes)
             const placasMaestras = ['NEX-001', 'TRX-700', 'BAV-400'];
-            const ordenesRef = collection(db, "ordenes");
-            const q = query(ordenesRef, where("empresaId", "==", "taller_002"));
+            const q = query(collection(db, "ordenes"), where("empresaId", "==", ID_NODO_DEMO));
             const querySnapshot = await getDocs(q);
 
             for (const documento of querySnapshot.docs) {
@@ -51,43 +48,40 @@
                 }
             }
 
-            // C. VINCULACIÓN DE PERFIL
+            // C. ACTUALIZACIÓN DE PERFIL EN FIREBASE
             const userRef = doc(db, "usuarios", user.uid);
             await updateDoc(userRef, {
-                empresaId: "taller_002",
+                empresaId: ID_NODO_DEMO,
                 planType: "GRATI-CORE",
                 status: "ACTIVE",
                 lastAccess: new Date().toISOString()
             });
 
-            // D. ÉXITO Y REDIRECCIÓN LIMPIA
+            // D. PERSISTENCIA EN LOCALSTORAGE (Vital para dashboard.js)
+            localStorage.setItem("nexus_empresaId", ID_NODO_DEMO);
+            localStorage.setItem("nexus_plan", "GRATI-CORE");
+            localStorage.setItem("nexus_empresaNombre", "NEXUS DISCOVERY CORE");
+            localStorage.setItem("nexus_userRole", "GUEST");
+
+            // E. REDIRECCIÓN
             Swal.fire({
                 icon: 'success',
                 title: 'CONEXIÓN ESTABLECIDA',
-                text: 'Bienvenido a la terminal Nexus-X.',
-                timer: 1500,
+                text: 'Accediendo a la terminal Nexus-X v40.0',
+                timer: 2000,
                 showConfirmButton: false,
                 background: '#020617',
                 color: '#fff'
             }).then(() => {
-function iniciarDemo() {
-    localStorage.setItem("planTipo", "GRATI-CORE");
-    localStorage.setItem("empresaId", "DEMO-NEXUS-001");
-    localStorage.setItem("rol", "GUEST");
-    window.location.href = "/app/#dashboard";
-}
+                window.location.href = "/app/#dashboard";
             });
 
         } catch (error) {
-            console.error("❌ Error en Protocolo:", error.code, error.message);
-            let msg = "Error de enlace satelital. Revisa tu conexión.";
-            if(error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-                msg = "Las credenciales del Nodo Maestro han cambiado.";
-            }
+            console.error("❌ Fallo Crítico:", error);
             Swal.fire({
                 icon: 'error',
                 title: 'FALLO DE TRANSMISIÓN',
-                text: msg,
+                text: "Error de autenticación en el Nodo Maestro.",
                 background: '#020617',
                 color: '#fff'
             });
