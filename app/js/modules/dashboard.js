@@ -111,19 +111,21 @@ function renderInterface(container, plan, config) {
 
         <div id="main-content-area" class="space-y-12">
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-6">
-                ${renderBtn('Clientes', 'fa-users-gear', '#clientes', config.modulos.includes('clientes'))}
-                ${renderBtn('Vehículos', 'fa-truck-fast', '#vehiculos', config.modulos.includes('vehiculos'))}
-                ${renderBtn('Inventario', 'fa-boxes-stacked', '#inventario', config.modulos.includes('inventario'))}
-                ${renderBtn('Caja Real', 'fa-money-bill-transfer', '#pagos', config.modulos.includes('pagos'))}
-                ${renderBtn('Libro Contable', 'fa-file-invoice-dollar', '#contabilidad', config.modulos.includes('contabilidad'))}
-                
-                ${renderBtn('MarketX', 'fa-globe', '#marketplace_bridge', config.modulos.includes('marketplace_bridge'))}
-                ${renderBtn('Nueva Misión', 'fa-plus-circle', '#publish_mision', config.modulos.includes('publish_mision'))}
-                
-                ${renderBtn('Reportes', 'fa-chart-simple', '#reportes', config.modulos.includes('reportes'))}
-                ${renderBtn('Nómina', 'fa-id-badge', '#nomina', config.modulos.includes('nomina'))}
-                ${renderBtn('Staff', 'fa-people-group', '#staff', config.modulos.includes('staff'))}
-                ${renderBtn('Audit Core', 'fa-shield-halved', '#finanzas_elite', config.modulos.includes('finanzas_elite'))}
+    ${renderBtn('Clientes', 'fa-users-gear', '#clientes', config.modulos.includes('clientes'))}
+    ${renderBtn('Vehículos', 'fa-truck-fast', '#vehiculos', config.modulos.includes('vehiculos'))}
+    ${renderBtn('Inventario', 'fa-boxes-stacked', '#inventario', config.modulos.includes('inventario'))}
+    ${renderBtn('Caja Real', 'fa-money-bill-transfer', '#pagos', config.modulos.includes('pagos'))}
+    ${renderBtn('Libro Contable', 'fa-file-invoice-dollar', '#contabilidad', config.modulos.includes('contabilidad'))}
+    
+    ${renderBtn('Gerente AI', 'fa-robot', '#gerenteAI', config.modulos.includes('gerenteAI'))}
+    
+    ${renderBtn('MarketX', 'fa-globe', '#marketplace_bridge', config.modulos.includes('marketplace_bridge'))}
+    ${renderBtn('Nueva Misión', 'fa-plus-circle', '#publish_mision', config.modulos.includes('publish_mision'))}
+    
+    ${renderBtn('Reportes', 'fa-chart-simple', '#reportes', config.modulos.includes('reportes'))}
+    ${renderBtn('Nómina', 'fa-id-badge', '#nomina', config.modulos.includes('nomina'))}
+    ${renderBtn('Staff', 'fa-people-group', '#staff', config.modulos.includes('staff'))}
+    ${renderBtn('Audit Core', 'fa-shield-halved', '#finanzas_elite', config.modulos.includes('finanzas_elite'))}
                 
                 <button onclick="window.open('https://wa.me/17049419163', '_blank')" class="flex flex-col items-center justify-center p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-[2rem] hover:bg-emerald-500 hover:text-white transition-all group">
                     <i class="fab fa-whatsapp text-xl mb-3 text-emerald-500 group-hover:text-white"></i>
