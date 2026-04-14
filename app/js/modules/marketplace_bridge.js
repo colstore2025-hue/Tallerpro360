@@ -1,35 +1,60 @@
 /**
  * marketplace_bridge.js - NEXUS-X 🛰️
- * Módulo de Interfaz de Puente para Marketplace Global
- * @author William Jeffry Urquijo Cubillos & Gemini AI
+ * Módulo de Integración Nativa para MarketX
+ * Optimizado para TallerPRO360 ERP
  */
 
 export default async function marketplaceBridge(container) {
-    // 1. Limpieza de contenedores previos y preparación de fondo
+    const plan = localStorage.getItem("nexus_plan") || "GRATI-CORE";
+    
+    // Verificación de Seguridad de Capa ERP
+    if (plan !== "PRO" && plan !== "ELITE") {
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-full p-20 text-center animate-in zoom-in duration-500">
+                <i class="fas fa-lock text-6xl text-cyan-500/20 mb-8"></i>
+                <h2 class="orbitron text-2xl font-black text-white italic">MÓDULO DE ACTIVOS BLOQUEADO</h2>
+                <p class="text-slate-500 mt-4 max-w-md">La vitrina comercial MarketX y la gestión de activos logística USA-LATAM requieren un nivel de enlace PRO o ELITE.</p>
+                <button onclick="location.hash='#pagos'" class="mt-8 px-10 py-4 bg-cyan-600 text-white orbitron text-[10px] font-black rounded-2xl hover:bg-white hover:text-black transition-all">ELEVAR NIVEL DE ENLACE</button>
+            </div>
+        `;
+        return;
+    }
+
+    // Inyección de la terminal Marketplace
     container.innerHTML = `
-        <div class="w-full h-screen bg-[#010409] overflow-hidden flex flex-col animate-in fade-in duration-700">
-            
-            <div class="w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent"></div>
+        <div class="w-full h-full bg-[#010409] flex flex-col animate-in fade-in duration-700 relative">
+            <div id="market-loader" class="absolute inset-0 flex items-center justify-center bg-[#010409] z-50 transition-opacity duration-1000">
+                <div class="flex flex-col items-center">
+                    <div class="w-12 h-12 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p class="orbitron text-[8px] text-cyan-500 mt-4 tracking-[0.5em]">ENLAZANDO TERMINAL MARKETX...</p>
+                </div>
+            </div>
 
             <iframe 
+                id="iframe-market"
                 src="marketplace.html" 
-                class="w-full h-full border-none shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+                class="w-full h-full border-none opacity-0 transition-opacity duration-1000"
                 title="Nexus-X Marketplace"
-                allowfullscreen
-                loading="lazy">
+                allowfullscreen>
             </iframe>
 
-            <div class="fixed bottom-0 left-0 w-full h-12 bg-gradient-to-t from-[#010409] to-transparent pointer-events-none"></div>
+            <div class="absolute bottom-0 left-0 w-full p-4 bg-black/80 backdrop-blur-md border-t border-white/5 flex justify-between items-center z-40">
+                <div class="flex items-center gap-4">
+                    <span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span class="orbitron text-[7px] text-slate-400 tracking-widest uppercase font-bold">Enlace Satelital Activo</span>
+                </div>
+                <p class="orbitron text-[7px] text-slate-600 tracking-tighter uppercase font-black italic">Logística USA-LATAM v3.5</p>
+            </div>
         </div>
     `;
 
-    // 2. Lógica de Redimensión Dinámica (Opcional por si el dashboard tiene paddings)
-    const adjustIframe = () => {
-        const headerOffset = 0; // Ajustar si el dashboard tiene top bar fija
-        const h = window.innerHeight - headerOffset;
-        container.style.height = `${h}px`;
-    };
+    const iframe = document.getElementById('iframe-market');
+    const loader = document.getElementById('market-loader');
 
-    window.addEventListener('resize', adjustIframe);
-    adjustIframe();
+    // Manejo de carga suave (Smooth Transition)
+    iframe.onload = () => {
+        loader.classList.add('opacity-0');
+        iframe.classList.remove('opacity-0');
+        setTimeout(() => loader.remove(), 1000);
+    };
 }
