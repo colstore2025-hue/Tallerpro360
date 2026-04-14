@@ -247,6 +247,7 @@ export default async function ordenes(container) {
         recalcularFinanzas();
     };
 
+        // --- 🛰️ CIERRE OPERATIVO & SINCRONIZACIÓN ---
     const ejecutarSincronizacionNexus = async () => {
         const btn = document.getElementById("btnSincronizar");
         btn.innerHTML = `<i class="fas fa-sync fa-spin"></i> ENLAZANDO...`;
@@ -269,7 +270,6 @@ export default async function ordenes(container) {
 
             await setDoc(doc(db, "ordenes", docId), dataOrden);
 
-            // LOGICA ERP: Descuento de Inventario real
             if (estadoOrden === "LISTO" || estadoOrden === "ENTREGADO") {
                 for (const item of dataOrden.items) {
                     if (item.tipo === 'REPUESTO' && item.sku && item.origen === 'TALLER') {
@@ -290,13 +290,14 @@ export default async function ordenes(container) {
         }
     };
 
+    // --- 📦 INTEGRACIÓN CON BÓVEDA DE INVENTARIO ---
     window.buscarEnInventario = async (idx) => {
         const { value: selectedItem } = await Swal.fire({
             title: 'BÓVEDA DE SUMINISTROS',
             background: '#010409', color: '#fff',
             html: `<select id="swal-sku" class="w-full bg-[#0d1117] p-4 rounded-2xl text-white border border-white/10 orbitron text-xs uppercase"><option>Cargando Bóveda...</option></select>`,
             didOpen: async () => {
-                const q = query(collection(db, "inventario"), where("empresaId", "==", empresaId), where("origen", "==", "PROPIO"));
+                const q = query(collection(db, "inventario"), where("empresaId", "==", empresaId));
                 const snap = await getDocs(q);
                 const select = document.getElementById("swal-sku");
                 select.innerHTML = '<option value="">-- SELECCIONE PIEZA --</option>' + 
@@ -317,26 +318,42 @@ export default async function ordenes(container) {
                 desc: selectedItem.n, costo: selectedItem.c, venta: selectedItem.v, 
                 sku: selectedItem.id, tipo: 'REPUESTO', origen: 'TALLER' 
             };
-            recalcularFinanzas();
+            recalcularFinanzas(); // Reconecta el renderizado tras seleccionar
         }
     };
 
+    // --- 🔗 VINCULACIÓN DE EVENTOS DE TERMINAL ---
     const vincularAccionesTerminal = () => {
         document.getElementById("btnSincronizar").onclick = ejecutarSincronizacionNexus;
         document.getElementById("btnCloseTerminal").onclick = () => document.getElementById("nexus-terminal").classList.add("hidden");
+        
+        // Dictado por voz
         document.getElementById("btnDictar").onclick = () => {
             if(!isRecording) { recognition?.start(); isRecording = true; document.getElementById("rec-indicator").classList.remove("hidden"); }
             else { recognition?.stop(); isRecording = false; document.getElementById("rec-indicator").classList.add("hidden"); }
         };
         if(recognition) recognition.onresult = (e) => { document.getElementById("ai-log-display").value += " " + e.results[0][0].transcript; };
+
+        // WhatsApp Directo con número configurado
         document.getElementById("btnWppDirect").onclick = () => {
+            const telefono = document.getElementById("f-telefono").value.trim() || "17049419163";
             const msg = `*TALLERPRO-360 [${ordenActiva.placa}]*%0A✅ Vehículo listo.%0A💰 Saldo: $${ordenActiva.costos_totales.saldo_pendiente.toLocaleString()}`;
-            window.open(`https://wa.me/57${ordenActiva.telefono}?text=${msg}`, '_blank');
+            window.open(`https://wa.me/${telefono}?text=${msg}`, '_blank');
         };
-        document.getElementById("btnAddRepuesto").onclick = () => { ordenActiva.items.push({ tipo: 'REPUESTO', desc: 'PIEZA NUEVA', costo: 0, venta: 0, origen: 'TALLER' }); recalcularFinanzas(); };
-        document.getElementById("btnAddMano").onclick = () => { ordenActiva.items.push({ tipo: 'MANO_OBRA', desc: 'SERVICIO TÉCNICO', costo: 0, venta: 0, origen: 'TALLER' }); recalcularFinanzas(); };
+
+        // RECONEXIÓN TOTAL DE BOTONES (+)
+        document.getElementById("btnAddRepuesto").onclick = () => { 
+            ordenActiva.items.push({ tipo: 'REPUESTO', desc: 'PIEZA NUEVA', costo: 0, venta: 0, origen: 'TALLER' }); 
+            recalcularFinanzas(); // Dispara renderItems()
+        };
+        
+        document.getElementById("btnAddMano").onclick = () => { 
+            ordenActiva.items.push({ tipo: 'MANO_OBRA', desc: 'SERVICIO TÉCNICO', costo: 0, venta: 0, origen: 'TALLER' }); 
+            recalcularFinanzas(); // Dispara renderItems()
+        };
     };
 
+    // --- ⚙️ HELPERS GLOBALES ---
     window.toggleOrigenItem = (idx) => { const it = ordenActiva.items[idx]; it.origen = it.origen === 'TALLER' ? 'CLIENTE' : 'TALLER'; if(it.origen === 'CLIENTE') it.costo = 0; recalcularFinanzas(); };
     window.editItemNexus = (idx, campo, val) => { ordenActiva.items[idx][campo] = (campo === 'costo' || campo === 'venta') ? Number(val) : val; recalcularFinanzas(); };
     window.removeItemNexus = (idx) => { ordenActiva.items.splice(idx, 1); recalcularFinanzas(); };
