@@ -133,8 +133,8 @@ function renderInterface(container, plan, config) {
             ${renderBtn('Inventario', 'fa-boxes-stacked', '#inventario', config.modulos.includes('inventario'))}
             ${renderBtn('Caja Real', 'fa-money-bill-transfer', '#pagos', config.modulos.includes('pagos'))}
             ${renderBtn('Libro Contable', 'fa-file-invoice-dollar', '#contabilidad', config.modulos.includes('contabilidad'))}
-            ${renderBtn('MarketX', 'fa-globe', '#marketplace', config.modulos.includes('marketplace'))}
-            ${renderBtn('Nueva Misión', 'fa-plus-circle', '#publish', config.modulos.includes('publish'))}
+            ${renderBtn('MarketX', 'fa-globe', '#marketplace_bridge', config.modulos.includes('marketplace_bridge'))}
+            ${renderBtn('Nueva Misión', 'fa-plus-circle', '#publish_mision', config.modulos.includes('publish_mision'))}
             ${renderBtn('Reportes', 'fa-chart-simple', '#reportes', config.modulos.includes('reportes'))}
             ${renderBtn('Nómina Staff', 'fa-id-badge', '#nomina', config.modulos.includes('nomina'))}
             ${renderBtn('Gestión Staff', 'fa-people-group', '#staff', config.modulos.includes('staff'))}
