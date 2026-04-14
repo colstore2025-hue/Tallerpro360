@@ -4,7 +4,7 @@
  * @author William Jeffry Urquijo Cubillos & Gemini AI
  */
 
-import { db } from "./core/firebase-config.js";
+import { db } from "/core/firebase-config.js";
 import { 
     collection, query, where, getDocs, limit 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
