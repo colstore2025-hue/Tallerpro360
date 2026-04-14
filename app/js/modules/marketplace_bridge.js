@@ -1,10 +1,11 @@
 /**
  * marketplace_bridge.js - NEXUS-X 🛰️
  * Módulo de Integración Nativa para MarketX
- * Optimizado para TallerPRO360 ERP
+ * Optimizado para TallerPRO360 ERP - 100% Case Sensitive Compatible
  */
 
 export default async function marketplaceBridge(container) {
+    // Normalizamos el plan a mayúsculas para la lógica interna
     const plan = (localStorage.getItem("nexus_plan") || "GRATI-CORE").toUpperCase();
     
     // 🛡️ Verificación de Seguridad de Capa ERP
@@ -21,6 +22,7 @@ export default async function marketplaceBridge(container) {
     }
 
     // 🚀 Inyección de la terminal Marketplace
+    // Nota: El src "marketplace.html" debe estar en la raíz o ruta relativa correcta
     container.innerHTML = `
         <div class="w-full h-[85vh] bg-[#010409] flex flex-col animate-in fade-in duration-700 relative rounded-[3rem] overflow-hidden border border-white/5">
             <div id="market-loader" class="absolute inset-0 flex items-center justify-center bg-[#010409] z-50 transition-opacity duration-1000">
@@ -56,16 +58,20 @@ export default async function marketplaceBridge(container) {
         iframe.onload = () => {
             if (loader) {
                 loader.classList.add('opacity-0');
-                setTimeout(() => loader.remove(), 1000);
+                setTimeout(() => {
+                    if(loader.parentNode) loader.remove();
+                }, 1000);
             }
             iframe.classList.remove('opacity-0');
             iframe.classList.add('opacity-100');
         };
 
-        // Fallback por si el onload falla (seguridad de enlace)
+        // Fallback de seguridad (5 segundos) por si hay latencia en el servidor
         setTimeout(() => {
-            if (loader) loader.remove();
-            iframe.classList.remove('opacity-0');
+            if (loader && loader.parentNode) {
+                loader.remove();
+                iframe.classList.remove('opacity-0');
+            }
         }, 5000);
     }
 }
