@@ -5,12 +5,12 @@
  */
 
 export default async function marketplaceBridge(container) {
-    const plan = localStorage.getItem("nexus_plan") || "GRATI-CORE";
+    const plan = (localStorage.getItem("nexus_plan") || "GRATI-CORE").toUpperCase();
     
-    // Verificación de Seguridad de Capa ERP
+    // 🛡️ Verificación de Seguridad de Capa ERP
     if (plan !== "PRO" && plan !== "ELITE") {
         container.innerHTML = `
-            <div class="flex flex-col items-center justify-center h-full p-20 text-center animate-in zoom-in duration-500">
+            <div class="flex flex-col items-center justify-center h-[80vh] p-20 text-center animate-in zoom-in duration-500">
                 <i class="fas fa-lock text-6xl text-cyan-500/20 mb-8"></i>
                 <h2 class="orbitron text-2xl font-black text-white italic">MÓDULO DE ACTIVOS BLOQUEADO</h2>
                 <p class="text-slate-500 mt-4 max-w-md">La vitrina comercial MarketX y la gestión de activos logística USA-LATAM requieren un nivel de enlace PRO o ELITE.</p>
@@ -20,13 +20,13 @@ export default async function marketplaceBridge(container) {
         return;
     }
 
-    // Inyección de la terminal Marketplace
+    // 🚀 Inyección de la terminal Marketplace
     container.innerHTML = `
-        <div class="w-full h-full bg-[#010409] flex flex-col animate-in fade-in duration-700 relative">
+        <div class="w-full h-[85vh] bg-[#010409] flex flex-col animate-in fade-in duration-700 relative rounded-[3rem] overflow-hidden border border-white/5">
             <div id="market-loader" class="absolute inset-0 flex items-center justify-center bg-[#010409] z-50 transition-opacity duration-1000">
                 <div class="flex flex-col items-center">
                     <div class="w-12 h-12 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-                    <p class="orbitron text-[8px] text-cyan-500 mt-4 tracking-[0.5em]">ENLAZANDO TERMINAL MARKETX...</p>
+                    <p class="orbitron text-[8px] text-cyan-500 mt-4 tracking-[0.5em] animate-pulse">ENLAZANDO TERMINAL MARKETX...</p>
                 </div>
             </div>
 
@@ -51,10 +51,21 @@ export default async function marketplaceBridge(container) {
     const iframe = document.getElementById('iframe-market');
     const loader = document.getElementById('market-loader');
 
-    // Manejo de carga suave (Smooth Transition)
-    iframe.onload = () => {
-        loader.classList.add('opacity-0');
-        iframe.classList.remove('opacity-0');
-        setTimeout(() => loader.remove(), 1000);
-    };
+    // 🔄 Manejo de carga suave (Smooth Transition)
+    if (iframe) {
+        iframe.onload = () => {
+            if (loader) {
+                loader.classList.add('opacity-0');
+                setTimeout(() => loader.remove(), 1000);
+            }
+            iframe.classList.remove('opacity-0');
+            iframe.classList.add('opacity-100');
+        };
+
+        // Fallback por si el onload falla (seguridad de enlace)
+        setTimeout(() => {
+            if (loader) loader.remove();
+            iframe.classList.remove('opacity-0');
+        }, 5000);
+    }
 }
