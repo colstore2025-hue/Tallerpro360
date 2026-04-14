@@ -21,11 +21,11 @@ const PERMISOS = {
         clase: "border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
     },
     "PRO": { 
-        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace', 'publish', 'soporte'],
+        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace_bridge', 'publish_mision', 'soporte'],
         clase: "border-purple-500 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.2)]"
     },
     "ELITE": { 
-        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace', 'publish', 'staff', 'nomina', 'finanzas_elite', 'soporte'],
+        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace_bridge', 'publish_mision', 'staff', 'nomina', 'finanzas_elite', 'soporte'],
         clase: "border-cyan-500 text-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.4)]"
     }
 };
