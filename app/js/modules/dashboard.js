@@ -209,7 +209,7 @@ function renderFooterKpi(label, id) {
     return `<div class="bg-black/20 border border-white/5 p-12 rounded-[4rem] text-center"><p class="text-[9px] text-slate-600 orbitron font-black uppercase mb-4 tracking-[0.4em]">${label}</p><p id="${id}" class="text-4xl font-black orbitron text-white italic">$ 0</p></div>`;
 }
 
-// --- 🛰️ ROUTER DE PRECISIÓN ABSOLUTA ---
+// --- 🛰️ ROUTER DE PRECISIÓN ABSOLUTA (NEXUS-X AEGIS) ---
 const ejecutarRouter = async () => {
     const hash = window.location.hash;
     const mainView = document.getElementById("main-content-area");
@@ -225,7 +225,7 @@ const ejecutarRouter = async () => {
         return;
     }
 
-    // Activar contenedor de módulos
+    // Activar contenedor de módulos y mostrar Loader Nexus
     mainView.classList.add("hidden");
     modContainer.classList.remove("hidden");
     modContainer.innerHTML = `
@@ -236,42 +236,44 @@ const ejecutarRouter = async () => {
 
     try {
         let modulo;
-        // --- 🛰️ ROUTER DE PRECISIÓN ACTUALIZADO ---
-// Reemplaza el bloque switch dentro de ejecutarRouter por este:
+        const moduleKey = hash.replace('#', ''); // Limpiamos el hash para buscar el archivo
 
+        // 🚨 MAPEO ESTRATÉGICO DE SCRIPTS
         switch(hash) {
-            case '#marketplace_bridge': // Coincide con el ID del botón en renderInterface
+            case '#marketplace_bridge':
                 modulo = await import('./modules/marketplace_bridge.js');
                 break;
-            case '#publish_mision':    // Coincide con el ID del botón en renderInterface
+            case '#publish_mision':
                 modulo = await import('./modules/publish_mision.js');
                 break;
             case '#finanzas_elite':
                 modulo = await import('./modules/finanzas_elite.js');
                 break;
             default:
-                // Para los demás módulos (clientes, vehiculos, etc.)
-                modulo = await import(`./modules/${hash.replace('#', '')}.js`);
+                // Carga dinámica para clientes, vehiculos, etc.
+                modulo = await import(`./modules/${moduleKey}.js`);
                 break;
         }
 
         if (modulo && modulo.default) {
-            modContainer.innerHTML = ""; // Limpiar loader
-            await modulo.default(modContainer); // Ejecutar el script cargado
+            modContainer.innerHTML = ""; // Limpiar el loader
+            // Ejecutamos el módulo pasando el contenedor como parámetro
+            await modulo.default(modContainer); 
         } else {
-            throw new Error("Módulo no exporta 'default function'");
+            throw new Error("El módulo no tiene una exportación 'default'");
         }
 
     } catch (error) {
-        console.error("🚨 ERROR DE CARGA:", error);
+        console.error("🚨 ERROR DE ENLACE NEXUS:", error);
         modContainer.innerHTML = `
             <div class="w-full h-[70vh] flex flex-col items-center justify-center">
                 <i class="fas fa-microchip text-red-500 text-5xl mb-6"></i>
                 <h2 class="orbitron text-white text-xl font-black italic">ENLACE NO ENCONTRADO</h2>
-                <p class="text-slate-500 text-[9px] orbitron mt-2">VERIFICA: /modules/${hash.replace('#','')}.js</p>
-                <button onclick="location.hash='#dashboard'" class="mt-8 px-6 py-3 bg-white text-black orbitron text-[9px] font-black rounded-xl">RESET CORE</button>
+                <p class="text-slate-500 text-[9px] orbitron mt-2 uppercase">Ruta fallida: /modules/${hash.replace('#','')}.js</p>
+                <button onclick="location.hash='#dashboard'" class="mt-8 px-6 py-3 bg-white text-black orbitron text-[9px] font-black rounded-xl hover:bg-cyan-500 hover:text-white transition-all">RESETEAR NÚCLEO</button>
             </div>`;
     }
 };
 
+// Escuchar cambios de hash para navegación instantánea
 window.addEventListener('hashchange', ejecutarRouter);
