@@ -24,7 +24,7 @@ const PERMISOS = {
         clase: "border-purple-500 text-purple-400"
     },
     "ELITE": { 
-        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace', 'publish', 'staff', 'nomina', 'finanzas_elite', 'soporte'],
+        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace_bridge', 'publish_mision', 'staff', 'nomina', 'finanzas_elite', 'soporte'],
         clase: "border-cyan-500 text-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.4)]"
     }
 };
@@ -120,8 +120,8 @@ function renderInterface(container, plan, config) {
                 ${renderBtn('Caja Real', 'fa-money-bill-transfer', '#pagos', config.modulos.includes('pagos'))}
                 ${renderBtn('Libro Contable', 'fa-file-invoice-dollar', '#contabilidad', config.modulos.includes('contabilidad'))}
                 
-                ${renderBtn('MarketX', 'fa-globe', '#marketplace', config.modulos.includes('marketplace'))}
-                ${renderBtn('Nueva Misión', 'fa-plus-circle', '#publish', config.modulos.includes('publish'))}
+                ${renderBtn('MarketX', 'fa-globe', '#marketplace_bridge', config.modulos.includes('marketplace_bridge'))}
+                ${renderBtn('Nueva Misión', 'fa-plus-circle', '#publish_mision', config.modulos.includes('publish_mision'))}
                 
                 ${renderBtn('Reportes', 'fa-chart-simple', '#reportes', config.modulos.includes('reportes'))}
                 ${renderBtn('Nómina', 'fa-id-badge', '#nomina', config.modulos.includes('nomina'))}
