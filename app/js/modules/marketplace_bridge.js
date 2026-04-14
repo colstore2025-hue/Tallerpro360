@@ -2,7 +2,7 @@
  * marketplace_bridge.js - NEXUS-X 🛰️
  * Módulo de Visualización de Activos
  */
-import { db } from "../core/firebase-config.js";
+import { db } from "./core/firebase-config.js";
 import { collection, query, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export default async function marketplaceBridge(container) {
