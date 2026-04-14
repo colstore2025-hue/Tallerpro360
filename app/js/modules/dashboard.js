@@ -236,19 +236,21 @@ const ejecutarRouter = async () => {
 
     try {
         let modulo;
-        // 🚨 AQUÍ SE DEFINE EL NOMBRE REAL DEL ARCHIVO SEGÚN EL BOTÓN
+        // --- 🛰️ ROUTER DE PRECISIÓN ACTUALIZADO ---
+// Reemplaza el bloque switch dentro de ejecutarRouter por este:
+
         switch(hash) {
-            case '#marketplace':
+            case '#marketplace_bridge': // Coincide con el ID del botón en renderInterface
                 modulo = await import('./modules/marketplace_bridge.js');
                 break;
-            case '#publish':
+            case '#publish_mision':    // Coincide con el ID del botón en renderInterface
                 modulo = await import('./modules/publish_mision.js');
                 break;
             case '#finanzas_elite':
                 modulo = await import('./modules/finanzas_elite.js');
                 break;
             default:
-                // Para clientes, vehiculos, etc., busca el nombre exacto del hash
+                // Para los demás módulos (clientes, vehiculos, etc.)
                 modulo = await import(`./modules/${hash.replace('#', '')}.js`);
                 break;
         }
