@@ -25,7 +25,7 @@ const PERMISOS = {
         clase: "border-purple-500 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.2)]"
     },
     "ELITE": { 
-        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace', 'publish', 'staff', 'nomina', 'finanzas-elite', 'soporte'],
+        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 'gerenteAI', 'reportes', 'marketplace', 'publish', 'staff', 'nomina', 'finanzas_elite', 'soporte'],
         clase: "border-cyan-500 text-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.4)]"
     }
 };
@@ -125,7 +125,7 @@ function renderInterface(container, plan, config) {
                 ${renderBtn('Reportes', 'fa-chart-simple', '#reportes', config.modulos.includes('reportes'))}
                 ${renderBtn('Nómina', 'fa-id-badge', '#nomina', config.modulos.includes('nomina'))}
                 ${renderBtn('Staff', 'fa-people-group', '#staff', config.modulos.includes('staff'))}
-                ${renderBtn('Audit Core', 'fa-shield-halved', '#finanzas-elite', config.modulos.includes('finanzas-elite'))}
+                ${renderBtn('Audit Core', 'fa-shield-halved', '#finanzas-elite', config.modulos.includes('finanzas_elite'))}
                 <button onclick="window.open('https://wa.me/17049419163', '_blank')" class="flex flex-col items-center justify-center p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-[2rem] hover:bg-emerald-500 hover:text-white transition-all group">
                     <i class="fab fa-whatsapp text-xl mb-3 text-emerald-500 group-hover:text-white"></i>
                     <p class="orbitron text-[8px] font-black uppercase tracking-widest text-emerald-500 group-hover:text-white">Soporte</p>
