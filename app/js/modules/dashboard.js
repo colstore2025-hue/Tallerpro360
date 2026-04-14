@@ -138,7 +138,7 @@ function renderInterface(container, plan, config) {
             ${renderBtn('Reportes', 'fa-chart-simple', '#reportes', config.modulos.includes('reportes'))}
             ${renderBtn('Nómina Staff', 'fa-id-badge', '#nomina', config.modulos.includes('nomina'))}
             ${renderBtn('Gestión Staff', 'fa-people-group', '#staff', config.modulos.includes('staff'))}
-            ${renderBtn('Audit Core', 'fa-shield-halved', '#finanzas-elite', config.modulos.includes('finanzas-elite'))}
+            ${renderBtn('Audit Core', 'fa-shield-halved', '#finanzas_elite', config.modulos.includes('finanzas_elite'))}
             
             <button onclick="window.open('https://wa.me/17049419163', '_blank')" 
                 class="flex flex-col items-center justify-center p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-[2rem] hover:bg-emerald-500 hover:text-white transition-all group shadow-lg">
