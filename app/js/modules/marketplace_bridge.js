@@ -1,77 +1,68 @@
 /**
  * marketplace_bridge.js - NEXUS-X 🛰️
- * Módulo de Integración Nativa para MarketX
- * Optimizado para TallerPRO360 ERP - 100% Case Sensitive Compatible
+ * Módulo de Integración Nativa Total (Sin Iframe)
  */
+import { db } from "../core/firebase-config.js";
+import { collection, query, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export default async function marketplaceBridge(container) {
-    // Normalizamos el plan a mayúsculas para la lógica interna
     const plan = (localStorage.getItem("nexus_plan") || "GRATI-CORE").toUpperCase();
     
-    // 🛡️ Verificación de Seguridad de Capa ERP
     if (plan !== "PRO" && plan !== "ELITE") {
         container.innerHTML = `
             <div class="flex flex-col items-center justify-center h-[80vh] p-20 text-center animate-in zoom-in duration-500">
                 <i class="fas fa-lock text-6xl text-cyan-500/20 mb-8"></i>
                 <h2 class="orbitron text-2xl font-black text-white italic">MÓDULO DE ACTIVOS BLOQUEADO</h2>
-                <p class="text-slate-500 mt-4 max-w-md">La vitrina comercial MarketX y la gestión de activos logística USA-LATAM requieren un nivel de enlace PRO o ELITE.</p>
-                <button onclick="location.hash='#pagos'" class="mt-8 px-10 py-4 bg-cyan-600 text-white orbitron text-[10px] font-black rounded-2xl hover:bg-white hover:text-black transition-all">ELEVAR NIVEL DE ENLACE</button>
-            </div>
-        `;
+                <button onclick="location.hash='#pagos'" class="mt-8 px-10 py-4 bg-cyan-600 text-white orbitron text-[10px] font-black rounded-2xl">ELEVAR NIVEL DE ENLACE</button>
+            </div>`;
         return;
     }
 
-    // 🚀 Inyección de la terminal Marketplace
-    // Nota: El src "marketplace.html" debe estar en la raíz o ruta relativa correcta
+    // Inyectamos la estructura base
     container.innerHTML = `
-        <div class="w-full h-[85vh] bg-[#010409] flex flex-col animate-in fade-in duration-700 relative rounded-[3rem] overflow-hidden border border-white/5">
-            <div id="market-loader" class="absolute inset-0 flex items-center justify-center bg-[#010409] z-50 transition-opacity duration-1000">
-                <div class="flex flex-col items-center">
-                    <div class="w-12 h-12 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-                    <p class="orbitron text-[8px] text-cyan-500 mt-4 tracking-[0.5em] animate-pulse">ENLAZANDO TERMINAL MARKETX...</p>
+    <div class="p-4 md:p-10 animate-in fade-in duration-700">
+        <header class="max-w-7xl mx-auto mb-16">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
+                <div class="relative pl-8">
+                    <div class="absolute left-0 top-0 h-full w-1.5 bg-cyan-500 shadow-[0_0_20px_#06b6d4]"></div>
+                    <h1 class="orbitron text-5xl md:text-6xl font-black italic uppercase tracking-tighter text-white">MARKET<span class="text-cyan-400">X</span></h1>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.4em] mt-3 italic">LOGÍSTICA: USA <i class="fas fa-random text-cyan-500 mx-2"></i> LATAM</p>
+                </div>
+                <button onclick="location.hash='#publish'" class="px-10 py-5 bg-white text-black orbitron text-[10px] font-black rounded-2xl uppercase hover:bg-cyan-500 hover:text-white transition-all">
+                    <i class="fas fa-upload mr-3"></i> Publicar Activo
+                </button>
+            </div>
+        </header>
+
+        <main id="productGrid" class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-8 pb-32">
+            <div class="col-span-full text-center py-20"><i class="fas fa-satellite animate-spin text-cyan-500 text-3xl"></i></div>
+        </main>
+    </div>`;
+
+    // Lógica de Renderizado
+    const grid = document.getElementById('productGrid');
+    const q = query(collection(db, "marketplace"), orderBy("creadoEn", "desc"));
+
+    onSnapshot(q, (snapshot) => {
+        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if(items.length === 0) {
+            grid.innerHTML = `<div class="col-span-full py-40 text-center orbitron text-slate-800 uppercase tracking-[1em] italic">Buscando señales...</div>`;
+            return;
+        }
+
+        grid.innerHTML = items.map(p => `
+            <div class="group bg-[#0d1117] p-6 rounded-[2.5rem] border border-white/5 hover:border-cyan-500/50 transition-all">
+                <div class="aspect-square bg-black rounded-[2rem] mb-6 overflow-hidden relative">
+                    <img src="${p.imgUrl || 'https://via.placeholder.com/400'}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all">
+                </div>
+                <h3 class="text-[14px] font-black text-white uppercase italic mb-4">${p.nombre}</h3>
+                <div class="flex items-center justify-between bg-white/5 p-4 rounded-2xl">
+                    <p class="text-white font-black orbitron text-lg italic">${p.precio}</p>
+                    <button onclick="window.open('https://wa.me/17049419163?text=Interes en: ${p.nombre}')" class="w-10 h-10 bg-white text-black rounded-xl flex items-center justify-center">
+                        <i class="fas fa-crosshairs"></i>
+                    </button>
                 </div>
             </div>
-
-            <iframe 
-                id="iframe-market"
-                src="marketplace.html" 
-                class="w-full h-full border-none opacity-0 transition-opacity duration-1000"
-                title="Nexus-X Marketplace"
-                allowfullscreen>
-            </iframe>
-
-            <div class="absolute bottom-0 left-0 w-full p-4 bg-black/80 backdrop-blur-md border-t border-white/5 flex justify-between items-center z-40">
-                <div class="flex items-center gap-4">
-                    <span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
-                    <span class="orbitron text-[7px] text-slate-400 tracking-widest uppercase font-bold">Enlace Satelital Activo</span>
-                </div>
-                <p class="orbitron text-[7px] text-slate-600 tracking-tighter uppercase font-black italic">Logística USA-LATAM v3.5</p>
-            </div>
-        </div>
-    `;
-
-    const iframe = document.getElementById('iframe-market');
-    const loader = document.getElementById('market-loader');
-
-    // 🔄 Manejo de carga suave (Smooth Transition)
-    if (iframe) {
-        iframe.onload = () => {
-            if (loader) {
-                loader.classList.add('opacity-0');
-                setTimeout(() => {
-                    if(loader.parentNode) loader.remove();
-                }, 1000);
-            }
-            iframe.classList.remove('opacity-0');
-            iframe.classList.add('opacity-100');
-        };
-
-        // Fallback de seguridad (5 segundos) por si hay latencia en el servidor
-        setTimeout(() => {
-            if (loader && loader.parentNode) {
-                loader.remove();
-                iframe.classList.remove('opacity-0');
-            }
-        }, 5000);
-    }
+        `).join('');
+    });
 }
