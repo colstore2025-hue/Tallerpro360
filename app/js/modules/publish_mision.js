@@ -2,7 +2,7 @@
  * publish_mision.js - NEXUS-X 🛰️
  * Módulo de Lanzamiento de Activos
  */
-import { db } from "../core/firebase-config.js";
+import { db } from "./core/firebase-config.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export default async function publishMision(container) {
