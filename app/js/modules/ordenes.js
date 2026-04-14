@@ -183,11 +183,10 @@ export default async function ordenes(container) {
                     </div>
                     <select id="f-estado" class="bg-cyan-500 text-black orbitron text-xs font-black p-5 rounded-2xl border-none outline-none cursor-pointer hover:bg-white transition-colors">
                         ${['COTIZACION', 'INGRESO', 'DIAGNOSTICO', 'REPARACION', 'LISTO', 'ENTREGADO'].map(f => `<option value="${f}" ${ordenActiva.estado === f ? 'selected' : ''}>${f}</option>`).join('')}
-                    </select>
+                      </select>
                 </div>
-                <div class="flex gap-4">
-                    <button id="btnCapturePhoto" class="w-20 h-20 rounded-3xl bg-white/5 text-white border border-white/10 hover:border-cyan-400 hover:text-cyan-400 transition-all flex flex-col items-center justify-center gap-2">
-                        <i class="fas fa-camera text-2xl"></i>
+                <div class="flex gap-3">
+                    <button id="btnCapturePhoto" class="w-14 h-14 rounded-2xl bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 hover:bg-cyan-500 hover:text-white transition-all"><i class="fas fa-camera"></i></button>
                         <span class="text-[8px] orbitron font-black">VISUAL</span>
                     </button>
                     <button id="btnWppDirect" class="w-20 h-20 rounded-3xl bg-emerald-500 text-black border-none hover:bg-white transition-all flex flex-col items-center justify-center gap-2">
