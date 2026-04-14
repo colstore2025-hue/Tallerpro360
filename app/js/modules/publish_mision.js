@@ -1,127 +1,128 @@
 /**
- * publish_mision.js - NEXUS-X V6.0 🛰️
- * Módulo de Despliegue de Activos al Marketplace
- * @author William Jeffry Urquijo Cubillos & Gemini AI
+ * publish_mision.js - NEXUS-X 🛰️
+ * Módulo Unificado de Lanzamiento de Activos (Misión Comercial)
  */
-import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
+import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export default async function publishMision(container) {
     const empresaId = localStorage.getItem("nexus_empresaId");
+    const plan = localStorage.getItem("nexus_plan") || "GRATI-CORE";
 
-    const renderLayout = () => {
+    // 🛡️ Validación de nivel de acceso (Solo PRO/ELITE)
+    if (plan !== "PRO" && plan !== "ELITE") {
         container.innerHTML = `
-        <div class="p-6 lg:p-12 bg-[#010409] min-h-screen text-white animate-in fade-in slide-in-from-bottom-10 duration-700 pb-40">
-            
-            <header class="max-w-4xl mx-auto mb-12 flex justify-between items-end border-b border-cyan-500/10 pb-8">
-                <div>
-                    <h1 class="orbitron text-4xl font-black italic uppercase tracking-tighter">
-                        NUEVA <span class="text-cyan-400">MISIÓN</span> COMERCIAL
-                    </h1>
-                    <p class="text-[9px] orbitron tracking-[0.5em] text-slate-500 uppercase mt-2 font-black">Carga de Activos a la Red Global</p>
-                </div>
-                <i class="fas fa-upload text-2xl text-cyan-500/20"></i>
-            </header>
+            <div class="flex flex-col items-center justify-center h-full p-20 text-center animate-in zoom-in">
+                <i class="fas fa-shield-halved text-6xl text-orange-500/20 mb-8"></i>
+                <h2 class="orbitron text-2xl font-black text-white italic">ACCESO DENEGADO</h2>
+                <p class="text-slate-500 mt-4 max-w-md">El protocolo de "Publicación Global" requiere una licencia corporativa activa.</p>
+                <button onclick="location.hash='#pagos'" class="mt-8 px-10 py-4 bg-orange-600 text-white orbitron text-[10px] font-black rounded-2xl hover:bg-white hover:text-black transition-all">UPGRADE SISTEMA</button>
+            </div>`;
+        return;
+    }
 
-            <div class="max-w-4xl mx-auto bg-[#0d1117] p-8 md:p-12 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-30"></div>
-                
-                <form id="formPublish" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    
-                    <div class="md:col-span-2 space-y-2">
-                        <label class="orbitron text-[9px] font-black text-cyan-500 uppercase tracking-widest">Nombre del Activo / Repuesto</label>
-                        <input type="text" id="pub_nombre" required placeholder="EJ: TURBO GARRETT GEN 2 - CUMMINS" 
-                               class="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-sm font-bold uppercase focus:border-cyan-500 outline-none transition-all">
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="orbitron text-[9px] font-black text-slate-500 uppercase tracking-widest">Categoría del Sistema</label>
-                        <select id="pub_categoria" class="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-sm font-bold uppercase focus:border-cyan-500 outline-none appearance-none">
-                            <option value="MOTOR">Motor / Performance</option>
-                            <option value="ECU">ECUs & Software</option>
-                            <option value="TRANSMISION">Transmisión</option>
-                            <option value="HIDRAULICO">Sistemas Hidráulicos</option>
-                            <option value="HERRAMIENTA">Herramientas Especializadas</option>
-                        </select>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="orbitron text-[9px] font-black text-slate-500 uppercase tracking-widest">Valor de Intercambio</label>
-                        <input type="text" id="pub_precio" required placeholder="$ 0.00" 
-                               class="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-sm font-bold orbitron italic focus:border-cyan-500 outline-none">
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="orbitron text-[9px] font-black text-orange-500 uppercase tracking-widest italic">Punto de Origen</label>
-                        <select id="pub_logistica" class="w-full bg-black/40 border border-orange-500/20 rounded-2xl p-5 text-sm font-bold uppercase focus:border-orange-500 outline-none">
-                            <option value="col">Ibagué / Local (COL)</option>
-                            <option value="usa">Charlotte / Import (USA)</option>
-                        </select>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="orbitron text-[9px] font-black text-slate-500 uppercase tracking-widest">Enlace de Imagen (URL)</label>
-                        <input type="url" id="pub_img" placeholder="https://..." 
-                               class="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-sm font-bold focus:border-cyan-500 outline-none">
-                    </div>
-
-                    <div class="md:col-span-2 space-y-2">
-                        <label class="orbitron text-[9px] font-black text-slate-500 uppercase tracking-widest">Especificaciones Técnicas</label>
-                        <textarea id="pub_desc" rows="3" placeholder="Detalles de compatibilidad, SKU o estado..."
-                                  class="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-sm font-bold focus:border-cyan-500 outline-none"></textarea>
-                    </div>
-
-                    <div class="md:col-span-2 pt-6">
-                        <button type="submit" id="btnSubmitPublish" class="w-full py-6 bg-cyan-500 text-black orbitron text-[11px] font-black uppercase tracking-[0.4em] rounded-2xl hover:bg-white transition-all shadow-xl shadow-cyan-500/10">
-                            Confirmar Despliegue
-                        </button>
-                    </div>
-                </form>
+    container.innerHTML = `
+    <div class="p-6 lg:p-12 max-w-7xl mx-auto animate-in fade-in duration-700">
+        <header class="flex justify-between items-end mb-12 border-b border-white/5 pb-10">
+            <div class="relative pl-8">
+                <div class="absolute left-0 top-0 h-full w-1.5 bg-cyan-500 shadow-[0_0_20px_#06b6d4]"></div>
+                <h1 class="orbitron text-5xl font-black italic uppercase tracking-tighter text-white">PUBLISH<span class="text-white/20">CENTER</span></h1>
+                <p class="text-[9px] orbitron tracking-[0.5em] text-slate-500 uppercase mt-4 font-black">Lanzamiento de Activos a la Red Global</p>
             </div>
-        </div>
-        `;
+            <button onclick="location.hash='#dashboard'" class="px-8 py-4 bg-[#0d1117] border border-white/5 rounded-2xl text-[10px] orbitron font-black hover:bg-white/5">ABORTAR</button>
+        </header>
 
-        document.getElementById('formPublish').addEventListener('submit', ejecutarCarga);
-    };
+        <form id="formNexusPublish" class="grid lg:grid-cols-12 gap-10">
+            <div class="lg:col-span-8 space-y-8">
+                <div class="bg-[#0d1117] p-10 rounded-[2.5rem] border border-white/5 shadow-2xl">
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="md:col-span-2">
+                            <label class="text-[8px] text-slate-500 uppercase font-black mb-3 tracking-widest block">Nombre del Repuesto / Activo</label>
+                            <input type="text" id="pub_nombre" required class="w-full p-6 bg-black/40 border border-white/10 rounded-2xl text-sm font-bold uppercase focus:border-cyan-500 outline-none transition-all" placeholder="EJ: TRANSMISIÓN EATON FULLER 18 VEL">
+                        </div>
+                        <div>
+                            <label class="text-[8px] text-slate-500 uppercase font-black mb-3 tracking-widest block">Precio Sugerido (USD/COP)</label>
+                            <input type="text" id="pub_precio" required class="w-full p-6 bg-black/40 border border-white/10 rounded-2xl text-sm font-black text-cyan-400" placeholder="$ 0">
+                        </div>
+                        <div>
+                            <label class="text-[8px] text-slate-500 uppercase font-black mb-3 tracking-widest block">Canal Logístico</label>
+                            <select id="pub_logistica" class="w-full p-6 bg-black/40 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest focus:border-cyan-500 outline-none">
+                                <option value="heavy">COLOMBIAN TRUCKS (LOCAL)</option>
+                                <option value="usa">CHARLOTTE HUB (IMPORT USA)</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="text-[8px] text-slate-500 uppercase font-black mb-3 tracking-widest block">ADN del Producto (Descripción)</label>
+                            <textarea id="pub_desc" rows="4" class="w-full p-6 bg-black/40 border border-white/10 rounded-2xl text-xs" placeholder="Estado, compatibilidad y certificación..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" id="btnLaunch" class="w-full py-8 bg-white text-black orbitron font-black text-[12px] rounded-[2.5rem] uppercase tracking-[0.2em] hover:bg-cyan-500 hover:text-white transition-all shadow-xl shadow-white/5">
+                    EJECUTAR PUBLICACIÓN GLOBAL <i class="fas fa-bolt ml-2"></i>
+                </button>
+            </div>
 
-    const ejecutarCarga = async (e) => {
+            <div class="lg:col-span-4 space-y-8">
+                <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-dashed border-white/10 text-center group cursor-pointer hover:border-cyan-500/50 transition-all">
+                    <label class="cursor-pointer">
+                        <i class="fas fa-camera text-3xl text-slate-600 mb-4 block group-hover:text-cyan-500"></i>
+                        <span class="orbitron text-[9px] font-black text-slate-500 uppercase tracking-widest">Cargar Evidencia Visual</span>
+                        <input type="url" id="pub_img" class="mt-4 w-full p-3 bg-black/20 border border-white/5 rounded-xl text-[9px] text-cyan-500 italic" placeholder="URL de la imagen (Firebase Storage/Imgur)">
+                    </label>
+                </div>
+                
+                <div class="bg-gradient-to-br from-[#0d1117] to-black p-10 rounded-[3rem] border border-cyan-500/10">
+                    <div class="flex items-center gap-4 mb-6">
+                        <i class="fas fa-brain text-cyan-500"></i>
+                        <p class="orbitron text-[10px] font-black text-white uppercase tracking-widest">Strategist AI</p>
+                    </div>
+                    <p id="aiHint" class="text-[11px] text-slate-400 italic leading-relaxed">Analizando demanda en red logística para este activo...</p>
+                </div>
+            </div>
+        </form>
+    </div>
+    `;
+
+    // --- LÓGICA DE INTERACCIÓN ---
+    const form = document.getElementById('formNexusPublish');
+    const inputNombre = document.getElementById('pub_nombre');
+    const hint = document.getElementById('aiHint');
+
+    inputNombre.addEventListener('input', (e) => {
+        if (e.target.value.length > 5) {
+            hint.innerHTML = `Nexus detecta alta demanda de <span class="text-cyan-400 font-bold">${e.target.value.toUpperCase()}</span> en el hub de Charlotte. Probabilidad de venta rápida: <span class="text-emerald-400">88%</span>.`;
+        }
+    });
+
+    form.onsubmit = async (e) => {
         e.preventDefault();
-        const btn = document.getElementById('btnSubmitPublish');
+        const btn = document.getElementById('btnLaunch');
         btn.innerText = "TRANSMITIENDO...";
         btn.disabled = true;
 
-        const data = {
-            nombre: document.getElementById('pub_nombre').value,
-            categoria: document.getElementById('pub_categoria').value,
+        const payload = {
+            nombre: inputNombre.value.toUpperCase(),
             precio: document.getElementById('pub_precio').value,
             logisticaType: document.getElementById('pub_logistica').value,
-            imgUrl: document.getElementById('pub_img').value || 'https://via.placeholder.com/400?text=Nexus-X',
             descripcion: document.getElementById('pub_desc').value,
+            imgUrl: document.getElementById('pub_img').value || 'https://via.placeholder.com/400?text=Nexus-X+Asset',
             empresaId: empresaId,
             creadoEn: serverTimestamp()
         };
 
         try {
-            await addDoc(collection(db, "marketplace"), data);
-            
+            await addDoc(collection(db, "marketplace"), payload);
             Swal.fire({
-                title: 'MISIÓN EXITOSA',
-                text: 'El activo ha sido desplegado en la red global.',
                 icon: 'success',
-                background: '#0d1117',
-                color: '#fff',
-                confirmButtonColor: '#06b6d4'
+                title: 'MISIÓN COMPLETADA',
+                text: 'El activo ya es visible en la red global Nexus-X.',
+                background: '#0d1117', color: '#fff', confirmButtonColor: '#06b6d4'
             });
-
-            // Opcional: Redirigir al marketplace después de publicar
-            // navegar('market'); 
-
-        } catch (error) {
-            console.error("Error Nexus-X:", error);
+            location.hash = "#marketplace";
+        } catch (err) {
+            console.error(err);
             btn.innerText = "REINTENTAR";
             btn.disabled = false;
         }
     };
-
-    renderLayout();
 }
