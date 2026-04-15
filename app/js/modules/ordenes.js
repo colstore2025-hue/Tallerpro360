@@ -286,6 +286,14 @@ const renderTerminal = () => {
             };
         }
 
+// Añadir esto en vincularAccionesTerminal para mantener la consistencia
+document.getElementById("f-telefono")?.addEventListener("change", (e) => {
+    ordenActiva.telefono = e.target.value;
+});
+document.getElementById("f-cliente")?.addEventListener("change", (e) => {
+    ordenActiva.cliente = e.target.value;
+});
+
 // --- 📸 GESTIÓN DE CÁMARA Y DESCARGA LOCAL ---
 const gestionarCamara = async (accion) => {
     const video = document.getElementById('video-feed');
@@ -323,11 +331,33 @@ const gestionarCamara = async (accion) => {
         viewport?.classList.add('hidden');
     }
 };
-        safeClick("btnWppDirect", () => {
-            const tel = document.getElementById("f-telefono")?.value || "17049419163";
-            const msg = `*NEXUS-X REPORT [${ordenActiva.placa}]*%0A✅ Status: ${ordenActiva.estado}%0A💰 Saldo: $${ordenActiva.costos_totales.saldo_pendiente.toLocaleString()}`;
-            window.open(`https://wa.me/${tel}?text=${msg}`, '_blank');
-        });
+        // --- 📲 SISTEMA DE MENSAJERÍA DIRECTA WHATSAPP ---
+safeClick("btnWppDirect", () => {
+    // 1. Obtener datos actuales de la interfaz
+    const nombreCliente = document.getElementById("f-cliente")?.value || "Cliente";
+    const telefonoRaw = document.getElementById("f-telefono")?.value || "17049419163";
+    const bitacoraia = document.getElementById("ai-log-display")?.value || "";
+    const placaVehiculo = document.getElementById("f-placa")?.value || "N/A";
+
+    // 2. Limpiar el teléfono (solo números)
+    const telefonoLimpio = telefonoRaw.replace(/\D/g, '');
+
+    // 3. Formatear el mensaje profesional
+    const mensaje = `*TallerPRO 360 - REPORTE DE ESTADO*\n\n` +
+                    `*Hola ${nombreCliente.toUpperCase()},*\n` +
+                    `Actualización para el vehículo [${placaVehiculo.toUpperCase()}]:\n\n` +
+                    `*Detalles del Servicio:*\n${bitacoraia}\n\n` +
+                    `_Enviado desde Nexus ERP Starlink_`;
+
+    // 4. Ejecutar apertura de WhatsApp
+    if (telefonoLimpio.length > 5) {
+        const url = `https://wa.me/${telefonoLimpio}?text=${encodeURIComponent(mensaje)}`;
+        window.open(url, '_blank');
+        hablar("Reporte enviado al cliente");
+    } else {
+        Swal.fire({ icon: 'warning', title: 'Teléfono Inválido', text: 'Por favor verifique el número del cliente.', background: '#010409', color: '#fff' });
+    }
+});
 
         safeClick("btnAddRepuesto", () => { 
             ordenActiva.items.push({ tipo: 'REPUESTO', desc: 'NUEVO REPUESTO', costo: 0, venta: 0, origen: 'TALLER', sku: '' }); 
