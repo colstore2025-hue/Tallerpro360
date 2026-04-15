@@ -192,6 +192,7 @@
     <a href="#pagos" class="mobile-link"><i class="fas fa-wallet"></i><span>Pagos</span></a>
     <a href="#configuracion" class="mobile-link"><i class="fas fa-sliders-h"></i><span>Ajustes</span></a>
 </nav>
+<script src="js/modules/nexus-help-engine.js"></script>
 
 <script type="module">
     import { auth, db } from "./js/core/firebase-config.js";
@@ -248,6 +249,9 @@
             container.innerHTML = ""; 
             if (module.default) {
                 await module.default(container, state);
+            }
+if (window.NexusHelp) {
+                NexusHelp.instalar(); 
             }
         } catch (err) {
             console.error("🚨 NEXUS ROUTER ERROR:", err);
