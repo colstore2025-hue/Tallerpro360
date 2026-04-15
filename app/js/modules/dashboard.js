@@ -322,7 +322,5 @@ function renderFooterKpi(label, id) {
     return `<div class="bg-black/20 border border-white/5 p-12 rounded-[4rem] text-center"><p class="text-[9px] text-slate-600 orbitron font-black uppercase mb-4 tracking-[0.4em]">${label}</p><p id="${id}" class="text-4xl font-black orbitron text-white italic">$ 0</p></div>`;
 }
 
-// Carga el motor de ayuda una sola vez
-NexusHelp.instalar();
 
 window.addEventListener('hashchange', ejecutarRouter);
