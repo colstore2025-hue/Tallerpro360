@@ -8,11 +8,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=JetBrains+Mono:wght@300&family=Outfit:wght@300;900&display=swap" rel="stylesheet">
     <style>
-        :root { --cyan: #00f2ff; --dark: #010409; --amber: #fbbf24; }
+        :root { --cyan: #00f2ff; --dark: #010409; --amber: #fbbf24; --emerald: #10b981; }
         body { font-family: 'Outfit', sans-serif; background: var(--dark); color: white; overflow-x: hidden; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
         .glass { background: rgba(13, 17, 23, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
         .progress-bar { height: 4px; background: rgba(255,255,255,0.05); position: fixed; top: 0; left: 0; z-index: 1000; width: 0%; transition: width 0.5s ease; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+        
+        /* Animación suave para la expansión */
+        .details-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; }
+        .card-active .details-content { max-height: 500px; }
+        .card-active { border-color: var(--cyan) !important; background: rgba(0, 242, 255, 0.02); }
     </style>
 </head>
 <body class="p-4 md:p-12 pb-32">
@@ -21,54 +27,124 @@
     <div class="max-w-6xl mx-auto">
         <header class="flex flex-col md:flex-row justify-between items-end mb-16 gap-8 border-b border-white/10 pb-10">
             <div>
-                <span class="orbitron text-[8px] text-cyan-500 tracking-[0.5em] uppercase">Manual de Despliegue TallerPRO360</span>
+                <span class="orbitron text-[8px] text-cyan-500 tracking-[0.5em] uppercase italic">System Protocol v21.0</span>
                 <h1 class="orbitron text-6xl font-black italic tracking-tighter uppercase mt-2">
                     NEXUS <span class="text-cyan-400">OPERATIONS</span>
                 </h1>
-                <p class="text-[10px] text-slate-500 uppercase tracking-[0.3em] mt-2">Misión: Automatización Total del Taller</p>
+                <p class="text-[10px] text-slate-500 uppercase tracking-[0.3em] mt-2 italic">Misión: Automatización y Control Táctico del Taller</p>
             </div>
             
             <div class="glass p-6 rounded-3xl border-cyan-500/20 w-full md:w-72">
                 <div class="flex justify-between items-center mb-2">
-                    <span class="orbitron text-[9px] font-black uppercase text-slate-400">Salud del Nodo AI</span>
+                    <span class="orbitron text-[9px] font-black uppercase text-slate-400 italic">Salud del Nodo AI</span>
                     <span id="saludPorcentaje" class="text-cyan-400 orbitron text-[10px]">0%</span>
                 </div>
                 <div class="w-full bg-white/5 h-2 rounded-full overflow-hidden">
                     <div id="saludBarra" class="h-full bg-cyan-500 shadow-[0_0_10px_#00f2ff] transition-all duration-1000" style="width: 0%"></div>
                 </div>
-                <p class="text-[8px] text-slate-500 mt-2 uppercase italic leading-tight">Nota: Si la salud es inferior al 80%, el Gerente AI operará con datos limitados.</p>
+                <p class="text-[7px] text-slate-500 mt-2 uppercase italic leading-tight">Optimice todos los módulos para activar al Gerente AI.</p>
             </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-1 space-y-6">
+            <div class="lg:col-span-1">
                 <div class="glass p-8 rounded-[2.5rem] border-amber-500/10 sticky top-10">
-                    <h3 class="orbitron text-xs font-black mb-6 text-amber-400 uppercase italic underline">Ruta de Inducción</h3>
+                    <h3 class="orbitron text-xs font-black mb-6 text-amber-400 uppercase italic underline">Checklist de Despliegue</h3>
                     <div id="checklist" class="space-y-4"></div>
+                    
+                    <div class="mt-8 pt-6 border-t border-white/5">
+                        <p class="text-[9px] text-slate-500 uppercase italic leading-relaxed italic">
+                            "Un taller digitalizado es un taller que no pierde dinero." <br>— Nexus AI
+                        </p>
+                    </div>
                 </div>
             </div>
-            <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6" id="gridModulos"></div>
+
+            <div class="lg:col-span-2 grid grid-cols-1 gap-6" id="gridModulos"></div>
         </div>
     </div>
 
     <div id="videoModal" class="fixed inset-0 bg-black/95 backdrop-blur-xl hidden z-[2000] flex items-center justify-center p-4">
         <div class="max-w-4xl w-full bg-[#0d1117] rounded-[3rem] border border-white/10 p-2 relative animate-in zoom-in duration-300">
-            <button onclick="cerrarVideo()" class="absolute -top-12 right-0 text-white orbitron text-[10px] hover:text-cyan-400">CERRAR [X]</button>
-            <div class="aspect-video w-full bg-black rounded-[2.5rem] overflow-hidden border border-white/5 relative" id="playerContainer">
-                <p class="absolute inset-0 flex items-center justify-center orbitron text-cyan-500 text-[10px] animate-pulse">CARGANDO MICRO-TUTORIAL NEXUS-X...</p>
-            </div>
+            <button onclick="cerrarVideo()" class="absolute -top-12 right-0 text-white orbitron text-[10px] hover:text-cyan-400 uppercase tracking-widest">Cerrar Terminal [X]</button>
+            <div class="aspect-video w-full bg-black rounded-[2.5rem] overflow-hidden border border-white/5 relative" id="playerContainer"></div>
         </div>
     </div>
 
     <script>
         const modulos = [
-            // REEMPLAZA LOS IDs DE YOUTUBE AQUÍ:
-            { id: 'config', title: 'CONFIG ADN', icon: 'fa-cogs', youtubeId: 'VIDEO_ID_YOUTUBE_1', desc: 'Centraliza tu identidad legal, logo y WhatsApp API. Es el cimiento de tu firma digital.' },
-            { id: 'ordenes', title: 'ÓRDENES PRO', icon: 'fa-file-invoice', youtubeId: 'VIDEO_ID_YOUTUBE_2', desc: 'Ingreso por placa, diagnóstico visual y liquidación. Envía el reporte PDF en 1 segundo.' },
-            { id: 'inventario', title: 'STOCK ELITE', icon: 'fa-box-open', youtubeId: 'VIDEO_ID_YOUTUBE_3', desc: 'Control de repuestos propios y del cliente. Alertas de stock crítico automáticas.' },
-            { id: 'contabilidad', title: 'LIBRO MAYOR', icon: 'fa-vault', youtubeId: 'VIDEO_ID_YOUTUBE_4', desc: 'Flujo de caja real. Sin cifras de muestra. El espejo financiero de tu taller.' },
-            { id: 'finanzas', title: 'FINANZAS IA', icon: 'fa-chart-pie', youtubeId: 'VIDEO_ID_YOUTUBE_5', desc: 'Análisis de utilidad neta. Cruza órdenes con gastos para saber cuánto ganas de verdad.' },
-            { id: 'gerente', title: 'GERENTE AI', icon: 'fa-brain', youtubeId: 'VIDEO_ID_YOUTUBE_6', desc: 'Tu socio digital 24/7. Audita el taller y te da consejos de crecimiento.' }
+            { 
+                id: 'config', 
+                title: 'CONFIG ADN', 
+                icon: 'fa-cogs', 
+                youtubeId: 'ID_VIDEO_ADN', 
+                desc: 'Identidad legal y conexión WhatsApp API.',
+                porque: 'Establece tu firma digital y asegura que el sistema te reconozca como el dueño único de la data.',
+                teclas: [
+                    { t: '[Sincronizar QR]', d: 'Vincula el envío masivo de reportes.' },
+                    { t: '[Cargar Logo]', d: 'Para que tus PDFs salgan con imagen profesional.' }
+                ]
+            },
+            { 
+                id: 'ordenes', 
+                title: 'ÓRDENES PRO', 
+                icon: 'fa-file-invoice', 
+                youtubeId: 'ID_VIDEO_ORDENES', 
+                desc: 'Gestión de flujo desde ingreso hasta entrega.',
+                porque: 'Centraliza la evidencia. El botón de [FOTO] es tu seguro de vida contra reclamos por daños pre-existentes.',
+                teclas: [
+                    { t: '[Captura Voz]', d: 'Dicta el daño sin ensuciar el teclado.' },
+                    { t: '[Switch Suministro]', d: 'Define si el repuesto lo pones tú o el cliente.' }
+                ]
+            },
+            { 
+                id: 'inventario', 
+                title: 'STOCK ELITE', 
+                icon: 'fa-box-open', 
+                youtubeId: 'ID_VIDEO_STOCK', 
+                desc: 'Control de repuestos y alertas críticas.',
+                porque: 'Evita el robo hormiga y compras de pánico. Saber tu costo de compra garantiza tu margen de ganancia real.',
+                teclas: [
+                    { t: '[Stock Crítico]', d: 'Configura el mínimo para recibir alertas.' },
+                    { t: '[Entrada]', d: 'Registra facturas de proveedores para valorizar bodega.' }
+                ]
+            },
+            { 
+                id: 'contabilidad', 
+                title: 'LIBRO MAYOR', 
+                icon: 'fa-vault', 
+                youtubeId: 'ID_VIDEO_CONTABLE', 
+                desc: 'Flujo de caja y contabilidad PUC.',
+                porque: 'Te da transparencia total. Si la caja no cuadra al final del día, aquí verás exactamente qué orden falló.',
+                teclas: [
+                    { t: '[Ver Flujo]', d: 'Consulta entradas y salidas en tiempo real.' },
+                    { t: '[Cierre de Caja]', d: 'Cruza efectivo vs transacciones digitales.' }
+                ]
+            },
+            { 
+                id: 'finanzas', 
+                title: 'FINANZAS IA', 
+                icon: 'fa-chart-pie', 
+                youtubeId: 'ID_VIDEO_FINANZAS', 
+                desc: 'Análisis de rentabilidad neta.',
+                porque: 'Convierte datos en dinero. Te dice cuánto ganaste quitando gastos de nómina y arriendo.',
+                teclas: [
+                    { t: '[Gráficos P&G]', d: 'Visión ejecutiva de pérdidas y ganancias.' },
+                    { t: '[Proyección]', d: '¿Cuánto dinero tendrás el próximo mes?' }
+                ]
+            },
+            { 
+                id: 'gerente', 
+                title: 'GERENTE AI', 
+                icon: 'fa-brain', 
+                youtubeId: 'ID_VIDEO_AI', 
+                desc: 'Auditoría inteligente 24/7.',
+                porque: 'Es tu socio que no duerme. Analiza todos los módulos para avisarte dónde hay fugas de dinero.',
+                teclas: [
+                    { t: '[Consultar IA]', d: 'Pregúntale cómo mejorar la utilidad del mes.' },
+                    { t: '[Auditoría]', d: 'Revisión automática de todos los procesos.' }
+                ]
+            }
         ];
 
         function init() {
@@ -76,18 +152,40 @@
             const checklist = document.getElementById('checklist');
 
             grid.innerHTML = modulos.map(m => `
-                <div class="glass p-8 rounded-[2.5rem] border border-white/5 hover:border-cyan-500/50 transition-all group">
+                <div id="card-${m.id}" class="glass p-8 rounded-[2.5rem] border border-white/5 transition-all group">
                     <div class="flex justify-between items-start mb-6">
-                        <i class="fas ${m.icon} text-cyan-400 text-2xl"></i>
-                        <button onclick="verVideo('${m.youtubeId}')" class="bg-white/5 hover:bg-cyan-500 hover:text-black p-3 rounded-xl transition-all shadow-xl shadow-cyan-500/0 hover:shadow-cyan-500/50">
-                            <i class="fas fa-play text-[10px]"></i>
-                        </button>
+                        <div class="flex items-center gap-4">
+                            <i class="fas ${m.icon} text-cyan-400 text-2xl"></i>
+                            <h4 class="orbitron text-sm font-black uppercase italic">${m.title}</h4>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="verVideo('${m.youtubeId}')" class="bg-white/5 hover:bg-cyan-500 hover:text-black px-4 py-2 rounded-xl transition-all orbitron text-[9px] font-black uppercase italic">
+                                Ver Video <i class="fas fa-play ml-2"></i>
+                            </button>
+                            <button onclick="toggleCard('${m.id}')" class="bg-white/5 hover:bg-amber-500 hover:text-black p-3 rounded-xl transition-all">
+                                <i class="fas fa-eye text-[10px]"></i>
+                            </button>
+                        </div>
                     </div>
-                    <h4 class="orbitron text-xs font-black uppercase mb-4">${m.title}</h4>
-                    <p class="text-[11px] text-slate-500 leading-relaxed mb-6">${m.desc}</p>
-                    <div class="flex gap-2">
-                        <span class="text-[7px] orbitron bg-cyan-500/10 text-cyan-400 px-2 py-1 rounded">AUTOMATIZADO</span>
-                        <span class="text-[7px] orbitron bg-white/5 text-slate-500 px-2 py-1 rounded">V.21</span>
+
+                    <p class="text-[11px] text-slate-400 mono leading-relaxed mb-4">${m.desc}</p>
+
+                    <div id="details-${m.id}" class="details-content border-t border-white/5 pt-4">
+                        <div class="mb-4">
+                            <span class="orbitron text-[8px] text-amber-500 uppercase font-black italic">¿Por qué usarlo?</span>
+                            <p class="text-[10px] text-slate-300 italic mt-1">${m.porque}</p>
+                        </div>
+                        <div class="space-y-2">
+                            <span class="orbitron text-[8px] text-cyan-400 uppercase font-black italic">Operativa Táctica</span>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                ${m.teclas.map(t => `
+                                    <div class="bg-white/5 p-3 rounded-2xl border border-white/5">
+                                        <b class="text-[9px] text-white mono block">${t.t}</b>
+                                        <span class="text-[9px] text-slate-500 italic">${t.d}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -95,9 +193,14 @@
             checklist.innerHTML = modulos.map(m => `
                 <div class="flex items-center gap-4 opacity-50 transition-all cursor-pointer hover:opacity-100" onclick="completar('${m.id}')">
                     <div id="check-${m.id}" class="w-5 h-5 border-2 border-white/10 rounded-lg flex items-center justify-center text-[10px] transition-all"></div>
-                    <span class="text-[10px] font-black orbitron uppercase text-slate-400">${m.title}</span>
+                    <span class="text-[10px] font-black orbitron uppercase text-slate-400 italic">${m.title}</span>
                 </div>
             `).join('');
+        }
+
+        function toggleCard(id) {
+            const card = document.getElementById(`card-${id}`);
+            card.classList.toggle('card-active');
         }
 
         let completados = new Set();
@@ -122,38 +225,16 @@
             document.getElementById('saludPorcentaje').innerText = Math.round(p) + "%";
         }
 
-        // --- EXPLICACIÓN DE CÓMO FUNCIONA EL VIDEO ---
         function verVideo(youtubeId) {
             const playerContainer = document.getElementById('playerContainer');
             const modal = document.getElementById('videoModal');
-
-            // 1. Inyectamos el reproductor de YouTube con reproducción automática (autoplay) activada.
-            // Esto es lo que "carga" el video real dentro del modal.
-            playerContainer.innerHTML = `
-                <iframe 
-                    width="100%" 
-                    height="100%" 
-                    src="https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1" 
-                    title="Nexus-X Micro-Tutorial" 
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                    allowfullscreen>
-                </iframe>`;
-            
-            // 2. Mostramos el modal.
+            playerContainer.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
             modal.classList.remove('hidden');
         }
 
         function cerrarVideo() {
-            const playerContainer = document.getElementById('playerContainer');
-            const modal = document.getElementById('videoModal');
-
-            // CRÍTICO: Limpiamos el contenedor del reproductor.
-            // Si no hacemos esto, el video seguirá reproduciéndose "en segundo plano" aunque el modal esté oculto.
-            playerContainer.innerHTML = `<p class="absolute inset-0 flex items-center justify-center orbitron text-cyan-500 text-[10px] animate-pulse">CARGANDO MICRO-TUTORIAL NEXUS-X...</p>`;
-            
-            // Ocultamos el modal.
-            modal.classList.add('hidden');
+            document.getElementById('playerContainer').innerHTML = "";
+            document.getElementById('videoModal').classList.add('hidden');
         }
 
         init();
