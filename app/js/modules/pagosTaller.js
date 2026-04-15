@@ -8,6 +8,10 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
+import { initNexusHelp } from './modules/nexus-help-engine.js';
+
+// Cuando cargue el documento o la vista:
+initNexusHelp('ordenes'); // Le pasas el ID del módulo actual
 
 export default async function pagosTaller(container, state) {
   const empresaId = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
