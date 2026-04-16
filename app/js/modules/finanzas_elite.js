@@ -14,7 +14,7 @@ import {
     runFinancialAnalysis
 } from "../ai/financialPredictorAI.js";
 
-import { optimizePricing } from "../ai/pricingOptimizerAI.js";
+import { calcularPrecioInteligente } from "../ai/pricingOptimizerAI.js";
 import { prioritizeJobs } from "../ai/smartSchedulerAI.js";
 
 export default async function finanzasElite(container) {
