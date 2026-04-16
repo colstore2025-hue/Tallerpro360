@@ -4,11 +4,12 @@
  * @author William Jeffry Urquijo Cubillos & Gemini AI
  */
 import { 
-    collection, query, where, orderBy, onSnapshot, serverTimestamp, getDocs, addDoc, doc, updateDoc 
+    collection, query, where, orderBy, onSnapshot, serverTimestamp, getDocs, addDoc 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"; 
 import { db } from "../core/firebase-config.js";
 
 export default async function contabilidad(container) {
+    // Prioridad de ID de empresa para evitar desincronización
     const empresaId = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
     let vistaActual = "DIARIO"; 
     let unsubscribe = null;
@@ -45,18 +46,32 @@ export default async function contabilidad(container) {
             </header>
 
             <nav class="flex justify-center gap-4 mb-12">
-                <button onclick="window.cambiarVistaContable('DIARIO')" class="px-8 py-3 rounded-full orbitron text-[10px] font-black border-2 ${vistaActual === 'DIARIO' ? 'bg-amber-400 text-black border-amber-400' : 'border-white/10 text-slate-500'} transition-all">LIBRO DIARIO</button>
-                <button onclick="window.cambiarVistaContable('CUENTAS')" class="px-8 py-3 rounded-full orbitron text-[10px] font-black border-2 ${vistaActual === 'CUENTAS' ? 'bg-amber-400 text-black border-amber-400' : 'border-white/10 text-slate-500'} transition-all">PLAN PUC</button>
+                <button id="btn-vista-diario" class="px-8 py-3 rounded-full orbitron text-[10px] font-black border-2 transition-all"></button>
+                <button id="btn-vista-puc" class="px-8 py-3 rounded-full orbitron text-[10px] font-black border-2 transition-all"></button>
             </nav>
 
             <div id="cont-dynamic-content" class="animate-in fade-in slide-in-from-bottom-5 duration-700"></div>
         </div>`;
         
+        setupNavigation();
         if (vistaActual === "DIARIO") cargarVistaDiaria();
-        else if (vistaActual === "CUENTAS") cargarVistaCuentas();
+        else cargarVistaCuentas();
     };
 
-    // --- 📊 VISTA 1: LIBRO DIARIO CON AUDITORÍA ---
+    const setupNavigation = () => {
+        const btnDiario = document.getElementById("btn-vista-diario");
+        const btnPuc = document.getElementById("btn-vista-puc");
+
+        btnDiario.innerText = "LIBRO DIARIO";
+        btnPuc.innerText = "PLAN PUC";
+
+        btnDiario.className = `px-8 py-3 rounded-full orbitron text-[10px] font-black border-2 ${vistaActual === 'DIARIO' ? 'bg-amber-400 text-black border-amber-400' : 'border-white/10 text-slate-500'}`;
+        btnPuc.className = `px-8 py-3 rounded-full orbitron text-[10px] font-black border-2 ${vistaActual === 'CUENTAS' ? 'bg-amber-400 text-black border-amber-400' : 'border-white/10 text-slate-500'}`;
+
+        btnDiario.onclick = () => { vistaActual = "DIARIO"; renderLayout(); };
+        btnPuc.onclick = () => { vistaActual = "CUENTAS"; renderLayout(); };
+    };
+
     const cargarVistaDiaria = () => {
         const content = document.getElementById("cont-dynamic-content");
         content.innerHTML = `
@@ -85,9 +100,8 @@ export default async function contabilidad(container) {
                     </div>
                 </div>
             </div>
-
             <div class="lg:col-span-8">
-                <div id="listaFinanzas" class="space-y-4 custom-scrollbar"></div>
+                <div id="listaFinanzas" class="space-y-4"></div>
             </div>
         </div>`;
 
@@ -95,20 +109,18 @@ export default async function contabilidad(container) {
         escucharContabilidad();
     };
 
-    // --- 📡 MOTOR DE ESCUCHA REAL-TIME (PUC & TOTALES) ---
     function escucharContabilidad() {
         if (unsubscribe) unsubscribe();
         const q = query(collection(db, "contabilidad"), where("empresaId", "==", empresaId), orderBy("creadoEn", "desc"));
 
         unsubscribe = onSnapshot(q, (snap) => {
-            let totalIngresos = 0;
-            let totalGastos = 0;
-            let totalNotas = 0;
+            let totalIngresos = 0, totalGastos = 0, totalNotas = 0;
             const list = document.getElementById("listaFinanzas");
+            if (!list) return;
 
-            const html = snap.docs.map(docSnap => {
+            list.innerHTML = snap.docs.map(docSnap => {
                 const m = docSnap.data();
-                const v = Number(m.monto || 0);
+                const v = parseFloat(m.monto || 0);
                 const esIngreso = ['ingreso_ot', 'venta_repuesto', 'capital_inicial'].includes(m.tipo);
                 const esNota = m.tipo === 'nota_credito';
 
@@ -117,7 +129,6 @@ export default async function contabilidad(container) {
                 else totalGastos += v;
 
                 const estilo = obtenerEstiloFinanciero(m.tipo);
-
                 return `
                 <div class="bg-[#0d1117] p-6 rounded-[2.5rem] border border-white/5 flex justify-between items-center hover:border-amber-400/50 transition-all">
                     <div class="flex items-center gap-5">
@@ -126,7 +137,7 @@ export default async function contabilidad(container) {
                         </div>
                         <div>
                             <p class="text-xs font-black text-white uppercase">${m.concepto}</p>
-                            <p class="text-[8px] text-slate-500 orbitron">${m.creadoEn?.toDate().toLocaleString() || '...UPLOADING'}</p>
+                            <p class="text-[8px] text-slate-500 orbitron">${m.creadoEn?.toDate().toLocaleString() || 'PROCESANDO...'}</p>
                         </div>
                     </div>
                     <div class="text-right">
@@ -136,9 +147,6 @@ export default async function contabilidad(container) {
                 </div>`;
             }).join("");
 
-            if(list) list.innerHTML = html;
-            
-            // Actualizar Tablero Maestro
             document.getElementById("dash-ingresos").innerText = `$ ${totalIngresos.toLocaleString()}`;
             document.getElementById("dash-gastos").innerText = `$ ${totalGastos.toLocaleString()}`;
             document.getElementById("dash-notas").innerText = `$ ${totalNotas.toLocaleString()}`;
@@ -146,13 +154,11 @@ export default async function contabilidad(container) {
         });
     }
 
-    // --- 🏛️ VISTA 2: PLAN DE CUENTAS (PUC) DETALLADO ---
     const cargarVistaCuentas = async () => {
         const content = document.getElementById("cont-dynamic-content");
-        content.innerHTML = `
-        <div class="bg-[#0d1117] p-10 rounded-[4rem] border border-white/5 shadow-3xl">
+        content.innerHTML = `<div class="bg-[#0d1117] p-10 rounded-[4rem] border border-white/5 shadow-3xl">
             <h3 class="orbitron text-xl font-black mb-10 text-amber-400 italic">BALANCE POR CUENTAS PUC (OFICIAL)</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="puc-grid">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div class="p-8 bg-black/40 rounded-[3rem] border border-emerald-500/10">
                     <p class="text-[10px] orbitron font-black text-emerald-400 mb-6">CLASE 4 - INGRESOS</p>
                     <div class="space-y-4" id="puc-clase-4"></div>
@@ -172,13 +178,11 @@ export default async function contabilidad(container) {
 
     const calcularPUCReal = async () => {
         const snap = await getDocs(query(collection(db, "contabilidad"), where("empresaId", "==", empresaId)));
-        const p = { 
-            '4135': 0, '413505': 0, '5105': 0, '5195': 0, '5305': 0, '1105': 0 
-        };
+        const p = { '4135': 0, '413505': 0, '5105': 0, '5195': 0, '5305': 0, '1105': 0 };
 
         snap.forEach(d => {
             const m = d.data();
-            const val = Number(m.monto);
+            const val = parseFloat(m.monto || 0);
             if(m.tipo === 'ingreso_ot') p['4135'] += val;
             if(m.tipo === 'venta_repuesto') p['413505'] += val;
             if(m.tipo === 'nomina_pago') p['5105'] += val;
@@ -188,7 +192,6 @@ export default async function contabilidad(container) {
         });
 
         const renderCuenta = (cod, nom, val) => `<div class="flex justify-between border-b border-white/5 pb-2"><span class="text-[10px] text-slate-400 font-mono">${cod} - ${nom}</span><span class="text-xs font-black text-white">$ ${val.toLocaleString()}</span></div>`;
-        
         document.getElementById("puc-clase-4").innerHTML = renderCuenta('4135', 'Servicios', p['4135']) + renderCuenta('413505', 'Repuestos', p['413505']);
         document.getElementById("puc-clase-5").innerHTML = renderCuenta('5105', 'Nómina', p['5105']) + renderCuenta('5195', 'Diversos', p['5195']) + renderCuenta('5305', 'Garantías', p['5305']);
         document.getElementById("puc-clase-1").innerHTML = renderCuenta('1105', 'Caja Gral', p['1105']);
@@ -209,9 +212,9 @@ export default async function contabilidad(container) {
     async function registrarMovimiento() {
         const concepto = document.getElementById("acc-concepto").value.toUpperCase();
         const tipo = document.getElementById("acc-tipo").value;
-        const monto = Number(document.getElementById("acc-monto").value);
+        const monto = parseFloat(document.getElementById("acc-monto").value);
 
-        if (!concepto || monto <= 0) return;
+        if (!concepto || isNaN(monto) || monto <= 0) return;
 
         await addDoc(collection(db, "contabilidad"), {
             empresaId, concepto, tipo, monto, creadoEn: serverTimestamp()
@@ -219,13 +222,7 @@ export default async function contabilidad(container) {
 
         document.getElementById("acc-concepto").value = "";
         document.getElementById("acc-monto").value = "";
-        Swal.fire({ toast: true, position: 'top-end', title: 'ASIENTO CONTABLE SINCRONIZADO', icon: 'success', showConfirmButton: false, timer: 1500, background: '#0d1117', color: '#fff' });
     }
-
-    window.cambiarVistaContable = (vista) => {
-        vistaActual = vista;
-        renderLayout();
-    };
 
     renderLayout();
 }
