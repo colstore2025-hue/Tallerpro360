@@ -1,40 +1,48 @@
+/**
+ * 🧠 FINANCIAL PREDICTOR AI - NEXUS-X CORE V2.0
+ * Motor financiero autónomo y robusto
+ */
+
 // ======================================================
-// 🧠 FINANCIAL PREDICTOR AI - TallerPRO360
-// Motor financiero inteligente (versión 1.0)
+// 🔒 NORMALIZACIÓN SEGURA
 // ======================================================
 
-// ------------------------------------------------------
-// 📊 UTILIDADES INTERNAS
-// ------------------------------------------------------
+function toNumber(val) {
+  const num = Number(val);
+  return isNaN(num) ? 0 : num;
+}
+
+// ======================================================
+// 📊 UTILIDADES
+// ======================================================
 
 function sum(arr, key) {
-  return arr.reduce((acc, item) => acc + (item[key] || 0), 0);
+  return arr.reduce((acc, item) => acc + toNumber(item[key]), 0);
 }
 
 function avg(arr, key) {
-  if (!arr.length) return 0;
-  return sum(arr, key) / arr.length;
+  return arr.length ? sum(arr, key) / arr.length : 0;
 }
 
 function clamp(value, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
 }
 
-// ------------------------------------------------------
-// 📈 1. PREDICCIÓN DE INGRESOS
-// ------------------------------------------------------
+// ======================================================
+// 📈 1. PREDICCIÓN DE INGRESOS (MEJORADA)
+// ======================================================
 
 export function predictRevenueNextMonth(ordenes = []) {
   if (!ordenes.length) return 0;
 
-  const ultimos30 = ordenes.slice(-30);
+  const data = ordenes.slice(-30);
 
-  const total = sum(ultimos30, "total");
-  const promedioDiario = total / (ultimos30.length || 1);
+  const total = sum(data, "total");
+  const promedio = total / data.length;
 
-  const crecimiento = calcularTendencia(ultimos30);
+  const tendencia = calcularTendencia(data);
 
-  const proyeccion = promedioDiario * 30 * (1 + crecimiento);
+  const proyeccion = promedio * 30 * (1 + tendencia);
 
   return Math.round(proyeccion);
 }
@@ -49,93 +57,81 @@ function calcularTendencia(data) {
 
   if (primera === 0) return 0;
 
-  return (segunda - primera) / primera;
+  let crecimiento = (segunda - primera) / primera;
+
+  // 🔒 limitar crecimiento para evitar locuras
+  return Math.max(-0.5, Math.min(0.5, crecimiento));
 }
 
-// ------------------------------------------------------
-// 💰 2. RIESGO DE FLUJO DE CAJA
-// ------------------------------------------------------
+// ======================================================
+// 💰 2. RIESGO DE CAJA
+// ======================================================
 
-export function predictCashFlowRisk({
-  ingresos = 0,
-  egresos = 0,
-  caja = 0
-}) {
+export function predictCashFlowRisk({ ingresos = 0, egresos = 0, caja = 0 }) {
+  ingresos = toNumber(ingresos);
+  egresos = toNumber(egresos);
+  caja = toNumber(caja);
+
   const flujo = ingresos - egresos;
 
   if (caja + flujo < 0) {
-    return {
-      nivel: "ALTO",
-      score: 90,
-      mensaje: "Entrarás en déficit en menos de 30 días"
-    };
+    return { nivel: "ALTO", score: 90, mensaje: "Déficit proyectado" };
   }
 
   if (flujo < 0) {
-    return {
-      nivel: "MEDIO",
-      score: 60,
-      mensaje: "Flujo negativo, reduce gastos o aumenta ingresos"
-    };
+    return { nivel: "MEDIO", score: 60, mensaje: "Flujo negativo" };
   }
 
-  return {
-    nivel: "BAJO",
-    score: 20,
-    mensaje: "Flujo saludable"
-  };
+  return { nivel: "BAJO", score: 20, mensaje: "Flujo saludable" };
 }
 
-// ------------------------------------------------------
+// ======================================================
 // 📦 3. CAPITAL ATRAPADO
-// ------------------------------------------------------
+// ======================================================
 
-export function calculateTrappedCapital(
-  inventario = [],
-  ordenesProceso = []
-) {
-  const inventarioTotal = sum(inventario, "valor");
-  const enProceso = sum(ordenesProceso, "total");
-
+export function calculateTrappedCapital(inventario = [], ordenesProceso = []) {
   return {
-    inventario: inventarioTotal,
-    enProceso: enProceso,
-    total: inventarioTotal + enProceso
+    inventario: sum(inventario, "valor"),
+    enProceso: sum(ordenesProceso, "total"),
+    total: sum(inventario, "valor") + sum(ordenesProceso, "total")
   };
 }
 
-// ------------------------------------------------------
-// ⚠️ 4. DETECCIÓN DE CUELLOS DE BOTELLA
-// ------------------------------------------------------
+// ======================================================
+// ⚠️ 4. CUELLOS DE BOTELLA
+// ======================================================
 
 export function detectBottleneck({ inventario = 0, caja = 0 }) {
-  if (caja === 0 && inventario > 0) {
+  inventario = toNumber(inventario);
+  caja = toNumber(caja);
+
+  if (caja <= 0 && inventario > 0) {
     return {
       tipo: "CRITICO",
-      mensaje: "Sin liquidez y con capital detenido en inventario"
+      mensaje: "Sin liquidez con capital inmovilizado"
     };
   }
 
   if (inventario > caja * 2) {
     return {
       tipo: "CUELLO_BOTELLA",
-      mensaje: "Demasiado capital detenido en inventario"
+      mensaje: "Capital atrapado en inventario"
     };
   }
 
   return null;
 }
 
-// ------------------------------------------------------
-// 🧮 5. SCORE DE SALUD FINANCIERA
-// ------------------------------------------------------
+// ======================================================
+// 🧮 5. SCORE FINANCIERO
+// ======================================================
 
-export function financialHealthScore({
-  caja = 0,
-  ingresos = 0,
-  egresos = 0,
-  inventario = 0
-}) {
+export function financialHealthScore({ caja = 0, ingresos = 0, egresos = 0, inventario = 0 }) {
+  caja = toNumber(caja);
+  ingresos = toNumber(ingresos);
+  egresos = toNumber(egresos);
+  inventario = toNumber(inventario);
+
   let score = 100;
 
   const flujo = ingresos - egresos;
@@ -149,9 +145,9 @@ export function financialHealthScore({
   return clamp(score);
 }
 
-// ------------------------------------------------------
-// 🎯 6. CLASIFICACIÓN DEL ESTADO
-// ------------------------------------------------------
+// ======================================================
+// 🎯 6. ESTADO
+// ======================================================
 
 export function classifyFinancialStatus(score) {
   if (score <= 40) return "CRITICO";
@@ -159,54 +155,39 @@ export function classifyFinancialStatus(score) {
   return "SALUDABLE";
 }
 
-// ------------------------------------------------------
-// 🤖 7. CEO AI - DECISIONES AUTOMÁTICAS
-// ------------------------------------------------------
+// ======================================================
+// 🤖 7. CEO AI (MEJORADO)
+// ======================================================
 
 export function generateCEODecisions(data) {
   const decisiones = [];
 
   if (data.caja < 0) {
-    decisiones.push({
-      prioridad: "ALTA",
-      accion: "Acelerar cobros pendientes inmediatamente"
-    });
+    decisiones.push({ prioridad: "ALTA", accion: "Cobrar cartera urgente" });
   }
 
   if (data.inventario > data.ingresos * 1.5) {
-    decisiones.push({
-      prioridad: "ALTA",
-      accion: "Liquidar inventario lento con descuentos del 10%-20%"
-    });
+    decisiones.push({ prioridad: "ALTA", accion: "Rotar inventario con descuentos" });
   }
 
   if (data.ingresos - data.egresos < 0) {
-    decisiones.push({
-      prioridad: "MEDIA",
-      accion: "Reducir gastos operativos en mínimo 15%"
-    });
+    decisiones.push({ prioridad: "MEDIA", accion: "Reducir costos operativos" });
   }
 
   if (data.score < 40) {
-    decisiones.push({
-      prioridad: "CRITICA",
-      accion: "Reestructurar operación en menos de 7 días"
-    });
+    decisiones.push({ prioridad: "CRITICA", accion: "Reestructurar operación" });
   }
 
   if (data.score > 70) {
-    decisiones.push({
-      prioridad: "OPORTUNIDAD",
-      accion: "Invertir en crecimiento o expansión del taller"
-    });
+    decisiones.push({ prioridad: "OPORTUNIDAD", accion: "Invertir en crecimiento" });
   }
 
   return decisiones;
 }
 
-// ------------------------------------------------------
-// 🔮 8. SIMULADOR DE ESCENARIOS (WHAT IF)
-// ------------------------------------------------------
+// ======================================================
+// 🔮 8. SIMULADOR
+// ======================================================
 
 export function simulateScenario(baseData, cambios = {}) {
   const simulated = { ...baseData };
@@ -223,69 +204,81 @@ export function simulateScenario(baseData, cambios = {}) {
     simulated.egresos *= (1 - cambios.reducirGastos);
   }
 
-  const nuevoScore = financialHealthScore(simulated);
+  const score = financialHealthScore(simulated);
 
   return {
     escenario: simulated,
-    score: nuevoScore,
-    estado: classifyFinancialStatus(nuevoScore)
+    score,
+    estado: classifyFinancialStatus(score)
   };
 }
 
-// ------------------------------------------------------
-// 🚀 9. FUNCIÓN MAESTRA (TODO EN UNO)
-// ------------------------------------------------------
+// ======================================================
+// 🚀 9. MASTER ENGINE
+// ======================================================
 
-export function runFinancialAnalysis({
-  ordenes = [],
-  inventario = [],
-  ordenesProceso = [],
-  ingresos = 0,
-  egresos = 0,
-  caja = 0
-}) {
-  const revenuePrediction = predictRevenueNextMonth(ordenes);
+export function runFinancialAnalysis(input) {
 
-  const riesgo = predictCashFlowRisk({
-    ingresos,
-    egresos,
-    caja
-  });
+  try {
 
-  const capital = calculateTrappedCapital(
-    inventario,
-    ordenesProceso
-  );
+    const {
+      ordenes = [],
+      inventario = [],
+      ordenesProceso = [],
+      ingresos = 0,
+      egresos = 0,
+      caja = 0
+    } = input || {};
 
-  const bottleneck = detectBottleneck({
-    inventario: capital.total,
-    caja
-  });
+    const revenuePrediction = predictRevenueNextMonth(ordenes);
 
-  const score = financialHealthScore({
-    caja,
-    ingresos,
-    egresos,
-    inventario: capital.total
-  });
+    const riesgo = predictCashFlowRisk({ ingresos, egresos, caja });
 
-  const estado = classifyFinancialStatus(score);
+    const capital = calculateTrappedCapital(inventario, ordenesProceso);
 
-  const decisiones = generateCEODecisions({
-    caja,
-    ingresos,
-    egresos,
-    inventario: capital.total,
-    score
-  });
+    const bottleneck = detectBottleneck({
+      inventario: capital.total,
+      caja
+    });
 
-  return {
-    revenuePrediction,
-    riesgo,
-    capital,
-    bottleneck,
-    score,
-    estado,
-    decisiones
-  };
+    const score = financialHealthScore({
+      caja,
+      ingresos,
+      egresos,
+      inventario: capital.total
+    });
+
+    const estado = classifyFinancialStatus(score);
+
+    const decisiones = generateCEODecisions({
+      caja,
+      ingresos,
+      egresos,
+      inventario: capital.total,
+      score
+    });
+
+    return {
+      ok: true,
+      revenuePrediction,
+      riesgo,
+      capital,
+      bottleneck,
+      score,
+      estado,
+      decisiones
+    };
+
+  } catch (err) {
+
+    console.error("🔥 Financial AI Error:", err);
+
+    return {
+      ok: false,
+      error: "Fallo en análisis financiero",
+      score: 0,
+      estado: "CRITICO",
+      decisiones: []
+    };
+  }
 }
