@@ -340,187 +340,149 @@ export default async function ordenes(container) {
         }
     };
 
-        // --- 💾 NEXUS-X DATABASE CORE: SINCRONIZACIÓN TOTAL ---
+        // --- 💾 NEXUS-X DATABASE CORE: ESTABILIZACIÓN TOTAL ---
 
 const ejecutarSincronizacionNexus = async () => {
     const btn = document.getElementById("btnSincronizar");
-    if (btn) btn.disabled = true;
+    btn.disabled = true;
     
     try {
-        const placaInput = document.getElementById("f-placa");
-        const placa = placaInput ? placaInput.value.trim().toUpperCase() : "";
+        const placa = document.getElementById("f-placa").value.trim().toUpperCase();
         if(!placa) throw new Error("IDENTIFICADOR REQUERIDO");
 
         const docId = ordenActiva.id || `OT_${placa}_${Date.now()}`;
         
-        // --- CÁLCULO DE AUDITORÍA PRE-VUELO ---
-        const totalVentaItems = (ordenActiva.items || []).reduce((acc, item) => acc + (Number(item.venta) || 0), 0);
-        const anticipoActual = Number(document.getElementById("f-anticipo-cliente")?.value || 0);
-        const gastosVarios = Number(document.getElementById("f-gastos-varios")?.value || 0);
-        const adelantoTecnico = Number(document.getElementById("f-adelanto-tecnico")?.value || 0);
+        // --- MOTOR DE CÁLCULO FINANCIERO INTEGRADO ---
+        const totalVentaItems = ordenActiva.items.reduce((acc, item) => acc + (Number(item.venta) || 0), 0);
+        const anticipoVal = Number(document.getElementById("f-anticipo-cliente").value) || 0;
+        const gastosVal = Number(document.getElementById("f-gastos-varios").value) || 0;
+        const adelantoVal = Number(document.getElementById("f-adelanto-tecnico").value) || 0;
 
         const finalData = {
             ...ordenActiva,
             id: docId, 
             empresaId,
             placa,
-            cliente: document.getElementById("f-cliente")?.value.toUpperCase() || "CLIENTE GENERAL",
-            telefono: document.getElementById("f-telefono")?.value || "",
-            estado: document.getElementById("f-estado")?.value || "INGRESO",
-            bitacora_ia: document.getElementById("ai-log-display")?.value || "",
+            cliente: document.getElementById("f-cliente").value.toUpperCase(),
+            telefono: document.getElementById("f-telefono").value,
+            estado: document.getElementById("f-estado").value,
+            bitacora_ia: document.getElementById("ai-log-display").value,
             totalMision: totalVentaItems,
             finanzas: {
-                anticipo_cliente: anticipoActual,
-                gastos_varios: gastosVarios,
-                adelanto_tecnico: adelantoTecnico
+                anticipo_cliente: anticipoVal,
+                gastos_varios: gastosVal,
+                adelanto_tecnico: adelantoVal
             },
             updatedAt: serverTimestamp()
         };
 
-        // 1. Persistencia en Nodo Órdenes
+        // 1. Persistencia en la Orden (Single Source of Truth)
         await setDoc(doc(db, "ordenes", docId), finalData);
 
-        // 2. Inyección a Contabilidad: INGRESOS
-        if(anticipoActual > 0) {
-            await addDoc(collection(db, "contabilidad"), {
+        // 2. Inyección Automática a Contabilidad (Ingresos)
+        if(anticipoVal > 0) {
+            await setDoc(doc(db, "contabilidad", `ING_${docId}`), {
                 empresaId,
-                tipo: 'ingreso_ot', 
-                monto: anticipoActual,
-                concepto: `INGRESO ORDEN: ${placa}`,
+                tipo: 'ingreso_ot',
+                monto: anticipoVal,
+                concepto: `ABONO ORDEN ${placa}`,
                 ordenId: docId,
-                creadoEn: serverTimestamp()
+                fecha: serverTimestamp()
             });
         }
 
-        // 3. Inyección a Contabilidad: EGRESOS
-        const totalEgresos = gastosVarios + adelantoTecnico;
-        if(totalEgresos > 0) {
-            await addDoc(collection(db, "contabilidad"), {
+        // 3. Inyección Automática a Contabilidad (Egresos)
+        if(gastosVal > 0 || adelantoVal > 0) {
+            await setDoc(doc(db, "contabilidad", `EGR_${docId}`), {
                 empresaId,
                 tipo: 'gasto_operativo',
-                monto: totalEgresos,
-                concepto: `EGRESO ORDEN: ${placa} (GASTOS/ADELANTOS)`,
+                monto: gastosVal + adelantoVal,
+                concepto: `EGRESO ORDEN ${placa}`,
                 ordenId: docId,
-                creadoEn: serverTimestamp()
+                fecha: serverTimestamp()
             });
         }
 
         Swal.fire({ 
             icon: 'success', 
             title: 'MISSION SYNCED', 
-            text: 'Datos integrados al Finance Core V21',
+            text: 'PROTOCOL OPERATIONAL',
             background: '#010409', 
             color: '#06b6d4', 
-            timer: 2000 
+            timer: 1500 
         });
         
-        document.getElementById("nexus-terminal")?.classList.add("hidden");
-        // Llama a la recarga de la vista si existe
-        if(typeof renderBase === 'function') renderBase();
+        document.getElementById("nexus-terminal").classList.add("hidden");
+        renderBase(); // Reconexión con el flujo principal
 
     } catch (err) {
-        Swal.fire({ icon: 'error', title: 'PROTOCOL FAILURE', text: err.message, background: '#010409', color: '#ff4444' });
+        Swal.fire({ icon: 'error', title: 'FAILURE', text: err.message });
     } finally { 
-        if (btn) btn.disabled = false; 
+        btn.disabled = false; 
     }
 };
 
-// --- GESTIÓN DE BÓVEDA E INVENTARIO ---
 window.buscarEnInventario = async (idx) => {
-    try {
-        const q = query(collection(db, "inventario"), where("empresaId", "==", empresaId));
-        const snap = await getDocs(q);
-        
-        const options = {};
-        snap.forEach(d => {
-            const data = d.data();
-            const key = JSON.stringify({id: d.id, n: data.nombre, c: data.costo, v: data.precioVenta});
-            options[key] = `${data.nombre} ($${data.precioVenta})`;
-        });
-
-        const { value: res } = await Swal.fire({
-            title: 'BÓVEDA DE REPUESTOS',
-            background: '#0d1117', color: '#fff',
-            input: 'select',
-            inputOptions: options,
-            showCancelButton: true,
-            confirmButtonColor: '#06b6d4',
-            placeholder: 'SELECCIONE REPUESTO'
-        });
-
-        if (res) {
-            const data = JSON.parse(res);
-            ordenActiva.items[idx] = { 
-                ...ordenActiva.items[idx], 
-                desc: data.n, costo: data.c, venta: data.v, sku: data.id, origen: 'TALLER' 
-            };
-            if(typeof recalcularFinanzas === 'function') recalcularFinanzas();
-        }
-    } catch (e) { console.error("Error en Bóveda:", e); }
+    const snap = await getDocs(query(collection(db, "inventario"), where("empresaId", "==", empresaId)));
+    const { value: res } = await Swal.fire({
+        title: 'BÓVEDA DE REPUESTOS',
+        background: '#0d1117', color: '#fff',
+        input: 'select',
+        inputOptions: Object.fromEntries(snap.docs.map(d => [
+            JSON.stringify({id: d.id, n: d.data().nombre, c: d.data().costo, v: d.data().precioVenta}), 
+            `${d.data().nombre} ($${d.data().precioVenta})`
+        ])),
+        showCancelButton: true
+    });
+    if (res) {
+        const data = JSON.parse(res);
+        ordenActiva.items[idx] = { ...ordenActiva.items[idx], desc: data.n, costo: data.c, venta: data.v, sku: data.id, origen: 'TALLER' };
+        recalcularFinanzas();
+    }
 };
 
-// --- CONTROLADORES DE INTERFAZ NEXUS ---
-window.abrirTerminalNexus = async (id) => {
-    const modal = document.getElementById("nexus-terminal");
-    if(!modal) return;
-    modal.classList.remove("hidden");
-    
+window.abrirTerminalNexus = (id) => {
+    document.getElementById("nexus-terminal").classList.remove("hidden");
     if(id) {
-        const s = await getDoc(doc(db, "ordenes", id));
-        if(s.exists()) {
-            ordenActiva = { id, ...s.data() };
-            if(typeof renderTerminal === 'function') renderTerminal();
-        }
+        getDoc(doc(doc(db, "ordenes", id))).then(s => { 
+            ordenActiva = { id, ...s.data() }; 
+            renderTerminal(); 
+        });
     } else {
         ordenActiva = { 
-            placa: '', cliente: '', telefono: '', estado: 'INGRESO', 
-            items: [], bitacora_ia: '', 
-            finanzas: { gastos_varios: 0, adelanto_tecnico: 0, anticipo_cliente: 0 }
+            placa: '', cliente: '', telefono: '', estado: 'INGRESO', items: [], 
+            bitacora_ia: '', finanzas: { gastos_varios: 0, adelanto_tecnico: 0, anticipo_cliente: 0 }
         };
-        if(typeof renderTerminal === 'function') renderTerminal();
+        renderTerminal();
     }
 };
 
 window.toggleOrigenItem = (idx) => { 
-    if(!ordenActiva.items[idx]) return;
     ordenActiva.items[idx].origen = ordenActiva.items[idx].origen === 'TALLER' ? 'CLIENTE' : 'TALLER'; 
-    if(ordenActiva.items[idx].origen === 'CLIENTE') {
-        ordenActiva.items[idx].costo = 0;
-        ordenActiva.items[idx].venta = 0;
-    }
-    if(typeof recalcularFinanzas === 'function') recalcularFinanzas(); 
+    if(ordenActiva.items[idx].origen === 'CLIENTE') ordenActiva.items[idx].costo = 0;
+    recalcularFinanzas(); 
 };
 
 window.editItemNexus = (idx, campo, val) => { 
-    if(!ordenActiva.items[idx]) return;
     ordenActiva.items[idx][campo] = (campo === 'costo' || campo === 'venta') ? Number(val) : val; 
-    if(typeof recalcularFinanzas === 'function') recalcularFinanzas(); 
+    recalcularFinanzas(); 
 };
 
-window.removeItemNexus = (idx) => { 
-    ordenActiva.items.splice(idx, 1); 
-    if(typeof recalcularFinanzas === 'function') recalcularFinanzas(); 
-};
+window.removeItemNexus = (idx) => { ordenActiva.items.splice(idx, 1); recalcularFinanzas(); };
+window.actualizarFinanzasDirecto = () => recalcularFinanzas();
 
-window.actualizarFinanzasDirecto = () => {
-    if(typeof recalcularFinanzas === 'function') recalcularFinanzas();
-};
-
-// Inicialización de navegación si los elementos existen
-const inicializarNavegacionNexus = () => {
+// --- VÍNCULOS DE NAVEGACIÓN ---
+const vincularNavegacion = () => {
     const btnNew = document.getElementById("btnNewMission");
     if(btnNew) btnNew.onclick = () => window.abrirTerminalNexus();
     
     document.querySelectorAll(".fase-tab").forEach(tab => { 
         tab.onclick = () => { 
-            if(typeof faseActual !== 'undefined') {
-                faseActual = tab.dataset.fase; 
-                if(typeof renderBase === 'function') renderBase(); 
-            }
+            faseActual = tab.dataset.fase; 
+            renderBase(); 
         }; 
     });
 };
 
-// Disparar render inicial si es necesario
-if(typeof renderBase === 'function') renderBase();
-inicializarNavegacionNexus();
+renderBase();
+vincularNavegacion();
