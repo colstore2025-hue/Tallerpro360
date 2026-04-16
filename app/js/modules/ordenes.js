@@ -340,149 +340,96 @@ export default async function ordenes(container) {
         }
     };
 
-        // --- 💾 NEXUS-X DATABASE CORE: ESTABILIZACIÓN TOTAL ---
-
-const ejecutarSincronizacionNexus = async () => {
-    const btn = document.getElementById("btnSincronizar");
-    btn.disabled = true;
-    
-    try {
-        const placa = document.getElementById("f-placa").value.trim().toUpperCase();
-        if(!placa) throw new Error("IDENTIFICADOR REQUERIDO");
-
-        const docId = ordenActiva.id || `OT_${placa}_${Date.now()}`;
+         // --- 💾 DATABASE SYNC (CONTABILIDAD INTEGRADA) ---
+    const ejecutarSincronizacionNexus = async () => {
+        const btn = document.getElementById("btnSincronizar");
+        btn.disabled = true;
         
-        // --- MOTOR DE CÁLCULO FINANCIERO INTEGRADO ---
-        const totalVentaItems = ordenActiva.items.reduce((acc, item) => acc + (Number(item.venta) || 0), 0);
-        const anticipoVal = Number(document.getElementById("f-anticipo-cliente").value) || 0;
-        const gastosVal = Number(document.getElementById("f-gastos-varios").value) || 0;
-        const adelantoVal = Number(document.getElementById("f-adelanto-tecnico").value) || 0;
+        try {
+            const placa = document.getElementById("f-placa").value.trim().toUpperCase();
+            if(!placa) throw new Error("IDENTIFICADOR REQUERIDO");
 
-        const finalData = {
-            ...ordenActiva,
-            id: docId, 
-            empresaId,
-            placa,
-            cliente: document.getElementById("f-cliente").value.toUpperCase(),
-            telefono: document.getElementById("f-telefono").value,
-            estado: document.getElementById("f-estado").value,
-            bitacora_ia: document.getElementById("ai-log-display").value,
-            totalMision: totalVentaItems,
-            finanzas: {
-                anticipo_cliente: anticipoVal,
-                gastos_varios: gastosVal,
-                adelanto_tecnico: adelantoVal
-            },
-            updatedAt: serverTimestamp()
-        };
+            const docId = ordenActiva.id || `OT_${placa}_${Date.now()}`;
+            const finalData = {
+                ...ordenActiva,
+                id: docId, empresaId,
+                placa,
+                cliente: document.getElementById("f-cliente").value.toUpperCase(),
+                telefono: document.getElementById("f-telefono").value,
+                estado: document.getElementById("f-estado").value,
+                bitacora_ia: document.getElementById("ai-log-display").value,
+                finanzas: {
+                    anticipo_cliente: Number(document.getElementById("f-anticipo-cliente").value),
+                    gastos_varios: Number(document.getElementById("f-gastos-varios").value),
+                    adelanto_tecnico: Number(document.getElementById("f-adelanto-tecnico").value)
+                },
+                updatedAt: serverTimestamp()
+            };
 
-        // 1. Persistencia en la Orden (Single Source of Truth)
-        await setDoc(doc(db, "ordenes", docId), finalData);
+            await setDoc(doc(db, "ordenes", docId), finalData);
 
-        // 2. Inyección Automática a Contabilidad (Ingresos)
-        if(anticipoVal > 0) {
-            await setDoc(doc(db, "contabilidad", `ING_${docId}`), {
-                empresaId,
-                tipo: 'ingreso_ot',
-                monto: anticipoVal,
-                concepto: `ABONO ORDEN ${placa}`,
-                ordenId: docId,
-                fecha: serverTimestamp()
-            });
-        }
+            // Trigger Contabilidad y Nómina (Auditoría Punto 3 y 4)
+            if(finalData.finanzas.gastos_varios > 0 || finalData.finanzas.adelanto_tecnico > 0) {
+                await setDoc(doc(db, "contabilidad", `MOV_${docId}`), {
+                    tipo: 'EGRESO_ORDEN',
+                    monto: finalData.finanzas.gastos_varios + finalData.finanzas.adelanto_tecnico,
+                    ordenId: docId,
+                    fecha: serverTimestamp(),
+                    descripcion: `Gastos y Pago Técnico de Orden ${placa}`
+                });
+            }
 
-        // 3. Inyección Automática a Contabilidad (Egresos)
-        if(gastosVal > 0 || adelantoVal > 0) {
-            await setDoc(doc(db, "contabilidad", `EGR_${docId}`), {
-                empresaId,
-                tipo: 'gasto_operativo',
-                monto: gastosVal + adelantoVal,
-                concepto: `EGRESO ORDEN ${placa}`,
-                ordenId: docId,
-                fecha: serverTimestamp()
-            });
-        }
+            Swal.fire({ icon: 'success', title: 'MISSION SYNCED', background: '#010409', color: '#06b6d4', timer: 1500 });
+            document.getElementById("nexus-terminal").classList.add("hidden");
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'FAILURE', text: err.message });
+        } finally { btn.disabled = false; }
+    };
 
-        Swal.fire({ 
-            icon: 'success', 
-            title: 'MISSION SYNCED', 
-            text: 'PROTOCOL OPERATIONAL',
-            background: '#010409', 
-            color: '#06b6d4', 
-            timer: 1500 
+    window.buscarEnInventario = async (idx) => {
+        const snap = await getDocs(query(collection(db, "inventario"), where("empresaId", "==", empresaId)));
+        const { value: res } = await Swal.fire({
+            title: 'BÓVEDA DE REPUESTOS',
+            background: '#0d1117', color: '#fff',
+            input: 'select',
+            inputOptions: Object.fromEntries(snap.docs.map(d => [JSON.stringify({id: d.id, n: d.data().nombre, c: d.data().costo, v: d.data().precioVenta}), `${d.data().nombre} ($${d.data().precioVenta})`])),
+            showCancelButton: true
         });
-        
-        document.getElementById("nexus-terminal").classList.add("hidden");
-        renderBase(); // Reconexión con el flujo principal
+        if (res) {
+            const data = JSON.parse(res);
+            ordenActiva.items[idx] = { ...ordenActiva.items[idx], desc: data.n, costo: data.c, venta: data.v, sku: data.id };
+            recalcularFinanzas();
+        }
+    };
 
-    } catch (err) {
-        Swal.fire({ icon: 'error', title: 'FAILURE', text: err.message });
-    } finally { 
-        btn.disabled = false; 
-    }
-};
+    window.abrirTerminalNexus = (id) => {
+        document.getElementById("nexus-terminal").classList.remove("hidden");
+        if(id) {
+            getDoc(doc(db, "ordenes", id)).then(s => { ordenActiva = { id, ...s.data() }; renderTerminal(); });
+        } else {
+            ordenActiva = { placa: '', cliente: '', telefono: '', estado: 'INGRESO', items: [], bitacora_ia: '', finanzas: { gastos_varios: 0, adelanto_tecnico: 0, anticipo_cliente: 0 }};
+            renderTerminal();
+        }
+    };
 
-window.buscarEnInventario = async (idx) => {
-    const snap = await getDocs(query(collection(db, "inventario"), where("empresaId", "==", empresaId)));
-    const { value: res } = await Swal.fire({
-        title: 'BÓVEDA DE REPUESTOS',
-        background: '#0d1117', color: '#fff',
-        input: 'select',
-        inputOptions: Object.fromEntries(snap.docs.map(d => [
-            JSON.stringify({id: d.id, n: d.data().nombre, c: d.data().costo, v: d.data().precioVenta}), 
-            `${d.data().nombre} ($${d.data().precioVenta})`
-        ])),
-        showCancelButton: true
-    });
-    if (res) {
-        const data = JSON.parse(res);
-        ordenActiva.items[idx] = { ...ordenActiva.items[idx], desc: data.n, costo: data.c, venta: data.v, sku: data.id, origen: 'TALLER' };
-        recalcularFinanzas();
-    }
-};
+    window.toggleOrigenItem = (idx) => { 
+        ordenActiva.items[idx].origen = ordenActiva.items[idx].origen === 'TALLER' ? 'CLIENTE' : 'TALLER'; 
+        if(ordenActiva.items[idx].origen === 'CLIENTE') ordenActiva.items[idx].costo = 0;
+        recalcularFinanzas(); 
+    };
 
-window.abrirTerminalNexus = (id) => {
-    document.getElementById("nexus-terminal").classList.remove("hidden");
-    if(id) {
-        getDoc(doc(doc(db, "ordenes", id))).then(s => { 
-            ordenActiva = { id, ...s.data() }; 
-            renderTerminal(); 
-        });
-    } else {
-        ordenActiva = { 
-            placa: '', cliente: '', telefono: '', estado: 'INGRESO', items: [], 
-            bitacora_ia: '', finanzas: { gastos_varios: 0, adelanto_tecnico: 0, anticipo_cliente: 0 }
-        };
-        renderTerminal();
-    }
-};
+    window.editItemNexus = (idx, campo, val) => { 
+        ordenActiva.items[idx][campo] = (campo === 'costo' || campo === 'venta') ? Number(val) : val; 
+        recalcularFinanzas(); 
+    };
 
-window.toggleOrigenItem = (idx) => { 
-    ordenActiva.items[idx].origen = ordenActiva.items[idx].origen === 'TALLER' ? 'CLIENTE' : 'TALLER'; 
-    if(ordenActiva.items[idx].origen === 'CLIENTE') ordenActiva.items[idx].costo = 0;
-    recalcularFinanzas(); 
-};
+    window.removeItemNexus = (idx) => { ordenActiva.items.splice(idx, 1); recalcularFinanzas(); };
+    window.actualizarFinanzasDirecto = () => recalcularFinanzas();
 
-window.editItemNexus = (idx, campo, val) => { 
-    ordenActiva.items[idx][campo] = (campo === 'costo' || campo === 'venta') ? Number(val) : val; 
-    recalcularFinanzas(); 
-};
+    const vincularNavegacion = () => {
+        document.getElementById("btnNewMission").onclick = () => window.abrirTerminalNexus();
+        document.querySelectorAll(".fase-tab").forEach(tab => { tab.onclick = () => { faseActual = tab.dataset.fase; renderBase(); }; });
+    };
 
-window.removeItemNexus = (idx) => { ordenActiva.items.splice(idx, 1); recalcularFinanzas(); };
-window.actualizarFinanzasDirecto = () => recalcularFinanzas();
-
-// --- VÍNCULOS DE NAVEGACIÓN ---
-const vincularNavegacion = () => {
-    const btnNew = document.getElementById("btnNewMission");
-    if(btnNew) btnNew.onclick = () => window.abrirTerminalNexus();
-    
-    document.querySelectorAll(".fase-tab").forEach(tab => { 
-        tab.onclick = () => { 
-            faseActual = tab.dataset.fase; 
-            renderBase(); 
-        }; 
-    });
-};
-
-renderBase();
-vincularNavegacion();
+    renderBase();
+}
