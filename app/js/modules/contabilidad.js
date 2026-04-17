@@ -1,6 +1,6 @@
 /**
- * contabilidad.js - RETROCESO A V21.2 (ESTABLE) 🏛️
- * Eliminación de nexus-core.js y restablecimiento de lógica directa.
+ * contabilidad.js - NEXUS-X BRIDGE PROTOCOL V21.2 🏛️
+ * Corrección de Desfase Firestore & Auditoría de IDs
  */
 import { 
     collection, query, where, orderBy, onSnapshot, serverTimestamp, getDocs, addDoc 
@@ -8,139 +8,142 @@ import {
 import { db } from "../core/firebase-config.js";
 
 export default async function contabilidad(container) {
+    // 1. CAPTURA CRÍTICA DE IDENTIDAD
+    const empresaId = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
     
-    // Identificación directa
-    const empresaId = localStorage.getItem("empresaId") || "ID_PENDIENTE";
+    // DEBUG: Esto aparecerá en tu consola (F12) para verificar el desfase
+    console.log("🔍 NEXUS DEBUG: Buscando contabilidad para empresaId:", empresaId);
+
     let vistaActual = "DIARIO"; 
     let unsubscribe = null;
 
     const renderLayout = () => {
         container.innerHTML = `
-        <div class="p-4 lg:p-10 bg-[#010409] min-h-screen text-slate-100 font-sans">
-            <header class="flex flex-col lg:flex-row justify-between items-center mb-10 border-b border-white/10 pb-6">
-                <div>
-                    <h1 class="text-4xl font-black text-white uppercase italic">FINANCE <span class="text-amber-400">V21.2</span></h1>
-                    <p class="text-[10px] text-slate-500 orbitron tracking-widest">MODO ESTABLE - SIN FILTROS NEXUS</p>
+        <div class="p-4 lg:p-10 bg-[#010409] min-h-screen text-slate-100 font-sans pb-32">
+            <header class="flex flex-col lg:flex-row justify-between items-center gap-8 mb-12 border-b border-white/10 pb-10">
+                <div class="text-center lg:text-left">
+                    <h1 class="orbitron text-5xl font-black text-white italic tracking-tighter uppercase">
+                        FINANCE <span class="text-amber-400">CORE</span><span class="text-cyan-500 text-xl">.V21.2</span>
+                    </h1>
+                    <p class="text-[9px] text-slate-500 font-black uppercase tracking-[0.4em] orbitron mt-2">Bridge Protocol Active</p>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="bg-black/50 p-4 rounded-2xl border border-emerald-500/20 text-center">
-                        <span class="text-[8px] text-emerald-400 block uppercase">Ingresos</span>
-                        <h2 id="dash-ingresos" class="text-lg font-bold text-emerald-400">$ 0</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full lg:w-auto">
+                    <div class="bg-[#0d1117] p-5 rounded-3xl border border-emerald-500/20 text-center">
+                        <span class="text-[8px] orbitron text-emerald-400 block mb-1">INGRESOS</span>
+                        <h2 id="dash-ingresos" class="text-xl font-black orbitron">$ 0</h2>
                     </div>
-                    <div class="bg-black/50 p-4 rounded-2xl border border-red-500/20 text-center">
-                        <span class="text-[8px] text-red-500 block uppercase">Gastos</span>
-                        <h2 id="dash-gastos" class="text-lg font-bold text-red-500">$ 0</h2>
+                    <div class="bg-[#0d1117] p-5 rounded-3xl border border-red-500/20 text-center">
+                        <span class="text-[8px] orbitron text-red-500 block mb-1">EGRESOS</span>
+                        <h2 id="dash-gastos" class="text-xl font-black orbitron">$ 0</h2>
                     </div>
-                    <div class="bg-black/50 p-4 rounded-2xl border border-amber-500/20 text-center">
-                        <span class="text-[8px] text-amber-500 block uppercase">Utilidad</span>
-                        <h2 id="dash-utilidad" class="text-lg font-bold text-amber-400">$ 0</h2>
+                    <div class="bg-[#0d1117] p-5 rounded-3xl border border-amber-500/20 text-center">
+                        <span class="text-[8px] orbitron text-amber-500 block mb-1">UTILIDAD</span>
+                        <h2 id="dash-utilidad" class="text-xl font-black orbitron">$ 0</h2>
                     </div>
-                    <div class="bg-black/50 p-4 rounded-2xl border border-cyan-500/20 text-center">
-                        <span class="text-[8px] text-cyan-400 block uppercase">Caja</span>
-                        <h2 id="dash-caja" class="text-lg font-bold text-cyan-400">$ 0</h2>
+                    <div class="bg-[#0d1117] p-5 rounded-3xl border border-cyan-500/20 text-center">
+                        <span class="text-[8px] orbitron text-cyan-400 block mb-1">DISPONIBLE</span>
+                        <h2 id="dash-caja" class="text-xl font-black orbitron">$ 0</h2>
                     </div>
                 </div>
             </header>
 
-            <nav class="flex gap-2 mb-8 justify-center">
-                <button id="btn-diario" class="px-6 py-2 rounded-lg bg-white/5 text-[10px] font-bold">LIBRO DIARIO</button>
-                <button id="btn-puc" class="px-6 py-2 rounded-lg bg-white/5 text-[10px] font-bold">PLAN PUC</button>
-            </nav>
-
-            <div id="cont-dynamic-content"></div>
+            <div id="cont-dynamic-content" class="animate-in fade-in slide-in-from-bottom-5 duration-700"></div>
         </div>`;
         
-        document.getElementById("btn-diario").onclick = () => { vistaActual = "DIARIO"; renderLayout(); };
-        document.getElementById("btn-puc").onclick = () => { vistaActual = "CUENTAS"; renderLayout(); };
-
-        if (vistaActual === "DIARIO") cargarVistaDiaria();
-        else cargarVistaCuentas();
+        cargarVistaDiaria();
     };
 
     const cargarVistaDiaria = () => {
-        document.getElementById("cont-dynamic-content").innerHTML = `
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="bg-[#0d1117] p-6 rounded-3xl border border-white/5">
-                <input id="acc-concepto" class="w-full bg-black p-4 rounded-xl mb-4 text-sm uppercase" placeholder="Concepto...">
-                <select id="acc-tipo" class="w-full bg-black p-4 rounded-xl mb-4 text-xs text-amber-400">
-                    <option value="ingreso_ot">4135 - SERVICIOS</option>
-                    <option value="venta_repuesto">413505 - REPUESTOS</option>
-                    <option value="gasto_operativo">5195 - GASTOS</option>
-                    <option value="nomina_pago">5105 - NÓMINA</option>
-                </select>
-                <input id="acc-monto" type="number" class="w-full bg-black p-4 rounded-xl mb-4 text-lg font-bold" placeholder="0.00">
-                <button id="btnGuardar" class="w-full bg-amber-400 text-black font-black py-4 rounded-xl">REGISTRAR</button>
+        const content = document.getElementById("cont-dynamic-content");
+        content.innerHTML = `
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <div class="lg:col-span-4">
+                <div class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 shadow-2xl">
+                    <p class="orbitron text-[10px] text-amber-500 font-black mb-6 uppercase">Entrada Manual</p>
+                    <div class="space-y-5">
+                        <input id="acc-concepto" class="w-full bg-black p-5 rounded-2xl border border-white/10 outline-none focus:border-amber-500 font-bold text-sm" placeholder="CONCEPTO">
+                        <select id="acc-tipo" class="w-full bg-black p-5 rounded-2xl border border-white/10 text-amber-400 font-black orbitron text-[10px]">
+                            <option value="ingreso_ot">INGRESO OT</option>
+                            <option value="gasto_operativo">GASTO OPERATIVO</option>
+                            <option value="nomina_pago">NÓMINA</option>
+                        </select>
+                        <input id="acc-monto" type="number" class="w-full bg-black p-5 rounded-2xl border border-white/10 text-white font-black orbitron text-xl" placeholder="0.00">
+                        <button id="btnGuardarFinanza" class="w-full bg-amber-400 text-black font-black orbitron py-5 rounded-2xl transition-all uppercase">SINCRONIZAR</button>
+                    </div>
+                </div>
             </div>
-            <div id="listaFinanzas" class="lg:col-span-2 space-y-3"></div>
+            <div class="lg:col-span-8">
+                <div id="listaFinanzas" class="space-y-4"></div>
+            </div>
         </div>`;
-        document.getElementById("btnGuardar").onclick = registrar;
-        escuchar();
+
+        document.getElementById("btnGuardarFinanza").onclick = registrarMovimiento;
+        escucharContabilidad();
     };
 
-    const escuchar = () => {
+    function escucharContabilidad() {
         if (unsubscribe) unsubscribe();
-        const q = query(collection(db, "contabilidad"), where("empresaId", "==", empresaId), orderBy("creadoEn", "desc"));
         
+        // QUERY FLEXIBLE: Si hay desfase, ordenamos por tiempo de servidor
+        const q = query(
+            collection(db, "contabilidad"), 
+            where("empresaId", "==", empresaId), 
+            orderBy("creadoEn", "desc")
+        );
+
         unsubscribe = onSnapshot(q, (snap) => {
-            let ing = 0, gas = 0;
+            let ingresos = 0, gastos = 0;
             const list = document.getElementById("listaFinanzas");
             if (!list) return;
 
-            list.innerHTML = snap.docs.map(doc => {
-                const m = doc.data();
-                const val = parseFloat(m.monto || 0);
-                const esIng = m.tipo.includes('ingreso') || m.tipo.includes('venta') || m.tipo.includes('capital');
-                
-                if (esIng) ing += val; else gas += val;
+            if (snap.empty) {
+                list.innerHTML = `<div class="p-10 text-center opacity-30 orbitron text-[10px]">SIN DATOS EN FIRESTORE PARA ESTE ID</div>`;
+                return;
+            }
 
-                return `<div class="bg-white/5 p-4 rounded-2xl flex justify-between">
-                    <div><p class="text-xs font-bold uppercase">${m.concepto}</p></div>
-                    <div class="text-right"><p class="${esIng ? 'text-emerald-400' : 'text-red-500'} font-bold">$${val.toLocaleString()}</p></div>
+            list.innerHTML = snap.docs.map(docSnap => {
+                const m = docSnap.data();
+                const v = parseFloat(m.monto || 0);
+                
+                // Mapeo basado en tus fotos de la consola
+                const esIngreso = ['ingreso_ot', 'venta_repuesto', 'capital_inicial'].includes(m.tipo);
+                
+                if (esIngreso) ingresos += v;
+                else gastos += v;
+
+                return `
+                <div class="bg-[#0d1117] p-6 rounded-[2.5rem] border border-white/5 flex justify-between items-center">
+                    <div>
+                        <p class="text-xs font-black text-white uppercase">${m.concepto}</p>
+                        <p class="text-[7px] text-slate-500 orbitron uppercase">${m.tipo}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-lg font-black orbitron ${esIngreso ? 'text-emerald-400' : 'text-red-500'}">
+                            ${esIngreso ? '+' : '-'} $${v.toLocaleString()}
+                        </p>
+                    </div>
                 </div>`;
             }).join("");
 
-            document.getElementById("dash-ingresos").innerText = `$ ${ing.toLocaleString()}`;
-            document.getElementById("dash-gastos").innerText = `$ ${gas.toLocaleString()}`;
-            document.getElementById("dash-utilidad").innerText = `$ ${(ing - gas).toLocaleString()}`;
-            document.getElementById("dash-caja").innerText = `$ ${(ing - gas).toLocaleString()}`;
+            document.getElementById("dash-ingresos").innerText = `$ ${ingresos.toLocaleString()}`;
+            document.getElementById("dash-gastos").innerText = `$ ${gastos.toLocaleString()}`;
+            document.getElementById("dash-utilidad").innerText = `$ ${(ingresos - gastos).toLocaleString()}`;
+            document.getElementById("dash-caja").innerText = `$ ${(ingresos - gastos).toLocaleString()}`;
         });
-    };
+    }
 
-    const cargarVistaCuentas = async () => {
-        document.getElementById("cont-dynamic-content").innerHTML = `
-            <div class="bg-black/50 p-8 rounded-3xl border border-white/5">
-                <h2 class="text-amber-400 font-bold mb-6">PLAN PUC - RECONEXIÓN DIRECTA</h2>
-                <div id="puc-render" class="space-y-4"></div>
-            </div>`;
-        
-        const snap = await getDocs(query(collection(db, "contabilidad"), where("empresaId", "==", empresaId)));
-        const puc = { '4135': 0, '51': 0, '11': 0 };
+    async function registrarMovimiento() {
+        const concepto = document.getElementById("acc-concepto").value.toUpperCase();
+        const tipo = document.getElementById("acc-tipo").value;
+        const monto = parseFloat(document.getElementById("acc-monto").value);
 
-        snap.forEach(d => {
-            const m = d.data();
-            const v = parseFloat(m.monto || 0);
-            if(m.tipo.includes('ingreso') || m.tipo.includes('venta')) puc['4135'] += v;
-            else if(m.tipo.includes('gasto') || m.tipo.includes('nomina')) puc['51'] += v;
-            else puc['11'] += v;
-        });
-
-        document.getElementById("puc-render").innerHTML = `
-            <div class="flex justify-between border-b border-white/10 pb-2"><span>4135 - INGRESOS</span><b>$${puc['4135'].toLocaleString()}</b></div>
-            <div class="flex justify-between border-b border-white/10 pb-2"><span>51 - GASTOS</span><b>$${puc['51'].toLocaleString()}</b></div>
-            <div class="flex justify-between border-b border-white/10 pb-2"><span>11 - DISPONIBLE</span><b>$${puc['11'].toLocaleString()}</b></div>
-        `;
-    };
-
-    async function registrar() {
-        const c = document.getElementById("acc-concepto").value;
-        const m = parseFloat(document.getElementById("acc-monto").value);
-        const t = document.getElementById("acc-tipo").value;
-        if (!c || !m) return;
+        if (!concepto || isNaN(monto)) return;
 
         await addDoc(collection(db, "contabilidad"), {
-            empresaId, concepto: c.toUpperCase(), monto: m, tipo: t, creadoEn: serverTimestamp()
+            empresaId, concepto, tipo, monto, creadoEn: serverTimestamp()
         });
+
         document.getElementById("acc-concepto").value = "";
         document.getElementById("acc-monto").value = "";
     }
