@@ -1,6 +1,6 @@
 /**
- * contabilidad.js - NEXUS-X MASTER-CORE V21.5 🏛️
- * Motor Financiero de Alta Precisión con Auditoría Cruzada
+ * contabilidad.js - NEXUS-X MASTER-CORE V21.6 🏛️
+ * Motor Financiero de Alta Precisión con Auditoría Cruzada y Resiliencia
  * @author William Jeffry Urquijo Cubillos & Gemini AI
  */
 import { 
@@ -9,14 +9,19 @@ import {
 import { db } from "../core/firebase-config.js";
 import { NexusSystem } from '../system/nexus-core.js';
 
-
 export default async function contabilidad(container) {
-    // 1. BLINDAJE DE IDENTIDAD (Evita el desfase de Firestore)
-    const empresaId = (localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId") || "").trim();
+    // 1. BLINDAJE DE IDENTIDAD CON FALLBACK
+    const obtenerEmpresaId = () => {
+        return (localStorage.getItem("nexus_empresaId") || 
+                localStorage.getItem("empresaId") || 
+                "NO_ID").trim();
+    };
+
+    let empresaId = obtenerEmpresaId();
     let vistaActual = "DIARIO"; 
     let unsubscribe = null;
 
-    // Mapeo de compatibilidad para que lea los datos de tus capturas de Firebase
+    // Mapeo de compatibilidad total (Sincronizado con tus fotos de Firebase)
     const MAP_TIPOS = {
         ingresos: ['ingreso_ot', 'venta_repuesto', 'capital_inicial', 'capital'],
         gastos: ['gasto_operativo', 'gasto_insumos', 'nomina_pago', 'nomina'],
@@ -29,27 +34,27 @@ export default async function contabilidad(container) {
             <header class="flex flex-col lg:flex-row justify-between items-center gap-8 mb-12 border-b border-white/10 pb-10">
                 <div class="text-center lg:text-left">
                     <h1 class="orbitron text-5xl font-black text-white italic tracking-tighter uppercase">
-                        FINANCE <span class="text-amber-400">CORE</span><span class="text-cyan-500 text-xl">.V21.5</span>
+                        FINANCE <span class="text-amber-400">CORE</span><span class="text-cyan-500 text-xl">.V21.6</span>
                     </h1>
                     <p class="text-[9px] text-slate-500 font-black uppercase tracking-[0.4em] orbitron mt-2 italic">Global Ledger & Fiscal Control</p>
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full lg:w-auto">
                     <div class="bg-[#0d1117] p-5 rounded-3xl border border-emerald-500/20 text-center shadow-2xl">
-                        <span class="text-[8px] orbitron text-emerald-400 block mb-1">INGRESOS</span>
-                        <h2 id="dash-ingresos" class="text-xl font-black orbitron">$ 0</h2>
+                        <span class="text-[8px] orbitron text-emerald-400 block mb-1 uppercase">Ingresos Totales</span>
+                        <h2 id="dash-ingresos" class="text-xl font-black orbitron text-emerald-400">$ 0</h2>
                     </div>
                     <div class="bg-[#0d1117] p-5 rounded-3xl border border-red-500/20 text-center shadow-2xl">
-                        <span class="text-[8px] orbitron text-red-500 block mb-1">GASTOS</span>
-                        <h2 id="dash-gastos" class="text-xl font-black orbitron">$ 0</h2>
+                        <span class="text-[8px] orbitron text-red-500 block mb-1 uppercase">Gastos Totales</span>
+                        <h2 id="dash-gastos" class="text-xl font-black orbitron text-red-500">$ 0</h2>
                     </div>
                     <div class="bg-[#0d1117] p-5 rounded-3xl border border-amber-500/20 text-center shadow-2xl">
-                        <span class="text-[8px] orbitron text-amber-500 block mb-1">UTILIDAD NETA</span>
-                        <h2 id="dash-utilidad" class="text-xl font-black orbitron">$ 0</h2>
+                        <span class="text-[8px] orbitron text-amber-500 block mb-1 uppercase">Utilidad Neta</span>
+                        <h2 id="dash-utilidad" class="text-xl font-black orbitron text-amber-400">$ 0</h2>
                     </div>
                     <div class="bg-[#0d1117] p-5 rounded-3xl border border-cyan-500/20 text-center shadow-2xl">
-                        <span class="text-[8px] orbitron text-cyan-400 block mb-1">DISPONIBLE</span>
-                        <h2 id="dash-caja" class="text-xl font-black orbitron">$ 0</h2>
+                        <span class="text-[8px] orbitron text-cyan-400 block mb-1 uppercase">Caja Disponible</span>
+                        <h2 id="dash-caja" class="text-xl font-black orbitron text-cyan-400">$ 0</h2>
                     </div>
                 </div>
             </header>
@@ -70,14 +75,24 @@ export default async function contabilidad(container) {
     const setupNavigation = () => {
         const btnDiario = document.getElementById("btn-vista-diario");
         const btnPuc = document.getElementById("btn-vista-puc");
+        if(!btnDiario || !btnPuc) return;
+
         btnDiario.innerText = "LIBRO DIARIO";
         btnPuc.innerText = "PLAN PUC / BALANCES";
 
         btnDiario.className = `px-8 py-3 rounded-full orbitron text-[10px] font-black ${vistaActual === 'DIARIO' ? 'bg-amber-400 text-black shadow-[0_0_20px_rgba(251,191,36,0.4)]' : 'text-slate-500 hover:text-white'}`;
         btnPuc.className = `px-8 py-3 rounded-full orbitron text-[10px] font-black ${vistaActual === 'CUENTAS' ? 'bg-amber-400 text-black shadow-[0_0_20px_rgba(251,191,36,0.4)]' : 'text-slate-500 hover:text-white'}`;
 
-        btnDiario.onclick = () => { vistaActual = "DIARIO"; renderLayout(); };
-        btnPuc.onclick = () => { vistaActual = "CUENTAS"; renderLayout(); };
+        btnDiario.onclick = () => { 
+            if(vistaActual === "DIARIO") return;
+            vistaActual = "DIARIO"; 
+            renderLayout(); 
+        };
+        btnPuc.onclick = () => { 
+            if(vistaActual === "CUENTAS") return;
+            vistaActual = "CUENTAS"; 
+            renderLayout(); 
+        };
     };
 
     const cargarVistaDiaria = () => {
@@ -112,7 +127,15 @@ export default async function contabilidad(container) {
 
     function escucharContabilidad() {
         if (unsubscribe) unsubscribe();
-        const q = query(collection(db, "contabilidad"), where("empresaId", "==", empresaId), orderBy("creadoEn", "desc"));
+        
+        // Re-verificar ID antes de la consulta para evitar el $0
+        empresaId = obtenerEmpresaId();
+
+        const q = query(
+            collection(db, "contabilidad"), 
+            where("empresaId", "==", empresaId), 
+            orderBy("creadoEn", "desc")
+        );
 
         unsubscribe = onSnapshot(q, (snap) => {
             let tIngresos = 0, tGastos = 0, tNotas = 0;
@@ -120,7 +143,8 @@ export default async function contabilidad(container) {
             if (!list) return;
 
             if (snap.empty) {
-                list.innerHTML = `<div class="p-20 text-center opacity-20 orbitron italic text-xs">ESPERANDO MOVIMIENTOS DE FIRESTORE...</div>`;
+                list.innerHTML = `<div class="p-20 text-center opacity-20 orbitron italic text-xs">SIN MOVIMIENTOS DETECTADOS PARA ESTE ID</div>`;
+                actualizarTotales(0, 0, 0);
                 return;
             }
 
@@ -143,23 +167,42 @@ export default async function contabilidad(container) {
                         </div>
                         <div>
                             <p class="text-xs font-black text-white uppercase tracking-tighter">${m.concepto}</p>
-                            <p class="text-[7px] text-slate-500 orbitron">${m.creadoEn?.toDate().toLocaleString() || 'SYNC...'}</p>
+                            <p class="text-[7px] text-slate-500 orbitron uppercase font-bold">
+                                ${m.creadoEn ? m.creadoEn.toDate().toLocaleString() : 'PROCESANDO...'}
+                            </p>
                         </div>
                     </div>
                     <div class="text-right">
-                        <p class="text-lg font-black orbitron ${esIngreso ? 'text-emerald-400' : 'text-red-500'}">${esIngreso ? '+' : '-'} $${v.toLocaleString()}</p>
+                        <p class="text-lg font-black orbitron ${esIngreso ? 'text-emerald-400' : 'text-red-500'}">
+                            ${esIngreso ? '+' : '-'} $${v.toLocaleString()}
+                        </p>
                         <p class="text-[6px] text-slate-600 orbitron uppercase font-black tracking-widest">${m.tipo}</p>
                     </div>
                 </div>`;
             }).join("");
 
-            const utilidad = tIngresos - tGastos - tNotas;
-            document.getElementById("dash-ingresos").innerText = `$ ${tIngresos.toLocaleString()}`;
-            document.getElementById("dash-gastos").innerText = `$ ${tGastos.toLocaleString()}`;
-            document.getElementById("dash-utilidad").innerText = `$ ${utilidad.toLocaleString()}`;
-            document.getElementById("dash-caja").innerText = `$ ${utilidad.toLocaleString()}`;
+            actualizarTotales(tIngresos, tGastos, tNotas);
+            // PERSISTENCIA EN BUNKER (Fase de Resiliencia)
+            NexusSystem.saveBunker('contabilidad', snap.docs.map(d => d.data()));
+        }, (error) => {
+            console.error("Fallo en Snapshot:", error);
+            const backup = NexusSystem.loadBunker('contabilidad');
+            if(backup) console.log("Nexus Core: Usando Backup por caída de red.");
         });
     }
+
+    const actualizarTotales = (ing, gas, not) => {
+        const util = ing - gas - not;
+        const dIng = document.getElementById("dash-ingresos");
+        const dGas = document.getElementById("dash-gastos");
+        const dUtil = document.getElementById("dash-utilidad");
+        const dCaja = document.getElementById("dash-caja");
+
+        if(dIng) dIng.innerText = `$ ${ing.toLocaleString()}`;
+        if(dGas) dGas.innerText = `$ ${gas.toLocaleString()}`;
+        if(dUtil) dUtil.innerText = `$ ${util.toLocaleString()}`;
+        if(dCaja) dCaja.innerText = `$ ${util.toLocaleString()}`;
+    };
 
     const cargarVistaCuentas = async () => {
         const content = document.getElementById("cont-dynamic-content");
@@ -168,15 +211,15 @@ export default async function contabilidad(container) {
             <h3 class="orbitron text-xl font-black mb-10 text-amber-400 italic">BALANCE OFICIAL PUC - NEXUS CORE</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="p-8 bg-black/40 rounded-[3rem] border border-emerald-500/10">
-                    <p class="text-[9px] orbitron font-black text-emerald-400 mb-6 uppercase">Clase 4 - Ingresos</p>
+                    <p class="text-[9px] orbitron font-black text-emerald-400 mb-6 uppercase tracking-widest">Clase 4 - Ingresos</p>
                     <div class="space-y-3" id="puc-clase-4"></div>
                 </div>
                 <div class="p-8 bg-black/40 rounded-[3rem] border border-red-500/10">
-                    <p class="text-[9px] orbitron font-black text-red-500 mb-6 uppercase">Clase 5 - Gastos</p>
+                    <p class="text-[9px] orbitron font-black text-red-500 mb-6 uppercase tracking-widest">Clase 5 - Gastos</p>
                     <div class="space-y-3" id="puc-clase-5"></div>
                 </div>
                 <div class="p-8 bg-black/40 rounded-[3rem] border border-amber-500/10">
-                    <p class="text-[9px] orbitron font-black text-amber-500 mb-6 uppercase">Clase 1 - Activos</p>
+                    <p class="text-[9px] orbitron font-black text-amber-500 mb-6 uppercase tracking-widest">Clase 1 - Activos</p>
                     <div class="space-y-3" id="puc-clase-1"></div>
                 </div>
             </div>
@@ -185,6 +228,7 @@ export default async function contabilidad(container) {
     };
 
     const calcularPUC = async () => {
+        empresaId = obtenerEmpresaId();
         const snap = await getDocs(query(collection(db, "contabilidad"), where("empresaId", "==", empresaId)));
         const p = { '4135': 0, '413505': 0, '5105': 0, '5195': 0, '1105': 0 };
 
@@ -198,7 +242,12 @@ export default async function contabilidad(container) {
             if(['capital_inicial', 'capital'].includes(m.tipo)) p['1105'] += val;
         });
 
-        const row = (c, n, v) => `<div class="flex justify-between border-b border-white/5 pb-2"><span class="text-[9px] text-slate-400 font-mono">${c}</span><span class="text-[10px] text-white font-black">$ ${v.toLocaleString()}</span></div>`;
+        const row = (c, n, v) => `
+        <div class="flex justify-between border-b border-white/5 pb-2 hover:border-amber-500/30 transition-colors">
+            <span class="text-[9px] text-slate-400 font-mono">${c}</span>
+            <span class="text-[10px] text-white font-black">$ ${v.toLocaleString()}</span>
+        </div>`;
+
         document.getElementById("puc-clase-4").innerHTML = row('4135 - SERVICIOS', '', p['4135']) + row('413505 - REPUESTOS', '', p['413505']);
         document.getElementById("puc-clase-5").innerHTML = row('5105 - NÓMINA', '', p['5105']) + row('5195 - DIVERSOS', '', p['5195']);
         document.getElementById("puc-clase-1").innerHTML = row('1105 - CAJA GRAL', '', p['1105']);
@@ -216,23 +265,30 @@ export default async function contabilidad(container) {
     };
 
     async function registrarMovimiento() {
-        const concepto = document.getElementById("acc-concepto").value.toUpperCase();
+        const conceptoInput = document.getElementById("acc-concepto");
+        const montoInput = document.getElementById("acc-monto");
+        const concepto = conceptoInput.value.toUpperCase();
         const tipo = document.getElementById("acc-tipo").value;
-        const monto = parseFloat(document.getElementById("acc-monto").value);
+        const monto = parseFloat(montoInput.value);
+
         if (!concepto || isNaN(monto) || monto <= 0) return;
 
-        // El sistema limpia y valida los campos antes de tocar Firestore
-const datosSaneados = NexusSystem.sanitize('contabilidad', { 
-    empresaId, 
-    concepto, 
-    tipo, 
-    monto, 
-    creadoEn: serverTimestamp() 
-});
+        // MANIOBRA NEXUS-CORE: Saneamiento de datos
+        const datosSaneados = NexusSystem.sanitize('contabilidad', { 
+            empresaId: obtenerEmpresaId(), 
+            concepto, 
+            tipo, 
+            monto, 
+            creadoEn: serverTimestamp() 
+        });
 
-await addDoc(collection(db, "contabilidad"), datosSaneados);
-        document.getElementById("acc-concepto").value = "";
-        document.getElementById("acc-monto").value = "";
+        try {
+            await addDoc(collection(db, "contabilidad"), datosSaneados);
+            conceptoInput.value = "";
+            montoInput.value = "";
+        } catch (e) {
+            console.error("Error al registrar:", e);
+        }
     }
 
     renderLayout();
