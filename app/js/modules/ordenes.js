@@ -340,50 +340,84 @@ export default async function ordenes(container) {
         }
     };
 
-         // --- 💾 DATABASE SYNC (CONTABILIDAD INTEGRADA) ---
+             // --- 💾 DATABASE SYNC (CONTABILIDAD INTEGRADA & NEXUS FINANCE) ---
     const ejecutarSincronizacionNexus = async () => {
         const btn = document.getElementById("btnSincronizar");
-        btn.disabled = true;
+        if (btn) btn.disabled = true;
         
         try {
             const placa = document.getElementById("f-placa").value.trim().toUpperCase();
             if(!placa) throw new Error("IDENTIFICADOR REQUERIDO");
 
             const docId = ordenActiva.id || `OT_${placa}_${Date.now()}`;
+            
+            // Captura de valores financieros para auditoría
+            const anticipoVal = Number(document.getElementById("f-anticipo-cliente").value) || 0;
+            const gastosVal = Number(document.getElementById("f-gastos-varios").value) || 0;
+            const adelantoVal = Number(document.getElementById("f-adelanto-tecnico").value) || 0;
+
             const finalData = {
                 ...ordenActiva,
-                id: docId, empresaId,
+                id: docId, 
+                empresaId,
                 placa,
                 cliente: document.getElementById("f-cliente").value.toUpperCase(),
                 telefono: document.getElementById("f-telefono").value,
                 estado: document.getElementById("f-estado").value,
                 bitacora_ia: document.getElementById("ai-log-display").value,
                 finanzas: {
-                    anticipo_cliente: Number(document.getElementById("f-anticipo-cliente").value),
-                    gastos_varios: Number(document.getElementById("f-gastos-varios").value),
-                    adelanto_tecnico: Number(document.getElementById("f-adelanto-tecnico").value)
+                    anticipo_cliente: anticipoVal,
+                    gastos_varios: gastosVal,
+                    adelanto_tecnico: adelantoVal
                 },
                 updatedAt: serverTimestamp()
             };
 
+            // 1. Persistencia de la Orden de Servicio
             await setDoc(doc(db, "ordenes", docId), finalData);
 
-            // Trigger Contabilidad y Nómina (Auditoría Punto 3 y 4)
-            if(finalData.finanzas.gastos_varios > 0 || finalData.finanzas.adelanto_tecnico > 0) {
-                await setDoc(doc(db, "contabilidad", `MOV_${docId}`), {
-                    tipo: 'EGRESO_ORDEN',
-                    monto: finalData.finanzas.gastos_varios + finalData.finanzas.adelanto_tecnico,
+            // 2. Sincronización con contabilidad.js (INGRESOS)
+            if(anticipoVal > 0) {
+                await setDoc(doc(db, "contabilidad", `ING_${docId}`), {
+                    empresaId,
+                    tipo: 'ingreso_ot', 
+                    monto: anticipoVal,
+                    concepto: `ANTICIPO OT: ${placa} - ${finalData.cliente}`,
                     ordenId: docId,
-                    fecha: serverTimestamp(),
-                    descripcion: `Gastos y Pago Técnico de Orden ${placa}`
+                    creadoEn: serverTimestamp()
                 });
             }
 
-            Swal.fire({ icon: 'success', title: 'MISSION SYNCED', background: '#010409', color: '#06b6d4', timer: 1500 });
+            // 3. Sincronización con contabilidad.js (EGRESOS: Gastos + Nómina)
+            const totalEgresos = gastosVal + adelantoVal;
+            if(totalEgresos > 0) {
+                await setDoc(doc(db, "contabilidad", `EGR_${docId}`), {
+                    empresaId,
+                    tipo: 'gasto_operativo',
+                    monto: totalEgresos,
+                    concepto: `EGRESO OPERATIVO OT: ${placa}`,
+                    ordenId: docId,
+                    creadoEn: serverTimestamp()
+                });
+            }
+
+            Swal.fire({ 
+                icon: 'success', 
+                title: 'MISSION SYNCED', 
+                text: 'PROTOCOL OPERATIONAL',
+                background: '#010409', 
+                color: '#06b6d4', 
+                timer: 1500 
+            });
+            
             document.getElementById("nexus-terminal").classList.add("hidden");
+            renderBase(); 
+
         } catch (err) {
-            Swal.fire({ icon: 'error', title: 'FAILURE', text: err.message });
-        } finally { btn.disabled = false; }
+            Swal.fire({ icon: 'error', title: 'FAILURE', text: err.message, background: '#010409', color: '#ff4444' });
+        } finally { 
+            if (btn) btn.disabled = false; 
+        }
     };
 
     window.buscarEnInventario = async (idx) => {
@@ -392,7 +426,10 @@ export default async function ordenes(container) {
             title: 'BÓVEDA DE REPUESTOS',
             background: '#0d1117', color: '#fff',
             input: 'select',
-            inputOptions: Object.fromEntries(snap.docs.map(d => [JSON.stringify({id: d.id, n: d.data().nombre, c: d.data().costo, v: d.data().precioVenta}), `${d.data().nombre} ($${d.data().precioVenta})`])),
+            inputOptions: Object.fromEntries(snap.docs.map(d => [
+                JSON.stringify({id: d.id, n: d.data().nombre, c: d.data().costo, v: d.data().precioVenta}), 
+                `${d.data().nombre} ($${d.data().precioVenta})`
+            ])),
             showCancelButton: true
         });
         if (res) {
@@ -405,9 +442,16 @@ export default async function ordenes(container) {
     window.abrirTerminalNexus = (id) => {
         document.getElementById("nexus-terminal").classList.remove("hidden");
         if(id) {
-            getDoc(doc(db, "ordenes", id)).then(s => { ordenActiva = { id, ...s.data() }; renderTerminal(); });
+            getDoc(doc(db, "ordenes", id)).then(s => { 
+                ordenActiva = { id, ...s.data() }; 
+                renderTerminal(); 
+            });
         } else {
-            ordenActiva = { placa: '', cliente: '', telefono: '', estado: 'INGRESO', items: [], bitacora_ia: '', finanzas: { gastos_varios: 0, adelanto_tecnico: 0, anticipo_cliente: 0 }};
+            ordenActiva = { 
+                placa: '', cliente: '', telefono: '', estado: 'INGRESO', 
+                items: [], bitacora_ia: '', 
+                finanzas: { gastos_varios: 0, adelanto_tecnico: 0, anticipo_cliente: 0 }
+            };
             renderTerminal();
         }
     };
@@ -423,12 +467,23 @@ export default async function ordenes(container) {
         recalcularFinanzas(); 
     };
 
-    window.removeItemNexus = (idx) => { ordenActiva.items.splice(idx, 1); recalcularFinanzas(); };
+    window.removeItemNexus = (idx) => { 
+        ordenActiva.items.splice(idx, 1); 
+        recalcularFinanzas(); 
+    };
+
     window.actualizarFinanzasDirecto = () => recalcularFinanzas();
 
     const vincularNavegacion = () => {
-        document.getElementById("btnNewMission").onclick = () => window.abrirTerminalNexus();
-        document.querySelectorAll(".fase-tab").forEach(tab => { tab.onclick = () => { faseActual = tab.dataset.fase; renderBase(); }; });
+        const btnNew = document.getElementById("btnNewMission");
+        if(btnNew) btnNew.onclick = () => window.abrirTerminalNexus();
+        
+        document.querySelectorAll(".fase-tab").forEach(tab => { 
+            tab.onclick = () => { 
+                faseActual = tab.dataset.fase; 
+                renderBase(); 
+            }; 
+        });
     };
 
     renderBase();
