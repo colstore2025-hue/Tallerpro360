@@ -7,6 +7,8 @@ import {
     collection, query, where, orderBy, onSnapshot, serverTimestamp, getDocs, addDoc 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"; 
 import { db } from "../core/firebase-config.js";
+import { NexusSystem } from '../system/nexus-core.js';
+
 
 export default async function contabilidad(container) {
     // 1. BLINDAJE DE IDENTIDAD (Evita el desfase de Firestore)
@@ -219,7 +221,16 @@ export default async function contabilidad(container) {
         const monto = parseFloat(document.getElementById("acc-monto").value);
         if (!concepto || isNaN(monto) || monto <= 0) return;
 
-        await addDoc(collection(db, "contabilidad"), { empresaId, concepto, tipo, monto, creadoEn: serverTimestamp() });
+        // El sistema limpia y valida los campos antes de tocar Firestore
+const datosSaneados = NexusSystem.sanitize('contabilidad', { 
+    empresaId, 
+    concepto, 
+    tipo, 
+    monto, 
+    creadoEn: serverTimestamp() 
+});
+
+await addDoc(collection(db, "contabilidad"), datosSaneados);
         document.getElementById("acc-concepto").value = "";
         document.getElementById("acc-monto").value = "";
     }
