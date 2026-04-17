@@ -340,136 +340,110 @@ export default async function ordenes(container) {
         }
     };
 
-                 /**
- * DATABASE SYNC - INTEGRACIÓN TOTAL NEXUS-X
- * Sincroniza Ordenes de Servicio con el motor Finance Core V21
- */
+                 // --- 💾 DATABASE SYNC (CONTABILIDAD INTEGRADA & NEXUS FINANCE) ---
 const ejecutarSincronizacionNexus = async () => {
     const btn = document.getElementById("btnSincronizar");
     if (btn) btn.disabled = true;
     
     try {
-        // 1. Validaciones Críticas de Identidad
-        const placaInput = document.getElementById("f-placa");
-        if (!placaInput || !placaInput.value.trim()) throw new Error("PLACA NO DETECTADA");
-        const placa = placaInput.value.trim().toUpperCase();
+        // 1. CAPTURA DE IDENTIDAD (Fuerza coincidencia con Finance Core V21)
+        const placa = document.getElementById("f-placa").value.trim().toUpperCase();
+        if(!placa) throw new Error("IDENTIFICADOR REQUERIDO");
 
-        // Recuperación blindada de Empresa ID (coincidente con contabilidad.js)
-        const empresaIdActual = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
-        if (!empresaIdActual) throw new Error("SESIÓN DE EMPRESA NO VÁLIDA");
-
+        // PRIORIDAD ABSOLUTA: Usar el ID que ya tiene la sesión activa del taller
+        const empresaIdActual = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId") || window.empresaId;
         const docId = ordenActiva.id || `OT_${placa}_${Date.now()}`;
         
-        // 2. Extracción Financiera de Precisión (Captura de Dashboard)
-        const anticipoVal = Number(document.getElementById("f-anticipo-cliente")?.value) || 0;
-        const gastosVal = Number(document.getElementById("f-gastos-varios")?.value) || 0;
-        const adelantoVal = Number(document.getElementById("f-adelanto-tecnico")?.value) || 0;
-        
-        // Captura el Gran Total de la Factura (el valor blanco de $155,000 en tu captura)
-        const totalElemento = document.querySelector(".gran-total-factura") || document.getElementById("f-total-general-ot");
-        const granTotalCalculado = totalElemento ? 
-            Number(totalElemento.innerText.replace(/[^0-9.-]+/g,"")) : 
-            (ordenActiva.total || 0);
+        // 2. CAPTURA FINANCIERA (Limpieza de caracteres para evitar NaN)
+        const anticipoVal = Number(document.getElementById("f-anticipo-cliente").value) || 0;
+        const gastosVal = Number(document.getElementById("f-gastos-varios").value) || 0;
+        const adelantoVal = Number(document.getElementById("f-adelanto-tecnico").value) || 0;
+        const totalOT = Number(document.getElementById("f-total-general-ot")?.innerText.replace(/[^0-9.-]+/g,"")) || 0;
 
-        // 3. Estructura de Datos para Misión
         const finalData = {
             ...ordenActiva,
             id: docId, 
             empresaId: empresaIdActual,
             placa,
-            cliente: document.getElementById("f-cliente")?.value?.toUpperCase() || "CLIENTE GENERAL",
-            telefono: document.getElementById("f-telefono")?.value || "",
-            estado: document.getElementById("f-estado")?.value || "INGRESO",
-            bitacora_ia: document.getElementById("ai-log-display")?.value || "",
-            totalMision: granTotalCalculado,
+            cliente: document.getElementById("f-cliente").value.toUpperCase(),
+            telefono: document.getElementById("f-telefono").value,
+            estado: document.getElementById("f-estado").value,
+            bitacora_ia: document.getElementById("ai-log-display").value,
+            total: totalOT, 
+            finanzas: {
+                anticipo_cliente: anticipoVal,
+                gastos_varios: gastosVal,
+                adelanto_tecnico: adelantoVal
+            },
             updatedAt: serverTimestamp(),
             creadoEn: serverTimestamp() 
         };
 
-        // 4. PERSISTENCIA EN FIREBASE (Misión y Contabilidad)
+        // 3. PERSISTENCIA DUAL (Misión + Contabilidad)
         await setDoc(doc(db, "ordenes", docId), finalData);
 
-        const esMisionCerrada = ['LISTO', 'ENTREGADO'].includes(finalData.estado);
-        
-        // Disparador de Ingresos (PUC Clase 4)
-        if (anticipoVal > 0 || esMisionCerrada) {
-            const ingresoReal = esMisionCerrada ? granTotalCalculado : anticipoVal;
+        // TRIGGER: Si hay flujo de dinero, se inyecta en el Libro Diario
+        if(anticipoVal > 0 || finalData.estado === 'ENTREGADO') {
+            const montoCaja = (finalData.estado === 'ENTREGADO') ? totalOT : anticipoVal;
+            
             await setDoc(doc(db, "contabilidad", `ING_${docId}`), {
                 empresaId: empresaIdActual,
-                tipo: 'ingreso_ot', 
-                monto: ingresoReal,
-                concepto: `OT ${placa}: ${finalData.cliente}`,
+                tipo: 'ingreso_ot', // ID exacto que espera contabilidad.js
+                monto: montoCaja,
+                concepto: `ORDEN ${placa} - ${finalData.cliente}`,
                 ordenId: docId,
                 creadoEn: serverTimestamp()
             });
         }
 
-        // Registro de Egresos Segmentados (PUC Clase 5)
-        if (adelantoVal > 0) {
-            await setDoc(doc(db, "contabilidad", `NOM_${docId}`), {
+        // TRIGGER: Egreso por Nómina o Gastos
+        if((gastosVal + adelantoVal) > 0) {
+            await setDoc(doc(db, "contabilidad", `EGR_${docId}`), {
                 empresaId: empresaIdActual,
-                tipo: 'nomina_pago', 
-                monto: adelantoVal,
-                concepto: `PAGO TÉCNICO OT: ${placa}`,
+                tipo: (adelantoVal > 0) ? 'nomina_pago' : 'gasto_operativo',
+                monto: (gastosVal + adelantoVal),
+                concepto: `EGRESO OT: ${placa}`,
                 ordenId: docId,
                 creadoEn: serverTimestamp()
             });
         }
 
-        if (gastosVal > 0) {
-            await setDoc(doc(db, "contabilidad", `GAS_${docId}`), {
-                empresaId: empresaIdActual,
-                tipo: 'gasto_operativo',
-                monto: gastosVal,
-                concepto: `INSUMOS/GASTOS OT: ${placa}`,
-                ordenId: docId,
-                creadoEn: serverTimestamp()
-            });
-        }
-
-        // 5. CIERRE DE PROTOCOLO
         Swal.fire({ 
             icon: 'success', 
             title: 'NEXUS SYNC COMPLETED', 
-            text: 'FINANCE V21 ACTUALIZADO',
-            background: '#010409', color: '#06b6d4', timer: 2000 
-        }).then(() => {
-            document.getElementById("nexus-terminal").classList.add("hidden");
-            if (typeof renderBase === 'function') renderBase();
-            else window.location.reload(); 
+            text: 'FINANCE CORE V21 ACTUALIZADO',
+            background: '#010409', color: '#06b6d4', timer: 1500 
         });
+        
+        document.getElementById("nexus-terminal").classList.add("hidden");
+        // Refresco de interfaz para evitar "Broken Link"
+        if(typeof renderBase === 'function') renderBase(); 
+        else window.location.reload();
 
     } catch (err) {
-        console.error("Falla Nexus:", err);
-        Swal.fire({ 
-            icon: 'error', 
-            title: 'LINK PROTOCOL BROKEN', 
-            text: err.message, 
-            background: '#010409', color: '#ff4444' 
-        });
+        Swal.fire({ icon: 'error', title: 'FAILURE', text: err.message, background: '#010409', color: '#ff4444' });
     } finally { 
         if (btn) btn.disabled = false; 
     }
-}; // <--- Cierre de la función principal
-
-// --- EXPOSICIÓN GLOBAL PARA NEXUS V8 ---
-window.ejecutarSincronizacionNexus = ejecutarSincronizacionNexus;
-window.abrirTerminalNexus = (id) => {
-    document.getElementById("nexus-terminal").classList.remove("hidden");
-    if(id) {
-        getDoc(doc(db, "ordenes", id)).then(s => { 
-            ordenActiva = { id, ...s.data() }; 
-            renderTerminal(); 
-        });
-    } else {
-        ordenActiva = { 
-            placa: '', cliente: '', telefono: '', estado: 'INGRESO', 
-            items: [], bitacora_ia: '', 
-            finanzas: { gastos_varios: 0, adelanto_tecnico: 0, anticipo_cliente: 0 }
-        };
-        renderTerminal();
-    }
 };
 
-// Sellar ejecución inicial
-renderBase(); 
+// --- CIERRE DE FUNCIONES GLOBALES ---
+window.ejecutarSincronizacionNexus = ejecutarSincronizacionNexus;
+window.buscarEnInventario = async (idx) => {
+    const snap = await getDocs(query(collection(db, "inventario"), where("empresaId", "==", localStorage.getItem("empresaId"))));
+    const { value: res } = await Swal.fire({
+        title: 'BÓVEDA DE REPUESTOS',
+        background: '#0d1117', color: '#fff',
+        input: 'select',
+        inputOptions: Object.fromEntries(snap.docs.map(d => [
+            JSON.stringify({id: d.id, n: d.data().nombre, c: d.data().costo, v: d.data().precioVenta}), 
+            `${d.data().nombre} ($${d.data().precioVenta})`
+        ])),
+        showCancelButton: true
+    });
+    if (res) {
+        const data = JSON.parse(res);
+        ordenActiva.items[idx] = { ...ordenActiva.items[idx], desc: data.n, costo: data.c, venta: data.v, sku: data.id };
+        recalcularFinanzas();
+    }
+};
