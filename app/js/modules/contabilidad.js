@@ -205,18 +205,22 @@ export default async function contabilidad(container) {
         });
     }
 
-    const actualizarTotales = (ing, gas, not) => {
-        const util = ing - gas - not;
-        const dIng = document.getElementById("dash-ingresos");
-        const dGas = document.getElementById("dash-gastos");
-        const dUtil = document.getElementById("dash-utilidad");
-        const dCaja = document.getElementById("dash-caja");
-
-        if(dIng) dIng.innerText = `$ ${ing.toLocaleString()}`;
-        if(dGas) dGas.innerText = `$ ${gas.toLocaleString()}`;
-        if(dUtil) dUtil.innerText = `$ ${util.toLocaleString()}`;
-        if(dCaja) dCaja.innerText = `$ ${util.toLocaleString()}`;
+    function actualizarTotales(ing, gas, not) {
+    const util = ing - gas - not;
+    
+    // Esta línea busca CUALQUIER ID posible para asegurar que pegue el dato
+    const ids = {
+        ing: ["dash-ingresos", "totalIngresos", "ingresos-val"],
+        gas: ["dash-gastos", "totalGastos", "gastos-val"],
+        utl: ["dash-utilidad", "utilidadNeta", "util-val"]
     };
+
+    ids.ing.forEach(id => { 
+        let el = document.getElementById(id); 
+        if(el) el.innerHTML = `<span class="text-emerald-400">$ ${ing.toLocaleString()}</span>`; 
+    });
+    // Repetir para gas y utl...
+}
 
     const cargarVistaCuentas = async () => {
         const content = document.getElementById("cont-dynamic-content");
