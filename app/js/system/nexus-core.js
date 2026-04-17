@@ -1,82 +1,74 @@
 /**
- * NEXUS-X CORE SYSTEM V1.0 🏛️
+ * NEXUS-X CORE SYSTEM V1.2 🏛️ - REFORMADO
  * Ubicación: app/js/system/nexus-core.js
- * Función: Guardian de Integridad y Saneamiento Firestore
+ * Función: Facilitador de Integridad (No restrictivo)
  */
 
-// 1. EL "MAPA PERFECTO" (La Hoja de Ruta que el sistema 'aprende')
 const SCHEMA_MAP = {
     contabilidad: {
-        fields: ['empresaId', 'concepto', 'monto', 'tipo', 'creadoEn'],
+        // Campos maestros requeridos
+        fields: ['empresaId', 'concepto', 'monto', 'tipo', 'creadoEn', 'estado', 'cuenta_puc'],
         aliases: { 
             'valor': 'monto', 
             'pago': 'monto', 
+            'importe': 'monto',
             'categoria': 'tipo',
-            'descripcion': 'concepto'
+            'descripcion': 'concepto',
+            'detalle': 'concepto',
+            'fecha': 'creadoEn'
         }
-    },
-    // Aquí puedes añadir 'inventario', 'logistica', etc.
+    }
 };
 
 export const NexusSystem = {
     
     /**
-     * SANEAMIENTO AUTOMÁTICO
-     * Evita que errores de palabras en el script dañen Firestore
+     * SANEAMIENTO ELÁSTICO
+     * Si no conoce el campo, lo deja pasar igual (Evita el $0)
      */
     sanitize: (collectionName, rawData) => {
         const schema = SCHEMA_MAP[collectionName];
         if (!schema) return rawData;
 
-        let cleanData = {};
+        let cleanData = { ...rawData }; // Mantiene TODO lo que venga originalmente
         
-        // Traducir alias (si usaste una palabra vieja o diferente)
+        // Traducir alias conocidos para estandarizar
         Object.keys(rawData).forEach(key => {
-            const standardKey = schema.aliases[key] || key;
-            if (schema.fields.includes(standardKey)) {
+            const standardKey = schema.aliases[key];
+            if (standardKey) {
                 cleanData[standardKey] = rawData[key];
+                // No borramos la original, solo aseguramos que la estandarizada exista
             }
         });
 
-        // Asegurar que no falten campos críticos
-        schema.fields.forEach(field => {
-            if (cleanData[field] === undefined) {
-                console.warn(`⚠️ Nexus System: Campo '${field}' ausente en la maniobra.`);
-                cleanData[field] = field === 'monto' ? 0 : '';
-            }
-        });
+        // Garantía de integridad para campos numéricos críticos
+        if (cleanData['monto'] === undefined || cleanData['monto'] === null) {
+            console.warn("⚠️ Nexus System: Monto no detectado, inicializando en 0.");
+            cleanData['monto'] = 0;
+        }
 
         return cleanData;
     },
 
     /**
-     * BUNKER LOCAL (Resiliencia)
-     * Guarda el último éxito para evitar el $0 en pantalla
+     * RESILIENCIA DINÁMICA
      */
     saveBunker: (key, data) => {
-        const storageKey = `nexus_bunker_${key}`;
-        localStorage.setItem(storageKey, JSON.stringify({
-            data: data,
-            timestamp: Date.now()
-        }));
+        try {
+            const storageKey = `nexus_bunker_${key}`;
+            localStorage.setItem(storageKey, JSON.stringify({
+                data: data,
+                timestamp: Date.now(),
+                version: "2.17"
+            }));
+        } catch(e) { console.error("Error en Bunker Save", e); }
     },
 
     loadBunker: (key) => {
         const bunker = localStorage.getItem(`nexus_bunker_${key}`);
-        return bunker ? JSON.parse(bunker).data : null;
-    },
-
-    /**
-     * CONTROL DE ESTABILIDAD (Modo Pro)
-     * Si el script de la reforma falla, informa para el rollback
-     */
-    monitor: (moduleName, executionFn) => {
-        try {
-            return executionFn();
-        } catch (error) {
-            console.error(`🚨 FALLO DE REFORMA en ${moduleName}:`, error);
-            // Aquí se activaría la alerta para volver al script anterior
-            return null;
-        }
+        if (!bunker) return null;
+        const parsed = JSON.parse(bunker);
+        // Si el bunker es de una versión muy vieja, ignorarlo para forzar actualización
+        return (Date.now() - parsed.timestamp < 86400000) ? parsed.data : null;
     }
 };
