@@ -208,18 +208,16 @@ export default async function contabilidad(container) {
     function actualizarTotales(ing, gas, not) {
     const util = ing - gas - not;
     
-    // Esta línea busca CUALQUIER ID posible para asegurar que pegue el dato
-    const ids = {
-        ing: ["dash-ingresos", "totalIngresos", "ingresos-val"],
-        gas: ["dash-gastos", "totalGastos", "gastos-val"],
-        utl: ["dash-utilidad", "utilidadNeta", "util-val"]
-    };
-
-    ids.ing.forEach(id => { 
-        let el = document.getElementById(id); 
-        if(el) el.innerHTML = `<span class="text-emerald-400">$ ${ing.toLocaleString()}</span>`; 
-    });
-    // Repetir para gas y utl...
+    // Forzamos la escritura buscando por múltiples vías
+    try {
+        document.querySelector('[id*="ingresos"]').innerText = `$ ${ing.toLocaleString()}`;
+        document.querySelector('[id*="gastos"]').innerText = `$ ${gas.toLocaleString()}`;
+        document.querySelector('[id*="utilidad"]').innerText = `$ ${util.toLocaleString()}`;
+        document.querySelector('[id*="caja"]').innerText = `$ ${util.toLocaleString()}`;
+        console.log("Inyección exitosa");
+    } catch(e) {
+        console.error("Error crítico de IDs:", e);
+    }
 }
 
     const cargarVistaCuentas = async () => {
