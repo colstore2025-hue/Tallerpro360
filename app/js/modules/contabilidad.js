@@ -150,17 +150,14 @@ export default async function contabilidad(container) {
                     </div>
                 </div>`;
             }).join("");
-        setTimeout(() => {
-        const util = tIngresos - tGastos - tNotas;
-        if(document.getElementById("dash-ingresos")) {
+
+            const utilidad = tIngresos - tGastos - tNotas;
             document.getElementById("dash-ingresos").innerText = `$ ${tIngresos.toLocaleString()}`;
             document.getElementById("dash-gastos").innerText = `$ ${tGastos.toLocaleString()}`;
-            document.getElementById("dash-utilidad").innerText = `$ ${util.toLocaleString()}`;
-            document.getElementById("dash-caja").innerText = `$ ${util.toLocaleString()}`;
-            console.log("✅ Totales sincronizados con éxito");
-        }
-    }, 100);
-});
+            document.getElementById("dash-utilidad").innerText = `$ ${utilidad.toLocaleString()}`;
+            document.getElementById("dash-caja").innerText = `$ ${utilidad.toLocaleString()}`;
+        });
+    }
 
     const cargarVistaCuentas = async () => {
         const content = document.getElementById("cont-dynamic-content");
