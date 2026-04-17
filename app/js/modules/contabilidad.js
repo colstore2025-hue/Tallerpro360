@@ -125,10 +125,12 @@ export default async function contabilidad(container) {
         escucharContabilidad();
     };
 
-    function escucharContabilidad() {
+    
+
+                function escucharContabilidad() {
         if (unsubscribe) unsubscribe();
         
-        // Re-verificar ID antes de la consulta para evitar el $0
+        // 1. RE-VERIFICACIÓN DE IDENTIDAD CRÍTICA
         empresaId = obtenerEmpresaId();
 
         const q = query(
@@ -138,17 +140,11 @@ export default async function contabilidad(container) {
         );
 
         unsubscribe = onSnapshot(q, (snap) => {
+            // 2. CÁLCULO MATEMÁTICO INMEDIATO (Fuera del renderizado)
             let tIngresos = 0, tGastos = 0, tNotas = 0;
-            const list = document.getElementById("listaFinanzas");
-            if (!list) return;
-
-            if (snap.empty) {
-                list.innerHTML = `<div class="p-20 text-center opacity-20 orbitron italic text-xs">SIN MOVIMIENTOS DETECTADOS PARA ESTE ID</div>`;
-                actualizarTotales(0, 0, 0);
-                return;
-            }
-
-            list.innerHTML = snap.docs.map(docSnap => {
+            
+            // Procesamos los datos antes de tocar el DOM para evitar el $0
+            snap.docs.forEach(docSnap => {
                 const m = docSnap.data();
                 const v = parseFloat(m.monto || 0);
                 const esIngreso = MAP_TIPOS.ingresos.includes(m.tipo);
@@ -157,8 +153,27 @@ export default async function contabilidad(container) {
                 if (esNota) tNotas += v;
                 else if (esIngreso) tIngresos += v;
                 else tGastos += v;
+            });
 
+            // 3. ACTUALIZACIÓN FORZADA DE DASHBOARD (Prioridad Alta)
+            actualizarTotales(tIngresos, tGastos, tNotas);
+
+            // 4. MANEJO DE VISTA VACÍA
+            const list = document.getElementById("listaFinanzas");
+            if (!list) return;
+
+            if (snap.empty) {
+                list.innerHTML = `<div class="p-20 text-center opacity-20 orbitron italic text-xs">SIN MOVIMIENTOS DETECTADOS PARA ESTE ID</div>`;
+                return;
+            }
+
+            // 5. RENDERIZADO DE LA LISTA
+            list.innerHTML = snap.docs.map(docSnap => {
+                const m = docSnap.data();
+                const v = parseFloat(m.monto || 0);
+                const esIngreso = MAP_TIPOS.ingresos.includes(m.tipo);
                 const estilo = obtenerEstilo(m.tipo);
+
                 return `
                 <div class="bg-[#0d1117] p-6 rounded-[2.5rem] border border-white/5 flex justify-between items-center group hover:bg-white/[0.02] transition-all">
                     <div class="flex items-center gap-5">
@@ -181,8 +196,7 @@ export default async function contabilidad(container) {
                 </div>`;
             }).join("");
 
-            actualizarTotales(tIngresos, tGastos, tNotas);
-            // PERSISTENCIA EN BUNKER (Fase de Resiliencia)
+            // PERSISTENCIA DE SEGURIDAD
             NexusSystem.saveBunker('contabilidad', snap.docs.map(d => d.data()));
         }, (error) => {
             console.error("Fallo en Snapshot:", error);
