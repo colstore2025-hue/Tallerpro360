@@ -1,13 +1,12 @@
 /**
- * 🌌 NEXUS-X AERO-LOGISTICS ERP - VAULT STOCK V21.0
- * 🛠️ ARQUITECTURA "TERMINATOR" PRO-2030 - ALMACÉN DE ALTA PRECISIÓN
+ * 🌌 NEXUS-X AERO-LOGISTICS ERP - VAULT STOCK V21.5
+ * 🛠️ ARQUITECTURA "TERMINATOR" - RECONSTRUCCIÓN DE NÚCLEO ESTABLE
  * 🏗️ SYSTEM: INVENTORY & SUPPLY CHAIN PROTOCOL
- * @author William Jeffry Urquijo Cubillos & Gemini AI
  */
 
 import { 
     collection, query, where, orderBy, onSnapshot, serverTimestamp, 
-    doc, updateDoc, deleteDoc, getDoc, getDocs, addDoc 
+    doc, updateDoc, deleteDoc, getDoc, addDoc 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
@@ -19,73 +18,44 @@ export default async function inventario(container) {
 
     const renderLayout = () => {
         container.innerHTML = `
-        <div class="p-6 lg:p-12 animate-in fade-in slide-in-from-bottom-10 duration-1000 pb-40 min-h-screen bg-[#010409] selection:bg-cyan-500 selection:text-black">
-            
-            <header class="flex flex-col lg:flex-row justify-between items-start gap-10 mb-20 border-b border-white/5 pb-12 relative">
-                <div class="absolute -top-10 -left-10 w-64 h-64 bg-cyan-500/5 blur-[120px] rounded-full pointer-events-none"></div>
-                
-                <div class="relative group z-10">
-                    <div class="flex items-center gap-4 mb-2">
-                        <span class="bg-cyan-500 text-[8px] font-black px-3 py-1 rounded-full text-black orbitron animate-pulse">SISTEMA ACTIVO</span>
-                        <span class="text-slate-600 text-[8px] orbitron tracking-[0.3em]">REF: NEXUS-X-LOGISTICS-2030</span>
-                    </div>
-                    <h1 class="orbitron text-6xl lg:text-7xl font-black text-white italic tracking-tighter uppercase leading-none">
-                        VAULT <span class="text-cyan-400 relative">STOCK<span class="absolute -bottom-2 left-0 w-full h-1 bg-cyan-400/20"></span></span><span class="text-slate-700 text-2xl">.V21</span>
+        <div class="p-6 lg:p-12 animate-in fade-in duration-700 pb-40 min-h-screen bg-[#010409]">
+            <header class="flex flex-col lg:flex-row justify-between items-start gap-10 mb-20 border-b border-white/5 pb-12">
+                <div>
+                    <h1 class="orbitron text-6xl font-black text-white italic tracking-tighter uppercase">
+                        VAULT <span class="text-cyan-400">STOCK</span><span class="text-slate-700 text-2xl">.V21.5</span>
                     </h1>
-                    <div class="flex items-center gap-4 mt-6">
-                        <div class="h-[1px] w-12 bg-slate-800"></div>
-                        <p class="text-[9px] text-slate-400 font-black uppercase tracking-[0.4em] orbitron italic">Control de Activos & Micro-Logística de Precisión</p>
-                    </div>
+                    <p class="text-[9px] text-slate-400 font-black uppercase tracking-[0.4em] orbitron mt-4">Logística de Precisión / Almacén Central</p>
                 </div>
-
-                <div class="flex bg-[#0d1117]/80 backdrop-blur-3xl p-2 rounded-[3rem] border border-white/10 w-full lg:w-auto shadow-[0_0_50px_rgba(0,0,0,0.5)] z-10">
-                    <button id="tabPropio" class="flex-1 lg:flex-none px-12 py-5 rounded-[2.5rem] text-[11px] font-black uppercase transition-all duration-700 orbitron tracking-[0.2em]">
-                        <i class="fas fa-warehouse mr-2"></i> BÓVEDA TALLER
-                    </button>
-                    <button id="tabCliente" class="flex-1 lg:flex-none px-12 py-5 rounded-[2.5rem] text-[11px] font-black uppercase transition-all duration-700 orbitron tracking-[0.2em]">
-                        <i class="fas fa-truck-loading mr-2"></i> REPUESTO CLIENTE
-                    </button>
+                <div class="flex bg-[#0d1117] p-2 rounded-[3rem] border border-white/10 shadow-2xl">
+                    <button id="tabPropio" class="px-10 py-4 rounded-[2.5rem] text-[10px] font-black orbitron transition-all">BÓVEDA TALLER</button>
+                    <button id="tabCliente" class="px-10 py-4 rounded-[2.5rem] text-[10px] font-black orbitron transition-all">REPUESTO CLIENTE</button>
                 </div>
             </header>
 
-            <div id="statsRow" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
-                <div class="bg-[#0d1117] border border-white/5 p-10 rounded-[3.5rem] shadow-2xl group hover:border-cyan-500/30 transition-all duration-500 relative overflow-hidden">
-                    <p class="text-[9px] text-slate-500 orbitron uppercase mb-4 tracking-widest italic font-bold">Unidades en Almacén</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
+                <div class="bg-[#0d1117] p-10 rounded-[3rem] border border-white/5 shadow-2xl">
+                    <p class="text-[9px] text-slate-500 orbitron mb-4 uppercase">Stock Total</p>
                     <p id="statTotal" class="text-5xl font-black text-white orbitron">0</p>
-                    <div class="mt-4 h-1 w-full bg-slate-900 rounded-full overflow-hidden">
-                        <div class="h-full bg-cyan-500 w-2/3 shadow-[0_0_15px_#06b6d4]"></div>
-                    </div>
                 </div>
-
-                <div id="valTotalContainer" class="bg-[#0d1117] border border-white/5 p-10 rounded-[3.5rem] shadow-2xl group hover:border-emerald-500/30 transition-all duration-500 relative overflow-hidden">
-                    <p class="text-[9px] text-slate-500 orbitron uppercase mb-4 tracking-widest italic font-bold">Valorización (PVP)</p>
+                <div class="bg-[#0d1117] p-10 rounded-[3rem] border border-white/5 shadow-2xl">
+                    <p class="text-[9px] text-slate-500 orbitron mb-4 uppercase">Valorización Inventario</p>
                     <p id="statValor" class="text-4xl font-black text-emerald-400 orbitron">$ 0</p>
                 </div>
-
-                <div class="bg-[#0d1117] border border-white/5 p-10 rounded-[3.5rem] shadow-2xl group hover:border-red-500/30 transition-all duration-500 relative overflow-hidden">
-                    <p class="text-[9px] text-slate-500 orbitron uppercase mb-4 tracking-widest italic font-bold">Déficit Crítico</p>
+                <div class="bg-[#0d1117] p-10 rounded-[3rem] border border-white/5 shadow-2xl">
+                    <p class="text-[9px] text-slate-500 orbitron mb-4 uppercase">Alertas Críticas</p>
                     <p id="statAlertas" class="text-5xl font-black text-red-500 orbitron">0</p>
                 </div>
-
-                <div class="bg-[#0d1117] border border-white/5 p-10 rounded-[3.5rem] shadow-2xl relative overflow-hidden hidden lg:block">
-                    <p class="text-[9px] text-slate-500 orbitron uppercase mb-4 tracking-widest italic font-bold">Estado del Almacén</p>
-                    <div class="flex items-center gap-3">
-                        <div class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
-                        <p class="text-xs font-black text-emerald-400 orbitron tracking-tighter">SINC_OK_V21</p>
-                    </div>
-                </div>
             </div>
 
-            <div class="mb-14 relative group">
-                <input id="stockSearch" type="text" placeholder="BUSCAR POR NOMBRE, MARCA O VEHÍCULO..." class="w-full bg-[#0d1117]/50 backdrop-blur-xl p-10 pl-24 rounded-[4rem] border border-white/5 text-white orbitron text-sm focus:border-cyan-500/50 outline-none transition-all shadow-[0_30px_60px_rgba(0,0,0,0.4)] placeholder:text-slate-700">
-                <i class="fas fa-search absolute left-10 top-1/2 -translate-y-1/2 text-cyan-500 text-2xl"></i>
+            <div class="mb-14 relative">
+                <input id="stockSearch" type="text" placeholder="ESCANEAR MEMORIA..." class="w-full bg-[#0d1117] p-8 pl-20 rounded-[3rem] border border-white/5 text-white orbitron text-sm outline-none focus:border-cyan-500 transition-all">
+                <i class="fas fa-search absolute left-8 top-1/2 -translate-y-1/2 text-cyan-500"></i>
             </div>
 
-            <div id="gridStock" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10"></div>
+            <div id="gridStock" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
 
-            <button id="btnMainAdd" class="fixed bottom-12 right-12 w-28 h-28 bg-white text-black rounded-[3.5rem] shadow-[0_20px_80px_rgba(255,255,255,0.15)] flex flex-col items-center justify-center z-50 hover:bg-cyan-400 hover:rotate-12 transition-all duration-500 group">
-                <i class="fas fa-plus text-3xl mb-1"></i>
-                <span class="text-[7px] font-black orbitron">NEW_ITEM</span>
+            <button id="btnMainAdd" class="fixed bottom-12 right-12 w-24 h-24 bg-white text-black rounded-full shadow-2xl flex items-center justify-center z-50 hover:bg-cyan-400 transition-all">
+                <i class="fas fa-plus text-2xl"></i>
             </button>
         </div>`;
 
@@ -100,18 +70,15 @@ export default async function inventario(container) {
     const switchTab = (tipo) => {
         filtroActual = tipo;
         escucharStock();
-        const btnP = document.getElementById("tabPropio");
-        const btnC = document.getElementById("tabCliente");
-        const activeClass = "bg-white text-black shadow-[0_0_40px_rgba(255,255,255,0.1)] scale-105";
-        const inactiveClass = "text-slate-500 hover:text-white";
-        
-        if(btnP) btnP.className = `flex-1 lg:flex-none px-12 py-5 rounded-[2.5rem] text-[11px] font-black uppercase transition-all duration-500 orbitron ${tipo === 'PROPIO' ? activeClass : inactiveClass}`;
-        if(btnC) btnC.className = `flex-1 lg:flex-none px-12 py-5 rounded-[2.5rem] text-[11px] font-black uppercase transition-all duration-500 orbitron ${tipo === 'CLIENTE' ? activeClass : inactiveClass}`;
+        const active = "bg-white text-black scale-105";
+        const inactive = "text-slate-500 hover:text-white";
+        document.getElementById("tabPropio").className = `px-10 py-4 rounded-[2.5rem] text-[10px] font-black orbitron transition-all ${tipo==='PROPIO'?active:inactive}`;
+        document.getElementById("tabCliente").className = `px-10 py-4 rounded-[2.5rem] text-[10px] font-black orbitron transition-all ${tipo==='CLIENTE'?active:inactive}`;
     };
 
     function escucharStock() {
         if (unsubscribe) unsubscribe();
-        const q = query(collection(db, "inventario"), where("empresaId", "==", empresaId), where("origen", "==", filtroActual), orderBy("nombre", "asc"));
+        const q = query(collection(db, "inventario"), where("empresaId", "==", empresaId), where("origen", "==", filtroActual));
         unsubscribe = onSnapshot(q, (snap) => {
             cacheInventario = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             renderGrid(cacheInventario);
@@ -125,121 +92,103 @@ export default async function inventario(container) {
 
         grid.innerHTML = data.map(item => {
             const cant = Number(item.cantidad || 0);
-            const min = Number(item.minimo || 2);
-            const esCritico = cant <= min;
+            const min = Number(item.minimo || 0);
             totalItems += cant;
             if (filtroActual === "PROPIO") valorAcumulado += (Number(item.precioVenta || 0) * cant);
-            if (esCritico) alertas++;
+            if (cant <= min) alertas++;
 
             return `
-            <div class="bg-[#0d1117] p-8 rounded-[3.5rem] border ${esCritico ? 'border-red-500/40' : 'border-white/5'} relative group hover:bg-[#161b22] transition-all duration-500 shadow-2xl overflow-hidden">
-                <div class="flex justify-between items-start mb-6">
-                    <div class="max-w-[80%]">
-                        <span class="text-[7px] text-cyan-400 orbitron uppercase font-bold tracking-widest">${item.marca || 'GENÉRICO'} | REF: ${item.referencia || 'N/A'}</span>
-                        <h3 class="text-white text-lg font-black uppercase truncate mt-1">${item.nombre}</h3>
-                        <p class="text-[8px] text-slate-500 orbitron italic mt-1 uppercase">${item.compatibilidad || 'MULTIVH'}</p>
+            <div class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 relative group hover:bg-[#161b22] transition-all duration-300">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="max-w-[70%]">
+                        <span class="text-[7px] text-cyan-400 orbitron font-bold uppercase">${item.marca || 'GENÉRICO'} | ${item.referencia || 'REF-X'}</span>
+                        <h3 class="text-white text-lg font-black uppercase truncate">${item.nombre}</h3>
+                        <p class="text-[7px] text-slate-600 orbitron">EMPAQUE: ${item.empaque || 'UNIDAD'}</p>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="window.editarRepuesto('${item.id}')" class="w-8 h-8 rounded-full bg-white/5 text-slate-400 hover:bg-cyan-500 hover:text-black transition-all flex items-center justify-center">
-                            <i class="fas fa-edit text-[10px]"></i>
-                        </button>
-                        <button onclick="window.eliminarActivo('${item.id}')" class="w-8 h-8 rounded-full bg-white/5 text-slate-400 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center">
-                            <i class="fas fa-trash text-[10px]"></i>
-                        </button>
+                        <button onclick="window.editarRepuesto('${item.id}')" class="text-slate-500 hover:text-cyan-400"><i class="fas fa-edit"></i></button>
+                        <button onclick="window.eliminarActivo('${item.id}')" class="text-slate-500 hover:text-red-500"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
-
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="bg-black/40 p-5 rounded-3xl border border-white/5 text-center">
-                        <p class="text-[7px] text-slate-500 orbitron mb-1 uppercase">Stock</p>
-                        <p class="text-3xl font-black ${esCritico ? 'text-red-500' : 'text-white'} orbitron">${cant}</p>
-                    </div>
-                    <div class="bg-black/40 p-5 rounded-3xl border border-white/5 text-center">
-                        <p class="text-[7px] text-slate-500 orbitron mb-1 uppercase">PVP</p>
-                        <p class="text-sm font-black text-emerald-400 orbitron mt-2">$${Number(item.precioVenta || 0).toLocaleString()}</p>
-                    </div>
+                <div class="grid grid-cols-2 gap-4 bg-black/40 p-4 rounded-2xl border border-white/5 text-center">
+                    <div><p class="text-[7px] text-slate-500 orbitron uppercase">Stock</p><p class="text-2xl font-black text-white orbitron">${cant}</p></div>
+                    <div><p class="text-[7px] text-slate-500 orbitron uppercase">Venta Uni.</p><p class="text-xs font-black text-emerald-400 orbitron mt-2">$${Number(item.precioVenta || 0).toLocaleString()}</p></div>
                 </div>
-
-                <div class="flex gap-2">
-                     <button onclick="window.ajustarStock('${item.id}', 1)" class="flex-1 py-4 bg-white/5 rounded-2xl border border-white/5 text-[9px] font-black orbitron hover:bg-cyan-500 hover:text-black transition-all uppercase">ENTRADA</button>
-                     <button onclick="window.ajustarStock('${item.id}', -1)" class="flex-1 py-4 bg-white/5 rounded-2xl border border-white/5 text-[9px] font-black orbitron hover:bg-red-500 hover:text-white transition-all uppercase">SALIDA</button>
+                <div class="flex gap-2 mt-4">
+                     <button onclick="window.ajustarStock('${item.id}', 1)" class="flex-1 py-3 bg-white/5 rounded-xl border border-white/5 text-[8px] font-black orbitron hover:bg-cyan-500 hover:text-black transition-all">IN</button>
+                     <button onclick="window.ajustarStock('${item.id}', -1)" class="flex-1 py-3 bg-white/5 rounded-xl border border-white/5 text-[8px] font-black orbitron hover:bg-red-500 hover:text-white transition-all">OUT</button>
                 </div>
-                ${esCritico ? `<div class="absolute top-0 right-10 bg-red-500 text-white text-[6px] font-black px-3 py-1 rounded-b-xl orbitron animate-pulse">STOCK_BAJO</div>` : ''}
             </div>`;
         }).join("");
         
-        actualizarEstadisticas(totalItems, valorAcumulado, alertas);
-    };
-
-    const actualizarEstadisticas = (t, v, a) => {
-        document.getElementById("statTotal").innerText = t;
-        document.getElementById("statValor").innerText = `$ ${v.toLocaleString()}`;
-        document.getElementById("statAlertas").innerText = a;
+        document.getElementById("statTotal").innerText = totalItems;
+        document.getElementById("statValor").innerText = `$ ${valorAcumulado.toLocaleString()}`;
+        document.getElementById("statAlertas").innerText = alertas;
     };
 
     const filtrarLocalmente = (term) => {
         const b = term.toLowerCase();
-        const f = cacheInventario.filter(it => 
-            it.nombre.toLowerCase().includes(b) || 
-            (it.marca && it.marca.toLowerCase().includes(b)) ||
-            (it.referencia && it.referencia.toLowerCase().includes(b)) ||
-            (it.compatibilidad && it.compatibilidad.toLowerCase().includes(b))
-        );
-        renderGrid(f);
+        renderGrid(cacheInventario.filter(it => it.nombre.toLowerCase().includes(b) || (it.marca && it.marca.toLowerCase().includes(b))));
     };
 
-    async function abrirModalCarga(datosEdicion = null) {
-        const isEdit = !!datosEdicion;
+    async function abrirModalCarga(editData = null) {
         const { value: f } = await window.Swal.fire({
-            title: isEdit ? 'ACTUALIZAR PROTOCOLO' : 'NUEVO INGRESO BÓVEDA',
+            title: editData ? 'EDITAR PROTOCOLO' : 'NUEVO INGRESO',
             background: '#010409', color: '#fff',
             customClass: { popup: 'rounded-[3rem] border border-white/10' },
             html: `
-                <div class="space-y-4 p-4 text-left">
-                    <input id="sw-nom" class="w-full bg-[#0d1117] p-5 rounded-2xl border border-white/5 text-white uppercase text-sm" placeholder="NOMBRE DEL REPUESTO" value="${isEdit ? datosEdicion.nombre : ''}">
-                    <div class="grid grid-cols-2 gap-4">
-                        <input id="sw-ref" class="bg-[#0d1117] p-5 rounded-2xl border border-white/5 text-white uppercase text-[10px]" placeholder="# REFERENCIA" value="${isEdit ? (datosEdicion.referencia || '') : ''}">
-                        <input id="sw-mar" class="bg-[#0d1117] p-5 rounded-2xl border border-white/5 text-white uppercase text-[10px]" placeholder="MARCA" value="${isEdit ? (datosEdicion.marca || '') : ''}">
+                <div class="space-y-3 p-2 text-left">
+                    <input id="sw-nom" class="w-full bg-[#0d1117] p-4 rounded-xl border border-white/5 text-white uppercase text-sm" placeholder="NOMBRE" value="${editData?.nombre || ''}">
+                    <div class="grid grid-cols-2 gap-3">
+                        <input id="sw-ref" class="bg-[#0d1117] p-4 rounded-xl border border-white/5 text-white uppercase text-[10px]" placeholder="REF" value="${editData?.referencia || ''}">
+                        <input id="sw-mar" class="bg-[#0d1117] p-4 rounded-xl border border-white/5 text-white uppercase text-[10px]" placeholder="MARCA" value="${editData?.marca || ''}">
                     </div>
-                    <input id="sw-vh" class="w-full bg-[#0d1117] p-5 rounded-2xl border border-white/5 text-white uppercase text-[10px]" placeholder="VEHÍCULOS COMPATIBLES (EJ: TOYOTA HILUX, FORD F150)" value="${isEdit ? (datosEdicion.compatibilidad || '') : ''}">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-[8px] orbitron text-slate-500 ml-2">CANTIDAD</label>
-                            <input id="sw-can" type="number" class="w-full bg-[#0d1117] p-5 rounded-2xl border border-white/5 text-white text-center font-black" value="${isEdit ? datosEdicion.cantidad : '1'}">
+                    <input id="sw-emp" class="w-full bg-[#0d1117] p-4 rounded-xl border border-white/5 text-white uppercase text-[10px]" placeholder="UNIDAD DE EMPAQUE (CAJA X 10, UNIDAD, GALÓN)" value="${editData?.empaque || ''}">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-black/20 p-2 rounded-xl border border-white/5">
+                            <label class="text-[7px] orbitron text-slate-500 block mb-1">COSTO TOTAL COMPRA</label>
+                            <input id="sw-cos" type="number" class="w-full bg-transparent text-white text-center font-black" placeholder="0" value="${editData?.precioCosto || ''}">
                         </div>
-                        <div>
-                            <label class="text-[8px] orbitron text-slate-500 ml-2">PVP VENTA</label>
-                            <input id="sw-ven" type="number" class="w-full bg-[#0d1117] p-5 rounded-2xl border border-white/5 text-emerald-400 text-center font-black" value="${isEdit ? datosEdicion.precioVenta : '0'}">
+                        <div class="bg-black/20 p-2 rounded-xl border border-white/5">
+                            <label class="text-[7px] orbitron text-slate-500 block mb-1">STOCK INICIAL</label>
+                            <input id="sw-can" type="number" class="w-full bg-transparent text-white text-center font-black" value="${editData?.cantidad || '1'}">
                         </div>
                     </div>
-                    <div>
-                        <label class="text-[8px] orbitron text-slate-500 ml-2">STOCK MÍNIMO (ALERTA)</label>
-                        <input id="sw-min" type="number" class="w-full bg-[#0d1117] p-5 rounded-2xl border border-white/5 text-red-500 text-center font-black" value="${isEdit ? datosEdicion.minimo : '2'}">
+                    <div class="bg-cyan-500/10 p-4 rounded-xl border border-cyan-500/20">
+                        <label class="text-[8px] orbitron text-cyan-400 block mb-1 font-black">PRECIO DE VENTA (POR UNIDAD)</label>
+                        <input id="sw-ven" type="number" class="w-full bg-transparent text-emerald-400 text-center text-xl font-black" placeholder="0" value="${editData?.precioVenta || ''}">
+                        <p class="text-[6px] text-slate-500 text-center mt-2 italic">Si compraste varios, divide el costo y pon aquí el valor de venta de una sola unidad.</p>
                     </div>
+                    <input id="sw-min" type="number" class="w-full bg-[#0d1117] p-4 rounded-xl border border-white/5 text-red-500 text-center text-xs" placeholder="ALERTA STOCK MÍNIMO" value="${editData?.minimo || '2'}">
                 </div>`,
             showCancelButton: true,
-            confirmButtonText: isEdit ? 'RE-SYNC_CORE' : 'COMMIT_VAULT',
+            confirmButtonText: 'GUARDAR REGISTRO',
             preConfirm: () => {
                 const n = document.getElementById('sw-nom').value.trim();
-                if(!n) return window.Swal.showValidationMessage("Nombre obligatorio");
+                if(!n) return window.Swal.showValidationMessage("Nombre es vital");
                 return {
                     nombre: n.toUpperCase(),
                     referencia: document.getElementById('sw-ref').value.toUpperCase(),
                     marca: document.getElementById('sw-mar').value.toUpperCase(),
-                    compatibilidad: document.getElementById('sw-vh').value.toUpperCase(),
+                    empaque: document.getElementById('sw-emp').value.toUpperCase(),
                     cantidad: Number(document.getElementById('sw-can').value),
+                    precioCosto: Number(document.getElementById('sw-cos').value),
                     precioVenta: Number(document.getElementById('sw-ven').value),
                     minimo: Number(document.getElementById('sw-min').value),
-                    empresaId, origen: filtroActual,
-                    actualizadoEn: serverTimestamp()
+                    empresaId, origen: filtroActual
                 }
             }
         });
 
         if (f) {
-            if(isEdit) await updateDoc(doc(db, "inventario", datosEdicion.id), f);
-            else await addDoc(collection(db, "inventario"), { ...f, creadoEn: serverTimestamp() });
-            window.Swal.fire({ title: 'SINCRONIZADO', icon: 'success', background: '#010409', color: '#fff', timer: 1500 });
+            try {
+                if(editData) await updateDoc(doc(db, "inventario", editData.id), f);
+                else await addDoc(collection(db, "inventario"), { ...f, creadoEn: serverTimestamp() });
+                window.Swal.fire({ title: 'SINC_OK', icon: 'success', background: '#010409', color: '#fff', timer: 1000 });
+            } catch (e) { 
+                console.error("Firestore Error:", e);
+                window.Swal.fire('ERROR', 'No se pudo guardar en la nube', 'error');
+            }
         }
     }
 
@@ -249,21 +198,13 @@ export default async function inventario(container) {
     };
 
     window.ajustarStock = async (id, cambio) => {
-        const ref = doc(db, "inventario", id);
+        const ref = doc(doc(db, "inventario", id));
         const snap = await getDoc(ref);
-        if (snap.exists()) {
-            const nuevaC = Math.max(0, (Number(snap.data().cantidad) || 0) + cambio);
-            await updateDoc(ref, { cantidad: nuevaC });
-        }
+        if (snap.exists()) await updateDoc(ref, { cantidad: Math.max(0, (Number(snap.data().cantidad) || 0) + cambio) });
     };
 
     window.eliminarActivo = async (id) => {
-        const { isConfirmed } = await window.Swal.fire({ 
-            title: '¿PURGAR REGISTRO?', 
-            text: "Se eliminará del núcleo de datos.", 
-            icon: 'warning', background: '#010409', color: '#fff', 
-            showCancelButton: true, confirmButtonColor: '#ef4444' 
-        });
+        const { isConfirmed } = await window.Swal.fire({ title: '¿ELIMINAR?', icon: 'warning', background: '#010409', color: '#fff', showCancelButton: true });
         if(isConfirmed) await deleteDoc(doc(db, "inventario", id));
     };
 
