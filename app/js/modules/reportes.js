@@ -1,19 +1,21 @@
 /**
- * 🌌 NEXUS-X AUDIT CENTER V26.5 - ESTABILIZACIÓN ELITE
- * 🛠️ INTEGRACIÓN PROFUNDA: pricingOptimizerAI & repairEstimator
- * 🇨🇴 FOCO: RENTABILIDAD REAL COLOMBIA 2026
+ * 🌌 NEXUS-X AUDIT CENTER V26.8 - PROTOCOLO DE ESTABILIDAD
+ * 🛠️ INTEGRACIÓN BLINDADA CON FIRESTORE Y AI
  */
 
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
-// Importación de los scripts de última generación fusionados
+// MANTENIENDO RUTAS ORIGINALES PARA EVITAR REBOTES
 import { calcularPrecioInteligente } from "./ai/pricingOptimizerAI.js";
 import repairEstimator from "./ai/repairEstimator.js";
 
 export default async function reportesModule(container) {
     const empresaId = localStorage.getItem("empresaId");
     let datosOrdenes = [];
+
+    // CONSTANTES DE COSTO OPERATIVO (Basado en tus capturas de pantalla)
+    const COSTO_BAHIA_HORA = 16026; 
 
     const renderLayout = () => {
         container.innerHTML = `
@@ -24,34 +26,23 @@ export default async function reportesModule(container) {
                         NEXUS-X <span class="text-cyan-400">AI AUDIT</span>
                     </h1>
                     <div class="flex items-center gap-3 mt-2">
-                        <span class="bg-emerald-500/20 text-emerald-500 text-[8px] orbitron px-3 py-1 rounded-full border border-emerald-500/30">INTEL_CORE_ACTIVE</span>
-                        <p class="text-slate-500 orbitron text-[9px] tracking-[0.2em]">ANÁLISIS OPERATIVO DE ÚLTIMA GENERACIÓN</p>
+                        <span class="bg-emerald-500/20 text-emerald-500 text-[8px] orbitron px-3 py-1 rounded-full border border-emerald-500/30 font-bold">PROTOCOL_STABLE</span>
+                        <p class="text-slate-500 orbitron text-[9px] tracking-[0.2em]">SISTEMA DE ANÁLISIS PROFUNDO FIRESTORE-LINKED</p>
                     </div>
                 </div>
                 
                 <div class="flex gap-4">
-                    <button id="btnVerMetricas" class="px-6 py-3 border border-white/10 rounded-2xl orbitron text-[9px] hover:bg-white/5 transition-all text-slate-400">
-                        🔍 MÉTRICAS DE MERCADO 2026
+                    <button id="exportGlobal" class="px-8 py-3 bg-cyan-500 text-black rounded-2xl orbitron text-[10px] font-black uppercase">
+                        📥 EXPORTAR XLSX
                     </button>
-                    <div class="relative group">
-                        <button class="px-8 py-3 bg-cyan-500 text-black rounded-2xl orbitron text-[10px] font-black uppercase shadow-lg shadow-cyan-500/20">
-                            📥 EXPORTAR_DATA
-                        </button>
-                        <div class="absolute right-0 mt-2 w-48 bg-[#0d1117] border border-white/10 rounded-xl hidden group-hover:block z-50 shadow-2xl">
-                            <button id="exportGlobal" class="w-full p-4 text-[10px] orbitron text-left hover:bg-white/5">GLOBAL (P&G)</button>
-                            <button id="exportDetallado" class="w-full p-4 text-[10px] orbitron text-left border-t border-white/5 hover:bg-white/5">REPORTES POR ORDEN</button>
-                        </div>
-                    </div>
                 </div>
             </header>
 
-            <div id="aiSummary" class="bg-cyan-500/5 border border-cyan-500/20 p-8 rounded-[2.5rem] mb-12 flex items-start gap-6 animate-pulse">
+            <div id="aiStatus" class="bg-cyan-500/5 border border-cyan-500/20 p-8 rounded-[2.5rem] mb-12 flex items-start gap-6">
                 <div class="text-3xl">🧠</div>
-                <div>
-                    <h4 class="orbitron text-xs font-black text-cyan-400 mb-2 uppercase italic">Estatus del Ecosistema</h4>
-                    <p id="iaGeneralMsg" class="text-[11px] text-slate-300 leading-relaxed max-w-4xl">
-                        Sincronizando con algoritmos de Pricing y Estimación... Analizando comportamiento de mercado en Colombia (Alza 7.48%).
-                    </p>
+                <div id="iaMessage">
+                    <h4 class="orbitron text-xs font-black text-cyan-400 mb-2 uppercase">AI Mechanic Assistant</h4>
+                    <p class="text-[11px] text-slate-300">Sincronizando misiones con la base de datos...</p>
                 </div>
             </div>
 
@@ -59,126 +50,112 @@ export default async function reportesModule(container) {
                 </div>
         </div>`;
 
-        document.getElementById("exportGlobal").onclick = () => exportarGlobal();
-        document.getElementById("exportDetallado").onclick = () => exportarPorOrden();
-        document.getElementById("btnVerMetricas").onclick = verPreciosSugeridos;
-
+        document.getElementById("exportGlobal").onclick = exportarGlobal;
         fetchData();
     };
 
     const fetchData = async () => {
         try {
-            const snap = await getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId)));
+            // USANDO LOS NOMBRES DE COLECCIÓN Y CAMPOS EXACTOS DE TU FIRESTORE
+            const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
+            const snap = await getDocs(q);
             datosOrdenes = snap.docs.map(d => ({ ...d.data(), id: d.id }));
-            renderMisiones();
+            
+            if(datosOrdenes.length === 0) {
+                document.getElementById("iaMessage").innerHTML = "<p class='text-amber-400'>No se encontraron misiones activas en Firestore para esta empresa.</p>";
+            } else {
+                renderMisiones();
+            }
         } catch (error) {
-            console.error("Error en Audit Protocol:", error);
-            document.getElementById("iaGeneralMsg").innerText = "ERROR DE CONEXIÓN AL PROTOCOLO NEXUS-X.";
+            console.error("Error crítico de enlace:", error);
+            // Esto evita que la pantalla se quede en negro si falla el link
+            container.innerHTML = `<div class="p-20 text-center"><h2 class="text-red-500 orbitron">FALLO DE PROTOCOLO: REVISE FIREBASE-CONFIG</h2><p class="text-xs text-slate-500 mt-4">${error.message}</p></div>`;
         }
     };
 
     const renderMisiones = () => {
         const grid = document.getElementById("gridAnalisis");
-        let perdidasTotales = 0;
+        let perdidaMargenTotal = 0;
 
         grid.innerHTML = datosOrdenes.map(o => {
-            // 1. Ejecutar Estimador de Reparación (IA)
-            const diagnosticoBase = o.servicios_realizados || ["General"];
-            const estimacionIA = repairEstimator.estimate(diagnosticoBase, o.kilometraje || 0);
+            // EXTRACCIÓN DE DATOS RESPETANDO TUS NOMBRES DE CAMPO
+            const ventaActual = Number(o.costos_totales?.total_general || 0);
+            const repuestos = Number(o.costos_totales?.costo_repuestos || 0);
+            const mo = Number(o.costos_totales?.mano_obra || 0);
+            const horas = Number(o.horas_reales || 1);
 
-            // 2. Ejecutar Optimizador de Precios (IA)
-            const analiticaPrecio = calcularPrecioInteligente({
-                costoRepuestos: Number(o.costos_totales?.costo_repuestos || 0),
-                horasTrabajo: Number(o.horas_reales || estimacionIA.totalHours),
-                tipoCliente: o.cliente_tipo || "normal",
-                tipoTrabajo: o.trabajo_tipo || "general"
+            // LLAMADA A TUS SCRIPTS DE ÚLTIMA GENERACIÓN
+            const optimizacion = calcularPrecioInteligente({
+                costoRepuestos: repuestos,
+                horasTrabajo: horas,
+                tipoCliente: o.cliente_tipo || "normal"
             });
 
-            const ventaReal = Number(o.costos_totales?.total_general || 0);
-            const utilidadReal = analiticaPrecio.analisis.utilidadEstimada;
-            const brechaPrecio = analiticaPrecio.total - ventaReal;
-
-            if (brechaPrecio > 0) perdidasTotales += brechaPrecio;
+            const brecha = optimizacion.total - ventaActual;
+            if (brecha > 0) perdidaMargenTotal += brecha;
 
             return `
-            <div class="bg-[#0d1117] border border-white/5 rounded-[3rem] p-10 hover:border-cyan-500/30 transition-all group">
+            <div class="bg-[#0d1117] border border-white/5 rounded-[3rem] p-10 hover:border-cyan-500/30 transition-all">
                 <div class="flex flex-col xl:flex-row justify-between gap-10">
                     <div class="flex-1">
                         <div class="flex items-center gap-4 mb-4">
-                            <span class="text-3xl font-black orbitron text-white italic group-hover:text-cyan-400 transition-colors">${o.placa || 'SIN_PLACA'}</span>
-                            <span class="text-[9px] orbitron px-4 py-1 bg-white/5 rounded-full text-slate-500 border border-white/5">${o.id.substring(0,8)}</span>
+                            <span class="text-3xl font-black orbitron text-white italic">${o.placa || 'N/A'}</span>
+                            <span class="text-[9px] orbitron px-4 py-1 bg-white/5 rounded-full text-slate-500">${o.id.substring(0,8)}</span>
                         </div>
-                        <p class="text-slate-500 orbitron text-[10px] mb-8 uppercase tracking-widest">${o.cliente || 'CLIENTE FINAL'} | ${o.marca || 'UNKNOWN'} ${o.linea || ''}</p>
+                        <p class="text-slate-500 orbitron text-[10px] mb-8 uppercase">${o.cliente || 'SIN NOMBRE'} | ${o.marca || ''} ${o.linea || ''}</p>
                         
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                             <div>
-                                <p class="text-[8px] text-slate-500 orbitron uppercase mb-1">Cobro Real</p>
-                                <p class="text-sm font-bold">$ ${ventaReal.toLocaleString()}</p>
+                                <p class="text-[8px] text-slate-500 orbitron uppercase mb-1">Total Facturado</p>
+                                <p class="text-sm font-bold">$ ${ventaActual.toLocaleString()}</p>
                             </div>
                             <div>
-                                <p class="text-[8px] text-slate-500 orbitron uppercase mb-1">Precio Sugerido IA</p>
-                                <p class="text-sm font-bold text-cyan-400">$ ${analiticaPrecio.total.toLocaleString()}</p>
+                                <p class="text-[8px] text-slate-500 orbitron uppercase mb-1">Sugerido IA 2026</p>
+                                <p class="text-sm font-bold text-cyan-400">$ ${optimizacion.total.toLocaleString()}</p>
                             </div>
                             <div>
-                                <p class="text-[8px] text-slate-500 orbitron uppercase mb-1">Tiempo Estándar</p>
-                                <p class="text-sm font-bold">${estimacionIA.totalHours}H SUGERIDAS</p>
+                                <p class="text-[8px] text-slate-500 orbitron uppercase mb-1">Mano de Obra</p>
+                                <p class="text-sm font-bold">$ ${mo.toLocaleString()}</p>
                             </div>
                             <div>
-                                <p class="text-[8px] text-slate-500 orbitron uppercase mb-1">Rentabilidad Neta</p>
-                                <p class="text-sm font-bold ${utilidadReal > 0 ? 'text-emerald-400' : 'text-red-500'} italic">$ ${Math.round(utilidadReal).toLocaleString()}</p>
+                                <p class="text-[8px] text-slate-500 orbitron uppercase mb-1">Estatus</p>
+                                <p class="text-[10px] font-black ${brecha <= 0 ? 'text-emerald-400' : 'text-amber-500'} orbitron">
+                                    ${brecha <= 0 ? 'OPTIMO' : 'REVISAR PRICING'}
+                                </p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="xl:w-96 bg-white/[0.02] rounded-[2rem] p-8 border border-white/5 relative overflow-hidden">
-                        <div class="absolute top-0 right-0 p-4 opacity-10">🧠</div>
-                        <p class="orbitron text-[9px] text-cyan-500 mb-4 uppercase tracking-tighter font-black">AI Audit Insight</p>
-                        <div class="space-y-4">
-                            <p class="text-[10px] leading-relaxed text-slate-300">
-                                ${brechaPrecio > 0 ? 
-                                    `🚨 <b class="text-red-400">PÉRDIDA DE MARGEN:</b> Estás cobrando $${brechaPrecio.toLocaleString()} menos que el mercado de 2026.` : 
-                                    `✅ <b class="text-emerald-400">VALOR ÓPTIMO:</b> El precio está alineado con la rentabilidad estratégica.`}
-                            </p>
-                            ${estimacionIA.preventiveAlerts.length > 0 ? 
-                                `<p class="text-[9px] text-amber-400 border-t border-white/5 pt-3 italic">⚠️ ${estimacionIA.preventiveAlerts[0]}</p>` : ''}
-                        </div>
+                    <div class="xl:w-80 bg-white/[0.02] rounded-3xl p-6 border border-white/5">
+                        <p class="orbitron text-[9px] text-cyan-500 mb-2 uppercase font-black">AI Insight</p>
+                        <p class="text-[10px] leading-relaxed text-slate-400 italic">
+                            ${brecha > 0 ? 
+                                `Detectamos una fuga de <b>$${brecha.toLocaleString()}</b> en esta orden comparado con el mercado 2026.` : 
+                                `Felicidades, esta misión está alineada con los márgenes de rentabilidad Nexus-X.`}
+                        </p>
                     </div>
                 </div>
             </div>`;
         }).join("");
 
-        document.getElementById("iaGeneralMsg").innerHTML = `
-            Análisis completado. Se detectó una <b>brecha de facturación de $${perdidasTotales.toLocaleString()}</b> en este periodo. 
-            Ajustar tarifas de mano de obra según el <i>Pricing Optimizer</i> para recuperar margen operativo.`;
+        document.getElementById("iaMessage").innerHTML = `
+            <h4 class="orbitron text-xs font-black text-cyan-400 mb-2 uppercase">Auditoría Finalizada</h4>
+            <p class="text-[11px] text-slate-300">
+                Se detectó una oportunidad de mejora en facturación por <b>$${perdidaMargenTotal.toLocaleString()}</b>. 
+                Sincronice el <i>Pricing Optimizer</i> para evitar fugas de capital.
+            </p>`;
     };
 
     const exportarGlobal = () => {
-        const wsData = datosOrdenes.map(o => {
-            const venta = Number(o.costos_totales?.total_general || 0);
-            const mo = Number(o.costos_totales?.mano_obra || 0);
-            const repuestos = Number(o.costos_totales?.costo_repuestos || 0);
-            const costoBahia = (o.horas_reales || 2) * 16026;
-            
-            return {
-                "PLACA": o.placa,
-                "CLIENTE": o.cliente,
-                "INGRESO BRUTO": venta,
-                "MANO OBRA": mo,
-                "REPUESTOS": repuestos,
-                "COSTO BAHIA": costoBahia,
-                "UTILIDAD NETA": venta - (mo + repuestos + costoBahia),
-                "STATUS": venta < (mo + repuestos + costoBahia) ? "PERDIDA" : "RENTABLE"
-            };
-        });
-        
+        const wsData = datosOrdenes.map(o => ({
+            "Placa": o.placa,
+            "Total Facturado": o.costos_totales?.total_general || 0,
+            "Utilidad Real": Number(o.costos_totales?.total_general || 0) - (Number(o.costos_totales?.costo_repuestos || 0) + Number(o.costos_totales?.mano_obra || 0) + ((o.horas_reales || 1) * COSTO_BAHIA_HORA))
+        }));
         const ws = XLSX.utils.json_to_sheet(wsData);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Auditoria_NexusX");
-        XLSX.writeFile(wb, `Audit_Report_2026.xlsx`);
-    };
-
-    const verPreciosSugeridos = () => {
-        alert("ESTÁNDARES COLOMBIA 2026:\n\n- Distribución 16V: $310.000\n- Frenos Delanteros: $150.000\n- Hora Técnico Senior: $150.000\n- Diagnóstico Scanner: $85.000\n\n*Datos basados en IPC 2026 + 7.48% sector mecánico.");
+        XLSX.utils.book_append_sheet(wb, ws, "NexusX_Audit");
+        XLSX.writeFile(wb, `Audit_Pro360_${empresaId}.xlsx`);
     };
 
     renderLayout();
