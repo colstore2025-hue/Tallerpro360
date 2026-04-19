@@ -228,7 +228,7 @@ export default async function pagosTaller(container, state) {
 
             // B. Auditoría Aegis
             await addDoc(collection(db, "contabilidad"), {
-                empresaId, referencia: ordenActiva.placa, monto, tipo: 'INGRESO', metodo: 'EFECTIVO',
+                empresaId, referencia: ordenActiva.placa, monto, tipo: 'ingreso_ot', metodo: 'EFECTIVO',
                 concepto: `ABONO OT-${ordenActiva.id.slice(-5)}`, createdAt: serverTimestamp()
             });
 
