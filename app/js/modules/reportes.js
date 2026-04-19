@@ -1,11 +1,13 @@
 /**
  * 🦾 NEXUS-X TERMINATOR CORE V29.0 - ANALÍTICA OPERATIVA
  * Central de Inteligencia de Procesos // William Jeffry Urquijo Cubillos 
+ * Estabilización Total: Reloj Suizo 2030.
  */
 
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 import { calcularPrecioInteligente } from "../ai/pricingOptimizerAI.js";
+import { NEXUS_CONFIG } from "./nexus_constants.js"; // RECTOR DEL SISTEMA
 
 export default async function reportesModule(container) {
     const empresaId = localStorage.getItem("nexus_empresaId");
@@ -34,8 +36,6 @@ export default async function reportesModule(container) {
                 </div>
             </header>
 
-            <div id="autoReportConfig" class="mb-12 hidden"></div>
-
             <div id="opStats" class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12"></div>
 
             <div class="bg-[#0d1117] border-l-4 border-cyan-500 p-12 rounded-r-[3.5rem] flex items-center gap-10 mb-16 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden group">
@@ -51,7 +51,7 @@ export default async function reportesModule(container) {
 
             <div class="bg-[#0d1117] border border-white/5 rounded-[3.5rem] overflow-hidden shadow-2xl">
                 <div class="p-10 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
-                    <h3 class="orbitron text-[12px] font-black text-white uppercase tracking-[0.5em] italic">Historial de Rentabilidad <span class="text-cyan-500">[Click para Deep Drill]</span></h3>
+                    <h3 class="orbitron text-[12px] font-black text-white uppercase tracking-[0.5em] italic">Historial de Rentabilidad <span class="text-cyan-500">[Análisis por Misión]</span></h3>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -75,81 +75,78 @@ export default async function reportesModule(container) {
     };
 
     const fetchData = async () => {
-        const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
+        // Uso de constante rectora para la colección
+        const q = query(collection(db, NEXUS_CONFIG.COLLECTIONS.ORDERS), where("empresaId", "==", empresaId));
         const snap = await getDocs(q);
         ordenesData = snap.docs.map(d => ({ ...d.data(), id: d.id }));
         procesarOperaciones();
     };
 
     const procesarOperaciones = () => {
-    const tbody = document.getElementById("opTableBody");
-    let totalVenta = 0; let totalSugerido = 0; let misionesBajaRentabilidad = 0;
+        const tbody = document.getElementById("opTableBody");
+        let totalVenta = 0; let totalSugerido = 0; let misionesBajaRentabilidad = 0;
 
-    tbody.innerHTML = ordenesData.map(o => {
-        // Venta Real es lo que el cliente realmente pagó o debe pagar (total_general)
-        const venta = Number(o.costos_totales?.total_general || 0);
-        const abonado = Number(o.finanzas?.anticipo_cliente || 0); // Lo que ya entró a caja
-        const repuestos = Number(o.costos_totales?.costo_repuestos || 0);
-        const mo = Number(o.costos_totales?.mano_obra || 0);
-        
-        totalVenta += venta;
+        tbody.innerHTML = ordenesData.map(o => {
+            const venta = Number(o.costos_totales?.total_general || 0);
+            const abonado = Number(o.finanzas?.anticipo_cliente || 0);
+            const repuestos = Number(o.costos_totales?.costo_repuestos || 0);
+            const mo = Number(o.costos_totales?.mano_obra || 0);
+            
+            totalVenta += venta;
 
-        const sugerido = calcularPrecioInteligente({ costoRepuestos: repuestos, horasTrabajo: o.horas_reales || 1 });
-        o.sugeridoCalculado = sugerido.total; 
-        totalSugerido += sugerido.total;
+            const sugerido = calcularPrecioInteligente({ costoRepuestos: repuestos, horasTrabajo: o.horas_reales || 1 });
+            o.sugeridoCalculado = sugerido.total; 
+            totalSugerido += sugerido.total;
 
-        // Margen basado en Venta Total vs Costos Directos
-        const margen = venta > 0 ? ((venta - (repuestos + mo)) / venta) * 100 : 0;
-        const esBaja = venta < sugerido.total;
-        if (esBaja) misionesBajaRentabilidad++;
+            const margen = venta > 0 ? ((venta - (repuestos + mo)) / venta) * 100 : 0;
+            const esBaja = venta < sugerido.total;
+            if (esBaja) misionesBajaRentabilidad++;
 
-        return `
-        <tr onclick="window.verDetalleMision('${o.id}')" class="hover:bg-cyan-500/[0.03] transition-all cursor-pointer group">
-            <td class="p-10">
-                <div class="flex flex-col">
-                    <span class="orbitron text-xl font-black italic tracking-tighter group-hover:text-cyan-400 transition-colors uppercase">${o.placa || 'N/A'}</span>
-                    <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">${o.cliente || 'CLIENTE'}</span>
-                </div>
-            </td>
-            <td class="p-10">
-                <div class="flex flex-col">
-                    <span class="text-xl font-black orbitron tabular-nums">$ ${venta.toLocaleString()}</span>
-                    <span class="text-[8px] text-emerald-500 font-black orbitron uppercase italic">Abonado: $${abonado.toLocaleString()}</span>
-                </div>
-            </td>
-            <td class="p-10 font-bold text-cyan-400/80 orbitron tabular-nums text-sm">
-                $ ${sugerido.total.toLocaleString()}
-            </td>
-            <td class="p-10">
-                <div class="flex flex-col items-center">
-                    <span class="text-[13px] font-black orbitron mb-2 ${margen > 25 ? 'text-emerald-400' : 'text-red-500'}">${margen.toFixed(1)}%</span>
-                    <div class="w-24 h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/5">
-                        <div class="h-full ${margen > 25 ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-red-500 shadow-[0_0_10px_#ef4444]'}" style="width: ${Math.min(margen, 100)}%"></div>
+            return `
+            <tr onclick="window.verDetalleMision('${o.id}')" class="hover:bg-cyan-500/[0.03] transition-all cursor-pointer group">
+                <td class="p-10">
+                    <div class="flex flex-col">
+                        <span class="orbitron text-xl font-black italic tracking-tighter group-hover:text-cyan-400 transition-colors uppercase">${o.placa || 'N/A'}</span>
+                        <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">${o.cliente || 'CLIENTE'}</span>
                     </div>
-                </div>
-            </td>
-            <td class="p-10 text-right">
-                <span class="px-5 py-2 rounded-xl text-[9px] orbitron font-black uppercase tracking-widest ${esBaja ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">
-                    ${esBaja ? 'Revisar Pricing' : 'Optimizado'}
-                </span>
-            </td>
-        </tr>`;
-    }).join("");
-    
-    // ... (resto de la función igual)
-};
+                </td>
+                <td class="p-10">
+                    <div class="flex flex-col">
+                        <span class="text-xl font-black orbitron tabular-nums">$ ${venta.toLocaleString()}</span>
+                        <span class="text-[8px] text-emerald-500 font-black orbitron uppercase italic">Pagado: $${abonado.toLocaleString()}</span>
+                    </div>
+                </td>
+                <td class="p-10 font-bold text-cyan-400/80 orbitron tabular-nums text-sm">
+                    $ ${sugerido.total.toLocaleString()}
+                </td>
+                <td class="p-10 text-center">
+                    <div class="flex flex-col items-center">
+                        <span class="text-[13px] font-black orbitron mb-2 ${margen > 25 ? 'text-emerald-400' : 'text-red-500'}">${margen.toFixed(1)}%</span>
+                        <div class="w-24 h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/5">
+                            <div class="h-full ${margen > 25 ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-red-500 shadow-[0_0_10px_#ef4444]'}" style="width: ${Math.min(Math.max(margen, 0), 100)}%"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="p-10 text-right">
+                    <span class="px-5 py-2 rounded-xl text-[9px] orbitron font-black uppercase tracking-widest ${esBaja ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">
+                        ${esBaja ? 'Revisar Pricing' : 'Optimizado'}
+                    </span>
+                </td>
+            </tr>`;
+        }).join("");
+
         const ticketPromedio = ordenesData.length > 0 ? totalVenta / ordenesData.length : 0;
         const fugaTotal = totalSugerido > totalVenta ? totalSugerido - totalVenta : 0;
 
         document.getElementById("opStats").innerHTML = `
-            ${renderStatBox("Ticket Promedio", ticketPromedio, "fa-tags", "Formula: Ingreso Total / N° Misiones")}
-            ${renderStatBox("Fuga Operativa (Sub-cobro)", fugaTotal, "fa-faucet-drip", "Formula: Sugerido IA - Facturado Real", "text-red-500")}
-            ${renderStatBox("Misiones Auditadas", ordenesData.length, "fa-clipboard-check", "Total de órdenes procesadas en el periodo")}
+            ${renderStatBox("Ticket Promedio", ticketPromedio, "fa-tags", "Ingreso Total / N° Misiones")}
+            ${renderStatBox("Fuga Operativa", fugaTotal, "fa-faucet-drip", "Sugerido IA - Facturado Real", "text-red-500")}
+            ${renderStatBox("Misiones Auditadas", ordenesData.length, "fa-clipboard-check", "Total de órdenes procesadas")}
         `;
 
         document.getElementById("iaTacticalMsg").innerHTML = `
-            He detectado que el <span class="text-white font-black">${((misionesBajaRentabilidad/ordenesData.length)*100).toFixed(0)}%</span> de tus servicios presentan fuga de capital. 
-            Acción Inmediata: Ajusta el valor de la hora hombre en el módulo de configuración para recuperar <span class="text-cyan-400 font-bold">$${fugaTotal.toLocaleString()}</span> de utilidad proyectada.`;
+            He detectado que el <span class="text-white font-black">${ordenesData.length > 0 ? ((misionesBajaRentabilidad/ordenesData.length)*100).toFixed(0) : 0}%</span> de tus servicios presentan fuga de capital. 
+            Acción Inmediata: Ajusta el valor de la hora hombre para recuperar <span class="text-cyan-400 font-bold">$${fugaTotal.toLocaleString()}</span> de utilidad proyectada.`;
     };
 
     const renderStatBox = (title, val, icon, formula, color = "text-white") => `
@@ -166,7 +163,6 @@ export default async function reportesModule(container) {
             </div>
         </div>`;
 
-    // FUNCIÓN DE DESCARGA DETALLADA (Global o por Misión)
     const generarInformeDetallado = (data, tipo = "global") => {
         try {
             if (tipo !== "global") {
@@ -181,7 +177,7 @@ export default async function reportesModule(container) {
                     [""],
                     ["PLACA", data.placa || 'N/A'],
                     ["CLIENTE", data.cliente || 'CLIENTE FINAL'],
-                    ["ESTADO P&G", venta < sugeridoIA ? "BAJA RENTABILIDAD / CRÍTICO" : "OPTIMIZADO"],
+                    ["ESTADO P&G", venta < sugeridoIA ? "BAJA RENTABILIDAD" : "OPTIMIZADO"],
                     ["-------------------------------------------"],
                     ["VALOR FACTURADO REAL", `$ ${venta.toLocaleString()}`],
                     ["COSTO DE REPUESTOS", `$ ${repuestos.toLocaleString()}`],
@@ -189,13 +185,12 @@ export default async function reportesModule(container) {
                     ["UTILIDAD NETA", `$ ${(venta - (repuestos + mo)).toLocaleString()}`],
                     ["MARGEN OPERATIVO", `${venta > 0 ? (((venta - (repuestos + mo)) / venta) * 100).toFixed(2) : 0}%`],
                     ["ANALISIS IA (SUGERIDO)", `$ ${sugeridoIA.toLocaleString()}`],
-                    ["-------------------------------------------"],
-                    ["LOGARITMO GERENCIAL", "[(Facturación - (Costo Directo + Operativo)) / Facturación] x 100"]
+                    ["-------------------------------------------"]
                 ];
                 
                 const ws = XLSX.utils.aoa_to_sheet(contenidoMision);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Detalle_Misión");
+                XLSX.utils.book_append_sheet(wb, ws, "Detalle_Mision");
                 XLSX.writeFile(wb, `NexusX_Mision_${data.placa || 'OT'}.xlsx`);
             } else {
                 const wsData = data.map(o => {
@@ -208,33 +203,33 @@ export default async function reportesModule(container) {
                         "VENTA TOTAL": venta,
                         "COSTO INSUMOS": repuestos,
                         "MANO OBRA": mo,
+                        "UTILIDAD": venta - (repuestos + mo),
                         "MARGEN %": venta > 0 ? (((venta - (repuestos + mo)) / venta) * 100).toFixed(1) + "%" : "0%",
-                        "ESTATUS": venta < (o.sugeridoCalculado || 158000) ? "REVISAR PRICING" : "OPTIMIZADO"
+                        "ESTATUS": venta < (o.sugeridoCalculado || 0) ? "CRÍTICO" : "OPTIMIZADO"
                     };
                 });
-
                 const wsGlobal = XLSX.utils.json_to_sheet(wsData);
                 const wbGlobal = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wbGlobal, wsGlobal, "Auditoria_Periodo");
-                XLSX.writeFile(wbGlobal, `NexusX_Auditoria_General_${new Date().toISOString().slice(0,10)}.xlsx`);
+                XLSX.utils.book_append_sheet(wbGlobal, wsGlobal, "Auditoria");
+                XLSX.writeFile(wbGlobal, `NexusX_General_${new Date().toISOString().slice(0,10)}.xlsx`);
             }
-            Swal.fire({ icon: 'success', title: 'Descarga Exitosa', background: '#0d1117', color: '#fff' });
+            Swal.fire({ icon: 'success', title: 'Protocolo Excel Completado', background: '#0d1117', color: '#fff' });
         } catch (error) {
-            console.error("Error en descarga:", error);
-            Swal.fire({ icon: 'error', title: 'Falla en Protocolo', text: 'Verifica la librería SheetJS en index.html', background: '#0d1117', color: '#fff' });
+            Swal.fire({ icon: 'error', title: 'Error de Telemetría', text: error.message, background: '#0d1117', color: '#fff' });
         }
     };
 
-    // FUNCIÓN DE DETALLE DE ORDEN (DEEP DRILL)
     window.verDetalleMision = (id) => {
         const o = ordenesData.find(x => x.id === id);
+        if (!o) return;
+        
         const venta = Number(o.costos_totales?.total_general || 0);
         const repuestos = Number(o.costos_totales?.costo_repuestos || 0);
         const mo = Number(o.costos_totales?.mano_obra || 0);
         const margenNeto = venta > 0 ? ((venta - (repuestos + mo)) / venta) * 100 : 0;
 
         Swal.fire({
-            title: `<span class="orbitron font-black text-cyan-500 uppercase">Resumen Misión: ${o.placa}</span>`,
+            title: `<span class="orbitron font-black text-cyan-500 uppercase">Misión: ${o.placa}</span>`,
             background: '#0d1117',
             color: '#fff',
             width: '600px',
@@ -243,33 +238,26 @@ export default async function reportesModule(container) {
                 <div class="bg-black/40 p-6 rounded-2xl border border-white/5">
                     <p class="text-[9px] text-slate-500 uppercase mb-4">Análisis de Rentabilidad</p>
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs">Margen Bruto (Venta - Insumos):</span>
-                        <span class="text-white font-black">$${(venta - repuestos).toLocaleString()}</span>
+                        <span class="text-xs">Inversión Insumos:</span>
+                        <span class="text-white font-black">$${repuestos.toLocaleString()}</span>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-xs">Utilidad Neta Operativa:</span>
+                        <span class="text-xs">Utilidad Neta:</span>
                         <span class="${margenNeto > 25 ? 'text-emerald-400' : 'text-red-500'} font-black">$${(venta - (repuestos + mo)).toLocaleString()}</span>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-black/40 p-6 rounded-2xl border border-white/5">
-                        <p class="text-[9px] text-slate-500 uppercase mb-2">ROI Mano Obra</p>
-                        <span class="text-xl font-black text-cyan-400">${venta > 0 ? ((mo / venta) * 100).toFixed(1) : 0}%</span>
+                        <p class="text-[9px] text-slate-500 uppercase mb-2">Margen</p>
+                        <span class="text-xl font-black text-cyan-400">${margenNeto.toFixed(1)}%</span>
                     </div>
                     <div class="bg-black/40 p-6 rounded-2xl border border-white/5">
-                        <p class="text-[9px] text-slate-500 uppercase mb-2">Eficiencia Neta</p>
-                        <span class="text-xl font-black text-white">${margenNeto.toFixed(1)}%</span>
+                        <p class="text-[9px] text-slate-500 uppercase mb-2">IA Sugerido</p>
+                        <span class="text-xl font-black text-white">$${(o.sugeridoCalculado || 0).toLocaleString()}</span>
                     </div>
                 </div>
-
-                <div class="bg-cyan-500/5 p-6 rounded-2xl border border-cyan-500/20 mb-6">
-                    <p class="text-[8px] text-cyan-500 uppercase font-black tracking-widest mb-2">Logaritmo Gerencial</p>
-                    <p class="text-[10px] text-slate-400 leading-relaxed italic">Formula: [(Facturación - (Costo Directo + Operativo)) / Facturación] x 100. Un margen inferior al 25% indica sub-valoración del tiempo técnico.</p>
-                </div>
-
-                <button onclick="window.descargarMisionEspecifica('${o.id}')" class="w-full p-5 bg-emerald-500/20 border border-emerald-500 text-emerald-400 orbitron text-[10px] font-black rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-lg">
-                    <i class="fas fa-file-invoice-dollar mr-2"></i> DESCARGAR CERTIFICADO DE MISIÓN (EXCEL)
+                <button onclick="window.descargarMisionEspecifica('${o.id}')" class="w-full p-5 bg-cyan-500/10 border border-cyan-500 text-cyan-400 orbitron text-[10px] font-black rounded-xl hover:bg-cyan-500 hover:text-white transition-all">
+                    <i class="fas fa-file-excel mr-2"></i> EXPORTAR DATA DE MISIÓN
                 </button>
             </div>`,
             showConfirmButton: false,
@@ -277,7 +265,6 @@ export default async function reportesModule(container) {
         });
     };
 
-    // Puentes globales para eventos en modales
     window.descargarMisionEspecifica = (id) => {
         const o = ordenesData.find(x => x.id === id);
         generarInformeDetallado(o, "individual");
