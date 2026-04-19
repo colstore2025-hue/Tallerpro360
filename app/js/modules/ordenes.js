@@ -407,10 +407,19 @@ export default async function ordenes(container) {
         if(id) {
             getDoc(doc(db, "ordenes", id)).then(s => { ordenActiva = { id, ...s.data() }; renderTerminal(); });
         } else {
-            ordenActiva = { placa: '', cliente: '', telefono: '', estado: 'INGRESO', items: [], bitacora_ia: '', finanzas: { gastos_varios: 0, adelanto_tecnico: 0, anticipo_cliente: 0 }};
-            renderTerminal();
-        }
+    ordenActiva = { 
+        placa: '', 
+        cliente: '', 
+        telefono: '', 
+        estado: 'INGRESO', 
+        tipo_orden: 'MECANICA',    // 🚀 NUEVO: Valor por defecto
+        clase_vehiculo: 'LIVIANO', // 🚀 NUEVO: Valor por defecto
+        items: [], 
+        bitacora_ia: '', 
+        finanzas: { gastos_varios: 0, adelanto_tecnico: 0, anticipo_cliente: 0 }
     };
+    renderTerminal();
+}
 
     window.toggleOrigenItem = (idx) => { 
         ordenActiva.items[idx].origen = ordenActiva.items[idx].origen === 'TALLER' ? 'CLIENTE' : 'TALLER'; 
