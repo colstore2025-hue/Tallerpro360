@@ -102,29 +102,20 @@ export default async function contabilidad(container) {
         escucharContabilidad();
     };
 
-        /**
-     * 🛰️ ESCUCHAR CONTABILIDAD - NEXUS-X V21.8 (PROTOCOLO RESCATE)
-     * Este bloque garantiza que si el índice de Firebase falla, 
-     * los datos se recuperen y ordenen localmente.
-     */
     function escucharContabilidad() {
         if (unsubscribe) unsubscribe();
         if (!empresaId) return;
 
-        // 🛡️ CONSULTA DE ALTA PRECISIÓN
         const qOficial = query(
             collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), 
             where("empresaId", "==", empresaId), 
             orderBy("creadoEn", "desc")
         );
 
-        // Intentamos la escucha oficial
         unsubscribe = onSnapshot(qOficial, (snap) => {
             procesarYRenderizar(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         }, (err) => {
-            console.warn("Nexus-X Alert: Índice ausente o error de ordenamiento. Activando Rescate Local.");
-            
-            // 🚨 PROTOCOLO DE RESCATE: Consulta sin ordenamiento (No requiere índices)
+            console.warn("Nexus-X Alert: Activando Rescate Local por error de índice.");
             const qRescate = query(
                 collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), 
                 where("empresaId", "==", empresaId)
@@ -132,47 +123,35 @@ export default async function contabilidad(container) {
 
             onSnapshot(qRescate, (snap) => {
                 const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                
-                // Ordenamiento manual por tiempo para recuperar la visualización
                 docs.sort((a, b) => {
-                    const fechaA = a.creadoEn?.seconds || a.createdAt?.seconds || 0;
-                    const fechaB = b.creadoEn?.seconds || b.createdAt?.seconds || 0;
-                    return fechaB - fechaA;
+                    const fA = a.creadoEn?.seconds || a.createdAt?.seconds || 0;
+                    const fB = b.creadoEn?.seconds || b.createdAt?.seconds || 0;
+                    return fB - fA;
                 });
-
                 procesarYRenderizar(docs);
             });
         });
     }
 
-    /**
-     * 🧠 PROCESADOR CENTRAL DE RENDERS
-     * Separa la lógica de cálculo del listener para evitar fugas de memoria
-     */
     function procesarYRenderizar(docs) {
         let tIng = 0, tGas = 0;
         const list = document.getElementById("listaFinanzas");
         if (!list) return;
 
         if (docs.length === 0) {
-            list.innerHTML = `<div class="p-20 text-center opacity-20 orbitron italic text-[10px]">LIBRO VACÍO - ESPERANDO TELEMETRÍA</div>`;
+            list.innerHTML = `<div class="p-20 text-center opacity-20 orbitron italic text-[10px]">LIBRO VACÍO - SIN TELEMETRÍA</div>`;
             actualizarDash(0, 0);
             return;
         }
 
         list.innerHTML = docs.map(m => {
             const v = Number(m.monto || 0);
-            // Normalizamos el tipo para el motor de búsqueda
-            const tipoNormalizado = (m.tipo || "").toLowerCase();
             const esIng = esIngreso(m.tipo);
-            
             if (esIng) tIng += v; else tGas += v;
 
             const estilo = obtenerEstilo(m.tipo);
-            
-            // Recuperación de fecha multiformato
-            const timestamp = m.creadoEn || m.createdAt || m.fecha;
-            const fechaString = timestamp?.toDate ? timestamp.toDate().toLocaleString() : 'FECHA MANUAL';
+            const ts = m.creadoEn || m.createdAt || m.fecha;
+            const fechaStr = ts?.toDate ? ts.toDate().toLocaleString() : 'REGISTRO MANUAL';
 
             return `
             <div class="bg-[#0d1117] p-6 rounded-[2.5rem] border border-white/5 flex justify-between items-center group hover:border-cyan-500/40 transition-all animate-in fade-in slide-in-from-right-2">
@@ -181,8 +160,8 @@ export default async function contabilidad(container) {
                         <i class="${estilo.icon} ${estilo.text}"></i>
                     </div>
                     <div>
-                        <p class="text-xs font-black text-white uppercase tracking-tighter">${m.concepto || 'TRANSACCIÓN SIN NOMBRE'}</p>
-                        <p class="text-[7px] text-slate-500 orbitron font-bold uppercase">${fechaString}</p>
+                        <p class="text-xs font-black text-white uppercase tracking-tighter">${m.concepto || 'TRANSACCIÓN'}</p>
+                        <p class="text-[7px] text-slate-500 orbitron font-bold uppercase">${fechaStr}</p>
                     </div>
                 </div>
                 <div class="text-right">
@@ -196,14 +175,7 @@ export default async function contabilidad(container) {
                 </div>
             </div>`;
         }).join("");
-
         actualizarDash(tIng, tGas);
-    }, (err) => {
-            console.error("Fallo de Telemetría:", err);
-            // Fallback en caso de que el índice de Firestore no esté listo
-            const fallbackQ = query(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), where("empresaId", "==", empresaId));
-            getDocs(fallbackQ).then(s => { /* Procesar manual */ });
-        });
     }
 
     function actualizarDash(ing, gas) {
@@ -223,32 +195,30 @@ export default async function contabilidad(container) {
 
         if (!cIn.value || monto <= 0) return Swal.fire({ icon: 'warning', title: 'DATOS INCOMPLETOS', background: '#0d1117', color: '#fff' });
 
-        await addDoc(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), {
-            empresaId,
-            concepto: cIn.value.toUpperCase().trim(),
-            tipo: tIn.value,
-            monto: monto,
-            metodo: NEXUS_CONFIG.PAYMENT_METHODS.CASH,
-            creadoEn: serverTimestamp()
-        });
-
-        cIn.value = ""; mIn.value = "";
-        Swal.fire({ icon: 'success', title: 'ASIENTO REGISTRADO', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+        try {
+            await addDoc(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), {
+                empresaId,
+                concepto: cIn.value.toUpperCase().trim(),
+                tipo: tIn.value,
+                monto: monto,
+                metodo: NEXUS_CONFIG.PAYMENT_METHODS.CASH,
+                creadoEn: serverTimestamp()
+            });
+            cIn.value = ""; mIn.value = "";
+            Swal.fire({ icon: 'success', title: 'SINCRONIZADO', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+        } catch (e) { console.error(e); }
     }
 
     const cargarVistaCuentas = async () => {
         const content = document.getElementById("cont-dynamic-content");
         content.innerHTML = `<div class="p-20 text-center orbitron text-[10px] animate-pulse text-cyan-500">CONSOLIDANDO BALANCES...</div>`;
-        
         const q = query(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), where("empresaId", "==", empresaId));
         const snap = await getDocs(q);
         const p = { ing: 0, gas: 0 };
-
         snap.forEach(d => {
             const m = d.data();
             if (esIngreso(m.tipo)) p.ing += Number(m.monto); else p.gas += Number(m.monto);
         });
-
         content.innerHTML = `
         <div class="bg-[#0d1117] p-12 rounded-[4rem] border border-white/5 shadow-3xl animate-in zoom-in duration-500">
             <h3 class="orbitron text-xl font-black text-amber-400 mb-10 italic uppercase">Estado de Resultados Nexus-X</h3>
@@ -261,8 +231,7 @@ export default async function contabilidad(container) {
     };
 
     function renderPucCard(title, total, border, text) {
-        return `
-        <div class="p-8 bg-black/40 rounded-[3rem] border ${border} hover:bg-white/5 transition-all">
+        return `<div class="p-8 bg-black/40 rounded-[3rem] border ${border} hover:bg-white/5 transition-all">
             <p class="text-[9px] orbitron ${text} mb-4 font-black tracking-widest">${title}</p>
             <span class="text-2xl font-black orbitron ${text}">$${total.toLocaleString()}</span>
         </div>`;
