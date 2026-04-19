@@ -12,9 +12,9 @@ export default async function contabilidad(container) {
     let vistaActual = "DIARIO"; 
     let unsubscribe = null;
 
-    // 1. MAPEO DE TIPOS (A prueba de errores de escritura en DB)
-    const T_ING = ['ingreso_ot', 'venta_repuesto', 'capital_inicial', 'capital', 'ingreso'];
-    const T_GAS = ['gasto_operativo', 'gasto_insumos', 'nomina_pago', 'nomina', 'gasto', 'egreso'];
+    // 1. MAPEO DE TIPOS (Blindaje de lectura para ingresos desde PagosTaller)
+const T_ING = ['ingreso_ot', 'venta_repuesto', 'capital_inicial', 'ingreso', 'INGRESO'];
+const T_GAS = ['gasto_operativo', 'gasto_insumos', 'nomina_pago', 'nomina', 'gasto', 'egreso'];
 
     const renderLayout = () => {
         container.innerHTML = `
