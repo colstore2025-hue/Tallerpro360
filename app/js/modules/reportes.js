@@ -1,188 +1,152 @@
 /**
- * 🌌 NEXUS-X AERO-LOGISTICS - AUDIT CENTER V24.0 (ENTERPRISE)
- * 🧠 NÚCLEO DE INTELIGENCIA ESTRATÉGICA & COSTEO POR BAHÍA
- * 🏗️ SYSTEM: BUSINESS INTELLIGENCE PROTOCOL (BIP)
+ * 🌌 NEXUS-X AUDIT CENTER V25.0 - ESTRATEGIA DE TALLER GRANDE
+ * 🧠 FOCO: PRODUCTIVIDAD, PUNTO DE EQUILIBRIO Y RENTABILIDAD POR MISIÓN
  */
 
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
-if (!window.XLSX) { 
-    const s = document.createElement('script'); 
-    s.src = "https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"; 
-    document.head.appendChild(s); 
-}
-
 export default async function reportesModule(container) {
     const empresaId = localStorage.getItem("empresaId");
     let datosOrdenes = [];
-    let datosContables = [];
-    
-    // --- VARIABLES DE CONFIGURACIÓN EMPRESARIAL ---
-    let configBahia = {
-        costosFijosMensuales: 5000000, // Ejemplo: Arriendo, servicios, etc.
-        numBahias: 4,                  // Capacidad instalada
-        horasLaboralesDia: 9,
+
+    // --- CONFIGURACIÓN DE GESTIÓN (PUNTO DE EQUILIBRIO) ---
+    const config = {
+        gastosFijos: 6500000, // Arriendo, Nómina Admin, Servicios
+        bahias: 5,            // Puestos de trabajo
+        horasDia: 9,
         diasMes: 26
     };
 
-    const renderLayout = () => {
+    const render = () => {
         container.innerHTML = `
-        <div class="p-6 lg:p-12 bg-[#010409] min-h-screen text-white font-sans pb-32">
-            <header class="flex flex-col xl:flex-row justify-between items-start gap-10 mb-12 border-b border-white/5 pb-10">
+        <div class="p-6 lg:p-12 bg-[#010409] min-h-screen text-white pb-40 animate-in fade-in duration-500">
+            <header class="mb-12 border-b border-white/5 pb-8 flex justify-between items-end">
                 <div>
-                    <h1 class="orbitron text-5xl font-black tracking-tighter uppercase italic">
-                        AUDIT <span class="text-cyan-400">CENTER</span> <span class="text-[10px] bg-cyan-500/10 p-2 rounded text-cyan-500 not-italic">ENTERPRISE V24</span>
+                    <h1 class="orbitron text-5xl font-black tracking-tighter italic uppercase text-white">
+                        INTEL <span class="text-cyan-400">CORE</span>
                     </h1>
-                    <p class="text-slate-500 text-[10px] orbitron mt-4 tracking-widest">SISTEMA DE ANÁLISIS DE RENTABILIDAD Y PRODUCTIVIDAD JUSTO A TIEMPO</p>
+                    <p class="text-slate-500 orbitron text-[9px] mt-2 tracking-[0.3em]">ANÁLISIS DE PRODUCTIVIDAD Y RENTABILIDAD POR UNIDAD</p>
                 </div>
-
-                <div class="flex flex-wrap gap-4 bg-[#0d1117] p-4 rounded-3xl border border-white/5">
-                    <div class="flex flex-col">
-                        <label class="orbitron text-[8px] text-slate-500 mb-1 uppercase">Rango de Auditoría</label>
-                        <div class="flex items-center gap-2">
-                            <input type="date" id="fI" class="bg-transparent border-none text-[11px] orbitron font-bold text-white uppercase focus:outline-none">
-                            <span class="text-slate-700 font-black">>></span>
-                            <input type="date" id="fF" class="bg-transparent border-none text-[11px] orbitron font-bold text-white uppercase focus:outline-none">
-                        </div>
-                    </div>
-                    <button id="btnExport" class="px-10 bg-white text-black rounded-2xl orbitron text-[10px] font-black hover:bg-cyan-400 transition-all uppercase">
-                        📥 Generar Libro Excel
+                <div class="flex gap-4">
+                     <button id="btnCalculos" class="px-6 py-2 border border-cyan-500/30 rounded-xl orbitron text-[9px] text-cyan-400 hover:bg-cyan-500/10 transition-all">
+                        VER FÓRMULAS DE CÁLCULO
+                    </button>
+                    <button id="btnExport" class="px-8 py-2 bg-white text-black rounded-xl orbitron text-[10px] font-black uppercase">
+                        Exportar_BI
                     </button>
                 </div>
             </header>
 
-            <section class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-12">
-                <div class="bg-cyan-500/5 p-6 rounded-3xl border border-cyan-500/20">
-                    <p class="orbitron text-[9px] text-cyan-500 mb-3 uppercase">Costo Fijo Mensual</p>
-                    <input type="number" id="cfgCostos" value="${configBahia.costosFijosMensuales}" class="bg-transparent text-xl font-bold w-full outline-none">
-                </div>
-                <div class="bg-cyan-500/5 p-6 rounded-3xl border border-cyan-500/20">
-                    <p class="orbitron text-[9px] text-cyan-500 mb-3 uppercase">Bahías Totales</p>
-                    <input type="number" id="cfgBahias" value="${configBahia.numBahias}" class="bg-transparent text-xl font-bold w-full outline-none">
-                </div>
-                <div class="bg-[#0d1117] p-6 rounded-3xl border border-white/5 flex flex-col justify-center">
-                    <p class="orbitron text-[8px] text-slate-500 uppercase">Costo por Hora / Bahía</p>
-                    <h4 id="valHoraBahia" class="text-xl font-black text-white italic">$ 0</h4>
-                </div>
-                <div class="bg-emerald-500/10 p-6 rounded-3xl border border-emerald-500/20 flex flex-col justify-center">
-                    <p class="orbitron text-[8px] text-emerald-500 uppercase">Estado de Eficiencia</p>
-                    <h4 class="text-xl font-black italic">OPTIMIZADO</h4>
-                </div>
-            </section>
+            <div id="statsGlobal" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12"></div>
 
-            <div id="kpiContainer" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12"></div>
+            <div class="bg-[#0d1117] rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl">
+                <div class="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
+                    <h2 class="orbitron text-xs font-black uppercase">Auditoría de Misiones (Ordenes de Trabajo)</h2>
+                    <input type="text" id="filterOT" placeholder="BUSCAR PLACA O CLIENTE..." class="bg-white/5 border border-white/10 px-6 py-2 rounded-full text-[10px] orbitron focus:outline-none focus:border-cyan-500 w-1/3">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-white/[0.02] orbitron text-[9px] text-slate-500 uppercase">
+                            <tr>
+                                <th class="p-8">Misión / Placa</th>
+                                <th class="p-8">Tiempo Ocupado</th>
+                                <th class="p-8 text-right">Rentabilidad Neta</th>
+                                <th class="p-8 text-center">IA Insight</th>
+                                <th class="p-8 text-right">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaOTs" class="divide-y divide-white/5 text-[11px] font-bold uppercase"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-            <div class="bg-[#0d1117]/80 rounded-[3rem] border border-white/5 overflow-hidden shadow-2xl">
-                <table id="tableReport" class="w-full text-left border-collapse">
-                    <thead class="bg-white/[0.02] orbitron text-[9px] text-slate-500 uppercase">
-                        <tr>
-                            <th class="p-8">Misión / Placa</th>
-                            <th class="p-8">Venta Bruta</th>
-                            <th class="p-8">Costo Bahía (Tiempo)</th>
-                            <th class="p-8">Rentabilidad Neta</th>
-                            <th class="p-8 text-right">Estatus Gerencial</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bodyReportes" class="text-[11px] divide-y divide-white/5 font-bold"></tbody>
-                </table>
+        <div id="modalAI" class="fixed inset-0 bg-black/90 backdrop-blur-xl hidden z-[100] flex items-center justify-center p-6">
+            <div class="bg-[#0d1117] border border-white/10 p-12 rounded-[3rem] max-w-2xl w-full shadow-2xl animate-in zoom-in duration-300">
+                <div id="contentAI"></div>
+                <button onclick="document.getElementById('modalAI').classList.add('hidden')" class="mt-10 w-full py-4 bg-cyan-500 text-black orbitron font-black rounded-2xl">ENTENDIDO</button>
             </div>
         </div>`;
 
-        // Eventos
-        const inputs = ['cfgCostos', 'cfgBahias', 'fI', 'fF'];
-        inputs.forEach(id => document.getElementById(id).onchange = calcularYRenderizar);
-        document.getElementById("btnExport").onclick = exportarExcelPro;
-
-        initData();
+        document.getElementById("btnCalculos").onclick = verFormulas;
+        document.getElementById("filterOT").oninput = (e) => filtrar(e.target.value);
+        init();
     };
 
-    const initData = async () => {
-        const [snapO, snapC] = await Promise.all([
-            getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId))),
-            getDocs(query(collection(db, "contabilidad"), where("empresaId", "==", empresaId)))
-        ]);
-        datosOrdenes = snapO.docs.map(d => ({ ...d.data(), id: d.id }));
-        datosContables = snapC.docs.map(d => ({ ...d.data(), id: d.id }));
-        calcularYRenderizar();
+    const init = async () => {
+        const snap = await getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId)));
+        datosOrdenes = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        procesarUI();
     };
 
-    const calcularYRenderizar = () => {
-        // Capturar Config de Bahía
-        const costosFijos = Number(document.getElementById("cfgCostos").value);
-        const bahias = Number(document.getElementById("cfgBahias").value);
+    const procesarUI = () => {
+        const costoHoraBahia = (config.gastosFijos / config.bahias) / (config.diasMes * config.horasDia);
+        const container = document.getElementById("listaOTs");
         
-        // Algoritmo Costo Hora Bahía
-        // (Costos Fijos / Bahías) / (Días * Horas)
-        const costoHoraBahia = (costosFijos / bahias) / (configBahia.diasMes * configBahia.horasLaboralesDia);
-        document.getElementById("valHoraBahia").innerText = `$ ${Math.round(costoHoraBahia).toLocaleString()}`;
-
-        renderTablas(costoHoraBahia);
-    };
-
-    const renderTablas = (costoH) => {
-        const body = document.getElementById("bodyReportes");
-        const kpi = document.getElementById("kpiContainer");
-
-        let totalNeto = 0;
-        let totalHorasPerdidas = 0;
-
-        body.innerHTML = datosOrdenes.map(o => {
+        container.innerHTML = datosOrdenes.map(o => {
             const venta = Number(o.costos_totales?.total_general || 0);
+            const tiempoH = o.horas_reales || 2; // Simulación si no existe
+            const costoB = tiempoH * costoHoraBahia;
+            const repuestos = Number(o.costos_totales?.costo_repuestos || 0);
+            const neto = venta - (repuestos + costoB);
             
-            // Simulación de tiempo: Si no hay fecha de cierre, asumimos 3 horas estándar
-            const horasOcupadas = o.horas_trabajadas || 3; 
-            const costoBahiaOT = horasOcupadas * costoH;
-            const rentabilidadOT = venta - (Number(o.costos_totales?.costo_repuestos || 0) + costoBahiaOT);
-            
-            totalNeto += rentabilidadOT;
-
             return `
-                <tr class="hover:bg-white/[0.02] transition-all">
-                    <td class="p-8">
-                        <div class="orbitron text-white text-xs">${o.placa || 'N/A'}</div>
-                        <div class="text-[9px] text-slate-500 uppercase">${o.cliente || 'Desconocido'}</div>
-                    </td>
-                    <td class="p-8 font-black">$ ${venta.toLocaleString()}</td>
-                    <td class="p-8 text-slate-400 italic">$ ${Math.round(costoBahiaOT).toLocaleString()} (${horasOcupadas}h)</td>
-                    <td class="p-8 ${rentabilidadOT > 0 ? 'text-emerald-400' : 'text-red-500'} font-black">
-                        $ ${Math.round(rentabilidadOT).toLocaleString()}
-                    </td>
-                    <td class="p-8 text-right">
-                        <span class="px-4 py-1 rounded-full text-[8px] orbitron font-black ${rentabilidadOT > (venta * 0.3) ? 'bg-emerald-500/10 text-emerald-500' : 'bg-orange-500/10 text-orange-400'}">
-                            ${rentabilidadOT > (venta * 0.3) ? 'ALTA RENTABILIDAD' : 'REVISAR PRICING'}
-                        </span>
-                    </td>
-                </tr>
-            `;
+            <tr class="hover:bg-white/[0.02] group transition-all">
+                <td class="p-8">
+                    <div class="text-white orbitron font-black text-xs">${o.placa}</div>
+                    <div class="text-slate-500 text-[9px]">${o.cliente}</div>
+                </td>
+                <td class="p-8 text-slate-400">${tiempoH} Horas de Bahía</td>
+                <td class="p-8 text-right ${neto > 0 ? 'text-emerald-400' : 'text-red-500'} font-black italic">
+                    $ ${Math.round(neto).toLocaleString()}
+                </td>
+                <td class="p-8 text-center">
+                    <span class="px-4 py-1 rounded-full text-[8px] orbitron ${neto > (venta * 0.2) ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}">
+                        ${neto > (venta * 0.2) ? 'OPTIMO' : 'FUGA DE CAPITAL'}
+                    </span>
+                </td>
+                <td class="p-8 text-right">
+                    <button onclick="verDetalleIA('${o.id}')" class="text-cyan-400 hover:underline orbitron text-[9px]">ANALIZAR_POR_QUE</button>
+                </td>
+            </tr>`;
         }).join("");
 
-        // KPIs de Talla Mundial
-        kpi.innerHTML = `
-            <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5">
-                <p class="orbitron text-[8px] text-slate-500 uppercase mb-2">Utilidad Neta Real</p>
-                <h3 class="orbitron text-2xl font-black italic ${totalNeto > 0 ? 'text-emerald-400' : 'text-red-500'}">$ ${Math.round(totalNeto).toLocaleString()}</h3>
-            </div>
-            <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5">
-                <p class="orbitron text-[8px] text-slate-500 uppercase mb-2">Punto de Equilibrio H/B</p>
-                <h3 class="orbitron text-2xl font-black italic">$ ${Math.round(costoH).toLocaleString()}</h3>
-            </div>
-            <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5">
-                <p class="orbitron text-[8px] text-slate-500 uppercase mb-2">Misiones Auditadas</p>
-                <h3 class="orbitron text-2xl font-black italic text-cyan-400">${datosOrdenes.length}</h3>
-            </div>
-            <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5">
-                <p class="orbitron text-[8px] text-slate-500 uppercase mb-2">Eficiencia Global</p>
-                <h3 class="orbitron text-2xl font-black italic text-white">84.5%</h3>
-            </div>
-        `;
+        actualizarKPIs(costoHoraBahia);
     };
 
-    const exportarExcelPro = () => {
-        const table = document.getElementById("tableReport");
-        const wb = XLSX.utils.table_to_book(table, { sheet: "AUDITORIA_GERENCIAL" });
-        XLSX.writeFile(wb, `Audit_NexusX_Enterprise_${new Date().toISOString().split('T')[0]}.xlsx`);
+    window.verDetalleIA = (id) => {
+        const o = datosOrdenes.find(x => x.id === id);
+        const costoHoraBahia = (config.gastosFijos / config.bahias) / (config.diasMes * config.horasDia);
+        const venta = Number(o.costos_totales?.total_general || 0);
+        const tiempoH = o.horas_reales || 2;
+        const costoB = tiempoH * costoHoraBahia;
+        const neto = venta - (Number(o.costos_totales?.costo_repuestos || 0) + costoB);
+
+        const modal = document.getElementById("modalAI");
+        const content = document.getElementById("contentAI");
+        modal.classList.remove("hidden");
+
+        content.innerHTML = `
+            <h3 class="orbitron text-2xl font-black text-cyan-400 mb-6 uppercase italic">Análisis de Misión: ${o.placa}</h3>
+            <div class="space-y-6 text-slate-300 font-medium leading-relaxed">
+                <p>Esta orden generó una <b class="${neto > 0 ? 'text-emerald-400' : 'text-red-500'} uppercase">${neto > 0 ? 'Utilidad' : 'Pérdida'} de $${Math.round(neto).toLocaleString()}</b>.</p>
+                <div class="bg-white/5 p-6 rounded-2xl border border-white/5 space-y-3">
+                    <div class="flex justify-between text-[10px] orbitron"><p>INGRESO TOTAL:</p> <p class="text-white">$ ${venta.toLocaleString()}</p></div>
+                    <div class="flex justify-between text-[10px] orbitron"><p>COSTO BAHÍA (TIEMPO):</p> <p class="text-red-400">-$ ${Math.round(costoB).toLocaleString()}</p></div>
+                    <div class="flex justify-between text-[10px] orbitron"><p>COSTO INSUMOS:</p> <p class="text-red-400">-$ ${Number(o.costos_totales?.costo_repuestos || 0).toLocaleString()}</p></div>
+                </div>
+                <p class="text-xs italic text-slate-500 border-l-2 border-cyan-500 pl-4">
+                    ${neto < 0 ? 
+                        "Sugerencia Gerencial: El tiempo de ocupación excedió el margen de venta. Se recomienda estandarizar este servicio o aumentar la tarifa de mano de obra." : 
+                        "Sugerencia Gerencial: Operación eficiente. El flujo de trabajo permitió liberar la bahía en tiempo récord maximizando el margen."}
+                </p>
+            </div>`;
     };
 
-    renderLayout();
+    const verFormulas = () => {
+        alert(`ESTÁNDAR DE CÁLCULO EMPRESARIAL:\n\n1. Costo Hora Bahía = (Gastos Fijos / Bahías) / (Días * Horas)\n2. Rentabilidad = Venta - (Insumos + Costo Bahía)\n3. Punto de Equilibrio = Volumen de ventas necesario para que Utilidad sea $0.`);
+    };
+
+    render();
 }
