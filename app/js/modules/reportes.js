@@ -1,196 +1,214 @@
 /**
- * 🦾 NEXUS-X TERMINATOR CORE V32.0 - OPERATIONAL INTELLIGENCE
- * Transformación de datos técnicos en decisiones estratégicas.
- * William Jeffry Urquijo Cubillos // High-Level Operations Plan
+ * 🦾 NEXUS-X STRATEGIC COMMANDER V33.0 - BSC EDITION
+ * Sistema de Inteligencia Operacional y Logística
+ * William Jeffry Urquijo Cubillos // Operaciones de Alto Nivel
  */
 
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 import { NEXUS_CONFIG } from "./nexus_constants.js";
 
-// Herramientas externas para el milagro visual
-const LIB_CHART = "https://cdn.jsdelivr.net/npm/chart.js";
-const LIB_XLSX = "https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js";
-
 export default async function reportesModule(container) {
     const empresaId = localStorage.getItem("nexus_empresaId");
-    let rawData = [];
+    let metrics = { global: {}, orders: [] };
 
     const init = async () => {
-        renderSkeleton();
-        await loadScript(LIB_CHART);
-        await loadScript(LIB_XLSX);
-        await loadData();
+        container.innerHTML = `<div class="p-4 text-cyan-500 orbitron animate-pulse">Sincronizando Bóveda de Datos...</div>`;
+        await loadDependencies();
+        await processBusinessIntelligence();
+        renderDashboard();
     };
 
-    const renderSkeleton = () => {
-        container.innerHTML = `
-        <div class="p-6 lg:p-12 bg-[#010409] min-h-screen text-white font-sans">
-            <div class="flex flex-col md:flex-row justify-between items-end mb-12 border-b border-white/5 pb-8">
-                <div>
-                    <h1 class="orbitron text-5xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">OPERATIONS BI</h1>
-                    <p class="text-[10px] orbitron tracking-[0.4em] text-slate-500 uppercase">Control de Eficiencia y Rentabilidad Real</p>
-                </div>
-                <div class="flex gap-4 mt-6 md:mt-0">
-                    <button id="mainExport" class="bg-white text-black px-6 py-3 rounded-xl orbitron text-[10px] font-black hover:bg-cyan-500 hover:text-white transition-all">EXPORTAR P&L GLOBAL</button>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12" id="kpiGrid"></div>
-
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                <div class="xl:col-span-2 bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
-                    <h4 class="orbitron text-[10px] font-black text-cyan-400 mb-6 uppercase tracking-widest">Rendimiento Mensual vs Proyección</h4>
-                    <canvas id="analyticsChart" height="300"></canvas>
-                </div>
-
-                <div class="bg-[#0d1117] rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col">
-                    <div class="p-6 border-b border-white/5 bg-white/[0.02]">
-                        <h4 class="orbitron text-[10px] font-black text-slate-400 uppercase">Auditoría por Misión</h4>
-                    </div>
-                    <div id="missionList" class="overflow-y-auto max-h-[400px] divide-y divide-white/[0.02]"></div>
-                </div>
-            </div>
-        </div>`;
-
-        document.getElementById("mainExport").onclick = () => exportGlobalExcel();
-    };
-
-    const loadData = async () => {
+    const processBusinessIntelligence = async () => {
         const q = query(collection(db, NEXUS_CONFIG.COLLECTIONS.ORDERS), where("empresaId", "==", empresaId));
         const snap = await getDocs(q);
         
-        // NORMALIZACIÓN CRÍTICA: Aquí arreglamos el problema del $0
-        rawData = snap.docs.map(doc => {
+        metrics.orders = snap.docs.map(doc => {
             const d = doc.data();
-            const v = Number(d.costos_totales?.total_general || d.total || d.precio_estimado || 0);
-            const r = Number(d.costos_totales?.costo_repuestos || 0);
-            const m = Number(d.costos_totales?.mano_obra || 0);
+            // Normalización Financiera
+            const venta = Number(d.costos_totales?.total_general || d.total || 0);
+            const costo = Number(d.costos_totales?.costo_repuestos || 0) + Number(d.costos_totales?.mano_obra || 0);
+            
+            // KPIs Logísticos (Nivel de Servicio)
+            const fIngreso = d.fecha_apertura?.toDate() || new Date();
+            const fEntrega = d.fecha_entrega?.toDate() || new Date();
+            const tiempoCiclo = Math.ceil((fEntrega - fIngreso) / (1000 * 60 * 60 * 24)); // Días
+            const cumplimiento = tiempoCiclo <= (d.promesa_dias || 3) ? 100 : 0;
+
             return {
                 id: doc.id,
-                ...d,
-                valVenta: v,
-                valCosto: r + m,
-                valUtilidad: v - (r + m),
-                valMargen: v > 0 ? ((v - (r + m)) / v) * 100 : 0
+                placa: d.placa || 'N/A',
+                cliente: d.cliente || 'S/N',
+                venta,
+                utilidad: venta - costo,
+                margen: venta > 0 ? ((venta - costo) / venta) * 100 : 0,
+                diasTaller: tiempoCiclo,
+                cumplimiento,
+                tecnico: d.tecnico_asignado || 'No asignado'
             };
         });
 
-        renderKPIs();
-        renderMainChart();
-        renderMissions();
+        // Agregados Globales (Balanced Scorecard)
+        const totalVenta = metrics.orders.reduce((a, b) => a + b.venta, 0);
+        metrics.global = {
+            totalVenta,
+            margenPromedio: metrics.orders.reduce((a, b) => a + b.margen, 0) / (metrics.orders.length || 1),
+            nivelServicio: metrics.orders.reduce((a, b) => a + b.cumplimiento, 0) / (metrics.orders.length || 1),
+            ticketPromedio: totalVenta / (metrics.orders.length || 1)
+        };
     };
 
-    const renderKPIs = () => {
-        const totalVenta = rawData.reduce((acc, cur) => acc + cur.valVenta, 0);
-        const totalUtilidad = rawData.reduce((acc, cur) => acc + cur.valUtilidad, 0);
-        const avgTicket = totalVenta / (rawData.length || 1);
-        const totalMargen = (totalUtilidad / (totalVenta || 1)) * 100;
-
-        const grid = document.getElementById("kpiGrid");
-        grid.innerHTML = `
-            ${kpiCard("Facturación Total", totalVenta, "fa-file-invoice-dollar", "text-white")}
-            ${kpiCard("Utilidad Neta", totalUtilidad, "fa-hand-holding-usd", "text-emerald-400")}
-            ${kpiCard("Ticket Promedio", avgTicket, "fa-chart-line", "text-cyan-400")}
-            ${kpiCard("Margen Global", totalMargen.toFixed(1) + "%", "fa-percent", "text-purple-400")}
-        `;
-    };
-
-    const kpiCard = (t, v, i, c) => `
-        <div class="bg-[#0d1117] p-8 rounded-3xl border border-white/5 hover:border-cyan-500/30 transition-all group">
-            <div class="flex justify-between items-start mb-4">
-                <p class="orbitron text-[9px] font-black text-slate-500 uppercase tracking-widest">${t}</p>
-                <i class="fas ${i} text-slate-700 group-hover:text-cyan-500 transition-colors"></i>
+    const renderDashboard = () => {
+        container.innerHTML = `
+        <div class="p-6 bg-[#010409] min-h-screen text-white font-sans animate-in fade-in duration-500">
+            <div class="flex justify-between items-center mb-8 border-b border-white/10 pb-6">
+                <div>
+                    <h2 class="orbitron text-3xl font-black italic text-cyan-400">STRATEGIC <span class="text-white">COMMANDER</span></h2>
+                    <p class="text-[8px] orbitron tracking-[0.4em] text-slate-500">Logística & Operaciones Pro-Level</p>
+                </div>
+                <button id="btnExcelFull" class="bg-cyan-500 hover:bg-white hover:text-black text-[10px] orbitron font-black px-6 py-3 rounded-lg transition-all shadow-[0_0_20px_rgba(6,182,212,0.4)]">
+                    DESCARGAR BSC EXCEL ELITE
+                </button>
             </div>
-            <p class="text-3xl font-black orbitron ${c} tabular-nums">${typeof v === 'number' ? '$' + v.toLocaleString() : v}</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                ${renderScorecardItem("Perspectiva Financiera", `$${metrics.global.totalVenta.toLocaleString()}`, "Venta Total", "text-white")}
+                ${renderScorecardItem("Nivel de Servicio (OTD)", `${metrics.global.nivelServicio.toFixed(1)}%`, "Cumplimiento Entrega", "text-emerald-400")}
+                ${renderScorecardItem("Rentabilidad Operativa", `${metrics.global.margenPromedio.toFixed(1)}%`, "Margen Neto Prom.", "text-cyan-400")}
+                ${renderScorecardItem("Eficiencia Logística", `${metrics.global.ticketPromedio.toFixed(0)}`, "Valor / Misión", "text-purple-400")}
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div class="bg-[#0d1117] p-6 rounded-3xl border border-white/5">
+                    <h3 class="orbitron text-[9px] font-black text-slate-500 mb-4 uppercase">Flujo Operativo de Ventas</h3>
+                    <canvas id="chartFinanciero" height="180"></canvas>
+                </div>
+
+                <div class="bg-[#0d1117] p-6 rounded-3xl border border-white/5">
+                    <h3 class="orbitron text-[9px] font-black text-cyan-500 mb-4 uppercase">Plan de Mejora Sugerido (IA)</h3>
+                    <div class="space-y-4">
+                        ${generateSmartActions()}
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 bg-[#0d1117] border border-white/5 rounded-3xl overflow-hidden">
+                <div class="p-4 bg-white/[0.02] border-b border-white/5">
+                    <h3 class="orbitron text-[9px] font-black text-slate-400 uppercase">Monitor de Operación Técnica</h3>
+                </div>
+                <div class="overflow-x-auto max-h-64 overflow-y-auto">
+                    <table class="w-full text-[11px] text-left">
+                        <thead class="sticky top-0 bg-[#0d1117] orbitron text-slate-500 border-b border-white/10">
+                            <tr>
+                                <th class="p-4">PLACA</th>
+                                <th class="p-4">TÉCNICO</th>
+                                <th class="p-4">DÍAS TALLER</th>
+                                <th class="p-4">RENTABILIDAD</th>
+                                <th class="p-4 text-right">AUDITORÍA</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/[0.02]">
+                            ${metrics.orders.map(o => `
+                                <tr class="hover:bg-cyan-500/5 transition-all">
+                                    <td class="p-4 font-black text-cyan-400">${o.placa}</td>
+                                    <td class="p-4 uppercase">${o.tecnico}</td>
+                                    <td class="p-4">${o.diasTaller} Días</td>
+                                    <td class="p-4 ${o.margen < 20 ? 'text-red-500' : 'text-emerald-500'} font-bold">${o.margen.toFixed(1)}%</td>
+                                    <td class="p-4 text-right">
+                                        <button onclick="downloadSingle('${o.id}')" class="text-white/50 hover:text-cyan-400"><i class="fas fa-download"></i></button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>`;
+        
+        initCharts();
+        document.getElementById("btnExcelFull").onclick = () => exportEliteExcel();
+    };
+
+    const generateSmartActions = () => {
+        let actions = [];
+        if (metrics.global.nivelServicio < 85) {
+            actions.push({ t: "LOGÍSTICA", m: "Cuello de botella detectado en tiempos de entrega. Acción: Revisar stock de repuestos críticos." });
+        }
+        if (metrics.global.margenPromedio < 25) {
+            actions.push({ t: "FINANCIERO", m: "Margen por debajo del umbral objetivo. Acción: Auditar costos de mano de obra externa." });
+        }
+        return actions.map(a => `
+            <div class="border-l-2 border-cyan-500 pl-4 py-2">
+                <span class="orbitron text-[8px] font-black text-cyan-500">${a.t}</span>
+                <p class="text-[10px] text-slate-400 italic">${a.m}</p>
+            </div>
+        `).join('') || '<p class="text-[10px] text-emerald-500">Operación Óptima: Mantener protocolos actuales.</p>';
+    };
+
+    const exportEliteExcel = () => {
+        const wb = XLSX.utils.book_new();
+        
+        // HOJA 1: BALANCED SCORECARD
+        const bscData = [
+            ["BALANCED SCORECARD - TALLERPRO360 ELITE"],
+            ["GENERADO POR", "NEXUS-X STRATEGIC ENGINE"],
+            ["FECHA", new Date().toLocaleString()],
+            [""],
+            ["PERSPECTIVA", "MÉTRICA", "VALOR", "ESTADO"],
+            ["FINANCIERA", "Venta Total", metrics.global.totalVenta, metrics.global.totalVenta > 10000000 ? "OBJETIVO CUMPLIDO" : "EN SEGUIMIENTO"],
+            ["CLIENTE / LOGÍSTICA", "Nivel de Servicio (OTD)", metrics.global.nivelServicio.toFixed(2) + "%", metrics.global.nivelServicio > 90 ? "EXCELENTE" : "CRÍTICO"],
+            ["PROCESOS INTERNOS", "Margen de Utilidad", metrics.global.margenPromedio.toFixed(2) + "%", metrics.global.margenPromedio > 30 ? "OPTIMIZADO" : "REVISAR COSTOS"],
+            ["APRENDIZAJE", "Ticket Promedio", metrics.global.ticketPromedio, "ESTÁNDAR"]
+        ];
+        const ws1 = XLSX.utils.aoa_to_sheet(bscData);
+        XLSX.utils.book_append_sheet(wb, ws1, "Balanced_Scorecard");
+
+        // HOJA 2: DATA CRUDA DE OPERACIONES
+        const ws2 = XLSX.utils.json_to_sheet(metrics.orders);
+        XLSX.utils.book_append_sheet(wb, ws2, "Detalle_Operaciones");
+
+        XLSX.writeFile(wb, `Estrategia_NexusX_${new Date().toISOString().slice(0,10)}.xlsx`);
+    };
+
+    // Auxiliares de Render y Carga...
+    const renderScorecardItem = (t, v, l, c) => `
+        <div class="bg-[#0d1117] p-5 rounded-2xl border border-white/5">
+            <p class="text-[8px] orbitron font-black text-slate-500 uppercase mb-2">${t}</p>
+            <p class="text-2xl font-black orbitron ${c}">${v}</p>
+            <p class="text-[7px] orbitron text-slate-600 mt-1 uppercase">${l}</p>
         </div>`;
 
-    const renderMissions = () => {
-        const list = document.getElementById("missionList");
-        list.innerHTML = rawData.map(o => `
-            <div class="p-6 hover:bg-cyan-500/[0.03] transition-all cursor-pointer group flex justify-between items-center" onclick="exportSingleOrder('${o.id}')">
-                <div>
-                    <span class="orbitron font-black text-cyan-400 text-lg group-hover:tracking-widest transition-all">${o.placa || 'OT'}</span>
-                    <p class="text-[9px] text-slate-500 font-bold uppercase">${o.cliente || 'CLIENTE'}</p>
-                </div>
-                <div class="text-right">
-                    <span class="orbitron font-bold text-white">$${o.valVenta.toLocaleString()}</span>
-                    <p class="text-[9px] ${o.valMargen > 25 ? 'text-emerald-500' : 'text-red-500'} font-black">${o.valMargen.toFixed(1)}% MARGEN</p>
-                </div>
-            </div>
-        `).join("");
+    const loadDependencies = async () => {
+        const libs = [
+            "https://cdn.jsdelivr.net/npm/chart.js",
+            "https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"
+        ];
+        for (const lib of libs) {
+            await new Promise(r => {
+                const s = document.createElement("script"); s.src = lib; s.onload = r; document.head.appendChild(s);
+            });
+        }
     };
 
-    const renderMainChart = () => {
-        const ctx = document.getElementById('analyticsChart');
-        // Lógica de agrupación por fecha...
+    const initCharts = () => {
+        const ctx = document.getElementById('chartFinanciero').getContext('2d');
         new Chart(ctx, {
-            type: 'bar',
+            type: 'line',
             data: {
-                labels: rawData.slice(-7).map(o => o.placa || 'OT'),
+                labels: metrics.orders.slice(-10).map(o => o.placa),
                 datasets: [{
-                    label: 'Venta Real',
-                    data: rawData.slice(-7).map(o => o.valVenta),
-                    backgroundColor: '#06b6d4',
-                    borderRadius: 10
-                }, {
-                    label: 'Utilidad',
-                    data: rawData.slice(-7).map(o => o.valUtilidad),
-                    backgroundColor: '#10b981',
-                    borderRadius: 10
+                    label: 'Tendencia de Margen %',
+                    data: metrics.orders.slice(-10).map(o => o.margen),
+                    borderColor: '#06b6d4',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: 'rgba(6, 182, 212, 0.05)'
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { family: 'Orbitron', size: 9 } } },
-                    x: { grid: { display: false }, ticks: { color: '#64748b', font: { family: 'Orbitron', size: 9 } } }
-                }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
     };
-
-    // FUNCIÓN PARA EXPORTAR UNA SOLA ORDEN (PEDIDO 1)
-    window.exportSingleOrder = (id) => {
-        const o = rawData.find(x => x.id === id);
-        const wb = XLSX.utils.book_new();
-        const data = [
-            ["AUDITORÍA DE MISIÓN INDIVIDUAL - NEXUS-X"],
-            ["PLACA", o.placa],
-            ["CLIENTE", o.cliente],
-            [""],
-            ["CONCEPTO", "VALOR"],
-            ["FACTURACIÓN TOTAL", o.valVenta],
-            ["COSTOS OPERATIVOS", o.valCosto],
-            ["UTILIDAD NETA", o.valUtilidad],
-            ["MARGEN RENTABILIDAD", o.valMargen.toFixed(2) + "%"],
-            [""],
-            ["ESTADO", o.estado]
-        ];
-        const ws = XLSX.utils.aoa_to_sheet(data);
-        XLSX.utils.book_append_sheet(wb, ws, "Detalle");
-        XLSX.writeFile(wb, `Auditoria_${o.placa}.xlsx`);
-    };
-
-    const exportGlobalExcel = () => {
-        const ws = XLSX.utils.json_to_sheet(rawData.map(o => ({
-            PLACA: o.placa,
-            CLIENTE: o.cliente,
-            VENTA: o.valVenta,
-            COSTO: o.valCosto,
-            UTILIDAD: o.valUtilidad,
-            MARGEN: o.valMargen.toFixed(2) + "%"
-        })));
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "P&L_Global");
-        XLSX.writeFile(wb, "NexusX_Global_BI.xlsx");
-    };
-
-    const loadScript = (src) => new Promise(res => {
-        const s = document.createElement("script"); s.src = src; s.onload = res; document.head.appendChild(s);
-    });
 
     init();
 }
