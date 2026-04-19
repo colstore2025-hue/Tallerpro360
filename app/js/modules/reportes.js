@@ -26,11 +26,15 @@ export default async function reportesModule(container) {
                     </div>
                 </div>
                 
-                <button id="btnExportExcel" class="group px-8 py-5 bg-white text-black rounded-2xl flex items-center gap-4 hover:bg-cyan-500 hover:text-white transition-all duration-500 transform hover:scale-105 active:scale-95 shadow-2xl">
-                    <i class="fas fa-file-excel text-xl"></i>
-                    <span class="orbitron text-[10px] font-black uppercase tracking-widest">Descargar Auditoría Excel</span>
-                </button>
+                <div class="flex gap-4">
+                    <button id="btnExportExcel" class="group px-8 py-5 bg-white text-black rounded-2xl flex items-center gap-4 hover:bg-cyan-500 hover:text-white transition-all duration-500 transform hover:scale-105 active:scale-95 shadow-2xl">
+                        <i class="fas fa-file-excel text-xl"></i>
+                        <span class="orbitron text-[10px] font-black uppercase tracking-widest">Descargar Auditoría Excel</span>
+                    </button>
+                </div>
             </header>
+
+            <div id="autoReportConfig" class="mb-12 hidden"></div>
 
             <div id="opStats" class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12"></div>
 
@@ -66,7 +70,7 @@ export default async function reportesModule(container) {
             </div>
         </div>`;
 
-        document.getElementById("btnExportExcel").onclick = exportarExcel;
+        document.getElementById("btnExportExcel").onclick = () => generarInformeDetallado(ordenesData, "global");
         fetchData();
     };
 
@@ -88,6 +92,7 @@ export default async function reportesModule(container) {
             totalVenta += venta;
 
             const sugerido = calcularPrecioInteligente({ costoRepuestos: repuestos, horasTrabajo: o.horas_reales || 1 });
+            o.sugeridoCalculado = sugerido.total; // Guardar para el export individual
             totalSugerido += sugerido.total;
 
             const margen = venta > 0 ? ((venta - (repuestos + mo)) / venta) * 100 : 0;
@@ -152,6 +157,65 @@ export default async function reportesModule(container) {
             </div>
         </div>`;
 
+    // FUNCIÓN DE DESCARGA DETALLADA (Global o por Misión)
+    const generarInformeDetallado = (data, tipo = "global") => {
+        try {
+            if (tipo !== "global") {
+                const venta = Number(data.costos_totales?.total_general || 0);
+                const repuestos = Number(data.costos_totales?.costo_repuestos || 0);
+                const mo = Number(data.costos_totales?.mano_obra || 0);
+                const sugeridoIA = data.sugeridoCalculado || 0;
+                
+                const contenidoMision = [
+                    ["NEXUS-X TERMINATOR CORE - CERTIFICADO DE MISIÓN"],
+                    ["AUDITORÍA DE ACTIVOS PRO360 // WILLIAM JEFFRY URQUIJO CUBILLOS"],
+                    [""],
+                    ["PLACA", data.placa || 'N/A'],
+                    ["CLIENTE", data.cliente || 'CLIENTE FINAL'],
+                    ["ESTADO P&G", venta < sugeridoIA ? "BAJA RENTABILIDAD / CRÍTICO" : "OPTIMIZADO"],
+                    ["-------------------------------------------"],
+                    ["VALOR FACTURADO REAL", `$ ${venta.toLocaleString()}`],
+                    ["COSTO DE REPUESTOS", `$ ${repuestos.toLocaleString()}`],
+                    ["INVERSIÓN MANO DE OBRA", `$ ${mo.toLocaleString()}`],
+                    ["UTILIDAD NETA", `$ ${(venta - (repuestos + mo)).toLocaleString()}`],
+                    ["MARGEN OPERATIVO", `${venta > 0 ? (((venta - (repuestos + mo)) / venta) * 100).toFixed(2) : 0}%`],
+                    ["ANALISIS IA (SUGERIDO)", `$ ${sugeridoIA.toLocaleString()}`],
+                    ["-------------------------------------------"],
+                    ["LOGARITMO GERENCIAL", "[(Facturación - (Costo Directo + Operativo)) / Facturación] x 100"]
+                ];
+                
+                const ws = XLSX.utils.aoa_to_sheet(contenidoMision);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Detalle_Misión");
+                XLSX.writeFile(wb, `NexusX_Mision_${data.placa || 'OT'}.xlsx`);
+            } else {
+                const wsData = data.map(o => {
+                    const venta = Number(o.costos_totales?.total_general || 0);
+                    const repuestos = Number(o.costos_totales?.costo_repuestos || 0);
+                    const mo = Number(o.costos_totales?.mano_obra || 0);
+                    return {
+                        "PLACA": o.placa,
+                        "CLIENTE": o.cliente,
+                        "VENTA TOTAL": venta,
+                        "COSTO INSUMOS": repuestos,
+                        "MANO OBRA": mo,
+                        "MARGEN %": venta > 0 ? (((venta - (repuestos + mo)) / venta) * 100).toFixed(1) + "%" : "0%",
+                        "ESTATUS": venta < (o.sugeridoCalculado || 158000) ? "REVISAR PRICING" : "OPTIMIZADO"
+                    };
+                });
+
+                const wsGlobal = XLSX.utils.json_to_sheet(wsData);
+                const wbGlobal = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wbGlobal, wsGlobal, "Auditoria_Periodo");
+                XLSX.writeFile(wbGlobal, `NexusX_Auditoria_General_${new Date().toISOString().slice(0,10)}.xlsx`);
+            }
+            Swal.fire({ icon: 'success', title: 'Descarga Exitosa', background: '#0d1117', color: '#fff' });
+        } catch (error) {
+            console.error("Error en descarga:", error);
+            Swal.fire({ icon: 'error', title: 'Falla en Protocolo', text: 'Verifica la librería SheetJS en index.html', background: '#0d1117', color: '#fff' });
+        }
+    };
+
     // FUNCIÓN DE DETALLE DE ORDEN (DEEP DRILL)
     window.verDetalleMision = (id) => {
         const o = ordenesData.find(x => x.id === id);
@@ -182,7 +246,7 @@ export default async function reportesModule(container) {
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-black/40 p-6 rounded-2xl border border-white/5">
                         <p class="text-[9px] text-slate-500 uppercase mb-2">ROI Mano Obra</p>
-                        <span class="text-xl font-black text-cyan-400">${((mo / venta) * 100).toFixed(1)}%</span>
+                        <span class="text-xl font-black text-cyan-400">${venta > 0 ? ((mo / venta) * 100).toFixed(1) : 0}%</span>
                     </div>
                     <div class="bg-black/40 p-6 rounded-2xl border border-white/5">
                         <p class="text-[9px] text-slate-500 uppercase mb-2">Eficiencia Neta</p>
@@ -190,31 +254,25 @@ export default async function reportesModule(container) {
                     </div>
                 </div>
 
-                <div class="bg-cyan-500/5 p-6 rounded-2xl border border-cyan-500/20">
+                <div class="bg-cyan-500/5 p-6 rounded-2xl border border-cyan-500/20 mb-6">
                     <p class="text-[8px] text-cyan-500 uppercase font-black tracking-widest mb-2">Logaritmo Gerencial</p>
                     <p class="text-[10px] text-slate-400 leading-relaxed italic">Formula: [(Facturación - (Costo Directo + Operativo)) / Facturación] x 100. Un margen inferior al 25% indica sub-valoración del tiempo técnico.</p>
                 </div>
+
+                <button onclick="window.descargarMisionEspecifica('${o.id}')" class="w-full p-5 bg-emerald-500/20 border border-emerald-500 text-emerald-400 orbitron text-[10px] font-black rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-lg">
+                    <i class="fas fa-file-invoice-dollar mr-2"></i> DESCARGAR CERTIFICADO DE MISIÓN (EXCEL)
+                </button>
             </div>`,
-            confirmButtonText: 'ENTENDIDO',
-            confirmButtonColor: '#06b6d4'
+            showConfirmButton: false,
+            showCloseButton: true
         });
     };
 
-    function exportarExcel() {
-        const wsData = ordenesData.map(o => ({
-            Placa: o.placa,
-            Cliente: o.cliente,
-            Venta_Real: o.costos_totales?.total_general || 0,
-            Costo_Repuestos: o.costos_totales?.costo_repuestos || 0,
-            Inversion_MO: o.costos_totales?.mano_obra || 0,
-            Margen_Neto: (((Number(o.costos_totales?.total_general || 0) - (Number(o.costos_totales?.costo_repuestos || 0) + Number(o.costos_totales?.mano_obra || 0))) / (o.costos_totales?.total_general || 1)) * 100).toFixed(1) + "%",
-            Auditoria: "Nexus-X V29.0"
-        }));
-        const ws = XLSX.utils.json_to_sheet(wsData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Auditoria_NexusX");
-        XLSX.writeFile(wb, `Reporte_Terminator_PRO360_${new Date().toISOString().slice(0,10)}.xlsx`);
-    }
+    // Puentes globales para eventos en modales
+    window.descargarMisionEspecifica = (id) => {
+        const o = ordenesData.find(x => x.id === id);
+        generarInformeDetallado(o, "individual");
+    };
 
     renderLayout();
 }
