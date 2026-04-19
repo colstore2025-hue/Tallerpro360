@@ -1,6 +1,6 @@
 /**
  * ordenes.js - NEXUS-X COMMAND CENTER V8.0 "PRO-EVO" 🛰️
- * MISIÓN: AUTOMATIZACIÓN TOTAL TALLERPRO360
+ * MISIÓN: AUTOMATIZACIÓN TOTAL TALLERPRO360 + ESTRUCTURA SAP BI
  */
 
 import { 
@@ -53,7 +53,7 @@ export default async function ordenes(container) {
         cargarEscuchaGlobal();
     };
 
-    // --- 📡 REAL-TIME ENGINE ---
+    // --- 📡 REAL-TIME ENGINE (REFORMADO PARA KPI BI) ---
     const cargarEscuchaGlobal = () => {
         const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
         onSnapshot(q, (snap) => {
@@ -75,19 +75,24 @@ export default async function ordenes(container) {
                          <span class="orbitron text-4xl font-black text-white group-hover:text-cyan-400 tracking-tighter">${o.placa}</span>
                          <div class="h-3 w-3 rounded-full ${o.estado === 'LISTO' ? 'bg-emerald-500 shadow-[0_0_15px_#10b981]' : 'bg-cyan-500 shadow-[0_0_15px_#06b6d4]'}"></div>
                     </div>
-                    <p class="text-[11px] text-cyan-500/50 orbitron font-black uppercase mb-8">${o.cliente || 'NO_NAME'}</p>
+                    <div class="flex justify-between items-center mb-4">
+                        <p class="text-[11px] text-cyan-500/50 orbitron font-black uppercase">${o.cliente || 'NO_NAME'}</p>
+                        <span class="text-[8px] orbitron border border-white/10 px-2 py-1 rounded text-slate-500 font-bold">${o.clase_vehiculo || 'LIVIANO'}</span>
+                    </div>
                     <div class="flex justify-between items-end border-t border-white/10 pt-6">
                         <div>
-                            <span class="text-[10px] text-slate-500 block uppercase mb-1 font-bold">Total Misión</span>
-                            <span class="text-2xl font-black text-white orbitron">$ ${Number(o.costos_totales?.gran_total || 0).toLocaleString()}</span>
+                            <span class="text-[10px] text-slate-500 block uppercase mb-1 font-bold">Utilidad Estimada</span>
+                            <span class="text-xl font-black ${Number(o.costos_totales?.utilidad || 0) > 0 ? 'text-emerald-400' : 'text-white'} orbitron">$ ${Number(o.costos_totales?.utilidad || 0).toLocaleString()}</span>
+                        </div>
+                        <div class="text-right">
+                             <span class="text-[8px] text-slate-600 block orbitron uppercase font-black">${o.tipo_orden || 'MECANICA'}</span>
                         </div>
                     </div>
                 </div>`).join('');
             }
         });
     };
-
-    // --- 🧮 AUDITORÍA FINANCIERA FORENSE V8.0 ---
+    // --- 🧮 AUDITORÍA FINANCIERA FORENSE V8.0 (NEXUS BI INTEGRATED) ---
     const recalcularFinanzas = () => {
         let subtotalConIVA = 0;
         let costoTotalTaller = 0;
@@ -104,11 +109,11 @@ export default async function ordenes(container) {
         const anticipo = Number(document.getElementById("f-anticipo-cliente")?.value || 0); 
         
         // Lógica Fiscal: El valor ingresado ya tiene el 19%
-        const granTotal = subtotalConIVA; // Gastos varios no se cobran al cliente según auditoría
+        const granTotal = subtotalConIVA; 
         const baseGravable = granTotal / 1.19;
         const totalIVA = granTotal - baseGravable;
 
-        // Utilidad: (Venta - IVA) - (Costo + Pago Técnico + Gastos Varios)
+        // Utilidad Real: Base Gravable - (Costos Directos + Operación)
         const utilidadNeta = baseGravable - (costoTotalTaller + pago_tecnico + g_insumos);
         const saldoPendiente = granTotal - anticipo;
 
@@ -165,7 +170,7 @@ export default async function ordenes(container) {
             </div>`).join('');
     };
 
-    // --- 🎮 TERMINAL PENTAGON PRO ---
+    // --- 🎮 TERMINAL PENTAGON PRO (REFORMADA SAP BI) ---
     const renderTerminal = () => {
         const modal = document.getElementById("nexus-terminal");
         modal.innerHTML = `
@@ -206,6 +211,28 @@ export default async function ordenes(container) {
                         <input id="f-telefono" value="${ordenActiva.telefono}" class="w-full bg-black p-6 rounded-3xl border border-white/5 text-white font-bold" placeholder="TELÉFONO">
                     </div>
 
+                    <div class="bg-[#0d1117] p-10 rounded-[3.5rem] border border-white/5 mt-6">
+                        <label class="text-[10px] text-cyan-400 font-black uppercase block mb-6">Segmentación de Negocio</label>
+                        <div class="grid grid-cols-1 gap-6">
+                            <div>
+                                <span class="text-[8px] orbitron text-slate-500 block mb-2 font-black uppercase">Unidad de Negocio (Área)</span>
+                                <select id="f-tipo-orden" class="w-full bg-black p-4 rounded-2xl border border-white/10 text-white orbitron text-[10px] font-black uppercase">
+                                    <option value="MECANICA" ${ordenActiva.tipo_orden === 'MECANICA' ? 'selected' : ''}>MECÁNICA GENERAL</option>
+                                    <option value="LATONERIA" ${ordenActiva.tipo_orden === 'LATONERIA' ? 'selected' : ''}>LATONERÍA Y PINTURA</option>
+                                    <option value="ELECTRICO" ${ordenActiva.tipo_orden === 'ELECTRICO' ? 'selected' : ''}>SISTEMA ELÉCTRICO</option>
+                                </select>
+                            </div>
+                            <div>
+                                <span class="text-[8px] orbitron text-slate-500 block mb-2 font-black uppercase">Categoría de Vehículo</span>
+                                <select id="f-clase-vehiculo" class="w-full bg-black p-4 rounded-2xl border border-white/10 text-white orbitron text-[10px] font-black uppercase">
+                                    <option value="LIVIANO" ${ordenActiva.clase_vehiculo === 'LIVIANO' ? 'selected' : ''}>LIVIANO (AUTOMÓVIL)</option>
+                                    <option value="MEDIANO" ${ordenActiva.clase_vehiculo === 'MEDIANO' ? 'selected' : ''}>MEDIANO (PICKUP/SUV)</option>
+                                    <option value="PESADO" ${ordenActiva.clase_vehiculo === 'PESADO' ? 'selected' : ''}>PESADO (CAMIÓN/FLOTA)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="bg-black p-10 rounded-[3.5rem] border border-red-500/30 relative">
                         <div id="rec-indicator" class="hidden absolute top-6 right-10 flex items-center gap-2">
                             <div class="h-2 w-2 bg-red-600 rounded-full animate-ping"></div>
@@ -238,15 +265,15 @@ export default async function ordenes(container) {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="bg-black p-8 rounded-[3rem] border border-white/5 grid grid-cols-3 gap-4">
                             <div class="flex flex-col gap-2">
-                                <label class="text-[8px] orbitron text-slate-500">ANTICIPO</label>
+                                <label class="text-[8px] orbitron text-slate-500 font-black uppercase">ANTICIPO</label>
                                 <input type="number" id="f-anticipo-cliente" value="${ordenActiva.finanzas?.anticipo_cliente || ''}" class="bg-emerald-500/10 p-4 rounded-xl text-emerald-400 font-bold border border-emerald-500/20" onchange="window.actualizarFinanzasDirecto()" placeholder="BOLD/EFECT">
                             </div>
                             <div class="flex flex-col gap-2">
-                                <label class="text-[8px] orbitron text-slate-500">GASTOS</label>
+                                <label class="text-[8px] orbitron text-slate-500 font-black uppercase">GASTOS</label>
                                 <input type="number" id="f-gastos-varios" value="${ordenActiva.finanzas?.gastos_varios || ''}" class="bg-white/5 p-4 rounded-xl text-white font-bold border border-white/10" onchange="window.actualizarFinanzasDirecto()" placeholder="GASTOS">
                             </div>
                             <div class="flex flex-col gap-2">
-                                <label class="text-[8px] orbitron text-slate-500 text-red-500">PAGO TÉCNICO</label>
+                                <label class="text-[8px] orbitron text-slate-500 text-red-500 font-black uppercase font-black">PAGO TÉCNICO</label>
                                 <input type="number" id="f-adelanto-tecnico" value="${ordenActiva.finanzas?.adelanto_tecnico || ''}" class="bg-red-500/10 p-4 rounded-xl text-red-500 font-bold border border-red-500/20" onchange="window.actualizarFinanzasDirecto()" placeholder="NOMINA">
                             </div>
                         </div>
@@ -301,7 +328,6 @@ export default async function ordenes(container) {
         });
         
         safeClick("btnAddMano", async () => { 
-            // Invocación a Módulo de Técnicos (Auditoría Punto 8)
             const { value: tecnico } = await Swal.fire({
                 title: 'ASIGNAR ESPECIALISTA',
                 background: '#0d1117', color: '#fff',
@@ -340,7 +366,7 @@ export default async function ordenes(container) {
         }
     };
 
-                 // --- 💾 DATABASE SYNC (CONTABILIDAD INTEGRADA) ---
+    // --- 💾 DATABASE SYNC (CONTABILIDAD INTEGRADA + SAP BI) ---
     const ejecutarSincronizacionNexus = async () => {
         const btn = document.getElementById("btnSincronizar");
         btn.disabled = true;
@@ -357,6 +383,11 @@ export default async function ordenes(container) {
                 cliente: document.getElementById("f-cliente").value.toUpperCase(),
                 telefono: document.getElementById("f-telefono").value,
                 estado: document.getElementById("f-estado").value,
+                
+                // 🚀 CAPTURA DE SEGMENTACIÓN PARA REPORTES.JS
+                tipo_orden: document.getElementById("f-tipo-orden").value,
+                clase_vehiculo: document.getElementById("f-clase-vehiculo").value,
+                
                 bitacora_ia: document.getElementById("ai-log-display").value,
                 finanzas: {
                     anticipo_cliente: Number(document.getElementById("f-anticipo-cliente").value),
@@ -368,14 +399,13 @@ export default async function ordenes(container) {
 
             await setDoc(doc(db, "ordenes", docId), finalData);
 
-            // Trigger Contabilidad y Nómina (Auditoría Punto 3 y 4)
             if(finalData.finanzas.gastos_varios > 0 || finalData.finanzas.adelanto_tecnico > 0) {
                 await setDoc(doc(db, "contabilidad", `MOV_${docId}`), {
                     tipo: 'EGRESO_ORDEN',
                     monto: finalData.finanzas.gastos_varios + finalData.finanzas.adelanto_tecnico,
                     ordenId: docId,
                     fecha: serverTimestamp(),
-                    descripcion: `Gastos y Pago Técnico de Orden ${placa}`
+                    descripcion: `Gastos/Nómina Orden ${placa} (${finalData.tipo_orden})`
                 });
             }
 
@@ -407,19 +437,16 @@ export default async function ordenes(container) {
         if(id) {
             getDoc(doc(db, "ordenes", id)).then(s => { ordenActiva = { id, ...s.data() }; renderTerminal(); });
         } else {
-    ordenActiva = { 
-        placa: '', 
-        cliente: '', 
-        telefono: '', 
-        estado: 'INGRESO', 
-        tipo_orden: 'MECANICA',    // 🚀 NUEVO: Valor por defecto
-        clase_vehiculo: 'LIVIANO', // 🚀 NUEVO: Valor por defecto
-        items: [], 
-        bitacora_ia: '', 
-        finanzas: { gastos_varios: 0, adelanto_tecnico: 0, anticipo_cliente: 0 }
+            ordenActiva = { 
+                placa: '', cliente: '', telefono: '', estado: 'INGRESO', 
+                tipo_orden: 'MECANICA',    
+                clase_vehiculo: 'LIVIANO', 
+                items: [], bitacora_ia: '', 
+                finanzas: { gastos_varios: 0, adelanto_tecnico: 0, anticipo_cliente: 0 }
+            };
+            renderTerminal();
+        }
     };
-    renderTerminal();
-}
 
     window.toggleOrigenItem = (idx) => { 
         ordenActiva.items[idx].origen = ordenActiva.items[idx].origen === 'TALLER' ? 'CLIENTE' : 'TALLER'; 
