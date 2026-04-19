@@ -1,273 +1,286 @@
 /**
- * 🦾 NEXUS-X TERMINATOR CORE V29.0 - ANALÍTICA OPERATIVA
- * Central de Inteligencia de Procesos // William Jeffry Urquijo Cubillos 
- * Estabilización Total: Reloj Suizo 2030.
+ * 🦾 NEXUS-X TERMINATOR CORE V30.0 - STRATEGIC BI & FORECASTING
+ * El Dashboard definitivo de Gerencia de Operaciones
+ * Director de Código: William Jeffry Urquijo Cubillos // Nexus AI
  */
 
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
-import { calcularPrecioInteligente } from "../ai/pricingOptimizerAI.js";
-import { NEXUS_CONFIG } from "./nexus_constants.js"; // RECTOR DEL SISTEMA
+import { NEXUS_CONFIG } from "./nexus_constants.js";
+
+// Cargamos Chart.js dinámicamente para el milagro visual
+const loadCharts = () => {
+    return new Promise((resolve) => {
+        if (window.Chart) return resolve();
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        script.onload = resolve;
+        document.head.appendChild(script);
+    });
+};
 
 export default async function reportesModule(container) {
     const empresaId = localStorage.getItem("nexus_empresaId");
     let ordenesData = [];
+    let myChart = null;
 
     const renderLayout = () => {
         container.innerHTML = `
-        <div class="p-6 lg:p-12 bg-[#010409] min-h-screen text-white pb-40 selection:bg-cyan-500/30 font-sans">
+        <div class="p-4 lg:p-10 bg-[#010409] min-h-screen text-white pb-40 font-sans animate-in fade-in duration-700">
             
-            <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-16 border-b border-white/5 pb-10 gap-6">
-                <div class="relative">
-                    <div class="absolute -left-6 top-0 h-full w-1.5 bg-cyan-500 shadow-[0_0_20px_#06b6d4]"></div>
-                    <h1 class="orbitron text-5xl font-black italic tracking-tighter uppercase leading-none">
-                        OPERACIONES <span class="text-cyan-400">ANALÍTICA</span>
+            <header class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-12 gap-8 border-b border-white/5 pb-10">
+                <div>
+                    <h1 class="orbitron text-6xl font-black italic tracking-tighter uppercase leading-none text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-400 to-blue-500">
+                        BUSINESS <span class="text-white">INTELLIGENCE</span>
                     </h1>
                     <div class="flex items-center gap-4 mt-4">
-                        <span class="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-[8px] orbitron font-black text-cyan-400 uppercase tracking-[0.4em]">Protocolo de Eficiencia Nexus-X</span>
+                        <div class="h-2 w-2 bg-emerald-500 animate-pulse rounded-full"></div>
+                        <span class="orbitron text-[9px] font-black text-slate-500 uppercase tracking-[0.5em]">Nexus Strategic Advisor V30.0</span>
                     </div>
                 </div>
                 
-                <div class="flex gap-4">
-                    <button id="btnExportExcel" class="group px-8 py-5 bg-white text-black rounded-2xl flex items-center gap-4 hover:bg-cyan-500 hover:text-white transition-all duration-500 transform hover:scale-105 active:scale-95 shadow-2xl">
-                        <i class="fas fa-file-excel text-xl"></i>
-                        <span class="orbitron text-[10px] font-black uppercase tracking-widest">Descargar Auditoría Excel</span>
+                <div class="flex flex-wrap gap-4">
+                    <button id="btnExportExcel" class="px-8 py-4 bg-white text-black rounded-2xl flex items-center gap-4 hover:bg-cyan-500 hover:text-white transition-all transform hover:scale-105 active:scale-95 shadow-xl">
+                        <i class="fas fa-file-invoice-dollar text-xl"></i>
+                        <span class="orbitron text-[10px] font-black uppercase">Exportar Auditoría P&L</span>
                     </button>
                 </div>
             </header>
 
-            <div id="opStats" class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12"></div>
-
-            <div class="bg-[#0d1117] border-l-4 border-cyan-500 p-12 rounded-r-[3.5rem] flex items-center gap-10 mb-16 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden group">
-                <div class="absolute right-0 top-0 opacity-10 text-9xl group-hover:rotate-12 transition-transform duration-700">🤖</div>
-                <div class="w-20 h-20 bg-white text-black rounded-3xl flex-shrink-0 flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(255,255,255,0.1)]">
-                    <i class="fas fa-brain"></i>
+            <div id="forecastSection" class="grid grid-cols-1 xl:grid-cols-12 gap-8 mb-12">
+                <div class="xl:col-span-8 bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden">
+                    <div class="flex justify-between items-center mb-10">
+                        <h3 class="orbitron text-xs font-black text-cyan-400 uppercase tracking-widest italic">Tendencia de Ingresos & Proyección Operativa</h3>
+                        <div class="flex gap-2">
+                             <span class="px-3 py-1 bg-cyan-500/10 border border-cyan-500/20 rounded text-[8px] orbitron text-cyan-500">REALTIME</span>
+                        </div>
+                    </div>
+                    <canvas id="mainChart" height="250"></canvas>
                 </div>
-                <div class="relative z-10">
-                    <h5 class="text-[12px] font-black uppercase text-white mb-2 orbitron tracking-[0.3em] italic">IA Strategic <span class="text-cyan-400">Operational Advisor</span></h5>
-                    <p id="iaTacticalMsg" class="text-lg text-slate-400 leading-relaxed font-medium italic">Sincronizando telemetría de rampas y flujos de trabajo...</p>
+
+                <div class="xl:col-span-4 flex flex-col gap-8">
+                    <div class="bg-gradient-to-br from-indigo-600 to-blue-800 p-8 rounded-[3rem] shadow-2xl relative overflow-hidden group">
+                        <i class="fas fa-chart-line absolute -right-4 -bottom-4 text-8xl opacity-10 rotate-12 transition-transform group-hover:scale-125"></i>
+                        <h4 class="orbitron text-[10px] font-black text-white/70 mb-6 uppercase tracking-widest">Forecast de Demanda</h4>
+                        <div id="forecastResult">
+                             <p class="text-4xl font-black orbitron mb-2 animate-pulse">ANALIZANDO...</p>
+                             <p class="text-[9px] orbitron font-black uppercase opacity-60">Próximos 30 días según IA</p>
+                        </div>
+                        <div class="mt-8 pt-8 border-t border-white/10">
+                             <p id="tacticalAdvice" class="text-xs font-medium italic text-indigo-100 leading-relaxed"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5">
+                        <h4 class="orbitron text-[10px] font-black text-slate-500 mb-6 uppercase tracking-widest">Eficiencia Operativa (KPI)</h4>
+                        <div class="flex items-end gap-4 mb-4">
+                            <span id="kpiEficiencia" class="text-5xl font-black orbitron">0%</span>
+                            <span class="text-[9px] text-emerald-400 font-black mb-2 uppercase">Score Global</span>
+                        </div>
+                        <div class="w-full h-2 bg-black/50 rounded-full overflow-hidden">
+                            <div id="barEficiencia" class="h-full bg-cyan-500 transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-[#0d1117] border border-white/5 rounded-[3.5rem] overflow-hidden shadow-2xl">
-                <div class="p-10 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
-                    <h3 class="orbitron text-[12px] font-black text-white uppercase tracking-[0.5em] italic">Historial de Rentabilidad <span class="text-cyan-500">[Análisis por Misión]</span></h3>
+            <div class="bg-[#0d1117] border border-white/5 rounded-[4rem] overflow-hidden shadow-2xl">
+                <div class="p-10 border-b border-white/5 flex flex-col md:flex-row justify-between gap-6 items-center bg-white/[0.01]">
+                    <h3 class="orbitron text-[11px] font-black text-white uppercase tracking-[0.4em]">Desglose de Rentabilidad por Misión</h3>
+                    <div class="bg-black/50 p-2 rounded-2xl flex gap-2 border border-white/5">
+                         <input type="text" id="searchPlate" class="bg-transparent border-none text-xs orbitron p-2 focus:ring-0 w-48 uppercase" placeholder="BUSCAR PLACA...">
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="bg-black/40 orbitron text-[9px] text-slate-500 uppercase tracking-[0.2em] border-b border-white/5">
+                    <table class="w-full text-left">
+                        <thead class="bg-black/40 text-[9px] text-slate-500 orbitron uppercase tracking-widest">
                             <tr>
-                                <th class="p-10">Identificación</th>
-                                <th class="p-10">Venta Real</th>
-                                <th class="p-10">Análisis IA</th>
-                                <th class="p-10 text-center">Margen Neto</th>
-                                <th class="p-10 text-right">Estatus P&G</th>
+                                <th class="p-10">Activo (Placa)</th>
+                                <th class="p-10">Mano de Obra</th>
+                                <th class="p-10">Insumos</th>
+                                <th class="p-10">Facturado</th>
+                                <th class="p-10">Margen Neto</th>
+                                <th class="p-10 text-right">Análisis BI</th>
                             </tr>
                         </thead>
-                        <tbody id="opTableBody" class="divide-y divide-white/[0.03]"></tbody>
+                        <tbody id="opTableBody" class="divide-y divide-white/[0.02]"></tbody>
                     </table>
                 </div>
             </div>
         </div>`;
 
-        document.getElementById("btnExportExcel").onclick = () => generarInformeDetallado(ordenesData, "global");
-        fetchData();
+        document.getElementById("btnExportExcel").onclick = () => exportarReporteElite();
+        document.getElementById("searchPlate").oninput = (e) => filterTable(e.target.value);
+        
+        loadCharts().then(fetchData);
     };
 
     const fetchData = async () => {
-        // Uso de constante rectora para la colección
         const q = query(collection(db, NEXUS_CONFIG.COLLECTIONS.ORDERS), where("empresaId", "==", empresaId));
         const snap = await getDocs(q);
         ordenesData = snap.docs.map(d => ({ ...d.data(), id: d.id }));
-        procesarOperaciones();
+        procesarInteligencia();
     };
 
-    const procesarOperaciones = () => {
-        const tbody = document.getElementById("opTableBody");
-        let totalVenta = 0; let totalSugerido = 0; let misionesBajaRentabilidad = 0;
+    const procesarInteligencia = () => {
+        let ingresosPorMes = {};
+        let totalFacturado = 0;
+        let totalCostos = 0;
+        let misionesCompletadas = 0;
 
-        tbody.innerHTML = ordenesData.map(o => {
+        ordenesData.forEach(o => {
             const venta = Number(o.costos_totales?.total_general || 0);
-            const abonado = Number(o.finanzas?.anticipo_cliente || 0);
-            const repuestos = Number(o.costos_totales?.costo_repuestos || 0);
+            const insumos = Number(o.costos_totales?.costo_repuestos || 0);
             const mo = Number(o.costos_totales?.mano_obra || 0);
             
-            totalVenta += venta;
+            totalFacturado += venta;
+            totalCostos += (insumos + mo);
+            if (o.estado === 'FINALIZADA' || o.estado === 'ENTREGADO') misionesCompletadas++;
 
-            const sugerido = calcularPrecioInteligente({ costoRepuestos: repuestos, horasTrabajo: o.horas_reales || 1 });
-            o.sugeridoCalculado = sugerido.total; 
-            totalSugerido += sugerido.total;
+            // Agrupar por mes para el gráfico
+            const fecha = o.fecha_apertura?.toDate ? o.fecha_apertura.toDate() : new Date();
+            const mesAnio = fecha.toLocaleString('default', { month: 'short' });
+            ingresosPorMes[mesAnio] = (ingresosPorMes[mesAnio] || 0) + venta;
+        });
 
-            const margen = venta > 0 ? ((venta - (repuestos + mo)) / venta) * 100 : 0;
-            const esBaja = venta < sugerido.total;
-            if (esBaja) misionesBajaRentabilidad++;
+        renderChart(ingresosPorMes);
+        renderTable(ordenesData);
+        calculateForecast(ingresosPorMes, totalFacturado);
+        
+        // KPI de Eficiencia (Misiones cerradas vs totales)
+        const eficiencia = ordenesData.length > 0 ? (misionesCompletadas / ordenesData.length) * 100 : 0;
+        document.getElementById("kpiEficiencia").innerText = `${eficiencia.toFixed(0)}%`;
+        document.getElementById("barEficiencia").style.width = `${eficiencia}%`;
+    };
+
+    const renderChart = (dataMes) => {
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        if (myChart) myChart.destroy();
+
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Object.keys(dataMes),
+                datasets: [{
+                    label: 'Flujo de Caja Real',
+                    data: Object.values(dataMes),
+                    borderColor: '#06b6d4',
+                    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                    borderWidth: 4,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointBackgroundColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { family: 'Orbitron' } } },
+                    x: { grid: { display: false }, ticks: { color: '#64748b', font: { family: 'Orbitron' } } }
+                }
+            }
+        });
+    };
+
+    const calculateForecast = (dataMes, totalFacturado) => {
+        const meses = Object.values(dataMes);
+        const promedio = meses.reduce((a, b) => a + b, 0) / (meses.length || 1);
+        const tendencia = meses.length > 1 ? (meses[meses.length-1] / meses[meses.length-2]) : 1;
+        const proyeccion = promedio * tendencia;
+
+        document.getElementById("forecastResult").innerHTML = `
+            <p class="text-4xl font-black orbitron mb-2">$ ${proyeccion.toLocaleString()}</p>
+            <p class="text-[9px] orbitron font-black uppercase opacity-60">Probabilidad de Cierre: ${tendencia > 1 ? 'ALTA' : 'MODERADA'}</p>
+        `;
+
+        const consejoIA = tendencia > 1 
+            ? "La demanda está en rampa ascendente. William, considera activar el turno nocturno o Taller Móvil."
+            : "Ritmo de entrada estable. Sugiero campaña en redes para servicios preventivos y evitar valles operativos.";
+        document.getElementById("tacticalAdvice").innerText = consejoIA;
+    };
+
+    const renderTable = (data) => {
+        const tbody = document.getElementById("opTableBody");
+        tbody.innerHTML = data.map(o => {
+            const venta = Number(o.costos_totales?.total_general || 0);
+            const insumos = Number(o.costos_totales?.costo_repuestos || 0);
+            const mo = Number(o.costos_totales?.mano_obra || 0);
+            const utilidad = venta - (insumos + mo);
+            const margen = venta > 0 ? (utilidad / venta) * 100 : 0;
 
             return `
-            <tr onclick="window.verDetalleMision('${o.id}')" class="hover:bg-cyan-500/[0.03] transition-all cursor-pointer group">
+            <tr class="hover:bg-white/[0.02] transition-all group border-b border-white/[0.02]">
                 <td class="p-10">
                     <div class="flex flex-col">
-                        <span class="orbitron text-xl font-black italic tracking-tighter group-hover:text-cyan-400 transition-colors uppercase">${o.placa || 'N/A'}</span>
-                        <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">${o.cliente || 'CLIENTE'}</span>
+                        <span class="orbitron text-xl font-black italic tracking-tighter text-cyan-400 uppercase">${o.placa || 'N/A'}</span>
+                        <span class="text-[10px] text-slate-500 font-bold uppercase">${o.cliente || 'CLIENTE'}</span>
                     </div>
                 </td>
+                <td class="p-10 orbitron text-sm font-bold text-slate-400">$ ${mo.toLocaleString()}</td>
+                <td class="p-10 orbitron text-sm font-bold text-slate-400">$ ${insumos.toLocaleString()}</td>
+                <td class="p-10 orbitron text-xl font-black text-white">$ ${venta.toLocaleString()}</td>
                 <td class="p-10">
                     <div class="flex flex-col">
-                        <span class="text-xl font-black orbitron tabular-nums">$ ${venta.toLocaleString()}</span>
-                        <span class="text-[8px] text-emerald-500 font-black orbitron uppercase italic">Pagado: $${abonado.toLocaleString()}</span>
-                    </div>
-                </td>
-                <td class="p-10 font-bold text-cyan-400/80 orbitron tabular-nums text-sm">
-                    $ ${sugerido.total.toLocaleString()}
-                </td>
-                <td class="p-10 text-center">
-                    <div class="flex flex-col items-center">
-                        <span class="text-[13px] font-black orbitron mb-2 ${margen > 25 ? 'text-emerald-400' : 'text-red-500'}">${margen.toFixed(1)}%</span>
-                        <div class="w-24 h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/5">
-                            <div class="h-full ${margen > 25 ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-red-500 shadow-[0_0_10px_#ef4444]'}" style="width: ${Math.min(Math.max(margen, 0), 100)}%"></div>
+                        <span class="text-xs font-black orbitron ${margen > 25 ? 'text-emerald-400' : 'text-red-500'}">${margen.toFixed(1)}%</span>
+                        <div class="w-16 h-1 bg-white/5 rounded-full mt-2 overflow-hidden">
+                             <div class="h-full ${margen > 25 ? 'bg-emerald-500' : 'bg-red-500'}" style="width: ${Math.min(margen, 100)}%"></div>
                         </div>
                     </div>
                 </td>
                 <td class="p-10 text-right">
-                    <span class="px-5 py-2 rounded-xl text-[9px] orbitron font-black uppercase tracking-widest ${esBaja ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">
-                        ${esBaja ? 'Revisar Pricing' : 'Optimizado'}
+                    <span class="text-[8px] orbitron font-black px-4 py-2 rounded-lg bg-white/5 border border-white/10">
+                        ${utilidad > 0 ? 'P&L POSITIVO' : 'DÉFICIT'}
                     </span>
                 </td>
             </tr>`;
         }).join("");
-
-        const ticketPromedio = ordenesData.length > 0 ? totalVenta / ordenesData.length : 0;
-        const fugaTotal = totalSugerido > totalVenta ? totalSugerido - totalVenta : 0;
-
-        document.getElementById("opStats").innerHTML = `
-            ${renderStatBox("Ticket Promedio", ticketPromedio, "fa-tags", "Ingreso Total / N° Misiones")}
-            ${renderStatBox("Fuga Operativa", fugaTotal, "fa-faucet-drip", "Sugerido IA - Facturado Real", "text-red-500")}
-            ${renderStatBox("Misiones Auditadas", ordenesData.length, "fa-clipboard-check", "Total de órdenes procesadas")}
-        `;
-
-        document.getElementById("iaTacticalMsg").innerHTML = `
-            He detectado que el <span class="text-white font-black">${ordenesData.length > 0 ? ((misionesBajaRentabilidad/ordenesData.length)*100).toFixed(0) : 0}%</span> de tus servicios presentan fuga de capital. 
-            Acción Inmediata: Ajusta el valor de la hora hombre para recuperar <span class="text-cyan-400 font-bold">$${fugaTotal.toLocaleString()}</span> de utilidad proyectada.`;
     };
 
-    const renderStatBox = (title, val, icon, formula, color = "text-white") => `
-        <div class="bg-[#0d1117] p-10 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden group hover:border-cyan-500/30 transition-all duration-500">
-            <div class="flex items-center gap-4 mb-6">
-                <div class="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
-                    <i class="fas ${icon} text-sm text-slate-400 group-hover:text-cyan-400 transition-colors"></i>
-                </div>
-                <p class="orbitron text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">${title}</p>
-            </div>
-            <p class="text-4xl font-black orbitron tracking-tighter tabular-nums ${color}">${typeof val === 'number' ? '$' + val.toLocaleString() : val}</p>
-            <div class="mt-6 pt-6 border-t border-white/5">
-                <p class="text-[8px] orbitron text-slate-600 font-black uppercase tracking-widest">${formula}</p>
-            </div>
-        </div>`;
-
-    const generarInformeDetallado = (data, tipo = "global") => {
-        try {
-            if (tipo !== "global") {
-                const venta = Number(data.costos_totales?.total_general || 0);
-                const repuestos = Number(data.costos_totales?.costo_repuestos || 0);
-                const mo = Number(data.costos_totales?.mano_obra || 0);
-                const sugeridoIA = data.sugeridoCalculado || 0;
-                
-                const contenidoMision = [
-                    ["NEXUS-X TERMINATOR CORE - CERTIFICADO DE MISIÓN"],
-                    ["AUDITORÍA DE ACTIVOS PRO360 // WILLIAM JEFFRY URQUIJO CUBILLOS"],
-                    [""],
-                    ["PLACA", data.placa || 'N/A'],
-                    ["CLIENTE", data.cliente || 'CLIENTE FINAL'],
-                    ["ESTADO P&G", venta < sugeridoIA ? "BAJA RENTABILIDAD" : "OPTIMIZADO"],
-                    ["-------------------------------------------"],
-                    ["VALOR FACTURADO REAL", `$ ${venta.toLocaleString()}`],
-                    ["COSTO DE REPUESTOS", `$ ${repuestos.toLocaleString()}`],
-                    ["INVERSIÓN MANO DE OBRA", `$ ${mo.toLocaleString()}`],
-                    ["UTILIDAD NETA", `$ ${(venta - (repuestos + mo)).toLocaleString()}`],
-                    ["MARGEN OPERATIVO", `${venta > 0 ? (((venta - (repuestos + mo)) / venta) * 100).toFixed(2) : 0}%`],
-                    ["ANALISIS IA (SUGERIDO)", `$ ${sugeridoIA.toLocaleString()}`],
-                    ["-------------------------------------------"]
-                ];
-                
-                const ws = XLSX.utils.aoa_to_sheet(contenidoMision);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Detalle_Mision");
-                XLSX.writeFile(wb, `NexusX_Mision_${data.placa || 'OT'}.xlsx`);
-            } else {
-                const wsData = data.map(o => {
-                    const venta = Number(o.costos_totales?.total_general || 0);
-                    const repuestos = Number(o.costos_totales?.costo_repuestos || 0);
-                    const mo = Number(o.costos_totales?.mano_obra || 0);
-                    return {
-                        "PLACA": o.placa,
-                        "CLIENTE": o.cliente,
-                        "VENTA TOTAL": venta,
-                        "COSTO INSUMOS": repuestos,
-                        "MANO OBRA": mo,
-                        "UTILIDAD": venta - (repuestos + mo),
-                        "MARGEN %": venta > 0 ? (((venta - (repuestos + mo)) / venta) * 100).toFixed(1) + "%" : "0%",
-                        "ESTATUS": venta < (o.sugeridoCalculado || 0) ? "CRÍTICO" : "OPTIMIZADO"
-                    };
-                });
-                const wsGlobal = XLSX.utils.json_to_sheet(wsData);
-                const wbGlobal = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wbGlobal, wsGlobal, "Auditoria");
-                XLSX.writeFile(wbGlobal, `NexusX_General_${new Date().toISOString().slice(0,10)}.xlsx`);
-            }
-            Swal.fire({ icon: 'success', title: 'Protocolo Excel Completado', background: '#0d1117', color: '#fff' });
-        } catch (error) {
-            Swal.fire({ icon: 'error', title: 'Error de Telemetría', text: error.message, background: '#0d1117', color: '#fff' });
-        }
+    const filterTable = (val) => {
+        const filtered = ordenesData.filter(o => (o.placa || "").toLowerCase().includes(val.toLowerCase()));
+        renderTable(filtered);
     };
 
-    window.verDetalleMision = (id) => {
-        const o = ordenesData.find(x => x.id === id);
-        if (!o) return;
+    const exportarReporteElite = () => {
+        const wb = XLSX.utils.book_new();
         
-        const venta = Number(o.costos_totales?.total_general || 0);
-        const repuestos = Number(o.costos_totales?.costo_repuestos || 0);
-        const mo = Number(o.costos_totales?.mano_obra || 0);
-        const margenNeto = venta > 0 ? ((venta - (repuestos + mo)) / venta) * 100 : 0;
+        // Hoja 1: Resumen Gerencial
+        const resumenData = [{
+            "EMPRESA": "TALLERPRO360 NEXUS-X",
+            "AUDITOR": "WILLIAM JEFFRY URQUIJO CUBILLOS",
+            "FECHA": new Date().toLocaleString(),
+            "TOTAL FACTURADO": ordenesData.reduce((a, b) => a + Number(b.costos_totales?.total_general || 0), 0),
+            "UTILIDAD ESTIMADA": "Ver Hoja Detalle",
+            "EFICIENCIA": document.getElementById("kpiEficiencia").innerText
+        }];
+        const ws1 = XLSX.utils.json_to_sheet(resumenData);
+        XLSX.utils.book_append_sheet(wb, ws1, "Resumen_Gerencial");
 
-        Swal.fire({
-            title: `<span class="orbitron font-black text-cyan-500 uppercase">Misión: ${o.placa}</span>`,
-            background: '#0d1117',
-            color: '#fff',
-            width: '600px',
-            html: `
-            <div class="text-left orbitron p-4 space-y-6">
-                <div class="bg-black/40 p-6 rounded-2xl border border-white/5">
-                    <p class="text-[9px] text-slate-500 uppercase mb-4">Análisis de Rentabilidad</p>
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs">Inversión Insumos:</span>
-                        <span class="text-white font-black">$${repuestos.toLocaleString()}</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs">Utilidad Neta:</span>
-                        <span class="${margenNeto > 25 ? 'text-emerald-400' : 'text-red-500'} font-black">$${(venta - (repuestos + mo)).toLocaleString()}</span>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-black/40 p-6 rounded-2xl border border-white/5">
-                        <p class="text-[9px] text-slate-500 uppercase mb-2">Margen</p>
-                        <span class="text-xl font-black text-cyan-400">${margenNeto.toFixed(1)}%</span>
-                    </div>
-                    <div class="bg-black/40 p-6 rounded-2xl border border-white/5">
-                        <p class="text-[9px] text-slate-500 uppercase mb-2">IA Sugerido</p>
-                        <span class="text-xl font-black text-white">$${(o.sugeridoCalculado || 0).toLocaleString()}</span>
-                    </div>
-                </div>
-                <button onclick="window.descargarMisionEspecifica('${o.id}')" class="w-full p-5 bg-cyan-500/10 border border-cyan-500 text-cyan-400 orbitron text-[10px] font-black rounded-xl hover:bg-cyan-500 hover:text-white transition-all">
-                    <i class="fas fa-file-excel mr-2"></i> EXPORTAR DATA DE MISIÓN
-                </button>
-            </div>`,
-            showConfirmButton: false,
-            showCloseButton: true
+        // Hoja 2: Detalle Forense
+        const detalleData = ordenesData.map(o => {
+            const v = Number(o.costos_totales?.total_general || 0);
+            const i = Number(o.costos_totales?.costo_repuestos || 0);
+            const m = Number(o.costos_totales?.mano_obra || 0);
+            return {
+                "PLACA": o.placa,
+                "CLIENTE": o.cliente,
+                "FECHA": o.fecha_apertura?.toDate ? o.fecha_apertura.toDate().toLocaleDateString() : 'N/A',
+                "MANO OBRA": m,
+                "INSUMOS": i,
+                "TOTAL FACTURADO": v,
+                "UTILIDAD NETA": v - (i + m),
+                "MARGEN %": v > 0 ? (((v - (i + m)) / v) * 100).toFixed(2) + "%" : "0%",
+                "ESTADO": o.estado
+            };
         });
-    };
+        const ws2 = XLSX.utils.json_to_sheet(detalleData);
+        XLSX.utils.book_append_sheet(wb, ws2, "Auditoria_Detallada");
 
-    window.descargarMisionEspecifica = (id) => {
-        const o = ordenesData.find(x => x.id === id);
-        generarInformeDetallado(o, "individual");
+        XLSX.writeFile(wb, `NexusX_Strategic_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+        Swal.fire({ icon: 'success', title: 'Informe Elite Generado', background: '#010409', color: '#fff' });
     };
 
     renderLayout();
