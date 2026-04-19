@@ -1,6 +1,6 @@
 /**
- * 🌌 NEXUS-X AERO-LOGISTICS - AUDIT CENTER V22.0
- * 🧠 NÚCLEO DE INTELIGENCIA ESTRATÉGICA & AUDITORÍA CIRCULAR
+ * 🌌 NEXUS-X AERO-LOGISTICS - AUDIT CENTER V22.0 (FINAL)
+ * 🧠 NÚCLEO DE INTELIGENCIA ESTRATÉGICA & CONEXIÓN FIRESTORE V18.0
  * 🏗️ SYSTEM: BUSINESS INTELLIGENCE PROTOCOL (BSC & P&G)
  * @author William Jeffry Urquijo Cubillos & Gemini AI
  */
@@ -24,9 +24,10 @@ import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.
 import { db } from "../core/firebase-config.js";
 
 export default async function reportesModule(container, state) {
-    const empresaId = localStorage.getItem("nexus_empresaId");
+    // Usamos exactamente los mismos identificadores del V18.0
+    const empresaId = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
     const nombreEmpresa = localStorage.getItem("nexus_nombreEmpresa") || "LOGÍSTICA NEXUS-X";
-    let datosCargados = [];
+    let datosCargados = []; // Manteniendo nombre original v18.0
     let vistaActual = 'GENERAL'; 
 
     const renderLayout = () => {
@@ -71,14 +72,14 @@ export default async function reportesModule(container, state) {
             </div>
 
             <div id="reportContent" class="bg-[#0d1117]/80 backdrop-blur-3xl rounded-[3.5rem] border border-white/5 overflow-x-auto shadow-2xl">
-                <table class="w-full text-left border-collapse min-w-[800px]">
+                <table class="w-full text-left border-collapse min-w-[800px]" id="tableReport">
                     <thead id="headReporte"></thead>
                     <tbody id="bodyReportes" class="divide-y divide-white/5 font-bold text-xs"></tbody>
                 </table>
             </div>
         </div>`;
 
-        // Event Listeners
+        // Listeners v18.0 Style
         document.getElementById("selectVista").onchange = (e) => { vistaActual = e.target.value; procesarDatos(); };
         document.getElementById("filtroTabla").oninput = procesarDatos;
         document.getElementById("fechaInicio").onchange = procesarDatos;
@@ -90,60 +91,57 @@ export default async function reportesModule(container, state) {
 
     const cargarHistorial = async () => {
         try {
+            // Conexión EXACTA a tu colección de Firestore
             const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId), orderBy("creadoEn", "desc"));
             const snap = await getDocs(q);
             datosCargados = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             procesarDatos();
-        } catch (e) { console.error("🚨 Error Audit Center:", e); }
+        } catch (e) { console.error("🚨 Error Crítico Firebase Audit:", e); }
     };
 
     const procesarDatos = () => {
         const busqueda = document.getElementById("filtroTabla").value.toLowerCase();
-        const fInicio = document.getElementById("fechaInicio").value;
-        const fFin = document.getElementById("fechaFin").value;
+        const fI = document.getElementById("fechaInicio").value;
+        const fF = document.getElementById("fechaFin").value;
 
         let filtrados = datosCargados.filter(o => {
             const fechaO = o.creadoEn?.toDate ? o.creadoEn.toDate() : null;
             const coincideTexto = (o.placa?.toLowerCase().includes(busqueda)) || (o.cliente?.toLowerCase().includes(busqueda)) || (o.tecnico?.toLowerCase().includes(busqueda));
             
             let coincideFecha = true;
-            if (fInicio && fechaO) coincideFecha = fechaO >= new Date(fInicio + "T00:00:00");
-            if (fFin && fechaO && coincideFecha) coincideFecha = fechaO <= new Date(fFin + "T23:59:59");
+            if (fI && fechaO) coincideFecha = fechaO >= new Date(fI + "T00:00:00");
+            if (fF && fechaO && coincideFecha) coincideFecha = fechaO <= new Date(fF + "T23:59:59");
             
             return coincideTexto && coincideFecha;
         });
 
-        actualizarUI(filtrados);
-    };
-
-    const actualizarUI = (data) => {
-        renderKPIs(data);
-        renderTabla(data);
+        renderKPIs(filtrados);
+        renderTabla(filtrados);
     };
 
     const renderKPIs = (data) => {
-        const kpiGrid = document.getElementById("kpiContainer");
-        const ingresosTotales = data.reduce((acc, o) => acc + (Number(o.costos_totales?.total_general || o.total || 0)), 0);
+        const grid = document.getElementById("kpiContainer");
+        // Cálculos usando campos exactos de tu Firebase
+        const ingresos = data.reduce((acc, o) => acc + (Number(o.costos_totales?.total_general || o.total || 0)), 0);
         const recaudado = data.reduce((acc, o) => acc + (Number(o.finanzas?.anticipo_cliente || 0)), 0);
-        const ticketPromedio = data.length > 0 ? ingresosTotales / data.length : 0;
-        const deudaCxC = data.reduce((acc, o) => acc + (Number(o.costos_totales?.saldo_pendiente || 0)), 0);
+        const deuda = data.reduce((acc, o) => acc + (Number(o.costos_totales?.saldo_pendiente || 0)), 0);
 
-        kpiGrid.innerHTML = `
-            <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 border-l-4 border-l-cyan-500 shadow-xl">
-                <p class="orbitron text-[8px] text-slate-500 uppercase font-black mb-1">Volumen de Negocio (Ingresos)</p>
-                <h3 class="orbitron text-2xl font-black italic text-white">$ ${ingresosTotales.toLocaleString("es-CO")}</h3>
+        grid.innerHTML = `
+            <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border-l-4 border-l-cyan-500 shadow-2xl">
+                <p class="orbitron text-[8px] text-slate-500 uppercase font-black mb-1">Monto Total Facturado</p>
+                <h3 class="orbitron text-2xl font-black italic">$ ${ingresos.toLocaleString("es-CO")}</h3>
             </div>
-            <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 border-l-4 border-l-emerald-500 shadow-xl">
-                <p class="orbitron text-[8px] text-slate-500 uppercase font-black mb-1">Ticket Promedio (BSC)</p>
-                <h3 class="orbitron text-2xl font-black italic text-emerald-400">$ ${Math.round(ticketPromedio).toLocaleString("es-CO")}</h3>
+            <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border-l-4 border-l-emerald-500 shadow-2xl">
+                <p class="orbitron text-[8px] text-slate-500 uppercase font-black mb-1">Total Caja (Recaudado)</p>
+                <h3 class="orbitron text-2xl font-black italic text-emerald-400">$ ${recaudado.toLocaleString("es-CO")}</h3>
             </div>
-            <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 border-l-4 border-l-orange-500 shadow-xl">
-                <p class="orbitron text-[8px] text-slate-500 uppercase font-black mb-1">Efectivo Recaudado</p>
-                <h3 class="orbitron text-2xl font-black italic text-white">$ ${recaudado.toLocaleString("es-CO")}</h3>
+            <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border-l-4 border-l-orange-500 shadow-2xl">
+                <p class="orbitron text-[8px] text-slate-500 uppercase font-black mb-1">Misiones Ejecutadas</p>
+                <h3 class="orbitron text-2xl font-black italic">${data.length}</h3>
             </div>
-            <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 border-l-4 border-l-red-500 shadow-xl">
-                <p class="orbitron text-[8px] text-slate-500 uppercase font-black mb-1">Saldos CxC (Riesgo)</p>
-                <h3 class="orbitron text-2xl font-black italic text-red-500">$ ${deudaCxC.toLocaleString("es-CO")}</h3>
+            <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border-l-4 border-l-red-500 shadow-2xl">
+                <p class="orbitron text-[8px] text-slate-500 uppercase font-black mb-1">Saldos por Cobrar (CxC)</p>
+                <h3 class="orbitron text-2xl font-black italic text-red-500">$ ${deuda.toLocaleString("es-CO")}</h3>
             </div>
         `;
     };
@@ -153,28 +151,28 @@ export default async function reportesModule(container, state) {
         const body = document.getElementById("bodyReportes");
 
         if (vistaActual === 'FINANZAS') {
-            header.innerHTML = `<tr class="bg-white/[0.02] orbitron text-[9px] text-slate-500 uppercase tracking-widest"><th class="p-8">Fecha</th><th class="p-8">Referencia</th><th class="p-8">Total Bruto</th><th class="p-8">Recaudo</th><th class="p-8 text-right">Estado P&G</th></tr>`;
+            header.innerHTML = `<tr class="bg-white/[0.02] orbitron text-[9px] text-slate-500 uppercase tracking-widest"><th class="p-8">Fecha</th><th class="p-8">Activo</th><th class="p-8">Venta Bruta</th><th class="p-8">Anticipos</th><th class="p-8 text-right">Saldo CxC</th></tr>`;
             body.innerHTML = data.map(o => `
                 <tr class="hover:bg-cyan-500/5 transition-all italic">
-                    <td class="p-8 text-slate-400 font-black">${o.creadoEn?.toDate ? o.creadoEn.toDate().toLocaleDateString() : '---'}</td>
+                    <td class="p-8 text-slate-400">${o.creadoEn?.toDate ? o.creadoEn.toDate().toLocaleDateString() : '---'}</td>
                     <td class="p-8 orbitron text-white text-[10px]">${o.placa}</td>
                     <td class="p-8">$ ${(o.costos_totales?.total_general || 0).toLocaleString()}</td>
-                    <td class="p-8 text-emerald-400 font-black">$ ${(o.finanzas?.anticipo_cliente || 0).toLocaleString()}</td>
-                    <td class="p-8 text-right font-black ${o.costos_totales?.saldo_pendiente > 0 ? 'text-red-500' : 'text-cyan-400'}">
-                        ${o.costos_totales?.saldo_pendiente > 0 ? 'PENDIENTE: $' + o.costos_totales.saldo_pendiente.toLocaleString() : 'SALDADO'}
+                    <td class="p-8 text-emerald-400">$ ${(o.finanzas?.anticipo_cliente || 0).toLocaleString()}</td>
+                    <td class="p-8 text-right font-black ${o.costos_totales?.saldo_pendiente > 0 ? 'text-red-500' : 'text-slate-600'}">
+                        $ ${(o.costos_totales?.saldo_pendiente || 0).toLocaleString()}
                     </td>
                 </tr>`).join("");
         } else if (vistaActual === 'STAFF') {
             const staff = {};
             data.forEach(o => {
                 const tec = o.tecnico || "NO ASIGNADO";
-                if(!staff[tec]) staff[tec] = { misiones: 0, total: 0, promedio: 0 };
+                if(!staff[tec]) staff[tec] = { misiones: 0, total: 0 };
                 staff[tec].misiones++;
-                staff[tec].total += Number(o.total || o.costos_totales?.total_general || 0);
+                staff[tec].total += Number(o.costos_totales?.total_general || o.total || 0);
             });
-            header.innerHTML = `<tr class="bg-white/[0.02] orbitron text-[9px] text-slate-500 uppercase tracking-widest"><th class="p-8">Técnico Operador</th><th class="p-8 text-center">Misiones Cumplidas</th><th class="p-8 text-right">Productividad Total</th></tr>`;
+            header.innerHTML = `<tr class="bg-white/[0.02] orbitron text-[9px] text-slate-500 uppercase tracking-widest"><th class="p-8">Especialista Operativo</th><th class="p-8 text-center">Cant. Misiones</th><th class="p-8 text-right">Producción Bruta</th></tr>`;
             body.innerHTML = Object.keys(staff).map(s => `
-                <tr class="hover:bg-orange-500/5 transition-all italic font-bold">
+                <tr class="hover:bg-white/5 transition-all">
                     <td class="p-8 orbitron text-cyan-400 font-black">${s}</td>
                     <td class="p-8 text-center">${staff[s].misiones}</td>
                     <td class="p-8 text-right text-white font-black">$ ${staff[s].total.toLocaleString()}</td>
@@ -182,35 +180,40 @@ export default async function reportesModule(container, state) {
         } else {
             header.innerHTML = `<tr class="bg-white/[0.02] orbitron text-[9px] text-slate-500 uppercase tracking-widest"><th class="p-8">Fecha</th><th class="p-8">Activo (Placa)</th><th class="p-8">Cliente</th><th class="p-8 text-right">Monto Total</th></tr>`;
             body.innerHTML = data.map(o => `
-                <tr class="hover:bg-white/5 transition-all italic font-bold">
-                    <td class="p-8 text-slate-400 font-black">${o.creadoEn?.toDate ? o.creadoEn.toDate().toLocaleDateString() : 'N/A'}</td>
-                    <td class="p-8 orbitron text-white font-black">${o.placa}</td>
-                    <td class="p-8 text-slate-400 uppercase">${o.cliente}</td>
-                    <td class="p-8 text-right text-cyan-400 font-black">$ ${(o.costos_totales?.total_general || o.total || 0).toLocaleString()}</td>
+                <tr class="hover:bg-white/5 transition-all">
+                    <td class="p-8 text-slate-400">${o.creadoEn?.toDate ? o.creadoEn.toDate().toLocaleDateString() : 'N/A'}</td>
+                    <td class="p-8 orbitron text-white font-black uppercase">${o.placa}</td>
+                    <td class="p-8 text-slate-400 uppercase font-bold">${o.cliente}</td>
+                    <td class="p-8 text-right text-cyan-400 font-black italic">$ ${(o.costos_totales?.total_general || o.total || 0).toLocaleString()}</td>
                 </tr>`).join("");
         }
     };
 
+    // --- 🛠️ MOTOR DE EXPORTACIÓN (CORRECCIÓN CONEXIÓN) ---
     const ejecutarExportacion = async () => {
         const { value: formato } = await window.Swal.fire({
-            title: 'SISTEMA DE EXPORTACIÓN',
-            html: `<p class="orbitron text-[10px] text-slate-400">AUDIT CENTER - ${nombreEmpresa}</p>`,
-            icon: 'info', background: '#010409', color: '#fff',
+            title: 'SISTEMA DE AUDITORÍA EXPORT',
+            html: `<div class="p-4 bg-black/20 rounded-2xl border border-white/5 text-left">
+                     <p class="text-[10px] orbitron text-slate-400 uppercase">Propietario:</p>
+                     <p class="text-xs font-black text-white">${nombreEmpresa}</p>
+                     <p class="text-[8px] orbitron text-cyan-400 mt-2">by Nexus-X Starlink SaaS</p>
+                   </div>`,
+            background: '#010409', color: '#fff',
             showCancelButton: true,
-            confirmButtonText: 'EXCEL (XLSX)',
-            cancelButtonText: 'PDF (EJECUTIVO)',
+            confirmButtonText: '<i class="fas fa-file-excel mr-2"></i> EXCEL (XLSX)',
+            cancelButtonText: '<i class="fas fa-file-pdf mr-2"></i> PDF EJECUTIVO',
             confirmButtonColor: '#10b981',
             cancelButtonColor: '#06b6d4'
         });
 
-        if (formato) { exportarExcel(); } 
+        if (formato === true) { exportarExcel(); } 
         else if (window.Swal.getIcon() && !formato) { exportarPDF(); }
     };
 
     const exportarExcel = () => {
-        const table = document.querySelector("table");
-        const wb = XLSX.utils.table_to_book(table, { sheet: "AUDIT_DATA" });
-        XLSX.writeFile(wb, `NexusX_${nombreEmpresa}_${vistaActual}.xlsx`);
+        const table = document.getElementById("tableReport");
+        const wb = XLSX.utils.table_to_book(table, { sheet: "NEXUS_AUDIT" });
+        XLSX.writeFile(wb, `Audit_${nombreEmpresa}_${vistaActual}.xlsx`);
     };
 
     const exportarPDF = () => {
@@ -220,25 +223,23 @@ export default async function reportesModule(container, state) {
 
         doc.setFillColor(1, 4, 9);
         doc.rect(0, 0, 600, 100, 'F');
-        
         doc.setTextColor(6, 182, 212);
         doc.setFontSize(22);
         doc.text(nombreEmpresa.toUpperCase(), 40, 50);
-        
         doc.setFontSize(8);
         doc.setTextColor(150);
         doc.text(`BY NEXUS-X STARLINK SAAS | TALLERPRO360`, 40, 75);
         doc.text(`REPORTE: ${vistaActual} | FECHA: ${fecha}`, 40, 85);
 
         doc.autoTable({
-            html: 'table',
+            html: '#tableReport',
             startY: 120,
             theme: 'striped',
             headStyles: { fillColor: [6, 182, 212], textColor: 255, fontSize: 8 },
-            styles: { fontSize: 7 }
+            styles: { fontSize: 7, font: 'helvetica' }
         });
 
-        doc.save(`NexusX_${nombreEmpresa}_Report.pdf`);
+        doc.save(`AuditReport_NexusX_${nombreEmpresa}.pdf`);
     };
 
     renderLayout();
