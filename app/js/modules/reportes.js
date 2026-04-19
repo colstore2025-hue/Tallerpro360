@@ -82,53 +82,62 @@ export default async function reportesModule(container) {
     };
 
     const procesarOperaciones = () => {
-        const tbody = document.getElementById("opTableBody");
-        let totalVenta = 0; let totalSugerido = 0; let misionesBajaRentabilidad = 0;
+    const tbody = document.getElementById("opTableBody");
+    let totalVenta = 0; let totalSugerido = 0; let misionesBajaRentabilidad = 0;
 
-        tbody.innerHTML = ordenesData.map(o => {
-            const venta = Number(o.costos_totales?.total_general || 0);
-            const repuestos = Number(o.costos_totales?.costo_repuestos || 0);
-            const mo = Number(o.costos_totales?.mano_obra || 0);
-            totalVenta += venta;
+    tbody.innerHTML = ordenesData.map(o => {
+        // Venta Real es lo que el cliente realmente pagó o debe pagar (total_general)
+        const venta = Number(o.costos_totales?.total_general || 0);
+        const abonado = Number(o.finanzas?.anticipo_cliente || 0); // Lo que ya entró a caja
+        const repuestos = Number(o.costos_totales?.costo_repuestos || 0);
+        const mo = Number(o.costos_totales?.mano_obra || 0);
+        
+        totalVenta += venta;
 
-            const sugerido = calcularPrecioInteligente({ costoRepuestos: repuestos, horasTrabajo: o.horas_reales || 1 });
-            o.sugeridoCalculado = sugerido.total; // Guardar para el export individual
-            totalSugerido += sugerido.total;
+        const sugerido = calcularPrecioInteligente({ costoRepuestos: repuestos, horasTrabajo: o.horas_reales || 1 });
+        o.sugeridoCalculado = sugerido.total; 
+        totalSugerido += sugerido.total;
 
-            const margen = venta > 0 ? ((venta - (repuestos + mo)) / venta) * 100 : 0;
-            const esBaja = venta < sugerido.total;
-            if (esBaja) misionesBajaRentabilidad++;
+        // Margen basado en Venta Total vs Costos Directos
+        const margen = venta > 0 ? ((venta - (repuestos + mo)) / venta) * 100 : 0;
+        const esBaja = venta < sugerido.total;
+        if (esBaja) misionesBajaRentabilidad++;
 
-            return `
-            <tr onclick="window.verDetalleMision('${o.id}')" class="hover:bg-cyan-500/[0.03] transition-all cursor-pointer group">
-                <td class="p-10">
-                    <div class="flex flex-col">
-                        <span class="orbitron text-xl font-black italic tracking-tighter group-hover:text-cyan-400 transition-colors uppercase">${o.placa || 'N/A'}</span>
-                        <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">${o.cliente || 'CLIENTE FINAL'}</span>
-                    </div>
-                </td>
-                <td class="p-10">
+        return `
+        <tr onclick="window.verDetalleMision('${o.id}')" class="hover:bg-cyan-500/[0.03] transition-all cursor-pointer group">
+            <td class="p-10">
+                <div class="flex flex-col">
+                    <span class="orbitron text-xl font-black italic tracking-tighter group-hover:text-cyan-400 transition-colors uppercase">${o.placa || 'N/A'}</span>
+                    <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">${o.cliente || 'CLIENTE'}</span>
+                </div>
+            </td>
+            <td class="p-10">
+                <div class="flex flex-col">
                     <span class="text-xl font-black orbitron tabular-nums">$ ${venta.toLocaleString()}</span>
-                </td>
-                <td class="p-10 font-bold text-cyan-400/80 orbitron tabular-nums text-sm">
-                    $ ${sugerido.total.toLocaleString()}
-                </td>
-                <td class="p-10">
-                    <div class="flex flex-col items-center">
-                        <span class="text-[13px] font-black orbitron mb-2 ${margen > 25 ? 'text-emerald-400' : 'text-red-500'}">${margen.toFixed(1)}%</span>
-                        <div class="w-24 h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/5">
-                            <div class="h-full ${margen > 25 ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-red-500 shadow-[0_0_10px_#ef4444]'}" style="width: ${Math.min(margen, 100)}%"></div>
-                        </div>
+                    <span class="text-[8px] text-emerald-500 font-black orbitron uppercase italic">Abonado: $${abonado.toLocaleString()}</span>
+                </div>
+            </td>
+            <td class="p-10 font-bold text-cyan-400/80 orbitron tabular-nums text-sm">
+                $ ${sugerido.total.toLocaleString()}
+            </td>
+            <td class="p-10">
+                <div class="flex flex-col items-center">
+                    <span class="text-[13px] font-black orbitron mb-2 ${margen > 25 ? 'text-emerald-400' : 'text-red-500'}">${margen.toFixed(1)}%</span>
+                    <div class="w-24 h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/5">
+                        <div class="h-full ${margen > 25 ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-red-500 shadow-[0_0_10px_#ef4444]'}" style="width: ${Math.min(margen, 100)}%"></div>
                     </div>
-                </td>
-                <td class="p-10 text-right">
-                    <span class="px-5 py-2 rounded-xl text-[9px] orbitron font-black uppercase tracking-widest ${esBaja ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">
-                        ${esBaja ? 'Revisar Pricing' : 'Optimizado'}
-                    </span>
-                </td>
-            </tr>`;
-        }).join("");
-
+                </div>
+            </td>
+            <td class="p-10 text-right">
+                <span class="px-5 py-2 rounded-xl text-[9px] orbitron font-black uppercase tracking-widest ${esBaja ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">
+                    ${esBaja ? 'Revisar Pricing' : 'Optimizado'}
+                </span>
+            </td>
+        </tr>`;
+    }).join("");
+    
+    // ... (resto de la función igual)
+};
         const ticketPromedio = ordenesData.length > 0 ? totalVenta / ordenesData.length : 0;
         const fugaTotal = totalSugerido > totalVenta ? totalSugerido - totalVenta : 0;
 
