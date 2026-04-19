@@ -1,7 +1,6 @@
 /**
- * 🌌 NEXUS-X REPORTES V28.5 - ANALÍTICA OPERATIVA
- * Enfoque: Productividad, Rentabilidad por Placa y Eficiencia IA
- * Alimenta el flujo estratégico para Finanzas Elite
+ * 🦾 NEXUS-X TERMINATOR CORE V29.0 - ANALÍTICA OPERATIVA
+ * Central de Inteligencia de Procesos // William Jeffry Urquijo Cubillos 
  */
 
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -9,56 +8,59 @@ import { db } from "../core/firebase-config.js";
 import { calcularPrecioInteligente } from "../ai/pricingOptimizerAI.js";
 
 export default async function reportesModule(container) {
-    const empresaId = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
+    const empresaId = localStorage.getItem("nexus_empresaId");
     let ordenesData = [];
 
     const renderLayout = () => {
         container.innerHTML = `
-        <div class="p-4 lg:p-10 bg-[#010409] min-h-screen text-white pb-32 selection:bg-cyan-500/30">
+        <div class="p-6 lg:p-12 bg-[#010409] min-h-screen text-white pb-40 selection:bg-cyan-500/30 font-sans">
             
-            <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 border-b border-white/5 pb-8 gap-6">
-                <div>
-                    <h1 class="orbitron text-4xl font-black italic tracking-tighter uppercase">
+            <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-16 border-b border-white/5 pb-10 gap-6">
+                <div class="relative">
+                    <div class="absolute -left-6 top-0 h-full w-1.5 bg-cyan-500 shadow-[0_0_20px_#06b6d4]"></div>
+                    <h1 class="orbitron text-5xl font-black italic tracking-tighter uppercase leading-none">
                         OPERACIONES <span class="text-cyan-400">ANALÍTICA</span>
                     </h1>
-                    <div class="flex items-center gap-3 mt-2">
-                        <span class="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-[8px] orbitron font-black text-cyan-400 uppercase tracking-widest">Protocolo de Eficiencia</span>
+                    <div class="flex items-center gap-4 mt-4">
+                        <span class="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-[8px] orbitron font-black text-cyan-400 uppercase tracking-[0.4em]">Protocolo de Eficiencia Nexus-X</span>
                     </div>
                 </div>
-                <div class="flex gap-4">
-                    <button id="btnExportExcel" class="px-6 py-3 bg-white/5 border border-white/10 rounded-xl orbitron text-[9px] font-black uppercase hover:bg-white hover:text-black transition-all">
-                        Descargar Excel
-                    </button>
-                </div>
+                
+                <button id="btnExportExcel" class="group px-8 py-5 bg-white text-black rounded-2xl flex items-center gap-4 hover:bg-cyan-500 hover:text-white transition-all duration-500 transform hover:scale-105 active:scale-95 shadow-2xl">
+                    <i class="fas fa-file-excel text-xl"></i>
+                    <span class="orbitron text-[10px] font-black uppercase tracking-widest">Descargar Auditoría Excel</span>
+                </button>
             </header>
 
-            <div id="opStats" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                </div>
+            <div id="opStats" class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12"></div>
 
-            <div class="bg-gradient-to-r from-[#0d1117] to-transparent border-l-4 border-cyan-500 p-10 rounded-r-[3rem] flex items-center gap-8 mb-12 shadow-2xl">
-                <div class="text-4xl">🤖</div>
-                <div>
-                    <h5 class="orbitron text-[10px] font-black text-cyan-400 uppercase mb-1 tracking-widest">IA Operational Advisor</h5>
-                    <p id="iaTacticalMsg" class="text-[13px] text-slate-300 leading-relaxed italic">Analizando el flujo de trabajo en las rampas...</p>
+            <div class="bg-[#0d1117] border-l-4 border-cyan-500 p-12 rounded-r-[3.5rem] flex items-center gap-10 mb-16 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden group">
+                <div class="absolute right-0 top-0 opacity-10 text-9xl group-hover:rotate-12 transition-transform duration-700">🤖</div>
+                <div class="w-20 h-20 bg-white text-black rounded-3xl flex-shrink-0 flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div class="relative z-10">
+                    <h5 class="text-[12px] font-black uppercase text-white mb-2 orbitron tracking-[0.3em] italic">IA Strategic <span class="text-cyan-400">Operational Advisor</span></h5>
+                    <p id="iaTacticalMsg" class="text-lg text-slate-400 leading-relaxed font-medium italic">Sincronizando telemetría de rampas y flujos de trabajo...</p>
                 </div>
             </div>
 
-            <div class="bg-[#0d1117] border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl relative">
-                <div class="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                    <h3 class="orbitron text-[11px] font-black text-white uppercase tracking-[0.4em]">Historial de Rentabilidad por Misión</h3>
+            <div class="bg-[#0d1117] border border-white/5 rounded-[3.5rem] overflow-hidden shadow-2xl">
+                <div class="p-10 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
+                    <h3 class="orbitron text-[12px] font-black text-white uppercase tracking-[0.5em] italic">Historial de Rentabilidad <span class="text-cyan-500">[Click para Deep Drill]</span></h3>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-black/20 orbitron text-[8px] text-slate-500 uppercase tracking-widest border-b border-white/5">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-black/40 orbitron text-[9px] text-slate-500 uppercase tracking-[0.2em] border-b border-white/5">
                             <tr>
-                                <th class="p-8">Identificación</th>
-                                <th class="p-8">Venta Real</th>
-                                <th class="p-8">Análisis IA</th>
-                                <th class="p-8">Margen Neto</th>
-                                <th class="p-8">Estado P&G</th>
+                                <th class="p-10">Identificación</th>
+                                <th class="p-10">Venta Real</th>
+                                <th class="p-10">Análisis IA</th>
+                                <th class="p-10 text-center">Margen Neto</th>
+                                <th class="p-10 text-right">Estatus P&G</th>
                             </tr>
                         </thead>
-                        <tbody id="opTableBody"></tbody>
+                        <tbody id="opTableBody" class="divide-y divide-white/[0.03]"></tbody>
                     </table>
                 </div>
             </div>
@@ -77,21 +79,15 @@ export default async function reportesModule(container) {
 
     const procesarOperaciones = () => {
         const tbody = document.getElementById("opTableBody");
-        let totalVenta = 0;
-        let totalSugerido = 0;
-        let misionesBajaRentabilidad = 0;
+        let totalVenta = 0; let totalSugerido = 0; let misionesBajaRentabilidad = 0;
 
         tbody.innerHTML = ordenesData.map(o => {
             const venta = Number(o.costos_totales?.total_general || 0);
             const repuestos = Number(o.costos_totales?.costo_repuestos || 0);
             const mo = Number(o.costos_totales?.mano_obra || 0);
-            
             totalVenta += venta;
 
-            const sugerido = calcularPrecioInteligente({
-                costoRepuestos: repuestos,
-                horasTrabajo: o.horas_reales || 1
-            });
+            const sugerido = calcularPrecioInteligente({ costoRepuestos: repuestos, horasTrabajo: o.horas_reales || 1 });
             totalSugerido += sugerido.total;
 
             const margen = venta > 0 ? ((venta - (repuestos + mo)) / venta) * 100 : 0;
@@ -99,66 +95,125 @@ export default async function reportesModule(container) {
             if (esBaja) misionesBajaRentabilidad++;
 
             return `
-            <tr class="border-b border-white/5 hover:bg-white/[0.01] transition-all group">
-                <td class="p-8">
-                    <span class="orbitron text-lg font-black italic group-hover:text-cyan-400 transition-colors">${o.placa || 'PRO-360'}</span><br>
-                    <span class="text-[9px] text-slate-500 uppercase font-bold">${o.cliente || 'CLIENTE FINAL'}</span>
-                </td>
-                <td class="p-8 font-bold text-sm">$ ${venta.toLocaleString()}</td>
-                <td class="p-8 font-bold text-sm text-cyan-400/80">$ ${sugerido.total.toLocaleString()}</td>
-                <td class="p-8">
+            <tr onclick="window.verDetalleMision('${o.id}')" class="hover:bg-cyan-500/[0.03] transition-all cursor-pointer group">
+                <td class="p-10">
                     <div class="flex flex-col">
-                        <span class="text-[11px] font-black orbitron ${margen > 25 ? 'text-emerald-400' : 'text-red-500'}">${margen.toFixed(1)}%</span>
-                        <div class="w-16 h-1 bg-white/5 rounded-full mt-1 overflow-hidden">
-                            <div class="h-full ${margen > 25 ? 'bg-emerald-500' : 'bg-red-500'}" style="width: ${Math.min(margen, 100)}%"></div>
+                        <span class="orbitron text-xl font-black italic tracking-tighter group-hover:text-cyan-400 transition-colors uppercase">${o.placa || 'N/A'}</span>
+                        <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">${o.cliente || 'CLIENTE FINAL'}</span>
+                    </div>
+                </td>
+                <td class="p-10">
+                    <span class="text-xl font-black orbitron tabular-nums">$ ${venta.toLocaleString()}</span>
+                </td>
+                <td class="p-10 font-bold text-cyan-400/80 orbitron tabular-nums text-sm">
+                    $ ${sugerido.total.toLocaleString()}
+                </td>
+                <td class="p-10">
+                    <div class="flex flex-col items-center">
+                        <span class="text-[13px] font-black orbitron mb-2 ${margen > 25 ? 'text-emerald-400' : 'text-red-500'}">${margen.toFixed(1)}%</span>
+                        <div class="w-24 h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/5">
+                            <div class="h-full ${margen > 25 ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-red-500 shadow-[0_0_10px_#ef4444]'}" style="width: ${Math.min(margen, 100)}%"></div>
                         </div>
                     </div>
                 </td>
-                <td class="p-8">
-                    <span class="text-[9px] orbitron font-black uppercase px-4 py-1 rounded-full ${esBaja ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'}">
+                <td class="p-10 text-right">
+                    <span class="px-5 py-2 rounded-xl text-[9px] orbitron font-black uppercase tracking-widest ${esBaja ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">
                         ${esBaja ? 'Revisar Pricing' : 'Optimizado'}
                     </span>
                 </td>
             </tr>`;
         }).join("");
 
-        // KPI OPERATIVOS
         const ticketPromedio = ordenesData.length > 0 ? totalVenta / ordenesData.length : 0;
         const fugaTotal = totalSugerido > totalVenta ? totalSugerido - totalVenta : 0;
 
         document.getElementById("opStats").innerHTML = `
-            ${renderStatBox("Ticket Promedio", ticketPromedio, "fa-tags")}
-            ${renderStatBox("Fuga Operativa (Sub-cobro)", fugaTotal, "fa-faucet-drip", "text-red-500")}
-            ${renderStatBox("Misiones Auditadas", ordenesData.length, "fa-clipboard-check")}
+            ${renderStatBox("Ticket Promedio", ticketPromedio, "fa-tags", "Formula: Ingreso Total / N° Misiones")}
+            ${renderStatBox("Fuga Operativa (Sub-cobro)", fugaTotal, "fa-faucet-drip", "Formula: Sugerido IA - Facturado Real", "text-red-500")}
+            ${renderStatBox("Misiones Auditadas", ordenesData.length, "fa-clipboard-check", "Total de órdenes procesadas en el periodo")}
         `;
 
         document.getElementById("iaTacticalMsg").innerHTML = `
-            He detectado que el <span class="text-white font-bold">${((misionesBajaRentabilidad/ordenesData.length)*100).toFixed(0)}%</span> de tus servicios están por debajo del precio sugerido IA. 
-            Esto genera una fuga de <span class="text-red-500 font-bold">$${fugaTotal.toLocaleString()}</span>. 
-            <b>Acción:</b> Ajusta los tabuladores de mano de obra en el módulo de Ajustes para nivelar el P&G.`;
+            He detectado que el <span class="text-white font-black">${((misionesBajaRentabilidad/ordenesData.length)*100).toFixed(0)}%</span> de tus servicios presentan fuga de capital. 
+            Acción Inmediata: Ajusta el valor de la hora hombre en el módulo de configuración para recuperar <span class="text-cyan-400 font-bold">$${fugaTotal.toLocaleString()}</span> de utilidad proyectada.`;
     };
 
-    const renderStatBox = (title, val, icon, color = "text-white") => `
-        <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 shadow-xl hover:border-white/10 transition-all">
-            <div class="flex items-center gap-3 mb-4">
-                <i class="fas ${icon} text-[10px] text-slate-500"></i>
-                <p class="orbitron text-[8px] text-slate-500 uppercase tracking-widest">${title}</p>
+    const renderStatBox = (title, val, icon, formula, color = "text-white") => `
+        <div class="bg-[#0d1117] p-10 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden group hover:border-cyan-500/30 transition-all duration-500">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
+                    <i class="fas ${icon} text-sm text-slate-400 group-hover:text-cyan-400 transition-colors"></i>
+                </div>
+                <p class="orbitron text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">${title}</p>
             </div>
-            <p class="text-3xl font-black orbitron tracking-tighter ${color}">${typeof val === 'number' ? '$ ' + val.toLocaleString() : val}</p>
+            <p class="text-4xl font-black orbitron tracking-tighter tabular-nums ${color}">${typeof val === 'number' ? '$' + val.toLocaleString() : val}</p>
+            <div class="mt-6 pt-6 border-t border-white/5">
+                <p class="text-[8px] orbitron text-slate-600 font-black uppercase tracking-widest">${formula}</p>
+            </div>
         </div>`;
+
+    // FUNCIÓN DE DETALLE DE ORDEN (DEEP DRILL)
+    window.verDetalleMision = (id) => {
+        const o = ordenesData.find(x => x.id === id);
+        const venta = Number(o.costos_totales?.total_general || 0);
+        const repuestos = Number(o.costos_totales?.costo_repuestos || 0);
+        const mo = Number(o.costos_totales?.mano_obra || 0);
+        const margenNeto = venta > 0 ? ((venta - (repuestos + mo)) / venta) * 100 : 0;
+
+        Swal.fire({
+            title: `<span class="orbitron font-black text-cyan-500 uppercase">Resumen Misión: ${o.placa}</span>`,
+            background: '#0d1117',
+            color: '#fff',
+            width: '600px',
+            html: `
+            <div class="text-left orbitron p-4 space-y-6">
+                <div class="bg-black/40 p-6 rounded-2xl border border-white/5">
+                    <p class="text-[9px] text-slate-500 uppercase mb-4">Análisis de Rentabilidad</p>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs">Margen Bruto (Venta - Insumos):</span>
+                        <span class="text-white font-black">$${(venta - repuestos).toLocaleString()}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs">Utilidad Neta Operativa:</span>
+                        <span class="${margenNeto > 25 ? 'text-emerald-400' : 'text-red-500'} font-black">$${(venta - (repuestos + mo)).toLocaleString()}</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-black/40 p-6 rounded-2xl border border-white/5">
+                        <p class="text-[9px] text-slate-500 uppercase mb-2">ROI Mano Obra</p>
+                        <span class="text-xl font-black text-cyan-400">${((mo / venta) * 100).toFixed(1)}%</span>
+                    </div>
+                    <div class="bg-black/40 p-6 rounded-2xl border border-white/5">
+                        <p class="text-[9px] text-slate-500 uppercase mb-2">Eficiencia Neta</p>
+                        <span class="text-xl font-black text-white">${margenNeto.toFixed(1)}%</span>
+                    </div>
+                </div>
+
+                <div class="bg-cyan-500/5 p-6 rounded-2xl border border-cyan-500/20">
+                    <p class="text-[8px] text-cyan-500 uppercase font-black tracking-widest mb-2">Logaritmo Gerencial</p>
+                    <p class="text-[10px] text-slate-400 leading-relaxed italic">Formula: [(Facturación - (Costo Directo + Operativo)) / Facturación] x 100. Un margen inferior al 25% indica sub-valoración del tiempo técnico.</p>
+                </div>
+            </div>`,
+            confirmButtonText: 'ENTENDIDO',
+            confirmButtonColor: '#06b6d4'
+        });
+    };
 
     function exportarExcel() {
         const wsData = ordenesData.map(o => ({
             Placa: o.placa,
-            Venta_Total: o.costos_totales?.total_general || 0,
-            Repuestos: o.costos_totales?.costo_repuestos || 0,
-            Mano_Obra: o.costos_totales?.mano_obra || 0,
-            Rentabilidad: "Auditada por Nexus-X"
+            Cliente: o.cliente,
+            Venta_Real: o.costos_totales?.total_general || 0,
+            Costo_Repuestos: o.costos_totales?.costo_repuestos || 0,
+            Inversion_MO: o.costos_totales?.mano_obra || 0,
+            Margen_Neto: (((Number(o.costos_totales?.total_general || 0) - (Number(o.costos_totales?.costo_repuestos || 0) + Number(o.costos_totales?.mano_obra || 0))) / (o.costos_totales?.total_general || 1)) * 100).toFixed(1) + "%",
+            Auditoria: "Nexus-X V29.0"
         }));
         const ws = XLSX.utils.json_to_sheet(wsData);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Audit_Operativo");
-        XLSX.writeFile(wb, "Reporte_Operaciones_PRO360.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "Auditoria_NexusX");
+        XLSX.writeFile(wb, `Reporte_Terminator_PRO360_${new Date().toISOString().slice(0,10)}.xlsx`);
     }
 
     renderLayout();
