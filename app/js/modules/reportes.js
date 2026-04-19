@@ -329,64 +329,80 @@ export default async function reportesModule(container) {
         }
     };
 
-    // DEEP DRILL MODAL (MODIFICADO PARA ELITE)
-    window.verDetalleMision = (id) => {
-        const o = ordenesData.find(x => x.id === id);
-        if(!o) return;
-        
-        const v = Number(o.costos_totales?.total_general || 0);
-        const r = Number(o.costos_totales?.costo_repuestos || 0);
-        const m = Number(o.costos_totales?.mano_obra || 0);
-        const margen = v > 0 ? ((v - (r + m)) / v) * 100 : 0;
+ // 🦾 DEEP DRILL MODAL (NEXUS-X ELITE - REVISIÓN DE FLUJO REAL)
+window.verDetalleMision = (id) => {
+    const o = ordenesData.find(x => x.id === id);
+    if(!o) return;
+    
+    /**
+     * ESTRATEGIA DE EXTRACCIÓN MULTINIVEL
+     * Blindaje contra valores vacíos: busca en costos_totales o en la raíz del objeto.
+     */
+    const v = Number(o.costos_totales?.total_general || o.total_general || o.total || 0);
+    const r = Number(o.costos_totales?.costo_repuestos || o.costo_repuestos || o.repuestos || 0);
+    const m = Number(o.costos_totales?.mano_obra || o.mano_obra || 0);
+    
+    const utilidadNeta = v - (r + m);
+    const margen = v > 0 ? (utilidadNeta / v) * 100 : 0;
 
-        Swal.fire({
-            title: `<span class="orbitron font-black text-cyan-500 uppercase">Audit: ${o.placa}</span>`,
-            background: '#0d1117',
-            color: '#fff',
-            width: '700px',
-            showConfirmButton: false,
-            showCloseButton: true,
-            html: `
-            <div class="text-left orbitron p-6 space-y-8 animate-in slide-in-from-bottom duration-500">
-                <div class="grid grid-cols-2 gap-6">
-                    <div class="bg-black/40 p-6 rounded-[2rem] border border-white/5">
-                        <p class="text-[8px] text-slate-500 uppercase mb-4 tracking-widest">Utilidad Neta</p>
-                        <p class="text-3xl font-black ${margen > 25 ? 'text-emerald-400' : 'text-red-500'} italic">$ ${(v - (r + m)).toLocaleString()}</p>
-                    </div>
-                    <div class="bg-black/40 p-6 rounded-[2rem] border border-white/5">
-                        <p class="text-[8px] text-slate-500 uppercase mb-4 tracking-widest">Eficiencia Operativa</p>
-                        <p class="text-3xl font-black text-white italic">${margen.toFixed(1)}%</p>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center text-[10px] border-b border-white/5 pb-2">
-                        <span class="text-slate-400">PUNTO DE EQUILIBRIO (BEP)</span>
-                        <span class="font-bold text-white">$ ${(r + m).toLocaleString()}</span>
-                    </div>
-                    <div class="flex justify-between items-center text-[10px] border-b border-white/5 pb-2">
-                        <span class="text-slate-400">VALORIZACIÓN IA RECOMENDADA</span>
-                        <span class="font-bold text-cyan-400">$ ${(o.sugeridoCalculado || 0).toLocaleString()}</span>
-                    </div>
-                    <div class="flex justify-between items-center text-[10px] border-b border-white/5 pb-2">
-                        <span class="text-slate-400">RATIO REPUESTO / MANO OBRA</span>
-                        <span class="font-bold text-white">${m > 0 ? (r / m).toFixed(2) : 0}</span>
-                    </div>
-                </div>
-
-                <div class="bg-cyan-500/5 p-8 rounded-[2.5rem] border border-cyan-500/20">
-                    <p class="text-[9px] text-cyan-400 font-black uppercase mb-3">Diagnóstico Táctico</p>
-                    <p class="text-xs text-slate-400 leading-relaxed italic">
-                        ${margen < 25 ? '⚠️ Misión por debajo del umbral de rentabilidad. El costo de mano de obra está siendo absorbido por el margen de repuestos.' : '✅ Operación saludable. El ratio de conversión de tiempo técnico es óptimo para la escala actual.'}
+    Swal.fire({
+        title: `
+            <div class="flex flex-col items-center gap-2">
+                <span class="orbitron font-black text-cyan-500 uppercase tracking-tighter text-2xl">Audit: ${o.placa || 'OT-SYS'}</span>
+                <span class="text-[9px] orbitron text-slate-500 tracking-[0.4em] uppercase">${o.id.slice(0,12)}</span>
+            </div>`,
+        background: '#0d1117',
+        color: '#fff',
+        width: '700px',
+        showConfirmButton: false,
+        showCloseButton: true,
+        html: `
+        <div class="text-left orbitron p-6 space-y-8 animate-in slide-in-from-bottom duration-500">
+            <div class="grid grid-cols-2 gap-6">
+                <div class="bg-black/40 p-6 rounded-[2rem] border border-white/5 shadow-xl">
+                    <p class="text-[8px] text-slate-500 uppercase mb-4 tracking-widest font-bold">Utilidad Neta</p>
+                    <p class="text-3xl font-black ${utilidadNeta > 0 ? 'text-emerald-400' : 'text-red-500'} italic">
+                        $ ${utilidadNeta.toLocaleString()}
                     </p>
                 </div>
+                <div class="bg-black/40 p-6 rounded-[2rem] border border-white/5 shadow-xl">
+                    <p class="text-[8px] text-slate-500 uppercase mb-4 tracking-widest font-bold">Eficiencia Operativa</p>
+                    <p class="text-3xl font-black text-white italic">${margen.toFixed(1)}%</p>
+                </div>
+            </div>
 
-                <button onclick="window.descargarMisionEspecifica('${o.id}')" class="w-full py-6 bg-white text-black orbitron text-xs font-black rounded-3xl hover:bg-cyan-500 hover:text-white transition-all transform hover:scale-[1.02] shadow-2xl">
-                    DESCARGAR CERTIFICADO DE MISIÓN (EXCEL)
-                </button>
-            </div>`
-        });
-    };
+            <div class="space-y-4 bg-white/[0.02] p-6 rounded-[2.5rem] border border-white/5">
+                <div class="flex justify-between items-center text-[10px] border-b border-white/5 pb-3">
+                    <span class="text-slate-400 uppercase tracking-widest">Punto de Equilibrio (BEP)</span>
+                    <span class="font-bold text-white tracking-tight">$ ${(r + m).toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between items-center text-[10px] border-b border-white/5 pb-3">
+                    <span class="text-slate-400 uppercase tracking-widest">Valorización IA Recomendada</span>
+                    <span class="font-bold text-cyan-400 tracking-tight">$ ${(o.sugeridoCalculado || 0).toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between items-center text-[10px] pt-1">
+                    <span class="text-slate-400 uppercase tracking-widest">Ratio Repuesto / M.O</span>
+                    <span class="font-bold text-white">${m > 0 ? (r / m).toFixed(2) : 'N/A'}</span>
+                </div>
+            </div>
+
+            <div class="bg-cyan-500/5 p-8 rounded-[2.5rem] border border-cyan-500/20 relative overflow-hidden">
+                <i class="fas fa-brain absolute -right-4 -bottom-4 text-6xl opacity-10"></i>
+                <p class="text-[9px] text-cyan-400 font-black uppercase mb-3 tracking-widest">Diagnóstico Táctico</p>
+                <p class="text-xs text-slate-400 leading-relaxed italic">
+                    ${margen < 25 
+                        ? '⚠️ Misión por debajo del umbral de rentabilidad. El costo de mano de obra está siendo absorbido por el margen de repuestos.' 
+                        : '✅ Operación saludable. El ratio de conversión de tiempo técnico es óptimo para la escala operativa actual.'}
+                </p>
+            </div>
+
+            <button onclick="window.descargarMisionEspecifica('${o.id}')" class="w-full py-6 bg-white text-black orbitron text-[10px] font-black rounded-3xl hover:bg-cyan-500 hover:text-white transition-all transform hover:scale-[1.02] shadow-2xl flex items-center justify-center gap-3">
+                <i class="fas fa-file-excel"></i>
+                DESCARGAR CERTIFICADO DE MISIÓN
+            </button>
+        </div>`
+    });
+};
 
     window.descargarMisionEspecifica = (id) => {
         const o = ordenesData.find(x => x.id === id);
