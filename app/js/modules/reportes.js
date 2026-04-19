@@ -1,16 +1,20 @@
 /**
- * 🦾 NEXUS-X STRATEGIC COMMANDER V36.0 - THE TOWER (FINAL TERMINATOR EDITION)
+ * 🦾 NEXUS-X STRATEGIC COMMANDER V36.5 - TERMINATOR 2030 EDITION
  * William Jeffry Urquijo Cubillos // Nexus AI
- * Dashboard 2030: SAP-Style, Triangulación Contable PUC (51), BESA & VPC EAFIT
+ * Dashboard SAP/BI Especializado en Taller Automotriz (Liviano/Mediano/Pesado)
  */
 
-import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
 export default async function nexusControlTower(container) {
     const empresaId = localStorage.getItem("nexus_empresaId");
     let masterData = [];
-    let financialData = { gastosFijos: 0, margenNeto: 0, puntoEquilibrio: 0 };
+    let stats = {
+        areas: { mecanica: 0, latoneria: 0, electrico: 0, otros: 0 },
+        tiposVehiculo: { liviano: 0, mediano: 0, pesado: 0 },
+        financial: { gastosFijos: 0, utilidadNeta: 0, breakEven: 0, roi: 0 }
+    };
 
     const init = async () => {
         injectNexusStyles();
@@ -22,70 +26,95 @@ export default async function nexusControlTower(container) {
     const injectNexusStyles = () => {
         const style = document.createElement('style');
         style.innerHTML = `
-            @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;600&display=swap');
-            .tower-card { background: linear-gradient(160deg, #0d1117 0%, #010409 100%); border: 1px solid rgba(6, 182, 212, 0.1); border-radius: 24px; }
-            .tower-card:hover { border-color: #06b6d4; box-shadow: 0 0 30px rgba(6, 182, 212, 0.1); transform: translateY(-2px); }
-            .kpi-value { font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: -1px; text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); }
-            .progress-bar { height: 4px; border-radius: 10px; background: rgba(255,255,255,0.05); overflow: hidden; }
-            .progress-fill { height: 100%; transition: width 1s ease-in-out; }
-            .sap-table thead { background: rgba(255,255,255,0.02); color: #64748b; font-family: 'Orbitron', sans-serif; font-size: 9px; }
-            .status-tag { padding: 2px 8px; border-radius: 6px; font-size: 9px; font-weight: 900; }
+            @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;700&display=swap');
+            :root { --nexus-cyan: #06b6d4; --nexus-dark: #010409; --nexus-card: #0d1117; }
+            .terminator-bg { background: var(--nexus-dark); color: #e2e8f0; font-family: 'Inter', sans-serif; }
+            .tower-card { background: linear-gradient(165deg, #0d1117 0%, #010409 100%); border: 1px solid rgba(6, 182, 212, 0.15); border-radius: 20px; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+            .tower-card:hover { border-color: var(--nexus-cyan); box-shadow: 0 0 40px rgba(6, 182, 212, 0.1); transform: scale(1.01); }
+            .orbitron { font-family: 'Orbitron', sans-serif; }
+            .kpi-title { font-[8px] tracking-[0.3em] text-slate-500 uppercase font-black; }
+            .kpi-main { font-size: 2.2rem; font-weight: 900; background: linear-gradient(to right, #fff, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+            .sap-badge { padding: 4px 12px; border-radius: 6px; font-[9px] orbitron font-black uppercase; }
+            .area-mecanica { color: #38bdf8; background: rgba(56, 189, 248, 0.1); }
+            .area-latoneria { color: #fbbf24; background: rgba(251, 191, 36, 0.1); }
+            .area-electrico { color: #a855f7; background: rgba(168, 85, 247, 0.1); }
+            .veh-pesado { border-left: 4px solid #ef4444; }
+            @keyframes pulse-nexus { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
+            .live-dot { width: 10px; height: 10px; background: var(--nexus-cyan); border-radius: 50%; box-shadow: 0 0 10px var(--nexus-cyan); animation: pulse-nexus 2s infinite; }
         `;
         document.head.appendChild(style);
     };
 
     const renderSkeleton = () => {
         container.innerHTML = `
-        <div class="bg-[#010409] min-h-screen text-slate-300 font-['Inter'] pb-12">
-            <header class="sticky top-0 z-50 backdrop-blur-xl bg-[#010409]/80 border-b border-white/5 p-6">
-                <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div class="text-center md:text-left">
-                        <div class="flex items-center justify-center md:justify-start gap-3">
-                            <span class="w-3 h-3 bg-cyan-500 rounded-full animate-pulse"></span>
-                            <h1 class="orbitron text-2xl font-black italic text-white tracking-tighter">NEXUS<span class="text-cyan-500">_CONTROL_TOWER</span></h1>
+        <div class="terminator-bg min-h-screen pb-20">
+            <header class="p-6 border-b border-white/5 sticky top-0 bg-[#010409]/90 backdrop-blur-md z-50">
+                <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
+                    <div class="flex items-center gap-4">
+                        <div class="live-dot"></div>
+                        <div>
+                            <h1 class="orbitron text-2xl font-black text-white italic">NEXUS_X<span class="text-cyan-500">_BI_TERMINATOR</span></h1>
+                            <p class="text-[9px] tracking-[0.4em] text-slate-400 orbitron uppercase">Strategic Workshop Intelligence Core</p>
                         </div>
-                        <p class="text-[8px] orbitron tracking-[0.5em] text-cyan-500/50 uppercase mt-1">Strategic Commander V36.0 - Protocol 2030</p>
                     </div>
-                    <div class="flex gap-3">
-                        <button id="btnExcelGlobal" class="tower-card px-5 py-2 text-[10px] orbitron font-black text-emerald-400 hover:bg-emerald-500 hover:text-black transition-all">EXCEL GERENCIAL</button>
+                    <div class="flex gap-4 mt-4 md:mt-0">
+                        <button id="btnExcelGlobal" class="tower-card px-6 py-2 text-[10px] orbitron font-black text-emerald-400 hover:bg-emerald-500 hover:text-black transition-all uppercase">
+                            <i class="fas fa-file-excel mr-2"></i> Informe Socios SAP
+                        </button>
                     </div>
                 </div>
             </header>
 
-            <main class="max-w-7xl mx-auto px-4 mt-8 space-y-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5" id="kpiGrid"></div>
+            <main class="max-w-7xl mx-auto px-4 pt-10 space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="kpiGrid">
+                    ${Array(4).fill('<div class="h-32 tower-card animate-pulse"></div>').join('')}
+                </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="lg:col-span-2 tower-card p-8">
-                        <h3 class="orbitron text-xs font-black text-slate-500 mb-8 tracking-widest">CURVA DE SOSTENIBILIDAD (VENTA VS GASTOS 51)</h3>
-                        <div class="h-72"><canvas id="financialChart"></canvas></div>
-                    </div>
-                    <div class="tower-card p-8 flex flex-col justify-between">
-                        <h3 class="orbitron text-xs font-black text-slate-500 mb-4">PUNTO DE EQUILIBRIO</h3>
-                        <div id="breakEvenGauge" class="text-center py-6"></div>
-                        <div class="bg-white/5 p-4 rounded-2xl">
-                            <p class="text-[10px] orbitron text-slate-400 mb-1">MARGEN BRUTO OPERATIVO</p>
-                            <p id="txtMargenBruto" class="text-xl font-black text-white orbitron">0%</p>
+                        <div class="flex justify-between items-center mb-10">
+                            <h3 class="orbitron text-xs font-black text-slate-500 uppercase tracking-widest">Rendimiento Operativo por Área</h3>
+                            <div class="flex gap-4 text-[9px] orbitron">
+                                <span class="text-cyan-400">● MECÁNICA</span>
+                                <span class="text-amber-400">● LATONERÍA</span>
+                                <span class="text-purple-400">● ELÉCTRICO</span>
+                            </div>
                         </div>
+                        <div class="h-80"><canvas id="workshopAreaChart"></canvas></div>
+                    </div>
+                    
+                    <div class="tower-card p-8">
+                        <h3 class="orbitron text-xs font-black text-slate-500 uppercase tracking-widest mb-6">Mix de Vehículos</h3>
+                        <div class="h-64"><canvas id="vehicleTypeChart"></canvas></div>
+                        <div id="vehicleStats" class="mt-6 space-y-3"></div>
                     </div>
                 </div>
 
                 <div class="tower-card overflow-hidden">
-                    <div class="p-6 border-b border-white/5 bg-white/2">
-                        <h3 class="orbitron text-xs font-black text-white">REPORTE INDIVIDUAL POR ORDEN</h3>
+                    <div class="p-6 bg-white/5 border-b border-white/5 flex justify-between items-center">
+                        <h3 class="orbitron text-xs font-black text-white uppercase tracking-tighter">Terminal de Seguimiento Automotriz</h3>
+                        <div class="flex gap-2">
+                            <select id="filterArea" class="bg-black/40 text-[10px] orbitron border border-white/10 rounded-lg p-2">
+                                <option value="TODOS">TODAS LAS ÁREAS</option>
+                                <option value="MECANICA">MECÁNICA</option>
+                                <option value="LATONERIA">LATONERÍA/PINTURA</option>
+                                <option value="ELECTRICO">ELÉCTRICO</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left sap-table">
-                            <thead>
+                        <table class="w-full text-left text-[11px]">
+                            <thead class="bg-white/2 orbitron text-slate-500 border-b border-white/5">
                                 <tr>
-                                    <th class="p-4">VEHÍCULO/PLACA</th>
-                                    <th class="p-4 text-center">EFICIENCIA BESA</th>
-                                    <th class="p-4 text-center">VPC EAFIT</th>
-                                    <th class="p-4 text-right">UTILIDAD</th>
-                                    <th class="p-4 text-right">ACCIONES</th>
+                                    <th class="p-5">IDENTIFICACIÓN VEHÍCULO</th>
+                                    <th class="p-5">CLASE/TIPO</th>
+                                    <th class="p-5 text-center">EFICIENCIA</th>
+                                    <th class="p-5 text-center">VPC (ENTREGA)</th>
+                                    <th class="p-5 text-right">UTILIDAD BRUTA</th>
+                                    <th class="p-5 text-center">ACCIONES</th>
                                 </tr>
                             </thead>
-                            <tbody id="mainTableBody" class="divide-y divide-white/[0.03]"></tbody>
+                            <tbody id="towerTableBody" class="divide-y divide-white/[0.03]"></tbody>
                         </table>
                     </div>
                 </div>
@@ -94,129 +123,137 @@ export default async function nexusControlTower(container) {
     };
 
     const syncAllSystems = async () => {
-        // 1. TRIANGULACIÓN: GASTOS FIJOS (PUC 51)
-        const qC = query(collection(db, "contabilidad"), where("empresaId", "==", empresaId));
-        const snapC = await getDocs(qC);
-        let totalGastos51 = 0;
+        // 1. DATA CONTABLE (PUC 51)
+        const snapC = await getDocs(query(collection(db, "contabilidad"), where("empresaId", "==", empresaId)));
+        let gastosTotales = 0;
         snapC.forEach(d => {
             const m = d.data();
             if(m.cuenta?.startsWith("5105") || m.cuenta?.startsWith("5195")) {
-                totalGastos51 += Number(m.valor || 0);
+                gastosTotales += Number(m.valor || 0);
             }
         });
+        stats.financial.gastosFijos = gastosTotales;
 
-        // 2. TRIANGULACIÓN: ÓRDENES (Mecánica, Chapa y Pesados)
-        const qO = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
-        const snapO = await getDocs(qO);
+        // 2. DATA DE ÓRDENES (REPARACIONES)
+        const snapO = await getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId)));
         
         masterData = snapO.docs.map(doc => {
             const o = doc.data();
-            const hFacturadas = Number(o.horas_facturadas || 0);
-            const hReales = Number(o.horas_reales || 0);
+            const hFact = Number(o.horas_facturadas || 0);
+            const hReal = Number(o.horas_reales || 0);
             
+            // Clasificación de Áreas y Tipos (Basado en tu nuevo requerimiento)
+            const area = o.tipo_orden || "MECANICA"; // Mecánica, Latonería, Eléctrico
+            const claseVehiculo = o.clase_vehiculo || "LIVIANO"; // Pequeño, Mediano, Pesado
+
+            stats.areas[area.toLowerCase()] = (stats.areas[area.toLowerCase()] || 0) + 1;
+            stats.tiposVehiculo[claseVehiculo.toLowerCase()] = (stats.tiposVehiculo[claseVehiculo.toLowerCase()] || 0) + 1;
+
             return {
                 id: doc.id,
                 ...o,
-                eficiencia: hReales > 0 ? (hFacturadas / hReales) * 100 : 100,
-                utilidad: (Number(o.total || 0) - Number(o.costo_total || 0)),
-                diasCiclo: Math.ceil(( (o.fecha_entrega?.toDate() || new Date()) - (o.fecha_apertura?.toDate() || new Date()) ) / (1000 * 60 * 60 * 24))
+                area,
+                claseVehiculo,
+                eficiencia: hReal > 0 ? (hFact / hReal) * 100 : 100,
+                utilidad: Number(o.total || 0) - Number(o.costo_total || 0),
+                diasCiclo: Math.ceil(((o.fecha_entrega?.toDate() || new Date()) - (o.fecha_apertura?.toDate() || new Date())) / (1000 * 60 * 60 * 24))
             };
         });
 
-        calculateFinalMetrics(totalGastos51);
-        renderUI();
+        calculateFinancialCore();
+        renderKPIs();
+        renderCharts();
+        renderTable(masterData);
+
+        document.getElementById("btnExcelGlobal").onclick = exportSAPExcel;
     };
 
-    const calculateFinalMetrics = (gastos) => {
+    const calculateFinancialCore = () => {
         const totalIngresos = masterData.reduce((a,b) => a + (Number(b.total) || 0), 0);
-        const totalUtilidadBruta = masterData.reduce((a,b) => a + b.utilidad, 0);
-        
-        financialData.gastosFijos = gastos;
-        financialData.margenBruto = totalIngresos > 0 ? (totalUtilidadBruta / totalIngresos) * 100 : 0;
-        financialData.puntoEquilibrio = totalUtilidadBruta > 0 ? (gastos / (totalUtilidadBruta / totalIngresos)) : 0;
-        financialData.utilidadNeta = totalUtilidadBruta - gastos;
+        const utilidadBruta = masterData.reduce((a,b) => a + b.utilidad, 0);
+        stats.financial.utilidadNeta = utilidadBruta - stats.financial.gastosFijos;
+        stats.financial.breakEven = utilidadBruta > 0 ? (stats.financial.gastosFijos / (utilidadBruta / totalIngresos)) : 0;
     };
 
-    const renderUI = () => {
-        // Render KPI Cards
+    const renderKPIs = () => {
         const kpiGrid = document.getElementById("kpiGrid");
+        const efGlobal = (masterData.reduce((a,b)=>a+b.eficiencia,0)/masterData.length || 0);
+
         kpiGrid.innerHTML = `
-            ${kpiCard("UTILIDAD NETA (EBITDA)", `$${financialData.utilidadNeta.toLocaleString()}`, financialData.utilidadNeta > 0 ? "text-emerald-400" : "text-red-500", "fas fa-funnel-dollar")}
-            ${kpiCard("PUNTO EQUILIBRIO", `$${financialData.puntoEquilibrio.toLocaleString()}`, "text-cyan-400", "fas fa-balance-scale")}
-            ${kpiCard("EFICIENCIA GLOBAL", `${(masterData.reduce((a,b)=>a+b.eficiencia,0)/masterData.length || 0).toFixed(1)}%`, "text-purple-400", "fas fa-microchip")}
-            ${kpiCard("TIEMPO CICLO AVG", `${(masterData.reduce((a,b)=>a+b.diasCiclo,0)/masterData.length || 0).toFixed(1)} DÍAS`, "text-white", "fas fa-bolt")}
+            ${kpiCard("UTILIDAD NETA OPERATIVA", `$${stats.financial.utilidadNeta.toLocaleString()}`, "fas fa-cash-register", stats.financial.utilidadNeta > 0 ? "text-emerald-400" : "text-red-500")}
+            ${kpiCard("PUNTO EQUILIBRIO", `$${stats.financial.breakEven.toLocaleString()}`, "fas fa-chart-line", "text-cyan-400")}
+            ${kpiCard("EFICIENCIA TALLER", `${efGlobal.toFixed(1)}%`, "fas fa-tools", "text-purple-400")}
+            ${kpiCard("TOTAL INGRESOS (BRUTO)", `$${masterData.reduce((a,b)=>a+Number(b.total || 0),0).toLocaleString()}`, "fas fa-vault", "text-white")}
         `;
-
-        document.getElementById("txtMargenBruto").innerText = `${financialData.margenBruto.toFixed(1)}%`;
-        
-        const tableBody = document.getElementById("mainTableBody");
-        tableBody.innerHTML = masterData.map(o => `
-            <tr class="hover:bg-cyan-500/[0.02]">
-                <td class="p-4">
-                    <div class="font-black text-white orbitron text-xs">${o.placa || 'NEW'}</div>
-                    <div class="text-[9px] text-slate-500 uppercase font-bold">${o.cliente || 'CLIENTE FINAL'}</div>
-                </td>
-                <td class="p-4 text-center">
-                    <div class="text-[10px] font-black ${o.eficiencia >= 100 ? 'text-emerald-400' : 'text-yellow-500'}">${o.eficiencia.toFixed(1)}%</div>
-                    <div class="progress-bar mt-1"><div class="progress-fill bg-cyan-500" style="width:${o.eficiencia}%"></div></div>
-                </td>
-                <td class="p-4 text-center">
-                    <span class="status-tag ${o.diasCiclo <= 4 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}">
-                        ${o.diasCiclo <= 4 ? 'OPTIMAL' : 'DELAYED'}
-                    </span>
-                </td>
-                <td class="p-4 text-right font-black text-white">$${(o.utilidad).toLocaleString()}</td>
-                <td class="p-4 text-right">
-                    <button onclick="window.exportSinglePDF('${o.id}')" class="text-slate-500 hover:text-white"><i class="fas fa-file-pdf"></i></button>
-                </td>
-            </tr>
-        `).join('');
-
-        initCharts();
-        document.getElementById("btnExcelGlobal").onclick = () => exportExcelGerencial();
     };
 
-    const kpiCard = (l, v, c, icon) => `
-        <div class="tower-card p-6">
-            <div class="flex justify-between items-start opacity-40 mb-4">
-                <p class="orbitron text-[9px] font-black tracking-widest">${l}</p>
-                <i class="${icon} text-xs"></i>
+    const kpiCard = (l, v, i, c) => `
+        <div class="tower-card p-6 relative overflow-hidden">
+            <i class="${i} absolute -right-2 -bottom-2 text-6xl opacity-5"></i>
+            <p class="kpi-title orbitron mb-4">${l}</p>
+            <p class="kpi-main orbitron ${c}">${v}</p>
+            <div class="mt-4 flex items-center gap-2">
+                <span class="text-[9px] text-slate-500 orbitron">OPERATIONAL BI STATE</span>
             </div>
-            <p class="kpi-value text-xl ${c}">${v}</p>
         </div>`;
 
-    const exportExcelGerencial = () => {
-        const wb = XLSX.utils.book_new();
-        const wsData = [
-            ["NEXUS-X TERMINATOR 2030 - REPORT"],
-            ["FECHA", new Date().toLocaleString()],
-            ["GASTOS FIJOS (PUC 51)", financialData.gastosFijos],
-            ["PUNTO EQUILIBRIO", financialData.puntoEquilibrio],
-            ["UTILIDAD NETA", financialData.utilidadNeta],
-            [],
-            ["PLACA", "CLIENTE", "EFICIENCIA %", "UTILIDAD BRUTA", "DÍAS CICLO"]
-        ];
-        masterData.forEach(o => wsData.push([o.placa, o.cliente, o.eficiencia, o.utilidad, o.diasCiclo]));
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-        XLSX.utils.book_append_sheet(wb, ws, "Financial_Report");
-        XLSX.writeFile(wb, `NexusX_SAP_Report.xlsx`);
+    const renderTable = (data) => {
+        const body = document.getElementById("towerTableBody");
+        body.innerHTML = data.map(o => `
+            <tr class="hover:bg-white/[0.02] border-b border-white/[0.01] ${o.claseVehiculo === 'PESADO' ? 'veh-pesado' : ''}">
+                <td class="p-5">
+                    <div class="orbitron font-black text-white text-xs">${o.placa || 'NEW-000'}</div>
+                    <div class="text-[9px] text-slate-500 uppercase">${o.cliente?.substring(0,25) || 'CLIENTE GENERAL'}</div>
+                </td>
+                <td class="p-5">
+                    <span class="sap-badge area-${o.area.toLowerCase()}">${o.area}</span>
+                    <div class="text-[8px] text-slate-500 mt-1 orbitron">${o.claseVehiculo}</div>
+                </td>
+                <td class="p-5 text-center">
+                    <div class="orbitron font-bold ${o.eficiencia >= 100 ? 'text-emerald-400' : 'text-amber-500'}">${o.eficiencia.toFixed(1)}%</div>
+                </td>
+                <td class="p-5 text-center">
+                    <span class="px-3 py-1 rounded text-[8px] orbitron font-black ${o.diasCiclo <= 4 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-500'}">
+                        ${o.diasCiclo <= 4 ? 'A TIEMPO' : o.diasCiclo + ' DÍAS'}
+                    </span>
+                </td>
+                <td class="p-5 text-right orbitron font-black text-white">$${o.utilidad.toLocaleString()}</td>
+                <td class="p-5 text-center">
+                    <button onclick="window.exportSinglePDF('${o.id}')" class="text-slate-400 hover:text-cyan-400 transition-all"><i class="fas fa-file-pdf"></i></button>
+                </td>
+            </tr>
+        `).join("");
     };
 
-    // MOTOR DE PDF INDIVIDUAL (ASIGNADO A WINDOW PARA LLAMADA DESDE TABLA)
-    window.exportSinglePDF = (id) => {
-        const o = masterData.find(x => x.id === id);
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+    const exportSAPExcel = () => {
+        const wb = XLSX.utils.book_new();
         
-        doc.setFont("helvetica", "bold");
-        doc.text(`NEXUS-X CERTIFICADO DE RENDIMIENTO: ${o.placa}`, 10, 20);
-        doc.setFontSize(10);
-        doc.text(`Cliente: ${o.cliente}`, 10, 30);
-        doc.text(`Eficiencia Operativa: ${o.eficiencia.toFixed(2)}%`, 10, 40);
-        doc.text(`Margen de Utilidad: $${o.utilidad.toLocaleString()}`, 10, 50);
-        doc.text(`Análisis VPC: ${o.diasCiclo <= 4 ? 'Cumple Promesa' : 'Excede Tiempo de Ciclo'}`, 10, 60);
-        
-        doc.save(`Certificado_Nexus_${o.placa}.pdf`);
+        // Pestaña Gerencial
+        const gerData = [
+            ["INFORME JUNTA DE SOCIOS - NEXUS-X AUTOMOTIVE"],
+            ["FECHA:", new Date().toLocaleDateString()],
+            [],
+            ["KPIs DE GERENCIA"],
+            ["Utilidad Neta", stats.financial.utilidadNeta],
+            ["Punto de Equilibrio", stats.financial.breakEven],
+            ["Gastos Operacionales (CUENTA 51)", stats.financial.gastosFijos],
+            [],
+            ["INDICADORES POR ÁREA"],
+            ["Área", "Órdenes", "Participación %"],
+            ["Mecánica", stats.areas.mecanica, ((stats.areas.mecanica/masterData.length)*100).toFixed(2)],
+            ["Latonería", stats.areas.latoneria, ((stats.areas.latoneria/masterData.length)*100).toFixed(2)],
+            ["Eléctrico", stats.areas.electrico, ((stats.areas.electrico/masterData.length)*100).toFixed(2)]
+        ];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(gerData), "Consolidado_SAP");
+
+        // Pestaña Detalle Técnico
+        const techData = masterData.map(o => ({
+            Placa: o.placa, Cliente: o.cliente, Area: o.area, Clase: o.claseVehiculo,
+            Eficiencia: o.eficiencia.toFixed(2), Utilidad: o.utilidad, Dias_Taller: o.diasCiclo
+        }));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(techData), "Data_Misiones");
+
+        XLSX.writeFile(wb, `NexusX_SAP_BI_Report.xlsx`);
     };
 
     const loadLibraries = async () => {
