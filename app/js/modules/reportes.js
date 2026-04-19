@@ -404,10 +404,53 @@ window.verDetalleMision = (id) => {
     });
 };
 
-    window.descargarMisionEspecifica = (id) => {
-        const o = ordenesData.find(x => x.id === id);
-        generarInformeDetallado([o], "individual");
-    };
+    // 🦾 ESTRATEGIA DE MAPEO ELITE V29 (LÍNEA 407+)
+window.descargarMisionEspecifica = (id) => {
+    const o = ordenesData.find(x => x.id === id);
+    if (!o) return;
 
-    renderLayout();
-}
+    // Forzamos la reconstrucción de la data para el reporte
+    const dataRefinada = [{
+        ...o,
+        // Si costos_totales no existe, extraemos directamente de la raíz de la orden
+        venta_final: Number(o.costos_totales?.total_general || o.total_mision || o.valor_total || 0),
+        insumos: Number(o.costos_totales?.costo_repuestos || o.costo_insumos || 0),
+        mano_obra: Number(o.costos_totales?.mano_obra || o.pago_tecnico || 0)
+    }];
+
+    generarInformeDetallado(dataRefinada, "individual");
+};
+
+// 📊 GENERADOR DE AUDITORÍA CON RASTREO AUTOMÁTICO
+window.generarInformeDetallado = (data, tipo = "periodo") => {
+    const wb = XLSX.utils.book_new();
+    
+    const rows = data.map(o => {
+        // RASTREO MULTINIVEL DE VALORES (Anti-Cero)
+        const v = Number(o.venta_final || o.costos_totales?.total_general || o.total_mision || 0);
+        const r = Number(o.insumos || o.costos_totales?.costo_repuestos || 0);
+        const m = Number(o.mano_obra || o.costos_totales?.mano_obra || 0);
+        
+        const utilidad = v - (r + m);
+        const margen = v > 0 ? (utilidad / v) * 100 : 0;
+
+        return {
+            "FECHA": o.fecha_registro || new Date().toLocaleDateString(),
+            "PLACA": o.placa || "OT-SYS",
+            "CLIENTE": o.cliente_nombre || o.cliente || "S/N",
+            "VENTA REAL": v,
+            "COSTO INSUMOS": r,
+            "MANO OBRA": m,
+            "UTILIDAD NETA": utilidad,
+            "MARGEN %": margen.toFixed(2) + "%",
+            "STATUS": margen < 25 ? "REVISAR PRICING" : "RENTABLE"
+        };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, "Auditoria_Nexus");
+    
+    XLSX.writeFile(wb, `NEXUS_AUDIT_${o.placa || 'GRUPAL'}.xlsx`);
+};
+
+renderLayout();
