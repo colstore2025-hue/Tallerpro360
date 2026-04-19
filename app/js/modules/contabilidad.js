@@ -102,53 +102,103 @@ export default async function contabilidad(container) {
         escucharContabilidad();
     };
 
+        /**
+     * 🛰️ ESCUCHAR CONTABILIDAD - NEXUS-X V21.8 (PROTOCOLO RESCATE)
+     * Este bloque garantiza que si el índice de Firebase falla, 
+     * los datos se recuperen y ordenen localmente.
+     */
     function escucharContabilidad() {
         if (unsubscribe) unsubscribe();
-        const q = query(
+        if (!empresaId) return;
+
+        // 🛡️ CONSULTA DE ALTA PRECISIÓN
+        const qOficial = query(
             collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), 
             where("empresaId", "==", empresaId), 
             orderBy("creadoEn", "desc")
         );
 
-        unsubscribe = onSnapshot(q, (snap) => {
-            let tIng = 0, tGas = 0;
-            const list = document.getElementById("listaFinanzas");
-            if (!list) return;
-
-            if (snap.empty) {
-                list.innerHTML = `<div class="p-20 text-center opacity-20 orbitron italic text-[10px]">SIN MOVIMIENTOS DETECTADOS</div>`;
-                actualizarDash(0, 0);
-                return;
-            }
-
-            list.innerHTML = snap.docs.map(doc => {
-                const m = doc.data();
-                const v = Number(m.monto || 0);
-                const esIng = esIngreso(m.tipo);
-                
-                if (esIng) tIng += v; else tGas += v;
-
-                const estilo = obtenerEstilo(m.tipo);
-                return `
-                <div class="bg-[#0d1117] p-6 rounded-[2.5rem] border border-white/5 flex justify-between items-center group hover:border-white/20 transition-all">
-                    <div class="flex items-center gap-5">
-                        <div class="w-12 h-12 rounded-2xl ${estilo.bg} flex items-center justify-center border ${estilo.border}">
-                            <i class="${estilo.icon} ${estilo.text}"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs font-black text-white uppercase">${m.concepto}</p>
-                            <p class="text-[7px] text-slate-500 orbitron">${m.creadoEn?.toDate().toLocaleString() || 'PROCESANDO...'}</p>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-lg font-black orbitron ${esIng ? 'text-emerald-400' : 'text-red-500'}">${esIng ? '+' : '-'} $${v.toLocaleString()}</p>
-                        <span class="text-[6px] text-slate-600 orbitron uppercase font-black">${m.metodo || 'SISTEMA'}</span>
-                    </div>
-                </div>`;
-            }).join("");
-
-            actualizarDash(tIng, tGas);
+        // Intentamos la escucha oficial
+        unsubscribe = onSnapshot(qOficial, (snap) => {
+            procesarYRenderizar(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         }, (err) => {
+            console.warn("Nexus-X Alert: Índice ausente o error de ordenamiento. Activando Rescate Local.");
+            
+            // 🚨 PROTOCOLO DE RESCATE: Consulta sin ordenamiento (No requiere índices)
+            const qRescate = query(
+                collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), 
+                where("empresaId", "==", empresaId)
+            );
+
+            onSnapshot(qRescate, (snap) => {
+                const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                
+                // Ordenamiento manual por tiempo para recuperar la visualización
+                docs.sort((a, b) => {
+                    const fechaA = a.creadoEn?.seconds || a.createdAt?.seconds || 0;
+                    const fechaB = b.creadoEn?.seconds || b.createdAt?.seconds || 0;
+                    return fechaB - fechaA;
+                });
+
+                procesarYRenderizar(docs);
+            });
+        });
+    }
+
+    /**
+     * 🧠 PROCESADOR CENTRAL DE RENDERS
+     * Separa la lógica de cálculo del listener para evitar fugas de memoria
+     */
+    function procesarYRenderizar(docs) {
+        let tIng = 0, tGas = 0;
+        const list = document.getElementById("listaFinanzas");
+        if (!list) return;
+
+        if (docs.length === 0) {
+            list.innerHTML = `<div class="p-20 text-center opacity-20 orbitron italic text-[10px]">LIBRO VACÍO - ESPERANDO TELEMETRÍA</div>`;
+            actualizarDash(0, 0);
+            return;
+        }
+
+        list.innerHTML = docs.map(m => {
+            const v = Number(m.monto || 0);
+            // Normalizamos el tipo para el motor de búsqueda
+            const tipoNormalizado = (m.tipo || "").toLowerCase();
+            const esIng = esIngreso(m.tipo);
+            
+            if (esIng) tIng += v; else tGas += v;
+
+            const estilo = obtenerEstilo(m.tipo);
+            
+            // Recuperación de fecha multiformato
+            const timestamp = m.creadoEn || m.createdAt || m.fecha;
+            const fechaString = timestamp?.toDate ? timestamp.toDate().toLocaleString() : 'FECHA MANUAL';
+
+            return `
+            <div class="bg-[#0d1117] p-6 rounded-[2.5rem] border border-white/5 flex justify-between items-center group hover:border-cyan-500/40 transition-all animate-in fade-in slide-in-from-right-2">
+                <div class="flex items-center gap-5">
+                    <div class="w-12 h-12 rounded-2xl ${estilo.bg} flex items-center justify-center border ${estilo.border} shadow-lg">
+                        <i class="${estilo.icon} ${estilo.text}"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-black text-white uppercase tracking-tighter">${m.concepto || 'TRANSACCIÓN SIN NOMBRE'}</p>
+                        <p class="text-[7px] text-slate-500 orbitron font-bold uppercase">${fechaString}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-lg font-black orbitron ${esIng ? 'text-emerald-400' : 'text-red-500'}">
+                        ${esIng ? '+' : '-'} $${v.toLocaleString()}
+                    </p>
+                    <div class="flex items-center justify-end gap-2">
+                         <span class="text-[6px] text-slate-600 orbitron uppercase font-black tracking-widest">${m.tipo?.replace('_', ' ')}</span>
+                         ${m.metodo ? `<span class="px-2 py-0.5 bg-cyan-500/10 rounded text-[5px] orbitron text-cyan-500 border border-cyan-500/20">${m.metodo}</span>` : ''}
+                    </div>
+                </div>
+            </div>`;
+        }).join("");
+
+        actualizarDash(tIng, tGas);
+    }, (err) => {
             console.error("Fallo de Telemetría:", err);
             // Fallback en caso de que el índice de Firestore no esté listo
             const fallbackQ = query(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), where("empresaId", "==", empresaId));
