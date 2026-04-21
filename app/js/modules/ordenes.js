@@ -9,6 +9,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
+import { jsPDF } from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+import "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.js";
+
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recognition = SpeechRecognition ? new SpeechRecognition() : null;
@@ -340,6 +343,22 @@ export default async function ordenes(container) {
         });
     };
 
+// Reemplazar el bloque de botones de acción por este:
+<div class="flex gap-4">
+    <button onclick="window.generarDocumentoNexus('MANIFIESTO')" class="w-20 h-20 rounded-3xl bg-white/5 text-cyan-400 border border-cyan-500/30 flex flex-col items-center justify-center gap-1 hover:bg-cyan-500 hover:text-black transition-all">
+        <i class="fas fa-file-invoice text-2xl"></i>
+        <span class="text-[7px] orbitron font-black">MANIFIESTO</span>
+    </button>
+    <button onclick="window.generarDocumentoNexus('FACTURA')" class="w-20 h-20 rounded-3xl bg-white/5 text-emerald-400 border border-emerald-500/30 flex flex-col items-center justify-center gap-1 hover:bg-emerald-500 hover:text-black transition-all">
+        <i class="fas fa-file-contract text-2xl"></i>
+        <span class="text-[7px] orbitron font-black">FACTURA</span>
+    </button>
+    <button id="btnWppDirect" class="w-20 h-20 rounded-3xl bg-emerald-500 text-black flex flex-col items-center justify-center gap-1">
+        <i class="fab fa-whatsapp text-2xl"></i>
+        <span class="text-[8px] orbitron font-black">ENVIAR</span>
+    </button>
+</div>
+
     // --- 📹 MULTIMEDIA ENGINE (OFF-CLOUD) ---
     const gestionarMultimedia = async (accion) => {
         const video = document.getElementById('video-feed');
@@ -365,6 +384,71 @@ export default async function ordenes(container) {
             viewport.classList.add('hidden');
         }
     };
+
+// --- 📄 NEXUS-X DOCUMENT ENGINE ---
+const generarDocumentoNexus = (tipo) => {
+    const doc = new jspdf.jsPDF();
+    const config = {
+        empresa: "TALLER LOS MOTORES",
+        nit: "41532245",
+        colorPrincipal: [6, 182, 212] // Cyan Nexus
+    };
+
+    // Header Estilo SAP
+    doc.setFillColor(13, 17, 23);
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text(tipo === 'MANIFIESTO' ? "MANIFIESTO DE SERVICIO" : "REPORTE DE SALIDA SAP", 15, 25);
+    
+    doc.setFontSize(10);
+    doc.text(`LOGÍSTICA NEXUS-X | ${config.empresa}`, 15, 32);
+
+    // Datos del Cliente/Vehículo
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    doc.text(`CLIENTE: ${ordenActiva.cliente.toUpperCase()}`, 15, 50);
+    doc.text(`VEHÍCULO (PLACA): ${ordenActiva.placa}`, 15, 55);
+    doc.text(`FECHA: ${new Date().toLocaleString()}`, 140, 50);
+
+    // Tabla de Items
+    const tableRows = ordenActiva.items.map(i => [
+        i.desc.toUpperCase(),
+        i.tipo,
+        `$ ${Number(i.venta).toLocaleString()}`
+    ]);
+
+    doc.autoTable({
+        startY: 65,
+        head: [['DESCRIPCIÓN', 'TIPO', 'VALOR']],
+        body: tableRows,
+        headStyles: { fillColor: config.colorPrincipal },
+        theme: 'striped'
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 10;
+
+    // Resumen Financiero
+    doc.setFontSize(12);
+    doc.text(`SUBTOTAL: $ ${ordenActiva.costos_totales.base_gravable.toLocaleString()}`, 140, finalY);
+    doc.text(`IVA (19%): $ ${ordenActiva.costos_totales.iva_19.toLocaleString()}`, 140, finalY + 7);
+    doc.setFont("helvetica", "bold");
+    doc.text(`TOTAL: $ ${ordenActiva.costos_totales.gran_total.toLocaleString()}`, 140, finalY + 14);
+    
+    if(tipo === 'MANIFIESTO') {
+        doc.setTextColor(255, 0, 0);
+        doc.text(`SALDO A PAGAR: $ ${ordenActiva.costos_totales.saldo_pendiente.toLocaleString()}`, 140, finalY + 21);
+    }
+
+    // Pie de página
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text("Este documento es una representación digital del sistema Nexus-X Starlink V8.0", 15, 280);
+
+    doc.save(`${tipo}_${ordenActiva.placa}.pdf`);
+    hablar(`Documento ${tipo} generado con éxito`);
+};
 
     // --- 💾 DATABASE SYNC (CONTABILIDAD INTEGRADA + SAP BI) ---
     const ejecutarSincronizacionNexus = async () => {
