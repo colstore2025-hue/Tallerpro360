@@ -9,10 +9,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
-import { jsPDF } from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-import "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.js";
 
-
+// --- MOTOR DE DOCUMENTACIÓN ---
+// Importación mediante window para evitar conflictos de módulos en la carga quirúrgica
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recognition = SpeechRecognition ? new SpeechRecognition() : null;
 
@@ -95,6 +94,7 @@ export default async function ordenes(container) {
             }
         });
     };
+
     // --- 🧮 AUDITORÍA FINANCIERA FORENSE V8.0 (NEXUS BI INTEGRATED) ---
     const recalcularFinanzas = () => {
         let subtotalConIVA = 0;
@@ -106,17 +106,14 @@ export default async function ordenes(container) {
             if (i.origen === "TALLER") costoTotalTaller += Number(i.costo || 0);
         });
 
-        // Captura de Inputs
         const g_insumos = Number(document.getElementById("f-gastos-varios")?.value || 0); 
         const pago_tecnico = Number(document.getElementById("f-adelanto-tecnico")?.value || 0); 
         const anticipo = Number(document.getElementById("f-anticipo-cliente")?.value || 0); 
         
-        // Lógica Fiscal: El valor ingresado ya tiene el 19%
         const granTotal = subtotalConIVA; 
         const baseGravable = granTotal / 1.19;
         const totalIVA = granTotal - baseGravable;
 
-        // Utilidad Real: Base Gravable - (Costos Directos + Operación)
         const utilidadNeta = baseGravable - (costoTotalTaller + pago_tecnico + g_insumos);
         const saldoPendiente = granTotal - anticipo;
 
@@ -135,158 +132,92 @@ export default async function ordenes(container) {
             totalEl.innerText = `$ ${granTotal.toLocaleString()}`;
             document.getElementById("saldo-display").innerHTML = `
                 <span class="text-cyan-500/50 text-[10px] uppercase block tracking-widest font-black mb-1">Saldo a Pagar</span>
-                <span class="${saldoPendiente > 0 ? 'text-red-500' : 'text-emerald-400'} animate-pulse">$ ${saldoPendiente.toLocaleString()}</span>
+                <span class="${saldoPendiente > 0 ? 'text-red-500' : 'text-emerald-400'} animate-pulse font-black text-xl">$ ${saldoPendiente.toLocaleString()}</span>
             `;
         }
         renderItems();
     };
 
-    // --- 🛠️ ITEM MANAGEMENT (UI AVANZADA) ---
-    const renderItems = () => {
-        const containerItems = document.getElementById("items-container");
-        if(!containerItems) return;
-        containerItems.innerHTML = ordenActiva.items.map((item, idx) => `
-            <div class="grid grid-cols-1 md:grid-cols-12 items-center gap-4 bg-white/[0.03] p-6 rounded-[2rem] border border-white/5 group hover:border-cyan-500/30 transition-all">
-                <div class="md:col-span-1">
-                    <button onclick="window.toggleOrigenItem(${idx})" class="w-14 h-14 rounded-2xl border-2 ${item.origen === 'TALLER' ? 'border-cyan-500/30 text-cyan-400' : 'border-amber-500/30 text-amber-400'}">
-                        <i class="fas ${item.origen === 'TALLER' ? 'fa-warehouse' : 'fa-user-tag'}"></i>
-                    </button>
-                </div>
-                <div class="md:col-span-4">
-                    <div class="flex items-center gap-2 mb-1">
-                        <span class="text-[9px] orbitron font-black ${item.tipo === 'REPUESTO' ? 'text-orange-500' : 'text-cyan-400'}">${item.tipo}</span>
-                        <button onclick="window.buscarEnInventario(${idx})" class="text-white/20 hover:text-cyan-400"><i class="fas fa-search-plus"></i></button>
-                    </div>
-                    <input onchange="window.editItemNexus(${idx}, 'desc', this.value)" value="${item.desc}" class="w-full bg-transparent border-b border-white/10 outline-none text-white font-black uppercase" placeholder="DESCRIPCIÓN">
-                </div>
-                <div class="md:col-span-3">
-                    <label class="text-[9px] text-slate-500 block uppercase font-black">Inversión (IVA Incl)</label>
-                    <input type="number" onchange="window.editItemNexus(${idx}, 'costo', this.value)" value="${item.costo || ''}" class="w-full bg-black p-4 rounded-2xl text-red-500 font-black border border-white/5" placeholder="0">
-                </div>
-                <div class="md:col-span-3">
-                    <label class="text-[9px] text-slate-500 block uppercase font-black">Venta Final</label>
-                    <input type="number" onchange="window.editItemNexus(${idx}, 'venta', this.value)" value="${item.venta || ''}" class="w-full bg-black p-4 rounded-2xl text-emerald-400 font-black border border-white/5" placeholder="0">
-                </div>
-                <div class="md:col-span-1">
-                    <button onclick="window.removeItemNexus(${idx})" class="text-red-500 hover:scale-125 transition-all">✕</button>
-                </div>
-            </div>`).join('');
-    };
+    // --- 📄 NEXUS-X DOCUMENT ENGINE (ESTILO TALLERPRO360) ---
+    window.generarDocumentoNexus = (tipo) => {
+        const doc = new jspdf.jsPDF();
+        const config = {
+            empresa: "TALLER PRO 360",
+            nit: "901.XXX.XXX-X",
+            colorNexus: [6, 182, 212], // Cyan
+            colorDark: [13, 17, 23]
+        };
 
-    // --- 🎮 TERMINAL PENTAGON PRO (REFORMADA SAP BI) ---
-    const renderTerminal = () => {
-        const modal = document.getElementById("nexus-terminal");
-        modal.innerHTML = `
-        <div class="max-w-[1500px] mx-auto pb-20 animate-in slide-in-from-bottom-10">
-            <div id="camera-viewport" class="hidden fixed inset-0 z-[110] bg-black flex flex-col items-center justify-center">
-                <video id="video-feed" autoplay playsinline class="w-full max-w-2xl rounded-[3rem] border-4 border-cyan-500"></video>
-                <div class="flex gap-10 mt-10">
-                    <button id="btnShutter" class="w-24 h-24 bg-white rounded-full border-8 border-slate-700 shadow-2xl"></button>
-                    <button id="btnCancelCam" class="w-24 h-24 bg-red-600 text-white rounded-full text-4xl">✕</button>
-                </div>
-            </div>
+        // Header Estilo SAP BI
+        doc.setFillColor(config.colorDark[0], config.colorDark[1], config.colorDark[2]);
+        doc.rect(0, 0, 210, 45, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(24);
+        doc.text(tipo === 'MANIFIESTO' ? "ORDEN DE TRABAJO" : "FACTURA DE SERVICIO", 15, 25);
+        
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text(`${config.empresa} | LOGISTICS NEURAL INTERFACE`, 15, 33);
+        doc.text(`ID OPERACIÓN: ${ordenActiva.id}`, 15, 38);
 
-            <div class="flex flex-wrap justify-between items-center gap-6 mb-12 bg-[#0d1117] p-10 rounded-[4rem] border-2 border-cyan-500/20 sticky top-0 z-50">
-                <div class="flex items-center gap-8">
-                    <input id="f-placa" value="${ordenActiva.placa}" class="bg-black text-6xl font-black orbitron text-white w-64 uppercase text-center rounded-3xl border border-white/10" placeholder="PLACA">
-                    <select id="f-estado" class="bg-cyan-500 text-black orbitron text-xs font-black p-6 rounded-2xl outline-none">
-                        ${['COTIZACION', 'INGRESO', 'DIAGNOSTICO', 'REPARACION', 'LISTO', 'ENTREGADO'].map(f => `<option value="${f}" ${ordenActiva.estado === f ? 'selected' : ''}>${f}</option>`).join('')}
-                    </select>
-                </div>
-                <div class="flex gap-4">
-                    <button id="btnCaptureVisual" class="w-20 h-20 rounded-3xl bg-white/5 text-white border border-white/10 flex flex-col items-center justify-center gap-1">
-                        <i class="fas fa-video text-2xl"></i>
-                        <span class="text-[8px] orbitron font-black">VIDEO</span>
-                    </button>
-                    <button id="btnWppDirect" class="w-20 h-20 rounded-3xl bg-emerald-500 text-black flex flex-col items-center justify-center gap-1">
-                        <i class="fab fa-whatsapp text-2xl"></i>
-                        <span class="text-[8px] orbitron font-black">REPORTE</span>
-                    </button>
-                    <button id="btnCloseTerminal" class="w-20 h-20 rounded-3xl bg-red-600 text-white font-black text-3xl">✕</button>
-                </div>
-            </div>
+        // Bloque Datos Cliente & Vehículo
+        doc.setTextColor(0, 0, 0);
+        doc.setDrawColor(230, 230, 230);
+        doc.line(15, 50, 195, 50);
+        
+        doc.setFont("helvetica", "bold");
+        doc.text("DATOS DEL SERVICIO", 15, 60);
+        doc.setFont("helvetica", "normal");
+        doc.text(`CLIENTE: ${ordenActiva.cliente.toUpperCase()}`, 15, 68);
+        doc.text(`TELÉFONO: ${ordenActiva.telefono}`, 15, 74);
+        doc.text(`PLACA: ${ordenActiva.placa}`, 110, 68);
+        doc.text(`FECHA: ${new Date().toLocaleString()}`, 110, 74);
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                <div class="lg:col-span-4 space-y-8">
-                    <div class="bg-[#0d1117] p-10 rounded-[3.5rem] border border-white/5">
-                        <label class="text-[10px] text-cyan-400 font-black uppercase block mb-6">Información Cliente</label>
-                        <input id="f-cliente" value="${ordenActiva.cliente}" class="w-full bg-black p-6 rounded-3xl border border-white/5 mb-4 text-white uppercase font-bold" placeholder="NOMBRE CLIENTE">
-                        <input id="f-telefono" value="${ordenActiva.telefono}" class="w-full bg-black p-6 rounded-3xl border border-white/5 text-white font-bold" placeholder="TELÉFONO">
-                    </div>
+        // Tabla de Items (Insumos y Mano de Obra)
+        const rows = ordenActiva.items.map(i => [
+            i.desc.toUpperCase(),
+            i.tipo,
+            `$ ${Number(i.venta).toLocaleString()}`
+        ]);
 
-                    <div class="bg-[#0d1117] p-10 rounded-[3.5rem] border border-white/5 mt-6">
-                        <label class="text-[10px] text-cyan-400 font-black uppercase block mb-6">Segmentación de Negocio</label>
-                        <div class="grid grid-cols-1 gap-6">
-                            <div>
-                                <span class="text-[8px] orbitron text-slate-500 block mb-2 font-black uppercase">Unidad de Negocio (Área)</span>
-                                <select id="f-tipo-orden" class="w-full bg-black p-4 rounded-2xl border border-white/10 text-white orbitron text-[10px] font-black uppercase">
-                                    <option value="MECANICA" ${ordenActiva.tipo_orden === 'MECANICA' ? 'selected' : ''}>MECÁNICA GENERAL</option>
-                                    <option value="LATONERIA" ${ordenActiva.tipo_orden === 'LATONERIA' ? 'selected' : ''}>LATONERÍA Y PINTURA</option>
-                                    <option value="ELECTRICO" ${ordenActiva.tipo_orden === 'ELECTRICO' ? 'selected' : ''}>SISTEMA ELÉCTRICO</option>
-                                </select>
-                            </div>
-                            <div>
-                                <span class="text-[8px] orbitron text-slate-500 block mb-2 font-black uppercase">Categoría de Vehículo</span>
-                                <select id="f-clase-vehiculo" class="w-full bg-black p-4 rounded-2xl border border-white/10 text-white orbitron text-[10px] font-black uppercase">
-                                    <option value="LIVIANO" ${ordenActiva.clase_vehiculo === 'LIVIANO' ? 'selected' : ''}>LIVIANO (AUTOMÓVIL)</option>
-                                    <option value="MEDIANO" ${ordenActiva.clase_vehiculo === 'MEDIANO' ? 'selected' : ''}>MEDIANO (PICKUP/SUV)</option>
-                                    <option value="PESADO" ${ordenActiva.clase_vehiculo === 'PESADO' ? 'selected' : ''}>PESADO (CAMIÓN/FLOTA)</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
+        doc.autoTable({
+            startY: 85,
+            head: [['DESCRIPCIÓN DEL SERVICIO / REPUESTO', 'TIPO', 'SUBTOTAL']],
+            body: rows,
+            headStyles: { fillColor: config.colorNexus, textColor: 0, fontStyle: 'bold' },
+            styles: { fontSize: 8, cellPadding: 4 },
+            alternateRowStyles: { fillColor: [245, 245, 245] }
+        });
 
-                    <div class="bg-black p-10 rounded-[3.5rem] border border-red-500/30 relative">
-                        <div id="rec-indicator" class="hidden absolute top-6 right-10 flex items-center gap-2">
-                            <div class="h-2 w-2 bg-red-600 rounded-full animate-ping"></div>
-                            <span class="text-[8px] orbitron text-red-500 font-black">AI REC</span>
-                        </div>
-                        <span class="orbitron text-[11px] text-red-500 font-black uppercase mb-6 block">AI Neural Log</span>
-                        <textarea id="ai-log-display" class="w-full bg-[#0d1117] p-6 rounded-3xl text-sm h-64 outline-none border border-white/5 text-slate-300 font-mono italic">${ordenActiva.bitacora_ia || ''}</textarea>
-                        <button id="btnDictar" class="w-full mt-6 py-6 bg-red-600 text-white rounded-2xl orbitron text-xs font-black">🎤 CAPTURAR VOZ</button>
-                    </div>
-                </div>
+        const finalY = doc.lastAutoTable.finalY + 10;
 
-                <div class="lg:col-span-8 space-y-8">
-                    <div class="bg-[#0d1117] p-12 rounded-[4.5rem] border border-white/10 shadow-2xl relative">
-                        <div class="flex justify-between items-end mb-12">
-                            <div>
-                                <p class="orbitron text-[14px] text-cyan-400 uppercase font-black mb-2">Gran Total Factura</p>
-                                <h2 id="total-factura" class="orbitron text-7xl md:text-8xl font-black text-white italic tracking-tighter">$ 0</h2>
-                            </div>
-                            <div id="saldo-display" class="bg-white/5 p-8 rounded-[3rem] border border-white/10 text-right min-w-[250px]"></div>
-                        </div>
+        // Desglose Financiero SAP
+        doc.setFontSize(10);
+        doc.text(`BASE GRAVABLE:`, 130, finalY);
+        doc.text(`$ ${Math.round(ordenActiva.costos_totales.base_gravable).toLocaleString()}`, 170, finalY, { align: 'right' });
+        
+        doc.text(`IVA (19%):`, 130, finalY + 7);
+        doc.text(`$ ${Math.round(ordenActiva.costos_totales.iva_19).toLocaleString()}`, 170, finalY + 7, { align: 'right' });
 
-                        <div id="items-container" class="space-y-6 max-h-[500px] overflow-y-auto pr-4"></div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
-                            <button id="btnAddRepuesto" class="py-6 bg-white/5 rounded-3xl border-2 border-dashed border-white/10 font-black text-xs">+ REPUESTO</button>
-                            <button id="btnAddMano" class="py-6 bg-cyan-500/5 rounded-3xl border-2 border-dashed border-cyan-500/30 text-cyan-400 font-black text-xs">+ MANO DE OBRA</button>
-                        </div>
-                    </div>
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text(`TOTAL A PAGAR:`, 130, finalY + 16);
+        doc.text(`$ ${Math.round(ordenActiva.costos_totales.gran_total).toLocaleString()}`, 170, finalY + 16, { align: 'right' });
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div class="bg-black p-8 rounded-[3rem] border border-white/5 grid grid-cols-3 gap-4">
-                            <div class="flex flex-col gap-2">
-                                <label class="text-[8px] orbitron text-slate-500 font-black uppercase">ANTICIPO</label>
-                                <input type="number" id="f-anticipo-cliente" value="${ordenActiva.finanzas?.anticipo_cliente || ''}" class="bg-emerald-500/10 p-4 rounded-xl text-emerald-400 font-bold border border-emerald-500/20" onchange="window.actualizarFinanzasDirecto()" placeholder="BOLD/EFECT">
-                            </div>
-                            <div class="flex flex-col gap-2">
-                                <label class="text-[8px] orbitron text-slate-500 font-black uppercase">GASTOS</label>
-                                <input type="number" id="f-gastos-varios" value="${ordenActiva.finanzas?.gastos_varios || ''}" class="bg-white/5 p-4 rounded-xl text-white font-bold border border-white/10" onchange="window.actualizarFinanzasDirecto()" placeholder="GASTOS">
-                            </div>
-                            <div class="flex flex-col gap-2">
-                                <label class="text-[8px] orbitron text-slate-500 text-red-500 font-black uppercase font-black">PAGO TÉCNICO</label>
-                                <input type="number" id="f-adelanto-tecnico" value="${ordenActiva.finanzas?.adelanto_tecnico || ''}" class="bg-red-500/10 p-4 rounded-xl text-red-500 font-bold border border-red-500/20" onchange="window.actualizarFinanzasDirecto()" placeholder="NOMINA">
-                            </div>
-                        </div>
-                        <button id="btnSincronizar" class="py-10 bg-white text-black rounded-[3rem] orbitron font-black text-xl hover:bg-cyan-400 transition-all shadow-2xl">🛰️ SYNC NEXUS</button>
-                    </div>
-                </div>
-            </div>
-        </div>`;
-        vincularAccionesTerminal();
-        recalcularFinanzas();
+        if(tipo === 'MANIFIESTO' && ordenActiva.costos_totales.saldo_pendiente > 0) {
+            doc.setTextColor(220, 38, 38);
+            doc.text(`SALDO PENDIENTE:`, 130, finalY + 24);
+            doc.text(`$ ${Math.round(ordenActiva.costos_totales.saldo_pendiente).toLocaleString()}`, 170, finalY + 24, { align: 'right' });
+        }
+
+        // Pie de Página & QR Simbolico
+        doc.setFontSize(7);
+        doc.setTextColor(150);
+        doc.text("Este documento es un soporte digital generado por NEXUS-X V8 PRO-EVO. No representa una factura cambiaria hasta su validación DIAN.", 15, 285);
+
+        doc.save(`${tipo}_${ordenActiva.placa}_${Date.now()}.pdf`);
+        hablar(`Documento ${tipo} generado`);
     };
 
     // --- 🔗 ACTION LINKS & SECURITY V8.0 ---
@@ -321,8 +252,260 @@ export default async function ordenes(container) {
             const nombre = document.getElementById("f-cliente").value;
             const tel = document.getElementById("f-telefono").value.replace(/\D/g, '');
             const placa = document.getElementById("f-placa").value;
-            const msg = `*TALLER PRO 360 REPORT*\nVehículo: ${placa}\nHola ${nombre}, su vehículo se encuentra en estado: ${document.getElementById("f-estado").value}.\n\nReporte Técnico:\n${document.getElementById("ai-log-display").value}`;
-            if(tel) window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`, '_blank');
+            const estado = document.getElementById("f-estado").value;
+            const saldo = Math.round(ordenActiva.costos_totales.saldo_pendiente).toLocaleString();
+            
+            const msg = `*NEXUS-X REPORT: ${placa}*\n\nHola ${nombre}, su vehículo ha pasado a estado: *${estado}*.\n\n💰 *Saldo pendiente:* $${saldo}\n\n📄 _Se adjunta soporte técnico digital._`;
+            if(tel) window.open(`https://wa.me/57${tel}?text=${encodeURIComponent(msg)}`, '_blank');
+        });
+
+        safeClick("btnAddRepuesto", () => { 
+            ordenActiva.items.push({ tipo: 'REPUESTO', desc: 'NUEVO INSUMO', costo: 0, venta: 0, origen: 'TALLER', sku: '' }); 
+            recalcularFinanzas(); 
+        });
+        
+        safeClick("btnAddMano", async () => { 
+            const { value: tecnico } = await Swal.fire({
+                title: 'ASIGNAR ESPECIALISTA',
+                background: '#0d1117', color: '#fff',
+                input: 'text', inputPlaceholder: 'Nombre del Técnico...',
+                showCancelButton: true
+            });
+            ordenActiva.items.push({ tipo: 'MANO_OBRA', desc: `LABOR: ${tecnico || 'GENERAL'}`, costo: 0, venta: 0, origen: 'TALLER', tecnico: tecnico || 'GENERAL' }); 
+            recalcularFinanzas(); 
+        });
+    };
+
+    // --- 💾 DATABASE SYNC (SAP BI INTEGRATED) ---
+    const ejecutarSincronizacionNexus = async () => {
+        const btn = document.getElementById("btnSincronizar");
+        btn.innerHTML = `<i class="fas fa-sync fa-spin"></i> TRANSMITIENDO...`;
+        btn.disabled = true;
+        
+        try {
+            const placa = document.getElementById("f-placa").value.trim().toUpperCase();
+            if(!placa) throw new Error("IDENTIFICADOR REQUERIDO");
+
+            const docId = ordenActiva.id || `OT_${placa}_${Date.now()}`;
+            const finalData = {
+                ...ordenActiva,
+                id: docId, empresaId,
+                placa,
+                cliente: document.getElementById("f-cliente").value.toUpperCase(),
+                telefono: document.getElementById("f-telefono").value,
+                estado: document.getElementById("f-estado").value,
+                tipo_orden: document.getElementById("f-tipo-orden").value,
+                clase_vehiculo: document.getElementById("f-clase-vehiculo").value,
+                bitacora_ia: document.getElementById("ai-log-display").value,
+                updatedAt: serverTimestamp()
+            };
+
+            await setDoc(doc(db, "ordenes", docId), finalData);
+
+            // Registro en Contabilidad si hay flujo de caja
+            if(finalData.finanzas.gastos_varios > 0 || finalData.finanzas.adelanto_tecnico > 0) {
+                await setDoc(doc(db, "contabilidad", `MOV_${docId}`), {
+                    tipo: 'EGRESO_ORDEN',
+                    monto: finalData.finanzas.gastos_varios + finalData.finanzas.adelanto_tecnico,
+                    ordenId: docId,
+                    fecha: serverTimestamp(),
+                    descripcion: `EGRESO OT: ${placa} | ${finalData.tipo_orden}`
+                });
+            }
+
+            Swal.fire({ icon: 'success', title: 'MISSION SYNCED', background: '#010409', color: '#06b6d4', timer: 2000 });
+            document.getElementById("nexus-terminal").classList.add("hidden");
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'FAILURE', text: err.message, background: '#0d1117', color: '#fff' });
+        } finally { 
+            btn.innerHTML = `🛰️ SYNC NEXUS`;
+            btn.disabled = false; 
+        }
+    };
+
+    // --- 📹 MULTIMEDIA ENGINE ---
+    const gestionarMultimedia = async (accion) => {
+        const video = document.getElementById('video-feed');
+        const viewport = document.getElementById('camera-viewport');
+        const canvas = document.createElement('canvas');
+
+        if (accion === 'INICIAR') {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                video.srcObject = stream;
+                viewport.classList.remove('hidden');
+            } catch (err) { Swal.fire("Error de cámara", err.message, "error"); }
+        } else if (accion === 'CAPTURAR') {
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            const link = document.createElement('a');
+            link.download = `NEXUS_EV_${ordenActiva.placa}_${Date.now()}.jpg`;
+            link.href = canvas.toDataURL('image/jpeg');
+            link.click();
+            gestionarMultimedia('CANCELAR');
+        } else {
+            if(video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+            viewport.classList.add('hidden');
+        }
+    };
+
+    // --- 🧩 WINDOW GLOBALS ---
+    window.buscarEnInventario = async (idx) => {
+        const snap = await getDocs(query(collection(db, "inventario"), where("empresaId", "==", empresaId)));
+        const { value: res } = await Swal.fire({
+            title: 'BÓVEDA DE REPUESTOS',
+            background: '#0d1117', color: '#fff',
+            input: 'select',
+            inputOptions: Object.fromEntries(snap.docs.map(d => [JSON.stringify({id: d.id, n: d.data().nombre, c: d.data().costo, v: d.data().precioVenta}), `${d.data().nombre} ($${d.data().precioVenta})`])),
+            showCancelButton: true
+        });
+        if (res) {
+            const data = JSON.parse(res);
+            ordenActiva.items[idx] = { ...ordenActiva.items[idx], desc: data.n, costo: data.c, venta: data.v, sku: data.id };
+            recalcularFinanzas();
+        }
+    };
+
+    window.abrirTerminalNexus = (id) => {
+        document.getElementById("nexus-terminal").classList.remove("hidden");
+        if(id) {
+            getDoc(doc(db, "ordenes", id)).then(s => { ordenActiva = { id, ...s.data() }; renderTerminal(); });
+        } else {
+            ordenActiva = { 
+                placa: '', cliente: '', telefono: '', estado: 'INGRESO', 
+                tipo_orden: 'MECANICA', clase_vehiculo: 'LIVIANO', 
+                items: [], bitacora_ia: '', 
+                finanzas: { gastos_varios: 0, adelanto_tecnico: 0, anticipo_cliente: 0 },
+                costos_totales: { base_gravable: 0, iva_19: 0, gran_total: 0, utilidad: 0, saldo_pendiente: 0 }
+            };
+            renderTerminal();
+        }
+    };
+
+    window.toggleOrigenItem = (idx) => { 
+        ordenActiva.items[idx].origen = ordenActiva.items[idx].origen === 'TALLER' ? 'CLIENTE' : 'TALLER'; 
+        if(ordenActiva.items[idx].origen === 'CLIENTE') ordenActiva.items[idx].costo = 0;
+        recalcularFinanzas(); 
+    };
+
+    window.editItemNexus = (idx, campo, val) => { 
+        ordenActiva.items[idx][campo] = (campo === 'costo' || campo === 'venta') ? Number(val) : val; 
+        recalcularFinanzas(); 
+    };
+
+    window.removeItemNexus = (idx) => { ordenActiva.items.splice(idx, 1); recalcularFinanzas(); };
+    window.actualizarFinanzasDirecto = () => recalcularFinanzas();
+
+    const vincularNavegacion = () => {
+        document.getElementById("btnNewMission").onclick = () => window.abrirTerminalNexus();
+        document.querySelectorAll(".fase-tab").forEach(tab => { tab.onclick = () => { faseActual = tab.dataset.fase; renderBase(); }; });
+    };
+
+    renderBase();
+}
+
+    // --- 📄 NEXUS-X DOCUMENT ENGINE (SAP BI STYLE) ---
+    window.generarDocumentoNexus = (tipo) => {
+        const doc = new jspdf.jsPDF();
+        const config = {
+            empresa: "TALLER LOS MOTORES",
+            nit: "41532245",
+            colorPrincipal: [6, 182, 212] // Cyan Nexus
+        };
+
+        // Header Estilo SAP BI
+        doc.setFillColor(13, 17, 23);
+        doc.rect(0, 0, 210, 40, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22);
+        doc.text(tipo === 'MANIFIESTO' ? "MANIFIESTO DE SERVICIO" : "REPORTE DE SALIDA SAP", 15, 25);
+        
+        doc.setFontSize(10);
+        doc.text(`LOGÍSTICA NEXUS-X | ${config.empresa}`, 15, 32);
+
+        // Datos del Cliente/Vehículo
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        doc.text(`CLIENTE: ${ordenActiva.cliente.toUpperCase()}`, 15, 50);
+        doc.text(`VEHÍCULO (PLACA): ${ordenActiva.placa}`, 15, 55);
+        doc.text(`FECHA: ${new Date().toLocaleString()}`, 140, 50);
+
+        // Tabla de Items (Nexus AutoTable)
+        const tableRows = ordenActiva.items.map(i => [
+            i.desc.toUpperCase(),
+            i.tipo,
+            `$ ${Number(i.venta).toLocaleString()}`
+        ]);
+
+        doc.autoTable({
+            startY: 65,
+            head: [['DESCRIPCIÓN', 'TIPO', 'VALOR']],
+            body: tableRows,
+            headStyles: { fillColor: config.colorPrincipal, textColor: 0 },
+            styles: { fontSize: 8, cellPadding: 3 },
+            theme: 'striped'
+        });
+
+        const finalY = doc.lastAutoTable.finalY + 10;
+
+        // Resumen Financiero Forense
+        doc.setFontSize(11);
+        doc.text(`SUBTOTAL: $ ${Math.round(ordenActiva.costos_totales.base_gravable).toLocaleString()}`, 140, finalY);
+        doc.text(`IVA (19%): $ ${Math.round(ordenActiva.costos_totales.iva_19).toLocaleString()}`, 140, finalY + 7);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(13);
+        doc.text(`TOTAL: $ ${Math.round(ordenActiva.costos_totales.gran_total).toLocaleString()}`, 140, finalY + 15);
+        
+        if(tipo === 'MANIFIESTO' && ordenActiva.costos_totales.saldo_pendiente > 0) {
+            doc.setTextColor(220, 38, 38);
+            doc.text(`SALDO A PAGAR: $ ${Math.round(ordenActiva.costos_totales.saldo_pendiente).toLocaleString()}`, 140, finalY + 23);
+        }
+
+        // Pie de página Legal
+        doc.setFontSize(7);
+        doc.setTextColor(150);
+        doc.setFont("helvetica", "italic");
+        doc.text("Este documento es una representación digital del sistema Nexus-X Starlink V8.0. Su validez legal depende de la factura electrónica correspondiente.", 15, 285);
+
+        doc.save(`${tipo}_${ordenActiva.placa}_${Date.now()}.pdf`);
+        hablar(`Documento ${tipo} generado con éxito`);
+    };
+
+    // --- 🔗 ACTION LINKS & SECURITY V8.0 ---
+    const vincularAccionesTerminal = () => {
+        const safeClick = (id, fn) => { const el = document.getElementById(id); if(el) el.onclick = fn; };
+
+        safeClick("btnSincronizar", ejecutarSincronizacionNexus);
+        safeClick("btnCloseTerminal", () => document.getElementById("nexus-terminal").classList.add("hidden"));
+        safeClick("btnCaptureVisual", () => gestionarMultimedia('INICIAR'));
+        safeClick("btnShutter", () => gestionarMultimedia('CAPTURAR'));
+        safeClick("btnCancelCam", () => gestionarMultimedia('CANCELAR'));
+
+        safeClick("btnDictar", () => {
+            if(!isRecording) { 
+                recognition?.start(); isRecording = true; 
+                document.getElementById("rec-indicator")?.classList.remove("hidden");
+                hablar("Nexus escuchando");
+            } else { 
+                recognition?.stop(); isRecording = false; 
+                document.getElementById("rec-indicator")?.classList.add("hidden"); 
+            }
+        });
+
+        if(recognition) {
+            recognition.onresult = (e) => { 
+                const log = document.getElementById("ai-log-display");
+                if(log) log.value += " " + e.results[0][0].transcript; 
+            };
+        }
+
+        safeClick("btnWppDirect", () => {
+            const nombre = document.getElementById("f-cliente").value;
+            const tel = document.getElementById("f-telefono").value.replace(/\D/g, '');
+            const placa = document.getElementById("f-placa").value;
+            const msg = `*TALLER PRO 360 REPORT*\nVehículo: ${placa}\nHola ${nombre}, su vehículo se encuentra en estado: ${document.getElementById("f-estado").value}.\n\n*Saldo:* $${Math.round(ordenActiva.costos_totales.saldo_pendiente).toLocaleString()}\n\nReporte Técnico:\n${document.getElementById("ai-log-display").value}`;
+            if(tel) window.open(`https://wa.me/57${tel}?text=${encodeURIComponent(msg)}`, '_blank');
         });
 
         safeClick("btnAddRepuesto", () => { 
@@ -343,22 +526,6 @@ export default async function ordenes(container) {
         });
     };
 
-// Reemplazar el bloque de botones de acción por este:
-<div class="flex gap-4">
-    <button onclick="window.generarDocumentoNexus('MANIFIESTO')" class="w-20 h-20 rounded-3xl bg-white/5 text-cyan-400 border border-cyan-500/30 flex flex-col items-center justify-center gap-1 hover:bg-cyan-500 hover:text-black transition-all">
-        <i class="fas fa-file-invoice text-2xl"></i>
-        <span class="text-[7px] orbitron font-black">MANIFIESTO</span>
-    </button>
-    <button onclick="window.generarDocumentoNexus('FACTURA')" class="w-20 h-20 rounded-3xl bg-white/5 text-emerald-400 border border-emerald-500/30 flex flex-col items-center justify-center gap-1 hover:bg-emerald-500 hover:text-black transition-all">
-        <i class="fas fa-file-contract text-2xl"></i>
-        <span class="text-[7px] orbitron font-black">FACTURA</span>
-    </button>
-    <button id="btnWppDirect" class="w-20 h-20 rounded-3xl bg-emerald-500 text-black flex flex-col items-center justify-center gap-1">
-        <i class="fab fa-whatsapp text-2xl"></i>
-        <span class="text-[8px] orbitron font-black">ENVIAR</span>
-    </button>
-</div>
-
     // --- 📹 MULTIMEDIA ENGINE (OFF-CLOUD) ---
     const gestionarMultimedia = async (accion) => {
         const video = document.getElementById('video-feed');
@@ -370,7 +537,7 @@ export default async function ordenes(container) {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 video.srcObject = stream;
                 viewport.classList.remove('hidden');
-            } catch (err) { alert("Error de cámara"); }
+            } catch (err) { Swal.fire("Error", "Cámara no disponible", "error"); }
         } else if (accion === 'CAPTURAR') {
             canvas.width = video.videoWidth; canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
@@ -385,75 +552,11 @@ export default async function ordenes(container) {
         }
     };
 
-// --- 📄 NEXUS-X DOCUMENT ENGINE ---
-const generarDocumentoNexus = (tipo) => {
-    const doc = new jspdf.jsPDF();
-    const config = {
-        empresa: "TALLER LOS MOTORES",
-        nit: "41532245",
-        colorPrincipal: [6, 182, 212] // Cyan Nexus
-    };
-
-    // Header Estilo SAP
-    doc.setFillColor(13, 17, 23);
-    doc.rect(0, 0, 210, 40, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
-    doc.text(tipo === 'MANIFIESTO' ? "MANIFIESTO DE SERVICIO" : "REPORTE DE SALIDA SAP", 15, 25);
-    
-    doc.setFontSize(10);
-    doc.text(`LOGÍSTICA NEXUS-X | ${config.empresa}`, 15, 32);
-
-    // Datos del Cliente/Vehículo
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(10);
-    doc.text(`CLIENTE: ${ordenActiva.cliente.toUpperCase()}`, 15, 50);
-    doc.text(`VEHÍCULO (PLACA): ${ordenActiva.placa}`, 15, 55);
-    doc.text(`FECHA: ${new Date().toLocaleString()}`, 140, 50);
-
-    // Tabla de Items
-    const tableRows = ordenActiva.items.map(i => [
-        i.desc.toUpperCase(),
-        i.tipo,
-        `$ ${Number(i.venta).toLocaleString()}`
-    ]);
-
-    doc.autoTable({
-        startY: 65,
-        head: [['DESCRIPCIÓN', 'TIPO', 'VALOR']],
-        body: tableRows,
-        headStyles: { fillColor: config.colorPrincipal },
-        theme: 'striped'
-    });
-
-    const finalY = doc.lastAutoTable.finalY + 10;
-
-    // Resumen Financiero
-    doc.setFontSize(12);
-    doc.text(`SUBTOTAL: $ ${ordenActiva.costos_totales.base_gravable.toLocaleString()}`, 140, finalY);
-    doc.text(`IVA (19%): $ ${ordenActiva.costos_totales.iva_19.toLocaleString()}`, 140, finalY + 7);
-    doc.setFont("helvetica", "bold");
-    doc.text(`TOTAL: $ ${ordenActiva.costos_totales.gran_total.toLocaleString()}`, 140, finalY + 14);
-    
-    if(tipo === 'MANIFIESTO') {
-        doc.setTextColor(255, 0, 0);
-        doc.text(`SALDO A PAGAR: $ ${ordenActiva.costos_totales.saldo_pendiente.toLocaleString()}`, 140, finalY + 21);
-    }
-
-    // Pie de página
-    doc.setFontSize(8);
-    doc.setTextColor(150);
-    doc.text("Este documento es una representación digital del sistema Nexus-X Starlink V8.0", 15, 280);
-
-    doc.save(`${tipo}_${ordenActiva.placa}.pdf`);
-    hablar(`Documento ${tipo} generado con éxito`);
-};
-
-    // --- 💾 DATABASE SYNC (CONTABILIDAD INTEGRADA + SAP BI) ---
+    // --- 💾 DATABASE SYNC (CONTABILIDAD + SAP BI) ---
     const ejecutarSincronizacionNexus = async () => {
         const btn = document.getElementById("btnSincronizar");
         btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-sync fa-spin"></i> SYNCING...`;
         
         try {
             const placa = document.getElementById("f-placa").value.trim().toUpperCase();
@@ -467,11 +570,8 @@ const generarDocumentoNexus = (tipo) => {
                 cliente: document.getElementById("f-cliente").value.toUpperCase(),
                 telefono: document.getElementById("f-telefono").value,
                 estado: document.getElementById("f-estado").value,
-                
-                // 🚀 CAPTURA DE SEGMENTACIÓN PARA REPORTES.JS
                 tipo_orden: document.getElementById("f-tipo-orden").value,
                 clase_vehiculo: document.getElementById("f-clase-vehiculo").value,
-                
                 bitacora_ia: document.getElementById("ai-log-display").value,
                 finanzas: {
                     anticipo_cliente: Number(document.getElementById("f-anticipo-cliente").value),
@@ -497,22 +597,9 @@ const generarDocumentoNexus = (tipo) => {
             document.getElementById("nexus-terminal").classList.add("hidden");
         } catch (err) {
             Swal.fire({ icon: 'error', title: 'FAILURE', text: err.message });
-        } finally { btn.disabled = false; }
-    };
-
-    window.buscarEnInventario = async (idx) => {
-        const snap = await getDocs(query(collection(db, "inventario"), where("empresaId", "==", empresaId)));
-        const { value: res } = await Swal.fire({
-            title: 'BÓVEDA DE REPUESTOS',
-            background: '#0d1117', color: '#fff',
-            input: 'select',
-            inputOptions: Object.fromEntries(snap.docs.map(d => [JSON.stringify({id: d.id, n: d.data().nombre, c: d.data().costo, v: d.data().precioVenta}), `${d.data().nombre} ($${d.data().precioVenta})`])),
-            showCancelButton: true
-        });
-        if (res) {
-            const data = JSON.parse(res);
-            ordenActiva.items[idx] = { ...ordenActiva.items[idx], desc: data.n, costo: data.c, venta: data.v, sku: data.id };
-            recalcularFinanzas();
+        } finally { 
+            btn.disabled = false; 
+            btn.innerHTML = `🛰️ SYNC NEXUS`;
         }
     };
 
@@ -523,10 +610,10 @@ const generarDocumentoNexus = (tipo) => {
         } else {
             ordenActiva = { 
                 placa: '', cliente: '', telefono: '', estado: 'INGRESO', 
-                tipo_orden: 'MECANICA',    
-                clase_vehiculo: 'LIVIANO', 
+                tipo_orden: 'MECANICA', clase_vehiculo: 'LIVIANO', 
                 items: [], bitacora_ia: '', 
-                finanzas: { gastos_varios: 0, adelanto_tecnico: 0, anticipo_cliente: 0 }
+                finanzas: { gastos_varios: 0, adelanto_tecnico: 0, anticipo_cliente: 0 },
+                costos_totales: { base_gravable: 0, iva_19: 0, gran_total: 0, utilidad: 0, saldo_pendiente: 0 }
             };
             renderTerminal();
         }
