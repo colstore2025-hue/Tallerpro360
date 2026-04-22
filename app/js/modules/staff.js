@@ -1,33 +1,51 @@
 /**
- * staff.js - TallerPRO360 NEXUS-X V32.0 🚀
- * SISTEMA DE PERFILES LOCALES CON SEGMENTACIÓN DE MÓDULOS
+ * staff.js - TallerPRO360 NEXUS-X V36.0 🛰️
+ * SEGMENTACIÓN TÁCTICA Y GESTIÓN DE ACCESOS DE ALTA PRECISIÓN
  */
 import { 
-    collection, query, where, onSnapshot, serverTimestamp, addDoc, doc, deleteDoc 
+    collection, query, where, onSnapshot, serverTimestamp, addDoc, doc, deleteDoc, updateDoc 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
 export default async function staffModule(container, state) {
-    const empresaId = state?.empresaId || localStorage.getItem("empresaId");
+    const empresaId = state?.empresaId || localStorage.getItem("nexus_empresaId");
+    const miRol = localStorage.getItem("nexus_rol") || "TECNICO";
     
+    // BLOQUEO DE SEGURIDAD: Solo el DUEÑO puede ver o gestionar este módulo
+    if (miRol !== 'DUENO') {
+        container.innerHTML = `
+        <div class="flex flex-col items-center justify-center h-screen bg-[#020617] text-center p-10">
+            <i class="fas fa-user-shield text-red-500 text-6xl mb-6 animate-pulse"></i>
+            <h1 class="orbitron text-2xl font-black text-white">ACCESO DENEGADO</h1>
+            <p class="orbitron text-[10px] text-slate-500 mt-4 tracking-[0.5em]">ESTE NODO REQUIERE NIVEL: DUEÑO</p>
+        </div>`;
+        return;
+    }
+
     const renderLayout = () => {
         container.innerHTML = `
-        <div class="p-6 bg-[#010409] min-h-screen text-white pb-40 animate-in fade-in duration-500">
-            <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 border-b border-white/5 pb-8 gap-6">
-                <div>
-                    <h1 class="orbitron text-4xl font-black text-white uppercase italic">CREW <span class="text-indigo-500">NEXUS</span></h1>
-                    <p class="text-[9px] orbitron text-slate-500 tracking-[0.3em]">ADMINISTRACIÓN DE LLAVES DE ACCESO</p>
+        <div class="p-6 lg:p-12 bg-[#010409] min-h-screen text-white pb-40 animate-in fade-in duration-700">
+            <header class="flex flex-col xl:flex-row justify-between items-end gap-10 mb-16 border-b border-white/5 pb-12">
+                <div class="relative">
+                    <div class="absolute -left-6 top-0 h-full w-1 bg-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.5)]"></div>
+                    <h1 class="orbitron text-5xl lg:text-6xl font-black italic tracking-tighter text-white uppercase">
+                        CREW <span class="text-indigo-400">CONTROL</span>
+                    </h1>
+                    <p class="text-[9px] orbitron tracking-[0.6em] text-slate-500 uppercase mt-4 italic font-bold">Gestión de Privilegios Nexus-X</p>
                 </div>
-                <button id="btnNuevoStaff" class="group relative bg-indigo-600 hover:bg-indigo-500 px-10 py-5 rounded-[2rem] orbitron text-[10px] font-black transition-all shadow-[0_0_30px_rgba(99,102,241,0.2)]">
-                    + VINCULAR PERSONAL
+
+                <button id="btnNuevoStaff" class="group relative px-10 py-5 bg-indigo-600 rounded-[2rem] overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(99,102,241,0.3)]">
+                    <div class="absolute inset-0 bg-gradient-to-r from-indigo-400 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <span class="relative orbitron text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-3">
+                        <i class="fas fa-user-plus text-xs"></i> VINCULAR OPERADOR
+                    </span>
                 </button>
             </header>
 
-            <div id="gridStaff" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                </div>
+            <div id="gridStaff" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8"></div>
         </div>`;
 
-        document.getElementById("btnNuevoStaff").onclick = formularioNuevoStaff;
+        document.getElementById("btnNuevoStaff").onclick = () => abrirFormularioStaff();
         escucharPersonal();
     };
 
@@ -36,99 +54,91 @@ export default async function staffModule(container, state) {
         onSnapshot(q, (snap) => {
             const grid = document.getElementById("gridStaff");
             if (snap.empty) {
-                grid.innerHTML = `
-                <div class="col-span-full py-20 text-center border-2 border-dashed border-white/5 rounded-[3rem]">
-                    <i class="fas fa-user-lock text-4xl mb-4 opacity-20"></i>
-                    <p class="orbitron text-[10px] opacity-30 tracking-widest uppercase">Nodo de personal vacío</p>
-                </div>`;
+                grid.innerHTML = `<div class="col-span-full py-40 text-center opacity-20"><p class="orbitron tracking-[0.5em]">NODO DE PERSONAL VACÍO</p></div>`;
                 return;
             }
 
             grid.innerHTML = snap.docs.map(d => {
                 const s = d.data();
-                const colorCargo = s.cargo === 'TECNICO' ? 'emerald' : (s.cargo === 'ADMIN' ? 'amber' : 'indigo');
+                const esAdmin = s.cargo === 'ADMIN';
+                const color = esAdmin ? 'amber' : 'emerald';
                 
                 return `
-                <div class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 relative overflow-hidden group hover:border-${colorCargo}-500/50 transition-all duration-500">
-                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-${colorCargo}-500/5 rounded-full blur-2xl"></div>
-                    
-                    <div class="flex flex-col items-center text-center relative z-10">
-                        <div class="w-20 h-20 bg-black rounded-[2rem] flex items-center justify-center mb-5 border border-white/5 group-hover:border-${colorCargo}-500 transition-all shadow-inner">
-                            <i class="fas ${s.cargo === 'TECNICO' ? 'fa-wrench' : 'fa-user-tie'} text-${colorCargo}-400 text-2xl"></i>
+                <div class="group relative bg-[#0d1117] p-10 rounded-[3.5rem] border border-white/5 hover:border-${color}-500/50 transition-all duration-500 shadow-2xl">
+                    <div class="flex flex-col items-center text-center">
+                        <div class="w-24 h-24 rounded-[2.5rem] bg-black border border-white/5 flex items-center justify-center mb-6 relative group-hover:border-${color}-500 transition-all duration-500">
+                            <i class="fas ${esAdmin ? 'fa-user-tie text-amber-400' : 'fa-wrench text-emerald-400'} text-3xl"></i>
                         </div>
                         
-                        <h3 class="orbitron text-xs font-black text-white uppercase mb-1">${s.nombre}</h3>
-                        <span class="text-[7px] bg-${colorCargo}-500/10 text-${colorCargo}-400 px-4 py-1.5 rounded-full orbitron font-black tracking-widest border border-${colorCargo}-500/20">
+                        <h3 class="text-white font-black orbitron text-sm uppercase tracking-tighter mb-2">${s.nombre}</h3>
+                        <span class="px-4 py-1 rounded-full text-[7px] font-black orbitron bg-${color}-500/10 text-${color}-400 border border-${color}-500/20 tracking-widest uppercase italic">
                             ${s.cargo}
                         </span>
-                        
-                        <div class="mt-8 pt-6 border-t border-white/5 w-full">
-                            <p class="text-[7px] text-slate-500 orbitron uppercase mb-2 tracking-tighter italic">Credencial de acceso</p>
-                            <div class="bg-black/40 py-3 rounded-xl border border-white/5 group-hover:border-${colorCargo}-500/20 transition-all">
-                                <code class="text-white text-xs font-bold tracking-[0.5em]">${s.pass}</code>
-                            </div>
-                        </div>
+                    </div>
 
-                        <button onclick="window.eliminarStaff('${d.id}')" class="mt-6 text-[8px] text-red-500/30 hover:text-red-500 orbitron transition-all uppercase font-black tracking-widest">
-                            Revocar Acceso
-                        </button>
+                    <div class="mt-10 pt-8 border-t border-white/5">
+                        <div class="flex justify-between items-center mb-6">
+                            <span class="text-[7px] text-slate-600 font-black orbitron uppercase">PIN ACCESO</span>
+                            <span class="text-xs font-black text-white orbitron tracking-[0.3em] bg-black px-3 py-1 rounded-lg">${s.pass}</span>
+                        </div>
+                        
+                        <div class="flex gap-3">
+                            <button onclick="editarStaff('${d.id}', '${s.nombre}', '${s.cargo}', '${s.pass}')" class="flex-1 py-3 bg-white/5 rounded-xl text-[8px] font-black text-slate-500 orbitron hover:text-white hover:bg-white/10 transition-all">
+                                EDITAR
+                            </button>
+                            <button onclick="eliminarStaff('${d.id}')" class="w-12 h-10 flex items-center justify-center bg-red-500/5 text-red-500/30 rounded-xl hover:bg-red-500 hover:text-white transition-all border border-red-500/10">
+                                <i class="fas fa-trash-alt text-xs"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>`;
             }).join("");
         });
     };
 
-    const formularioNuevoStaff = () => {
+    // --- OPERACIONES DE ALTA PRECISIÓN (WINDOW SCOPE) ---
+
+    window.abrirFormularioStaff = (editData = null) => {
+        const isEdit = !!editData;
         Swal.fire({
-            title: 'NUEVA LLAVE TÁCTICA',
+            title: isEdit ? 'RECALIBRAR ACCESO' : 'NUEVA LLAVE TÁCTICA',
             background: '#010409',
             color: '#fff',
-            customClass: { popup: 'rounded-[3rem] border border-white/10' },
             html: `
                 <div class="space-y-4 p-4 text-left">
-                    <label class="orbitron text-[9px] text-slate-500 ml-2 uppercase">Identificación</label>
-                    <input id="f-nombre" class="w-full bg-black p-5 rounded-2xl text-white border border-white/5 orbitron text-xs uppercase" placeholder="NOMBRE COMPLETO">
-                    
-                    <label class="orbitron text-[9px] text-slate-500 ml-2 uppercase">Asignación de Rango</label>
-                    <select id="f-cargo" class="w-full bg-black p-5 rounded-2xl text-white border border-white/5 orbitron text-[10px] appearance-none">
-                        <option value="TECNICO">MECÁNICO / TÉCNICO (Solo Ordenes)</option>
-                        <option value="ADMIN">ADMINISTRATIVO (Todo menos Ordenes)</option>
+                    <input id="f-nombre" class="w-full bg-black p-5 rounded-2xl text-white border border-white/5 orbitron text-xs uppercase" placeholder="NOMBRE" value="${isEdit ? editData.nombre : ''}">
+                    <select id="f-cargo" class="w-full bg-black p-5 rounded-2xl text-white border border-white/5 orbitron text-[10px]">
+                        <option value="TECNICO" ${isEdit && editData.cargo === 'TECNICO' ? 'selected' : ''}>TÉCNICO (Solo Ordenes)</option>
+                        <option value="ADMIN" ${isEdit && editData.cargo === 'ADMIN' ? 'selected' : ''}>ADMIN (Contabilidad/Inventario)</option>
                     </select>
-                    
-                    <label class="orbitron text-[9px] text-slate-500 ml-2 uppercase">PIN de Seguridad (4-6 Dígitos)</label>
-                    <input id="f-pass" type="text" maxlength="6" class="w-full bg-black p-5 rounded-2xl text-white border border-white/5 orbitron text-center text-lg font-black tracking-widest" placeholder="0000">
+                    <input id="f-pass" type="text" maxlength="6" class="w-full bg-black p-5 rounded-2xl text-white border border-white/5 orbitron text-center text-lg font-black" placeholder="PIN" value="${isEdit ? editData.pass : ''}">
                 </div>`,
-            confirmButtonText: 'CONFIRMAR ALTA',
+            showCancelButton: true,
+            confirmButtonText: isEdit ? 'ACTUALIZAR' : 'CREAR',
             preConfirm: () => {
-                const nombre = document.getElementById('f-nombre').value.trim();
+                const nombre = document.getElementById('f-nombre').value.toUpperCase().trim();
                 const cargo = document.getElementById('f-cargo').value;
                 const pass = document.getElementById('f-pass').value.trim();
-                if(!nombre || !pass) return Swal.showValidationMessage("Protocolo incompleto");
+                if(!nombre || !pass) return Swal.showValidationMessage("Incompleto");
                 return { nombre, cargo, pass };
             }
         }).then(async (res) => {
             if(res.isConfirmed) {
-                try {
-                    await addDoc(collection(db, "staff_local"), {
-                        ...res.value,
-                        empresaId,
-                        creadoEn: serverTimestamp()
-                    });
-                    Swal.fire({ icon: 'success', title: 'PERSONAL REGISTRADO', background: '#010409', color: '#fff' });
-                } catch (e) { console.error(e); }
+                if(isEdit) {
+                    await updateDoc(doc(db, "staff_local", editData.id), res.value);
+                } else {
+                    await addDoc(collection(db, "staff_local"), { ...res.value, empresaId, creadoEn: serverTimestamp() });
+                }
+                Swal.fire({ icon: 'success', title: 'OPERACIÓN EXITOSA', background: '#010409' });
             }
         });
     };
 
+    window.editarStaff = (id, nombre, cargo, pass) => abrirFormularioStaff({ id, nombre, cargo, pass });
+
     window.eliminarStaff = async (id) => {
-        const confirm = await Swal.fire({ 
-            title: '¿ELIMINAR?', 
-            text: "El personal no podrá volver a usar su PIN.",
-            background: '#0d1117', 
-            color: '#fff',
-            showCancelButton: true 
-        });
-        if(confirm.isConfirmed) await deleteDoc(doc(db, "staff_local", id));
+        const res = await Swal.fire({ title: '¿REVOCAR ACCESO?', background: '#0d1117', color: '#fff', showCancelButton: true, confirmButtonColor: '#ef4444' });
+        if(res.isConfirmed) await deleteDoc(doc(db, "staff_local", id));
     };
 
     renderLayout();
