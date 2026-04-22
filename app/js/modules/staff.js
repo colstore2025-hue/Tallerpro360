@@ -1,7 +1,7 @@
 /**
- * staff.js - TallerPRO360 NEXUS-X V20.0 👥
+ * staff.js - TallerPRO360 NEXUS-X V21.0 👥
  * SISTEMA DE GESTIÓN DE TRIPULACIÓN Y PROTOCOLO DE ACCESO
- * Desarrollado por: William Jeffry Urquijo Cubillos
+ * Optimizado para despliegues de alta disponibilidad en Vercel
  */
 import { 
     collection, query, where, onSnapshot, serverTimestamp, setDoc, doc, updateDoc, deleteDoc
@@ -13,11 +13,16 @@ import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12
 import { db, firebaseConfig } from "../core/firebase-config.js";
 
 export default async function staffModule(container, state) {
+    // --- ESTADO INICIAL ---
     const empresaId = state?.empresaId || localStorage.getItem("empresaId");
     const miRol = (state?.rol || localStorage.getItem("rol") || "OPERADOR").toUpperCase(); 
     let unsubscribe = null;
 
-    // --- INTERFAZ BASE ---
+    // --- PROTECCIÓN DE CONFIGURACIÓN ---
+    if (!firebaseConfig) {
+        console.error("⚠️ NEXUS-X: Error de enlace con firebase-config.js");
+    }
+
     const renderLayout = () => {
         container.innerHTML = `
         <div class="p-6 lg:p-12 bg-[#010409] min-h-screen text-white animate-in fade-in duration-700 pb-40">
@@ -32,9 +37,9 @@ export default async function staffModule(container, state) {
                 </div>
 
                 ${(miRol === 'ADMIN' || miRol === 'SUPERADMIN' || miRol === 'DUENO') ? `
-                <div class="flex gap-4">
+                <div class="flex flex-wrap gap-4">
                     <button id="btnRecoverAll" class="px-6 py-5 bg-white/5 border border-white/10 rounded-2xl hover:bg-indigo-500/10 transition-all flex items-center gap-3 orbitron text-[10px] font-bold text-slate-400">
-                        <i class="fas fa-key"></i> RESET LINK
+                        <i class="fas fa-key text-indigo-400"></i> RESET LINK
                     </button>
                     <button id="btnNuevoMiembro" class="group relative px-10 py-5 bg-indigo-600 rounded-[2rem] overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(99,102,241,0.3)]">
                         <div class="absolute inset-0 bg-gradient-to-r from-indigo-400 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -49,26 +54,22 @@ export default async function staffModule(container, state) {
                 <div class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 relative group overflow-hidden shadow-2xl">
                     <div class="absolute -right-5 -bottom-5 text-indigo-500/5 text-8xl group-hover:scale-110 transition-transform"><i class="fas fa-users-cog"></i></div>
                     <p class="orbitron text-[9px] text-indigo-400 mb-2 font-black uppercase tracking-widest italic font-bold">Total Tripulación</p>
-                    <h2 id="totalCrew" class="orbitron text-4xl font-black text-white italic">...</h2>
+                    <h2 id="totalCrew" class="orbitron text-4xl font-black text-white italic font-bold italic">0</h2>
                 </div>
                 <div class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 relative group overflow-hidden shadow-2xl">
                     <div class="absolute -right-5 -bottom-5 text-emerald-500/5 text-8xl group-hover:scale-110 transition-transform"><i class="fas fa-satellite"></i></div>
                     <p class="orbitron text-[9px] text-emerald-400 mb-2 font-black uppercase tracking-widest italic font-bold">Personal Activo</p>
-                    <h2 id="onlineCrew" class="orbitron text-4xl font-black text-white italic">...</h2>
+                    <h2 id="onlineCrew" class="orbitron text-4xl font-black text-white italic font-bold italic">0</h2>
                 </div>
                 <div class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 relative group overflow-hidden shadow-2xl">
                     <div class="absolute -right-5 -bottom-5 text-indigo-500/5 text-8xl group-hover:scale-110 transition-transform"><i class="fas fa-user-shield"></i></div>
                     <p class="orbitron text-[9px] text-slate-500 mb-2 font-black uppercase tracking-widest italic font-bold">Rango de Mando</p>
-                    <h2 class="orbitron text-3xl font-black text-indigo-400 italic uppercase tracking-tighter">${miRol}</h2>
+                    <h2 class="orbitron text-2xl lg:text-3xl font-black text-indigo-400 italic uppercase tracking-tighter">${miRol}</h2>
                 </div>
             </div>
 
             <div id="gridStaff" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8">
-                <div class="col-span-full py-20 text-center opacity-40">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500 mb-4"></div>
-                    <p class="orbitron text-[10px] uppercase tracking-widest">Sincronizando Nodo Nexus...</p>
                 </div>
-            </div>
         </div>
         `;
 
@@ -77,7 +78,6 @@ export default async function staffModule(container, state) {
         escucharStaff();
     };
 
-    // --- LISTADO EN TIEMPO REAL ---
     const escucharStaff = () => {
         if (unsubscribe) unsubscribe();
         const grid = document.getElementById("gridStaff");
@@ -111,7 +111,7 @@ export default async function staffModule(container, state) {
                     <div class="flex flex-col items-center text-center">
                         <div class="w-24 h-24 rounded-[2.5rem] bg-black border border-white/5 flex items-center justify-center mb-6 relative group-hover:border-indigo-500 transition-all duration-500">
                             <i class="fas ${esAdmin ? 'fa-user-shield text-indigo-400' : 'fa-id-badge text-slate-600'} text-3xl"></i>
-                            <div class="absolute -bottom-1 -right-1 w-6 h-6 ${status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-red-500'} rounded-full border-4 border-[#0d1117]"></div>
+                            <div class="absolute -bottom-1 -right-1 w-6 h-6 ${status === 'ACTIVE' ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-red-500'} rounded-full border-4 border-[#0d1117]"></div>
                         </div>
                         
                         <h3 class="text-white font-black orbitron text-sm uppercase tracking-tighter mb-2">${u.nombre || 'SIN_NOMBRE'}</h3>
@@ -132,40 +132,39 @@ export default async function staffModule(container, state) {
         });
     };
 
-    // --- LOGICA DE REGISTRO CON AUTH SECUNDARIO ---
     const abrirFormularioStaff = () => {
         Swal.fire({
             title: 'RECLUTAMIENTO NEXUS-X',
             background: '#010409',
             color: '#fff',
+            customClass: { popup: 'rounded-[3rem] border border-indigo-500/20' },
             html: `
                 <div class="space-y-6 p-4 text-left">
                     <div>
-                        <label class="orbitron text-[8px] text-slate-500 uppercase ml-2">Nombre de Operador</label>
+                        <label class="orbitron text-[8px] text-slate-500 uppercase ml-2">Nombre Completo</label>
                         <input id="st-nombre" class="w-full bg-black/60 p-5 rounded-2xl text-white border border-white/5 orbitron text-xs uppercase focus:border-indigo-500 outline-none transition-all">
                     </div>
                     <div>
-                        <label class="orbitron text-[8px] text-slate-500 uppercase ml-2">Email de Acceso</label>
+                        <label class="orbitron text-[8px] text-slate-500 uppercase ml-2">Email Personal/Taller</label>
                         <input id="st-email" type="email" class="w-full bg-black/60 p-5 rounded-2xl text-white border border-white/5 font-mono text-xs focus:border-indigo-500 outline-none transition-all">
                     </div>
                     <div class="relative">
-                        <label class="orbitron text-[8px] text-slate-500 uppercase ml-2">Llave de Seguridad</label>
+                        <label class="orbitron text-[8px] text-slate-500 uppercase ml-2">Llave de Acceso</label>
                         <input id="st-pass" type="password" class="w-full bg-black/60 p-5 rounded-2xl text-white border border-white/5 text-xs focus:border-indigo-500 outline-none transition-all">
-                        <button type="button" onclick="const p = document.getElementById('st-pass'); p.type = p.type === 'password' ? 'text' : 'password';" class="absolute right-5 top-10 text-slate-500 hover:text-indigo-400">
+                        <button type="button" onclick="const p=document.getElementById('st-pass'); p.type=p.type==='password'?'text':'password';" class="absolute right-5 top-10 text-slate-500 hover:text-indigo-400">
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
                     <div>
-                        <label class="orbitron text-[8px] text-slate-500 uppercase ml-2">Rango Táctico</label>
+                        <label class="orbitron text-[8px] text-slate-500 uppercase ml-2">Rango del Operador</label>
                         <select id="st-rol" class="w-full bg-black/60 p-5 rounded-2xl text-white border border-white/5 orbitron text-[10px]">
-                            <option value="tecnico">OPERADOR TÉCNICO</option>
-                            <option value="admin">ADMINISTRADOR</option>
+                            <option value="TECNICO">OPERADOR TÉCNICO</option>
+                            <option value="ADMIN">ADMINISTRADOR</option>
                         </select>
                     </div>
                 </div>`,
             showCancelButton: true,
-            confirmButtonText: 'AUTORIZAR ACCESO',
-            background: '#010409',
+            confirmButtonText: 'EMITIR CREDENCIAL',
             confirmButtonColor: '#4f46e5',
             preConfirm: () => {
                 const nombre = document.getElementById('st-nombre').value.toUpperCase().trim();
@@ -173,67 +172,62 @@ export default async function staffModule(container, state) {
                 const pass = document.getElementById('st-pass').value;
                 const role = document.getElementById('st-rol').value;
                 if (!nombre || !email || !pass) return Swal.showValidationMessage("Protocolo incompleto");
-                if (pass.length < 6) return Swal.showValidationMessage("La llave debe tener min. 6 caracteres");
                 return { nombre, email, pass, role };
             }
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    Swal.fire({ title: 'CREANDO CREDENCIALES...', background: '#010409', didOpen: () => Swal.showLoading() });
+                    Swal.fire({ title: 'DESPLEGANDO...', background: '#010409', didOpen: () => Swal.showLoading() });
                     
-                    // Inicializar app secundaria para no cerrar sesión actual
-                    let secondaryApp = getApps().find(app => app.name === "SecondaryApp") || initializeApp(firebaseConfig, "SecondaryApp");
-                    const secondaryAuth = getAuth(secondaryApp);
+                    let sApp = getApps().find(a => a.name === "SecondaryApp") || initializeApp(firebaseConfig, "SecondaryApp");
+                    const sAuth = getAuth(sApp);
 
-                    const userCred = await createUserWithEmailAndPassword(secondaryAuth, result.value.email, result.value.pass);
+                    const userCred = await createUserWithEmailAndPassword(sAuth, result.value.email, result.value.pass);
                     const uid = userCred.user.uid;
 
                     await setDoc(doc(db, "usuarios", uid), {
                         nombre: result.value.nombre,
                         email: result.value.email,
-                        role: result.value.role.toUpperCase(),
+                        role: result.value.role,
                         empresaId: empresaId,
                         status: 'ACTIVE',
                         misionesCount: 0,
                         creadoEn: serverTimestamp()
                     });
 
-                    await signOut(secondaryAuth); // Limpiar app secundaria
-                    Swal.fire({ icon: 'success', title: 'OPERADOR VINCULADO', background: '#0d1117' });
-
+                    await signOut(sAuth); 
+                    Swal.fire({ icon: 'success', title: 'OPERADOR VINCULADO', background: '#0d1117', color: '#fff' });
                 } catch (e) {
-                    Swal.fire({ icon: 'error', title: 'ERROR CRÍTICO', text: e.message, background: '#0d1117' });
+                    Swal.fire({ icon: 'error', title: 'FALLO DE NODO', text: e.message, background: '#0d1117', color: '#fff' });
                 }
             }
         });
     };
 
-    // --- RECUPERACIÓN DE CONTRASEÑA ---
-    const recuperarPasswordGenerico = async (emailManual = null) => {
-        const { value: email } = emailManual ? { value: emailManual } : await Swal.fire({
-            title: 'RECUPERAR LLAVE',
+    const recuperarPasswordGenerico = async () => {
+        const { value: email } = await Swal.fire({
+            title: 'RESET DE SEGURIDAD',
             input: 'email',
-            inputLabel: 'Correo del colaborador',
-            inputPlaceholder: 'email@taller.com',
+            inputLabel: 'Email del colaborador',
             background: '#0d1117',
-            color: '#fff'
+            color: '#fff',
+            confirmButtonColor: '#4f46e5'
         });
 
         if (email) {
             try {
-                const auth = getAuth();
-                await sendPasswordResetEmail(auth, email);
-                Swal.fire({ icon: 'success', title: 'LINK ENVIADO', text: 'El colaborador recibirá un correo para resetear su llave.', background: '#0d1117' });
+                await sendPasswordResetEmail(getAuth(), email);
+                Swal.fire({ icon: 'success', title: 'LINK ENVIADO', background: '#0d1117', color: '#fff' });
             } catch (e) {
-                Swal.fire({ icon: 'error', title: 'ERROR', text: e.message, background: '#0d1117' });
+                Swal.fire({ icon: 'error', title: 'ERROR', text: e.message, background: '#0d1117', color: '#fff' });
             }
         }
     };
 
-    // --- FUNCIONES GLOBALES ---
+    // --- MÉTODOS GLOBALES WINDOW ---
     window.editarOperador = async (id) => {
         const { value: res } = await Swal.fire({
-            title: 'MODIFICAR RANGO',
+            title: 'MODIFICAR PERFIL',
             background: '#0d1117',
             color: '#fff',
             html: `
@@ -243,7 +237,7 @@ export default async function staffModule(container, state) {
                 </select>
                 <select id="ed-status" class="w-full bg-black p-4 rounded-xl text-white border border-white/10 orbitron text-xs">
                     <option value="ACTIVE">ACTIVO</option>
-                    <option value="INACTIVE">INACTIVO / BLOQUEADO</option>
+                    <option value="INACTIVE">BLOQUEADO</option>
                 </select>
             `,
             preConfirm: () => [document.getElementById('ed-rol').value, document.getElementById('ed-status').value]
@@ -251,14 +245,15 @@ export default async function staffModule(container, state) {
 
         if (res) {
             await updateDoc(doc(db, "usuarios", id), { role: res[0], status: res[1] });
-            Swal.fire({ icon: 'success', title: 'NODO ACTUALIZADO', background: '#0d1117' });
+            Swal.fire({ icon: 'success', title: 'PERFIL ACTUALIZADO', background: '#0d1117', color: '#fff' });
         }
     };
 
     window.eliminarOperador = async (id) => {
-        const res = await Swal.fire({ title: '¿REVOCAR ACCESO?', text: "Esta acción es irreversible en la base de datos.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#0d1117', color: '#fff' });
+        const res = await Swal.fire({ title: '¿REVOCAR ACCESO?', text: "El registro será eliminado del nodo central.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#0d1117', color: '#fff' });
         if (res.isConfirmed) await deleteDoc(doc(db, "usuarios", id));
     };
 
     renderLayout();
 }
+
