@@ -2,13 +2,12 @@
 <html lang="es">
 <head>
     <link rel="icon" type="image/png" href="assets/logo-192.png">
-<link rel="apple-touch-icon" href="assets/logo-192.png">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
+    <link rel="apple-touch-icon" href="assets/logo-192.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover">
@@ -23,119 +22,28 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        :root { 
-            --neon-cyan: #00f2ff; 
-            --dark-bg: #020617; 
-            --sidebar-bg: rgba(10, 15, 29, 0.98); 
-        }
-        
-        body { 
-            margin:0; 
-            font-family:'Inter', sans-serif; 
-            background: var(--dark-bg); 
-            color:#cbd5e1; 
-            overflow: hidden; 
-            height: 100vh;
-        }
-        
-        .nasa-glass { 
-            background: var(--sidebar-bg); 
-            backdrop-filter: blur(25px); 
-            border-bottom: 1px solid rgba(255,255,255,0.05); 
-        }
-        
+        :root { --neon-cyan: #00f2ff; --dark-bg: #020617; --sidebar-bg: rgba(10, 15, 29, 0.98); }
+        body { margin:0; font-family:'Inter', sans-serif; background: var(--dark-bg); color:#cbd5e1; overflow: hidden; height: 100vh; }
+        .nasa-glass { background: var(--sidebar-bg); backdrop-filter: blur(25px); border-bottom: 1px solid rgba(255,255,255,0.05); }
         #mainLayout { display:flex; height:calc(100vh - 64px); }
-        
-        #sidebar { 
-            width:260px; 
-            background: rgba(2, 6, 23, 0.95); 
-            display:flex; flex-direction:column; 
-            padding:24px 16px; 
-            border-right: 1px solid rgba(255,255,255,0.08);
-            transition: all 0.4s ease;
-        }
-
-        #appContainer { 
-            flex:1; 
-            padding:0; /* El padding lo manejan los módulos internos */
-            overflow-y:auto; 
-            background: radial-gradient(circle at 50% 0%, #0f172a, #020617);
-            scroll-behavior: smooth;
-        }
-
-/* Scrollbar Estilo Nexus-X */
-#appContainer::-webkit-scrollbar {
-    width: 4px;
-}
-#appContainer::-webkit-scrollbar-track {
-    background: transparent;
-}
-#appContainer::-webkit-scrollbar-thumb {
-    background: rgba(0, 242, 255, 0.1);
-    border-radius: 10px;
-}
-#appContainer::-webkit-scrollbar-thumb:hover {
-    background: var(--neon-cyan);
-}
-
-        /* NAVEGACIÓN ESTILO TESLA */
-        .nav-link { 
-            display: flex; align-items: center; gap: 14px; padding: 14px 18px; 
-            border-radius: 16px; color: #475569; font-size: 10px; 
-            font-weight: 900; transition: 0.3s; margin-bottom: 6px; 
-            text-decoration: none; border: 1px solid transparent;
-            text-transform: uppercase; letter-spacing: 2px;
-            font-family: 'Orbitron', sans-serif;
-        }
+        #sidebar { width:260px; background: rgba(2, 6, 23, 0.95); display:flex; flex-direction:column; padding:24px 16px; border-right: 1px solid rgba(255,255,255,0.08); transition: all 0.4s ease; }
+        #appContainer { flex:1; overflow-y:auto; background: radial-gradient(circle at 50% 0%, #0f172a, #020617); scroll-behavior: smooth; }
+        #appContainer::-webkit-scrollbar { width: 4px; }
+        #appContainer::-webkit-scrollbar-track { background: transparent; }
+        #appContainer::-webkit-scrollbar-thumb { background: rgba(0, 242, 255, 0.1); border-radius: 10px; }
+        #appContainer::-webkit-scrollbar-thumb:hover { background: var(--neon-cyan); }
+        .nav-link { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 16px; color: #475569; font-size: 10px; font-weight: 900; transition: 0.3s; margin-bottom: 6px; text-decoration: none; border: 1px solid transparent; text-transform: uppercase; letter-spacing: 2px; font-family: 'Orbitron', sans-serif; }
         .nav-link:hover { background: rgba(0, 242, 255, 0.03); color: white; }
-        .nav-link.active { 
-            background: rgba(0, 242, 255, 0.08); 
-            color: var(--neon-cyan); 
-            border: 1px solid rgba(0, 242, 255, 0.15);
-            box-shadow: 0 10px 30px rgba(0, 242, 255, 0.05);
-        }
-
-        /* NAVBAR MÓVIL OPTIMIZADA */
-        #mobileNav {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(10, 15, 29, 0.98);
-            backdrop-filter: blur(30px);
-            border-top: 1px solid rgba(255,255,255,0.1);
-            z-index: 1000;
-            grid-template-columns: repeat(4, 1fr);
-            padding: 14px 0 calc(env(safe-area-inset-bottom) + 14px);
-        }
-
-        .mobile-link {
-            display: flex; flex-direction: column; align-items: center;
-            color: #475569; font-size: 8px; font-weight: 900; gap: 6px;
-            text-decoration: none; text-transform: uppercase; letter-spacing: 1px;
-        }
+        .nav-link.active { background: rgba(0, 242, 255, 0.08); color: var(--neon-cyan); border: 1px solid rgba(0, 242, 255, 0.15); box-shadow: 0 10px 30px rgba(0, 242, 255, 0.05); }
+        #mobileNav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 15, 29, 0.98); backdrop-filter: blur(30px); border-top: 1px solid rgba(255,255,255,0.1); z-index: 1000; grid-template-columns: repeat(4, 1fr); padding: 14px 0 calc(env(safe-area-inset-bottom) + 14px); }
+        .mobile-link { display: flex; flex-direction: column; align-items: center; color: #475569; font-size: 8px; font-weight: 900; gap: 6px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; }
         .mobile-link i { font-size: 20px; }
         .mobile-link.active { color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0,242,255,0.5); }
-
-        @media (max-width: 1024px) {
-            #sidebar { display: none; }
-            #mobileNav { display: grid; }
-            #mainLayout { height: calc(100vh - 64px - 85px); }
-            #appContainer { padding-bottom: 50px; }
-        }
-
-        .spinner { 
-            width: 50px; height: 50px; border: 4px solid rgba(0,242,255,0.05); 
-            border-top-color: var(--neon-cyan); border-radius: 50%; 
-            animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; 
-            box-shadow: 0 0 20px rgba(0,242,255,0.1);
-        }
+        @media (max-width: 1024px) { #sidebar { display: none; } #mobileNav { display: grid; } #mainLayout { height: calc(100vh - 64px - 85px); } #appContainer { padding-bottom: 50px; } }
+        .spinner { width: 50px; height: 50px; border: 4px solid rgba(0,242,255,0.05); border-top-color: var(--neon-cyan); border-radius: 50%; animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; box-shadow: 0 0 20px rgba(0,242,255,0.1); }
         @keyframes spin { to { transform: rotate(360deg); } }
         .orbitron { font-family: 'Orbitron', sans-serif; }
     </style>
@@ -173,27 +81,17 @@
             <p class="text-[8px] font-black text-slate-700 uppercase tracking-[6px] italic">Protocolos Maestros</p>
         </div>
         <div id="navMenu" class="space-y-2">
-            <a href="#dashboard" class="nav-link active"><i class="fas fa-chart-line w-6"></i> Dashboard</a>
-            <a href="#ordenes" class="nav-link"><i class="fas fa-screwdriver-wrench w-6"></i> Órdenes</a>
-            <a href="#inventario" class="nav-link"><i class="fas fa-warehouse w-6"></i> Stock</a>
-            <a href="#clientes" class="nav-link"><i class="fas fa-address-book w-6"></i> CRM</a>
-            <a href="#pagos" class="nav-link"><i class="fas fa-cash-register w-6"></i> Recaudos</a>
-            <a href="#contabilidad" class="nav-link"><i class="fas fa-receipt w-6"></i> Finanzas</a>
-        </div>
-        <div class="mt-auto pt-8 border-t border-white/5">
-            <a href="#configuracion" class="nav-link italic border-cyan-500/10"><i class="fas fa-gear w-6"></i> Configuración</a>
-        </div>
+            </div>
+        <div class="mt-auto pt-8 border-t border-white/5" id="configZone">
+            </div>
     </nav>
 
     <main id="appContainer"></main>
 </div>
 
 <nav id="mobileNav">
-    <a href="#dashboard" class="mobile-link active"><i class="fas fa-home-alt"></i><span>Inicio</span></a>
-    <a href="#ordenes" class="mobile-link"><i class="fas fa-clipboard-list"></i><span>Órdenes</span></a>
-    <a href="#pagos" class="mobile-link"><i class="fas fa-wallet"></i><span>Pagos</span></a>
-    <a href="#configuracion" class="mobile-link"><i class="fas fa-sliders-h"></i><span>Ajustes</span></a>
-</nav>
+    </nav>
+
 <script src="js/modules/nexus-help-engine.js"></script>
 
 <script type="module">
@@ -203,35 +101,89 @@
 
     const CORE_VERSION = "V17.0.0-PRO-" + new Date().getTime();
     
-            // RUTAS MAESTRAS UNIFICADAS (NEXUS-X V33.0 - NIVEL TERMINATOR)
-    // Asegura que los archivos existan en: /app/js/modules/
-        const routes = {
+    const routes = {
         dashboard: () => import(`/app/js/modules/dashboard.js?v=${CORE_VERSION}`),
         ordenes: () => import(`/app/js/modules/ordenes.js?v=${CORE_VERSION}`),
         inventario: () => import(`/app/js/modules/inventario.js?v=${CORE_VERSION}`),
         clientes: () => import(`/app/js/modules/clientes.js?v=${CORE_VERSION}`),
-        pagos: () => import(`/app/js/modules/pagosTaller.js?v=${CORE_VERSION}`), // Apunta a pagosTaller
+        pagos: () => import(`/app/js/modules/pagosTaller.js?v=${CORE_VERSION}`),
         contabilidad: () => import(`/app/js/modules/contabilidad.js?v=${CORE_VERSION}`),
-        configuracion: () => import(`/app/js/modules/config.js?v=${CORE_VERSION}`), // Ajustado
+        configuracion: () => import(`/app/js/modules/config.js?v=${CORE_VERSION}`),
         staff: () => import(`/app/js/modules/staff.js?v=${CORE_VERSION}`),
         nomina: () => import(`/app/js/modules/nomina.js?v=${CORE_VERSION}`),
         finanzas_elite: () => import(`/app/js/modules/finanzas_elite.js?v=${CORE_VERSION}`),
         gerenteAI: () => import(`/app/js/modules/gerenteAI.js?v=${CORE_VERSION}`),
         reportes: () => import(`/app/js/modules/reportes.js?v=${CORE_VERSION}`),
-        vehiculos: () => import(`/app/js/modules/vehiculos.js?v=${CORE_VERSION}`)
+        vehiculos: () => import(`/app/js/modules/vehiculos.js?v=${CORE_VERSION}`),
+        marketplace_bridge: () => import(`/app/js/modules/marketplace_bridge.js?v=${CORE_VERSION}`),
+        publish_mision: () => import(`/app/js/modules/publish_mision.js?v=${CORE_VERSION}`)
     };
+
+    /**
+     * MOTOR DE SEGURIDAD NEXUS-X: RENDERIZADO POR ROLES
+     */
+    function renderMenuByRole(rol) {
+        const navMenu = document.getElementById("navMenu");
+        const mobileNav = document.getElementById("mobileNav");
+        const configZone = document.getElementById("configZone");
+        
+        let menuHTML = `<a href="#dashboard" class="nav-link"><i class="fas fa-chart-line w-6"></i> Dashboard</a>`;
+        let mobileHTML = `<a href="#dashboard" class="mobile-link"><i class="fas fa-home-alt"></i><span>Inicio</span></a>`;
+
+        if (rol === "TECNICO") {
+            menuHTML += `<a href="#ordenes" class="nav-link"><i class="fas fa-screwdriver-wrench w-6"></i> Órdenes</a>`;
+            mobileHTML += `<a href="#ordenes" class="mobile-link"><i class="fas fa-clipboard-list"></i><span>Órdenes</span></a>`;
+        } 
+        else if (rol === "ADMIN") {
+            menuHTML += `
+                <a href="#inventario" class="nav-link"><i class="fas fa-warehouse w-6"></i> Stock</a>
+                <a href="#clientes" class="nav-link"><i class="fas fa-address-book w-6"></i> CRM</a>
+                <a href="#vehiculos" class="nav-link"><i class="fas fa-car w-6"></i> Vehículos</a>
+                <a href="#pagos" class="nav-link"><i class="fas fa-cash-register w-6"></i> Recaudos</a>
+                <a href="#contabilidad" class="nav-link"><i class="fas fa-receipt w-6"></i> Finanzas</a>
+                <a href="#nomina" class="nav-link"><i class="fas fa-users-cog w-6"></i> Nómina</a>
+                <a href="#reportes" class="nav-link"><i class="fas fa-file-invoice-dollar w-6"></i> Reportes</a>`;
+            mobileHTML += `
+                <a href="#pagos" class="mobile-link"><i class="fas fa-wallet"></i><span>Pagos</span></a>
+                <a href="#clientes" class="mobile-link"><i class="fas fa-users"></i><span>CRM</span></a>`;
+        } 
+        else if (rol === "DUENO") {
+            menuHTML += `
+                <a href="#ordenes" class="nav-link"><i class="fas fa-screwdriver-wrench w-6"></i> Órdenes</a>
+                <a href="#inventario" class="nav-link"><i class="fas fa-warehouse w-6"></i> Stock</a>
+                <a href="#clientes" class="nav-link"><i class="fas fa-address-book w-6"></i> CRM</a>
+                <a href="#pagos" class="nav-link"><i class="fas fa-cash-register w-6"></i> Recaudos</a>
+                <a href="#contabilidad" class="nav-link"><i class="fas fa-receipt w-6"></i> Finanzas</a>
+                <a href="#staff" class="nav-link"><i class="fas fa-user-shield w-6"></i> Staff</a>
+                <a href="#gerenteAI" class="nav-link text-cyan-400"><i class="fas fa-brain w-6"></i> Gerente AI</a>
+                <a href="#finanzas_elite" class="nav-link text-amber-500"><i class="fas fa-crown w-6"></i> Elite Flow</a>`;
+            mobileHTML += `
+                <a href="#ordenes" class="mobile-link"><i class="fas fa-clipboard-list"></i><span>Órdenes</span></a>
+                <a href="#gerenteAI" class="mobile-link"><i class="fas fa-brain"></i><span>AI</span></a>`;
+        }
+
+        // Configuración y logout para todos pero ajustado
+        configZone.innerHTML = `<a href="#configuracion" class="nav-link italic border-cyan-500/10"><i class="fas fa-gear w-6"></i> Configuración</a>`;
+        mobileHTML += `<a href="#configuracion" class="mobile-link"><i class="fas fa-sliders-h"></i><span>Ajustes</span></a>`;
+
+        navMenu.innerHTML = menuHTML;
+        mobileNav.innerHTML = mobileHTML;
+    }
 
     async function router() {
         const container = document.getElementById("appContainer");
         const hash = window.location.hash.replace("#", "") || "dashboard";
+        const rol = localStorage.getItem("rol");
 
-        container.innerHTML = `
-            <div class="flex h-full flex-col items-center justify-center animate-in fade-in duration-700">
-                <div class="spinner mb-8"></div>
-                <div class="text-center orbitron">
-                    <p class="text-[8px] font-black uppercase text-cyan-400 tracking-[8px] animate-pulse">Sincronizando Nexus-X</p>
-                </div>
-            </div>`;
+        // VALIDACIÓN DE SEGURIDAD EN ROUTER
+        if (rol === "TECNICO" && !["dashboard", "ordenes", "configuracion"].includes(hash)) {
+            window.location.hash = "#dashboard"; return;
+        }
+        if (rol === "ADMIN" && ["staff", "finanzas_elite", "gerenteAI", "ordenes"].includes(hash)) {
+            window.location.hash = "#dashboard"; return;
+        }
+
+        container.innerHTML = `<div class="flex h-full flex-col items-center justify-center"><div class="spinner"></div></div>`;
 
         document.querySelectorAll('.nav-link, .mobile-link').forEach(link => {
             link.classList.toggle('active', link.getAttribute('href') === `#${hash}`);
@@ -240,67 +192,48 @@
         try {
             const moduleLoader = routes[hash] || routes.dashboard;
             const module = await moduleLoader();
-            
             const state = {
                 empresaId: localStorage.getItem("empresaId"),
                 uid: localStorage.getItem("uid"),
-                rol: localStorage.getItem("rol"),
+                rol: rol,
                 planTipo: localStorage.getItem("planTipo")
             };
-
             container.innerHTML = ""; 
-            if (module.default) {
-                await module.default(container, state);
-            }
-if (window.NexusHelp) {
-                NexusHelp.instalar(); 
-            }
+            if (module.default) await module.default(container, state);
+            if (window.NexusHelp) NexusHelp.instalar(); 
         } catch (err) {
-            console.error("🚨 NEXUS ROUTER ERROR:", err);
-            container.innerHTML = `
-                <div class="h-full flex items-center justify-center p-10">
-                    <div class="max-w-xs text-center border border-red-500/20 bg-red-500/5 p-8 rounded-[2rem] backdrop-blur-xl">
-                        <i class="fas fa-triangle-exclamation text-red-500 text-3xl mb-4"></i>
-                        <p class="text-red-500 orbitron text-[9px] tracking-widest uppercase font-black italic">Link Protocol Broken: ${hash}</p>
-                        <p class="text-[7px] text-slate-500 mt-2 uppercase">Verificar existencia de: js/modules/${hash}.js</p>
-                        <button onclick="location.hash='#dashboard'; location.reload();" class="mt-6 px-6 py-3 bg-red-500/10 text-red-500 rounded-xl text-[8px] orbitron font-black uppercase hover:bg-red-500 hover:text-white transition-all">Reestablecer Órbita</button>
-                    </div>
-                </div>`;
+            console.error("🚨 ROUTER ERROR:", err);
+            location.hash = "#dashboard";
         }
     }
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            // Sincronización con colección correcta: "usuarios"
             const userRef = doc(db, "usuarios", user.uid);
             const userSnap = await getDoc(userRef);
-            
             if (userSnap.exists()) {
                 const data = userSnap.data();
                 localStorage.setItem("empresaId", data.empresaId || "BASE");
-                localStorage.setItem("rol", (data.role || data.rolGlobal || "OPERADOR").toUpperCase());
-                localStorage.setItem("planTipo", (data.planType || data.plantype || "GRATI-CORE").toUpperCase());
-                localStorage.setItem("nexus_userName", data.nombre || user.email.split('@')[0]);
+                localStorage.setItem("rol", (localStorage.getItem("nexus_rol") || data.role || "OPERADOR").toUpperCase());
+                localStorage.setItem("planTipo", (data.planType || "GRATI-CORE").toUpperCase());
+                localStorage.setItem("nexus_userName", localStorage.getItem("nexus_userName") || data.nombre);
             }
-
+            
+            renderMenuByRole(localStorage.getItem("rol"));
             document.getElementById("userName").innerText = (localStorage.getItem("nexus_userName")).toUpperCase();
-            document.getElementById("userRole").innerText = `Nodo: ${localStorage.getItem("empresaId")}`;
+            document.getElementById("userRole").innerText = `Rol: ${localStorage.getItem("rol")}`;
             
             if (!window.location.hash) window.location.hash = "#dashboard";
             router();
         } else {
-            localStorage.clear();
-            window.location.href = "../login.html";
+            localStorage.clear(); window.location.href = "../login.html";
         }
     });
 
     window.addEventListener("hashchange", router);
-    
     document.getElementById("logoutBtn").onclick = async () => {
         if (confirm("¿Finalizar transmisión Nexus-X?")) {
-            await signOut(auth);
-            localStorage.clear();
-            window.location.href = "../login.html";
+            await signOut(auth); localStorage.clear(); window.location.href = "../login.html";
         }
     };
 </script>
