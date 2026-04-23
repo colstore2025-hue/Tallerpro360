@@ -1,5 +1,5 @@
 /**
- * dashboard.js - NEXUS-X AEGIS ULTIMA V50.0 🛰️
+ * dashboard.js - NEXUS-X AEGIS ULTIMA V50.1 🛰️
  * NÚCLEO DE COMANDO CENTRAL - TallerPRO360 SAP-GEN 2030
  * @author William Jeffry Urquijo Cubillos & Gemini AI
  */
@@ -14,24 +14,23 @@ const ROLES_PERMISOS = {
     "TECNICO": {
         label: "OPERADOR TÁCTICO",
         color: "text-emerald-400",
-        // Acceso limitado solo a la operatividad del taller
         modulos: ['ordenes', 'vehiculos'] 
     },
     "ADMIN": {
         label: "CONTROL LOGÍSTICO",
         color: "text-amber-400",
-        // Todo excepto finanzas_elite y gerenteAI (Tal cual lo pediste)
+        // Acceso total excepto Finanzas Elite y Gerente AI
         modulos: [
-            'clientes', 'vehiculos', 'ordenes', 'inventario', 'pagosTaller', 
+            'clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 
             'contabilidad', 'reportes', 'staff', 'nomina', 'marketplace_bridge', 'publish_mision'
         ]
     },
     "DUENO": {
         label: "COMANDANTE CORE",
         color: "text-cyan-400",
-        // Acceso Total a la infraestructura
+        // Acceso Total a la infraestructura SAP
         modulos: [
-            'clientes', 'vehiculos', 'ordenes', 'inventario', 'pagosTaller', 'contabilidad', 
+            'clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 
             'gerenteAI', 'reportes', 'marketplace_bridge', 'publish_mision', 
             'staff', 'nomina', 'finanzas_elite'
         ]
@@ -64,6 +63,7 @@ export default async function dashboard(container) {
 function renderInterface(container, plan, rol) {
     const empresa = localStorage.getItem("nexus_empresaNombre") || "TallerPRO360";
     const uiRol = ROLES_PERMISOS[rol];
+    const uiPlan = PLANES_UI[plan] || PLANES_UI["ELITE"];
 
     container.innerHTML = `
     <div id="nexus-aegis-view" class="p-4 lg:p-10 space-y-10 animate-in fade-in duration-700 pb-32 max-w-[1920px] mx-auto bg-[#010409]">
@@ -72,7 +72,7 @@ function renderInterface(container, plan, rol) {
             <div class="relative pl-6">
                 <div class="absolute left-0 top-0 h-full w-1 bg-cyan-500 shadow-[0_0_20px_#06b6d4]"></div>
                 <h1 class="orbitron text-4xl font-black italic uppercase text-white tracking-tighter">${empresa}</h1>
-                <p class="text-[9px] text-slate-500 orbitron tracking-[0.5em] mt-2 font-black uppercase">AEGIS ULTIMA V50.0 // TERMINATOR GEN</p>
+                <p class="text-[9px] text-slate-500 orbitron tracking-[0.5em] mt-2 font-black uppercase">AEGIS ULTIMA V50.1 // SAP-CORE 2030</p>
             </div>
             
             <div class="flex gap-3">
@@ -80,7 +80,7 @@ function renderInterface(container, plan, rol) {
                     <p class="text-[7px] orbitron text-slate-600 uppercase mb-1">Authorization</p>
                     <p class="text-[10px] orbitron font-black ${uiRol.color}">${uiRol.label}</p>
                 </div>
-                <div class="bg-[#0d1117] border ${PLANES_UI[plan]} px-6 py-3 rounded-2xl text-center">
+                <div class="bg-[#0d1117] border ${uiPlan} px-6 py-3 rounded-2xl text-center">
                     <p class="text-[7px] orbitron text-slate-600 uppercase mb-1">Security Plan</p>
                     <p class="text-[10px] orbitron font-black">${plan}</p>
                 </div>
@@ -88,20 +88,23 @@ function renderInterface(container, plan, rol) {
         </header>
 
         <div id="main-content-area" class="space-y-12">
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-4">
-                ${renderBtn('Órdenes', 'fa-screwdriver-wrench', '#ordenes', rol, 'ordenes')}
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-6">
+                ${renderBtn('Clientes', 'fa-users-gear', '#clientes', rol, 'clientes')}
+                ${renderBtn('Vehículos', 'fa-truck-fast', '#vehiculos', rol, 'vehiculos')}
                 ${renderBtn('Inventario', 'fa-boxes-stacked', '#inventario', rol, 'inventario')}
-                ${renderBtn('Vehículos', 'fa-car-side', '#vehiculos', rol, 'vehiculos')}
-                ${renderBtn('CRM / Clientes', 'fa-users-gear', '#clientes', rol, 'clientes')}
-                ${renderBtn('Caja Taller', 'fa-vault', '#pagosTaller', rol, 'pagosTaller')}
-                ${renderBtn('Contabilidad', 'fa-file-invoice-dollar', '#contabilidad', rol, 'contabilidad')}
-                ${renderBtn('Nómina', 'fa-id-card', '#nomina', rol, 'nomina')}
-                ${renderBtn('Reportes', 'fa-chart-pie', '#reportes', rol, 'reportes')}
-                ${renderBtn('Gerente AI', 'fa-brain', '#gerenteAI', rol, 'gerenteAI')}
-                ${renderBtn('Audit Core', 'fa-shield-check', '#finanzas_elite', rol, 'finanzas_elite')}
-                ${renderBtn('MarketBridge', 'fa-bridge', '#marketplace_bridge', rol, 'marketplace_bridge')}
-                ${renderBtn('Misión X', 'fa-rocket', '#publish_mision', rol, 'publish_mision')}
-                ${renderBtn('Staff', 'fa-user-tie', '#staff', rol, 'staff')}
+                ${renderBtn('Órdenes', 'fa-screwdriver-wrench', '#ordenes', rol, 'ordenes')}
+                
+                ${renderBtn('Caja Real', 'fa-money-bill-transfer', '#pagos', rol, 'pagos')}
+                ${renderBtn('Libro Contable', 'fa-file-invoice-dollar', '#contabilidad', rol, 'contabilidad')}
+                ${renderBtn('Nómina', 'fa-id-badge', '#nomina', rol, 'nomina')}
+                
+                ${renderBtn('Gerente AI', 'fa-robot', '#gerenteAI', rol, 'gerenteAI')}
+                ${renderBtn('MarketX', 'fa-globe', '#marketplace_bridge', rol, 'marketplace_bridge')}
+                ${renderBtn('Nueva Misión', 'fa-plus-circle', '#publish_mision', rol, 'publish_mision')}
+                
+                ${renderBtn('Reportes', 'fa-chart-simple', '#reportes', rol, 'reportes')}
+                ${renderBtn('Staff', 'fa-people-group', '#staff', rol, 'staff')}
+                ${renderBtn('Audit Core', 'fa-shield-halved', '#finanzas_elite', rol, 'finanzas_elite')}
                 
                 <button onclick="window.open('https://wa.me/17049419163')" class="group p-5 rounded-3xl bg-emerald-500/5 border border-emerald-500/20 hover:bg-emerald-500 transition-all flex flex-col items-center justify-center">
                     <i class="fab fa-whatsapp text-lg mb-2 text-emerald-500 group-hover:text-white"></i>
@@ -168,7 +171,7 @@ const ejecutarRouter = async () => {
 
     try {
         const moduleKey = hash.replace('#', '');
-        // Sincronización dinámica con los archivos de tu carpeta /modules/
+        // El import ahora cargará exactamente el nombre del archivo en /modules/
         const modulo = await import(`./modules/${moduleKey}.js?v=${Date.now()}`);
         if (modulo?.default) {
             modContainer.innerHTML = "";
