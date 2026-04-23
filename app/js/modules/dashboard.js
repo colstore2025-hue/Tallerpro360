@@ -6,45 +6,49 @@
 
 import { db } from "../core/firebase-config.js";
 import { 
-    collection, query, where, getDocs, limit, orderBy, onSnapshot, addDoc, serverTimestamp 
+    collection, query, where, getDocs, limit, onSnapshot 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// --- 🛡️ 1. PROTOCOLO DE SEGURIDAD NIVEL MILITAR (ROLES) ---
+// --- 🛡️ 1. PROTOCOLO DE SEGURIDAD Y PERMISOS POR ROL ---
 const ROLES_PERMISOS = {
     "TECNICO": {
         label: "OPERADOR TÁCTICO",
         color: "text-emerald-400",
-        modulos: ['ordenes', 'vehiculos', 'configuracion']
+        // Acceso limitado solo a la operatividad del taller
+        modulos: ['ordenes', 'vehiculos'] 
     },
     "ADMIN": {
         label: "CONTROL LOGÍSTICO",
         color: "text-amber-400",
-        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'crm', 'contabilidad', 'reportes', 'staff']
+        // Todo excepto finanzas_elite y gerenteAI (Tal cual lo pediste)
+        modulos: [
+            'clientes', 'vehiculos', 'ordenes', 'inventario', 'pagosTaller', 
+            'contabilidad', 'reportes', 'staff', 'nomina', 'marketplace_bridge', 'publish_mision'
+        ]
     },
     "DUENO": {
         label: "COMANDANTE CORE",
         color: "text-cyan-400",
-        // El Dueño ve TODO, incluyendo los nuevos módulos detectados en tu carpeta app/js/modules
+        // Acceso Total a la infraestructura
         modulos: [
-            'clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'contabilidad', 
+            'clientes', 'vehiculos', 'ordenes', 'inventario', 'pagosTaller', 'contabilidad', 
             'gerenteAI', 'reportes', 'marketplace_bridge', 'publish_mision', 
-            'staff', 'nomina', 'finanzas_elite', 'auditoria', 'logistica', 'crm'
+            'staff', 'nomina', 'finanzas_elite'
         ]
     }
 };
 
 const PLANES_UI = {
-    "GRATI-CORE": "border-slate-700 text-slate-500",
-    "BASICO": "border-blue-500 text-blue-400",
+    "ELITE": "border-cyan-500 text-cyan-400 shadow-[0_0_40px_rgba(6,182,212,0.3)]",
     "PRO": "border-purple-500 text-purple-400",
-    "ELITE": "border-cyan-500 text-cyan-400 shadow-[0_0_40px_rgba(6,182,212,0.3)]"
+    "BASICO": "border-blue-500 text-blue-400"
 };
 
 // --- 🚀 2. MOTOR DE INYECCIÓN ---
 export default async function dashboard(container) {
     const empresaId = localStorage.getItem("empresaId");
     const rol = (localStorage.getItem("rol") || "TECNICO").toUpperCase();
-    const plan = (localStorage.getItem("planTipo") || "GRATI-CORE").toUpperCase();
+    const plan = (localStorage.getItem("planTipo") || "ELITE").toUpperCase();
     
     if (!empresaId) { location.hash = "#login"; return; }
 
@@ -56,28 +60,9 @@ export default async function dashboard(container) {
     }
 }
 
-// --- 🧠 3. MOTOR BI (INTELIGENCIA ESTRATÉGICA) ---
-async function cargarBI(empresaId, plan, rol) {
-    try {
-        const snap = await getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId), limit(200)));
-        const data = snap.docs.map(d => d.data());
-        const stats = {
-            revenue: data.reduce((acc, o) => acc + (Number(o.total) || 0), 0),
-            count: data.length,
-            ticket: data.length ? (data.reduce((acc, o) => acc + (Number(o.total) || 0), 0) / data.length) : 0,
-            staff: processStaff(data)
-        };
-
-        updateHUD(stats, plan, rol);
-        if (rol === "DUENO") renderEfficiency(stats.staff);
-        deployAI(stats, rol === "DUENO");
-    } catch (err) { console.error("AEGIS_BI_ERROR", err); }
-}
-
-// --- 🛠️ 4. ARQUITECTURA VISUAL (INTERFACE DESIGN) ---
+// --- 🛠️ 3. ARQUITECTURA VISUAL (SAP-STYLE) ---
 function renderInterface(container, plan, rol) {
     const empresa = localStorage.getItem("nexus_empresaNombre") || "TallerPRO360";
-    const uiPlan = PLANES_UI[plan] || PLANES_UI["GRATI-CORE"];
     const uiRol = ROLES_PERMISOS[rol];
 
     container.innerHTML = `
@@ -95,7 +80,7 @@ function renderInterface(container, plan, rol) {
                     <p class="text-[7px] orbitron text-slate-600 uppercase mb-1">Authorization</p>
                     <p class="text-[10px] orbitron font-black ${uiRol.color}">${uiRol.label}</p>
                 </div>
-                <div class="bg-[#0d1117] border ${uiPlan} px-6 py-3 rounded-2xl text-center">
+                <div class="bg-[#0d1117] border ${PLANES_UI[plan]} px-6 py-3 rounded-2xl text-center">
                     <p class="text-[7px] orbitron text-slate-600 uppercase mb-1">Security Plan</p>
                     <p class="text-[10px] orbitron font-black">${plan}</p>
                 </div>
@@ -103,21 +88,20 @@ function renderInterface(container, plan, rol) {
         </header>
 
         <div id="main-content-area" class="space-y-12">
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-4">
                 ${renderBtn('Órdenes', 'fa-screwdriver-wrench', '#ordenes', rol, 'ordenes')}
                 ${renderBtn('Inventario', 'fa-boxes-stacked', '#inventario', rol, 'inventario')}
                 ${renderBtn('Vehículos', 'fa-car-side', '#vehiculos', rol, 'vehiculos')}
-                ${renderBtn('Clientes', 'fa-users', '#clientes', rol, 'clientes')}
-                ${renderBtn('Caja Real', 'fa-vault', '#pagos', rol, 'pagos')}
+                ${renderBtn('CRM / Clientes', 'fa-users-gear', '#clientes', rol, 'clientes')}
+                ${renderBtn('Caja Taller', 'fa-vault', '#pagosTaller', rol, 'pagosTaller')}
                 ${renderBtn('Contabilidad', 'fa-file-invoice-dollar', '#contabilidad', rol, 'contabilidad')}
                 ${renderBtn('Nómina', 'fa-id-card', '#nomina', rol, 'nomina')}
-                ${renderBtn('CRM', 'fa-comments-dollar', '#crm', rol, 'crm')}
-                ${renderBtn('Logística', 'fa-truck-fast', '#logistica', rol, 'logistica')}
                 ${renderBtn('Reportes', 'fa-chart-pie', '#reportes', rol, 'reportes')}
                 ${renderBtn('Gerente AI', 'fa-brain', '#gerenteAI', rol, 'gerenteAI')}
-                ${renderBtn('Auditoría', 'fa-shield-check', '#auditoria', rol, 'auditoria')}
-                ${renderBtn('MarketX', 'fa-globe', '#marketplace_bridge', rol, 'marketplace_bridge')}
-                ${renderBtn('Misión', 'fa-plus-circle', '#publish_mision', rol, 'publish_mision')}
+                ${renderBtn('Audit Core', 'fa-shield-check', '#finanzas_elite', rol, 'finanzas_elite')}
+                ${renderBtn('MarketBridge', 'fa-bridge', '#marketplace_bridge', rol, 'marketplace_bridge')}
+                ${renderBtn('Misión X', 'fa-rocket', '#publish_mision', rol, 'publish_mision')}
+                ${renderBtn('Staff', 'fa-user-tie', '#staff', rol, 'staff')}
                 
                 <button onclick="window.open('https://wa.me/17049419163')" class="group p-5 rounded-3xl bg-emerald-500/5 border border-emerald-500/20 hover:bg-emerald-500 transition-all flex flex-col items-center justify-center">
                     <i class="fab fa-whatsapp text-lg mb-2 text-emerald-500 group-hover:text-white"></i>
@@ -154,7 +138,7 @@ function renderInterface(container, plan, rol) {
 }
 
 function renderBtn(name, icon, path, rol, modulo) {
-    const tieneAcceso = rol === "DUENO" || ROLES_PERMISOS[rol].modulos.includes(modulo);
+    const tieneAcceso = ROLES_PERMISOS[rol].modulos.includes(modulo);
     if (!tieneAcceso) return ""; 
 
     return `
@@ -164,7 +148,7 @@ function renderBtn(name, icon, path, rol, modulo) {
     </button>`;
 }
 
-// --- 🛰️ 5. ROUTER QUIRÚRGICO (PRECISIÓN 2030) ---
+// --- 🛰️ 4. ROUTER DE MÓDULOS (PRECISIÓN QUIRÚRGICA) ---
 const ejecutarRouter = async () => {
     const hash = window.location.hash;
     const mainView = document.getElementById("main-content-area");
@@ -184,6 +168,7 @@ const ejecutarRouter = async () => {
 
     try {
         const moduleKey = hash.replace('#', '');
+        // Sincronización dinámica con los archivos de tu carpeta /modules/
         const modulo = await import(`./modules/${moduleKey}.js?v=${Date.now()}`);
         if (modulo?.default) {
             modContainer.innerHTML = "";
@@ -195,7 +180,24 @@ const ejecutarRouter = async () => {
     }
 };
 
-// --- 📊 6. HELPERS ---
+// --- 📊 5. BUSINESS INTELLIGENCE & HUD ---
+async function cargarBI(empresaId, plan, rol) {
+    try {
+        const snap = await getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId), limit(200)));
+        const data = snap.docs.map(d => d.data());
+        const stats = {
+            revenue: data.reduce((acc, o) => acc + (Number(o.total) || 0), 0),
+            count: data.length,
+            ticket: data.length ? (data.reduce((acc, o) => acc + (Number(o.total) || 0), 0) / data.length) : 0,
+            staff: processStaff(data)
+        };
+
+        updateHUD(stats, plan, rol);
+        if (rol === "DUENO") renderEfficiency(stats.staff);
+        deployAI(stats, rol === "DUENO");
+    } catch (err) { console.error("AEGIS_BI_ERROR", err); }
+}
+
 function updateHUD(s, plan, rol) {
     const hud = document.getElementById("hudKpis");
     if(!hud) return;
@@ -228,7 +230,7 @@ function updateHUD(s, plan, rol) {
 function processStaff(data) {
     const staff = {};
     data.forEach(o => {
-        const t = o.tecnico || "Unknown";
+        const t = o.tecnico || "Sin Asignar";
         staff[t] = (staff[t] || 0) + (Number(o.total) || 0);
     });
     return Object.entries(staff).sort((a,b) => b[1] - a[1]);
