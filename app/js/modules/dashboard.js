@@ -19,7 +19,7 @@ const ROLES_PERMISOS = {
     "ADMIN": {
         label: "CONTROL LOGÍSTICO",
         color: "text-amber-400",
-        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'crm', 'contabilidad']
+        modulos: ['clientes', 'vehiculos', 'ordenes', 'inventario', 'pagos', 'crm', 'contabilidad', 'reportes', 'staff']
     },
     "DUENO": {
         label: "COMANDANTE CORE",
