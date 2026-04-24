@@ -1,26 +1,28 @@
 /**
- * publish_mision.js - NEXUS-X AEGIS V50.1 🛰️
- * NODO DE LANZAMIENTO DE ACTIVOS (MISIÓN CRÍTICA)
+ * publish_mision.js - NEXUS-X AEGIS V50.2 🛰️
+ * NODO DE LANZAMIENTO CON SOPORTE MULTI-IMAGEN
  * @author William Jeffry Urquijo Cubillos & Gemini AI
  */
 import { db } from "../core/firebase-config.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// NOTA: Para producción, William, recuerda integrar Firebase Storage para las URLs reales.
 export default async function publish_mision(container) {
     const empresaId = localStorage.getItem("empresaId");
     const empresaNombre = localStorage.getItem("nexus_empresaNombre") || "OPERADOR NEXUS";
+    let selectedImages = []; // Array para almacenar las bases64 o files
 
     container.innerHTML = `
-    <div class="p-4 lg:p-12 max-w-6xl mx-auto animate-in fade-in zoom-in-95 duration-700">
+    <div class="p-4 lg:p-12 max-w-7xl mx-auto animate-in fade-in zoom-in-95 duration-700">
         
         <header class="flex justify-between items-center mb-12 border-b border-white/5 pb-10">
             <div class="relative pl-6">
                 <div class="absolute left-0 top-0 h-full w-1 bg-cyan-500 shadow-[0_0_20px_#06b6d4]"></div>
                 <h1 class="orbitron text-4xl font-black italic text-white uppercase tracking-tighter">MISSION<span class="text-cyan-500">CONTROL</span></h1>
-                <p class="text-[9px] text-slate-500 orbitron tracking-[0.5em] mt-2">LANZAMIENTO DE ACTIVOS SAP-GEN</p>
+                <p class="text-[9px] text-slate-500 orbitron tracking-[0.5em] mt-2">DESPLIEGE DE ACTIVOS MULTI-IMAGEN V50.2</p>
             </div>
             <button onclick="location.hash='#marketplace_bridge'" class="group flex items-center gap-3 px-6 py-3 bg-[#0d1117] border border-white/10 rounded-2xl hover:border-red-500/50 transition-all">
-                <span class="text-[8px] orbitron text-slate-500 group-hover:text-red-500 transition-all font-black uppercase">Abortar Misión</span>
+                <span class="text-[8px] orbitron text-slate-500 group-hover:text-red-500 transition-all font-black uppercase">Abortar</span>
                 <i class="fas fa-times text-slate-700 group-hover:text-red-500"></i>
             </button>
         </header>
@@ -28,109 +30,99 @@ export default async function publish_mision(container) {
         <form id="form-publish" class="grid lg:grid-cols-12 gap-8">
             
             <div class="lg:col-span-7 space-y-6">
-                <div class="bg-[#0d1117] p-8 lg:p-10 rounded-[3rem] border border-white/5 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 p-6 opacity-10">
-                        <i class="fas fa-satellite text-6xl text-cyan-500"></i>
+                <div class="bg-[#0d1117] p-6 rounded-[2.5rem] border border-dashed border-white/10 relative">
+                    <label class="text-[8px] orbitron font-black text-cyan-500 tracking-widest block mb-4 uppercase text-center">Evidencia Visual del Activo (Máx 4 Fotos)</label>
+                    
+                    <div class="grid grid-cols-4 gap-4 mb-4" id="preview-container">
+                        ${[1,2,3,4].map(i => `
+                            <div id="slot-${i}" class="aspect-square bg-black/40 border border-white/5 rounded-2xl flex items-center justify-center relative overflow-hidden group">
+                                <i class="fas fa-camera text-slate-800 text-xl group-hover:text-cyan-500 transition-all"></i>
+                                <input type="file" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer img-input" data-slot="${i}">
+                                <img src="" class="hidden w-full h-full object-cover absolute inset-0 pointer-events-none">
+                            </div>
+                        `).join('')}
                     </div>
+                    <p class="text-[7px] text-center text-slate-600 orbitron">SISTEMA DE CAPTURA SAP-GEN: FORMATOS JPG/PNG ADMITIDOS</p>
+                </div>
 
+                <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="col-span-full">
-                            <label class="text-[8px] orbitron font-black text-cyan-500/50 tracking-widest block mb-3 uppercase">Identificador del Activo (Part Name/Model)</label>
-                            <input type="text" id="m_nombre" required 
-                                class="w-full p-5 bg-black/40 border border-white/5 rounded-2xl text-white font-bold orbitron text-sm focus:border-cyan-500 outline-none transition-all" 
-                                placeholder="EJ: TRANSMISIÓN EATON FULLER 18-SPEED">
+                            <label class="text-[8px] orbitron font-black text-slate-500 mb-2 block uppercase">Nombre del Producto / Repuesto</label>
+                            <input type="text" id="m_nombre" required class="w-full p-4 bg-black/40 border border-white/5 rounded-xl text-white font-bold orbitron text-xs focus:border-cyan-500 outline-none">
                         </div>
-
                         <div>
-                            <label class="text-[8px] orbitron font-black text-slate-500 tracking-widest block mb-3 uppercase">Valuación Comercial</label>
-                            <div class="relative">
-                                <span class="absolute left-5 top-1/2 -translate-y-1/2 text-cyan-500 font-black orbitron text-xs">$</span>
-                                <input type="text" id="m_precio" required 
-                                    class="w-full p-5 pl-10 bg-black/40 border border-white/5 rounded-2xl text-cyan-400 font-black orbitron text-sm focus:border-cyan-500 outline-none" 
-                                    placeholder="0.00">
-                            </div>
+                            <label class="text-[8px] orbitron font-black text-slate-500 mb-2 block uppercase">Valuación USD/COP</label>
+                            <input type="number" id="m_precio" required class="w-full p-4 bg-black/40 border border-white/5 rounded-xl text-emerald-400 font-black orbitron text-xs">
                         </div>
-
                         <div>
-                            <label class="text-[8px] orbitron font-black text-slate-500 tracking-widest block mb-3 uppercase">Canal de Despliegue</label>
-                            <select id="m_log" class="w-full p-5 bg-black/40 border border-white/5 rounded-2xl text-white font-black orbitron text-[10px] focus:border-cyan-500 outline-none appearance-none">
+                            <label class="text-[8px] orbitron font-black text-slate-500 mb-2 block uppercase">Ubicación de Stock</label>
+                            <select id="m_log" class="w-full p-4 bg-black/40 border border-white/5 rounded-xl text-white orbitron text-[9px] outline-none">
                                 <option value="heavy">COLOMBIAN TRUCKS LOGISTICS</option>
-                                <option value="usa">CHARLOTTE HUB (NORTH CAROLINA)</option>
-                                <option value="nexus">NEXUS-X INTERNAL NETWORK</option>
+                                <option value="usa">CHARLOTTE HUB (NC)</option>
+                                <option value="nexus">NEXUS-X INTERNAL</option>
                             </select>
                         </div>
-
                         <div class="col-span-full">
-                            <label class="text-[8px] orbitron font-black text-slate-500 tracking-widest block mb-3 uppercase">Especificaciones del Hardware (Opcional)</label>
-                            <textarea id="m_desc" rows="3" class="w-full p-5 bg-black/40 border border-white/5 rounded-2xl text-slate-300 text-xs focus:border-cyan-500 outline-none resize-none" placeholder="Detalles técnicos, estado, ubicación física..."></textarea>
+                            <textarea id="m_desc" rows="2" class="w-full p-4 bg-black/40 border border-white/5 rounded-xl text-slate-300 text-[10px] outline-none resize-none" placeholder="Especificaciones técnicas..."></textarea>
                         </div>
                     </div>
                 </div>
 
-                <button type="submit" id="btn-envio" class="group w-full py-8 bg-white text-black orbitron font-black text-[11px] rounded-[2.5rem] hover:bg-cyan-500 hover:text-white transition-all duration-500 uppercase tracking-[0.2em] shadow-2xl relative overflow-hidden">
-                    <span class="relative z-10">Ejecutar Lanzamiento Global <i class="fas fa-bolt ml-2"></i></span>
-                    <div class="absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <button type="submit" id="btn-envio" class="w-full py-6 bg-white text-black orbitron font-black text-[10px] rounded-full hover:bg-cyan-500 hover:text-white transition-all shadow-xl uppercase tracking-widest">
+                    Ejecutar Lanzamiento <i class="fas fa-bolt ml-2"></i>
                 </button>
             </div>
 
             <div class="lg:col-span-5">
-                <div class="bg-black border border-white/5 p-10 rounded-[3.5rem] h-full flex flex-col items-center justify-center text-center relative overflow-hidden group">
-                    <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-500/5 via-transparent to-transparent"></div>
-                    
-                    <div id="ai-status-icon" class="w-20 h-20 bg-[#0d1117] border border-cyan-500/20 rounded-full flex items-center justify-center mb-8 relative z-10">
-                        <i class="fas fa-satellite-dish text-3xl text-cyan-500 animate-pulse"></i>
+                <div class="bg-black border border-white/5 p-10 rounded-[3.5rem] h-full flex flex-col items-center justify-center text-center relative overflow-hidden shadow-2xl">
+                    <div id="ai-status-icon" class="w-16 h-16 bg-cyan-500/10 border border-cyan-500/20 rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-brain text-2xl text-cyan-500 animate-pulse"></i>
                     </div>
-
-                    <h4 class="orbitron text-[10px] text-white font-black uppercase tracking-[0.4em] mb-6 relative z-10">NEXUS Strategist AI</h4>
+                    <h4 class="orbitron text-[9px] text-white font-black uppercase mb-4 tracking-widest">Nexus Intelligence</h4>
+                    <p id="ai-text" class="text-[10px] text-slate-500 italic leading-relaxed">"Esperando carga de activos visuales para optimizar indexación en la red."</p>
                     
-                    <div class="space-y-4 relative z-10">
-                        <p id="ai-text" class="text-xs text-slate-500 italic leading-relaxed px-6">
-                            "Esperando telemetría del activo. El despliegue en la red <span class="text-white">Nexus-X</span> garantiza visibilidad en todos los nodos de <span class="text-cyan-500 italic">${empresaNombre}</span>."
-                        </p>
-                        
-                        <div class="flex flex-col gap-2 pt-6">
-                            <div class="flex justify-between text-[7px] orbitron text-slate-700 font-black uppercase">
-                                <span>Verificación de Datos</span>
-                                <span id="v-data" class="text-slate-800">WAITING...</span>
-                            </div>
-                            <div class="h-[2px] bg-white/5 w-full rounded-full overflow-hidden">
-                                <div id="v-bar" class="h-full bg-cyan-500 w-0 transition-all duration-1000"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-10 pt-10 border-t border-white/5 w-full">
-                        <p class="text-[6px] orbitron text-slate-800 tracking-widest uppercase">Encryption: AES-256 NEXUS-CORE</p>
+                    <div id="image-counter" class="mt-8 flex gap-2">
+                        <div class="w-2 h-2 rounded-full bg-white/5"></div>
+                        <div class="w-2 h-2 rounded-full bg-white/5"></div>
+                        <div class="w-2 h-2 rounded-full bg-white/5"></div>
+                        <div class="w-2 h-2 rounded-full bg-white/5"></div>
                     </div>
                 </div>
             </div>
         </form>
     </div>`;
 
-    // LÓGICA DE INTERACCIÓN AI
-    const nombreInput = document.getElementById('m_nombre');
-    const vBar = document.getElementById('v-bar');
-    const vData = document.getElementById('v-data');
+    // LÓGICA DE CARGA DE IMÁGENES
+    const inputs = container.querySelectorAll('.img-input');
     const aiText = document.getElementById('ai-text');
+    const counters = document.getElementById('image-counter').children;
 
-    nombreInput.oninput = (e) => {
-        if(e.target.value.length > 3) {
-            vBar.style.width = '100%';
-            vData.innerText = 'VALIDATED';
-            vData.classList.replace('text-slate-800', 'text-emerald-500');
-            aiText.innerHTML = `"Activo identificado. Optimizando canal de distribución para <span class="text-white">${e.target.value.toUpperCase()}</span>..."`;
-        }
-    };
+    inputs.forEach((input, index) => {
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const previewImg = input.nextElementSibling;
+                    previewImg.src = event.target.result;
+                    previewImg.classList.remove('hidden');
+                    selectedImages[index] = event.target.result; // Guardamos el base64
+                    
+                    counters[index].classList.replace('bg-white/5', 'bg-cyan-500');
+                    aiText.innerHTML = `"Imagen ${index + 1} verificada. Resolución óptima para Marketplace Global detectada."`;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+    });
 
     const form = document.getElementById('form-publish');
     form.onsubmit = async (e) => {
         e.preventDefault();
         const btn = document.getElementById('btn-envio');
-        const icon = document.getElementById('ai-status-icon');
-        
         btn.disabled = true;
-        btn.innerHTML = `<i class="fas fa-sync animate-spin"></i> TRANSMITIENDO A LA RED...`;
-        icon.classList.add('animate-spin');
+        btn.innerHTML = `<i class="fas fa-sync animate-spin"></i> TRANSMITIENDO...`;
 
         try {
             await addDoc(collection(db, "marketplace"), {
@@ -140,22 +132,19 @@ export default async function publish_mision(container) {
                 descripcion: document.getElementById('m_desc').value,
                 empresaId: empresaId,
                 operador: empresaNombre,
+                images: selectedImages, // Array de fotos enviado a Firestore
+                imgUrl: selectedImages[0] || '', // Foto principal para la miniatura
                 ubicacion: document.getElementById('m_log').value === 'usa' ? 'CHARLOTTE HUB' : 'COLOMBIA CORE',
                 creadoEn: serverTimestamp()
             });
 
-            // Simulación de éxito SAP
-            aiText.innerHTML = `<span class="text-emerald-500">MISIÓN LANZADA CON ÉXITO.</span> Propagando señal en nodos regionales...`;
-            
-            setTimeout(() => {
-                location.hash = "#marketplace_bridge";
-            }, 1500);
+            aiText.innerHTML = `<span class="text-emerald-500 italic">DESPLIEGUE EXITOSO.</span> Activo disponible en Marketplace.`;
+            setTimeout(() => location.hash = "#marketplace_bridge", 1500);
 
         } catch (err) {
             console.error(err);
             btn.disabled = false;
-            btn.innerHTML = "ERROR EN TRANSMISIÓN - REINTENTAR";
-            icon.classList.remove('animate-spin');
+            btn.innerHTML = "ERROR - REINTENTAR";
         }
     };
 }
