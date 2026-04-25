@@ -27,45 +27,71 @@ export default async function ordenes(container) {
         return;
     }
 
-    // --- MOTOR FINANCIERO SAP BI (EBITDA REAL) ---
+        // --- MOTOR FINANCIERO QUANTUM-SAP (EBITDA & TAX LOGIC) ---
     const recalcularFinanzas = () => {
         if (!ordenActiva) return;
-        let m = { v_rep: 0, c_rep: 0, v_mo: 0, c_mo: 0, tiempo: 0 };
+        
+        // Inicialización de acumuladores SAP
+        let m = { 
+            v_rep: 0,   // Venta Repuestos
+            c_rep: 0,   // Costo Repuestos (Inventario)
+            v_mo: 0,    // Venta Mano de Obra
+            c_mo: 0,    // Costo Staff (Pago a técnicos)
+            tiempo: 0   // Horas Hombre Totales
+        };
 
         ordenActiva.items.forEach(i => {
             const v = Number(i.venta || 0);
             const c = Number(i.costo || 0);
             m.tiempo += Number(i.tiempo_estimado || 0);
+            
             if (i.tipo === 'REPUESTO') {
                 m.v_rep += v;
+                // Si el repuesto es del taller, se suma al costo para calcular utilidad real
                 if(i.origen === 'TALLER') m.c_rep += c;
             } else {
                 m.v_mo += v;
-                m.c_mo += c; 
+                m.c_mo += c; // Este es el pasivo directo con el técnico
             }
         });
 
+        // Captura de variables externas de flujo de caja
         const insumos = Number(document.getElementById("f-gastos-varios")?.value || 0); 
         const anticipo = Number(document.getElementById("f-anticipo-cliente")?.value || 0); 
+        
+        // Lógica Tributaria Colombia (Facturación Final)
         const granTotal = m.v_rep + m.v_mo; 
-        const utilidad = (granTotal / 1.19) - (m.c_rep + m.c_mo + insumos);
+        const baseGravable = granTotal / 1.19;
+        const impuestoIVA = granTotal - baseGravable;
+        
+        // Cálculo de Utilidad Neta (EBITDA Operativo)
+        // Fórmula: Base Gravable - (Costo Repuestos + Costo Técnicos + Gastos Operativos/Insumos)
+        const utilidadNeta = baseGravable - (m.c_rep + m.c_mo + insumos);
 
+        // Inyección de datos al objeto de la orden para sincronización Cloud
         ordenActiva.costos_totales = {
             gran_total: granTotal,
-            utilidad: utilidad,
-            saldo: granTotal - anticipo,
-            tiempo_h: m.tiempo,
-            staff_cost: m.c_mo
+            base_iva: baseGravable,
+            iva_19: impuestoIVA,
+            utilidad_neta: utilidadNeta,
+            saldo_pendiente: granTotal - anticipo,
+            eficiencia_h: m.tiempo,
+            staff_liability: m.c_mo
         };
 
+        // Renderizado en UI de alta fidelidad
         const totalEl = document.getElementById("total-factura");
         if(totalEl) {
             totalEl.innerText = `$ ${Math.round(granTotal).toLocaleString()}`;
             document.getElementById("saldo-display").innerHTML = `
-                <div class="text-right">
-                    <span class="text-cyan-500/50 text-[10px] orbitron block font-black">EFFICIENCY: ${m.tiempo}H</span>
-                    <span class="${ordenActiva.costos_totales.saldo > 0 ? 'text-red-500' : 'text-emerald-400'} font-black text-4xl orbitron">
-                        $ ${Math.round(ordenActiva.costos_totales.saldo).toLocaleString()}
+                <div class="text-right space-y-1">
+                    <span class="text-cyan-500/50 text-[9px] orbitron block font-black tracking-widest">SAP BI ANALYTICS</span>
+                    <div class="flex flex-col border-r-4 border-red-600 pr-4">
+                        <span class="text-slate-500 text-[10px] orbitron uppercase">IVA (19%): $${Math.round(impuestoIVA).toLocaleString()}</span>
+                        <span class="text-emerald-500 font-black text-xs orbitron">EBITDA: $${Math.round(utilidadNeta).toLocaleString()}</span>
+                    </div>
+                    <span class="${ordenActiva.costos_totales.saldo_pendiente > 0 ? 'text-red-500' : 'text-emerald-400'} font-black text-5xl orbitron tracking-tighter">
+                        $ ${Math.round(ordenActiva.costos_totales.saldo_pendiente).toLocaleString()}
                     </span>
                 </div>`;
         }
