@@ -265,6 +265,29 @@ export default async function ordenes(container) {
         };
     };
 
+    // --- MOTOR DE COMUNICACIÓN NEXUS-X (WHATSAPP PREMIUM) ---
+    window.enviarReporteQuantum = (fase) => {
+        const tel = document.getElementById("f-telefono").value.replace(/\+/g, '');
+        const placa = document.getElementById("f-placa").value;
+        const total = document.getElementById("total-factura").innerText;
+        const cliente = document.getElementById("f-cliente").value;
+
+        let mensaje = `*🛰️ NEXUS-X COMMAND CENTER - ${fase}*%0A%0A`;
+        mensaje += `Hola *${cliente}*, el estatus de tu unidad *[${placa}]* ha sido actualizado.%0A%0A`;
+        
+        if(fase === 'COTIZACION') {
+            mensaje += `✅ *PRE-COTIZACIÓN LISTA*%0A`;
+            mensaje += `💰 *VALOR ESTIMADO:* ${total}%0A`;
+            mensaje += `🔗 *LINK DE APROBACIÓN:* https://nexus-x.io/view/${ordenActiva.id}%0A%0A`;
+        } else if(fase === 'DIAGNOSTICO') {
+            mensaje += `🔍 *REPORTE TÉCNICO VÍA VOZ:*%0A_${ordenActiva.bitacora_ia || 'Sin bitácora registrada'}_%0A%0A`;
+        }
+
+        mensaje += `_TallerPRO360 - Logística Automotriz de Élite_`;
+        
+        window.open(`https://api.whatsapp.com/send?phone=${tel}&text=${mensaje}`, '_blank');
+    };
+
     window.nexusAbrirRadar = async () => {
         const snap = await getDocs(collection(db, "proveedores"));
         const lista = snap.docs.map(d => `<div class="p-4 bg-white/5 mb-2 rounded-xl border border-white/10 flex justify-between"><span>${d.data().nombre}</span><span class="text-emerald-400 font-bold">${d.data().telefono}</span></div>`).join('');
