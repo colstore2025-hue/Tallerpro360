@@ -152,18 +152,29 @@ export default async function ordenes(container) {
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
                 <div class="lg:col-span-4 space-y-6">
-                    <div class="bg-[#0d1117] rounded-[3.5rem] border border-white/5 p-10 space-y-6">
-                        <h4 class="orbitron font-black text-red-500 text-[10px] tracking-[0.3em] uppercase">Escudo Legal & CRM</h4>
-                        <input id="f-cliente" value="${ordenActiva.cliente || ''}" placeholder="NOMBRE DEL CLIENTE" class="w-full bg-black p-5 rounded-2xl border border-white/5 text-white font-black uppercase text-sm">
+                                        <div class="bg-[#0d1117] rounded-[3.5rem] border border-white/5 p-10 space-y-6 shadow-2xl">
+                        <h4 class="orbitron font-black text-red-500 text-[10px] tracking-[0.3em] uppercase mb-4">Escudo Legal & CRM</h4>
+                        
+                        <div class="grid grid-cols-3 gap-2">
+                            <select id="f-tipo-doc" class="bg-black p-4 rounded-2xl border border-white/10 text-white orbitron text-[10px] appearance-none">
+                                <option value="NIT" ${ordenActiva.cliente_data?.tipo_doc === 'NIT' ? 'selected' : ''}>NIT</option>
+                                <option value="CC" ${ordenActiva.cliente_data?.tipo_doc === 'CC' ? 'selected' : ''}>CC</option>
+                            </select>
+                            <input id="f-doc" value="${ordenActiva.cliente_data?.doc || ''}" placeholder="DOCUMENTO" class="col-span-2 bg-black p-4 rounded-2xl border border-white/5 text-white font-black text-xs">
+                        </div>
+
+                        <input id="f-cliente" value="${ordenActiva.cliente || ''}" placeholder="NOMBRE O RAZÓN SOCIAL" class="w-full bg-black p-5 rounded-2xl border border-white/5 text-white font-black uppercase text-sm">
                         <input id="f-telefono" value="${ordenActiva.telefono || ''}" placeholder="WHATSAPP (+57)" class="w-full bg-black p-5 rounded-2xl border border-white/5 text-emerald-400 font-black">
                         
                         <div class="grid grid-cols-2 gap-4">
                             <input id="f-km" value="${ordenActiva.recepcion?.km || ''}" type="number" placeholder="KM" class="bg-black p-5 rounded-2xl border border-white/5 text-white font-black">
                             <select id="f-gas" class="bg-black p-5 rounded-2xl border border-white/5 text-white orbitron text-[10px]">
-                                <option value="1/4">1/4</option><option value="1/2">1/2</option><option value="FULL">FULL</option>
+                                <option value="1/4" ${ordenActiva.recepcion?.gas === '1/4' ? 'selected' : ''}>1/4</option>
+                                <option value="1/2" ${ordenActiva.recepcion?.gas === '1/2' ? 'selected' : ''}>1/2</option>
+                                <option value="FULL" ${ordenActiva.recepcion?.gas === 'FULL' ? 'selected' : ''}>FULL</option>
                             </select>
                         </div>
-                        <button onclick="window.nexusDispararCamara()" class="w-full py-6 bg-red-600/10 border border-dashed border-red-600/50 rounded-2xl text-red-500 orbitron text-[10px] hover:bg-red-600 hover:text-white transition-all font-black"><i class="fas fa-camera mr-2"></i> REGISTRAR EVIDENCIA FOTO</button>
+                        <button onclick="window.nexusDispararCamara()" class="w-full py-6 bg-red-600/10 border border-dashed border-red-600/50 rounded-2xl text-red-500 orbitron text-[10px] hover:bg-red-600 hover:text-white transition-all font-black uppercase"><i class="fas fa-camera mr-2"></i> Captura Evidencia Visual</button>
                     </div>
 
                     <div id="pricing-engine-container"></div>
