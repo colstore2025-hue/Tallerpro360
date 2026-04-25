@@ -1,6 +1,6 @@
 /**
- * pricingEnginePRO360.js - NEXUS-X AEGIS V60.0 🚀
- * SISTEMA DE VALUACIÓN INTELIGENTE Y KPI DE EFICIENCIA
+ * pricingEnginePRO360.js - NEXUS-X AI PRICING UNIT
+ * Lógica de cálculo de precios dinámicos según gama, urgencia y mercado.
  */
 
 // 1. EL MOTOR DE CÁLCULO (Lógica pura)
@@ -8,39 +8,52 @@ export function calcularPrecioInteligentePRO360(data) {
   const {
     costoRepuestos = 0,
     horasEstimadas = 1,
-    tipoVehiculo = "MEDIO",
-    tipoTrabajo = "GENERAL",
-    urgencia = "NORMAL",
+    tipoVehiculo = "MEDIO", // ECONOMICO, MEDIO, PREMIUM
+    tipoTrabajo = "GENERAL", // DIAGNOSTICO, GENERAL, ESPECIALIZADO
+    urgencia = "NORMAL",    // NORMAL, URGENTE
     perfilCliente = "NORMAL"
   } = data;
 
-  // Tarifas hora hombre según mercado real Colombia 2026
-  const tarifas = { 'ECONOMICO': 48000, 'MEDIO': 78000, 'PREMIUM': 145000 };
-  let valorHora = tarifas[tipoVehiculo] || tarifas['MEDIO'];
-
-  // Base de costo: Repuestos + Tiempo (Mano de Obra)
-  let costoManoObraBase = horasEstimadas * valorHora;
-  let factor = 1;
-  let justificantes = [`Base: $${valorHora.toLocaleString()} x ${horasEstimadas}h`];
-
-  // Algoritmos de Ajuste Dinámico
-  if(urgencia === "URGENTE") { factor += 0.25; justificantes.push("+25% Prioridad Alpha"); }
-  if(tipoTrabajo === "DIAGNOSTICO") { factor += 0.15; justificantes.push("+15% Uso de Scanner/Tecnología"); }
-  if(perfilCliente === "PREMIUM") { factor += 0.10; justificantes.push("+10% Garantía Extendida"); }
-
-  const precioSugerido = Math.round(costoManoObraBase * factor);
+  // --- CONFIGURACIÓN DE PESOS (MULTIPLIER ESTRUCTURA) ---
+  const VALOR_HORA_BASE = 80000; // Valor base hora taller
   
+  const multGama = {
+    "ECONOMICO": 0.85,
+    "MEDIO": 1.0,
+    "PREMIUM": 1.45
+  };
+
+  const multTrabajo = {
+    "DIAGNOSTICO": 1.2,
+    "GENERAL": 1.0,
+    "ESPECIALIZADO": 1.35
+  };
+
+  const multUrgencia = {
+    "NORMAL": 1.0,
+    "URGENTE": 1.25
+  };
+
+  // --- CÁLCULO DE MANO DE OBRA (M.O) ---
+  const factorFinal = (multGama[tipoVehiculo] || 1) * (multTrabajo[tipoTrabajo] || 1) * (multUrgencia[urgencia] || 1);
+
+  const precioManoObraSugerido = Math.round(VALOR_HORA_BASE * horasEstimadas * factorFinal);
+
+  // --- ANÁLISIS DE EXPLICACIÓN ---
+  let explicacion = `Basado en ${horasEstimadas}h para gama ${tipoVehiculo}. `;
+  if (urgencia === "URGENTE") explicacion += "Incluye recargo por prioridad. ";
+  if (tipoTrabajo === "DIAGNOSTICO") explicacion += "Ajustado por uso de equipo especializado.";
+
   return {
-    precioSugerido,
-    costoManoObraBase,
-    justificacion: justificantes.join(" | "),
-    kpi: {
-      horasAsignadas: horasEstimadas,
-      eficienciaEsperada: "92%",
-      impactoBahia: urgencia === "URGENTE" ? "ALTO" : "NORMAL"
-    }
+    precioSugerido: precioManoObraSugerido,
+    explicacion: explicacion,
+    manoObraPura: precioManoObraSugerido,
+    factorAplicado: factorFinal
   };
 }
+
+// Alias para mantener compatibilidad con imports genéricos
+export const analizarPrecioSugerido = calcularPrecioInteligentePRO360;
 
 // 2. LA INTERFAZ DE COMANDO PARA ordenes.js
 export function renderModuloPricing(container) {
