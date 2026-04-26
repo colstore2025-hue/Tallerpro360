@@ -292,45 +292,73 @@ export default async function ordenes(container) {
     };
 
     const ejecutarSincronizacionTotal = async () => {
-        const btn = document.getElementById("btnSincronizar");
-        btn.disabled = true;
-        btn.innerHTML = `<i class="fas fa-satellite animate-spin"></i> SYNCING...`;
+    const btn = document.getElementById("btnSincronizar");
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-satellite animate-spin"></i> SYNCING...`;
 
-        try {
-            const batch = writeBatch(db);
-            const placa = document.getElementById("f-placa").value.toUpperCase();
-            const id = ordenActiva.id || `OT_${placa}_${Date.now()}`;
+    try {
+        const batch = writeBatch(db);
+        const placa = document.getElementById("f-placa").value.toUpperCase();
+        const id = ordenActiva.id || `OT_${placa}_${Date.now()}`;
 
-            const data = {
-                ...ordenActiva,
-                id, placa, empresaId,
-                cliente: document.getElementById("f-cliente").value,
-                telefono: document.getElementById("f-telefono").value,
-                anticipo: Number(document.getElementById("f-anticipo").value),
-                insumos: Number(document.getElementById("f-insumos-iva").value),
-                insumos_no_iva: Number(document.getElementById("f-insumos-no-iva").value),
-                bitacora_ia: document.getElementById("ai-log-display").value,
-                updatedAt: serverTimestamp()
-            };
+        // 1. Mapeo de Finanzas (Compatibilidad Total con V8/V9/V16)
+        const costos = {
+            gran_total: ordenActiva.costos_totales.total, // Para contabilidad y reportes
+            base_gravable: ordenActiva.costos_totales.base,
+            iva_19: ordenActiva.costos_totales.iva,
+            utilidad: ordenActiva.costos_totales.ebitda, // Para reportes e indicadores
+            saldo_pendiente: ordenActiva.costos_totales.saldo, // PARA PAGOSTALLER (Crítico)
+            anticipo_cliente: Number(document.getElementById("f-anticipo").value),
+            gastos_operativos: Number(document.getElementById("f-insumos-iva").value) + Number(document.getElementById("f-insumos-no-iva").value)
+        };
 
-            batch.set(doc(db, "ordenes", id), data);
-            
-            // Asiento Contable Protegido
-            batch.set(doc(db, "contabilidad", `CONT_${id}`), {
-                empresaId, total: data.costos_totales.total, 
-                utilidad: data.costos_totales.ebitda, fecha: serverTimestamp(), placa 
+        const data = {
+            ...ordenActiva,
+            id, placa, empresaId,
+            cliente: document.getElementById("f-cliente").value.toUpperCase(),
+            telefono: document.getElementById("f-telefono").value,
+            estado: document.getElementById("f-estado").value,
+            costos_totales: costos, // Guardamos con los nombres que los otros módulos entienden
+            bitacora_ia: document.getElementById("ai-log-display").value,
+            updatedAt: serverTimestamp(),
+            fecha_orden: serverTimestamp() // Para que reportes.js lo lea cronológicamente
+        };
+
+        // Guardar Orden Principal
+        batch.set(doc(db, "ordenes", id), data);
+        
+        // 2. Registro en Contabilidad (Asiento de Ingreso)
+        batch.set(doc(db, "contabilidad", `ACC_${id}`), {
+            empresaId, 
+            monto: costos.gran_total, 
+            utilidad: costos.utilidad, 
+            placa: placa,
+            tipo: 'INGRESO_OT',
+            fecha: serverTimestamp()
+        });
+
+        // 3. Registro de Gastos (Si existen insumos) para contabilidad.js
+        if(costos.gastos_operativos > 0) {
+            batch.set(doc(db, "contabilidad", `EGR_${id}`), {
+                empresaId,
+                monto: costos.gastos_operativos,
+                tipo: 'EGRESO_OPERATIVO_OT',
+                categoria: 'INSUMOS',
+                detalle: `Gastos operativos placa ${placa}`,
+                fecha: serverTimestamp()
             });
-
-            await batch.commit();
-            hablar("Sync completo. Orden en la nube.");
-            Swal.fire({ title: 'NEXUS SYNC OK', icon: 'success', background: '#0d1117', color: '#fff' });
-            document.getElementById("nexus-terminal").classList.add("hidden");
-        } catch (e) {
-            console.error(e);
-            btn.disabled = false;
-            btn.innerHTML = `🛰️ PUSH_TO_NEXUS_CLOUD`;
         }
-    };
+
+        await batch.commit();
+        hablar("Misión sincronizada. Conexión Nexus establecida.");
+        Swal.fire({ title: 'NEXUS SYNC OK', icon: 'success', background: '#0d1117', color: '#fff' });
+        document.getElementById("nexus-terminal").classList.add("hidden");
+    } catch (e) {
+        console.error(e);
+        btn.disabled = false;
+        btn.innerHTML = `🛰️ PUSH_TO_NEXUS_CLOUD`;
+    }
+};
 
     window.renderItems = () => {
         const container = document.getElementById("items-container");
