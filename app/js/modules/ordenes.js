@@ -362,74 +362,105 @@ export default async function ordenes(container) {
     };
 
     // --- 💾 DATABASE SYNC (CONEXIÓN SAP BI INTEGRADA) ---
-    const ejecutarSincronizacionTotal = async () => {
-        const btn = document.getElementById("btnSincronizar");
-        btn.disabled = true;
-        btn.innerHTML = `<i class="fas fa-satellite animate-spin"></i> SYNCING...`;
+const ejecutarSincronizacionTotal = async () => {
+    const btn = document.getElementById("btnSincronizar");
+    if (!btn) return;
 
-        try {
-            const batch = writeBatch(db);
-            const placa = document.getElementById("f-placa").value.toUpperCase();
-            const id = ordenActiva.id || `OT_${placa}_${Date.now()}`;
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-satellite animate-spin"></i> SYNCING...`;
 
-            // Mapeo Maestro para compatibilidad total con Módulos de Pagos, Contabilidad y Reportes
-            const costos = {
-                gran_total: ordenActiva.costos_totales.total || 0,
-                base_gravable: ordenActiva.costos_totales.base || 0,
-                iva_19: ordenActiva.costos_totales.iva || 0,
-                utilidad: ordenActiva.costos_totales.ebitda || 0, 
-                saldo_pendiente: ordenActiva.costos_totales.saldo || 0, 
-                anticipo_cliente: Number(document.getElementById("f-anticipo").value || 0),
-                gastos_operativos: Number(document.getElementById("f-insumos-iva").value || 0) + Number(document.getElementById("f-insumos-no-iva").value || 0)
-            };
+    try {
+        const batch = writeBatch(db);
+        const placaRaw = document.getElementById("f-placa")?.value || "";
+        const placa = placaRaw.toUpperCase();
+        
+        if (!placa) throw new Error("LA PLACA ES REQUERIDA PARA LA SINCRONIZACIÓN");
 
-            const data = {
-                ...ordenActiva,
-                id, placa, empresaId,
-                cliente: document.getElementById("f-cliente").value.toUpperCase(),
-                telefono: document.getElementById("f-telefono").value,
-                estado: document.getElementById("f-estado").value,
-                costos_totales: costos, 
-                bitacora_ia: document.getElementById("ai-log-display").value,
-                updatedAt: serverTimestamp(),
-                fecha_orden: serverTimestamp() 
-            };
+        const id = ordenActiva.id || `OT_${placa}_${Date.now()}`;
 
-            batch.set(doc(db, "ordenes", id), data);
-            
-            // Asiento contable para el flujo de caja
-            batch.set(doc(db, "contabilidad", `ACC_${id}`), {
-                empresaId, 
-                monto: costos.gran_total, 
-                utilidad: costos.utilidad, 
-                placa: placa,
-                tipo: 'INGRESO_OT',
+        // PROTECCIÓN QUIRÚRGICA: Evita errores 'undefined' si el motor financiero no ha corrido
+        const cActuales = ordenActiva.costos_totales || {};
+        
+        // Mapeo Maestro: Cruce de variables V16 (Frontend) -> V8/V9 (Database/Legacy)
+        const costos = {
+            gran_total: Number(cActuales.total || 0),        // Requerido por Facturación
+            base_gravable: Number(cActuales.base || 0),     // Requerido por Impuestos
+            iva_19: Number(cActuales.iva || 0),              // Requerido por Contabilidad
+            utilidad: Number(cActuales.ebitda || 0),        // Requerido por Dashboard EBITDA
+            saldo_pendiente: Number(cActuales.saldo || 0),   // CRÍTICO: Requerido por pagosTaller.js
+            anticipo_cliente: Number(document.getElementById("f-anticipo")?.value || 0),
+            gastos_operativos: Number(document.getElementById("f-insumos-iva")?.value || 0) + 
+                               Number(document.getElementById("f-insumos-no-iva")?.value || 0)
+        };
+
+        const data = {
+            ...ordenActiva,
+            id, 
+            placa, 
+            empresaId,
+            cliente: document.getElementById("f-cliente")?.value.toUpperCase() || "SIN NOMBRE",
+            telefono: document.getElementById("f-telefono")?.value || "",
+            estado: document.getElementById("f-estado")?.value || "INGRESO",
+            costos_totales: costos, 
+            bitacora_ia: document.getElementById("ai-log-display")?.value || "",
+            updatedAt: serverTimestamp(),
+            fecha_orden: ordenActiva.fecha_orden || serverTimestamp() // Mantiene fecha original
+        };
+
+        // 1. Persistencia de la Orden Principal
+        batch.set(doc(db, "ordenes", id), data);
+        
+        // 2. Asiento Contable Automatizado (Módulo Ingresos V9)
+        batch.set(doc(db, "contabilidad", `ACC_${id}`), {
+            empresaId, 
+            monto: costos.gran_total, 
+            utilidad: costos.utilidad, 
+            placa: placa,
+            tipo: 'INGRESO_OT',
+            referencia: id,
+            fecha: serverTimestamp()
+        });
+
+        // 3. Registro de Egresos Operativos (Módulo Gastos V8)
+        if(costos.gastos_operativos > 0) {
+            batch.set(doc(db, "contabilidad", `EGR_${id}`), {
+                empresaId,
+                monto: costos.gastos_operativos,
+                tipo: 'EGRESO_OPERATIVO_OT',
+                categoria: 'INSUMOS',
+                detalle: `INSUMOS Y OPERACIÓN PLACA ${placa}`,
+                referencia: id,
                 fecha: serverTimestamp()
             });
-
-            // Registro automático de egresos por insumos
-            if(costos.gastos_operativos > 0) {
-                batch.set(doc(db, "contabilidad", `EGR_${id}`), {
-                    empresaId,
-                    monto: costos.gastos_operativos,
-                    tipo: 'EGRESO_OPERATIVO_OT',
-                    categoria: 'INSUMOS',
-                    detalle: `Gastos operativos placa ${placa}`,
-                    fecha: serverTimestamp()
-                });
-            }
-
-            await batch.commit();
-            hablar("Misión sincronizada.");
-            Swal.fire({ title: 'NEXUS SYNC OK', icon: 'success', background: '#0d1117', color: '#fff' });
-            document.getElementById("nexus-terminal").classList.add("hidden");
-        } catch (e) {
-            console.error("Fallo de Sincronización:", e);
-            btn.disabled = false;
-            btn.innerHTML = `🛰️ PUSH_TO_NEXUS_CLOUD`;
-            Swal.fire({ title: 'ERROR', text: e.message, icon: 'error' });
         }
-    };
+
+        await batch.commit();
+        
+        hablar("Misión sincronizada. Conexión Nexus establecida.");
+        Swal.fire({ 
+            title: 'NEXUS SYNC OK', 
+            text: `ORDEN ${placa} ACTUALIZADA EN CLOUD`,
+            icon: 'success', 
+            background: '#0d1117', 
+            color: '#fff',
+            confirmButtonColor: '#06b6d4'
+        });
+
+        document.getElementById("nexus-terminal")?.classList.add("hidden");
+        
+    } catch (e) {
+        console.error("Fallo de Sincronización Nexus:", e);
+        btn.disabled = false;
+        btn.innerHTML = `🛰️ PUSH_TO_NEXUS_CLOUD`;
+        Swal.fire({ 
+            title: 'SYNC_ERROR', 
+            text: e.message, 
+            icon: 'error',
+            background: '#0d1117',
+            color: '#fff'
+        });
+    }
+};
 
     // --- 📡 GRILLA EN TIEMPO REAL ---
     const cargarEscuchaOrdenes = () => {
