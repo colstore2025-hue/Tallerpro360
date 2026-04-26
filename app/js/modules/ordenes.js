@@ -1,8 +1,7 @@
 /**
  * TallerPRO360 - V20.0 QUANTUM-SAP 🛰️
  * RELOJ SUIZO DE PRECISIÓN INTEGRAL
- * ARQUITECTO: WILLIAM JEFFRY URQUIJO CUBILLOS & GEMINI AI PRO
- * ESTATUS: PRODUCCIÓN FINAL - INTEGRIDAD TOTAL.
+ * DESARROLLADOR: WILLIAM JEFFRY URQUIJO CUBILLOS & GEMINI AI PRO
  */
 
 import { 
@@ -17,312 +16,259 @@ export default async function ordenes(container) {
     const empresaId = localStorage.getItem("nexus_empresaId");
     let ordenActiva = null;
 
-    // --- 1. MOTOR DE BÚSQUEDA QUANTUM (INVENTARIO SERVICE) ---
-    const buscarStockReal = async (termino) => {
+    // --- 1. MOTOR DE BÚSQUEDA REACTIVO (CONEXIÓN INVENTARIO.JS) ---
+    const buscarEnInventario = async (termino) => {
         if (!termino || termino.length < 3) return [];
         const q = query(
             collection(db, "productos"), 
             where("empresaId", "==", empresaId),
             where("nombre", ">=", termino.toUpperCase()),
             where("nombre", "<=", termino.toUpperCase() + "\uf8ff"),
-            limit(10)
+            limit(5)
         );
         const snap = await getDocs(q);
         return snap.docs.map(d => ({ id: d.id, ...d.data() }));
     };
 
-    // --- 2. CÁLCULO DE PRECISIÓN SUIZA (EBITDA & TAXES) ---
-    const ejecutarCalculoQuantum = () => {
+    // --- 2. MOTOR FINANCIERO SAP (EBITDA & TAXES) ---
+    const recalcularFinanzasQuantum = () => {
         if (!ordenActiva) return;
+        let m = { v_rep: 0, c_rep: 0, v_mo: 0, c_mo: 0 };
 
-        let res = {
-            v_items: 0, // Lo que suma al cliente
-            c_items: 0, // Costo de repuestos/servicios externos
-            g_operativo: Number(document.getElementById("f-insumos-gastos")?.value || 0), // Insumos taller
-            anticipo: Number(document.getElementById("f-anticipo")?.value || 0)
-        };
-
-        ordenActiva.items.forEach(it => {
-            res.v_items += Number(it.venta || 0);
-            res.c_items += Number(it.costo || 0);
+        ordenActiva.items.forEach(i => {
+            const v = Number(i.venta || 0);
+            const c = Number(i.costo || 0);
+            if (i.tipo === 'REPUESTO') {
+                m.v_rep += v; 
+                m.c_rep += c;
+            } else {
+                m.v_mo += v;
+                m.c_mo += c; 
+            }
         });
 
-        // Fórmulas SAP para Integridad Contable
-        const subtotal = res.v_items;
-        const base = subtotal / 1.19;
-        const iva = subtotal - base;
-        const totalFinal = subtotal;
+        const insumosIVA = Number(document.getElementById("f-insumos-iva")?.value || 0); 
+        const insumosNoIVA = Number(document.getElementById("f-insumos-no-iva")?.value || 0); 
+        const anticipo = Number(document.getElementById("f-anticipo")?.value || 0); 
         
-        // EBITDA REAL = (Base Gravable) - (Costos Directos) - (Gastos Insumos Operativos)
-        const ebitda = base - (res.c_items) - res.g_operativo;
+        const subtotalGravado = m.v_rep + m.v_mo + insumosIVA;
+        const baseGravable = subtotalGravado / 1.19;
+        const iva = subtotalGravado - baseGravable;
+        const totalFactura = subtotalGravado + insumosNoIVA;
+        
+        // EBITDA REAL: Base + No IVA - Costos Directos
+        const utilidadNeta = (baseGravable + insumosNoIVA) - (m.c_rep + m.c_mo + (insumosIVA / 1.19));
 
-        ordenActiva.finanzas = {
-            total: totalFinal,
-            base: base,
-            iva: iva,
-            ebitda: ebitda,
-            saldo: totalFinal - res.anticipo,
-            costos_base: res.c_items + res.g_operativo
+        ordenActiva.costos_totales = { 
+            total: totalFactura, base: baseGravable, iva: iva,
+            saldo: totalFactura - anticipo, ebitda: utilidadNeta
         };
 
-        actualizarUIFinanciera();
+        actualizarUIFinanciera(totalFactura, baseGravable, iva, utilidadNeta, ordenActiva.costos_totales.saldo);
         renderItems();
     };
 
-    const actualizarUIFinanciera = () => {
-        const display = document.getElementById("display-total-quantum");
-        const panel = document.getElementById("quantum-summary-panel");
-        if(display) display.innerText = `$ ${Math.round(ordenActiva.finanzas.total).toLocaleString()}`;
-        if(panel) {
-            panel.innerHTML = `
-                <div class="grid grid-cols-2 gap-4 animate-pulse">
-                    <div class="text-[9px] orbitron text-slate-500">EBITDA_ESTIMADO: <span class="text-cyan-400 font-black">$${Math.round(ordenActiva.finanzas.ebitda).toLocaleString()}</span></div>
-                    <div class="text-[9px] orbitron text-slate-500 text-right">IVA_19%: <span class="text-white">$${Math.round(ordenActiva.finanzas.iva).toLocaleString()}</span></div>
-                    <div class="col-span-2 h-[2px] bg-red-600/30 my-2"></div>
-                    <div class="text-2xl orbitron font-black text-red-500 uppercase italic">Saldo Pendiente: $${Math.round(ordenActiva.finanzas.saldo).toLocaleString()}</div>
+    const actualizarUIFinanciera = (t, b, i, e, s) => {
+        const totalEl = document.getElementById("total-factura");
+        const summaryEl = document.getElementById("finance-summary");
+        if(totalEl) totalEl.innerText = `$ ${Math.round(t).toLocaleString()}`;
+        if(summaryEl) {
+            summaryEl.innerHTML = `
+                <div class="grid grid-cols-2 gap-4 border-t border-red-600/30 pt-4 mt-4">
+                    <div class="text-[9px] orbitron text-slate-500">BASE: <span class="text-white">$${Math.round(b).toLocaleString()}</span></div>
+                    <div class="text-[9px] orbitron text-slate-500 text-right">IVA 19%: <span class="text-white">$${Math.round(i).toLocaleString()}</span></div>
+                    <div class="text-cyan-400 font-black text-xl orbitron italic">EBITDA: $${Math.round(e).toLocaleString()}</div>
+                    <div class="text-red-500 font-black text-xl orbitron text-right">SALDO: $${Math.round(s).toLocaleString()}</div>
                 </div>`;
         }
     };
-
+    // --- 3. RENDER TERMINAL QUANTUM ---
     const renderTerminal = () => {
         const modal = document.getElementById("nexus-terminal");
         modal.innerHTML = `
-        <div class="max-w-[1900px] mx-auto p-8 animate-in fade-in duration-500 pb-40">
-            <header class="flex flex-col lg:flex-row justify-between items-center bg-[#0a0f18] p-10 rounded-[3.5rem] border-l-[15px] border-red-600 shadow-2xl gap-10 mb-10">
-                <div class="flex items-center gap-12">
-                    <div class="relative">
-                        <input id="f-placa" value="${ordenActiva.placa}" class="bg-transparent text-[8rem] font-black orbitron text-white w-[35rem] uppercase outline-none leading-none" placeholder="PLACA">
-                        <div class="absolute -bottom-4 left-0 flex gap-4">
-                            <button onclick="window.quantumVozPlaca()" class="bg-cyan-500 p-3 rounded-xl text-black hover:scale-110 transition-all"><i class="fas fa-microphone-alt"></i></button>
-                            <span class="text-[10px] orbitron text-cyan-400 font-bold tracking-widest uppercase">Nexus_Voice_Active</span>
-                        </div>
-                    </div>
+        <div class="max-w-[1700px] mx-auto pb-40 animate-in slide-in-from-bottom duration-500">
+            <header class="flex justify-between items-center bg-[#0a0f18] p-10 rounded-[3rem] border-l-[10px] border-red-600 mb-10 shadow-2xl">
+                <div class="flex items-center gap-8">
+                    <input id="f-placa" value="${ordenActiva.placa}" class="bg-transparent text-8xl font-black orbitron text-white w-[30rem] uppercase outline-none" placeholder="PLACA">
+                    <button onclick="window.quantumVozPlaca()" class="w-20 h-20 bg-red-600 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(220,38,38,0.5)]"><i class="fas fa-microphone text-3xl"></i></button>
                 </div>
 
                 <div class="flex flex-col items-center">
-                    <label class="text-[9px] orbitron text-slate-500 mb-2 uppercase tracking-widest">Estado del Proceso</label>
-                    <select id="f-estado" onchange="window.cambiarEstadoQuantum(this.value)" class="bg-black text-white orbitron font-black text-3xl p-4 rounded-3xl border border-red-600/30 outline-none">
+                    <span class="text-[10px] orbitron text-slate-500 mb-2 tracking-widest">STATUS_CONTROL</span>
+                    <select id="f-estado" onchange="window.cambiarEstado(this.value)" class="bg-black text-white orbitron font-black text-2xl p-4 rounded-2xl border border-white/10">
                         ${['COTIZACION', 'INGRESO', 'DIAGNOSTICO', 'REPARACION', 'LISTO', 'ENTREGADO', 'CANCELADO_LIQUIDADO'].map(e => 
                             `<option value="${e}" ${ordenActiva.estado === e ? 'selected' : ''}>${e}</option>`).join('')}
                     </select>
-                    <p class="text-[8px] text-red-500 mt-2 font-bold italic">Seleccione CANCELADO_LIQUIDADO para retirar de la parrilla</p>
                 </div>
 
-                <div class="flex gap-6">
-                    <button id="btnSincronizarQuantum" class="px-14 py-8 bg-red-600 text-white orbitron font-black text-xl rounded-full hover:bg-white hover:text-black transition-all shadow-[0_0_50px_rgba(220,38,38,0.3)]">SINCRONIZAR_SAP 🛰️</button>
-                    <button id="btnCloseTerminal" class="w-24 h-24 bg-white/5 text-white text-4xl rounded-full hover:rotate-90 transition-all">✕</button>
-                </div>
+                <button id="btnCloseTerminal" class="w-24 h-24 bg-white/5 text-white text-4xl rounded-full hover:bg-red-600 transition-all">✕</button>
             </header>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                <aside class="lg:col-span-4 space-y-8">
-                    <div class="bg-[#0a0f18] p-10 rounded-[4rem] border border-white/5 shadow-2xl">
-                        <h4 class="orbitron text-cyan-500 text-[10px] font-black mb-8 uppercase tracking-widest italic">Data Maestra (Vehículo & Cliente)</h4>
+                <aside class="lg:col-span-4 space-y-6">
+                    <div class="bg-[#0a0f18] p-8 rounded-[2.5rem] border border-white/5 shadow-inner">
+                        <h4 class="orbitron text-cyan-500 text-[10px] font-black mb-6 uppercase italic">Data Maestra SAP (Cliente & Vehículo)</h4>
                         <div class="space-y-4">
-                            <input id="f-cliente" value="${ordenActiva.cliente || ''}" placeholder="NOMBRE O RAZÓN SOCIAL" class="w-full bg-black/50 p-6 rounded-2xl text-white font-bold uppercase border border-white/5">
-                            <input id="f-identificacion" value="${ordenActiva.identificacion || ''}" placeholder="NIT / CÉDULA" class="w-full bg-black/50 p-6 rounded-2xl text-white font-bold border border-white/5">
+                            <input id="f-cliente" value="${ordenActiva.cliente || ''}" placeholder="RAZÓN SOCIAL / NOMBRE" class="w-full bg-black p-5 rounded-xl text-white font-bold uppercase border border-white/5 text-xs">
+                            <input id="f-identificacion" value="${ordenActiva.identificacion || ''}" placeholder="NIT / CÉDULA (FACTURACIÓN)" class="w-full bg-black p-5 rounded-xl text-white font-bold border border-white/5 text-xs">
                             <div class="grid grid-cols-2 gap-4">
-                                <input id="f-telefono" value="${ordenActiva.telefono || ''}" placeholder="WHATSAPP" class="bg-black/50 p-6 rounded-2xl text-green-400 font-bold border border-white/5">
-                                <input id="f-kilometraje" value="${ordenActiva.kilometraje || ''}" placeholder="KILOMETRAJE" class="bg-black/50 p-6 rounded-2xl text-yellow-500 font-bold border border-white/5">
+                                <input id="f-telefono" value="${ordenActiva.telefono || ''}" placeholder="WHATSAPP" class="bg-black p-5 rounded-xl text-green-400 font-bold border border-white/5 text-xs">
+                                <input id="f-km" value="${ordenActiva.km || ''}" placeholder="KILOMETRAJE" class="bg-black p-5 rounded-xl text-yellow-500 font-bold border border-white/5 text-xs">
                             </div>
                         </div>
                     </div>
 
-                    <div id="ai-pricing-slot" class="rounded-[4rem] overflow-hidden"></div>
-
-                    <div class="bg-black p-10 rounded-[4rem] border border-red-600/20 relative shadow-inner">
-                        <label class="orbitron text-[9px] text-red-500 block mb-4 italic">BITÁCORA TÉCNICA (NEURAL LOG)</label>
-                        <textarea id="f-bitacora" class="w-full bg-transparent h-60 text-xs text-slate-300 font-mono outline-none leading-relaxed" placeholder="Dictar hallazgos técnicos...">${ordenActiva.bitacora || ''}</textarea>
-                        <button onclick="window.quantumVozBitacora()" class="absolute bottom-6 right-6 w-16 h-16 bg-white text-black rounded-full shadow-2xl hover:scale-110 transition-all"><i class="fas fa-headset"></i></button>
+                    <div class="bg-black p-8 rounded-[2.5rem] border border-red-600/20 relative">
+                        <span class="orbitron text-[9px] text-red-500 block mb-4 italic uppercase">Neural Bitácora (Hallazgos Técnicos)</span>
+                        <textarea id="f-bitacora" class="w-full bg-transparent h-40 text-slate-300 text-xs font-mono outline-none" placeholder="Dictar reporte...">${ordenActiva.bitacora || ''}</textarea>
+                        <button onclick="window.quantumVozBitacora()" class="absolute bottom-6 right-6 w-14 h-14 bg-white text-black rounded-full shadow-2xl"><i class="fas fa-microphone"></i></button>
                     </div>
                 </aside>
 
-                <main class="lg:col-span-8 space-y-8">
-                    <div class="bg-[#0a0f18] p-12 rounded-[5rem] border border-white/5">
-                        <div class="flex justify-between items-end mb-12 border-b border-white/5 pb-10">
-                            <div>
-                                <h2 id="display-total-quantum" class="text-[11rem] font-black orbitron text-white leading-none tracking-tighter italic">$ 0</h2>
-                                <p class="text-cyan-500 orbitron font-bold text-xs mt-6 tracking-[1.5em] uppercase">Total Facturación Quantum</p>
-                            </div>
-                            <div id="quantum-summary-panel" class="w-[400px]"></div>
+                <main class="lg:col-span-8">
+                    <div class="bg-[#0a0f18] p-10 rounded-[4rem] border border-white/5 shadow-2xl">
+                        <div class="flex justify-between items-start mb-10">
+                            <h2 id="total-factura" class="orbitron text-[9rem] font-black text-white italic leading-none tracking-tighter">$ 0</h2>
+                            <div id="finance-summary" class="w-96"></div>
                         </div>
 
-                        <div id="items-wrapper" class="space-y-4 max-h-[600px] overflow-y-auto pr-6 custom-scroll"></div>
+                        <div id="items-container" class="space-y-3 max-h-[500px] overflow-y-auto pr-4 custom-scroll"></div>
 
-                        <div class="grid grid-cols-3 gap-6 mt-12">
-                            <button onclick="window.quantumAddItem('REPUESTO')" class="py-10 border-2 border-dashed border-cyan-500/30 rounded-[3rem] text-cyan-500 orbitron text-[10px] font-black hover:bg-cyan-500/5 transition-all">SINC_STOCK_INV</button>
-                            <button onclick="window.quantumAddItem('SERVICIO_EXTERNO')" class="py-10 border-2 border-dashed border-yellow-500/30 rounded-[3rem] text-yellow-500 orbitron text-[10px] font-black hover:bg-yellow-500/5 transition-all">GASTO_TERCERO (TORNO)</button>
-                            <button onclick="window.quantumAddItem('MANO_OBRA')" class="py-10 border-2 border-dashed border-red-500/30 rounded-[3rem] text-red-500 orbitron text-[10px] font-black hover:bg-red-500/5 transition-all">MANO_OBRA_CERT</button>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-10">
-                        <div class="bg-black/80 p-10 rounded-[3.5rem] border border-white/5">
-                            <span class="orbitron text-[9px] text-slate-500 block mb-4 uppercase">Insumos Operativos (Gasto Taller)</span>
-                            <input id="f-insumos-gastos" type="number" value="${ordenActiva.insumos_gastos || 0}" onchange="window.quantumRecalcular()" class="bg-transparent text-6xl font-black text-red-500 w-full outline-none">
-                        </div>
-                        <div class="bg-black/80 p-10 rounded-[3.5rem] border border-white/5">
-                            <span class="orbitron text-[9px] text-green-500 block mb-4 uppercase">Anticipo de Cliente</span>
-                            <input id="f-anticipo" type="number" value="${ordenActiva.anticipo || 0}" onchange="window.quantumRecalcular()" class="bg-transparent text-6xl font-black text-green-400 w-full outline-none">
+                        <div class="grid grid-cols-2 gap-6 mt-10">
+                            <button onclick="window.quantumAddRepuesto()" class="py-8 border-2 border-dashed border-cyan-500/30 text-cyan-500 orbitron text-[10px] font-black rounded-3xl hover:bg-cyan-500/10 transition-all uppercase">Vincular Inventario.js</button>
+                            <button onclick="window.quantumAddMO()" class="py-8 border-2 border-dashed border-red-600/30 text-red-600 orbitron text-[10px] font-black rounded-3xl hover:bg-red-600/10 transition-all uppercase">Añadir Mano de Obra</button>
                         </div>
                     </div>
                 </main>
             </div>
         </div>`;
-        
-        vincularEventosQuantum();
-        ejecutarCalculoQuantum();
+        vincularEventosTerminal();
+        recalcularFinanzasQuantum();
     };
-
-    const sincronizarQuantumSAP = async () => {
-        const btn = document.getElementById("btnSincronizarQuantum");
-        btn.disabled = true;
-        btn.innerHTML = `<i class="fas fa-sync animate-spin"></i> PROPAGANDO_DATA_SAP...`;
-
-        try {
-            const batch = writeBatch(db);
-            const placa = document.getElementById("f-placa").value.toUpperCase();
-            if(!placa) throw new Error("PLACA_REQUERIDA");
-
-            const id = ordenActiva.id || `OT_${placa}_${Date.now()}`;
-            const fin = ordenActiva.finanzas;
-
-            const finalData = {
-                ...ordenActiva,
-                id, placa, empresaId,
-                cliente: document.getElementById("f-cliente").value.toUpperCase(),
-                identificacion: document.getElementById("f-identificacion").value,
-                telefono: document.getElementById("f-telefono").value,
-                kilometraje: document.getElementById("f-kilometraje").value,
-                bitacora: document.getElementById("f-bitacora").value,
-                insumos_gastos: Number(document.getElementById("f-insumos-gastos").value),
-                anticipo: Number(document.getElementById("f-anticipo").value),
-                estado: document.getElementById("f-estado").value,
-                updatedAt: serverTimestamp(),
-                fecha_orden: ordenActiva.fecha_orden || serverTimestamp()
-            };
-
-            // 1. Persistencia Maestra
-            batch.set(doc(db, "ordenes", id), finalData);
-
-            // 2. Puente Contable Profesional (Eslabón SAP)
-            batch.set(doc(db, "contabilidad", `CONT_${id}`), {
-                empresaId, placa, total: fin.total, base: fin.base, iva: fin.iva,
-                ebitda: fin.ebitda, categoria: 'SERVICIO_TECNICO',
-                referencia: id, fecha: serverTimestamp(), 
-                estado_contable: finalData.estado === 'CANCELADO_LIQUIDADO' ? 'LIQUIDADO_PARCIAL' : 'PENDIENTE'
-            });
-
-            // 3. WhatsApp Harley-Davidson Edition
-            if(finalData.telefono) {
-                const urlTrace = `https://tallerpro360.web.app/trace/${id}`;
-                const msg = `🛠️ *NEXUS_X: SAP_REPORT*%0A*${finalData.cliente}*, su vehiculo *${placa}* está en fase: *${finalData.estado}*.%0A%0A*Vea el progreso oficial aquí:*%0A${urlTrace}`;
-                window.open(`https://wa.me/57${finalData.telefono}?text=${msg}`, '_blank');
-            }
-
-            await batch.commit();
-            hablar("Sincronización Quantum completada.");
-            Swal.fire({ title: 'QUANTUM SAP OK', text: 'Eslabones de cadena sincronizados', icon: 'success', background: '#0a0f18', color: '#fff' });
-            document.getElementById("nexus-terminal").classList.add("hidden");
-
-        } catch (e) {
-            btn.disabled = false;
-            btn.innerText = "REINTENTAR SINCRONIZACIÓN";
-            Swal.fire('ERROR DE INTEGRIDAD', e.message, 'error');
-        }
-    };
-
-    window.quantumAddItem = async (tipo) => {
-        if(tipo === 'REPUESTO') {
-            const { value: res } = await Swal.fire({ 
-                title: 'NEXUS STOCK SEARCH', 
-                input: 'text', 
-                inputPlaceholder: 'Nombre del repuesto...', 
-                background: '#0a0f18', color: '#fff',
-                showCancelButton: true
-            });
-            if(res) {
-                const productos = await buscarStockReal(res);
-                if(productos.length > 0) {
-                    const options = Object.fromEntries(productos.map(p => [p.id, `${p.nombre} (Stock: ${p.stock})`]));
-                    const { value: selId } = await Swal.fire({ title: 'VINCULAR PRODUCTO', input: 'select', inputOptions: options, background: '#0a0f18', color: '#fff' });
-                    if(selId) {
-                        const p = productos.find(x => x.id === selId);
-                        ordenActiva.items.push({ tipo, desc: p.nombre, costo: p.costo, venta: p.venta, productoId: selId });
-                    }
-                } else {
-                    Swal.fire('SIN STOCK', 'No se encontró en inventario.js', 'warning');
-                }
-            }
-        } else if(tipo === 'SERVICIO_EXTERNO') {
-            const { value: d } = await Swal.fire({ title: 'GASTO TERCERO (TORNO/EXTERNO)', input: 'text', background: '#0a0f18', color: '#fff' });
-            if(d) {
-                const { value: c } = await Swal.fire({ title: 'COSTO (LO QUE PAGAS)', input: 'number', background: '#0a0f18', color: '#fff' });
-                const { value: v } = await Swal.fire({ title: 'VENTA (LO QUE COBRAS)', input: 'number', background: '#0a0f18', color: '#fff' });
-                ordenActiva.items.push({ tipo, desc: d.toUpperCase(), costo: Number(c), venta: Number(v) });
-            }
-        } else {
-            ordenActiva.items.push({ tipo: 'MANO_OBRA', desc: 'MANO DE OBRA ESPECIALIZADA', costo: 0, venta: 0 });
-        }
-        ejecutarCalculoQuantum();
-    };
-
     window.quantumVozPlaca = () => {
         const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
         recognition.interimResults = false;
         recognition.lang = 'es-CO';
         hablar("Dictar placa ahora");
-        recognition.start();
+        
+        // Blindaje: El micro solo abre tras terminar de hablar
+        setTimeout(() => {
+            recognition.start();
+        }, 1200);
+
         recognition.onresult = (e) => {
-            const txt = e.results[0][0].transcript.replace(/\s/g, '').toUpperCase();
-            if(txt.length >= 5) {
+            let txt = e.results[0][0].transcript.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if(txt.length >= 3) {
                 document.getElementById('f-placa').value = txt;
-                hablar(`Placa ${txt} detectada`);
+                hablar(`Placa ${txt} procesada`);
             }
         };
     };
 
-    // --- REFINAMIENTO DE RENDER DE ITEMS ---
-    window.renderItems = () => {
-        const wrapper = document.getElementById("items-wrapper");
-        if(!wrapper) return;
-        wrapper.innerHTML = ordenActiva.items.map((it, idx) => `
-            <div class="flex items-center gap-6 bg-white/[0.03] p-6 rounded-3xl border border-white/5 hover:border-red-600/30 transition-all">
-                <div class="flex-1 grid grid-cols-4 gap-6">
-                    <div class="col-span-2">
-                        <span class="text-[8px] orbitron font-black ${it.tipo === 'MANO_OBRA' ? 'text-red-500' : 'text-cyan-500'} uppercase">${it.tipo}</span>
-                        <input onchange="ordenActiva.items[${idx}].desc=this.value.toUpperCase()" value="${it.desc}" class="bg-transparent text-white font-bold w-full outline-none border-b border-white/10 pb-1">
-                    </div>
-                    <div>
-                        <span class="text-[8px] orbitron text-slate-500 block mb-1">COSTO_UN</span>
-                        <input type="number" onchange="ordenActiva.items[${idx}].costo=Number(this.value); window.quantumRecalcular()" value="${it.costo}" class="bg-black/50 p-2 text-red-500 font-black text-center rounded-xl w-full">
-                    </div>
-                    <div>
-                        <span class="text-[8px] orbitron text-slate-500 block mb-1">VENTA_UN</span>
-                        <input type="number" onchange="ordenActiva.items[${idx}].venta=Number(this.value); window.quantumRecalcular()" value="${it.venta}" class="bg-black/50 p-2 text-green-400 font-black text-center rounded-xl w-full border border-green-500/20">
-                    </div>
-                </div>
-                <button onclick="ordenActiva.items.splice(${idx},1); window.quantumRecalcular()" class="w-12 h-12 bg-red-600/10 text-red-500 rounded-xl hover:bg-red-600 hover:text-white transition-all">✕</button>
-            </div>`).join('');
+    window.quantumAddRepuesto = async () => {
+        const { value: query } = await Swal.fire({
+            title: 'BUSCAR EN STOCK',
+            input: 'text',
+            background: '#0a0f18', color: '#fff',
+            inputPlaceholder: 'Nombre del repuesto...'
+        });
+
+        if(query) {
+            const productos = await buscarEnInventario(query);
+            if(productos.length > 0) {
+                const options = Object.fromEntries(productos.map(p => [p.id, `${p.nombre} ($${p.venta}) - Stock: ${p.stock}`]));
+                const { value: selId } = await Swal.fire({ title: 'SELECCIONE PRODUCTO', input: 'select', inputOptions: options, background: '#0a0f18', color: '#fff' });
+                
+                if(selId) {
+                    const p = productos.find(x => x.id === selId);
+                    ordenActiva.items.push({ tipo: 'REPUESTO', desc: p.nombre, costo: p.costo, venta: p.venta, idRef: p.id });
+                    recalcularFinanzasQuantum();
+                }
+            } else {
+                Swal.fire('SIN RESULTADOS', 'No existe en inventario.js', 'warning');
+            }
+        }
     };
 
-    window.quantumRecalcular = ejecutarCalculoQuantum;
-    const vincularEventosQuantum = () => {
-        document.getElementById("btnSincronizarQuantum").onclick = sincronizarQuantumSAP;
-        document.getElementById("btnCloseTerminal").onclick = () => document.getElementById("nexus-terminal").classList.add("hidden");
+    window.enviarWhatsAppQuantum = async (proceso) => {
+        const id = ordenActiva.id;
+        if(!id) return Swal.fire('Error', 'Sincronice primero para generar ID', 'error');
+
+        const link = `https://tallerpro360.web.app/trace/${id}`;
+        let msg = "";
+        const cliente = document.getElementById("f-cliente").value;
+        const placa = document.getElementById("f-placa").value;
+
+        if(proceso === 'INGRESO') msg = `🛠️ *NEXUS_X: INGRESO*%0AHola *${cliente}*, vehículo *${placa}* recibido. Seguimiento: ${link}`;
+        if(proceso === 'READY') msg = `✅ *NEXUS_X: LISTO*%0A*${cliente}*, su vehículo *${placa}* está listo para entrega. Detalle: ${link}`;
+
+        window.open(`https://wa.me/57${document.getElementById("f-telefono").value}?text=${msg}`, '_blank');
+    };
+
+    const sincronizarQuantum = async () => {
+        const batch = writeBatch(db);
+        const placa = document.getElementById("f-placa").value.toUpperCase();
+        const id = ordenActiva.id || `OT_${placa}_${Date.now()}`;
+
+        const finalData = {
+            ...ordenActiva,
+            id, placa, empresaId,
+            cliente: document.getElementById("f-cliente").value.toUpperCase(),
+            identificacion: document.getElementById("f-identificacion").value,
+            telefono: document.getElementById("f-telefono").value,
+            km: document.getElementById("f-km").value,
+            bitacora: document.getElementById("f-bitacora").value,
+            insumos: Number(document.getElementById("f-insumos-iva").value),
+            insumos_no_iva: Number(document.getElementById("f-insumos-no-iva").value),
+            anticipo: Number(document.getElementById("f-anticipo").value),
+            updatedAt: serverTimestamp()
+        };
+
+        batch.set(doc(db, "ordenes", id), finalData);
         
-        renderModuloPricing(document.getElementById('ai-pricing-slot'), (precioSugerido) => {
-            const moIdx = ordenActiva.items.findLastIndex(it => it.tipo === 'MANO_OBRA');
-            if(moIdx !== -1) {
-                ordenActiva.items[moIdx].venta = precioSugerido;
-                hablar("IA pricing aplicado a mano de obra");
-                ejecutarCalculoQuantum();
-            }
+        // Limpieza de parrilla: Solo se muestra si no está liquidado
+        if(finalData.estado === 'CANCELADO_LIQUIDADO') {
+            hablar("Orden liquidada y retirada de la parrilla");
+        }
+
+        await batch.commit();
+        ordenActiva.id = id; // Actualizar ID local para el link de WhatsApp
+        Swal.fire({ title: 'QUANTUM SYNC OK', icon: 'success', background: '#0a0f18', color: '#fff' });
+    };
+
+    // --- RENDER BASE Y ESCUCHA (PARRILLA LIMPIA) ---
+    const cargarParrillaQuantum = () => {
+        const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
+        onSnapshot(q, (snap) => {
+            const grid = document.getElementById("grid-ordenes");
+            if (!grid) return;
+            grid.innerHTML = snap.docs
+                .filter(d => d.data().estado !== 'CANCELADO_LIQUIDADO') // FILTRO SAP DE LIMPIEZA
+                .map(d => {
+                    const o = d.data();
+                    return `
+                    <div onclick="window.abrirTerminal('${d.id}')" class="bg-[#0d1117] p-8 border border-white/5 rounded-[2.5rem] hover:border-red-600 transition-all cursor-pointer group shadow-xl">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="orbitron text-5xl font-black text-white group-hover:text-red-500">${o.placa}</h4>
+                            <span class="text-[8px] orbitron bg-white/5 px-3 py-1 rounded-full text-cyan-400">${o.estado}</span>
+                        </div>
+                        <p class="text-[10px] text-slate-500 mb-6 font-bold uppercase">${o.cliente || 'S/N'}</p>
+                        <div class="flex justify-between items-center pt-4 border-t border-white/5">
+                            <span class="orbitron text-white font-black">$ ${Math.round(o.costos_totales?.total || 0).toLocaleString()}</span>
+                            <i class="fas fa-chevron-right text-red-600"></i>
+                        </div>
+                    </div>`;
+                }).join('');
         });
     };
 
-    // --- RENDER BASE Y ESCUCHA DE PARRILLA ---
-    // (Aquí va tu lógica de renderBase del script v16 con onSnapshot)
-    // Asegúrate de filtrar en el onSnapshot: where("estado", "!=", "CANCELADO_LIQUIDADO") 
-    // para que la parrilla principal esté siempre limpia.
+    // Vincular funciones globales necesarias
+    window.abrirTerminal = (id) => {
+        if(id) getDoc(doc(db, "ordenes", id)).then(s => { ordenActiva = { id, ...s.data() }; renderTerminal(); });
+        else { ordenActiva = { placa:'', estado:'INGRESO', items:[], anticipo:0 }; renderTerminal(); }
+        document.getElementById("nexus-terminal").classList.remove("hidden");
+    };
+    
+    // Iniciar Sistema
+    // (Asegúrate de llamar a renderBase() y cargarParrillaQuantum() al final)
 }
