@@ -360,68 +360,111 @@ export default async function ordenes(container) {
     }
 };
 
-    window.renderItems = () => {
-        const container = document.getElementById("items-container");
-        if(!container) return;
-        container.innerHTML = ordenActiva.items.map((item, idx) => `
-            <div class="flex items-center gap-6 bg-white/[0.03] p-6 rounded-2xl border ${item.origen === 'CLIENTE' ? 'border-yellow-600/30' : 'border-white/5'} group">
-                <div class="flex-1 grid grid-cols-4 gap-6">
-                    <div class="col-span-2">
-                        <input onchange="window.updateItem(${idx}, 'desc', this.value)" value="${item.desc}" class="bg-transparent text-white font-black orbitron text-xs outline-none w-full uppercase">
-                        <span class="text-[8px] orbitron text-cyan-500 font-bold uppercase">${item.tipo} | TECH: ${item.tecnico} | ORIGEN: ${item.origen}</span>
+    /**
+ * REFORMA NEXUS-X: RESTABLECIMIENTO DE CONEXIONES SAP BI
+ * Mapeo de campos: total -> gran_total | saldo -> saldo_pendiente | ebitda -> utilidad
+ */
+
+window.renderItems = () => {
+    const container = document.getElementById("items-container");
+    if(!container) return;
+    container.innerHTML = ordenActiva.items.map((item, idx) => `
+        <div class="flex items-center gap-6 bg-white/[0.03] p-6 rounded-2xl border ${item.origen === 'CLIENTE' ? 'border-yellow-600/30' : 'border-white/5'} group">
+            <div class="flex-1 grid grid-cols-5 gap-4">
+                <div class="col-span-2">
+                    <div class="flex items-center gap-2">
+                         <button onclick="window.nexusLupaInventario(${idx})" class="text-cyan-500 hover:text-white transition-all"><i class="fas fa-search-plus"></i></button>
+                         <input onchange="window.updateItem(${idx}, 'desc', this.value)" value="${item.desc}" class="bg-transparent text-white font-black orbitron text-xs outline-none w-full uppercase">
                     </div>
-                    <input type="number" onchange="window.updateItem(${idx}, 'costo', this.value)" value="${item.costo}" class="bg-black/50 p-3 text-red-500 font-black text-center orbitron text-xs rounded-lg" placeholder="COST">
-                    <input type="number" onchange="window.updateItem(${idx}, 'venta', this.value)" value="${item.venta}" class="bg-black/50 p-3 text-green-400 font-black text-center orbitron text-xs rounded-lg" placeholder="PRICE">
+                    <span class="text-[8px] orbitron text-cyan-500 font-bold uppercase">${item.tipo} | TECH: ${item.tecnico} | ORIGEN: ${item.origen}</span>
                 </div>
-                <button onclick="window.removeItemNexus(${idx})" class="text-slate-600 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt text-xl"></i></button>
-            </div>`).join('');
-    };
+                <input type="number" onchange="window.updateItem(${idx}, 'costo', this.value)" value="${item.costo}" class="bg-black/50 p-3 text-red-500 font-black text-center orbitron text-xs rounded-lg" placeholder="COST">
+                <input type="number" onchange="window.updateItem(${idx}, 'venta', this.value)" value="${item.venta}" class="bg-black/50 p-3 text-green-400 font-black text-center orbitron text-xs rounded-lg" placeholder="PRICE">
+                <button onclick="window.toggleOrigen(${idx})" class="text-[9px] orbitron ${item.origen === 'CLIENTE' ? 'text-yellow-500' : 'text-slate-500'} font-black">${item.origen === 'CLIENTE' ? 'CLIENTE' : 'TALLER'}</button>
+            </div>
+            <button onclick="window.removeItemNexus(${idx})" class="text-slate-600 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt text-xl"></i></button>
+        </div>`).join('');
+};
 
-    window.removeItemNexus = (idx) => {
-        ordenActiva.items.splice(idx, 1);
+window.removeItemNexus = (idx) => {
+    ordenActiva.items.splice(idx, 1);
+    recalcularFinanzas();
+};
+
+// --- 🔗 ASCENSOR DE INVENTARIO (RECONEXIÓN MODULO INVENTARIO) ---
+window.nexusLupaInventario = async (idx) => {
+    const snap = await getDocs(query(collection(db, "inventario"), where("empresaId", "==", empresaId)));
+    const { value: res } = await Swal.fire({
+        title: 'NEXUS INVENTORY SYNC',
+        input: 'select',
+        inputOptions: Object.fromEntries(snap.docs.map(d => [
+            JSON.stringify({d: d.data().nombre, c: d.data().costo, v: d.data().precioVenta}), 
+            `${d.data().nombre} ($${d.data().precioVenta})`
+        ])),
+        background: '#0d1117', color: '#fff', confirmButtonColor: '#06b6d4'
+    });
+    if (res) {
+        const data = JSON.parse(res);
+        ordenActiva.items[idx].desc = data.d.toUpperCase();
+        ordenActiva.items[idx].costo = Number(data.c);
+        ordenActiva.items[idx].venta = Number(data.v);
         recalcularFinanzas();
-    };
+    }
+};
 
-    const vincularEventosBase = () => {
-        document.getElementById("btnNewMission").onclick = () => window.abrirTerminalNexus();
-    };
+window.toggleOrigen = (idx) => {
+    ordenActiva.items[idx].origen = ordenActiva.items[idx].origen === 'TALLER' ? 'CLIENTE' : 'TALLER';
+    if(ordenActiva.items[idx].origen === 'CLIENTE') ordenActiva.items[idx].costo = 0;
+    recalcularFinanzas();
+};
 
-    const vincularAccionesTerminal = () => {
-        document.getElementById("btnCloseTerminal").onclick = () => document.getElementById("nexus-terminal").classList.add("hidden");
-        document.getElementById("btnSincronizar").onclick = ejecutarSincronizacionTotal;
-        window.enviarNotificacionNexus = enviarNotificacionNexus;
-        window.recalcularFinanzas = recalcularFinanzas;
-    };
-
-    window.abrirTerminalNexus = (id = null) => {
-        if(id) {
-            getDoc(doc(db, "ordenes", id)).then(s => { ordenActiva = { id, ...s.data() }; renderTerminal(); });
-        } else {
-            ordenActiva = { placa:'', estado:'INGRESO', items:[], cliente_data:{}, anticipo:0, insumos:0, insumos_no_iva:0, bitacora_ia:'' };
-            renderTerminal();
-        }
-        document.getElementById("nexus-terminal").classList.remove("hidden");
-    };
-
-    const cargarEscuchaOrdenes = () => {
-        const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
-        onSnapshot(q, (snap) => {
-            const grid = document.getElementById("grid-ordenes");
-            if (!grid) return;
-            grid.innerHTML = snap.docs.map(d => {
-                const o = d.data();
-                return `
-                <div onclick="window.abrirTerminalNexus('${d.id}')" class="bg-[#0d1117] p-8 border border-white/5 rounded-[2.5rem] hover:border-cyan-500 transition-all cursor-pointer group shadow-xl">
-                    <h4 class="orbitron text-4xl font-black text-white group-hover:text-cyan-400 mb-2">${o.placa}</h4>
-                    <p class="text-[10px] text-slate-500 mb-4 font-bold uppercase">${o.cliente || 'CLIENTE S/N'}</p>
-                    <div class="pt-4 border-t border-white/5 flex justify-between items-center">
-                        <span class="orbitron text-green-400 font-black">$ ${Math.round(o.costos_totales?.total || 0).toLocaleString()}</span>
-                        <span class="text-[8px] orbitron bg-red-600/20 text-red-500 px-3 py-1 rounded-full uppercase">${o.estado}</span>
-                    </div>
-                </div>`;
-            }).join('');
+window.abrirTerminalNexus = (id = null) => {
+    if(id) {
+        getDoc(doc(db, "ordenes", id)).then(s => { 
+            ordenActiva = { id, ...s.data() }; 
+            // Asegurar que existan los campos de finanzas antiguos para no romper el cálculo
+            if(!ordenActiva.finanzas) ordenActiva.finanzas = { anticipo_cliente: 0, gastos_varios: 0 };
+            renderTerminal(); 
         });
-    };
+    } else {
+        // Objeto inicial con estructura compatible
+        ordenActiva = { 
+            placa:'', estado:'INGRESO', items:[], cliente_data:{}, 
+            anticipo:0, insumos:0, insumos_no_iva:0, bitacora_ia:'',
+            costos_totales: { gran_total: 0, utilidad: 0, saldo_pendiente: 0 } 
+        };
+        renderTerminal();
+    }
+    document.getElementById("nexus-terminal").classList.remove("hidden");
+};
+
+// --- 📡 CARGA DE GRILLA CON LLAVES COMPATIBLES ---
+const cargarEscuchaOrdenes = () => {
+    const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
+    onSnapshot(q, (snap) => {
+        const grid = document.getElementById("grid-ordenes");
+        if (!grid) return;
+        grid.innerHTML = snap.docs.map(d => {
+            const o = d.data();
+            // Soporte para ambos nombres de campo durante la transición
+            const total = o.costos_totales?.gran_total || o.costos_totales?.total || 0;
+            const estado = o.estado || 'S/N';
+            
+            return `
+            <div onclick="window.abrirTerminalNexus('${d.id}')" class="bg-[#0d1117] p-8 border border-white/5 rounded-[2.5rem] hover:border-cyan-500 transition-all cursor-pointer group shadow-xl relative overflow-hidden">
+                <div class="flex justify-between items-start">
+                    <h4 class="orbitron text-4xl font-black text-white group-hover:text-cyan-400 mb-2 tracking-tighter">${o.placa}</h4>
+                    <span class="text-[7px] orbitron bg-white/5 border border-white/10 px-2 py-1 rounded text-slate-500 uppercase">${o.tipo_orden || 'MECANICA'}</span>
+                </div>
+                <p class="text-[10px] text-slate-500 mb-4 font-bold uppercase">${o.cliente || 'CLIENTE S/N'}</p>
+                <div class="pt-4 border-t border-white/5 flex justify-between items-center">
+                    <span class="orbitron text-green-400 font-black">$ ${Math.round(total).toLocaleString()}</span>
+                    <span class="text-[8px] orbitron ${estado === 'LISTO' ? 'bg-green-600/20 text-green-500' : 'bg-red-600/20 text-red-500'} px-3 py-1 rounded-full uppercase font-black animate-pulse">${estado}</span>
+                </div>
+            </div>`;
+        }).join('');
+    });
+};
 
     renderBase();
 }
