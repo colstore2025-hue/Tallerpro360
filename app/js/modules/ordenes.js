@@ -6,10 +6,9 @@
  */
 
 import { 
-    collection, query, where, onSnapshot, doc, getDoc, 
+    collection, query, where, onSnapshot, doc, getDoc, getDocs,
     setDoc, serverTimestamp, writeBatch 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 import { analizarPrecioSugerido, renderModuloPricing } from "../ai/pricingEnginePRO360.js";
 
@@ -469,10 +468,10 @@ export default async function ordenes(container) {
             });
         } else {
             ordenActiva = { 
-                placa:'', estado:'INGRESO', items:[], cliente_data:{}, 
-                anticipo:0, insumos:0, insumos_no_iva:0, bitacora_ia:'',
-                costos_totales: { total: 0, ebitda: 0, saldo: 0 } 
-            };
+    placa:'', estado:'INGRESO', items:[], cliente:'', telefono: '',
+    anticipo:0, insumos:0, insumos_no_iva:0, bitacora_ia:'',
+    costos_totales: { total: 0, base: 0, iva: 0, ebitda: 0, saldo: 0 } 
+};
             renderTerminal();
         }
         document.getElementById("nexus-terminal").classList.remove("hidden");
@@ -488,7 +487,8 @@ export default async function ordenes(container) {
         window.recalcularFinanzas = recalcularFinanzas;
     };
 
-    // --- 🚀 DESPLIEGUE INICIAL ---
+        // --- 🚀 DESPLIEGUE INICIAL ---
     renderBase();
-    cargarEscuchaOrdenes();
+    // No invocar cargarEscucha aquí si ya está dentro de renderBase
 }
+
