@@ -489,37 +489,175 @@ const ejecutarSincronizacionTotal = async () => {
         });
     };
 
-    // --- 🛸 CONTROL DE TERMINAL ---
-    window.abrirTerminalNexus = (id = null) => {
+        // --- 🛠️ MANIOBRA QUIRÚRGICA: GESTIÓN DE ACCIONES Y PERSISTENCIA ---
+
+    window.abrirTerminalNexus = async (id = null) => {
         if(id) {
-            getDoc(doc(db, "ordenes", id)).then(s => { 
-                ordenActiva = { id, ...s.data() }; 
-                if(!ordenActiva.finanzas) ordenActiva.finanzas = { anticipo_cliente: 0, gastos_varios: 0 };
-                renderTerminal(); 
-            });
+            const docSnap = await getDoc(doc(db, "ordenes", id));
+            if (docSnap.exists()) {
+                ordenActiva = { id, ...docSnap.data() };
+                // Asegurar que existan los arrays de items para evitar fallos de lectura
+                if(!ordenActiva.items) ordenActiva.items = [];
+            }
         } else {
+            // Inicialización con esquema exacto para compatibilidad V8/V9
             ordenActiva = { 
-    placa:'', estado:'INGRESO', items:[], cliente:'', telefono: '',
-    anticipo:0, insumos:0, insumos_no_iva:0, bitacora_ia:'',
-    costos_totales: { total: 0, base: 0, iva: 0, ebitda: 0, saldo: 0 } 
-};
-            renderTerminal();
+                placa: '', estado: 'INGRESO', items: [], cliente: '', telefono: '',
+                anticipo: 0, insumos: 0, insumos_no_iva: 0, bitacora_ia: '',
+                costos_totales: { total: 0, base: 0, iva: 0, ebitda: 0, saldo: 0 } 
+            };
         }
+        renderTerminal();
         document.getElementById("nexus-terminal").classList.remove("hidden");
     };
 
-    const vincularAccionesTerminal = () => {
-        const safeClose = document.getElementById("btnCloseTerminal");
-        if(safeClose) safeClose.onclick = () => document.getElementById("nexus-terminal").classList.add("hidden");
-        
-        const safeSync = document.getElementById("btnSincronizar");
-        if(safeSync) safeSync.onclick = ejecutarSincronizacionTotal;
+    window.addItemNexus = async (tipo) => {
+        let origen = 'TALLER', tec = 'INTERNO', costo = 0;
+        if(tipo === 'REPUESTO') {
+            const { value: res } = await Swal.fire({ 
+                title: 'ORIGEN REPUESTO', 
+                input: 'select', 
+                inputOptions: { 'TALLER': 'Stock Taller', 'CLIENTE': 'Cliente (Costo $0)' },
+                background: '#0d1117', color: '#fff', confirmButtonColor: '#06b6d4'
+            });
+            origen = res || 'TALLER';
+        } else {
+            const { value: t } = await Swal.fire({ title: 'ASIGNAR TÉCNICO', input: 'text', background: '#0d1117', color: '#fff' });
+            tec = (t || 'POR ASIGNAR').toUpperCase();
+            const { value: c } = await Swal.fire({ title: 'COSTO TÉCNICO', input: 'number', background: '#0d1117', color: '#fff' });
+            costo = Number(c || 0);
+        }
 
-        window.recalcularFinanzas = recalcularFinanzas;
+        ordenActiva.items.push({ 
+            tipo, desc: `NUEVO ${tipo}`, costo, venta: 0, 
+            origen, tecnico: tec, tiempo_estimado: 1 
+        });
+        recalcularFinanzas();
     };
 
-        // --- 🚀 DESPLIEGUE INICIAL ---
+    window.renderItems = () => {
+        const itemsContainer = document.getElementById("items-container");
+        if(!itemsContainer) return;
+        itemsContainer.innerHTML = ordenActiva.items.map((item, idx) => `
+            <div class="flex items-center gap-6 bg-white/[0.03] p-6 rounded-2xl border border-white/5 animate-in slide-in-from-left-4">
+                <div class="flex-1 grid grid-cols-5 gap-4">
+                    <div class="col-span-2">
+                        <input onchange="ordenActiva.items[${idx}].desc=this.value.toUpperCase()" value="${item.desc}" class="bg-transparent text-white font-black orbitron text-xs outline-none w-full uppercase">
+                        <span class="text-[8px] orbitron text-cyan-500 font-bold uppercase">${item.tipo} | ${item.tecnico}</span>
+                    </div>
+                    <input type="number" onchange="ordenActiva.items[${idx}].costo=Number(this.value); recalcularFinanzas()" value="${item.costo}" class="bg-black/50 p-2 text-red-500 font-black text-center orbitron text-xs rounded-lg">
+                    <input type="number" onchange="ordenActiva.items[${idx}].venta=Number(this.value); recalcularFinanzas()" value="${item.venta}" class="bg-black/50 p-2 text-green-400 font-black text-center orbitron text-xs rounded-lg">
+                    <button onclick="ordenActiva.items[${idx}].origen = ordenActiva.items[${idx}].origen === 'TALLER' ? 'CLIENTE' : 'TALLER'; recalcularFinanzas()" class="text-[9px] orbitron text-slate-500 font-black uppercase">${item.origen}</button>
+                </div>
+                <button onclick="ordenActiva.items.splice(${idx}, 1); recalcularFinanzas()" class="text-slate-600 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button>
+            </div>`).join('');
+    };
+
+    const ejecutarSincronizacionTotal = async () => {
+        const btn = document.getElementById("btnSincronizar");
+        if (!btn) return;
+        
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-satellite animate-spin"></i> SYNCING...`;
+
+        try {
+            const batch = writeBatch(db);
+            const placa = document.getElementById("f-placa").value.toUpperCase();
+            if (!placa) throw new Error("REQUIRES_PLATE_ID");
+
+            const id = ordenActiva.id || `OT_${placa}_${Date.now()}`;
+            const cA = ordenActiva.costos_totales;
+
+            // MAPEO MAESTRO: Blindaje de datos para Módulos de Contabilidad V8 y Pagos V9
+            const costosConsolidados = {
+                gran_total: Number(cA.total || 0),
+                base_gravable: Number(cA.base || 0),
+                iva_19: Number(cA.iva || 0),
+                utilidad: Number(cA.ebitda || 0), 
+                saldo_pendiente: Number(cA.saldo || 0), 
+                anticipo_cliente: Number(document.getElementById("f-anticipo")?.value || 0),
+                gastos_operativos: Number(document.getElementById("f-insumos-iva")?.value || 0) + Number(document.getElementById("f-insumos-no-iva")?.value || 0)
+            };
+
+            const payload = {
+                ...ordenActiva,
+                id, placa, empresaId,
+                cliente: document.getElementById("f-cliente").value.toUpperCase(),
+                telefono: document.getElementById("f-telefono").value,
+                estado: document.getElementById("f-estado").value,
+                costos_totales: costosConsolidados, 
+                bitacora_ia: document.getElementById("ai-log-display").value,
+                updatedAt: serverTimestamp(),
+                fecha_orden: ordenActiva.fecha_orden || serverTimestamp() 
+            };
+
+            // 1. Update/Set Orden
+            batch.set(doc(db, "ordenes", id), payload);
+            
+            // 2. Asiento Contable V9 (Ingreso Estructural)
+            batch.set(doc(db, "contabilidad", `ACC_${id}`), {
+                empresaId, placa, monto: costosConsolidados.gran_total, 
+                utilidad: costosConsolidados.utilidad, tipo: 'INGRESO_OT', fecha: serverTimestamp()
+            });
+
+            // 3. Registro de Egreso V8 (Gastos Operativos)
+            if(costosConsolidados.gastos_operativos > 0) {
+                batch.set(doc(db, "contabilidad", `EGR_${id}`), {
+                    empresaId, monto: costosConsolidados.gastos_operativos,
+                    tipo: 'EGRESO_OPERATIVO_OT', categoria: 'INSUMOS', fecha: serverTimestamp()
+                });
+            }
+
+            await batch.commit();
+            hablar("Misión sincronizada en la nube Nexus.");
+            Swal.fire({ title: 'NEXUS SYNC OK', icon: 'success', background: '#0d1117', color: '#fff' });
+            document.getElementById("nexus-terminal").classList.add("hidden");
+
+        } catch (e) {
+            console.error("Critical Sync Failure:", e);
+            btn.disabled = false;
+            btn.innerHTML = `🛰️ PUSH_TO_NEXUS_CLOUD`;
+            Swal.fire({ title: 'SYNC_ERROR', text: e.message, icon: 'error' });
+        }
+    };
+
+    const vincularAccionesTerminal = () => {
+        const closeBtn = document.getElementById("btnCloseTerminal");
+        const syncBtn = document.getElementById("btnSincronizar");
+        if(closeBtn) closeBtn.onclick = () => document.getElementById("nexus-terminal").classList.add("hidden");
+        if(syncBtn) syncBtn.onclick = ejecutarSincronizacionTotal;
+    };
+
+    const cargarEscuchaOrdenes = () => {
+        const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
+        onSnapshot(q, (snap) => {
+            const grid = document.getElementById("grid-ordenes");
+            if (!grid) return;
+            grid.innerHTML = snap.docs.map(d => {
+                const o = d.data();
+                const total = o.costos_totales?.gran_total || 0;
+                return `
+                <div onclick="window.abrirTerminalNexus('${d.id}')" class="bg-[#0d1117] p-8 border border-white/5 rounded-[2.5rem] hover:border-cyan-500 transition-all cursor-pointer group shadow-xl">
+                    <div class="flex justify-between items-start">
+                        <h4 class="orbitron text-4xl font-black text-white group-hover:text-cyan-400 mb-2">${o.placa}</h4>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mb-4 font-bold uppercase">${o.cliente || 'CLIENTE S/N'}</p>
+                    <div class="pt-4 border-t border-white/5 flex justify-between items-center">
+                        <span class="orbitron text-green-400 font-black">$ ${Math.round(total).toLocaleString()}</span>
+                        <span class="text-[8px] orbitron bg-red-600/20 text-red-500 px-3 py-1 rounded-full font-black animate-pulse">${o.estado}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        });
+    };
+
+    const vincularEventosBase = () => {
+        const btnNew = document.getElementById("btnNewMission");
+        if(btnNew) btnNew.onclick = () => window.abrirTerminalNexus();
+    };
+
+    // --- 🚀 DESPLIEGUE ---
     renderBase();
-    // No invocar cargarEscucha aquí si ya está dentro de renderBase
 }
+
 
