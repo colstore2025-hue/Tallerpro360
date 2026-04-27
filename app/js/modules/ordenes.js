@@ -187,6 +187,10 @@ export default async function ordenes(container) {
                         
                         <div class="grid grid-cols-2 gap-6 mt-12">
                             <button onclick="window.addItemNexus('REPUESTO')" class="py-6 border-2 border-white/10 orbitron text-[10px] font-black text-white hover:bg-white hover:text-black transition-all rounded-2xl">+ ADD_PART</button>
+<button onclick="agregarDesdeInventario()"
+class="bg-yellow-500 text-black p-4 rounded-xl font-bold mt-4">
+📦 INVENTARIO
+</button>
                             <button onclick="window.addItemNexus('MANO_OBRA')" class="py-6 border-2 border-red-600/20 orbitron text-[10px] font-black text-red-600 hover:bg-red-600 hover:text-white transition-all rounded-2xl">+ ADD_LABOR</button>
                         </div>
                     </div>
@@ -262,33 +266,79 @@ export default async function ordenes(container) {
     };
 
     window.addItemNexus = async (tipo) => {
-        let origen = 'TALLER';
-        let tec = 'INTERNO';
-        let costo = 0;
-        
-        if(tipo === 'REPUESTO') {
-            const { value: res } = await Swal.fire({
-                title: 'ORIGEN REPUESTO',
-                input: 'select',
-                inputOptions: { 'TALLER': 'Stock Taller', 'CLIENTE': 'Cliente (Costo $0)' },
-                background: '#0d1117', color: '#fff'
-            });
-            origen = res || 'TALLER';
+
+    let origen = 'TALLER';
+    let tec = 'INTERNO';
+    let costo = 0;
+    let venta = 0;
+
+    if(tipo === 'REPUESTO'){
+
+        const { value: res } = await Swal.fire({
+            title: 'ORIGEN REPUESTO',
+            input: 'select',
+            inputOptions: {
+                'TALLER': 'Stock Taller',
+                'CLIENTE': 'Cliente (Costo $0)'
+            },
+            background: '#0d1117',
+            color: '#fff'
+        });
+
+        origen = res || 'TALLER';
+
+        if(origen === 'CLIENTE'){
+            costo = 0;
+            venta = 0;
         } else {
-            const { value:t } = await Swal.fire({ title:'ASIGNAR TÉCNICO', input:'text', background:'#0d1117', color:'#fff' });
-            tec = t || 'POR ASIGNAR';
-            const { value:c } = await Swal.fire({ title:'COSTO TÉCNICO (NÓMINA)', input:'number', background:'#0d1117', color:'#fff' });
-            costo = Number(c || 0);
+            const sugerido = analizarPrecioSugerido({
+                tipo: "repuesto",
+                costo: 0
+            });
+            venta = sugerido || 0;
         }
 
-        ordenActiva.items.push({ tipo, desc: `NUEVO ${tipo}`, costo, venta: 0, origen, tecnico: tec, tiempo_estimado: 1 });
-        recalcularFinanzas();
-    };
+    } else {
 
-    window.updateItem = (idx, campo, valor) => {
-        ordenActiva.items[idx][campo] = (campo === 'desc') ? valor.toUpperCase() : Number(valor);
-        recalcularFinanzas();
-    };
+        const { value:t } = await Swal.fire({
+            title:'ASIGNAR TÉCNICO',
+            input:'text',
+            background:'#0d1117',
+            color:'#fff'
+        });
+
+        tec = t || 'POR ASIGNAR';
+
+        const { value:c } = await Swal.fire({
+            title:'COSTO TÉCNICO',
+            input:'number',
+            background:'#0d1117',
+            color:'#fff'
+        });
+
+        costo = Number(c || 0);
+
+        // 🔥 PRICING AUTOMÁTICO MANO DE OBRA
+        const sugerido = analizarPrecioSugerido({
+            tipo: "mano_obra",
+            costo: costo
+        });
+
+        venta = sugerido || (costo * 2);
+    }
+
+    ordenActiva.items.push({
+        tipo,
+        desc: `NUEVO ${tipo}`,
+        costo,
+        venta,
+        origen,
+        tecnico: tec,
+        cantidad: 1
+    });
+
+    recalcularFinanzas();
+};
 
     const ejecutarSincronizacionTotal = async () => {
         const btn = document.getElementById("btnSincronizar");
@@ -321,8 +371,22 @@ export default async function ordenes(container) {
             });
 
             await batch.commit();
-            hablar("Sync completo. Orden en la nube.");
-            Swal.fire({ title: 'NEXUS SYNC OK', icon: 'success', background: '#0d1117', color: '#fff' });
+
+ordenActiva.id = id; // 🔥 CLAVE
+
+hablar("Orden guardada correctamente");
+
+Swal.fire({
+    title: '✅ ORDEN GUARDADA',
+    html: `
+        <b>Placa:</b> ${placa}<br>
+        <b>Total:</b> $${Math.round(data.costos_totales.total).toLocaleString()}<br>
+        <b>ID:</b> ${id}
+    `,
+    icon: 'success',
+    background: '#0d1117',
+    color: '#fff'
+});
             document.getElementById("nexus-terminal").classList.add("hidden");
         } catch (e) {
             console.error(e);
@@ -330,6 +394,45 @@ export default async function ordenes(container) {
             btn.innerHTML = `🛰️ PUSH_TO_NEXUS_CLOUD`;
         }
     };
+
+window.agregarDesdeInventario = async () => {
+
+    const q = query(
+        collection(db, "inventario"),
+        where("empresaId", "==", empresaId)
+    );
+
+    const snap = await getDocs(q);
+
+    if(snap.empty){
+        Swal.fire("Sin inventario");
+        return;
+    }
+
+    const lista = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+    }));
+
+    const item = lista[0]; // luego haces selector PRO
+
+    const sugerido = analizarPrecioSugerido({
+        tipo: "repuesto",
+        costo: item.precioCosto || 0
+    });
+
+    ordenActiva.items.push({
+        tipo: 'REPUESTO',
+        desc: item.nombre,
+        costo: item.precioCosto || 0,
+        venta: sugerido || item.precioVenta || 0,
+        idRef: item.id,
+        cantidad: 1,
+        origen: 'TALLER'
+    });
+
+    recalcularFinanzas();
+};
 
     window.renderItems = () => {
         const container = document.getElementById("items-container");
@@ -349,9 +452,14 @@ export default async function ordenes(container) {
     };
 
     window.removeItemNexus = (idx) => {
-        ordenActiva.items.splice(idx, 1);
-        recalcularFinanzas();
-    };
+    if(!confirm("¿Eliminar item?")) return;
+
+    ordenActiva.items.splice(idx, 1);
+
+    hablar("Item eliminado");
+
+    recalcularFinanzas();
+};
 
     const vincularEventosBase = () => {
         document.getElementById("btnNewMission").onclick = () => window.abrirTerminalNexus();
