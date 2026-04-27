@@ -25,53 +25,53 @@ export default async function ordenes(container) {
         return;
     }
 
-    // --- 1. MOTOR FINANCIERO (SAP-ELIMINATOR V16) ---
-    const recalcularFinanzas = () => {
-        if (!ordenActiva) return;
-        let m = { v_rep: 0, c_rep: 0, v_mo: 0, c_mo: 0 };
+    // --- MOTOR FINANCIERO QUANTUM-SAP V17 ---
+const recalcularFinanzas = () => {
+    if (!ordenActiva) return;
+    
+    // Acumuladores con tipado estricto
+    let m = { v_rep: 0, c_rep: 0, v_mo: 0, c_mo: 0, v_ins_iva: 0, v_ins_no_iva: 0 };
 
-        ordenActiva.items.forEach(i => {
-            const v = Number(i.venta || 0);
-            const c = Number(i.costo || 0);
-            if (i.tipo === 'REPUESTO') {
-                if(i.origen === 'TALLER') { 
-                    m.v_rep += v; 
-                    m.c_rep += c; 
-                } else {
-                    m.v_rep += 0; // Repuesto de cliente no suma a la facturación del taller
-                }
-            } else {
-                m.v_mo += v;
-                m.c_mo += c; 
-            }
-        });
+    ordenActiva.items.forEach(i => {
+        const v = Number(i.venta || 0);
+        const c = Number(i.costo || 0);
+        const cant = Number(i.cantidad || 1);
 
-        const insumosIVA = Number(document.getElementById("f-insumos-iva")?.value || 0); 
-        const insumosNoIVA = Number(document.getElementById("f-insumos-no-iva")?.value || 0); 
-        const anticipo = Number(document.getElementById("f-anticipo")?.value || 0); 
-        
-        // El subtotal con IVA incluye Repuestos Taller + Mano de Obra + Insumos Gravados (Siliconas/Torno)
-        const subtotalGravado = m.v_rep + m.v_mo + insumosIVA;
-        const baseGravable = subtotalGravado / 1.19;
-        const iva = subtotalGravado - baseGravable;
-        
-        // El total final suma los insumos sin IVA (Gasolina/Otros)
-        const totalFactura = subtotalGravado + insumosNoIVA;
-        
-        // EBITDA: Base Gravable + Insumos No IVA - (Costos Repuestos + Costos MO + Costos Insumos)
-        const utilidadNeta = (baseGravable + insumosNoIVA) - (m.c_rep + m.c_mo + (insumosIVA / 1.19) + insumosNoIVA);
+        if (i.tipo === 'REPUESTO' && i.origen === 'TALLER') {
+            m.v_rep += (v * cant);
+            m.c_rep += (c * cant);
+        } else if (i.tipo === 'MANO_OBRA') {
+            m.v_mo += (v * cant);
+            m.c_mo += (c * cant);
+        }
+    });
 
-        ordenActiva.costos_totales = { 
-            total: totalFactura, 
-            base: baseGravable,
-            iva: iva,
-            saldo: totalFactura - anticipo, 
-            ebitda: utilidadNeta
-        };
+    const insumosIVA = Number(document.getElementById("f-insumos-iva")?.value || 0);
+    const insumosNoIVA = Number(document.getElementById("f-insumos-no-iva")?.value || 0);
+    const anticipo = Number(document.getElementById("f-anticipo")?.value || 0);
 
-        actualizarUIFinanciera(totalFactura, baseGravable, iva, utilidadNeta, ordenActiva.costos_totales.saldo);
-        renderItems();
+    // LÓGICA SAP: Desglose de Impuestos
+    const subtotalGravado = m.v_rep + m.v_mo + insumosIVA;
+    const baseGravable = subtotalGravado / 1.19;
+    const ivaTotal = subtotalGravado - baseGravable;
+    const totalFinal = subtotalGravado + insumosNoIVA;
+
+    // EBITDA REAL: (Ingresos Netos - Costos Totales Operativos)
+    const costoTotalOperativo = m.c_rep + m.c_mo + (insumosIVA / 1.19);
+    const utilidadNeta = baseGravable - costoTotalOperativo + insumosNoIVA;
+
+    ordenActiva.costos_totales = {
+        total: totalFinal,
+        base: baseGravable,
+        iva: ivaTotal,
+        saldo: totalFinal - anticipo,
+        ebitda: utilidadNeta,
+        margen: (utilidadNeta / baseGravable) * 100
     };
+
+    actualizarUIFinanciera();
+    renderItems();
+};
 
     const actualizarUIFinanciera = (total, base, iva, ebitda, saldo) => {
         const totalEl = document.getElementById("total-factura");
@@ -90,22 +90,21 @@ export default async function ordenes(container) {
 
     // --- 2. TRAZABILIDAD HARLEY-DAVIDSON (LINK GENERATOR) ---
     const enviarNotificacionNexus = (proceso) => {
-        const linkServidor = `https://tallerpro360.web.app/trace/${ordenActiva.id}`;
-        let mensaje = "";
-        
-        switch(proceso) {
-            case 'INGRESO':
-                mensaje = `🛰️ *NEXUS_X: INGRESO CONFIRMADO*%0AHola *${ordenActiva.cliente}*, su vehículo *${ordenActiva.placa}* ha iniciado fase de diagnóstico. Trazabilidad en vivo: ${linkServidor}`;
-                break;
-            case 'REPARACION':
-                mensaje = `🛠️ *NEXUS_X: EN PROCESO*%0A*${ordenActiva.cliente}*, estamos ejecutando las reparaciones en *${ordenActiva.placa}*. Vea el progreso aquí: ${linkServidor}`;
-                break;
-            case 'FINAL':
-                mensaje = `✅ *NEXUS_X: VEHÍCULO LISTO*%0ASu vehículo *${ordenActiva.placa}* está listo para entrega. Resumen técnico y factura: ${linkServidor}`;
-                break;
-        }
-        window.open(`https://wa.me/57${ordenActiva.telefono}?text=${mensaje}`, '_blank');
-    };
+    // La URL de trazabilidad es un documento HTML dinámico que lee de Firebase
+    const linkServidor = `https://tallerpro360.web.app/trace/${ordenActiva.id}`;
+    const tallerNombre = "NEXUS-X TITAN WORKSHOP"; // Podrías traerlo de empresaId
+    
+    let template = "";
+    switch(proceso) {
+        case 'INGRESO':
+            template = `*${tallerNombre}*%0A%0A🛰️ *STATUS: INGRESO CONFIRMADO*%0A------------------------------%0AHola *${ordenActiva.cliente}*, su vehículo *[${ordenActiva.placa}]* ha entrado a boxes. %0A%0A📊 *INFORME INICIAL:*%0A${ordenActiva.bitacora_ia.substring(0, 100)}...%0A%0A🌐 *SIGA EL PROGRESO EN VIVO (NEON UI):*%0A${linkServidor}`;
+            break;
+        case 'FINAL':
+            template = `*${tallerNombre}*%0A%0A✅ *STATUS: VEHÍCULO LISTO*%0A------------------------------%0AEstimado *${ordenActiva.cliente}*, la misión en su vehículo *[${ordenActiva.placa}]* ha finalizado con éxito.%0A%0A💰 *TOTAL A PAGAR:* $${Math.round(ordenActiva.costos_totales.total).toLocaleString()}%0A💳 *SALDO:* $${Math.round(ordenActiva.costos_totales.saldo).toLocaleString()}%0A%0A📥 *VER FACTURA Y DETALLES TÉCNICOS:*%0A${linkServidor}`;
+            break;
+    }
+    window.open(`https://wa.me/57${ordenActiva.telefono}?text=${template}`, '_blank');
+};
 
     // --- 3. UI BASE (NEON MATRIX V16) ---
     const renderBase = () => {
@@ -187,10 +186,7 @@ export default async function ordenes(container) {
                         
                         <div class="grid grid-cols-2 gap-6 mt-12">
                             <button onclick="window.addItemNexus('REPUESTO')" class="py-6 border-2 border-white/10 orbitron text-[10px] font-black text-white hover:bg-white hover:text-black transition-all rounded-2xl">+ ADD_PART</button>
-<button onclick="agregarDesdeInventario()"
-class="bg-yellow-500 text-black p-4 rounded-xl font-bold mt-4">
-📦 INVENTARIO
-</button>
+
                             <button onclick="window.addItemNexus('MANO_OBRA')" class="py-6 border-2 border-red-600/20 orbitron text-[10px] font-black text-red-600 hover:bg-red-600 hover:text-white transition-all rounded-2xl">+ ADD_LABOR</button>
                         </div>
                     </div>
@@ -395,61 +391,93 @@ Swal.fire({
         }
     };
 
+// --- SISTEMA DE LUPA (INVENTARIO PRO) ---
 window.agregarDesdeInventario = async () => {
+    try {
+        const { getDocs, query, collection, where } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+        const q = query(collection(db, "inventario"), where("empresaId", "==", localStorage.getItem("nexus_empresaId")));
+        const snap = await getDocs(q);
 
-    const q = query(
-        collection(db, "inventario"),
-        where("empresaId", "==", empresaId)
-    );
+        if (snap.empty) return Swal.fire("INFO", "Inventario vacío en la nube", "warning");
 
-    const snap = await getDocs(q);
+        const opciones = {};
+        snap.forEach(d => {
+            const data = d.data();
+            opciones[d.id] = `${data.nombre.toUpperCase()} - [STOCK: ${data.stock || 0}] - $${Number(data.precioVenta).toLocaleString()}`;
+        });
 
-    if(snap.empty){
-        Swal.fire("Sin inventario");
-        return;
-    }
+        const { value: itemId } = await Swal.fire({
+            title: 'LUPA DE INVENTARIO NEXUS',
+            input: 'select',
+            inputOptions: opciones,
+            placeholder: 'Seleccione repuesto...',
+            showCancelButton: true,
+            background: '#05070a', color: '#fff', confirmButtonColor: '#00f2ff'
+        });
 
-    const lista = snap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-    }));
+        if (itemId) {
+            const itemDoc = snap.docs.find(d => d.id === itemId).data();
+            const sugerido = analizarPrecioSugerido({ tipo: "repuesto", costo: itemDoc.precioCosto });
 
-    const item = lista[0]; // luego haces selector PRO
+            ordenActiva.items.push({
+                tipo: 'REPUESTO',
+                desc: itemDoc.nombre,
+                costo: itemDoc.precioCosto || 0,
+                venta: sugerido || itemDoc.precioVenta,
+                cantidad: 1,
+                origen: 'TALLER',
+                idRef: itemId
+            });
+            recalcularFinanzas();
+            hablar("Item de inventario vinculado");
+        }
+    } catch (e) { console.error("Error Lupa:", e); }
+};
 
-    const sugerido = analizarPrecioSugerido({
-        tipo: "repuesto",
-        costo: item.precioCosto || 0
-    });
-
-    ordenActiva.items.push({
-        tipo: 'REPUESTO',
-        desc: item.nombre,
-        costo: item.precioCosto || 0,
-        venta: sugerido || item.precioVenta || 0,
-        idRef: item.id,
-        cantidad: 1,
-        origen: 'TALLER'
-    });
-
+// --- EDICIÓN EN TIEMPO REAL (ELIMINA EL "NADA SIRVE") ---
+window.updateItem = (idx, campo, valor) => {
+    const val = (campo === 'costo' || campo === 'venta' || campo === 'cantidad') ? Number(valor) : valor;
+    ordenActiva.items[idx][campo] = val;
+    
+    // Auto-recalcular sin cerrar el flujo
+    const subtotalGravado = (ordenActiva.items[idx].venta * ordenActiva.items[idx].cantidad);
+    console.log(`Update: Item ${idx} -> ${campo}: ${val}`);
     recalcularFinanzas();
 };
 
     window.renderItems = () => {
-        const container = document.getElementById("items-container");
-        if(!container) return;
-        container.innerHTML = ordenActiva.items.map((item, idx) => `
-            <div class="flex items-center gap-6 bg-white/[0.03] p-6 rounded-2xl border ${item.origen === 'CLIENTE' ? 'border-yellow-600/30' : 'border-white/5'} group">
-                <div class="flex-1 grid grid-cols-4 gap-6">
-                    <div class="col-span-2">
-                        <input onchange="window.updateItem(${idx}, 'desc', this.value)" value="${item.desc}" class="bg-transparent text-white font-black orbitron text-xs outline-none w-full uppercase">
-                        <span class="text-[8px] orbitron text-cyan-500 font-bold uppercase">${item.tipo} | TECH: ${item.tecnico} | ORIGEN: ${item.origen}</span>
-                    </div>
-                    <input type="number" onchange="window.updateItem(${idx}, 'costo', this.value)" value="${item.costo}" class="bg-black/50 p-3 text-red-500 font-black text-center orbitron text-xs rounded-lg" placeholder="COST">
-                    <input type="number" onchange="window.updateItem(${idx}, 'venta', this.value)" value="${item.venta}" class="bg-black/50 p-3 text-green-400 font-black text-center orbitron text-xs rounded-lg" placeholder="PRICE">
+    const container = document.getElementById("items-container");
+    if(!container) return;
+    
+    container.innerHTML = ordenActiva.items.map((item, idx) => `
+        <div class="flex flex-col gap-2 bg-white/[0.02] p-4 rounded-xl border border-white/5 mb-4 group hover:border-cyan-500/50 transition-all">
+            <div class="flex items-center gap-4">
+                <span class="text-[9px] orbitron p-1 ${item.tipo === 'REPUESTO' ? 'bg-cyan-500 text-black' : 'bg-red-600 text-white'}">${item.tipo}</span>
+                <input onchange="window.updateItem(${idx}, 'desc', this.value)" value="${item.desc}" class="flex-1 bg-transparent text-white font-black orbitron text-xs outline-none uppercase">
+                <button onclick="window.removeItemNexus(${idx})" class="text-slate-600 hover:text-red-500"><i class="fas fa-trash-alt"></i></button>
+            </div>
+            
+            <div class="grid grid-cols-4 gap-2">
+                <div class="flex flex-col">
+                    <label class="text-[8px] text-slate-500 orbitron">COSTO UNIT</label>
+                    <input type="number" onchange="window.updateItem(${idx}, 'costo', this.value)" value="${item.costo}" class="bg-black/40 p-2 text-red-500 text-[10px] orbitron rounded border border-white/5">
                 </div>
-                <button onclick="window.removeItemNexus(${idx})" class="text-slate-600 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt text-xl"></i></button>
-            </div>`).join('');
-    };
+                <div class="flex flex-col">
+                    <label class="text-[8px] text-green-500 orbitron">VENTA UNIT</label>
+                    <input type="number" onchange="window.updateItem(${idx}, 'venta', this.value)" value="${item.venta}" class="bg-black/40 p-2 text-green-400 text-[10px] orbitron rounded border border-white/5">
+                </div>
+                <div class="flex flex-col">
+                    <label class="text-[8px] text-slate-500 orbitron">CANT</label>
+                    <input type="number" onchange="window.updateItem(${idx}, 'cantidad', this.value)" value="${item.cantidad || 1}" class="bg-black/40 p-2 text-white text-[10px] orbitron rounded border border-white/5">
+                </div>
+                <div class="flex flex-col justify-end">
+                    <span class="text-[10px] text-right font-bold text-cyan-400">$${(item.venta * (item.cantidad || 1)).toLocaleString()}</span>
+                </div>
+            </div>
+            ${item.tipo === 'MANO_OBRA' ? `<div class="text-[8px] text-slate-500 italic">Asignado a: ${item.tecnico}</div>` : ''}
+        </div>
+    `).join('');
+};
 
     window.removeItemNexus = (idx) => {
     if(!confirm("¿Eliminar item?")) return;
