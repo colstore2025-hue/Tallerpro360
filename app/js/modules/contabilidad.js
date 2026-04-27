@@ -193,34 +193,70 @@ export default async function contabilidad(container) {
     }
 
     const cargarVistaCuentas = async () => {
-        const content = document.getElementById("cont-dynamic-content");
-        content.innerHTML = `<div class="p-20 text-center orbitron text-cyan-500 animate-pulse uppercase tracking-[0.5em]">Consolidando Activos...</div>`;
-        
+    const content = document.getElementById("cont-dynamic-content");
+    content.innerHTML = `<div class="p-20 text-center orbitron text-cyan-500 animate-pulse uppercase tracking-[0.5em]">Consolidando Activos...</div>`;
+    
+    try {
         const q = query(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), where("empresaId", "==", empresaId));
         const snap = await getDocs(q);
+        
+        // Inicializamos valores en 0
         let p = { ing: 0, gas: 0 };
+
         snap.forEach(d => {
             const m = d.data();
-            esIngreso(m.tipo) ? p.ing += Number(m.monto) : p.gas += Number(m.monto);
+            // VALIDACIÓN CRÍTICA: Si el monto no existe o no es numérico, usamos 0
+            const valorNumerico = Number(m.monto) || 0; 
+
+            if (esIngreso(m.tipo)) {
+                p.ing += valorNumerico;
+            } else {
+                p.gas += valorNumerico;
+            }
         });
+
+        const resultadoNeto = p.ing - p.gas;
 
         content.innerHTML = `
         <div class="bg-[#0d1117] p-12 rounded-[4rem] border border-white/5 shadow-3xl">
-            <h3 class="orbitron text-xl font-black text-amber-400 mb-10 italic uppercase">Balance Consolidado Nexus-X</h3>
+            <h3 class="orbitron text-xl font-black text-amber-400 mb-10 italic uppercase text-center">Balance Consolidado Nexus-X</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 ${renderPucCard("TOTAL INGRESOS", p.ing, "border-emerald-500/20", "text-emerald-400")}
                 ${renderPucCard("TOTAL EGRESOS", p.gas, "border-red-500/20", "text-red-500")}
-                ${renderPucCard("RESULTADO NETO", p.ing - p.gas, "border-cyan-500/20", "text-cyan-400")}
+                ${renderPucCard("RESULTADO NETO", resultadoNeto, "border-cyan-500/20", "text-cyan-400")}
             </div>
         </div>`;
-    };
+        
+        // Actualizamos también los indicadores superiores (Top Bar)
+        actualizarDash(p.ing, p.gas);
+
+    } catch (error) {
+        console.error("Error en Auditoría:", error);
+        content.innerHTML = `<div class="p-20 text-center orbitron text-red-500">Error al sincronizar bóveda.</div>`;
+    }
+};
+
+// Antes de hacer el 'addDoc' o enviar el movimiento manual:
+const montoLimpio = parseFloat(inputMonto.value.replace(/[^0-9.-]+/g, ""));
+const conceptoLimpio = inputConcepto.value.trim();
+
+if (!montoLimpio || conceptoLimpio === "") {
+    // Aquí es donde se dispara tu modal de "Auditoría Rechazada"
+    mostrarModalError("Monto y Concepto requeridos");
+    return;
+}
 
     function renderPucCard(title, total, border, text) {
-        return `<div class="p-8 bg-black/40 rounded-[3rem] border ${border}">
-            <p class="text-[9px] orbitron ${text} mb-4 font-black tracking-widest">${title}</p>
-            <span class="text-2xl font-black orbitron ${text}">$${total.toLocaleString()}</span>
+    // Aseguramos que siempre sea un número para evitar el texto "NaN" en el HTML
+    const valorFinal = Number(total) || 0;
+    return `
+        <div class="p-8 bg-black/40 rounded-[3rem] border ${border} backdrop-blur-sm">
+            <p class="text-[9px] orbitron ${text} mb-4 font-black tracking-widest uppercase">${title}</p>
+            <span class="text-2xl font-black orbitron ${text}">
+                $ ${valorFinal.toLocaleString('es-CO', { minimumFractionDigits: 0 })}
+            </span>
         </div>`;
-    }
+}
 
     function actualizarDash(ing, gas) {
         const util = ing - gas;
