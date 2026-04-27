@@ -281,6 +281,15 @@ export default async function ordenes(container) {
         recalcularFinanzas();
     };
 
+window.syncBitacoraLive = async (val) => {
+    ordenActiva.bitacora_ia = val;
+    if (ordenActiva.id) {
+        const docRef = doc(db, "ordenes", ordenActiva.id);
+        await setDoc(docRef, { bitacora_ia: val, updatedAt: serverTimestamp() }, { merge: true });
+        // Esto envía el dato a Firestore cada vez que escribes o dictas, sin cerrar la terminal.
+    }
+};
+
     window.renderItems = () => {
         const c = document.getElementById("items-container"); if (!c) return;
         c.innerHTML = ordenActiva.items.map((it, i) => `
