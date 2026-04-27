@@ -184,11 +184,20 @@ const recalcularFinanzas = () => {
                         
                         <div id="items-container" class="space-y-4 max-h-[400px] overflow-y-auto pr-4 custom-scroll"></div>
                         
-                        <div class="grid grid-cols-2 gap-6 mt-12">
-                            <button onclick="window.addItemNexus('REPUESTO')" class="py-6 border-2 border-white/10 orbitron text-[10px] font-black text-white hover:bg-white hover:text-black transition-all rounded-2xl">+ ADD_PART</button>
+                        // --- DENTRO DE renderTerminal (Botonera de Items) ---
+<div class="grid grid-cols-3 gap-4 mt-12">
+    <button onclick="window.agregarDesdeInventario()" class="py-6 border-2 border-cyan-500/50 orbitron text-[10px] font-black text-cyan-400 hover:bg-cyan-500 hover:text-black transition-all rounded-2xl flex flex-col items-center justify-center gap-2">
+        <i class="fas fa-search text-xl"></i> LUPA INVENTARIO
+    </button>
 
-                            <button onclick="window.addItemNexus('MANO_OBRA')" class="py-6 border-2 border-red-600/20 orbitron text-[10px] font-black text-red-600 hover:bg-red-600 hover:text-white transition-all rounded-2xl">+ ADD_LABOR</button>
-                        </div>
+    <button onclick="window.addItemNexus('REPUESTO')" class="py-6 border-2 border-white/10 orbitron text-[10px] font-black text-white hover:bg-white hover:text-black transition-all rounded-2xl flex flex-col items-center justify-center gap-2">
+        <i class="fas fa-box-open text-xl"></i> REPUESTO EXTERNO
+    </button>
+
+    <button onclick="window.addItemNexus('MANO_OBRA')" class="py-6 border-2 border-red-600/20 orbitron text-[10px] font-black text-red-600 hover:bg-red-600 hover:text-white transition-all rounded-2xl flex flex-col items-center justify-center gap-2">
+        <i class="fas fa-tools text-xl"></i> AGREGAR LABOR
+    </button>
+</div>
                     </div>
 
                     <div class="grid grid-cols-3 gap-6">
@@ -261,78 +270,63 @@ const recalcularFinanzas = () => {
         } catch (e) { console.error(e); }
     };
 
-    window.addItemNexus = async (tipo) => {
-
+    // --- LÓGICA DE INSERCIÓN TITÁN V17 ---
+window.addItemNexus = async (tipo) => {
     let origen = 'TALLER';
     let tec = 'INTERNO';
     let costo = 0;
     let venta = 0;
+    let desc = `NUEVO ${tipo}`;
 
-    if(tipo === 'REPUESTO'){
-
+    if (tipo === 'REPUESTO') {
         const { value: res } = await Swal.fire({
             title: 'ORIGEN REPUESTO',
             input: 'select',
-            inputOptions: {
-                'TALLER': 'Stock Taller',
-                'CLIENTE': 'Cliente (Costo $0)'
-            },
-            background: '#0d1117',
-            color: '#fff'
+            inputOptions: { 'TALLER': 'Stock Taller', 'CLIENTE': 'Cliente (Costo $0)' },
+            background: '#0d1117', color: '#fff'
         });
-
         origen = res || 'TALLER';
-
-        if(origen === 'CLIENTE'){
-            costo = 0;
-            venta = 0;
+        if (origen === 'CLIENTE') {
+            costo = 0; venta = 0;
         } else {
-            const sugerido = analizarPrecioSugerido({
-                tipo: "repuesto",
-                costo: 0
-            });
-            venta = sugerido || 0;
+            // Precio base para repuesto manual
+            venta = 0; 
         }
-
     } else {
-
-        const { value:t } = await Swal.fire({
-            title:'ASIGNAR TÉCNICO',
-            input:'text',
-            background:'#0d1117',
-            color:'#fff'
+        // MANO DE OBRA: SINCRONIZACIÓN DE PRICING
+        const { value: t } = await Swal.fire({
+            title: 'TÉCNICO ASIGNADO',
+            input: 'text',
+            placeholder: 'Nombre del especialista...',
+            background: '#0d1117', color: '#fff'
         });
-
         tec = t || 'POR ASIGNAR';
 
-        const { value:c } = await Swal.fire({
-            title:'COSTO TÉCNICO',
-            input:'number',
-            background:'#0d1117',
-            color:'#fff'
+        const { value: c } = await Swal.fire({
+            title: 'COSTO TÉCNICO (PAGO)',
+            input: 'number',
+            background: '#0d1117', color: '#fff'
         });
-
         costo = Number(c || 0);
 
-        // 🔥 PRICING AUTOMÁTICO MANO DE OBRA
-        const sugerido = analizarPrecioSugerido({
-            tipo: "mano_obra",
-            costo: costo
-        });
-
-        venta = sugerido || (costo * 2);
+        // 🔥 MOTOR DE PRECIOS QUANTUM: Sincroniza abajo en mano de obra
+        const sugerido = analizarPrecioSugerido({ tipo: "mano_obra", costo: costo });
+        venta = sugerido; // Aquí se inserta el precio sugerido automáticamente
+        desc = `LABOR: ${tec.toUpperCase()}`;
     }
 
     ordenActiva.items.push({
         tipo,
-        desc: `NUEVO ${tipo}`,
+        desc,
         costo,
         venta,
         origen,
         tecnico: tec,
-        cantidad: 1
+        cantidad: 1,
+        fecha: new Date().toISOString()
     });
 
+    hablar(`${tipo} agregado al presupuesto`);
     recalcularFinanzas();
 };
 
@@ -447,34 +441,43 @@ window.updateItem = (idx, campo, valor) => {
 
     window.renderItems = () => {
     const container = document.getElementById("items-container");
-    if(!container) return;
-    
+    if (!container) return;
+
     container.innerHTML = ordenActiva.items.map((item, idx) => `
-        <div class="flex flex-col gap-2 bg-white/[0.02] p-4 rounded-xl border border-white/5 mb-4 group hover:border-cyan-500/50 transition-all">
+        <div class="flex flex-col gap-3 bg-white/[0.03] p-5 rounded-2xl border border-white/10 mb-4 hover:border-cyan-500/50 transition-all relative overflow-hidden group">
+            <div class="absolute top-0 left-0 h-full w-1 ${item.tipo === 'REPUESTO' ? 'bg-cyan-500' : 'bg-red-600'}"></div>
+            
             <div class="flex items-center gap-4">
-                <span class="text-[9px] orbitron p-1 ${item.tipo === 'REPUESTO' ? 'bg-cyan-500 text-black' : 'bg-red-600 text-white'}">${item.tipo}</span>
-                <input onchange="window.updateItem(${idx}, 'desc', this.value)" value="${item.desc}" class="flex-1 bg-transparent text-white font-black orbitron text-xs outline-none uppercase">
-                <button onclick="window.removeItemNexus(${idx})" class="text-slate-600 hover:text-red-500"><i class="fas fa-trash-alt"></i></button>
+                <span class="text-[8px] orbitron font-black px-2 py-1 ${item.tipo === 'REPUESTO' ? 'bg-cyan-500 text-black' : 'bg-red-600 text-white'} rounded-sm">${item.tipo}</span>
+                <input onchange="window.updateItem(${idx}, 'desc', this.value)" value="${item.desc}" class="flex-1 bg-transparent text-white font-black orbitron text-xs outline-none uppercase border-b border-transparent focus:border-cyan-500">
+                <button onclick="window.removeItemNexus(${idx})" class="text-slate-500 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button>
             </div>
             
-            <div class="grid grid-cols-4 gap-2">
-                <div class="flex flex-col">
-                    <label class="text-[8px] text-slate-500 orbitron">COSTO UNIT</label>
-                    <input type="number" onchange="window.updateItem(${idx}, 'costo', this.value)" value="${item.costo}" class="bg-black/40 p-2 text-red-500 text-[10px] orbitron rounded border border-white/5">
+            <div class="grid grid-cols-4 gap-4 items-end">
+                <div>
+                    <label class="text-[7px] orbitron text-slate-500 block mb-1">COSTO UNIT</label>
+                    <input type="number" onchange="window.updateItem(${idx}, 'costo', this.value)" value="${item.costo}" class="bg-black/50 p-2 text-red-400 text-xs orbitron rounded w-full border border-white/5">
                 </div>
-                <div class="flex flex-col">
-                    <label class="text-[8px] text-green-500 orbitron">VENTA UNIT</label>
-                    <input type="number" onchange="window.updateItem(${idx}, 'venta', this.value)" value="${item.venta}" class="bg-black/40 p-2 text-green-400 text-[10px] orbitron rounded border border-white/5">
+                <div>
+                    <label class="text-[7px] orbitron text-green-500 block mb-1">PRECIO VENTA</label>
+                    <input type="number" onchange="window.updateItem(${idx}, 'venta', this.value)" value="${item.venta}" class="bg-black/50 p-2 text-green-400 text-xs orbitron rounded w-full border border-white/5">
                 </div>
-                <div class="flex flex-col">
-                    <label class="text-[8px] text-slate-500 orbitron">CANT</label>
-                    <input type="number" onchange="window.updateItem(${idx}, 'cantidad', this.value)" value="${item.cantidad || 1}" class="bg-black/40 p-2 text-white text-[10px] orbitron rounded border border-white/5">
+                <div>
+                    <label class="text-[7px] orbitron text-slate-500 block mb-1">CANT.</label>
+                    <input type="number" onchange="window.updateItem(${idx}, 'cantidad', this.value)" value="${item.cantidad || 1}" class="bg-black/50 p-2 text-white text-xs orbitron rounded w-full border border-white/5">
                 </div>
-                <div class="flex flex-col justify-end">
-                    <span class="text-[10px] text-right font-bold text-cyan-400">$${(item.venta * (item.cantidad || 1)).toLocaleString()}</span>
+                <div class="text-right">
+                    <p class="text-[7px] orbitron text-slate-500">SUBTOTAL</p>
+                    <span class="text-xs font-black text-white orbitron">$${(item.venta * (item.cantidad || 1)).toLocaleString()}</span>
                 </div>
             </div>
-            ${item.tipo === 'MANO_OBRA' ? `<div class="text-[8px] text-slate-500 italic">Asignado a: ${item.tecnico}</div>` : ''}
+            
+            ${item.tipo === 'MANO_OBRA' ? `
+                <div class="flex justify-between items-center pt-2 border-t border-white/5">
+                    <span class="text-[8px] text-slate-500 italic font-mono">EJECUTA: ${item.tecnico}</span>
+                    <span class="text-[8px] text-cyan-500 orbitron tracking-widest">PRICING_SYNC_OK</span>
+                </div>
+            ` : ''}
         </div>
     `).join('');
 };
