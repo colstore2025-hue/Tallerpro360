@@ -67,21 +67,27 @@ export default async function ordenes(container) {
             </div>`;
     };
 
-    window.enviarNotificacionNexus = (proceso) => {
+        window.enviarNotificacionNexus = (proceso) => {
         const idOrden = ordenActiva.id || "PENDIENTE";
-        const linkTrace = `https://tallerpro360.web.app/trace.html?id=${idOrden}`;
-        const bitacoraCorta = ordenActiva.bitacora_ia ? `%0A📝 *BITÁCORA:* ${ordenActiva.bitacora_ia.substring(0, 100)}...` : "";
+        // CAMBIO ESTRATÉGICO: Apuntamos al motor de renderizado de Vercel que ya validaste
+        const linkTrace = `https://tallerpro360.vercel.app/trace?id=${idOrden}`;
+        
+        // Formateo de Bitácora para impacto visual
+        const bitacoraCorta = ordenActiva.bitacora_ia ? `%0A📝 *BITÁCORA:* ${ordenActiva.bitacora_ia.substring(0, 150).toUpperCase()}...` : "";
+        const totalFormatted = `$${Math.round(ordenActiva.costos_totales?.total || 0).toLocaleString()}`;
         
         let msj = "";
         if (proceso === 'INGRESO') {
-            msj = `🛰️ *NEXUS_X: INGRESO CONFIRMADO*%0AHola *${ordenActiva.cliente}*, vehículo *${ordenActiva.placa}* ha iniciado fase de diagnóstico.${bitacoraCorta}%0A🌐 *TRAZABILIDAD Y RECEPCIÓN:* ${linkTrace}`;
+            msj = `🛰️ *NEXUS_X: INGRESO CONFIRMADO*%0A%0AHola *${ordenActiva.cliente}*, recibimos su vehículo *${ordenActiva.placa}*. Hemos iniciado la fase de diagnóstico digital.${bitacoraCorta}%0A%0A🌐 *Siga el progreso en tiempo real aquí:*%0A${linkTrace}`;
         } else if (proceso === 'FINAL') {
-            msj = `✅ *NEXUS_X: OPERACIÓN COMPLETADA*%0AVehículo *${ordenActiva.placa}* listo para entrega.%0A💰 *TOTAL:* $${Math.round(ordenActiva.costos_totales.total).toLocaleString()}%0A📥 *REPORTE Y FACTURA:* ${linkTrace}`;
+            msj = `✅ *NEXUS_X: MISIÓN COMPLETADA*%0A%0AVehículo *${ordenActiva.placa}* se encuentra en zona de entrega.%0A💰 *VALOR TOTAL:* ${totalFormatted}%0A%0A📥 *DESCARGUE SU REPORTE TÉCNICO AQUÍ:*%0A${linkTrace}`;
         } else {
-            msj = `🛰️ *NEXUS_X: ACTUALIZACIÓN*%0AHola *${ordenActiva.cliente}*, hay novedades en la orden de su vehículo *${ordenActiva.placa}*.%0A🌐 *VER COTIZACIÓN:* ${linkTrace}`;
+            msj = `🛰️ *NEXUS_X: ACTUALIZACIÓN DE ESTADO*%0A%0AHola *${ordenActiva.cliente}*, la bitácora técnica de su vehículo *${ordenActiva.placa}* tiene nuevas actualizaciones.%0A%0A🌐 *VER DETALLE Y COSTOS:*%0A${linkTrace}`;
         }
 
-        window.open(`https://wa.me/57${ordenActiva.telefono}?text=${msj}`, '_blank');
+        // Validación de número para evitar errores de envío
+        const tel = ordenActiva.telefono ? ordenActiva.telefono.replace(/\D/g, '') : "";
+        window.open(`https://wa.me/57${tel}?text=${msj}`, '_blank');
     };
 
     const renderBase = () => {
