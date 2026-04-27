@@ -145,9 +145,14 @@ export default async function ordenes(container) {
                     </div>
                     <div id="pricing-engine-container" class="bg-white/5 p-8 border border-white/5 rounded-3xl"></div>
                     <div class="bg-black p-8 border border-red-600/20 rounded-3xl relative">
-                        <textarea id="ai-log-display" onchange="ordenActiva.bitacora_ia = this.value" class="w-full bg-transparent text-slate-300 text-xs h-32 outline-none font-mono" placeholder="Escuchando voz técnica...">${ordenActiva.bitacora_ia || ''}</textarea>
-                        <button onclick="window.nexusDictarBitacora()" class="absolute bottom-6 right-6 w-12 h-12 bg-white text-black rounded-full shadow-2xl"><i class="fas fa-microphone"></i></button>
-                    </div>
+    <textarea id="ai-log-display" 
+        oninput="window.syncBitacoraLive(this.value)" 
+        class="w-full bg-transparent text-slate-300 text-xs h-32 outline-none font-mono" 
+        placeholder="Escuchando voz técnica...">${ordenActiva.bitacora_ia || ''}</textarea>
+    <button onclick="window.nexusDictarBitacora()" class="absolute bottom-6 right-6 w-12 h-12 bg-white text-black rounded-full shadow-2xl">
+        <i class="fas fa-microphone"></i>
+    </button>
+</div>
                 </div>
 
                 <div class="lg:col-span-8 space-y-8">
