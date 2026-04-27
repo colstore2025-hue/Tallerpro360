@@ -12,6 +12,15 @@ import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 import { analizarPrecioSugerido, renderModuloPricing } from "../ai/pricingEnginePRO360.js";
 
+// --- CONFIGURACIÓN DE ESPECIALIDADES (EL ASCENSOR NEXUS) ---
+// Este diccionario es el núcleo para las gráficas en reportes.js
+const NEXUS_ASCENSOR = {
+    MECANICA: { label: 'Mecánica', color: '#06b6d4', icon: 'fa-tools' },
+    LATONERIA_PINTURA: { label: 'Latonería y Pintura', color: '#fbbf24', icon: 'fa-paint-roller' },
+    ELECTRICO: { label: 'Eléctrico', color: '#a855f7', icon: 'fa-bolt' },
+    ELECTRONICA: { label: 'Electrónica', color: '#10b981', icon: 'fa-microchip' }
+};
+
 const SpeechRecognition = window.Recognition || window.webkitSpeechRecognition;
 const recognition = SpeechRecognition ? new SpeechRecognition() : null;
 
@@ -120,6 +129,7 @@ export default async function ordenes(container) {
         modal.innerHTML = `
         <div class="max-w-[1600px] mx-auto pb-40 animate-in zoom-in duration-300">
             <div class="flex flex-col lg:flex-row justify-between items-center mb-12 bg-[#0d1117] p-10 border-l-8 border-cyan-500 rounded-r-3xl gap-6">
+                
                 <div class="flex items-center gap-6">
                     <input id="f-placa" value="${ordenActiva.placa}" class="bg-black text-7xl font-black orbitron text-white w-80 uppercase border-2 border-white/5 rounded-xl text-center" placeholder="PLACA">
                     <div class="flex gap-2">
@@ -127,17 +137,36 @@ export default async function ordenes(container) {
                         <button onclick="window.nexusCamara()" class="w-16 h-16 bg-white text-black rounded-xl hover:bg-cyan-500 transition-all flex items-center justify-center"><i class="fas fa-camera text-2xl"></i></button>
                     </div>
                 </div>
-                <div class="flex items-center gap-4 bg-black/50 p-4 rounded-2xl border border-white/5">
-                    <span class="orbitron text-[9px] text-slate-500">FASE:</span>
-                    <select id="f-estado" onchange="window.cambiarEstado(this.value)" class="bg-transparent text-cyan-400 orbitron font-black text-xl outline-none">
-                        ${['COTIZACION', 'INGRESO', 'DIAGNOSTICO', 'REPARACION', 'LISTO', 'ENTREGADO'].map(e => 
-                            `<option value="${e}" ${ordenActiva.estado === e ? 'selected' : ''} class="bg-black">${e}</option>`).join('')}
-                    </select>
+
+                <div class="flex flex-col gap-2 bg-black/50 p-4 px-6 rounded-2xl border border-white/5 min-w-[250px]">
+                    <span class="orbitron text-[8px] text-slate-500 uppercase tracking-[0.2em] font-black">Ascensor / Área:</span>
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-layer-group text-cyan-500 text-xs"></i>
+                        <select id="f-tipo-orden" class="bg-transparent text-white orbitron font-black text-sm outline-none border-b border-white/10 focus:border-cyan-500 cursor-pointer w-full">
+                            ${Object.entries(NEXUS_ASCENSOR).map(([key, val]) => `
+                                <option value="${key}" ${ordenActiva.tipo_orden === key ? 'selected' : ''} class="bg-[#0d1117] text-white">
+                                    ${val.label.toUpperCase()}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
                 </div>
-                <button id="btnCloseTerminal" class="w-20 h-20 bg-red-600 text-white text-3xl font-black rounded-2xl hover:rotate-90 transition-all">✕</button>
+
+                <div class="flex items-center gap-4 bg-black/50 p-4 px-6 rounded-2xl border border-white/5">
+                    <div class="flex flex-col gap-1">
+                        <span class="orbitron text-[9px] text-slate-500 uppercase font-black">Fase Actual:</span>
+                        <select id="f-estado" onchange="window.cambiarEstado(this.value)" class="bg-transparent text-cyan-400 orbitron font-black text-xl outline-none cursor-pointer">
+                            ${['COTIZACION', 'INGRESO', 'DIAGNOSTICO', 'REPARACION', 'LISTO', 'ENTREGADO'].map(e => 
+                                `<option value="${e}" ${ordenActiva.estado === e ? 'selected' : ''} class="bg-[#0d1117]">${e}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+
+                <button id="btnCloseTerminal" class="w-20 h-20 bg-red-600 text-white text-3xl font-black rounded-2xl hover:rotate-90 transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)]">✕</button>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                ```
                 <div class="lg:col-span-4 space-y-6">
                     <div class="bg-[#0d1117] p-8 border border-white/5 rounded-3xl">
                         <h4 class="orbitron font-black text-cyan-500 text-[11px] mb-6 uppercase tracking-widest">Client Experience</h4>
@@ -233,16 +262,25 @@ export default async function ordenes(container) {
         recalcularFinanzas();
     };
 
-    const ejecutarSincronizacionTotal = async () => {
+        const ejecutarSincronizacionTotal = async () => {
         const btn = document.getElementById("btnSincronizar");
         btn.disabled = true;
         btn.innerHTML = `<i class="fas fa-satellite animate-spin"></i> SYNCING...`;
+        
         try {
             const batch = writeBatch(db);
             const placa = document.getElementById("f-placa").value.toUpperCase();
             const id = ordenActiva.id || `OT_${placa}_${Date.now()}`;
+            
+            // CAPTURA DE DATOS DESDE LA UI
+            const tipoOrdenSeleccionado = document.getElementById("f-tipo-orden").value;
+            
             const data = {
-                ...ordenActiva, id, placa, empresaId,
+                ...ordenActiva, 
+                id, 
+                placa, 
+                empresaId,
+                tipo_orden: tipoOrdenSeleccionado, // <--- ADN PARA REPORTES.JS
                 cliente: document.getElementById("f-cliente").value,
                 telefono: document.getElementById("f-telefono").value,
                 anticipo: Number(document.getElementById("f-anticipo").value),
@@ -251,16 +289,41 @@ export default async function ordenes(container) {
                 bitacora_ia: document.getElementById("ai-log-display").value,
                 updatedAt: serverTimestamp()
             };
+
+            // 1. Guardar en Colección de Órdenes
             batch.set(doc(db, "ordenes", id), data);
-            batch.set(doc(db, "contabilidad", `CONT_${id}`), { empresaId, total: data.costos_totales.total, utilidad: data.costos_totales.ebitda, fecha: serverTimestamp(), placa });
+
+            // 2. Guardar en Contabilidad (Enlazado por Placa y Especialidad)
+            batch.set(doc(db, "contabilidad", `CONT_${id}`), { 
+                empresaId, 
+                placa,
+                tipo_orden: tipoOrdenSeleccionado, // <--- CLAVE PARA FILTRAR EBITDA POR ÁREA
+                total: data.costos_totales.total || 0, 
+                utilidad: data.costos_totales.ebitda || 0, 
+                fecha: serverTimestamp() 
+            });
+
             await batch.commit();
+            
             ordenActiva.id = id;
             hablar("Nexus Cloud Sincronizado");
-            Swal.fire({ title: '✅ SYNC OK', icon: 'success', background: '#0d1117', color: '#fff' });
+            
+            Swal.fire({ 
+                title: '✅ NEXUS SYNC OK', 
+                text: `Orden ${placa} actualizada en la nube`,
+                icon: 'success', 
+                background: '#0d1117', 
+                color: '#fff',
+                confirmButtonColor: '#06b6d4'
+            });
+
             document.getElementById("nexus-terminal").classList.add("hidden");
+
         } catch (e) {
+            console.error("Critical Sync Error:", e);
             btn.disabled = false;
-            btn.innerHTML = `🛰️ PUSH_TO_NEXUS_CLOUD`;
+            btn.innerHTML = `🛰️ REINTENTAR PUSH_CLOUD`;
+            Swal.fire({ title: 'ERROR EN SYNC', text: e.message, icon: 'error', background: '#0d1117', color: '#fff' });
         }
     };
 
