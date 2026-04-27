@@ -1,333 +1,845 @@
 /**
- * ordenes.js - NEXUS-X "THE TITAN" FINAL MISSION 🛰️
- * SISTEMA DE DESCUENTO DE STOCK + BITÁCORA PROFESIONAL + SAP INTEGRITY
+ * 🚀 NEXUS-X PRO360 - ORDENES (BLOQUE 1 CORE ESTABLE)
+ * ✔ UI PRO
+ * ✔ MODELO UNIFICADO
+ * ✔ COTIZACIÓN AVANZADA
+ * ✔ CHECKLIST INGRESO
+ * ✔ PRICING ENGINE INTEGRADO
  */
 
-import { 
-    collection, query, where, onSnapshot, doc, getDoc, getDocs,
-    setDoc, updateDoc, serverTimestamp, writeBatch, increment, limit 
+import {
+  collection, query, where, onSnapshot,
+  doc, getDoc, getDocs,
+  setDoc, updateDoc,
+  serverTimestamp, writeBatch, increment
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
 import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 import { analizarPrecioSugerido, renderModuloPricing } from "../ai/pricingEnginePRO360.js";
 
+export default async function ordenes(container){
+
+const empresaId = localStorage.getItem("nexus_empresaId");
+let ordenActiva = null;
+
+/* =====================================================
+🧱 MODELO UNIFICADO
+===================================================== */
+const crearOrdenBase = () => ({
+  id: null,
+  empresaId,
+
+  placa: '',
+  estado: 'COTIZACION',
+
+  cliente: '',
+  telefono: '',
+  identificacion: '',
+
+  vehiculo: {
+    marca: '',
+    linea: '',
+    modelo: '',
+    km: ''
+  },
+
+  cotizacion: {
+    falla: '',
+    prioridad: 'MEDIA',
+    fechaPromesa: '',
+    asesor: ''
+  },
+
+  checklist: {
+    combustible: 'MEDIO',
+    documentos: false,
+    herramientas: false,
+    rayones: false,
+    luces: true,
+    testigos: true,
+    observaciones: ''
+  },
+
+  items: [],
+
+  finanzas: {
+    total: 0,
+    base: 0,
+    iva: 0,
+    saldo: 0,
+    ebitda: 0
+  },
+
+  bitacora: '',
+  firma: null,
+
+  createdAt: null,
+  updatedAt: null
+});
+
+/* =====================================================
+💰 MOTOR FINANCIERO PRO360
+===================================================== */
+const recalcularFinanzas = () => {
+  if(!ordenActiva) return;
+
+  let venta = 0;
+  let costo = 0;
+
+  ordenActiva.items.forEach(i=>{
+    venta += Number(i.venta || 0);
+    costo += Number(i.costo || 0);
+  });
+
+  const base = venta / 1.19;
+  const iva = venta - base;
+  const ebitda = base - costo;
+
+  ordenActiva.finanzas = {
+    total: venta,
+    base,
+    iva,
+    saldo: venta,
+    ebitda
+  };
+
+  pintarFinanzas();
+  renderItems();
+};
+
+const pintarFinanzas = () => {
+  const t = ordenActiva.finanzas;
+
+  document.getElementById("total").innerText =
+    `$ ${Math.round(t.total).toLocaleString()}`;
+
+  document.getElementById("resumen").innerHTML = `
+    <div class="text-green-400 font-bold">✔ EXCELENTE OPERACIÓN</div>
+    <div>Base: $${Math.round(t.base).toLocaleString()}</div>
+    <div>IVA: $${Math.round(t.iva).toLocaleString()}</div>
+    <div class="text-green-400 font-bold">
+      ✔ EBITDA: $${Math.round(t.ebitda).toLocaleString()}
+    </div>
+  `;
+};
+
+/* =====================================================
+🧾 MODO COTIZACIÓN AVANZADA
+===================================================== */
+const renderCotizacion = () => `
+<div class="bg-black/40 p-4 rounded-xl border border-green-500/20">
+  <div class="text-green-400 font-bold mb-2">✔ DATOS COTIZACIÓN PRO</div>
+
+  <textarea id="falla" placeholder="FALLA REPORTADA"
+    class="w-full bg-black p-3 mb-3 rounded"></textarea>
+
+  <select id="prioridad" class="w-full bg-black p-3 mb-3">
+    <option>BAJA</option>
+    <option selected>MEDIA</option>
+    <option>ALTA</option>
+  </select>
+
+  <input id="fechaPromesa" type="date"
+    class="w-full bg-black p-3 mb-3"/>
+
+  <input id="asesor" placeholder="ASESOR"
+    class="w-full bg-black p-3"/>
+</div>
+`;
+
+/* =====================================================
+🛡 CHECKLIST INGRESO (PROTECCIÓN LEGAL)
+===================================================== */
+const renderChecklist = () => `
+<div class="bg-black/40 p-4 rounded-xl border border-green-500/20">
+  <div class="text-green-400 font-bold mb-2">✔ CHECKLIST INGRESO</div>
+
+  <label>Combustible</label>
+  <select id="combustible" class="w-full bg-black p-2 mb-3">
+    <option>VACIO</option>
+    <option selected>MEDIO</option>
+    <option>LLENO</option>
+  </select>
+
+  <label><input type="checkbox" id="doc"/> Documentos OK</label><br>
+  <label><input type="checkbox" id="herr"/> Herramientas</label><br>
+  <label><input type="checkbox" id="ray"/> Rayones visibles</label><br>
+
+  <textarea id="obs" placeholder="OBSERVACIONES"
+    class="w-full bg-black p-3 mt-3"></textarea>
+</div>
+`;
+
+/* =====================================================
+🎨 UI PRINCIPAL
+===================================================== */
+const renderUI = () => {
+  container.innerHTML = `
+  <div class="p-6 bg-[#05070a] min-h-screen text-white">
+
+    <h1 class="text-4xl font-black mb-6 text-cyan-400">
+      NEXUS-X PRO360
+    </h1>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- IZQUIERDA -->
+      <div class="space-y-4">
+
+        <input id="placa" placeholder="PLACA"
+          class="w-full bg-black p-4 text-2xl uppercase rounded"/>
+
+        <input id="cliente" placeholder="CLIENTE"
+          class="w-full bg-black p-3 rounded"/>
+
+        <input id="telefono" placeholder="WHATSAPP"
+          class="w-full bg-black p-3 rounded"/>
+
+        <select id="estado" class="w-full bg-black p-3 rounded">
+          <option>COTIZACION</option>
+          <option>INGRESO</option>
+          <option>DIAGNOSTICO</option>
+          <option>REPARACION</option>
+          <option>LISTO</option>
+          <option>ENTREGADO</option>
+        </select>
+
+        <div id="modoExtra"></div>
+
+      </div>
+
+      <!-- CENTRO -->
+      <div>
+
+        <div id="items" class="space-y-3"></div>
+
+        <button onclick="addItem()"
+          class="bg-cyan-500 text-black w-full p-3 mt-4 rounded font-bold">
+          + MANO DE OBRA
+        </button>
+
+      </div>
+
+      <!-- DERECHA -->
+      <div>
+
+        <div id="pricing-box"
+          class="bg-black/40 p-4 rounded mb-4"></div>
+
+        <div id="total" class="text-3xl font-black">$ 0</div>
+        <div id="resumen" class="text-sm mt-2"></div>
+
+        <button onclick="guardarOrden()"
+          class="bg-green-500 text-black w-full p-4 mt-4 rounded font-bold">
+          GUARDAR ORDEN
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+  `;
+
+  renderModuloPricing(document.getElementById("pricing-box"));
+  renderModo();
+  recalcularFinanzas();
+};
+
+/* =====================================================
+🔄 CAMBIO DE MODO (COTIZACION / INGRESO)
+===================================================== */
+const renderModo = () => {
+  const cont = document.getElementById("modoExtra");
+
+  const estado = document.getElementById("estado")?.value || ordenActiva.estado;
+
+  if(estado === 'COTIZACION'){
+    cont.innerHTML = renderCotizacion();
+  } else if(estado === 'INGRESO'){
+    cont.innerHTML = renderChecklist();
+  } else {
+    cont.innerHTML = '';
+  }
+};
+
+/* =====================================================
+➕ ITEMS + PRICING IA
+===================================================== */
+window.addItem = () => {
+
+  const sugerido = analizarPrecioSugerido({
+    tipo: "mano_obra",
+    costo: 0
+  });
+
+  ordenActiva.items.push({
+    tipo: 'MANO_OBRA',
+    desc: 'SERVICIO',
+    costo: 0,
+    venta: sugerido || 0
+  });
+
+  renderItems();
+  recalcularFinanzas();
+};
+
+window.renderItems = () => {
+  const el = document.getElementById("items");
+
+  el.innerHTML = ordenActiva.items.map((i,idx)=>`
+    <div class="bg-black/40 p-3 rounded">
+
+      <input value="${i.desc}"
+        onchange="ordenActiva.items[${idx}].desc=this.value"
+        class="w-full bg-black p-2 mb-2"/>
+
+      <div class="flex gap-2">
+        <input type="number" value="${i.costo}"
+          onchange="ordenActiva.items[${idx}].costo=this.value; recalcularFinanzas()"
+          class="w-1/2 bg-black p-2 text-red-400"/>
+
+        <input type="number" value="${i.venta}"
+          onchange="ordenActiva.items[${idx}].venta=this.value; recalcularFinanzas()"
+          class="w-1/2 bg-black p-2 text-green-400"/>
+      </div>
+
+      <div class="text-green-400 text-xs mt-1">
+        ✔ Margen: $${Math.round((i.venta||0)-(i.costo||0))}
+      </div>
+
+    </div>
+  `).join('');
+};
+
+/* =====================================================
+💾 GUARDAR BASE
+===================================================== */
+window.guardarOrden = async () => {
+
+  const batch = writeBatch(db);
+
+  const id = ordenActiva.id || `OT_${Date.now()}`;
+
+  ordenActiva = {
+    ...ordenActiva,
+    id,
+    empresaId,
+    placa: document.getElementById("placa").value.toUpperCase(),
+    cliente: document.getElementById("cliente").value,
+    telefono: document.getElementById("telefono").value,
+    estado: document.getElementById("estado").value,
+    updatedAt: serverTimestamp()
+  };
+
+  batch.set(doc(db,"ordenes",id), ordenActiva);
+
+  await batch.commit();
+
+  hablar("Orden guardada correctamente");
+};
+
+/* =====================================================
+🚀 INIT
+===================================================== */
+ordenActiva = crearOrdenBase();
+renderUI();
+
+}
+
+/* =====================================================
+🔎 BUSCADOR INVENTARIO REAL (LUPA PRO)
+===================================================== */
+window.buscarRepuesto = async () => {
+
+  const termino = prompt("🔍 Buscar repuesto...");
+  if(!termino) return;
+
+  const q = query(
+    collection(db, "inventario"),
+    where("empresaId", "==", empresaId)
+  );
+
+  const snap = await getDocs(q);
+
+  const resultados = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(p =>
+      (p.nombre || "").toUpperCase().includes(termino.toUpperCase())
+    );
+
+  if(resultados.length === 0){
+    alert("❌ No encontrado en inventario");
+    return;
+  }
+
+  // Selección simple (luego puedes mejorar a modal UI)
+  const prod = resultados[0];
+
+  if((prod.cantidad || 0) <= 0){
+    alert("⚠️ SIN STOCK");
+    return;
+  }
+
+  const sugerido = analizarPrecioSugerido({
+    tipo: "repuesto",
+    costo: prod.precioCosto || 0
+  });
+
+  ordenActiva.items.push({
+    tipo: 'REPUESTO',
+    desc: prod.nombre,
+    costo: prod.precioCosto || 0,
+    venta: sugerido || prod.precioVenta || 0,
+    idRef: prod.id,
+    cantidad: 1
+  });
+
+  agregarBitacora(`Repuesto agregado: ${prod.nombre}`);
+
+  renderItems();
+  recalcularFinanzas();
+};
+
+/* =====================================================
+📦 DESCUENTO AUTOMÁTICO STOCK
+===================================================== */
+const descontarStock = (batch) => {
+
+  ordenActiva.items.forEach(item => {
+
+    if(item.tipo === 'REPUESTO' && item.idRef){
+
+      const ref = doc(db, "inventario", item.idRef);
+
+      batch.update(ref, {
+        cantidad: increment(-(item.cantidad || 1))
+      });
+
+    }
+
+  });
+};
+
+/* =====================================================
+🧾 MEJORAR ITEMS (TIPOS + ELIMINAR)
+===================================================== */
+window.renderItems = () => {
+
+  const el = document.getElementById("items");
+
+  el.innerHTML = ordenActiva.items.map((i,idx)=>`
+
+    <div class="bg-black/40 p-4 rounded-xl border border-white/10">
+
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-xs text-cyan-400 font-bold">
+          ${i.tipo || 'ITEM'}
+        </span>
+
+        <button onclick="removeItem(${idx})"
+          class="text-red-500 text-xs">✕</button>
+      </div>
+
+      <input value="${i.desc}"
+        onchange="ordenActiva.items[${idx}].desc=this.value"
+        class="w-full bg-black p-2 mb-2"/>
+
+      <div class="flex gap-2">
+        <input type="number" value="${i.costo}"
+          onchange="ordenActiva.items[${idx}].costo=this.value; recalcularFinanzas()"
+          class="w-1/2 bg-black p-2 text-red-400"
+          placeholder="Costo"/>
+
+        <input type="number" value="${i.venta}"
+          onchange="ordenActiva.items[${idx}].venta=this.value; recalcularFinanzas()"
+          class="w-1/2 bg-black p-2 text-green-400"
+          placeholder="Venta"/>
+      </div>
+
+      <div class="text-green-400 text-xs mt-2">
+        ✔ Margen: $${Math.round((i.venta||0)-(i.costo||0))}
+      </div>
+
+    </div>
+
+  `).join('');
+};
+
+window.removeItem = (idx) => {
+  ordenActiva.items.splice(idx,1);
+  recalcularFinanzas();
+};
+
+/* =====================================================
+🧠 BITÁCORA INTELIGENTE (ESPONJA TOTAL)
+===================================================== */
+const agregarBitacora = (texto) => {
+
+  const timestamp = new Date().toLocaleString();
+
+  ordenActiva.bitacora += `\n[${timestamp}] ${texto}`;
+
+};
+
+/* =====================================================
+🎤 VOZ BITÁCORA (MEJORADA)
+===================================================== */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recognition = SpeechRecognition ? new SpeechRecognition() : null;
 
-export default async function ordenes(container) {
-    const empresaId = localStorage.getItem("nexus_empresaId");
-    let ordenActiva = null;
+window.dictarBitacora = () => {
 
-    // --- 1. MOTOR FINANCIERO & SAP ---
-    const recalcularFinanzas = () => {
-        if (!ordenActiva) return;
-        let m = { v_rep: 0, c_rep: 0, v_mo: 0, c_mo: 0 };
+  if(!recognition){
+    alert("Voz no disponible");
+    return;
+  }
 
-        ordenActiva.items.forEach(i => {
-            const v = Number(i.venta || 0);
-            const c = Number(i.costo || 0);
-            if (i.tipo === 'REPUESTO') {
-                if(i.origen !== 'EXTERNO') { m.v_rep += v; m.c_rep += c; }
-            } else {
-                m.v_mo += v; m.c_mo += c; 
-            }
-        });
+  hablar("Dicta el hallazgo técnico");
 
-        const ins_iva = Number(document.getElementById("f-insumos-iva")?.value || 0); 
-        const ins_no_iva = Number(document.getElementById("f-insumos-no-iva")?.value || 0); 
-        const ant = Number(document.getElementById("f-anticipo")?.value || 0); 
-        
-        const sub_gravado = m.v_rep + m.v_mo + ins_iva;
-        const base = sub_gravado / 1.19;
-        const iva = sub_gravado - base;
-        const total = sub_gravado + ins_no_iva;
-        const ebitda = (base + ins_no_iva) - (m.c_rep + m.c_mo + (ins_iva / 1.19));
+  recognition.start();
 
-        ordenActiva.costos_totales = { total, base, iva, saldo: total - ant, ebitda };
+  recognition.onresult = (e) => {
 
-        actualizarUIFinanciera();
-        renderItems();
+    const txt = e.results[0][0].transcript.toUpperCase();
+
+    agregarBitacora(txt);
+
+    hablar("Bitácora actualizada");
+
+  };
+};
+
+/* =====================================================
+🔘 BOTONES NUEVOS EN UI
+===================================================== */
+setTimeout(()=>{
+
+  const cont = document.getElementById("items");
+
+  if(cont){
+    cont.insertAdjacentHTML("beforebegin", `
+
+      <div class="flex gap-2 mb-3">
+
+        <button onclick="buscarRepuesto()"
+          class="bg-yellow-500 text-black px-4 py-2 rounded font-bold">
+          🔎 INVENTARIO
+        </button>
+
+        <button onclick="addItem()"
+          class="bg-cyan-500 text-black px-4 py-2 rounded font-bold">
+          ➕ MANO OBRA
+        </button>
+
+        <button onclick="dictarBitacora()"
+          class="bg-white text-black px-4 py-2 rounded font-bold">
+          🎤 BITÁCORA
+        </button>
+
+      </div>
+
+    `);
+  }
+
+},500);
+
+/* =====================================================
+💾 GUARDAR (ACTUALIZADO CON STOCK)
+===================================================== */
+window.guardarOrden = async () => {
+
+  const batch = writeBatch(db);
+
+  const id = ordenActiva.id || `OT_${Date.now()}`;
+
+  ordenActiva = {
+    ...ordenActiva,
+    id,
+    empresaId,
+    placa: document.getElementById("placa").value.toUpperCase(),
+    cliente: document.getElementById("cliente").value,
+    telefono: document.getElementById("telefono").value,
+    estado: document.getElementById("estado").value,
+    updatedAt: serverTimestamp()
+  };
+
+  batch.set(doc(db,"ordenes",id), ordenActiva);
+
+  // 🔥 STOCK
+  descontarStock(batch);
+
+  await batch.commit();
+
+  hablar("Orden guardada con inventario actualizado");
+
+  alert("✔ ORDEN + STOCK OK");
+
+};
+
+/* =====================================================
+💰 CONTABILIDAD AUTOMÁTICA
+===================================================== */
+const registrarContabilidad = (batch, orden) => {
+
+  const ref = doc(db, "contabilidad", `CONT_${orden.id}`);
+
+  batch.set(ref, {
+    empresaId,
+    ordenId: orden.id,
+    placa: orden.placa,
+    cliente: orden.cliente,
+
+    total: orden.finanzas.total,
+    base: orden.finanzas.base,
+    iva: orden.finanzas.iva,
+    utilidad: orden.finanzas.ebitda,
+
+    fecha: serverTimestamp()
+  });
+};
+
+/* =====================================================
+📄 DOCUMENTO HTML PRO
+===================================================== */
+window.generarDocumentoHTML = () => {
+
+  const o = ordenActiva;
+  if(!o) return;
+
+  const itemsHTML = o.items.map(i=>`
+    <tr>
+      <td>${i.desc}</td>
+      <td>${i.tipo}</td>
+      <td>$${Number(i.costo).toLocaleString()}</td>
+      <td>$${Number(i.venta).toLocaleString()}</td>
+    </tr>
+  `).join('');
+
+  const html = `
+  <html>
+  <head>
+    <title>Orden ${o.placa}</title>
+    <style>
+      body{font-family:Arial;padding:40px;background:#f5f5f5;}
+      .card{background:white;padding:30px;border-radius:20px;}
+      table{width:100%;margin-top:20px;border-collapse:collapse;}
+      td,th{padding:10px;border-bottom:1px solid #ddd;}
+      .total{font-size:24px;font-weight:bold;text-align:right;}
+      .ok{color:green;font-weight:bold;}
+    </style>
+  </head>
+
+  <body>
+    <div class="card">
+      <h1>ORDEN DE TRABAJO</h1>
+
+      <p><b>Cliente:</b> ${o.cliente}</p>
+      <p><b>Placa:</b> ${o.placa}</p>
+      <p><b>Estado:</b> ${o.estado}</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Descripción</th>
+            <th>Tipo</th>
+            <th>Costo</th>
+            <th>Venta</th>
+          </tr>
+        </thead>
+        <tbody>${itemsHTML}</tbody>
+      </table>
+
+      <div class="total">
+        TOTAL: $${Math.round(o.finanzas.total).toLocaleString()}
+      </div>
+
+      <h3>Bitácora</h3>
+      <pre>${o.bitacora || 'Sin registros'}</pre>
+
+      <p class="ok">✔ Documento generado por PRO360</p>
+    </div>
+  </body>
+  </html>
+  `;
+
+  const win = window.open();
+  win.document.write(html);
+  win.document.close();
+};
+
+/* =====================================================
+📲 WHATSAPP CLIENTE
+===================================================== */
+window.enviarWhatsApp = () => {
+
+  const o = ordenActiva;
+
+  if(!o.telefono){
+    alert("Falta teléfono");
+    return;
+  }
+
+  const mensaje = `
+Hola ${o.cliente},
+
+Tu vehículo (${o.placa}) está en estado: ${o.estado}
+
+💰 Total: $${Math.round(o.finanzas.total).toLocaleString()}
+
+🔧 Detalle:
+${o.items.map(i=>`- ${i.desc}: $${i.venta}`).join('\n')}
+
+📝 Bitácora:
+${o.bitacora || 'Sin novedades'}
+
+Gracias por confiar en nosotros.
+TallerPRO360 🚀
+`;
+
+  const url = `https://wa.me/57${o.telefono}?text=${encodeURIComponent(mensaje)}`;
+  window.open(url, "_blank");
+};
+
+/* =====================================================
+✍️ FIRMA DIGITAL
+===================================================== */
+window.guardarFirma = () => {
+
+  const nombre = prompt("Nombre de quien recibe:");
+  if(!nombre) return;
+
+  ordenActiva.firma = {
+    nombre: nombre.toUpperCase(),
+    fecha: new Date().toISOString()
+  };
+
+  agregarBitacora(`Firma registrada: ${nombre}`);
+
+  alert("✔ Firma guardada");
+};
+
+/* =====================================================
+📊 RESUMEN GERENCIAL
+===================================================== */
+window.generarResumen = () => {
+
+  const o = ordenActiva;
+
+  const costoTotal = o.items.reduce((acc,i)=>acc + Number(i.costo||0),0);
+
+  const utilidad = o.finanzas.total - costoTotal;
+
+  alert(`
+📊 RESUMEN PRO360
+
+Cliente: ${o.cliente}
+Vehículo: ${o.placa}
+
+Total: $${Math.round(o.finanzas.total).toLocaleString()}
+Utilidad: $${Math.round(utilidad).toLocaleString()}
+
+Items: ${o.items.length}
+Estado: ${o.estado}
+  `);
+};
+
+/* =====================================================
+🔘 BOTONES FINALES UI
+===================================================== */
+setTimeout(()=>{
+
+  const panel = document.getElementById("resumen");
+
+  if(panel){
+    panel.insertAdjacentHTML("afterend", `
+
+      <div class="grid grid-cols-2 gap-2 mt-6">
+
+        <button onclick="generarDocumentoHTML()"
+          class="bg-white text-black p-3 rounded font-bold">
+          📄 DOC
+        </button>
+
+        <button onclick="enviarWhatsApp()"
+          class="bg-green-500 text-white p-3 rounded font-bold">
+          📲 WA
+        </button>
+
+        <button onclick="guardarFirma()"
+          class="bg-yellow-500 text-black p-3 rounded font-bold">
+          ✍️ FIRMA
+        </button>
+
+        <button onclick="generarResumen()"
+          class="bg-cyan-500 text-black p-3 rounded font-bold">
+          📊 RESUMEN
+        </button>
+
+      </div>
+
+    `);
+  }
+
+},800);
+
+/* =====================================================
+💾 GUARDAR FINAL (CON CONTABILIDAD)
+===================================================== */
+window.guardarOrden = async () => {
+
+  try {
+
+    const batch = writeBatch(db);
+
+    const id = ordenActiva.id || `OT_${Date.now()}`;
+
+    // 🔥 NORMALIZAR BITÁCORA
+    if(!ordenActiva.bitacora) ordenActiva.bitacora = "";
+
+    // 🔔 BITÁCORA GLOBAL (ANTES DE GUARDAR)
+    ordenActiva.bitacora += `\n[${new Date().toLocaleString()}] ✔ ORDEN SINCRONIZADA OK`;
+
+    // 🔥 CAPTURA DE CAMPOS UI
+    ordenActiva = {
+      ...ordenActiva,
+      id,
+      empresaId,
+      placa: document.getElementById("placa").value.toUpperCase(),
+      cliente: document.getElementById("cliente").value,
+      telefono: document.getElementById("telefono").value,
+      estado: document.getElementById("estado").value,
+      updatedAt: serverTimestamp()
     };
 
-    const actualizarUIFinanciera = () => {
-        const { total, base, iva, ebitda, saldo } = ordenActiva.costos_totales;
-        document.getElementById("total-factura").innerText = `$ ${Math.round(total).toLocaleString()}`;
-        document.getElementById("finance-summary").innerHTML = `
-            <div class="grid grid-cols-2 gap-4 border-t border-cyan-500/30 pt-4 mt-4">
-                <div class="text-[10px] orbitron text-slate-500 uppercase">Base: <span class="text-white">$${Math.round(base).toLocaleString()}</span></div>
-                <div class="text-[10px] orbitron text-slate-500 text-right uppercase">IVA 19%: <span class="text-white">$${Math.round(iva).toLocaleString()}</span></div>
-                <div class="text-green-400 font-black text-2xl orbitron italic">EBITDA: $${Math.round(ebitda).toLocaleString()}</div>
-                <div class="text-red-500 font-black text-2xl orbitron text-right">SALDO: $${Math.round(saldo).toLocaleString()}</div>
-            </div>`;
-    };
+    // 🔹 GUARDAR ORDEN
+    batch.set(doc(db,"ordenes",id), ordenActiva);
 
-    // --- 2. GESTIÓN DE STOCK (CONEXIÓN INVENTARIO.JS) ---
-    window.nexusAddRepuesto = async () => {
-        const { value: busqueda } = await Swal.fire({ 
-            title: 'NEXUS STOCK SYSTEM', 
-            input: 'text', inputPlaceholder: 'Buscar en inventario.js...',
-            background: '#0a0f18', color: '#fff', customClass: { input: 'orbitron' }
-        });
-        
-        if(busqueda) {
-            const q = query(collection(db, "productos"), where("empresaId", "==", empresaId), where("nombre", ">=", busqueda.toUpperCase()), limit(5));
-            const snap = await getDocs(q);
-            const prods = snap.docs.map(d => ({id: d.id, ...d.data()}));
-            
-            if(prods.length > 0) {
-                const options = Object.fromEntries(prods.map(p => [p.id, `${p.nombre} (Stock: ${p.stock || 0})`]));
-                const { value: selId } = await Swal.fire({ title: 'SELECCIONAR ITEM', input: 'select', inputOptions: options, background: '#0a0f18', color: '#fff' });
-                if(selId) {
-                    const p = prods.find(x => x.id === selId);
-                    ordenActiva.items.push({ 
-                        tipo: 'REPUESTO', desc: p.nombre, costo: p.costo || 0, 
-                        venta: p.venta || 0, idRef: p.id, origen: 'TALLER', cantidad: 1 
-                    });
-                    recalcularFinanzas();
-                }
-            } else {
-                const { value: ext } = await Swal.fire({ title: 'ITEM NO ENCONTRADO', input: 'text', text: 'Nombre del repuesto externo:', background: '#0a0f18', color: '#fff' });
-                if(ext) {
-                    ordenActiva.items.push({ tipo: 'REPUESTO', desc: ext.toUpperCase(), costo: 0, venta: 0, origen: 'EXTERNO', cantidad: 1 });
-                    recalcularFinanzas();
-                }
-            }
-        }
-    };
+    // 🔹 INVENTARIO
+    descontarStock(batch);
 
-    // --- 3. SINCRONIZACIÓN ATÓMICA & DESCUENTO STOCK ---
-    window.nexusSincronizar = async () => {
-        const btn = document.getElementById("btnSincronizar");
-        btn.disabled = true;
-        btn.innerHTML = `<i class="fas fa-sync animate-spin"></i> PROCESANDO_DATA...`;
+    // 🔹 CONTABILIDAD
+    registrarContabilidad(batch, ordenActiva);
 
-        try {
-            const batch = writeBatch(db);
-            const placa = document.getElementById("f-placa").value.toUpperCase();
-            const id = ordenActiva.id || `OT_${placa}_${Date.now()}`;
+    // 🔥 COMMIT ATÓMICO
+    await batch.commit();
 
-            const data = {
-                ...ordenActiva,
-                id, placa, empresaId,
-                cliente: document.getElementById("f-cliente").value.toUpperCase(),
-                identificacion: document.getElementById("f-id").value,
-                telefono: document.getElementById("f-telefono").value,
-                km: document.getElementById("f-km").value,
-                bitacora: document.getElementById("f-bitacora").value,
-                insumos_iva: Number(document.getElementById("f-insumos-iva").value),
-                insumos_no_iva: Number(document.getElementById("f-insumos-no-iva").value),
-                anticipo: Number(document.getElementById("f-anticipo").value),
-                updatedAt: serverTimestamp(),
-                estado: document.getElementById("f-estado").value
-            };
+    ordenActiva.id = id;
 
-            // Guardar Orden
-            batch.set(doc(db, "ordenes", id), data);
+    hablar("Sistema completo sincronizado");
 
-            // DESCUENTO DE STOCK EN INVENTARIO.JS
-            ordenActiva.items.forEach(item => {
-                if(item.tipo === 'REPUESTO' && item.origen === 'TALLER' && item.idRef) {
-                    const prodRef = doc(db, "productos", item.idRef);
-                    batch.update(prodRef, { stock: increment(-1) }); // Descuenta 1 unidad
-                }
-            });
+    alert("🚀 ORDEN + INVENTARIO + CONTABILIDAD OK");
 
-            await batch.commit();
-            ordenActiva.id = id;
-            hablar("Orden sincronizada. Inventario actualizado.");
-            Swal.fire({ title: 'SUCCESS', text: 'Data Cloud & Stock OK', icon: 'success', background: '#0a0f18', color: '#fff' });
-            btn.disabled = false;
-            btn.innerHTML = `🛰️ Sincronizar_Cloud_SAP`;
-        } catch (e) {
-            console.error(e);
-            btn.disabled = false;
-            btn.innerHTML = `⚠️ ERROR_REINTENTAR`;
-        }
-    };
+    // 📲 ENVÍO AUTOMÁTICO OPCIONAL
+    // enviarWhatsApp();
 
-    // --- 4. TERMINAL & BITÁCORA ---
-    const renderTerminal = () => {
-        const modal = document.getElementById("nexus-terminal");
-        modal.innerHTML = `
-        <div class="max-w-[1700px] mx-auto pb-40 animate-in fade-in duration-500">
-            <header class="flex justify-between items-center bg-[#0d1117] p-10 border-l-8 border-red-600 rounded-r-[3rem] mb-12 shadow-2xl">
-                <div class="flex items-center gap-8">
-                    <input id="f-placa" value="${ordenActiva.placa}" class="bg-black text-8xl font-black orbitron text-white w-[35rem] uppercase border-none outline-none" placeholder="PLACA">
-                    <button onclick="window.nexusVozPlaca()" class="w-20 h-20 bg-red-600 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(220,38,38,0.5)]"><i class="fas fa-microphone text-3xl"></i></button>
-                </div>
-                <div class="text-center">
-                    <span class="orbitron text-[10px] text-slate-500 block mb-2 tracking-[0.5em]">STATUS_ENGINE</span>
-                    <select id="f-estado" class="bg-black text-cyan-400 orbitron font-black text-2xl p-4 rounded-2xl border border-white/5 outline-none">
-                        ${['COTIZACION', 'INGRESO', 'DIAGNOSTICO', 'REPARACION', 'LISTO', 'ENTREGADO', 'CANCELADO_LIQUIDADO'].map(e => 
-                            `<option value="${e}" ${ordenActiva.estado === e ? 'selected' : ''}>${e}</option>`).join('')}
-                    </select>
-                </div>
-                <button onclick="document.getElementById('nexus-terminal').classList.add('hidden')" class="w-24 h-24 bg-white/5 text-white text-4xl rounded-full hover:bg-red-600 transition-all">✕</button>
-            </header>
+  } catch (error) {
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                <div class="lg:col-span-4 space-y-8">
-                    <div class="bg-[#0d1117] p-8 border border-white/5 rounded-[3rem]">
-                        <h4 class="orbitron text-cyan-500 text-[11px] font-black mb-6 uppercase tracking-widest italic italic">Data Maestra SAP</h4>
-                        <div class="space-y-4">
-                            <input id="f-cliente" value="${ordenActiva.cliente || ''}" placeholder="CLIENTE / EMPRESA" class="w-full bg-black p-5 text-white font-bold uppercase text-xs border border-white/10 rounded-xl">
-                            <input id="f-id" value="${ordenActiva.identificacion || ''}" placeholder="NIT / C.C." class="w-full bg-black p-5 text-white font-bold text-xs border border-white/10 rounded-xl">
-                            <div class="grid grid-cols-2 gap-4">
-                                <input id="f-telefono" value="${ordenActiva.telefono || ''}" placeholder="WHATSAPP" class="bg-black p-5 text-green-400 font-bold border border-white/10 rounded-xl">
-                                <input id="f-km" value="${ordenActiva.km || ''}" placeholder="KILOMETRAJE" class="bg-black p-5 text-yellow-500 font-bold border border-white/10 rounded-xl">
-                            </div>
-                        </div>
-                    </div>
+    console.error("❌ ERROR CRÍTICO PRO360:", error);
 
-                    <div class="bg-black p-8 border border-red-600/20 rounded-[3rem] relative shadow-2xl">
-                        <span class="orbitron text-[10px] text-red-500 font-black block mb-4 italic uppercase">Historial de Hallazgos Técnicos</span>
-                        <textarea id="f-bitacora" class="w-full bg-transparent text-slate-300 text-xs h-60 outline-none font-mono leading-relaxed" placeholder="Reporte para el cliente...">${ordenActiva.bitacora || ''}</textarea>
-                        <button onclick="window.nexusVozBitacora()" class="absolute bottom-8 right-8 w-16 h-16 bg-white text-black rounded-full shadow-2xl hover:scale-110 transition-all"><i class="fas fa-microphone text-xl"></i></button>
-                    </div>
-                </div>
+    alert("⚠️ ERROR EN PROCESO - VALIDAR DATOS");
 
-                <div class="lg:col-span-8 space-y-8">
-                    <div class="bg-[#0d1117] p-12 border border-cyan-500/10 rounded-[4rem] shadow-2xl">
-                        <div class="flex justify-between items-start mb-12">
-                            <h2 id="total-factura" class="orbitron text-[9rem] font-black text-white italic leading-none tracking-tighter">$ 0</h2>
-                            <div id="finance-summary" class="w-96"></div>
-                        </div>
-                        <div id="items-container" class="space-y-4 max-h-[450px] overflow-y-auto pr-6 custom-scroll"></div>
-                        <div class="grid grid-cols-2 gap-6 mt-12">
-                            <button onclick="window.nexusAddRepuesto()" class="py-8 border-2 border-dashed border-cyan-500/30 orbitron text-[11px] font-black text-cyan-500 hover:bg-cyan-500/5 rounded-[2rem] uppercase italic">Vincular_Stock_Real</button>
-                            <button onclick="window.nexusAddMO()" class="py-8 border-2 border-dashed border-red-600/30 orbitron text-[11px] font-black text-red-600 hover:bg-red-600/5 rounded-[2rem] uppercase italic">Añadir_Mano_Obra</button>
-                        </div>
-                    </div>
+  }
 
-                    <div class="grid grid-cols-3 gap-6">
-                        <div class="bg-black p-8 rounded-[2.5rem] border border-white/5">
-                            <label class="orbitron text-[9px] text-slate-500 block mb-2 uppercase tracking-widest">Insumos (+IVA)</label>
-                            <input id="f-insumos-iva" value="${ordenActiva.insumos_iva || 0}" type="number" onchange="window.recalcular()" class="bg-transparent text-white text-4xl font-black w-full outline-none">
-                        </div>
-                        <div class="bg-black p-8 rounded-[2.5rem] border border-white/5">
-                            <label class="orbitron text-[9px] text-yellow-600 block mb-2 uppercase tracking-widest">Insumos (S/IVA)</label>
-                            <input id="f-insumos-no-iva" value="${ordenActiva.insumos_no_iva || 0}" type="number" onchange="window.recalcular()" class="bg-transparent text-yellow-600 text-4xl font-black w-full outline-none">
-                        </div>
-                        <div class="bg-black p-8 rounded-[2.5rem] border border-white/5">
-                            <label class="orbitron text-[9px] text-green-500 block mb-2 uppercase tracking-widest">Anticipo</label>
-                            <input id="f-anticipo" value="${ordenActiva.anticipo || 0}" type="number" onchange="window.recalcular()" class="bg-transparent text-green-400 text-4xl font-black w-full outline-none">
-                        </div>
-                    </div>
-
-                    <button id="btnSincronizar" onclick="window.nexusSincronizar()" class="w-full bg-cyan-500 text-black py-10 orbitron font-black text-4xl rounded-[3rem] hover:bg-white hover:scale-[1.02] transition-all uppercase italic shadow-[0_20px_50px_rgba(0,242,255,0.2)]">🛰️ Sincronizar_Cloud_SAP</button>
-                </div>
-            </div>
-        </div>`;
-        recalcularFinanzas();
-    };
-
-    // --- 5. LOGICA DE VOZ (LIMPIA) ---
-    window.nexusVozBitacora = () => {
-        if(!recognition) return;
-        hablar("Reporte hallazgos");
-        recognition.start();
-        recognition.onresult = (e) => {
-            const txt = e.results[0][0].transcript;
-            // Limpieza de IA_LOG: Ahora es un registro profesional directo
-            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            document.getElementById('f-bitacora').value += `\n[${timestamp}] - ${txt.toUpperCase()}`;
-            hablar("Actualizado");
-        };
-    };
-
-    window.nexusVozPlaca = () => {
-        if(!recognition) return;
-        hablar("Dictar placa");
-        setTimeout(() => {
-            recognition.start();
-            recognition.onresult = (e) => {
-                const txt = e.results[0][0].transcript.replace(/[^A-Z0-9]/g, '').toUpperCase();
-                document.getElementById('f-placa').value = txt;
-                hablar(`Placa ${txt}`);
-            };
-        }, 1200);
-    };
-
-    window.nexusAddMO = () => {
-        ordenActiva.items.push({ tipo: 'MANO_OBRA', desc: 'SERVICIO TÉCNICO', costo: 0, venta: 0 });
-        recalcularFinanzas();
-    };
-
-    window.updateItem = (idx, campo, valor) => {
-        ordenActiva.items[idx][campo] = (campo === 'desc') ? valor.toUpperCase() : Number(valor);
-        recalcularFinanzas();
-    };
-
-    window.renderItems = () => {
-        const wrap = document.getElementById("items-container");
-        if(!wrap) return;
-        wrap.innerHTML = ordenActiva.items.map((it, idx) => `
-            <div class="flex items-center gap-6 bg-white/[0.02] p-6 rounded-3xl border border-white/5 group hover:border-cyan-500/30 transition-all">
-                <div class="flex-1 grid grid-cols-4 gap-6">
-                    <div class="col-span-2">
-                        <input onchange="window.updateItem(${idx}, 'desc', this.value)" value="${it.desc}" class="bg-transparent text-white font-black orbitron text-xs outline-none w-full uppercase">
-                        <span class="text-[8px] orbitron ${it.tipo === 'REPUESTO' ? 'text-cyan-500' : 'text-red-500'} font-bold uppercase tracking-widest">${it.tipo} ${it.origen ? '| '+it.origen : ''}</span>
-                    </div>
-                    <div>
-                        <span class="text-[8px] orbitron text-slate-500 block mb-1">COSTO</span>
-                        <input type="number" onchange="window.updateItem(${idx}, 'costo', this.value)" value="${it.costo}" class="bg-black/40 p-2 text-red-500 font-black text-center orbitron text-xs rounded-xl w-full">
-                    </div>
-                    <div>
-                        <span class="text-[8px] orbitron text-slate-500 block mb-1">VENTA</span>
-                        <input type="number" onchange="window.updateItem(${idx}, 'venta', this.value)" value="${it.venta}" class="bg-black/40 p-2 text-green-400 font-black text-center orbitron text-xs rounded-xl w-full border border-green-500/20">
-                    </div>
-                </div>
-                <button onclick="ordenActiva.items.splice(${idx},1); recalcularFinanzas()" class="text-slate-600 hover:text-red-500 transition-all"><i class="fas fa-trash-alt"></i></button>
-            </div>`).join('');
-    };
-
-    const cargarParrilla = () => {
-        const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
-        onSnapshot(q, (snap) => {
-            const grid = document.getElementById("grid-ordenes");
-            if (!grid) return;
-            grid.innerHTML = snap.docs
-                .filter(d => d.data().estado !== 'CANCELADO_LIQUIDADO')
-                .map(d => {
-                    const o = d.data();
-                    return `
-                    <div onclick="window.abrirTerminal('${d.id}')" class="bg-[#0d1117] p-8 border border-white/5 rounded-[2.5rem] hover:border-red-600 transition-all cursor-pointer group shadow-xl">
-                        <h4 class="orbitron text-5xl font-black text-white group-hover:text-red-500 mb-2 tracking-tighter">${o.placa}</h4>
-                        <p class="text-[10px] text-slate-500 mb-6 font-bold uppercase">${o.cliente || 'CLIENTE_S_N'}</p>
-                        <div class="pt-6 border-t border-white/5 flex justify-between items-center">
-                            <span class="orbitron text-green-400 font-black text-xl">$ ${Math.round(o.costos_totales?.total || 0).toLocaleString()}</span>
-                            <span class="text-[8px] orbitron bg-red-600 text-white px-3 py-1 rounded-full uppercase">${o.estado}</span>
-                        </div>
-                    </div>`;
-                }).join('');
-        });
-    };
-
-    window.abrirTerminal = (id = null) => {
-        if(id) {
-            getDoc(doc(db, "ordenes", id)).then(s => { ordenActiva = { id, ...s.data() }; renderTerminal(); });
-        } else {
-            ordenActiva = { placa:'', estado:'INGRESO', items:[], cliente:'', identificacion:'', telefono:'', km:'', anticipo:0, insumos_iva:0, insumos_no_iva:0, bitacora:'' };
-            renderTerminal();
-        }
-        document.getElementById("nexus-terminal").classList.remove("hidden");
-    };
-
-    window.recalcular = recalcularFinanzas;
-    
-    // --- UI BASE ---
-    container.innerHTML = `
-    <div class="p-6 lg:p-12 bg-[#05070a] min-h-screen text-slate-100 pb-40">
-        <header class="flex justify-between items-end mb-16 border-b-2 border-red-600 pb-10">
-            <div>
-                <h1 class="orbitron text-7xl font-black italic tracking-tighter text-white uppercase">Nexus<span class="text-red-600">_X</span></h1>
-                <p class="text-[10px] orbitron text-cyan-400 font-bold tracking-[0.8em] uppercase italic">Automotive Logistics System</p>
-            </div>
-            <button onclick="window.abrirTerminal()" class="px-12 py-5 bg-cyan-500 text-black orbitron text-[10px] font-black hover:bg-white transition-all shadow-[8px_8px_0px_rgba(0,242,255,0.3)] uppercase italic">NUEVA ORDEN +</button>
-        </header>
-        <div id="grid-ordenes" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8"></div>
-        <div id="nexus-terminal" class="hidden fixed inset-0 z-[100] bg-black/98 backdrop-blur-2xl p-6 lg:p-12 overflow-y-auto custom-scroll"></div>
-    </div>`;
-    
-    cargarParrilla();
-}
+};
