@@ -89,21 +89,20 @@ const recalcularFinanzas = () => {
     };
 
     // --- 2. TRAZABILIDAD HARLEY-DAVIDSON (LINK GENERATOR) ---
-    const enviarNotificacionNexus = (proceso) => {
-    // La URL de trazabilidad es un documento HTML dinámico que lee de Firebase
-    const linkServidor = `https://tallerpro360.web.app/trace/${ordenActiva.id}`;
-    const tallerNombre = "NEXUS-X TITAN WORKSHOP"; // Podrías traerlo de empresaId
-    
-    let template = "";
-    switch(proceso) {
-        case 'INGRESO':
-            template = `*${tallerNombre}*%0A%0A🛰️ *STATUS: INGRESO CONFIRMADO*%0A------------------------------%0AHola *${ordenActiva.cliente}*, su vehículo *[${ordenActiva.placa}]* ha entrado a boxes. %0A%0A📊 *INFORME INICIAL:*%0A${ordenActiva.bitacora_ia.substring(0, 100)}...%0A%0A🌐 *SIGA EL PROGRESO EN VIVO (NEON UI):*%0A${linkServidor}`;
-            break;
-        case 'FINAL':
-            template = `*${tallerNombre}*%0A%0A✅ *STATUS: VEHÍCULO LISTO*%0A------------------------------%0AEstimado *${ordenActiva.cliente}*, la misión en su vehículo *[${ordenActiva.placa}]* ha finalizado con éxito.%0A%0A💰 *TOTAL A PAGAR:* $${Math.round(ordenActiva.costos_totales.total).toLocaleString()}%0A💳 *SALDO:* $${Math.round(ordenActiva.costos_totales.saldo).toLocaleString()}%0A%0A📥 *VER FACTURA Y DETALLES TÉCNICOS:*%0A${linkServidor}`;
-            break;
+    window.enviarNotificacionNexus = (proceso) => {
+    // Generamos el link que apunta a tu hosting de Firebase
+    const linkTrazabilidad = `https://tallerpro360.web.app/trace.html?id=${ordenActiva.id}`;
+    const taller = "TallerPRO360 - Titan Logistics";
+
+    let msj = "";
+    if (proceso === 'INGRESO') {
+        msj = `*${taller}*%0A🛰️ *ORDEN DE SERVICIO:* ${ordenActiva.placa}%0A------------------------------%0AHola *${ordenActiva.cliente}*, su vehículo ha ingresado a nuestra zona de diagnóstico. %0A%0A📝 *BITÁCORA INICIAL:*%0A${ordenActiva.bitacora_ia || 'Iniciando inspección...'}%0A%0A🌐 *SIGA EL PROGRESO EN TIEMPO REAL AQUÍ:*%0A${linkTrazabilidad}`;
+    } else if (proceso === 'FINAL') {
+        msj = `*${taller}*%0A✅ *OPERACIÓN COMPLETADA*%0A------------------------------%0AEstimado *${ordenActiva.cliente}*, su vehículo placa *${ordenActiva.placa}* está listo para entrega.%0A%0A💰 *TOTAL:* $${Math.round(ordenActiva.costos_totales.total).toLocaleString()}%0A💳 *SALDO:* $${Math.round(ordenActiva.costos_totales.saldo).toLocaleString()}%0A%0A📥 *DESCARGUE SU REPORTE Y FACTURA:*%0A${linkTrazabilidad}`;
     }
-    window.open(`https://wa.me/57${ordenActiva.telefono}?text=${template}`, '_blank');
+
+    const urlWA = `https://wa.me/57${ordenActiva.telefono}?text=${msj}`;
+    window.open(urlWA, '_blank');
 };
 
     // --- 3. UI BASE (NEON MATRIX V16) ---
@@ -385,47 +384,59 @@ Swal.fire({
         }
     };
 
-// --- SISTEMA DE LUPA (INVENTARIO PRO) ---
+// --- LÓGICA DE LA LUPA TITÁN ---
 window.agregarDesdeInventario = async () => {
     try {
         const { getDocs, query, collection, where } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+        
+        // Llamada al motor de inventario.js (Base de datos centralizada)
         const q = query(collection(db, "inventario"), where("empresaId", "==", localStorage.getItem("nexus_empresaId")));
         const snap = await getDocs(q);
 
-        if (snap.empty) return Swal.fire("INFO", "Inventario vacío en la nube", "warning");
+        if (snap.empty) {
+            return Swal.fire({ title: "STOCK VACÍO", text: "No hay repuestos registrados en Nexus Cloud", icon: "warning", background: "#0d1117", color: "#fff" });
+        }
 
         const opciones = {};
         snap.forEach(d => {
             const data = d.data();
-            opciones[d.id] = `${data.nombre.toUpperCase()} - [STOCK: ${data.stock || 0}] - $${Number(data.precioVenta).toLocaleString()}`;
+            // Mostramos Stock y Precio para decisión rápida
+            opciones[d.id] = `${data.nombre.toUpperCase()} | STOCK: ${data.stock || 0} | $${Number(data.precioVenta).toLocaleString()}`;
         });
 
         const { value: itemId } = await Swal.fire({
-            title: 'LUPA DE INVENTARIO NEXUS',
+            title: '🛰️ LUPA NEXUS-X',
             input: 'select',
             inputOptions: opciones,
-            placeholder: 'Seleccione repuesto...',
+            placeholder: 'Seleccione componente...',
             showCancelButton: true,
-            background: '#05070a', color: '#fff', confirmButtonColor: '#00f2ff'
+            confirmButtonColor: '#00f2ff',
+            background: '#05070a', color: '#fff'
         });
 
         if (itemId) {
-            const itemDoc = snap.docs.find(d => d.id === itemId).data();
-            const sugerido = analizarPrecioSugerido({ tipo: "repuesto", costo: itemDoc.precioCosto });
+            const itemData = snap.docs.find(d => d.id === itemId).data();
+            
+            // Inserción con validación de Pricing Engine
+            const sugerido = analizarPrecioSugerido({ tipo: "repuesto", costo: itemData.precioCosto });
 
             ordenActiva.items.push({
                 tipo: 'REPUESTO',
-                desc: itemDoc.nombre,
-                costo: itemDoc.precioCosto || 0,
-                venta: sugerido || itemDoc.precioVenta,
+                desc: itemData.nombre.toUpperCase(),
+                costo: itemData.precioCosto || 0,
+                venta: sugerido || itemData.precioVenta,
                 cantidad: 1,
                 origen: 'TALLER',
-                idRef: itemId
+                refId: itemId // Vínculo para descontar stock al finalizar
             });
+
+            hablar("Componente vinculado desde inventario");
             recalcularFinanzas();
-            hablar("Item de inventario vinculado");
         }
-    } catch (e) { console.error("Error Lupa:", e); }
+    } catch (e) {
+        console.error("Error en Lupa:", e);
+        Swal.fire("ERROR", "Fallo en conexión con inventario.js", "error");
+    }
 };
 
 // --- EDICIÓN EN TIEMPO REAL (ELIMINA EL "NADA SIRVE") ---
