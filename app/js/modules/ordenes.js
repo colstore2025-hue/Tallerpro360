@@ -256,19 +256,94 @@ export default async function ordenes(container) {
             </div>`).join('');
     };
 
-    window.agregarDesdeInventario = async () => {
-        try {
-            const q = query(collection(db, "inventario"), where("empresaId", "==", empresaId));
-            const snap = await getDocs(q); if (snap.empty) return;
-            const ops = {}; snap.forEach(d => { ops[d.id] = `${d.data().nombre.toUpperCase()} | $${Number(d.data().precioVenta).toLocaleString()}`; });
-            const { value: iId } = await Swal.fire({ title: 'LUPA NEXUS', input: 'select', inputOptions: ops, background: '#05070a', color: '#fff' });
-            if (iId) {
-                const d = snap.docs.find(x => x.id === iId).data();
-                ordenActiva.items.push({ tipo: 'REPUESTO', desc: d.nombre.toUpperCase(), costo: d.precioCosto || 0, venta: d.precioVenta, cantidad: 1, origen: 'TALLER', refId: iId });
-                recalcularFinanzas();
+    // --- BLOQUE QUIRÚRGICO: SINCRONIZACIÓN LUPA INVENTARIO V16.2 ---
+// Reemplaza tu función window.agregarDesdeInventario con este código blindado:
+
+window.agregarDesdeInventario = async () => {
+    try {
+        // 1. Verificación de permisos y estado
+        if (!empresaId) throw new Error("EMPRESA_ID_NOT_FOUND");
+        
+        hablar("Accediendo a Bóveda de Inventario");
+
+        // 2. Consulta optimizada a la colección 'inventario'
+        // Nota: Asegúrate de que los imports (query, collection, where, getDocs) 
+        // estén declarados al inicio del archivo ordenes.js
+        const inventarioRef = collection(db, "inventario");
+        const q = query(inventarioRef, where("empresaId", "==", empresaId));
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+            return Swal.fire({
+                title: 'BÓVEDA VACÍA',
+                text: 'No hay insumos creados en inventario.js',
+                icon: 'warning',
+                background: '#0d1117',
+                color: '#fff'
+            });
+        }
+
+        // 3. Construcción del Diccionario para el "Ascensor" (SweetAlert Select)
+        const opciones = {};
+        snap.forEach(docSnap => {
+            const d = docSnap.data();
+            // Formateo de alta gerencia para la lista
+            opciones[docSnap.id] = `${d.nombre.toUpperCase()} | STOCK: ${d.stock || 0} | $${Number(d.precioVenta || 0).toLocaleString()}`;
+        });
+
+        // 4. Despliegue del "Ascensor" de Productos
+        const { value: itemId } = await Swal.fire({
+            title: '🛰️ LUPA NEXUS-X',
+            input: 'select',
+            inputOptions: opciones,
+            inputPlaceholder: 'SELECCIONE INSUMO / REPUESTO',
+            showCancelButton: true,
+            background: '#05070a',
+            color: '#06b6d4',
+            confirmButtonColor: '#06b6d4',
+            cancelButtonColor: '#ef4444',
+            customClass: {
+                popup: 'orbitron border-2 border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.5)]',
+                input: 'bg-black text-white border-cyan-500/30'
             }
-        } catch (e) { console.error(e); }
-    };
+        });
+
+        // 5. Inyección en la Orden Activa
+        if (itemId) {
+            const docEncontrado = snap.docs.find(doc => doc.id === itemId);
+            const dataInsumo = docEncontrado.data();
+
+            // Mapeo exacto para mantener integridad con SAP BI
+            ordenActiva.items.push({ 
+                tipo: 'REPUESTO', 
+                desc: dataInsumo.nombre.toUpperCase(), 
+                costo: Number(dataInsumo.precioCosto || 0), 
+                venta: Number(dataInsumo.precioVenta || 0), 
+                cantidad: 1, 
+                origen: 'TALLER', 
+                refId: itemId,
+                fecha_adicion: new Date().toISOString()
+            });
+
+            hablar(`${dataInsumo.nombre} cargado a la misión`);
+            
+            // Recalcular finanzas y refrescar UI inmediatamente
+            recalcularFinanzas();
+        }
+
+    } catch (e) {
+        console.error("CRITICAL_INVENTARIO_SYNC_ERROR:", e);
+        Swal.fire({
+            title: 'ERROR DE ENLACE',
+            text: 'No se pudo conectar con inventario.js',
+            icon: 'error',
+            background: '#0d1117',
+            color: '#fff'
+        });
+    }
+};
+
+// --- FIN DEL BLOQUE ---
 
     renderBase();
 }
