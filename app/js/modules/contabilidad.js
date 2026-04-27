@@ -14,13 +14,16 @@ export default async function contabilidad(container) {
     let vistaActual = "DIARIO"; 
     let unsubscribe = null;
 
-    // 1. NORMALIZADOR DE FLUJOS (Garantiza que los 200k entren donde deben)
-    const esIngreso = (tipo) => [
-        NEXUS_CONFIG.FINANCE_TYPES.REVENUE_OT, 
-        NEXUS_CONFIG.FINANCE_TYPES.REVENUE_PARTS, 
-        NEXUS_CONFIG.FINANCE_TYPES.REVENUE_CAPITAL,
-        'ingreso_ot', 'ingreso', 'INGRESO'
-    ].includes(tipo);
+    // --- NORMALIZADOR QUANTUM (Vínculo con ordenes.js) ---
+    const esIngreso = (tipo) => {
+        const triggers = [
+            NEXUS_CONFIG.FINANCE_TYPES.REVENUE_OT, 
+            NEXUS_CONFIG.FINANCE_TYPES.REVENUE_PARTS, 
+            NEXUS_CONFIG.FINANCE_TYPES.REVENUE_CAPITAL,
+            'ingreso_ot', 'ingreso', 'INGRESO', 'VENTA_SERVICIO'
+        ];
+        return triggers.includes(tipo);
+    };
 
     const renderLayout = () => {
         container.innerHTML = `
@@ -41,15 +44,15 @@ export default async function contabilidad(container) {
                 </div>
             </header>
 
-            <nav class="flex justify-center gap-4 mb-12 bg-[#0d1117]/50 p-2 rounded-full border border-white/5 w-fit mx-auto">
-                <button id="btn-vista-diario" class="px-8 py-3 rounded-full orbitron text-[10px] font-black transition-all">LIBRO DIARIO</button>
-                <button id="btn-vista-puc" class="px-8 py-3 rounded-full orbitron text-[10px] font-black transition-all">ESTADOS FINANCIEROS</button>
-            </nav>
+            <div class="flex justify-center gap-4 mb-12 bg-[#0d1117]/50 p-2 rounded-full border border-white/5 w-fit mx-auto">
+                <button id="btn-vista-diario" class="nav-cont-btn px-8 py-3 rounded-full orbitron text-[10px] font-black transition-all">LIBRO DIARIO</button>
+                <button id="btn-vista-puc" class="nav-cont-btn px-8 py-3 rounded-full orbitron text-[10px] font-black transition-all">ESTADOS FINANCIEROS</button>
+            </div>
 
             <div id="cont-dynamic-content" class="animate-in slide-in-from-bottom-5 duration-700"></div>
         </div>`;
         
-        setupNavigation();
+        setupInternalNavigation();
         vistaActual === "DIARIO" ? cargarVistaDiaria() : cargarVistaCuentas();
     };
 
@@ -61,41 +64,49 @@ export default async function contabilidad(container) {
         </div>`;
     }
 
-    const setupNavigation = () => {
+    const setupInternalNavigation = () => {
         const btnD = document.getElementById("btn-vista-diario");
         const btnP = document.getElementById("btn-vista-puc");
-        const active = "bg-white text-black shadow-glow-white";
-        const inactive = "text-slate-500 hover:text-white";
+        const activeClass = "bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.2)]";
+        const inactiveClass = "text-slate-500 hover:text-white";
 
         if (btnD && btnP) {
-            btnD.className = `px-8 py-3 rounded-full orbitron text-[10px] font-black ${vistaActual === 'DIARIO' ? active : inactive}`;
-            btnP.className = `px-8 py-3 rounded-full orbitron text-[10px] font-black ${vistaActual === 'CUENTAS' ? active : inactive}`;
-            btnD.onclick = () => { vistaActual = "DIARIO"; renderLayout(); };
-            btnP.onclick = () => { vistaActual = "CUENTAS"; renderLayout(); };
+            btnD.className = `px-8 py-3 rounded-full orbitron text-[10px] font-black ${vistaActual === 'DIARIO' ? activeClass : inactiveClass}`;
+            btnP.className = `px-8 py-3 rounded-full orbitron text-[10px] font-black ${vistaActual === 'CUENTAS' ? activeClass : inactiveClass}`;
+            
+            btnD.onclick = () => { if(vistaActual !== "DIARIO"){ vistaActual = "DIARIO"; renderLayout(); }};
+            btnP.onclick = () => { if(vistaActual !== "CUENTAS"){ vistaActual = "CUENTAS"; renderLayout(); }};
         }
     };
 
     const cargarVistaDiaria = () => {
-        document.getElementById("cont-dynamic-content").innerHTML = `
+        const content = document.getElementById("cont-dynamic-content");
+        content.innerHTML = `
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
             <div class="lg:col-span-4">
                 <div class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 shadow-2xl sticky top-10">
-                    <p class="orbitron text-[10px] text-cyan-500 font-black mb-6 uppercase italic tracking-widest">Inyectar Movimiento Manual</p>
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-2 h-2 bg-cyan-500 rounded-full animate-ping"></div>
+                        <p class="orbitron text-[10px] text-cyan-500 font-black uppercase italic tracking-widest">Inyectar Movimiento Manual</p>
+                    </div>
                     <div class="space-y-5">
-                        <input id="acc-concepto" class="w-full bg-black p-5 rounded-2xl border border-white/10 text-white uppercase text-sm focus:border-cyan-500 outline-none transition-all" placeholder="CONCEPTO...">
+                        <input id="acc-concepto" class="w-full bg-black p-5 rounded-2xl border border-white/10 text-white uppercase text-sm focus:border-cyan-500 outline-none transition-all" placeholder="CONCEPTO (Ej: Pago Arriendo)...">
                         <select id="acc-tipo" class="w-full bg-black p-5 rounded-2xl border border-white/10 text-cyan-400 font-black orbitron text-[10px] uppercase cursor-pointer">
                             <option value="${NEXUS_CONFIG.FINANCE_TYPES.REVENUE_OT}">4135 - INGRESO POR SERVICIOS</option>
                             <option value="${NEXUS_CONFIG.FINANCE_TYPES.EXPENSE_OPERATIONAL}">5195 - GASTOS OPERATIVOS</option>
                             <option value="${NEXUS_CONFIG.FINANCE_TYPES.EXPENSE_PAYROLL}">5105 - PAGO NÓMINA</option>
                             <option value="${NEXUS_CONFIG.FINANCE_TYPES.REVENUE_CAPITAL}">1105 - CAPITAL INICIAL</option>
                         </select>
-                        <input id="acc-monto" type="number" class="w-full bg-black p-5 rounded-2xl border border-white/10 text-white font-black orbitron text-xl" placeholder="0.00">
-                        <button id="btnGuardarFinanza" class="w-full bg-cyan-500 text-black font-black orbitron py-5 rounded-2xl hover:scale-[1.02] transition-all uppercase tracking-widest shadow-lg">SINCRONIZAR BÓVEDA</button>
+                        <div class="relative">
+                            <span class="absolute left-5 top-5 text-slate-500 orbitron">$</span>
+                            <input id="acc-monto" type="number" class="w-full bg-black p-5 pl-10 rounded-2xl border border-white/10 text-white font-black orbitron text-xl" placeholder="0.00">
+                        </div>
+                        <button id="btnGuardarFinanza" class="w-full bg-cyan-500 text-black font-black orbitron py-5 rounded-2xl hover:bg-white transition-all uppercase tracking-widest shadow-lg">SINCRONIZAR BÓVEDA</button>
                     </div>
                 </div>
             </div>
             <div class="lg:col-span-8">
-                <div id="listaFinanzas" class="space-y-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar"></div>
+                <div id="listaFinanzas" class="space-y-4 max-h-[75vh] overflow-y-auto pr-2 custom-scroll"></div>
             </div>
         </div>`;
         document.getElementById("btnGuardarFinanza").onclick = registrarMovimiento;
@@ -106,145 +117,131 @@ export default async function contabilidad(container) {
         if (unsubscribe) unsubscribe();
         if (!empresaId) return;
 
-        const qOficial = query(
-            collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), 
-            where("empresaId", "==", empresaId), 
-            orderBy("creadoEn", "desc")
-        );
+        const collectionRef = collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING);
+        const qOficial = query(collectionRef, where("empresaId", "==", empresaId), orderBy("creadoEn", "desc"));
 
         unsubscribe = onSnapshot(qOficial, (snap) => {
-            procesarYRenderizar(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            const transacciones = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            renderizarTransacciones(transacciones);
         }, (err) => {
-            console.warn("Nexus-X Alert: Activando Rescate Local por error de índice.");
-            const qRescate = query(
-                collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), 
-                where("empresaId", "==", empresaId)
-            );
-
+            console.error("Contabilidad Sync Error:", err);
+            // Rescate por falta de índices compuestos
+            const qRescate = query(collectionRef, where("empresaId", "==", empresaId));
             onSnapshot(qRescate, (snap) => {
                 const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                docs.sort((a, b) => {
-                    const fA = a.creadoEn?.seconds || a.createdAt?.seconds || 0;
-                    const fB = b.creadoEn?.seconds || b.createdAt?.seconds || 0;
-                    return fB - fA;
-                });
-                procesarYRenderizar(docs);
+                docs.sort((a, b) => (b.creadoEn?.seconds || 0) - (a.creadoEn?.seconds || 0));
+                renderizarTransacciones(docs);
             });
         });
     }
 
-    function procesarYRenderizar(docs) {
+    function renderizarTransacciones(docs) {
         let tIng = 0, tGas = 0;
         const list = document.getElementById("listaFinanzas");
         if (!list) return;
 
-        if (docs.length === 0) {
-            list.innerHTML = `<div class="p-20 text-center opacity-20 orbitron italic text-[10px]">LIBRO VACÍO - SIN TELEMETRÍA</div>`;
-            actualizarDash(0, 0);
-            return;
-        }
+        list.innerHTML = docs.length === 0 
+            ? `<div class="p-20 text-center opacity-20 orbitron italic text-[10px]">LIBRO VACÍO - ESPERANDO FLUJO</div>`
+            : docs.map(m => {
+                const monto = Number(m.monto || 0);
+                const ing = esIngreso(m.tipo);
+                ing ? tIng += monto : tGas += monto;
 
-        list.innerHTML = docs.map(m => {
-            const v = Number(m.monto || 0);
-            const esIng = esIngreso(m.tipo);
-            if (esIng) tIng += v; else tGas += v;
+                const estilo = obtenerEstilo(m.tipo);
+                const fecha = m.creadoEn?.toDate() ? m.creadoEn.toDate().toLocaleString() : 'PROCESANDO...';
 
-            const estilo = obtenerEstilo(m.tipo);
-            const ts = m.creadoEn || m.createdAt || m.fecha;
-            const fechaStr = ts?.toDate ? ts.toDate().toLocaleString() : 'REGISTRO MANUAL';
-
-            return `
-            <div class="bg-[#0d1117] p-6 rounded-[2.5rem] border border-white/5 flex justify-between items-center group hover:border-cyan-500/40 transition-all animate-in fade-in slide-in-from-right-2">
-                <div class="flex items-center gap-5">
-                    <div class="w-12 h-12 rounded-2xl ${estilo.bg} flex items-center justify-center border ${estilo.border} shadow-lg">
-                        <i class="${estilo.icon} ${estilo.text}"></i>
+                return `
+                <div class="bg-[#0d1117] p-6 rounded-[2.5rem] border border-white/5 flex justify-between items-center hover:border-cyan-500/40 transition-all">
+                    <div class="flex items-center gap-5">
+                        <div class="w-12 h-12 rounded-2xl ${estilo.bg} flex items-center justify-center border ${estilo.border}">
+                            <i class="${estilo.icon} ${estilo.text}"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-black text-white uppercase">${m.concepto || 'S/N'}</p>
+                            <p class="text-[7px] text-slate-500 orbitron uppercase font-bold">${fecha}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-xs font-black text-white uppercase tracking-tighter">${m.concepto || 'TRANSACCIÓN'}</p>
-                        <p class="text-[7px] text-slate-500 orbitron font-bold uppercase">${fechaStr}</p>
+                    <div class="text-right">
+                        <p class="text-lg font-black orbitron ${ing ? 'text-emerald-400' : 'text-red-500'}">
+                            ${ing ? '+' : '-'} $${monto.toLocaleString()}
+                        </p>
+                        <span class="text-[6px] text-slate-600 orbitron uppercase font-black">${m.tipo?.replace(/_/g, ' ')}</span>
                     </div>
-                </div>
-                <div class="text-right">
-                    <p class="text-lg font-black orbitron ${esIng ? 'text-emerald-400' : 'text-red-500'}">
-                        ${esIng ? '+' : '-'} $${v.toLocaleString()}
-                    </p>
-                    <div class="flex items-center justify-end gap-2">
-                         <span class="text-[6px] text-slate-600 orbitron uppercase font-black tracking-widest">${m.tipo?.replace('_', ' ')}</span>
-                         ${m.metodo ? `<span class="px-2 py-0.5 bg-cyan-500/10 rounded text-[5px] orbitron text-cyan-500 border border-cyan-500/20">${m.metodo}</span>` : ''}
-                    </div>
-                </div>
-            </div>`;
-        }).join("");
+                </div>`;
+            }).join("");
+        
         actualizarDash(tIng, tGas);
     }
 
-    function actualizarDash(ing, gas) {
-        const util = ing - gas;
-        const ids = { "dash-ingresos": ing, "dash-gastos": gas, "dash-utilidad": util, "dash-caja": util };
-        Object.keys(ids).forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.innerText = `$ ${ids[id].toLocaleString()}`;
-        });
-    }
-
     async function registrarMovimiento() {
-        const cIn = document.getElementById("acc-concepto");
-        const mIn = document.getElementById("acc-monto");
-        const tIn = document.getElementById("acc-tipo");
-        const monto = Number(mIn.value);
+        const concepto = document.getElementById("acc-concepto").value.trim().toUpperCase();
+        const monto = Number(document.getElementById("acc-monto").value);
+        const tipo = document.getElementById("acc-tipo").value;
 
-        if (!cIn.value || monto <= 0) return Swal.fire({ icon: 'warning', title: 'DATOS INCOMPLETOS', background: '#0d1117', color: '#fff' });
+        if (!concepto || monto <= 0) return Swal.fire({ icon: 'error', title: 'AUDITORÍA RECHAZADA', text: 'Monto y Concepto requeridos.', background: '#0d1117', color: '#fff' });
 
         try {
             await addDoc(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), {
-                empresaId,
-                concepto: cIn.value.toUpperCase().trim(),
-                tipo: tIn.value,
-                monto: monto,
+                empresaId, concepto, tipo, monto,
                 metodo: NEXUS_CONFIG.PAYMENT_METHODS.CASH,
                 creadoEn: serverTimestamp()
             });
-            cIn.value = ""; mIn.value = "";
-            Swal.fire({ icon: 'success', title: 'SINCRONIZADO', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
-        } catch (e) { console.error(e); }
+            document.getElementById("acc-concepto").value = "";
+            document.getElementById("acc-monto").value = "";
+            Swal.fire({ icon: 'success', title: 'BOVEDA ACTUALIZADA', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+        } catch (e) { console.error("Error al registrar:", e); }
     }
 
     const cargarVistaCuentas = async () => {
         const content = document.getElementById("cont-dynamic-content");
-        content.innerHTML = `<div class="p-20 text-center orbitron text-[10px] animate-pulse text-cyan-500">CONSOLIDANDO BALANCES...</div>`;
+        content.innerHTML = `<div class="p-20 text-center orbitron text-cyan-500 animate-pulse uppercase tracking-[0.5em]">Consolidando Activos...</div>`;
+        
         const q = query(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), where("empresaId", "==", empresaId));
         const snap = await getDocs(q);
-        const p = { ing: 0, gas: 0 };
+        let p = { ing: 0, gas: 0 };
         snap.forEach(d => {
             const m = d.data();
-            if (esIngreso(m.tipo)) p.ing += Number(m.monto); else p.gas += Number(m.monto);
+            esIngreso(m.tipo) ? p.ing += Number(m.monto) : p.gas += Number(m.monto);
         });
+
         content.innerHTML = `
-        <div class="bg-[#0d1117] p-12 rounded-[4rem] border border-white/5 shadow-3xl animate-in zoom-in duration-500">
-            <h3 class="orbitron text-xl font-black text-amber-400 mb-10 italic uppercase">Estado de Resultados Nexus-X</h3>
+        <div class="bg-[#0d1117] p-12 rounded-[4rem] border border-white/5 shadow-3xl">
+            <h3 class="orbitron text-xl font-black text-amber-400 mb-10 italic uppercase">Balance Consolidado Nexus-X</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                ${renderPucCard("INGRESOS TOTALES", p.ing, "border-emerald-500/20", "text-emerald-400")}
-                ${renderPucCard("GASTOS Y COSTOS", p.gas, "border-red-500/20", "text-red-500")}
-                ${renderPucCard("UTILIDAD NETA", p.ing - p.gas, "border-cyan-500/20", "text-cyan-400")}
+                ${renderPucCard("TOTAL INGRESOS", p.ing, "border-emerald-500/20", "text-emerald-400")}
+                ${renderPucCard("TOTAL EGRESOS", p.gas, "border-red-500/20", "text-red-500")}
+                ${renderPucCard("RESULTADO NETO", p.ing - p.gas, "border-cyan-500/20", "text-cyan-400")}
             </div>
         </div>`;
     };
 
     function renderPucCard(title, total, border, text) {
-        return `<div class="p-8 bg-black/40 rounded-[3rem] border ${border} hover:bg-white/5 transition-all">
+        return `<div class="p-8 bg-black/40 rounded-[3rem] border ${border}">
             <p class="text-[9px] orbitron ${text} mb-4 font-black tracking-widest">${title}</p>
             <span class="text-2xl font-black orbitron ${text}">$${total.toLocaleString()}</span>
         </div>`;
     }
 
-    const obtenerEstilo = (t) => {
-        const conf = {
-            [NEXUS_CONFIG.FINANCE_TYPES.REVENUE_OT]: { icon: 'fas fa-wrench', text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-            [NEXUS_CONFIG.FINANCE_TYPES.EXPENSE_PAYROLL]: { icon: 'fas fa-user-tie', text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
-            [NEXUS_CONFIG.FINANCE_TYPES.EXPENSE_OPERATIONAL]: { icon: 'fas fa-lightbulb', text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' }
+    function actualizarDash(ing, gas) {
+        const util = ing - gas;
+        const metrics = { "dash-ingresos": ing, "dash-gastos": gas, "dash-utilidad": util, "dash-caja": util };
+        Object.entries(metrics).forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = `$ ${val.toLocaleString()}`;
+        });
+    }
+
+    function obtenerEstilo(t) {
+        const c = NEXUS_CONFIG.FINANCE_TYPES;
+        const map = {
+            [c.REVENUE_OT]: { icon: 'fas fa-wrench', text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+            [c.EXPENSE_PAYROLL]: { icon: 'fas fa-user-tie', text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
+            [c.EXPENSE_OPERATIONAL]: { icon: 'fas fa-industry', text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+            [c.REVENUE_CAPITAL]: { icon: 'fas fa-vault', text: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' }
         };
-        return conf[t] || { icon: 'fas fa-exchange-alt', text: 'text-slate-400', bg: 'bg-white/5', border: 'border-white/10' };
-    };
+        return map[t] || { icon: 'fas fa-exchange-alt', text: 'text-slate-400', bg: 'bg-white/5', border: 'border-white/10' };
+    }
 
     renderLayout();
 }
+
