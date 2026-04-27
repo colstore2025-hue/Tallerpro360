@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS-X | LIVE TRACKING</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-cyan: #00f2ff;
+            --neon-red: #ff003c;
+            --dark-bg: #05070a;
+        }
+        body {
+            background: radial-gradient(circle at top, #0d1117 0%, var(--dark-bg) 100%);
+            color: #e2e8f0;
+            font-family: 'JetBrains Mono', monospace;
+            min-height: 100vh;
+        }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .scanline {
+            width: 100%; height: 2px; background: rgba(0, 242, 255, 0.1);
+            position: absolute; animation: scan 4s linear infinite;
+        }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        .hud-border { border-left: 4px solid var(--neon-cyan); clip-path: polygon(0 0, 100% 0, 100% 90%, 95% 100%, 0 100%); }
+        .glow-text { text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); }
+    </style>
+</head>
+<body class="p-4 lg:p-10 relative overflow-x-hidden">
+    <div class="scanline"></div>
+
+    <header class="max-w-4xl mx-auto flex justify-between items-end mb-10 border-b border-white/10 pb-6">
+        <div>
+            <h1 class="orbitron text-4xl font-black italic tracking-tighter glow-text">NEXUS<span class="text-red-600">_X</span></h1>
+            <p id="taller-nombre" class="text-[8px] orbitron tracking-[0.5em] text-cyan-400 uppercase">Titan Logistics Workshop</p>
+        </div>
+        <div class="text-right">
+            <p class="text-[10px] text-slate-500 orbitron">LIVE_FEED_V17</p>
+            <p id="timestamp" class="text-[10px] text-white font-bold"></p>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto space-y-6">
+        
+        <div class="glass hud-border p-8 relative">
+            <div class="flex justify-between items-start">
+                <div>
+                    <label class="text-[9px] orbitron text-cyan-500 tracking-widest">VEHICLE_ID</label>
+                    <h2 id="placa" class="orbitron text-6xl font-black italic">---</h2>
+                </div>
+                <div class="text-right">
+                    <div id="badge-estado" class="px-4 py-1 bg-red-600 text-black orbitron text-[10px] font-black italic rounded-bl-xl">CARGANDO</div>
+                </div>
+            </div>
+            
+            <div class="mt-8">
+                <div class="flex justify-between mb-2 text-[9px] orbitron text-slate-500 uppercase">
+                    <span>Ingreso</span>
+                    <span>Diagnóstico</span>
+                    <span>Reparación</span>
+                    <span>Listo</span>
+                </div>
+                <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden p-[2px]">
+                    <div id="progreso-bar" class="h-full bg-cyan-500 shadow-[0_0_15px_#00f2ff] transition-all duration-1000" style="width: 5%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="space-y-6">
+                <div class="glass p-6 rounded-2xl border-t-2 border-cyan-500">
+                    <h3 class="orbitron text-[10px] text-cyan-500 font-bold mb-4 flex items-center gap-2">
+                        <i class="fas fa-satellite-dish animate-pulse"></i> NEURAL_BITACORA_FEED
+                    </h3>
+                    <div id="bitacora-ia" class="text-xs text-slate-400 leading-relaxed font-light min-h-[150px] whitespace-pre-wrap italic">
+                        Estableciendo conexión con los sensores del taller...
+                    </div>
+                </div>
+            </div>
+
+            <div id="area-financiera" class="space-y-6 hidden">
+                <div class="glass p-6 rounded-2xl border-t-2 border-green-500 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-2 bg-green-500/10 text-green-500 text-[8px] orbitron font-bold">PRESUPUESTO_ACTIVO</div>
+                    <h3 class="orbitron text-[10px] text-green-500 font-bold mb-6">RESUMEN DE OPERACIONES</h3>
+                    
+                    <div id="lista-items" class="space-y-3 mb-8">
+                        </div>
+
+                    <div class="border-t border-white/10 pt-4 flex justify-between items-end">
+                        <div class="text-[10px] orbitron text-slate-500">TOTAL A LIQUIDAR</div>
+                        <div id="total-final" class="text-4xl font-black orbitron text-white italic">$ 0</div>
+                    </div>
+                </div>
+
+                <div id="acciones-cliente" class="grid grid-cols-1 gap-4">
+                    <button id="btn-aprobar" class="w-full bg-white text-black py-4 orbitron font-black text-xs hover:bg-cyan-500 transition-all rounded-xl shadow-lg uppercase tracking-widest">Aprobar Presupuesto ✓</button>
+                    <button id="btn-pagar" class="w-full bg-green-600 text-white py-4 orbitron font-black text-xs hover:bg-green-400 transition-all rounded-xl shadow-lg uppercase tracking-widest hidden">Pagar con BOLD <i class="fas fa-credit-card ml-2"></i></button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { db } from "./core/firebase-config.js";
+        import { doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const params = new URLSearchParams(window.location.search);
+        const orderId = params.get("id");
+
+        if (orderId) {
+            onSnapshot(doc(db, "ordenes", orderId), (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    renderTrazabilidad(data);
+                } else {
+                    document.body.innerHTML = "<div class='p-20 text-center orbitron text-red-500'>ERROR: MISSION_NOT_FOUND</div>";
+                }
+            });
+        }
+
+        function renderTrazabilidad(o) {
+            document.getElementById("timestamp").innerText = new Date().toLocaleString();
+            document.getElementById("placa").innerText = o.placa;
+            document.getElementById("bitacora-ia").innerText = o.bitacora_ia || "Esperando reporte técnico...";
+            
+            const badge = document.getElementById("badge-estado");
+            badge.innerText = o.estado;
+            
+            // Lógica de Barra de Progreso
+            const niveles = { 'COTIZACION': 10, 'INGRESO': 25, 'DIAGNOSTICO': 45, 'REPARACION': 75, 'LISTO': 100, 'ENTREGADO': 100 };
+            document.getElementById("progreso-bar").style.width = `${niveles[o.estado] || 5}%`;
+
+            // Control de Área Financiera
+            const areaFin = document.getElementById("area-financiera");
+            if (o.items && o.items.length > 0) {
+                areaFin.classList.remove("hidden");
+                renderItems(o.items);
+                document.getElementById("total-final").innerText = `$${Math.round(o.costos_totales.total).toLocaleString()}`;
+                
+                // Mostrar Pago BOLD solo si ya está LISTO
+                if (o.estado === 'LISTO') {
+                    document.getElementById("btn-pagar").classList.remove("hidden");
+                    document.getElementById("btn-aprobar").classList.add("hidden");
+                }
+            }
+
+            // Manejo de Aprobación
+            const btnAprobar = document.getElementById("btn-aprobar");
+            if (o.aprobada) {
+                btnAprobar.innerText = "ORDEN APROBADA ✓";
+                btnAprobar.classList.replace("bg-white", "bg-cyan-900/30");
+                btnAprobar.classList.add("text-cyan-400", "pointer-events-none");
+            } else {
+                btnAprobar.onclick = async () => {
+                    if(confirm("¿Deseas aprobar el presupuesto para iniciar la reparación?")) {
+                        await updateDoc(doc(db, "ordenes", o.id), { 
+                            aprobada: true, 
+                            bitacora_ia: o.bitacora_ia + `\n[SISTEMA]: El cliente aprobó la cotización el ${new Date().toLocaleString()}`
+                        });
+                        alert("Misión aprobada. El equipo técnico ha sido notificado.");
+                    }
+                };
+            }
+
+            // Manejo de Link BOLD
+            document.getElementById("btn-pagar").onclick = () => {
+                // Aquí se usaría la lógica de tu config.js para generar el link Bold
+                window.open(`https://checkout.bold.co/payment/OT_${o.placa}`, '_blank');
+            };
+        }
+
+        function renderItems(items) {
+            const container = document.getElementById("lista-items");
+            container.innerHTML = items.map(i => `
+                <div class="flex justify-between items-center bg-white/[0.02] p-3 rounded-lg border border-white/5">
+                    <div>
+                        <p class="text-[10px] font-bold text-white uppercase">${i.desc}</p>
+                        <p class="text-[7px] text-slate-500 orbitron">${i.tipo} x ${i.cantidad}</p>
+                    </div>
+                    <div class="text-xs font-bold text-cyan-400">$${Math.round(i.venta * i.cantidad).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
