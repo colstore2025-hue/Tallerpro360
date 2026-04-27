@@ -1,18 +1,17 @@
 /**
  * ordenes.js - NEXUS-X "THE TITAN" V16.0 🛰️
- * CONSOLIDACIÓN TOTAL: SAP BI + NEON UI + VOICE AI + HARLEY EXPERIENCE + PRICING PRO
- * ESTABILIZADO Y BLINDADO - 2026
+ * CONSOLIDACIÓN TOTAL: QUANTUM-SAP 2030 TERMINATOR EDITION
+ * DESARROLLADOR: WILLIAM JEFFRY URQUIJO CUBILLOS & GEMINI AI PRO
  */
 
 import { 
-    collection, query, where, onSnapshot, doc, getDoc, 
+    collection, query, where, onSnapshot, doc, getDoc, getDocs,
     setDoc, serverTimestamp, writeBatch 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 import { analizarPrecioSugerido, renderModuloPricing } from "../ai/pricingEnginePRO360.js";
 
-// --- CONFIGURACIÓN DE ESPECIALIDADES (EL ASCENSOR NEXUS) ---
 const NEXUS_ASCENSOR = {
     MECANICA: { label: 'Mecánica', color: '#06b6d4', icon: 'fa-tools' },
     LATONERIA_PINTURA: { label: 'Latonería y Pintura', color: '#fbbf24', icon: 'fa-paint-roller' },
@@ -62,18 +61,27 @@ export default async function ordenes(container) {
         if(summaryEl) summaryEl.innerHTML = `
             <div class="grid grid-cols-2 gap-4 border-t border-cyan-500/30 pt-6 mt-6">
                 <div class="text-[10px] orbitron text-slate-500 uppercase font-black">BASE: <span class="text-white">$${Math.round(base).toLocaleString()}</span></div>
-                <div class="text-[10px] orbitron text-slate-500 text-right uppercase font-black">IVA: <span class="text-white">$${Math.round(iva).toLocaleString()}</span></div>
+                <div class="text-[10px] orbitron text-slate-500 text-right uppercase font-black">IVA (19%): <span class="text-white">$${Math.round(iva).toLocaleString()}</span></div>
                 <div class="text-green-400 font-black text-2xl orbitron italic leading-none">EBITDA: $${Math.round(ebitda).toLocaleString()}</div>
                 <div class="text-red-500 font-black text-2xl orbitron text-right italic leading-none font-black">SALDO: $${Math.round(saldo).toLocaleString()}</div>
             </div>`;
     };
 
     window.enviarNotificacionNexus = (proceso) => {
-        const link = `https://tallerpro360.web.app/trace.html?id=${ordenActiva.id}`;
-        let msj = proceso === 'INGRESO' ? 
-            `🛰️ *ORDEN:* ${ordenActiva.placa}%0AHola *${ordenActiva.cliente}*, vehículo ingresado.%0A🌐 *LINK:* ${link}` :
-            `✅ *LISTO:* ${ordenActiva.placa}%0A💰 *TOTAL:* $${Math.round(ordenActiva.costos_totales.total).toLocaleString()}%0A🌐 *REPORT:* ${link}`;
-        window.open(`https://wa.me/57${ordenActiva.telefono}?text=*TallerPRO360*%0A${msj}`, '_blank');
+        const idOrden = ordenActiva.id || "PENDIENTE";
+        const linkTrace = `https://tallerpro360.web.app/trace.html?id=${idOrden}`;
+        const bitacoraCorta = ordenActiva.bitacora_ia ? `%0A📝 *BITÁCORA:* ${ordenActiva.bitacora_ia.substring(0, 100)}...` : "";
+        
+        let msj = "";
+        if (proceso === 'INGRESO') {
+            msj = `🛰️ *NEXUS_X: INGRESO CONFIRMADO*%0AHola *${ordenActiva.cliente}*, vehículo *${ordenActiva.placa}* ha iniciado fase de diagnóstico.${bitacoraCorta}%0A🌐 *TRAZABILIDAD Y RECEPCIÓN:* ${linkTrace}`;
+        } else if (proceso === 'FINAL') {
+            msj = `✅ *NEXUS_X: OPERACIÓN COMPLETADA*%0AVehículo *${ordenActiva.placa}* listo para entrega.%0A💰 *TOTAL:* $${Math.round(ordenActiva.costos_totales.total).toLocaleString()}%0A📥 *REPORTE Y FACTURA:* ${linkTrace}`;
+        } else {
+            msj = `🛰️ *NEXUS_X: ACTUALIZACIÓN*%0AHola *${ordenActiva.cliente}*, hay novedades en la orden de su vehículo *${ordenActiva.placa}*.%0A🌐 *VER COTIZACIÓN:* ${linkTrace}`;
+        }
+
+        window.open(`https://wa.me/57${ordenActiva.telefono}?text=${msj}`, '_blank');
     };
 
     const renderBase = () => {
@@ -84,7 +92,7 @@ export default async function ordenes(container) {
                     <h1 class="orbitron text-7xl font-black italic tracking-tighter text-white uppercase">NEXUS<span class="text-red-600">_X</span></h1>
                     <p class="text-[10px] orbitron text-cyan-400 font-bold tracking-[0.8em] uppercase italic">Automotive Titan Logistics</p>
                 </div>
-                <button id="btnNewMission" class="px-12 py-5 bg-cyan-500 text-black rounded-none orbitron text-[10px] font-black hover:bg-white transition-all shadow-[10px_10px_0px_rgba(0,242,255,0.3)]">INICIAR ORDEN +</button>
+                <button id="btnNewMission" class="px-12 py-5 bg-cyan-500 text-black rounded-none orbitron text-[10px] font-black hover:bg-white transition-all shadow-[10px_10px_0px_rgba(0,242,255,0.3)]">INICIAR MISIÓN +</button>
             </header>
             <div id="grid-ordenes" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8"></div>
             <div id="nexus-terminal" class="hidden fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl p-6 lg:p-12 overflow-y-auto custom-scroll"></div>
@@ -100,19 +108,17 @@ export default async function ordenes(container) {
             <div class="flex flex-col lg:flex-row justify-between items-center mb-12 bg-[#0d1117] p-10 border-l-8 border-cyan-500 rounded-r-3xl gap-6">
                 <div class="flex items-center gap-6">
                     <input id="f-placa" value="${ordenActiva.placa}" class="bg-black text-7xl font-black orbitron text-white w-80 uppercase border-2 border-white/5 rounded-xl text-center" placeholder="PLACA">
-                    <div class="flex gap-2">
-                        <button onclick="window.nexusEscuchaPlaca()" class="w-16 h-16 bg-red-600 rounded-xl flex items-center justify-center animate-pulse"><i class="fas fa-microphone text-xl"></i></button>
-                    </div>
+                    <button onclick="window.nexusEscuchaPlaca()" class="w-16 h-16 bg-red-600 rounded-xl flex items-center justify-center animate-pulse"><i class="fas fa-microphone text-xl"></i></button>
                 </div>
                 <div class="flex flex-col gap-2 bg-black/50 p-4 px-6 rounded-2xl border border-white/5 min-w-[250px]">
-                    <span class="orbitron text-[8px] text-slate-500 uppercase tracking-[0.2em] font-black">Ascensor / Área:</span>
-                    <select id="f-tipo-orden" class="bg-transparent text-white orbitron font-black text-sm outline-none border-b border-white/10 focus:border-cyan-500 cursor-pointer">
+                    <span class="orbitron text-[8px] text-slate-500 uppercase font-black">Área Nexus:</span>
+                    <select id="f-tipo-orden" class="bg-transparent text-white orbitron font-black text-sm outline-none border-b border-white/10 focus:border-cyan-500">
                         ${Object.entries(NEXUS_ASCENSOR).map(([k,v]) => `<option value="${k}" ${ordenActiva.tipo_orden === k ? 'selected' : ''} class="bg-[#0d1117]">${v.label.toUpperCase()}</option>`).join('')}
                     </select>
                 </div>
                 <div class="flex items-center gap-4 bg-black/50 p-4 px-6 rounded-2xl border border-white/5">
-                    <span class="orbitron text-[9px] text-slate-500 font-black uppercase">Fase:</span>
-                    <select id="f-estado" onchange="window.cambiarEstado(this.value)" class="bg-transparent text-cyan-400 orbitron font-black text-xl outline-none cursor-pointer">
+                    <span class="orbitron text-[9px] text-slate-500 font-black uppercase">Fase Misión:</span>
+                    <select id="f-estado" onchange="window.cambiarEstado(this.value)" class="bg-transparent text-cyan-400 orbitron font-black text-xl outline-none">
                         ${['COTIZACION', 'INGRESO', 'DIAGNOSTICO', 'REPARACION', 'LISTO', 'ENTREGADO'].map(e => `<option value="${e}" ${ordenActiva.estado === e ? 'selected' : ''} class="bg-[#0d1117]">${e}</option>`).join('')}
                     </select>
                 </div>
@@ -122,17 +128,18 @@ export default async function ordenes(container) {
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
                 <div class="lg:col-span-4 space-y-6">
                     <div class="bg-[#0d1117] p-8 border border-white/5 rounded-3xl">
-                        <h4 class="orbitron font-black text-cyan-500 text-[11px] mb-6 uppercase">Client Experience</h4>
-                        <input id="f-cliente" value="${ordenActiva.cliente || ''}" placeholder="NOMBRE CLIENTE" class="w-full bg-black p-4 mb-4 text-white font-black uppercase text-xs border border-white/10 rounded-xl">
+                        <h4 class="orbitron font-black text-cyan-500 text-[11px] mb-6 uppercase">Expediente Cliente</h4>
+                        <input id="f-cliente" value="${ordenActiva.cliente || ''}" placeholder="CLIENTE" class="w-full bg-black p-4 mb-4 text-white font-black uppercase text-xs border border-white/10 rounded-xl">
                         <input id="f-telefono" value="${ordenActiva.telefono || ''}" placeholder="WHATSAPP (+57)" class="w-full bg-black p-4 mb-6 text-green-400 font-bold border border-white/10 rounded-xl">
                         <div class="grid grid-cols-3 gap-2">
-                            <button onclick="window.enviarNotificacionNexus('INGRESO')" class="py-3 bg-green-600/10 text-green-500 orbitron text-[8px] font-black rounded-lg border border-green-600/20">ENTRY</button>
-                            <button onclick="window.enviarNotificacionNexus('FINAL')" class="py-3 bg-red-600/10 text-red-500 orbitron text-[8px] font-black rounded-lg border border-red-600/20">READY</button>
+                            <button onclick="window.enviarNotificacionNexus('INGRESO')" class="py-3 bg-green-600/10 text-green-500 orbitron text-[8px] font-black rounded-lg border border-green-600/20">ENTRY_WA</button>
+                            <button onclick="window.enviarNotificacionNexus('UPDATE')" class="py-3 bg-cyan-600/10 text-cyan-500 orbitron text-[8px] font-black rounded-lg border border-cyan-600/20">QUOTE_WA</button>
+                            <button onclick="window.enviarNotificacionNexus('FINAL')" class="py-3 bg-red-600/10 text-red-500 orbitron text-[8px] font-black rounded-lg border border-red-600/20">READY_WA</button>
                         </div>
                     </div>
                     <div id="pricing-engine-container" class="bg-white/5 p-8 border border-white/5 rounded-3xl"></div>
                     <div class="bg-black p-8 border border-red-600/20 rounded-3xl relative">
-                        <textarea id="ai-log-display" class="w-full bg-transparent text-slate-300 text-xs h-32 outline-none font-mono" placeholder="Escuchando voz técnica...">${ordenActiva.bitacora_ia || ''}</textarea>
+                        <textarea id="ai-log-display" onchange="ordenActiva.bitacora_ia = this.value" class="w-full bg-transparent text-slate-300 text-xs h-32 outline-none font-mono" placeholder="Escuchando voz técnica...">${ordenActiva.bitacora_ia || ''}</textarea>
                         <button onclick="window.nexusDictarBitacora()" class="absolute bottom-6 right-6 w-12 h-12 bg-white text-black rounded-full shadow-2xl"><i class="fas fa-microphone"></i></button>
                     </div>
                 </div>
@@ -145,15 +152,15 @@ export default async function ordenes(container) {
                         </div>
                         <div id="items-container" class="space-y-4 max-h-[400px] overflow-y-auto pr-4 custom-scroll"></div>
                         <div class="grid grid-cols-3 gap-4 mt-12">
-                            <button onclick="window.agregarDesdeInventario()" class="py-6 border-2 border-cyan-500/50 orbitron text-[10px] font-black text-cyan-400 hover:bg-cyan-500 hover:text-black transition-all rounded-2xl"><i class="fas fa-search text-xl"></i> INVENTARIO</button>
-                            <button onclick="window.addItemNexus('REPUESTO')" class="py-6 border-2 border-white/10 orbitron text-[10px] font-black text-white hover:bg-white hover:text-black transition-all rounded-2xl"><i class="fas fa-box-open text-xl"></i> REPUESTO</button>
+                            <button onclick="window.agregarDesdeInventario()" class="py-6 border-2 border-cyan-500/50 orbitron text-[10px] font-black text-cyan-400 hover:bg-cyan-500 hover:text-black transition-all rounded-2xl"><i class="fas fa-search text-xl"></i> LUPA STOCK</button>
+                            <button onclick="window.addItemNexus('REPUESTO')" class="py-6 border-2 border-white/10 orbitron text-[10px] font-black text-white hover:bg-white hover:text-black transition-all rounded-2xl"><i class="fas fa-box-open text-xl"></i> EXTERNO</button>
                             <button onclick="window.addItemNexus('MANO_OBRA')" class="py-6 border-2 border-red-600/20 orbitron text-[10px] font-black text-red-600 hover:bg-red-600 hover:text-white transition-all rounded-2xl"><i class="fas fa-tools text-xl"></i> LABOR</button>
                         </div>
                     </div>
                     <div class="grid grid-cols-3 gap-6">
-                        <div class="bg-black p-6 rounded-3xl border border-white/5"><label class="orbitron text-[9px] text-slate-500 block mb-2 uppercase italic">Insumos (IVA)</label><input id="f-insumos-iva" value="${ordenActiva.insumos || 0}" type="number" onchange="window.recalcularFinanzas()" class="bg-transparent text-white text-4xl font-black w-full outline-none"></div>
-                        <div class="bg-black p-6 rounded-3xl border border-white/5"><label class="orbitron text-[9px] text-yellow-500 block mb-2 uppercase italic">Insumos (NO IVA)</label><input id="f-insumos-no-iva" value="${ordenActiva.insumos_no_iva || 0}" type="number" onchange="window.recalcularFinanzas()" class="bg-transparent text-yellow-500 text-4xl font-black w-full outline-none"></div>
-                        <div class="bg-black p-6 rounded-3xl border border-white/5"><label class="orbitron text-[9px] text-green-500 block mb-2 uppercase italic">Anticipo</label><input id="f-anticipo" value="${ordenActiva.anticipo || 0}" type="number" onchange="window.recalcularFinanzas()" class="bg-transparent text-green-400 text-4xl font-black w-full outline-none"></div>
+                        <div class="bg-black p-6 rounded-3xl border border-white/5"><label class="orbitron text-[9px] text-slate-500 block mb-2 uppercase">Insumos (IVA)</label><input id="f-insumos-iva" value="${ordenActiva.insumos || 0}" type="number" onchange="window.recalcularFinanzas()" class="bg-transparent text-white text-4xl font-black w-full outline-none"></div>
+                        <div class="bg-black p-6 rounded-3xl border border-white/5"><label class="orbitron text-[9px] text-yellow-500 block mb-2 uppercase">Insumos (NO IVA)</label><input id="f-insumos-no-iva" value="${ordenActiva.insumos_no_iva || 0}" type="number" onchange="window.recalcularFinanzas()" class="bg-transparent text-yellow-500 text-4xl font-black w-full outline-none"></div>
+                        <div class="bg-black p-6 rounded-3xl border border-white/5"><label class="orbitron text-[9px] text-green-500 block mb-2 uppercase font-black">Anticipo</label><input id="f-anticipo" value="${ordenActiva.anticipo || 0}" type="number" onchange="window.recalcularFinanzas()" class="bg-transparent text-green-400 text-4xl font-black w-full outline-none"></div>
                     </div>
                     <button id="btnSincronizar" class="w-full bg-cyan-500 text-black py-10 orbitron font-black text-4xl rounded-[2rem] hover:bg-white transition-all shadow-[0_0_50px_rgba(0,242,255,0.2)]">🛰️ PUSH_TO_NEXUS_CLOUD</button>
                 </div>
@@ -165,9 +172,36 @@ export default async function ordenes(container) {
         recalcularFinanzas();
     };
 
+    window.agregarDesdeInventario = async () => {
+        try {
+            hablar("Buscando en bóveda");
+            const q = query(collection(db, "inventario"), where("empresaId", "==", empresaId));
+            const snap = await getDocs(q);
+            if (snap.empty) return Swal.fire({ title: 'STOCK VACÍO', icon: 'error', background: '#0d1117', color: '#fff' });
+            
+            const ops = {};
+            snap.forEach(d => { ops[d.id] = `${d.data().nombre.toUpperCase()} | STOCK: ${d.data().stock || 0} | $${Number(d.data().precioVenta).toLocaleString()}`; });
+            
+            const { value: iId } = await Swal.fire({ title: '🛰️ LUPA INVENTARIO', input: 'select', inputOptions: ops, background: '#05070a', color: '#fff', confirmButtonColor: '#06b6d4' });
+            if (iId) {
+                const it = snap.docs.find(x => x.id === iId).data();
+                ordenActiva.items.push({ tipo: 'REPUESTO', desc: it.nombre.toUpperCase(), costo: it.precioCosto || 0, venta: it.precioVenta, cantidad: 1, origen: 'TALLER', refId: iId });
+                hablar(`${it.nombre} agregado`);
+                recalcularFinanzas();
+            }
+        } catch (e) { console.error("Sync Error:", e); }
+    };
+
     window.abrirTerminalNexus = (id = null) => {
-        if(id) { getDoc(doc(db, "ordenes", id)).then(s => { ordenActiva = { id, ...s.data() }; renderTerminal(); }); }
-        else { ordenActiva = { placa:'', estado:'INGRESO', items:[], anticipo:0, insumos:0, insumos_no_iva:0, bitacora_ia:'', tipo_orden:'MECANICA' }; renderTerminal(); }
+        if(id) { 
+            getDoc(doc(db, "ordenes", id)).then(s => { 
+                ordenActiva = { id, ...s.data(), items: s.data().items || [] }; 
+                renderTerminal(); 
+            }); 
+        } else { 
+            ordenActiva = { placa:'', estado:'COTIZACION', items:[], anticipo:0, insumos:0, insumos_no_iva:0, bitacora_ia:'', tipo_orden:'MECANICA' }; 
+            renderTerminal(); 
+        }
         document.getElementById("nexus-terminal").classList.remove("hidden");
     };
 
@@ -182,7 +216,7 @@ export default async function ordenes(container) {
             const tOrd = document.getElementById("f-tipo-orden").value;
             const data = {
                 ...ordenActiva, id, placa, empresaId, tipo_orden: tOrd,
-                cliente: document.getElementById("f-cliente").value,
+                cliente: document.getElementById("f-cliente").value.toUpperCase(),
                 telefono: document.getElementById("f-telefono").value,
                 anticipo: Number(document.getElementById("f-anticipo").value),
                 insumos: Number(document.getElementById("f-insumos-iva").value),
@@ -195,7 +229,7 @@ export default async function ordenes(container) {
             await batch.commit();
             ordenActiva.id = id;
             hablar("Nexus Cloud Sincronizado");
-            Swal.fire({ title: '✅ SYNC OK', icon: 'success', background: '#0d1117', color: '#fff' });
+            Swal.fire({ title: '✅ MISION GUARDADA', icon: 'success', background: '#0d1117', color: '#fff' });
             document.getElementById("nexus-terminal").classList.add("hidden");
         } catch (e) { btn.disabled = false; btn.innerHTML = `🛰️ PUSH_TO_NEXUS_CLOUD`; }
     };
@@ -210,29 +244,28 @@ export default async function ordenes(container) {
                 const config = NEXUS_ASCENSOR[info.tipo_orden] || NEXUS_ASCENSOR.MECANICA;
                 return `
                 <div onclick="window.abrirTerminalNexus('${d.id}')" class="bg-[#0d1117] p-8 border border-white/5 rounded-[2.5rem] hover:border-cyan-500 transition-all cursor-pointer group relative overflow-hidden">
-                    <div class="absolute top-4 right-4"><i class="fas ${config.icon} text-xs" style="color: ${config.color}55"></i></div>
-                    <h4 class="orbitron text-4xl font-black text-white group-hover:text-cyan-400 leading-none mb-1">${info.placa}</h4>
+                    <div class="absolute top-4 right-4"><i class="fas ${config.icon} text-xs text-cyan-500 opacity-30"></i></div>
+                    <h4 class="orbitron text-4xl font-black text-white group-hover:text-cyan-400 mb-1">${info.placa}</h4>
                     <p class="text-[9px] text-slate-500 font-black uppercase mb-4 tracking-tighter">${info.cliente || 'S/N'}</p>
                     <div class="pt-4 border-t border-white/5 flex justify-between items-center">
                         <span class="text-[9px] orbitron font-black px-2 py-1 rounded-md" style="background: ${config.color}20; color: ${config.color}">${config.label}</span>
-                        <span class="text-[8px] orbitron bg-red-600/20 text-red-500 px-3 py-1 rounded-full font-black italic uppercase">${info.estado}</span>
+                        <span class="text-[8px] orbitron bg-red-600/20 text-red-500 px-3 py-1 rounded-full font-black uppercase">${info.estado}</span>
                     </div>
                 </div>`;
             }).join('');
         });
     };
 
-    // --- RECURSOS AUXILIARES ---
     window.updateItem = (idx, campo, val) => { ordenActiva.items[idx][campo] = (campo==='costo'||campo==='venta'||campo==='cantidad')?Number(val):val; recalcularFinanzas(); };
     window.removeItemNexus = (idx) => { if(confirm("¿Eliminar?")) { ordenActiva.items.splice(idx, 1); recalcularFinanzas(); } };
-    window.nexusEscuchaPlaca = () => { if(!recognition) return; recognition.start(); hablar("Escuchando placa"); recognition.onresult = (e) => { const txt = e.results[0][0].transcript.replace(/\s/g, '').toUpperCase(); document.getElementById('f-placa').value = txt; hablar(`Placa ${txt}`); }; };
-    window.nexusDictarBitacora = () => { if(!recognition) return; recognition.start(); hablar("Dicte"); recognition.onresult = (e) => { document.getElementById('ai-log-display').value += `\n[${new Date().toLocaleTimeString()}] ${e.results[0][0].transcript.toUpperCase()}`; }; };
-    window.cambiarEstado = async (n) => { if(!ordenActiva.id) return; try { await setDoc(doc(db, "ordenes", ordenActiva.id), { estado: n, updatedAt: serverTimestamp() }, { merge: true }); hablar(`Fase ${n}`); } catch (e) { console.error(e); } };
+    window.nexusEscuchaPlaca = () => { if(!recognition) return; recognition.start(); hablar("Placa"); recognition.onresult = (e) => { document.getElementById('f-placa').value = e.results[0][0].transcript.replace(/\s/g, '').toUpperCase(); }; };
+    window.nexusDictarBitacora = () => { if(!recognition) return; recognition.start(); hablar("Dicte hallazgo"); recognition.onresult = (e) => { document.getElementById('ai-log-display').value += `\n[${new Date().toLocaleTimeString()}] ${e.results[0][0].transcript.toUpperCase()}`; }; };
+    window.cambiarEstado = async (n) => { if(!ordenActiva.id) return; await setDoc(doc(db, "ordenes", ordenActiva.id), { estado: n, updatedAt: serverTimestamp() }, { merge: true }); hablar(`Fase ${n}`); };
 
     window.addItemNexus = async (tipo) => {
         let origen = 'TALLER', tec = 'INTERNO', costo = 0, venta = 0;
-        if (tipo === 'REPUESTO') { const { value: r } = await Swal.fire({ title: 'ORIGEN', input: 'select', inputOptions: { 'TALLER': 'Taller', 'CLIENTE': 'Cliente' }, background: '#0d1117', color: '#fff' }); origen = r || 'TALLER'; }
-        else { const { value: c } = await Swal.fire({ title: 'COSTO', input: 'number', background: '#0d1117', color: '#fff' }); costo = Number(c || 0); venta = analizarPrecioSugerido({ tipo: "mano_obra", costo }); tec = 'TECNICO NEXUS'; }
+        if (tipo === 'REPUESTO') { const { value: r } = await Swal.fire({ title: 'ORIGEN', input: 'select', inputOptions: { 'TALLER': 'Stock', 'CLIENTE': 'Cliente' }, background: '#0d1117', color: '#fff' }); origen = r || 'TALLER'; }
+        else { const { value: c } = await Swal.fire({ title: 'COSTO LABOR', input: 'number', background: '#0d1117', color: '#fff' }); costo = Number(c || 0); venta = analizarPrecioSugerido({ tipo: "mano_obra", costo }); tec = 'TECNICO NEXUS'; }
         ordenActiva.items.push({ tipo, desc: `NUEVO ${tipo}`, costo, venta, origen, tecnico: tec, cantidad: 1, fecha: new Date().toISOString() });
         recalcularFinanzas();
     };
@@ -243,107 +276,18 @@ export default async function ordenes(container) {
             <div class="flex flex-col gap-3 bg-white/[0.03] p-5 rounded-2xl border border-white/10 mb-4 relative overflow-hidden group">
                 <div class="absolute top-0 left-0 h-full w-1 ${it.tipo === 'REPUESTO' ? 'bg-cyan-500' : 'bg-red-600'}"></div>
                 <div class="flex items-center gap-4">
-                    <span class="text-[8px] orbitron font-black px-2 py-1 ${it.tipo === 'REPUESTO' ? 'bg-cyan-500 text-black' : 'bg-red-600 text-white'} rounded-sm italic font-black uppercase tracking-tighter">${it.tipo}</span>
-                    <input onchange="window.updateItem(${i}, 'desc', this.value)" value="${it.desc}" class="flex-1 bg-transparent text-white font-black orbitron text-xs outline-none uppercase border-b border-transparent focus:border-cyan-500">
-                    <button onclick="window.removeItemNexus(${i})" class="text-slate-600 hover:text-red-500 transition-all"><i class="fas fa-trash-alt"></i></button>
+                    <span class="text-[8px] orbitron font-black px-2 py-1 ${it.tipo === 'REPUESTO' ? 'bg-cyan-500 text-black' : 'bg-red-600 text-white'} rounded-sm">${it.tipo}</span>
+                    <input onchange="window.updateItem(${i}, 'desc', this.value)" value="${it.desc}" class="flex-1 bg-transparent text-white font-black orbitron text-xs outline-none uppercase">
+                    <button onclick="window.removeItemNexus(${i})" class="text-slate-600 hover:text-red-500"><i class="fas fa-trash-alt"></i></button>
                 </div>
                 <div class="grid grid-cols-4 gap-4 items-end">
-                    <div><label class="text-[7px] orbitron text-slate-500 block uppercase font-black">Costo Unit</label><input type="number" onchange="window.updateItem(${i}, 'costo', this.value)" value="${it.costo}" class="bg-black/50 p-2 text-red-400 text-xs rounded w-full border border-white/5 outline-none font-black orbitron italic"></div>
-                    <div><label class="text-[7px] orbitron text-green-500 block uppercase font-black tracking-widest">Venta Unit</label><input type="number" onchange="window.updateItem(${i}, 'venta', this.value)" value="${it.it_venta || it.venta}" class="bg-black/50 p-2 text-green-400 text-xs rounded w-full border border-white/5 outline-none font-black orbitron italic"></div>
-                    <div><label class="text-[7px] orbitron text-slate-500 block uppercase font-black tracking-widest">Cant</label><input type="number" onchange="window.updateItem(${i}, 'cantidad', this.value)" value="${it.cantidad || 1}" class="bg-black/50 p-2 text-white text-xs rounded w-full border border-white/5 outline-none font-black orbitron italic"></div>
-                    <div class="text-right text-xs font-black orbitron italic text-white">$${(it.venta * (it.cantidad || 1)).toLocaleString()}</div>
+                    <div><label class="text-[7px] orbitron text-slate-500 block uppercase">Costo</label><input type="number" onchange="window.updateItem(${i}, 'costo', this.value)" value="${it.costo}" class="bg-black/50 p-2 text-red-400 text-xs rounded w-full border border-white/5 outline-none font-black orbitron"></div>
+                    <div><label class="text-[7px] orbitron text-green-500 block uppercase">Venta</label><input type="number" onchange="window.updateItem(${i}, 'venta', this.value)" value="${it.venta}" class="bg-black/50 p-2 text-green-400 text-xs rounded w-full border border-white/5 outline-none font-black orbitron"></div>
+                    <div><label class="text-[7px] orbitron text-slate-500 block uppercase font-black">Cant</label><input type="number" onchange="window.updateItem(${i}, 'cantidad', this.value)" value="${it.cantidad || 1}" class="bg-black/50 p-2 text-white text-xs rounded w-full border border-white/5 outline-none font-black orbitron"></div>
+                    <div class="text-right text-xs font-black orbitron text-white italic">$${(it.venta * (it.cantidad || 1)).toLocaleString()}</div>
                 </div>
             </div>`).join('');
     };
-
-    // --- BLOQUE QUIRÚRGICO: SINCRONIZACIÓN LUPA INVENTARIO V16.2 ---
-// Reemplaza tu función window.agregarDesdeInventario con este código blindado:
-
-window.agregarDesdeInventario = async () => {
-    try {
-        // 1. Verificación de permisos y estado
-        if (!empresaId) throw new Error("EMPRESA_ID_NOT_FOUND");
-        
-        hablar("Accediendo a Bóveda de Inventario");
-
-        // 2. Consulta optimizada a la colección 'inventario'
-        // Nota: Asegúrate de que los imports (query, collection, where, getDocs) 
-        // estén declarados al inicio del archivo ordenes.js
-        const inventarioRef = collection(db, "inventario");
-        const q = query(inventarioRef, where("empresaId", "==", empresaId));
-        const snap = await getDocs(q);
-
-        if (snap.empty) {
-            return Swal.fire({
-                title: 'BÓVEDA VACÍA',
-                text: 'No hay insumos creados en inventario.js',
-                icon: 'warning',
-                background: '#0d1117',
-                color: '#fff'
-            });
-        }
-
-        // 3. Construcción del Diccionario para el "Ascensor" (SweetAlert Select)
-        const opciones = {};
-        snap.forEach(docSnap => {
-            const d = docSnap.data();
-            // Formateo de alta gerencia para la lista
-            opciones[docSnap.id] = `${d.nombre.toUpperCase()} | STOCK: ${d.stock || 0} | $${Number(d.precioVenta || 0).toLocaleString()}`;
-        });
-
-        // 4. Despliegue del "Ascensor" de Productos
-        const { value: itemId } = await Swal.fire({
-            title: '🛰️ LUPA NEXUS-X',
-            input: 'select',
-            inputOptions: opciones,
-            inputPlaceholder: 'SELECCIONE INSUMO / REPUESTO',
-            showCancelButton: true,
-            background: '#05070a',
-            color: '#06b6d4',
-            confirmButtonColor: '#06b6d4',
-            cancelButtonColor: '#ef4444',
-            customClass: {
-                popup: 'orbitron border-2 border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.5)]',
-                input: 'bg-black text-white border-cyan-500/30'
-            }
-        });
-
-        // 5. Inyección en la Orden Activa
-        if (itemId) {
-            const docEncontrado = snap.docs.find(doc => doc.id === itemId);
-            const dataInsumo = docEncontrado.data();
-
-            // Mapeo exacto para mantener integridad con SAP BI
-            ordenActiva.items.push({ 
-                tipo: 'REPUESTO', 
-                desc: dataInsumo.nombre.toUpperCase(), 
-                costo: Number(dataInsumo.precioCosto || 0), 
-                venta: Number(dataInsumo.precioVenta || 0), 
-                cantidad: 1, 
-                origen: 'TALLER', 
-                refId: itemId,
-                fecha_adicion: new Date().toISOString()
-            });
-
-            hablar(`${dataInsumo.nombre} cargado a la misión`);
-            
-            // Recalcular finanzas y refrescar UI inmediatamente
-            recalcularFinanzas();
-        }
-
-    } catch (e) {
-        console.error("CRITICAL_INVENTARIO_SYNC_ERROR:", e);
-        Swal.fire({
-            title: 'ERROR DE ENLACE',
-            text: 'No se pudo conectar con inventario.js',
-            icon: 'error',
-            background: '#0d1117',
-            color: '#fff'
-        });
-    }
-};
-
-// --- FIN DEL BLOQUE ---
 
     renderBase();
 }
