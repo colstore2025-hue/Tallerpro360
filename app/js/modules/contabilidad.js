@@ -180,37 +180,96 @@ export default async function contabilidad(container) {
         });
     }
 
+    // --- MOTOR DE ESCUCHA EN TIEMPO REAL (CLIENT-SIDE SORTING) ---
     function escucharContabilidad() {
         if (unsubscribe) unsubscribe();
-        const q = query(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), where("empresaId", "==", empresaId), orderBy("creadoEn", "desc"));
-        unsubscribe = onSnapshot(q, (snap) => {
-            const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            renderizarTransacciones(docs);
-        }, (err) => console.warn("Index fail, using fallback..."));
+        if (!empresaId) return;
+
+        const collectionRef = collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING);
+        
+        // 🛠️ ESTRATEGIA: Filtramos por empresa pero delegamos el orden al cliente
+        // Esto evita el error de "Index missing" y el lag de visualización.
+        const qOficial = query(
+            collectionRef, 
+            where("empresaId", "==", empresaId)
+        );
+
+        unsubscribe = onSnapshot(qOficial, (snap) => {
+            const transacciones = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            // ⚡ ORDENAMIENTO DE ALTA PRIORIDAD (Más reciente arriba)
+            transacciones.sort((a, b) => {
+                const dateA = a.creadoEn?.seconds || 0;
+                const dateB = b.creadoEn?.seconds || 0;
+                return dateB - dateA;
+            });
+
+            renderizarTransacciones(transacciones);
+        }, (error) => {
+            console.error("Nexus-X Sync Error:", error);
+        });
     }
 
+    // --- RENDERIZADO DE TRANSACCIONES (LIBRO DIARIO) ---
     function renderizarTransacciones(docs) {
         let tI = 0, tG = 0;
         const list = document.getElementById("listaFinanzas");
         if (!list) return;
+
+        if (docs.length === 0) {
+            list.innerHTML = `<div class="p-20 text-center opacity-20 orbitron italic text-[10px]">LIBRO VACÍO - ESPERANDO FLUJO</div>`;
+            actualizarDash(0, 0);
+            return;
+        }
+
         list.innerHTML = docs.map(m => {
             const val = Number(m.monto) || 0;
             const ing = esIngreso(m.tipo);
+            
+            // Acumulación para el Dashboard Superior
             ing ? tI += val : tG += val;
-            return `<div class="bg-[#0d1117] p-5 rounded-3xl border border-white/5 flex justify-between items-center mb-3">
-                <div><p class="text-xs font-black uppercase">${m.concepto}</p></div>
-                <p class="orbitron font-black ${ing ? 'text-emerald-400' : 'text-red-500'}">${ing?'+':'-'} $${val.toLocaleString()}</p>
+
+            const estilo = obtenerEstilo(m.tipo);
+            const fechaLabel = m.creadoEn?.toDate() 
+                ? m.creadoEn.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+                : 'SYNC...';
+
+            return `
+            <div class="bg-[#0d1117] p-6 rounded-[2.5rem] border border-white/5 flex justify-between items-center hover:border-cyan-500/40 transition-all mb-4">
+                <div class="flex items-center gap-5">
+                    <div class="w-12 h-12 rounded-2xl ${estilo.bg} flex items-center justify-center border ${estilo.border}">
+                        <i class="${estilo.icon} ${estilo.text}"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-black text-white uppercase">${m.concepto || 'S/N'}</p>
+                        <p class="text-[7px] text-slate-500 orbitron uppercase font-bold">${fechaLabel}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-lg font-black orbitron ${ing ? 'text-emerald-400' : 'text-red-500'}">
+                        ${ing ? '+' : '-'} $${val.toLocaleString()}
+                    </p>
+                    <span class="text-[6px] text-slate-600 orbitron uppercase font-black">${m.tipo?.replace(/_/g, ' ')}</span>
+                </div>
             </div>`;
         }).join("");
+        
+        // Sincronización inmediata con los DashCards superiores
         actualizarDash(tI, tG);
     }
 
+    // --- DICCIONARIO DE ESTILOS VISUALES ---
     function obtenerEstilo(t) {
         const c = NEXUS_CONFIG.FINANCE_TYPES;
-        const map = { [c.REVENUE_OT]: { icon: 'fas fa-wrench', text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' } };
+        const map = { 
+            [c.REVENUE_OT]: { icon: 'fas fa-wrench', text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+            [c.EXPENSE_PAYROLL]: { icon: 'fas fa-user-tie', text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
+            [c.EXPENSE_OPERATIONAL]: { icon: 'fas fa-industry', text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+            [c.REVENUE_CAPITAL]: { icon: 'fas fa-vault', text: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' }
+        };
         return map[t] || { icon: 'fas fa-coins', text: 'text-slate-400', bg: 'bg-white/5', border: 'border-white/10' };
     }
 
-    // --- MANIOBRA FINAL ---
+    // --- DISPARO INICIAL DEL COMPONENTE ---
     renderLayout();
-}
+} // <--- CIERRE FINAL DE: export default async function contabilidad(container)
