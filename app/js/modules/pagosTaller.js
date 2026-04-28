@@ -1,7 +1,7 @@
 /**
- * pagosTaller.js - NEXUS-X PAY_HUB V20.3 💳 "THE REINFORCED TERMINATOR"
- * Restauración de Flujo de Anticipos + Sincronización Total Órdenes/Contabilidad
- * William Jeffry Urquijo Cubillos // Nexus-X Starlink
+ * pagosTaller.js - NEXUS-X V20.4 💳 "THE STABILIZER"
+ * Objetivo: Sincronización total entre Contabilidad, Órdenes y Caja.
+ * Basado en Auditoría de Firestore para placas UYT564 y BCE670.
  */
 import { 
   collection, query, where, getDocs, doc, updateDoc, serverTimestamp, addDoc, increment, getDoc 
@@ -19,72 +19,60 @@ export default async function pagosTaller(container, state) {
     <div class="p-6 lg:p-12 animate-in fade-in duration-700 pb-40 bg-[#010409] min-h-screen text-white">
       <header class="flex flex-col lg:flex-row justify-between items-start gap-8 mb-16 border-b border-cyan-500/20 pb-12">
           <div>
-              <h1 class="orbitron text-6xl font-black italic tracking-tighter text-white">
+              <h1 class="orbitron text-5xl font-black italic tracking-tighter text-white">
                 PAY<span class="text-cyan-400">_NEXUS</span><span class="text-red-600">.X</span>
               </h1>
-              <p class="text-[9px] orbitron tracking-[0.6em] text-slate-500 uppercase mt-4 italic">Neural Payment Terminal // Flujo de Caja Maestro</p>
+              <p class="text-[9px] orbitron tracking-[0.6em] text-slate-500 uppercase mt-4 italic">Operación de Estabilización // Sincronización Firestore</p>
           </div>
-          <div class="bg-[#0d1117] p-6 rounded-[2rem] border border-white/5 flex items-center gap-4">
-              <div class="h-3 w-3 bg-emerald-500 rounded-full animate-ping"></div>
-              <p class="text-[10px] orbitron font-black uppercase">Sincronización: <span class="text-emerald-400">ACTIVA</span></p>
+          <div class="bg-[#0d1117] p-6 rounded-[2rem] border border-white/5 flex items-center gap-4 shadow-lg shadow-cyan-500/5">
+              <div class="h-2 w-2 bg-emerald-500 rounded-full animate-ping"></div>
+              <p class="text-[9px] orbitron font-black text-slate-400 uppercase tracking-widest">Contabilidad.js Link: <span class="text-emerald-400">ONLINE</span></p>
           </div>
       </header>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          <div class="lg:col-span-7 space-y-8">
-              <div class="bg-[#0d1117] p-10 rounded-[4rem] border border-white/5 shadow-2xl">
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div class="bg-black/60 p-8 rounded-[2.5rem] border border-white/5 focus-within:border-cyan-500 transition-all">
-                          <label class="text-[9px] text-slate-500 font-black orbitron mb-4 block uppercase tracking-widest">PLACA / VEHÍCULO</label>
-                          <div class="flex items-center gap-4">
-                              <input id="refIn" placeholder="BCE670" class="bg-transparent border-none outline-none text-5xl font-black text-white w-full uppercase orbitron" value="${state?.placa || ''}">
-                              <button id="btnFetchOrden" class="h-16 w-16 bg-cyan-500 text-black rounded-2xl hover:scale-110 transition-all">
-                                  <i class="fas fa-search text-xl"></i>
-                              </button>
-                          </div>
-                      </div>
-
-                      <div class="bg-black/60 p-8 rounded-[2.5rem] border border-white/5">
-                          <label class="text-[9px] text-slate-500 font-black orbitron mb-4 block uppercase tracking-widest italic text-emerald-500">MONTO A INGRESAR (COP)</label>
-                          <input id="montoIn" type="number" placeholder="0" class="bg-transparent border-none outline-none text-5xl font-black text-emerald-400 w-full orbitron">
+      <div class="max-w-4xl mx-auto space-y-8">
+          <div class="bg-[#0d1117] p-10 rounded-[3rem] border border-white/5 shadow-2xl">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div class="bg-black/60 p-8 rounded-[2.5rem] border border-white/5 focus-within:border-cyan-500 transition-all">
+                      <label class="text-[8px] text-slate-500 font-black orbitron mb-3 block uppercase tracking-widest">ID_VEHÍCULO (PLACA)</label>
+                      <div class="flex items-center gap-4">
+                          <input id="refIn" placeholder="UYT564" class="bg-transparent border-none outline-none text-4xl font-black text-white w-full uppercase orbitron" value="${state?.placa || ''}">
+                          <button id="btnFetchOrden" class="h-14 w-14 bg-cyan-500 text-black rounded-2xl hover:scale-110 transition-all shadow-lg">
+                              <i class="fas fa-satellite-dish"></i>
+                          </button>
                       </div>
                   </div>
-
-                  <div id="ot-selector-container" class="hidden mt-8 p-6 bg-cyan-500/5 border border-cyan-500/20 rounded-[2.5rem]">
-                      <p class="text-[9px] orbitron text-cyan-500 font-black mb-4 uppercase">Misiones detectadas:</p>
-                      <div id="ot-list" class="grid grid-cols-1 gap-3"></div>
-                  </div>
-
-                  <div id="display-info" class="hidden mt-10 p-10 bg-white/5 border border-white/10 rounded-[3rem] animate-in zoom-in">
-                      <div class="flex justify-between items-center">
-                          <div>
-                              <p id="txtCliente" class="text-white font-black orbitron text-2xl uppercase italic tracking-tighter"></p>
-                              <p id="txtMision" class="text-[10px] text-cyan-400 font-bold uppercase mt-2 tracking-widest italic"></p>
-                          </div>
-                          <div class="text-right">
-                              <p class="text-[9px] text-red-500 font-black orbitron mb-2 uppercase tracking-widest">DEUDA ACTUAL</p>
-                              <p id="label-monto" class="text-5xl font-black text-white orbitron italic">$ 0</p>
-                          </div>
-                      </div>
-                  </div>
-
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
-                      <button id="btnCobrarBold" class="bg-cyan-500 text-black py-10 rounded-[2.5rem] font-black orbitron text-[11px] uppercase tracking-widest hover:bg-white transition-all flex items-center justify-center gap-4">
-                          PASARELA BOLD <i class="fas fa-bolt"></i>
-                      </button>
-                      <button id="btnEfectivo" class="bg-white/5 text-slate-400 border border-white/10 py-10 rounded-[2.5rem] font-black orbitron text-[11px] uppercase tracking-widest hover:bg-white hover:text-black transition-all">
-                          REGISTRO CASH <i class="fas fa-money-bill-wave ml-3"></i>
-                      </button>
+                  <div class="bg-black/60 p-8 rounded-[2.5rem] border border-white/5">
+                      <label class="text-[8px] text-emerald-500/70 font-black orbitron mb-3 block uppercase tracking-widest">MONTO ABONO (COP)</label>
+                      <input id="montoIn" type="number" placeholder="0" class="bg-transparent border-none outline-none text-4xl font-black text-emerald-400 w-full orbitron">
                   </div>
               </div>
-          </div>
 
-          <div class="lg:col-span-5">
-              <div class="bg-[#0d1117] p-10 rounded-[3rem] border border-white/5 h-full">
-                  <h4 class="text-[11px] font-black text-cyan-500 orbitron tracking-[0.5em] mb-8 uppercase italic">CONTROL DE CAJA</h4>
-                  <p class="text-xs text-slate-400 leading-relaxed italic">
-                      <b>Nota de Flujo:</b> El sistema permite anticipos en cualquier estado. Los ingresos se verán reflejados en "Órdenes" (Sección Finanzas) y en el módulo de "Contabilidad" como ingreso operacional.
-                  </p>
+              <div id="ot-selector-container" class="hidden mt-8 p-6 bg-cyan-500/5 border border-cyan-500/20 rounded-3xl">
+                  <p class="text-[8px] orbitron text-cyan-500 font-black mb-3 uppercase tracking-widest">Seleccione Misión:</p>
+                  <div id="ot-list" class="grid grid-cols-1 gap-2"></div>
+              </div>
+
+              <div id="display-info" class="hidden mt-8 p-8 bg-white/5 border border-white/10 rounded-[2.5rem] animate-in slide-in-from-bottom-5">
+                  <div class="flex justify-between items-center">
+                      <div>
+                          <p id="txtCliente" class="text-white font-black orbitron text-xl uppercase italic"></p>
+                          <p id="txtMision" class="text-[9px] text-cyan-400 font-bold uppercase mt-1 tracking-widest"></p>
+                      </div>
+                      <div class="text-right">
+                          <p class="text-[8px] text-red-500 font-black orbitron mb-1 uppercase tracking-widest">SALDO EN ÓRDENES</p>
+                          <p id="label-monto" class="text-4xl font-black text-white orbitron">$ 0</p>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
+                  <button id="btnEfectivo" class="bg-emerald-500 text-black py-8 rounded-[2rem] font-black orbitron text-[10px] uppercase tracking-widest hover:bg-white transition-all">
+                      REGISTRAR CASH <i class="fas fa-cash-register ml-2"></i>
+                  </button>
+                  <button id="btnCobrarBold" class="bg-white/5 text-cyan-400 border border-cyan-500/30 py-8 rounded-[2rem] font-black orbitron text-[10px] uppercase tracking-widest hover:bg-cyan-500 hover:text-black transition-all">
+                      PASARELA BOLD <i class="fas fa-bolt ml-2"></i>
+                  </button>
               </div>
           </div>
       </div>
@@ -92,8 +80,8 @@ export default async function pagosTaller(container, state) {
     `;
 
     document.getElementById("btnFetchOrden").onclick = buscarMisionesPlaca;
-    document.getElementById("btnCobrarBold").onclick = () => procesarPago(NEXUS_CONFIG.PAYMENT_METHODS.CARD);
-    document.getElementById("btnEfectivo").onclick = () => procesarPago(NEXUS_CONFIG.PAYMENT_METHODS.CASH);
+    document.getElementById("btnEfectivo").onclick = () => procesarPago("efectivo");
+    document.getElementById("btnCobrarBold").onclick = () => procesarPago("bold");
   };
 
   async function buscarMisionesPlaca() {
@@ -101,15 +89,14 @@ export default async function pagosTaller(container, state) {
     if(!placa) return;
 
     try {
-        Swal.fire({ title: 'Rastreando Unidad...', didOpen: () => Swal.showLoading(), background: '#010409', color: '#fff' });
+        Swal.fire({ title: 'Escaneando Red Nexus...', didOpen: () => Swal.showLoading(), background: '#010409', color: '#fff' });
         
-        // ELIMINADO EL FILTRO DE SALDO > 0 para que aparezcan órdenes en diagnóstico
+        // Búsqueda en colección raíz según V17/V20
         const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId), where("placa", "==", placa));
         const snap = await getDocs(q);
 
-        if(snap.empty) return Swal.fire('SISTEMA', 'No hay órdenes activas para esta placa.', 'error');
+        if(snap.empty) return Swal.fire('NEXUS-X', `No hay misiones para ${placa}.`, 'error');
 
-        // Filtrar solo las que no están cerradas
         const ordenes = snap.docs.map(d => ({id: d.id, ...d.data()}))
                             .filter(o => !['ENTREGADO', 'ANULADO'].includes(o.estado));
 
@@ -120,7 +107,7 @@ export default async function pagosTaller(container, state) {
             renderSelector(ordenes);
             Swal.close();
         }
-    } catch (e) { Swal.fire('ERROR', 'Error de conexión Firebase.', 'error'); }
+    } catch (e) { Swal.fire('ERROR', 'Fallo de enlace satelital.', 'error'); }
   }
 
   function renderSelector(ordenes) {
@@ -130,8 +117,8 @@ export default async function pagosTaller(container, state) {
     container.classList.remove("hidden");
     ordenes.forEach(ot => {
         const btn = document.createElement("button");
-        btn.className = "w-full p-4 bg-white/5 border border-white/10 rounded-xl text-left flex justify-between";
-        btn.innerHTML = `<span class="orbitron text-xs">OT-${ot.id.slice(-6)} [${ot.estado}]</span> <b>$${(ot.costos_totales?.saldo_pendiente || 0).toLocaleString()}</b>`;
+        btn.className = "w-full p-4 bg-white/5 border border-white/10 rounded-xl text-left flex justify-between hover:bg-cyan-500/20 transition-all";
+        btn.innerHTML = `<span class="orbitron text-[10px]">OT-${ot.id.slice(-6)} [${ot.estado}]</span> <b class="text-emerald-400 font-black">$${(ot.costos_totales?.saldo_pendiente || 0).toLocaleString()}</b>`;
         btn.onclick = () => { seleccionarOT(ot); container.classList.add("hidden"); };
         list.appendChild(btn);
     });
@@ -142,46 +129,55 @@ export default async function pagosTaller(container, state) {
     const saldo = ot.costos_totales?.saldo_pendiente || 0;
     document.getElementById("display-info").classList.remove("hidden");
     document.getElementById("txtCliente").innerText = ot.cliente.toUpperCase();
-    document.getElementById("txtMision").innerText = `FASE ACTUAL: ${ot.estado} / ID: ${ot.id.slice(-6)}`;
+    document.getElementById("txtMision").innerText = `MODO: ${ot.estado} | REF: ${ot.id.slice(-6)}`;
     document.getElementById("label-monto").innerText = `$ ${saldo.toLocaleString()}`;
-    document.getElementById("montoIn").value = saldo > 0 ? saldo : "";
+    document.getElementById("montoIn").value = "";
     document.getElementById("montoIn").focus();
-    hablar(`Orden vinculada para ingreso.`);
+    hablar(`Orden ${ot.id.slice(-6)} vinculada.`);
   }
 
   async function procesarPago(metodo) {
     const monto = Number(document.getElementById("montoIn").value);
-    if(!ordenActiva || monto <= 0) return Swal.fire('ALERTA', 'Ingresa un monto válido.', 'warning');
+    if(!ordenActiva || monto <= 0) return Swal.fire('ALERTA', 'Monto no válido.', 'warning');
 
     try {
         Swal.fire({ title: 'Inyectando Capital...', didOpen: () => Swal.showLoading(), background: '#010409' });
 
         const ordenRef = doc(db, "ordenes", ordenActiva.id);
-        const saldoActual = Number(ordenActiva.costos_totales?.saldo_pendiente || 0);
 
-        // 🛡️ ACTUALIZACIÓN DE ORDEN: Usamos las dos rutas para asegurar compatibilidad
+        // 🛡️ ACCIÓN 1: ACTUALIZAR ORDEN (Sincronización con ordenes.js)
+        // Escribimos en costos_totales.anticipo que es lo que lee tu tabla de ordenes.js
         await updateDoc(ordenRef, {
-            "finanzas.anticipo_cliente": increment(monto), // Ruta nueva
-            "costos_totales.anticipo": increment(monto),   // Ruta espejo para ordenes.js
+            "costos_totales.anticipo": increment(monto), 
             "costos_totales.saldo_pendiente": increment(-monto),
-            "updatedAt": serverTimestamp(),
-            "bitacora": (ordenActiva.bitacora || "") + `\n[${new Date().toLocaleDateString()}]: Recibido anticipo de $${monto} vía ${metodo}.`
+            "updatedAt": serverTimestamp()
         });
 
-        // 💰 ASIENTO EN CONTABILIDAD
+        // 💰 ACCIÓN 2: REGISTRO EN CONTABILIDAD (Sincronización con contabilidad.js)
+        // Usamos la palabra 'monto' en lugar de 'total' para que sume en tu Dashboard
         await addDoc(collection(db, "contabilidad"), {
             empresaId,
             referencia: ordenActiva.placa,
-            total: monto,
-            tipo: 'INGRESO_OT',
+            monto: monto, // <--- PALABRA CLAVE SEGÚN TUS FOTOS
+            concepto: `ABONO OT-${ordenActiva.id.slice(-5)} - ${ordenActiva.cliente}`,
+            tipo: "ingreso", // <--- PALABRA CLAVE V17
             metodo: metodo,
-            concepto: `ANTICIPO OT-${ordenActiva.id.slice(-5)} - ${ordenActiva.cliente}`,
             fecha: serverTimestamp()
         });
 
-        Swal.fire('ÉXITO', 'Anticipo registrado en Caja y Orden.', 'success');
-        buscarMisionesPlaca(); // Refrescar
-    } catch (e) { Swal.fire('ERROR', 'Error en el proceso contable.', 'error'); }
+        hablar("Misión cumplida. Capital ingresado y saldo actualizado.");
+        Swal.fire('PAGO EXITOSO', `Abono de $${monto.toLocaleString()} registrado.`, 'success');
+        
+        // Reset y recarga
+        ordenActiva = null;
+        document.getElementById("refIn").value = "";
+        document.getElementById("display-info").classList.add("hidden");
+        document.getElementById("montoIn").value = "";
+
+    } catch (e) { 
+        console.error(e);
+        Swal.fire('ERROR', 'Fallo en la inyección de datos.', 'error'); 
+    }
   }
 
   renderLayout();
