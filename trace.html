@@ -3,147 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS-X | DIGITAL DIAGNOSTIC REPORT</title>
+    <title>NEXUS-X | DOCUMENTO DIGITAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1f2937; }
+        body { font-family: 'Inter', sans-serif; background-color: #e5e7eb; color: #1f2937; padding: 10px; }
         .mono { font-family: 'JetBrains Mono', monospace; }
         .document-page { 
             background: white; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-            min-height: 297mm; /* Proporción A4 */
-            max-width: 850px;
-            margin: 2rem auto;
-            padding: 40px;
+            max-width: 800px;
+            margin: 1rem auto;
+            padding: 30px;
             position: relative;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-        .header-accent { border-top: 8px solid #1e3a8a; }
-        .bitacora-entry { border-left: 3px solid #3b82f6; background: #eff6ff; padding: 12px; margin-bottom: 10px; border-radius: 0 8px 8px 0; }
-        .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 8rem; opacity: 0.03; font-weight: 900; pointer-events: none; }
+        /* Colores Dinámicos según Tipo de Documento */
+        .doc-OT { border-top: 10px solid #1e3a8a; } /* Azul - Orden */
+        .doc-COT { border-top: 10px solid #f59e0b; } /* Naranja - Cotización */
+        .doc-FAC { border-top: 10px solid #10b981; } /* Verde - Factura */
+        
+        .bitacora-entry { border-left: 2px solid #3b82f6; background: #f8fafc; padding: 10px; margin-bottom: 8px; font-size: 0.85rem; }
+        .logo-app { position: absolute; bottom: 20px; right: 20px; opacity: 0.4; filter: grayscale(100%); width: 60px; }
     </style>
 </head>
 <body>
 
-<div class="document-page header-accent">
-    <div class="watermark mono">NEXUS-X</div>
+<div id="main-doc" class="document-page doc-OT">
+    <img src="https://tallerpro360.vercel.app/logo.png" class="logo-app" alt="TallerPRO360">
 
-    <header class="flex justify-between items-start border-b pb-8 mb-8">
+    <header class="flex justify-between items-start border-b pb-6 mb-6">
         <div>
-            <h1 class="text-3xl font-extrabold tracking-tighter text-blue-900">NEXUS_X <span class="text-gray-400">STARLINK</span></h1>
-            <div id="info-taller" class="text-sm text-gray-500 mt-2">
-                <p class="font-bold text-gray-800 uppercase" id="nombre-taller">CENTRO TÉCNICO ALIADO</p>
-                <p id="nit-taller">SISTEMA LOGÍSTICO INTEGRADO</p>
+            <h1 id="doc-title" class="text-2xl font-extrabold tracking-tighter text-slate-800">ORDEN DE TRABAJO</h1>
+            <div class="text-sm text-gray-500 mt-1">
+                <p class="font-bold text-gray-800 uppercase" id="taller-nombre">CARGANDO TALLER...</p>
+                <p id="taller-dir" class="text-[10px]">VERIFICANDO CONEXIÓN STARLINK...</p>
             </div>
         </div>
         <div class="text-right">
-            <div class="bg-blue-900 text-white px-4 py-1 text-xs font-bold inline-block mb-2">ORDEN DE SERVICIO</div>
-            <p class="text-xl font-bold mono" id="numero-orden">#---</p>
-            <p class="text-xs text-gray-400" id="fecha-actual">FECHA: --/--/----</p>
+            <div id="status-pill" class="bg-blue-900 text-white px-3 py-1 text-[10px] font-bold rounded mb-1">ID_GLOBAL</div>
+            <p class="text-lg font-bold mono" id="doc-number">#---</p>
         </div>
     </header>
 
-    <section class="grid grid-cols-3 gap-4 mb-8 bg-gray-50 p-6 rounded-xl border">
+    <div class="grid grid-cols-2 gap-4 mb-6 bg-slate-50 p-4 rounded border border-slate-200">
         <div>
-            <p class="text-[10px] text-gray-400 font-bold uppercase">Placa / Identifier</p>
-            <p class="text-2xl font-black mono text-blue-800" id="placa">---</p>
-        </div>
-        <div>
-            <p class="text-[10px] text-gray-400 font-bold uppercase">Estado Actual</p>
-            <p class="text-sm font-bold uppercase tracking-wider" id="estado">SINCRONIZANDO...</p>
+            <p class="text-[9px] text-gray-400 font-black uppercase">Unidad / Placa</p>
+            <p class="text-xl font-black mono text-slate-900" id="placa">---</p>
         </div>
         <div class="text-right">
-            <p class="text-[10px] text-gray-400 font-bold uppercase">Progreso</p>
-            <div class="w-full bg-gray-200 h-2 mt-2 rounded-full overflow-hidden">
-                <div id="progreso-bar" class="bg-blue-600 h-full transition-all duration-1000" style="width: 0%"></div>
-            </div>
+            <p class="text-[9px] text-gray-400 font-black uppercase">Fecha de Emisión</p>
+            <p class="text-xs font-bold" id="fecha">--/--/----</p>
         </div>
-    </section>
+    </div>
 
-    <section class="mb-10">
-        <h3 class="text-xs font-black text-blue-900 mb-4 border-b-2 border-blue-100 pb-1">BITÁCORA DE TRABAJO (REAL-TIME UPDATES)</h3>
-        <div id="timeline-container" class="space-y-3">
-            <p class="text-gray-400 italic text-sm">Esperando reporte técnico desde la nube...</p>
-        </div>
-    </section>
+    <div class="mb-8">
+        <h3 class="text-[10px] font-black text-slate-500 mb-3 border-b pb-1 uppercase tracking-widest">Trazabilidad de Misión</h3>
+        <div id="timeline-container" class="space-y-2"></div>
+    </div>
 
-    <section id="section-costos" class="hidden">
-        <table class="w-full text-left text-sm mb-6">
-            <thead>
-                <tr class="border-b-2 border-gray-800 text-[10px] uppercase font-black">
-                    <th class="py-2">Descripción del Servicio / Repuesto</th>
-                    <th class="py-2 text-center">Cant.</th>
-                    <th class="py-2 text-right">Unitario</th>
-                    <th class="py-2 text-right">Subtotal</th>
+    <div id="cost-section" class="hidden">
+        <table class="w-full text-left text-xs mb-4">
+            <thead class="bg-slate-100 uppercase text-[9px] font-black">
+                <tr>
+                    <th class="p-2">Descripción</th>
+                    <th class="p-2 text-center">Cant.</th>
+                    <th class="p-2 text-right">Total</th>
                 </tr>
             </thead>
-            <tbody id="lista-items" class="divide-y">
-                </tbody>
+            <tbody id="item-list" class="divide-y text-slate-700"></tbody>
         </table>
-
-        <div class="flex justify-end">
-            <div class="w-64 space-y-2">
-                <div class="flex justify-between text-sm">
-                    <span class="text-gray-500">Valor Total Servicios:</span>
-                    <span class="font-bold" id="total-final">$ 0</span>
-                </div>
-                <div id="acciones-cliente" class="pt-4 border-t space-y-3">
-                    </div>
+        <div class="flex justify-end pt-4 border-t-2 border-slate-800">
+            <div class="text-right">
+                <p class="text-[10px] font-bold text-slate-400 uppercase">Total a Pagar</p>
+                <p class="text-4xl font-black text-slate-900" id="grand-total">$ 0</p>
             </div>
         </div>
-    </section>
+    </div>
 
-    <footer class="mt-20 border-t pt-8 text-[9px] text-gray-400 text-center uppercase tracking-widest">
-        Sistema Nexus-X Starlink SaaS | Powered by Colombian Trucks Logistics LLC
+    <div id="action-area" class="mt-10 flex flex-col gap-3"></div>
+
+    <footer class="mt-16 text-[8px] text-gray-300 text-center uppercase mono italic">
+        Cloud Security Hash: Nexus-X-V4-Starlink-Verified
     </footer>
 </div>
 
 <script type="module">
     import { db } from "./core/firebase-config.js";
-    import { doc, onSnapshot, query, collection, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const params = new URLSearchParams(window.location.search);
-    const rawId = params.get("id");
+    const id = params.get("id")?.split('_').pop();
 
-    if (rawId) {
-        const idNumerico = rawId.split('_').pop();
-        onSnapshot(doc(db, "ordenes", idNumerico), (snap) => {
-            if (snap.exists()) renderDoc(snap.data(), snap.id);
+    if (id) {
+        onSnapshot(doc(db, "ordenes", id), (snap) => {
+            if (snap.exists()) buildNexusDoc(snap.data(), snap.id);
         });
     }
 
-    function renderDoc(data, docId) {
-        document.getElementById("numero-orden").innerText = `#${docId.slice(-6).toUpperCase()}`;
-        document.getElementById("placa").innerText = data.placa || "---";
-        document.getElementById("estado").innerText = data.estado || "INGRESO";
-        document.getElementById("fecha-actual").innerText = `GENERADO: ${new Date().toLocaleDateString()}`;
-        
-        // Bitácora Invertida
-        const logContainer = document.getElementById("timeline-container");
-        const contenido = `${data.bitacora_ia || ''}\n${data.notas || ''}`;
-        const lineas = contenido.split('\n').filter(l => l.trim() !== "").reverse();
-        
-        logContainer.innerHTML = lineas.map(l => `
-            <div class="bitacora-entry">
-                <p class="text-[9px] font-black text-blue-500 mb-1">REPORTE TÉCNICO > ${new Date().toLocaleTimeString()}</p>
-                <p class="text-sm font-medium text-gray-700">${l}</p>
-            </div>
-        `).join('') || '<p class="text-gray-400 italic text-sm">Sin reportes recientes.</p>';
+    function buildNexusDoc(data, docId) {
+        const docFrame = document.getElementById("main-doc");
+        const title = document.getElementById("doc-title");
+        const actions = document.getElementById("action-area");
+        const est = data.estado || "INGRESO";
 
-        // Costos
+        // 1. LÓGICA DE TRANSFORMACIÓN SEGÚN ESTADO
+        docFrame.className = "document-page"; // Reset
+        actions.innerHTML = ""; // Limpiar botones
+
+        if (est === "COTIZACION") {
+            docFrame.classList.add("doc-COT");
+            title.innerText = "COTIZACIÓN DE SERVICIOS";
+            if (!data.aprobada) {
+                actions.innerHTML = `<button onclick="approve()" class="w-full bg-amber-500 text-white py-4 font-black rounded-lg shadow-lg">AUTORIZAR PRESUPUESTO VIA SATELLITE</button>`;
+            }
+        } else if (est === "LISTO") {
+            docFrame.classList.add("doc-FAC");
+            title.innerText = "COBRO DE SERVICIOS";
+            actions.innerHTML = `<button onclick="window.open('https://checkout.bold.co/payment/OT_${data.placa}')" class="w-full bg-emerald-600 text-white py-4 font-black rounded-lg shadow-lg uppercase">Pagar con BOLD <i class="fas fa-credit-card ml-2"></i></button>`;
+        } else if (est === "ENTREGADO" || est === "FACTURADO") {
+            docFrame.classList.add("doc-FAC");
+            title.innerText = "FACTURA DE SERVICIO / RESUMEN";
+        } else {
+            docFrame.classList.add("doc-OT");
+            title.innerText = "ORDEN DE TRABAJO TÉCNICA";
+        }
+
+        // 2. RELLENO DE DATOS
+        document.getElementById("taller-nombre").innerText = data.taller_aliado || "CENTRO TECNOLÓGICO";
+        document.getElementById("doc-number").innerText = `#${docId.slice(-6).toUpperCase()}`;
+        document.getElementById("placa").innerText = data.placa;
+        document.getElementById("fecha").innerText = new Date().toLocaleDateString();
+
+        // 3. BITÁCORA (TRAZABILIDAD)
+        const logContent = `${data.bitacora_ia || ''}\n${data.notas || ''}`;
+        document.getElementById("timeline-container").innerHTML = logContent.split('\n')
+            .filter(l => l.trim()).reverse().map(l => `
+                <div class="bitacora-entry">
+                    <p class="text-[8px] font-black text-slate-400 mb-1">DATA_LOG_STAMP</p>
+                    <p>${l}</p>
+                </div>`).join('');
+
+        // 4. ITEMS Y COSTOS
         if (data.items && data.items.length > 0) {
-            document.getElementById("section-costos").classList.remove("hidden");
-            document.getElementById("lista-items").innerHTML = data.items.map(i => `
-                <tr>
-                    <td class="py-3 font-semibold text-gray-800">${i.desc}</td>
-                    <td class="py-3 text-center">${i.cantidad}</td>
-                    <td class="py-3 text-right">$${i.venta.toLocaleString()}</td>
-                    <td class="py-3 text-right font-bold">$${(i.venta * i.cantidad).toLocaleString()}</td>
-                </tr>
+            document.getElementById("cost-section").classList.remove("hidden");
+            document.getElementById("item-list").innerHTML = data.items.map(i => `
+                <tr><td class="p-2 font-bold">${i.desc}</td><td class="p-2 text-center">${i.cantidad}</td><td class="p-2 text-right">$${(i.venta * i.cantidad).toLocaleString()}</td></tr>
             `).join('');
-            document.getElementById("total-final").innerText = `$${(data.costos_totales?.total || 0).toLocaleString()}`;
+            document.getElementById("grand-total").innerText = `$${(data.costos_totales?.total || 0).toLocaleString()}`;
         }
     }
+
+    // Acción de aprobación remota
+    window.approve = async () => {
+        if(confirm("¿Confirma la autorización de este presupuesto?")) {
+            await updateDoc(doc(db, "ordenes", id), { aprobada: true, estado: 'REPARACION' });
+        }
+    };
 </script>
+
 </body>
 </html>
