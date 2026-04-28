@@ -14,8 +14,12 @@
         .orbitron { font-family: 'Orbitron', sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .glow-text { text-shadow: 0 0 15px rgba(0, 242, 255, 0.6); }
-        .bitacora-entry { border-left: 3px solid var(--neon-cyan); background: linear-gradient(90deg, rgba(0, 242, 255, 0.07) 0%, transparent 100%); padding: 15px; margin-bottom: 12px; }
+        .bitacora-entry { border-left: 3px solid var(--neon-cyan); background: linear-gradient(90deg, rgba(0, 242, 255, 0.07) 0%, transparent 100%); padding: 15px; margin-bottom: 12px; border-radius: 0 8px 8px 0; }
         .hud-line { height: 1px; background: linear-gradient(90deg, var(--neon-cyan), transparent); }
+        /* Scrollbar estilo Matrix */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 10px; }
     </style>
 </head>
 <body class="p-4 lg:p-10">
@@ -23,7 +27,7 @@
     <main class="max-w-5xl mx-auto">
         <header class="flex justify-between items-center mb-8">
             <div class="flex items-center gap-4">
-                <img src="assets/favicon.png" alt="Nexus-X" class="w-10 h-10">
+                <img src="assets/favicon.png" alt="Nexus-X" class="w-10 h-10 object-contain">
                 <div>
                     <h1 class="orbitron text-2xl font-black italic tracking-tighter glow-text uppercase">Nexus<span class="text-red-600">_X</span></h1>
                     <p id="taller-aliado" class="text-[9px] orbitron text-cyan-400 tracking-widest uppercase">Protocolo Starlink Activo</p>
@@ -38,27 +42,30 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div class="lg:col-span-7 space-y-6">
                 <div class="glass p-8 rounded-2xl border-l-4 border-cyan-500">
-                    <p class="text-[9px] orbitron text-cyan-500 mb-2">IDENTIFICADOR_UNIDAD</p>
-                    <h2 id="placa" class="orbitron text-6xl font-black italic text-white tracking-tighter">------</h2>
+                    <p class="text-[9px] orbitron text-cyan-500 mb-2 tracking-widest">IDENTIFICADOR_UNIDAD</p>
+                    <h2 id="placa" class="orbitron text-6xl font-black italic text-white tracking-tighter uppercase">------</h2>
                     <div class="hud-line my-4"></div>
                     <div class="flex gap-6 text-[10px] orbitron">
-                        <p class="text-slate-400">ESTADO: <span id="estado" class="text-white font-bold tracking-widest">---</span></p>
-                        <p class="text-slate-400">KM: <span id="km-info" class="text-white">---</span></p>
+                        <p class="text-slate-400 uppercase">Estado_Misión: <span id="estado" class="text-white font-bold tracking-widest">---</span></p>
+                        <p class="text-slate-400 uppercase">Telemetría: <span id="km-info" class="text-white">---</span></p>
                     </div>
                 </div>
 
                 <div class="glass p-6 rounded-2xl">
-                    <h3 class="orbitron text-[10px] text-cyan-500 font-bold mb-6 tracking-widest uppercase"><i class="fas fa-satellite-dish mr-2"></i> Reporte Taller_PRO_360</h3>
-                    <div id="timeline-container" class="space-y-4">
-                        <p class="text-slate-500 text-xs animate-pulse">Esperando paquetes de datos...</p>
+                    <h3 class="orbitron text-[10px] text-cyan-500 font-bold mb-6 tracking-widest uppercase flex items-center gap-2">
+                        <i class="fas fa-satellite-dish animate-pulse"></i> Reporte Taller_PRO_360
+                    </h3>
+                    <div id="timeline-container" class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                        <p class="text-slate-500 text-xs animate-pulse italic">Esperando paquetes de datos...</p>
                     </div>
                 </div>
             </div>
 
             <div class="lg:col-span-5 space-y-6">
                 <div id="area-financiera" class="glass p-8 rounded-3xl border-t-2 border-cyan-500 hidden">
-                    <h3 class="orbitron text-[10px] text-cyan-500 font-bold mb-6 uppercase">Costos de Misión</h3>
-                    <div id="lista-items" class="space-y-3 mb-8"></div>
+                    <h3 class="orbitron text-[10px] text-cyan-500 font-bold mb-6 uppercase tracking-widest">Costos de Misión</h3>
+                    <div id="lista-items" class="space-y-3 mb-8">
+                        </div>
                     <div class="border-t border-white/10 pt-6 text-right">
                         <p class="text-[9px] orbitron text-slate-500 mb-1 font-bold uppercase">Total_Liquidación</p>
                         <div id="total-final" class="text-5xl font-black orbitron text-white italic tracking-tighter">$ 0</div>
@@ -74,36 +81,107 @@
         </div>
     </main>
 
-    <script type="module">
-    // Asegúrate de que esta ruta sea exacta a donde tienes tu config
-    import { db } from "./core/firebase-config.js"; 
+<script type="module">
+    import { db as moduleDb } from "./core/firebase-config.js";
     import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const params = new URLSearchParams(window.location.search);
-    const rawId = params.get("id");
+    // Función de inicialización robusta
+    const iniciarRastreo = () => {
+        // Soporte para bridge global o importación modular
+        const db = moduleDb || window.db;
+        const params = new URLSearchParams(window.location.search);
+        const rawId = params.get("id");
 
-    console.log("Intento de conexión con ID Raw:", rawId);
+        if (rawId && db) {
+            // Limpieza de ID (OT_PLACA_ID -> ID)
+            const idLimpio = rawId.includes('_') ? rawId.split('_').pop().trim() : rawId.trim();
+            console.log("🛰️ Nexus-X: Conectando a:", idLimpio);
+            
+            const docRef = doc(db, "ordenes", idLimpio);
 
-    if (rawId) {
-        // Esta línea es CRÍTICA: extrae el número del final
-        const idLimpio = rawId.split('_').pop().trim();
-        console.log("ID Limpio para buscar en Firestore:", idLimpio);
+            onSnapshot(docRef, (snap) => {
+                if (snap.exists()) {
+                    actualizarUI(snap.data(), snap.id);
+                } else {
+                    document.getElementById("loader").innerHTML = `
+                        <div class="text-red-500 orbitron text-[10px] uppercase">
+                            <i class="fas fa-exclamation-triangle mb-2 text-lg"></i><br>
+                            Error_Link_Roto: ID_NOT_FOUND
+                        </div>`;
+                }
+            }, (error) => {
+                console.error("🔥 Firebase Error:", error);
+                document.getElementById("loader").innerHTML = `<p class="text-red-500 orbitron text-[9px]">ERROR_DE_ACCESO: VERIFICAR_REGLAS</p>`;
+            });
+        } else if (!db) {
+            console.warn("🔄 Reintentando enlace con núcleo Firebase...");
+            setTimeout(iniciarRastreo, 500);
+        } else {
+            document.getElementById("loader").innerHTML = `<p class="text-amber-500 orbitron text-[9px]">ESPERANDO_ID_DE_RASTREO</p>`;
+        }
+    };
+
+    function actualizarUI(data, id) {
+        document.getElementById("loader").classList.add("hidden");
         
-        const docRef = doc(db, "ordenes", idLimpio);
+        // Datos de Identidad
+        document.getElementById("taller-aliado").innerText = data.taller_aliado || "NEXUS_X PARTNER";
+        document.getElementById("doc-id").innerText = `#${id.slice(-6).toUpperCase()}`;
+        document.getElementById("placa").innerText = data.placa || "N/A";
+        
+        const est = (data.estado || "PENDIENTE").toUpperCase();
+        document.getElementById("estado").innerText = est;
+        
+        // Kilometraje
+        document.getElementById("km-info").innerText = data.kilometraje ? `${Number(data.kilometraje).toLocaleString()} KM` : "NO_REGISTRADO";
 
-        onSnapshot(docRef, (snap) => {
-            if (snap.exists()) {
-                console.log("¡Datos encontrados!", snap.data());
-                actualizarUI(snap.data(), snap.id);
+        // Bitácora Combinada
+        const logBox = document.getElementById("timeline-container");
+        const combinedLogs = [data.bitacora_ia, data.notas, data.observaciones]
+            .filter(txt => txt && txt.trim() !== "")
+            .join('\n');
+        
+        const lineas = combinedLogs.split('\n').filter(l => l.trim()).reverse();
+        logBox.innerHTML = lineas.map(l => `
+            <div class="bitacora-entry">
+                <p class="text-[7px] orbitron text-cyan-500 mb-1 tracking-tighter opacity-70">SYNC_OK > DATA_VERIFIED</p>
+                <p class="text-sm font-light leading-relaxed">${l}</p>
+            </div>
+        `).join('') || "<p class='text-slate-600 text-[10px] italic orbitron'>Sin reportes técnicos registrados aún.</p>";
+
+        // Gestión de Costos y Pagos
+        if (data.items && data.items.length > 0) {
+            document.getElementById("area-financiera").classList.remove("hidden");
+            document.getElementById("lista-items").innerHTML = data.items.map(i => `
+                <div class="flex justify-between items-center bg-white/5 p-3 rounded border border-white/5 hover:border-cyan-500/30 transition-colors">
+                    <span class="text-[10px] font-bold uppercase tracking-tight max-w-[70%] truncate">${i.desc || i.descripcion}</span>
+                    <span class="text-xs font-black text-cyan-400">$${(Number(i.venta) * Number(i.cantidad || 1)).toLocaleString()}</span>
+                </div>
+            `).join('');
+            
+            const total = data.costos_totales?.total || data.total || 0;
+            document.getElementById("total-final").innerText = `$${Number(total).toLocaleString()}`;
+            
+            const btnBox = document.getElementById("btn-acciones");
+            btnBox.innerHTML = "";
+
+            if (est === 'LISTO') {
+                document.getElementById("badge-tipo").innerText = "LIQUIDACIÓN_FINAL";
+                btnBox.innerHTML = `<button onclick="window.open('https://checkout.bold.co/payment/OT_${data.placa}')" class="w-full bg-green-600 text-white py-4 orbitron font-black text-xs rounded shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:scale-[1.02] transition-transform uppercase italic">Proceder al Pago Seguro</button>`;
+            } else if (est === 'COTIZACION') {
+                document.getElementById("badge-tipo").innerText = "PRESUPUESTO";
+                btnBox.innerHTML = `<div class="p-3 bg-amber-500/10 border border-amber-500/50 rounded text-center">
+                    <p class="text-[10px] orbitron text-amber-500 animate-pulse font-bold">ESPERANDO APROBACIÓN DE COTIZACIÓN</p>
+                </div>`;
             } else {
-                console.error("No se encontró el documento con ID:", idLimpio);
-                document.getElementById("loader").innerHTML = `<p class='text-red-500 orbitron text-[10px]'>ERROR: ID ${idLimpio} NO LOCALIZADO</p>`;
+                document.getElementById("badge-tipo").innerText = "MISIÓN_EN_CURSO";
             }
-        }, (error) => {
-            console.error("Error de Firebase:", error.code, error.message);
-            document.getElementById("loader").innerHTML = `<p class='text-red-500 orbitron text-[10px]'>ERROR DE RED: ${error.code}</p>`;
-        });
+        }
     }
+
+    // Iniciar secuencia de rastreo
+    iniciarRastreo();
+
 </script>
 </body>
 </html>
