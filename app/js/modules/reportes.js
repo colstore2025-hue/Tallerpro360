@@ -111,39 +111,73 @@ export default async function nexusReportes(container) {
         </div>`;
     };
 
-    const fetchData = async () => {
-        try {
-            const [snapOrders, snapAcc] = await Promise.all([
-                getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId))),
-                getDocs(query(collection(db, "contabilidad"), where("empresaId", "==", empresaId)))
-            ]);
+    /**
+ * 🛰️ fetchData - NEXUS-X BI QUANTUM-CORE V45.2
+ * MANIOBRA: AUDITORÍA FORENSE DE ACTIVOS Y PASIVOS
+ */
+const fetchData = async () => {
+    try {
+        // 1. SINCRONIZACIÓN PARALELA DE ALTA VELOCIDAD
+        const [snapOrders, snapAcc] = await Promise.all([
+            getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId))),
+            getDocs(query(collection(db, "contabilidad"), where("empresaId", "==", empresaId)))
+        ]);
 
-            state.gastosFijos = snapAcc.docs.reduce((acc, d) => acc + Number(d.data().monto || 0), 0);
+        // 2. CÁLCULO DE EGRESOS Y GASTOS (Filtro por tipo 'gasto')
+        // Aseguramos que solo sume lo que no es un ingreso para el cálculo del punto de equilibrio
+        state.gastosFijos = snapAcc.docs.reduce((acc, d) => {
+            const data = d.data();
+            const esGasto = !['ingreso_ot', 'ingreso', 'VENTA_SERVICIO'].includes(data.tipo);
+            const monto = Number(data.monto || data.total || 0);
+            return esGasto ? acc + monto : acc;
+        }, 0);
+        
+        // 3. MAPEO MAESTRO DE ÓRDENES (Normalización de Objetos Anidados)
+        state.ordenesMaster = snapOrders.docs.map(doc => {
+            const o = doc.data();
             
-            state.ordenesMaster = snapOrders.docs.map(doc => {
-                const o = doc.data();
-                const total = Number(o.total || o.costos_totales?.gran_total || 0);
-                const costo = Number(o.costo_total || 0);
-                const fecha = o.createdAt?.toDate() || new Date();
-                
-                return {
-                    id: doc.id,
-                    placa: o.placa || 'N/A',
-                    area: o.tipo_orden || 'MECANICA',
-                    total, 
-                    utilidad: total - costo,
-                    dias: Math.ceil((new Date() - fecha) / (1000 * 60 * 60 * 24)) || 1,
-                    cliente: o.cliente || 'CLIENTE NEXUS',
-                    fecha
-                };
-            });
+            // INTELIGENCIA DE DATOS: Buscamos el total en la raíz o dentro del objeto financiero
+            const totalFacturado = Number(
+                o.costos_totales?.total || 
+                o.total || 
+                o.costos_totales?.gran_total || 0
+            );
 
-            processAndRender(state.ordenesMaster);
+            // CÁLCULO DE COSTO OPERATIVO (Insumos + Repuestos + Labor)
+            // Si el costo_total no existe, lo calculamos de la base para no falsear la utilidad
+            const costoOperativo = Number(
+                o.costo_total || 
+                o.costos_totales?.base || 0
+            );
 
-        } catch (e) {
-            console.error("Critical BI Failure:", e);
-        }
-    };
+            // LÓGICA TEMPORAL (MTTR - Mean Time To Repair)
+            // Priorizamos createdAt sobre updatedAt para medir la estancia real
+            const fechaInicio = o.createdAt?.toDate() ? o.createdAt.toDate() : new Date();
+            const hoy = new Date();
+            const diffTiempo = Math.abs(hoy - fechaInicio);
+            const diasTaller = Math.ceil(diffTiempo / (1000 * 60 * 60 * 24)) || 1;
+            
+            return {
+                id: doc.id,
+                placa: (o.placa || 'S/N').toUpperCase(),
+                area: o.tipo_orden || 'MECANICA',
+                total: totalFacturado,
+                utilidad: totalFacturado - costoOperativo,
+                dias: diasTaller,
+                cliente: o.cliente || 'CLIENTE_GENERICO_NEXUS',
+                estado: o.estado || 'DESCONOCIDO',
+                fecha: fechaInicio
+            };
+        });
+
+        // 4. DISPARO DE RENDERIZADO BI
+        processAndRender(state.ordenesMaster);
+
+    } catch (e) {
+        console.error("🚨 CRITICAL_BI_DATA_CORRUPTION:", e);
+        speakAlert("Error crítico en la telemetría de datos. Verifique consola.");
+    }
+};
 
     const processAndRender = (data) => {
         state.dataActual = data;
