@@ -10,79 +10,61 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
     <style>
         :root { --neon-cyan: #00f2ff; --dark-bg: #05070a; }
-        body { 
-            background: radial-gradient(circle at top, #0d1117 0%, var(--dark-bg) 100%); 
-            color: #e2e8f0; 
-            font-family: 'JetBrains Mono', monospace; 
-            min-height: 100vh;
-        }
+        body { background: radial-gradient(circle at top, #0d1117 0%, var(--dark-bg) 100%); color: #e2e8f0; font-family: 'JetBrains Mono', monospace; min-height: 100vh; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .glow-text { text-shadow: 0 0 15px rgba(0, 242, 255, 0.6); }
-        .bitacora-entry { 
-            border-left: 3px solid var(--neon-cyan); 
-            background: linear-gradient(90deg, rgba(0, 242, 255, 0.07) 0%, transparent 100%);
-            padding: 15px; 
-            margin-bottom: 12px; 
-            border-radius: 0 12px 12px 0; 
-        }
-        .doc-header { border-bottom: 1px solid rgba(0, 242, 255, 0.2); padding-bottom: 20px; margin-bottom: 30px; }
+        .bitacora-entry { border-left: 3px solid var(--neon-cyan); background: linear-gradient(90deg, rgba(0, 242, 255, 0.07) 0%, transparent 100%); padding: 15px; margin-bottom: 12px; }
     </style>
 </head>
-<body class="p-4 lg:p-10 relative">
+<body class="p-4 lg:p-10">
 
     <main class="max-w-5xl mx-auto">
-        <header class="doc-header flex justify-between items-center">
+        <header class="flex justify-between items-center border-b border-cyan-500/20 pb-6 mb-10">
             <div class="flex items-center gap-4">
-                <img src="assets/favicon.png" alt="TallerPRO360" class="w-10 h-10">
+                <img src="assets/favicon.png" alt="Logo" class="w-10 h-10">
                 <div>
                     <h1 class="orbitron text-2xl font-black italic tracking-tighter glow-text">NEXUS<span class="text-red-600">_X</span></h1>
-                    <p id="taller-aliado" class="text-[9px] orbitron tracking-[0.2em] text-cyan-400 uppercase">Sincronizando Estación...</p>
+                    <p id="taller-aliado" class="text-[9px] orbitron text-cyan-400 uppercase tracking-widest text-xs">CONECTANDO...</p>
                 </div>
             </div>
             <div class="text-right">
-                <div id="badge-tipo" class="bg-cyan-500 text-black px-3 py-1 text-[9px] font-black orbitron rounded-sm mb-1 uppercase">Misión_Activa</div>
-                <p id="doc-id" class="text-lg font-bold mono text-white">#---</p>
+                <div id="badge-tipo" class="bg-cyan-500 text-black px-3 py-1 text-[9px] font-black orbitron rounded-sm mb-1">LINK_ESTABLISHED</div>
+                <p id="doc-id" class="text-lg font-bold mono">#------</p>
             </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div class="lg:col-span-7 space-y-6">
-                <div class="glass p-6 rounded-2xl border-l-4 border-cyan-500 relative overflow-hidden">
-                    <label class="text-[9px] orbitron text-cyan-500 tracking-widest">UNIT_IDENTIFIER</label>
-                    <h2 id="placa" class="orbitron text-6xl font-black italic tracking-tighter text-white">---</h2>
-                    <div class="mt-4 flex flex-wrap gap-6 text-[10px] orbitron text-slate-400">
-                        <p>ESTADO: <span id="estado" class="text-cyan-400">CONNECTING...</span></p>
-                        <p>FECHA: <span id="fecha-actual">--/--/--</span></p>
+                <div class="glass p-8 rounded-2xl border-l-4 border-cyan-500">
+                    <label class="text-[9px] orbitron text-cyan-500 tracking-widest uppercase">Unidad de Servicio</label>
+                    <h2 id="placa" class="orbitron text-6xl font-black italic tracking-tighter text-white">------</h2>
+                    <div class="mt-4 flex gap-6 text-[10px] orbitron text-slate-400">
+                        <p>ESTADO: <span id="estado" class="text-cyan-400 font-bold uppercase">BUSCANDO...</span></p>
+                        <p>SYNC: <span id="sync-time">--:--:--</span></p>
                     </div>
                 </div>
 
                 <div class="glass p-6 rounded-2xl">
-                    <h3 class="orbitron text-[10px] text-cyan-500 font-bold mb-6 tracking-widest uppercase flex items-center gap-2">
-                        <i class="fas fa-terminal"></i> Live_Trazability_Log
-                    </h3>
-                    <div id="timeline-container" class="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-                        </div>
+                    <h3 class="orbitron text-[10px] text-cyan-500 font-bold mb-6 tracking-widest uppercase"><i class="fas fa-terminal mr-2"></i> Reporte de Trazabilidad</h3>
+                    <div id="timeline-container" class="space-y-4"></div>
                 </div>
             </div>
 
             <div class="lg:col-span-5 space-y-6">
                 <div id="area-financiera" class="glass p-8 rounded-3xl border-t-2 border-cyan-500 hidden">
-                    <h3 class="orbitron text-[11px] text-cyan-500 font-black mb-6 uppercase">Estructura de Costos</h3>
-                    <div id="lista-items" class="space-y-3 mb-8">
-                        </div>
-                    
-                    <div class="border-t border-white/10 pt-6">
-                        <p class="text-[9px] orbitron text-slate-500 mb-2 uppercase">Net_Total_Due</p>
+                    <h3 class="orbitron text-[11px] text-cyan-500 font-black mb-6 uppercase tracking-widest">Resumen Financiero</h3>
+                    <div id="lista-items" class="space-y-3 mb-8"></div>
+                    <div class="border-t border-white/10 pt-6 text-right">
+                        <p class="text-[9px] orbitron text-slate-500 mb-1">TOTAL_NETO</p>
                         <div id="total-final" class="text-5xl font-black orbitron text-white italic">$ 0</div>
                     </div>
-
-                    <div id="btn-acciones" class="mt-8 flex flex-col gap-3"></div>
+                    <div id="btn-acciones" class="mt-8"></div>
                 </div>
-
-                <div id="waiting-msg" class="glass p-10 rounded-3xl text-center">
+                
+                <div id="loader" class="glass p-10 rounded-3xl text-center">
                     <i class="fas fa-satellite-dish animate-pulse text-cyan-500 text-3xl mb-4"></i>
-                    <p class="orbitron text-[10px] tracking-widest">LOCALIZANDO DATOS EN NUBE...</p>
+                    <p class="orbitron text-[10px]">VERIFICANDO CREDENCIALES...</p>
                 </div>
             </div>
         </div>
@@ -90,84 +72,76 @@
 
     <script type="module">
         import { db } from "./core/firebase-config.js";
-        import { doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const params = new URLSearchParams(window.location.search);
-        const idFull = params.get("id"); // Espera OT_PLACA_ID
+        const rawId = params.get("id");
 
-        if (idFull) {
-            // Extraer solo el número final que es el ID de Firebase
-            const firebaseId = idFull.split('_').pop();
+        if (rawId) {
+            // LÓGICA DE EXTRACCIÓN DE ID "INTELIGENTE"
+            // Esto separa OT_PLACA_123456 y se queda con 123456
+            const cleanId = rawId.includes('_') ? rawId.split('_').pop() : rawId;
             
-            onSnapshot(doc(db, "ordenes", firebaseId), (snap) => {
+            iniciarEscucha(cleanId);
+        } else {
+            document.body.innerHTML = "ID_NOT_FOUND";
+        }
+
+        function iniciarEscucha(idDoc) {
+            const docRef = doc(db, "ordenes", idDoc);
+            
+            onSnapshot(docRef, (snap) => {
                 if (snap.exists()) {
-                    procesarDatos(snap.data(), snap.id);
+                    renderDatos(snap.data(), snap.id);
                 } else {
-                    document.getElementById("waiting-msg").innerHTML = "<p class='orbitron text-red-500'>ERROR: ID_NOT_FOUND</p>";
+                    document.getElementById("loader").innerHTML = "<p class='text-red-500 orbitron uppercase'>Error: El ID no existe en la base de datos.</p>";
                 }
+            }, (error) => {
+                console.error(error);
+                document.getElementById("loader").innerHTML = "ERROR_CONNECTION_REFUSED";
             });
         }
 
-        function procesarDatos(d, docId) {
-            document.getElementById("waiting-msg").classList.add("hidden");
+        function renderDatos(data, id) {
+            document.getElementById("loader").classList.add("hidden");
             
-            // Header e Info
-            document.getElementById("taller-aliado").innerText = d.taller_aliado || "CENTRO TÉCNICO NEXUS";
-            document.getElementById("doc-id").innerText = `#${docId.slice(-6).toUpperCase()}`;
-            document.getElementById("placa").innerText = d.placa || "---";
-            document.getElementById("fecha-actual").innerText = new Date().toLocaleDateString();
-            
-            const est = (d.estado || "INGRESO").toUpperCase();
-            document.getElementById("estado").innerText = est;
+            // Datos básicos
+            document.getElementById("taller-aliado").innerText = data.taller_aliado || "NEXUS_X PARTNER";
+            document.getElementById("doc-id").innerText = `#${id.slice(-6).toUpperCase()}`;
+            document.getElementById("placa").innerText = data.placa || "N/A";
+            document.getElementById("estado").innerText = data.estado || "PROCESO";
+            document.getElementById("sync-time").innerText = new Date().toLocaleTimeString();
 
-            // Lógica de Documento Dinámico
-            const badge = document.getElementById("badge-tipo");
-            const btnBox = document.getElementById("btn-acciones");
-            btnBox.innerHTML = "";
-
-            if (est === "COTIZACION") {
-                badge.innerText = "PRESUPUESTO_DIAGNÓSTICO";
-                if(!d.aprobada) {
-                    btnBox.innerHTML = `<button onclick="confirmar()" class="w-full bg-white text-black py-4 orbitron font-black text-xs rounded hover:bg-cyan-400 transition-all uppercase">Autorizar Misión</button>`;
-                }
-            } else if (est === "LISTO") {
-                badge.innerText = "COBRO_ELECTRONICO";
-                btnBox.innerHTML = `<button onclick="window.open('https://checkout.bold.co/payment/OT_${d.placa}')" class="w-full bg-green-600 text-white py-4 orbitron font-black text-xs rounded uppercase">Pagar con BOLD Segura</button>`;
-            } else if (est === "FACTURADO") {
-                badge.innerText = "RESUMEN_FINAL";
-            }
-
-            // BITÁCORA (Lo que se dicta o escribe)
+            // Bitácora / Notas (EL SALTO CUÁNTICO)
             const logContainer = document.getElementById("timeline-container");
-            const logs = `${d.bitacora_ia || ''}\n${d.notas || ''}\n${d.observaciones || ''}`;
+            const logs = `${data.bitacora_ia || ''}\n${data.notas || ''}`;
             const lineas = logs.split('\n').filter(l => l.trim()).reverse();
 
             logContainer.innerHTML = lineas.map(l => `
                 <div class="bitacora-entry">
-                    <p class="text-[7px] orbitron text-cyan-500 opacity-50 mb-1">STAMP_LOG_VERIFIED</p>
-                    <p class="text-sm font-light leading-relaxed">${l}</p>
+                    <p class="text-[7px] orbitron text-cyan-500 mb-1">REPORTE_TECNICO_VERIFICADO</p>
+                    <p class="text-sm font-light">${l}</p>
                 </div>
-            `).join('') || "<p class='text-slate-600 text-xs italic'>Esperando reporte técnico...</p>";
+            `).join('') || "<p class='text-slate-600 text-xs italic'>Sin movimientos registrados en la bitácora.</p>";
 
-            // COSTOS
-            if (d.items && d.items.length > 0) {
+            // Área Financiera
+            if (data.items && data.items.length > 0) {
                 document.getElementById("area-financiera").classList.remove("hidden");
-                document.getElementById("lista-items").innerHTML = d.items.map(i => `
+                document.getElementById("lista-items").innerHTML = data.items.map(i => `
                     <div class="flex justify-between items-center bg-white/5 p-3 rounded border border-white/5">
-                        <span class="text-[10px] font-bold uppercase truncate max-w-[70%]">${i.desc || i.descripcion}</span>
-                        <span class="text-xs font-black text-cyan-400">$${(Number(i.venta) * Number(i.cantidad || 1)).toLocaleString()}</span>
+                        <span class="text-[10px] font-bold uppercase">${i.desc || i.descripcion}</span>
+                        <span class="text-xs font-black text-cyan-400">$${(Number(i.venta) * Number(i.cantidad)).toLocaleString()}</span>
                     </div>
                 `).join('');
-                document.getElementById("total-final").innerText = `$${(d.costos_totales?.total || d.total || 0).toLocaleString()}`;
+                document.getElementById("total-final").innerText = `$${(data.costos_totales?.total || data.total || 0).toLocaleString()}`;
+                
+                // Botón BOLD si está listo
+                if (data.estado === 'LISTO') {
+                    document.getElementById("btn-acciones").innerHTML = `
+                        <button onclick="window.open('https://checkout.bold.co/payment/OT_${data.placa}')" class="w-full bg-green-600 text-white py-4 orbitron font-black text-xs rounded uppercase italic">Pagar vía BOLD Segura</button>`;
+                }
             }
         }
-
-        window.confirmar = async () => {
-            const firebaseId = idFull.split('_').pop();
-            if(confirm("¿Autoriza los valores y trabajos descritos?")) {
-                await updateDoc(doc(db, "ordenes", firebaseId), { aprobada: true, estado: 'REPARACION' });
-            }
-        };
     </script>
 </body>
 </html>
