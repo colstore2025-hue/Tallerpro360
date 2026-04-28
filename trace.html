@@ -3,164 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS-X | DOCUMENTO DIGITAL</title>
+    <title>NEXUS-X | STARLINK TRACE</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #e5e7eb; color: #1f2937; padding: 10px; }
-        .mono { font-family: 'JetBrains Mono', monospace; }
-        .document-page { 
-            background: white; 
-            max-width: 800px;
-            margin: 1rem auto;
-            padding: 30px;
-            position: relative;
-            border-radius: 4px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        /* Colores Dinámicos según Tipo de Documento */
-        .doc-OT { border-top: 10px solid #1e3a8a; } /* Azul - Orden */
-        .doc-COT { border-top: 10px solid #f59e0b; } /* Naranja - Cotización */
-        .doc-FAC { border-top: 10px solid #10b981; } /* Verde - Factura */
-        
-        .bitacora-entry { border-left: 2px solid #3b82f6; background: #f8fafc; padding: 10px; margin-bottom: 8px; font-size: 0.85rem; }
-        .logo-app { position: absolute; bottom: 20px; right: 20px; opacity: 0.4; filter: grayscale(100%); width: 60px; }
+        :root { --neon-cyan: #00f2ff; --neon-green: #10b981; --dark-bg: #05070a; }
+        body { background: radial-gradient(circle at top, #0d1117 0%, var(--dark-bg) 100%); color: #e2e8f0; font-family: 'JetBrains Mono', monospace; min-height: 100vh; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .glow-text { text-shadow: 0 0 15px rgba(0, 242, 255, 0.6); }
+        .bitacora-entry { border-left: 3px solid var(--neon-cyan); background: rgba(0, 242, 255, 0.05); padding: 15px; margin-bottom: 12px; border-radius: 0 12px 12px 0; }
+        .doc-header { border-bottom: 1px solid rgba(0, 242, 255, 0.2); padding-bottom: 20px; margin-bottom: 30px; }
     </style>
 </head>
-<body>
+<body class="p-4 lg:p-10">
 
-<div id="main-doc" class="document-page doc-OT">
-    <img src="https://tallerpro360.vercel.app/logo.png" class="logo-app" alt="TallerPRO360">
-
-    <header class="flex justify-between items-start border-b pb-6 mb-6">
-        <div>
-            <h1 id="doc-title" class="text-2xl font-extrabold tracking-tighter text-slate-800">ORDEN DE TRABAJO</h1>
-            <div class="text-sm text-gray-500 mt-1">
-                <p class="font-bold text-gray-800 uppercase" id="taller-nombre">CARGANDO TALLER...</p>
-                <p id="taller-dir" class="text-[10px]">VERIFICANDO CONEXIÓN STARLINK...</p>
+    <main class="max-w-5xl mx-auto">
+        <header class="doc-header flex justify-between items-center">
+            <div>
+                <img src="favicon.png" alt="Logo" class="w-12 h-12 mb-2">
+                <h1 class="orbitron text-3xl font-black italic tracking-tighter glow-text">NEXUS<span class="text-red-600">_X</span></h1>
+                <p id="taller-nombre" class="text-[10px] orbitron tracking-[0.3em] text-cyan-400 uppercase">Sincronizando con Estación Terrena...</p>
             </div>
-        </div>
-        <div class="text-right">
-            <div id="status-pill" class="bg-blue-900 text-white px-3 py-1 text-[10px] font-bold rounded mb-1">ID_GLOBAL</div>
-            <p class="text-lg font-bold mono" id="doc-number">#---</p>
-        </div>
-    </header>
-
-    <div class="grid grid-cols-2 gap-4 mb-6 bg-slate-50 p-4 rounded border border-slate-200">
-        <div>
-            <p class="text-[9px] text-gray-400 font-black uppercase">Unidad / Placa</p>
-            <p class="text-xl font-black mono text-slate-900" id="placa">---</p>
-        </div>
-        <div class="text-right">
-            <p class="text-[9px] text-gray-400 font-black uppercase">Fecha de Emisión</p>
-            <p class="text-xs font-bold" id="fecha">--/--/----</p>
-        </div>
-    </div>
-
-    <div class="mb-8">
-        <h3 class="text-[10px] font-black text-slate-500 mb-3 border-b pb-1 uppercase tracking-widest">Trazabilidad de Misión</h3>
-        <div id="timeline-container" class="space-y-2"></div>
-    </div>
-
-    <div id="cost-section" class="hidden">
-        <table class="w-full text-left text-xs mb-4">
-            <thead class="bg-slate-100 uppercase text-[9px] font-black">
-                <tr>
-                    <th class="p-2">Descripción</th>
-                    <th class="p-2 text-center">Cant.</th>
-                    <th class="p-2 text-right">Total</th>
-                </tr>
-            </thead>
-            <tbody id="item-list" class="divide-y text-slate-700"></tbody>
-        </table>
-        <div class="flex justify-end pt-4 border-t-2 border-slate-800">
             <div class="text-right">
-                <p class="text-[10px] font-bold text-slate-400 uppercase">Total a Pagar</p>
-                <p class="text-4xl font-black text-slate-900" id="grand-total">$ 0</p>
+                <div id="badge-tipo" class="bg-cyan-500 text-black px-4 py-1 text-[10px] font-black orbitron rounded-sm mb-2">ORDEN_ACTIVA</div>
+                <p id="doc-id" class="text-xl font-bold mono text-white">#---</p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-7 space-y-6">
+                <div class="glass p-8 rounded-2xl border-l-4 border-cyan-500">
+                    <label class="text-[9px] orbitron text-cyan-500 tracking-widest">VEHICLE_IDENTIFIER</label>
+                    <h2 id="placa" class="orbitron text-6xl font-black italic tracking-tighter text-white">---</h2>
+                    <div class="mt-4 flex gap-4 text-[10px] orbitron text-slate-500">
+                        <span>STATUS: <span id="estado" class="text-green-500">---</span></span>
+                        <span>DATE: <span id="fecha">--/--/--</span></span>
+                    </div>
+                </div>
+
+                <div class="glass p-6 rounded-2xl">
+                    <h3 class="orbitron text-[10px] text-cyan-500 font-bold mb-6 tracking-widest uppercase">
+                        <i class="fas fa-satellite-dish mr-2"></i> Live_Trazability_Log
+                    </h3>
+                    <div id="timeline-container" class="space-y-4">
+                        </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5 space-y-6">
+                <div id="area-financiera" class="glass p-8 rounded-3xl border-t-2 border-cyan-500 hidden">
+                    <h3 class="orbitron text-[11px] text-cyan-500 font-black mb-6 uppercase">Desglose Técnico de Costos</h3>
+                    <div id="lista-items" class="space-y-3 mb-8"></div>
+                    
+                    <div class="border-t border-white/10 pt-6">
+                        <p class="text-[10px] orbitron text-slate-500 mb-2">TOTAL_A_PAGAR_COP</p>
+                        <div id="total-final" class="text-5xl font-black orbitron text-white italic">$ 0</div>
+                    </div>
+
+                    <div id="btn-container" class="mt-8"></div>
+                </div>
+
+                <div id="waiting-msg" class="glass p-10 rounded-3xl text-center">
+                    <i class="fas fa-spinner animate-spin text-cyan-500 text-3xl mb-4"></i>
+                    <p class="orbitron text-[10px]">ENLAZANDO CON FIREBASE CLOUD...</p>
+                </div>
             </div>
         </div>
-    </div>
+    </main>
 
-    <div id="action-area" class="mt-10 flex flex-col gap-3"></div>
+    <script type="module">
+        import { db } from "./core/firebase-config.js";
+        import { doc, onSnapshot, query, collection, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    <footer class="mt-16 text-[8px] text-gray-300 text-center uppercase mono italic">
-        Cloud Security Hash: Nexus-X-V4-Starlink-Verified
-    </footer>
-</div>
+        // CAPTURA DE ID MEJORADA
+        const urlParams = new URLSearchParams(window.location.search);
+        const fullId = urlParams.get("id"); // Ejemplo: OT_FAB345_1777222814525
 
-<script type="module">
-    import { db } from "./core/firebase-config.js";
-    import { doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get("id")?.split('_').pop();
-
-    if (id) {
-        onSnapshot(doc(db, "ordenes", id), (snap) => {
-            if (snap.exists()) buildNexusDoc(snap.data(), snap.id);
-        });
-    }
-
-    function buildNexusDoc(data, docId) {
-        const docFrame = document.getElementById("main-doc");
-        const title = document.getElementById("doc-title");
-        const actions = document.getElementById("action-area");
-        const est = data.estado || "INGRESO";
-
-        // 1. LÓGICA DE TRANSFORMACIÓN SEGÚN ESTADO
-        docFrame.className = "document-page"; // Reset
-        actions.innerHTML = ""; // Limpiar botones
-
-        if (est === "COTIZACION") {
-            docFrame.classList.add("doc-COT");
-            title.innerText = "COTIZACIÓN DE SERVICIOS";
-            if (!data.aprobada) {
-                actions.innerHTML = `<button onclick="approve()" class="w-full bg-amber-500 text-white py-4 font-black rounded-lg shadow-lg">AUTORIZAR PRESUPUESTO VIA SATELLITE</button>`;
-            }
-        } else if (est === "LISTO") {
-            docFrame.classList.add("doc-FAC");
-            title.innerText = "COBRO DE SERVICIOS";
-            actions.innerHTML = `<button onclick="window.open('https://checkout.bold.co/payment/OT_${data.placa}')" class="w-full bg-emerald-600 text-white py-4 font-black rounded-lg shadow-lg uppercase">Pagar con BOLD <i class="fas fa-credit-card ml-2"></i></button>`;
-        } else if (est === "ENTREGADO" || est === "FACTURADO") {
-            docFrame.classList.add("doc-FAC");
-            title.innerText = "FACTURA DE SERVICIO / RESUMEN";
+        if (!fullId) {
+            document.body.innerHTML = "<div class='p-20 orbitron text-red-500'>ERROR: ID_MISSING</div>";
         } else {
-            docFrame.classList.add("doc-OT");
-            title.innerText = "ORDEN DE TRABAJO TÉCNICA";
+            ejecutarBusqueda(fullId);
         }
 
-        // 2. RELLENO DE DATOS
-        document.getElementById("taller-nombre").innerText = data.taller_aliado || "CENTRO TECNOLÓGICO";
-        document.getElementById("doc-number").innerText = `#${docId.slice(-6).toUpperCase()}`;
-        document.getElementById("placa").innerText = data.placa;
-        document.getElementById("fecha").innerText = new Date().toLocaleDateString();
+        async function ejecutarBusqueda(idInput) {
+            // Intentamos sacar el número del final (ID de Firebase)
+            const partes = idInput.split('_');
+            const firebaseId = partes[partes.length - 1]; 
 
-        // 3. BITÁCORA (TRAZABILIDAD)
-        const logContent = `${data.bitacora_ia || ''}\n${data.notas || ''}`;
-        document.getElementById("timeline-container").innerHTML = logContent.split('\n')
-            .filter(l => l.trim()).reverse().map(l => `
+            // Escucha en tiempo real del documento principal
+            onSnapshot(doc(db, "ordenes", firebaseId), (snap) => {
+                if (snap.exists()) {
+                    actualizarUI(snap.data(), snap.id);
+                } else {
+                    // Si falla por ID, buscamos por placa como respaldo
+                    buscarPorPlaca(partes[1] || idInput);
+                }
+            });
+        }
+
+        async function buscarPorPlaca(placa) {
+            const q = query(collection(db, "ordenes"), where("placa", "==", placa.toUpperCase()));
+            const qSnap = await getDocs(q);
+            if (!qSnap.empty) {
+                actualizarUI(qSnap.docs[0].data(), qSnap.docs[0].id);
+            } else {
+                document.getElementById("waiting-msg").innerHTML = "<p class='orbitron text-red-500'>UNIDAD NO LOCALIZADA</p>";
+            }
+        }
+
+        function actualizarUI(data, docId) {
+            // Ocultar mensaje de espera
+            document.getElementById("waiting-msg").classList.add("hidden");
+
+            // Info General
+            document.getElementById("taller-nombre").innerText = data.taller_aliado || "CENTRO TÉCNICO NEXUS_X";
+            document.getElementById("doc-id").innerText = `#${docId.slice(-6).toUpperCase()}`;
+            document.getElementById("placa").innerText = data.placa || "---";
+            document.getElementById("estado").innerText = (data.estado || "PROCESANDO").toUpperCase();
+            document.getElementById("fecha").innerText = new Date().toLocaleDateString();
+
+            // Transformación de Títulos (COTIZACIÓN / ORDEN / COBRO)
+            const badge = document.getElementById("badge-tipo");
+            const est = data.estado;
+            if (est === "COTIZACION") badge.innerText = "PRESUPUESTO_SUGERIDO";
+            else if (est === "LISTO") badge.innerText = "COBRO_PENDIENTE";
+            else if (est === "FACTURADO") badge.innerText = "RESUMEN_FACTURA";
+
+            // BITÁCORA (Aquí es donde sale lo que escribes/dictas)
+            const container = document.getElementById("timeline-container");
+            const logs = `${data.bitacora_ia || ''}\n${data.notas || ''}`;
+            const lineas = logs.split('\n').filter(l => l.trim()).reverse();
+            
+            container.innerHTML = lineas.map(l => `
                 <div class="bitacora-entry">
-                    <p class="text-[8px] font-black text-slate-400 mb-1">DATA_LOG_STAMP</p>
-                    <p>${l}</p>
-                </div>`).join('');
+                    <p class="text-[8px] orbitron text-cyan-400 mb-1">STAMP_LINK_SUCCESS</p>
+                    <p class="text-sm font-light">${l}</p>
+                </div>
+            `).join('') || "<p class='text-slate-600 text-xs italic'>Esperando primer reporte técnico...</p>";
 
-        // 4. ITEMS Y COSTOS
-        if (data.items && data.items.length > 0) {
-            document.getElementById("cost-section").classList.remove("hidden");
-            document.getElementById("item-list").innerHTML = data.items.map(i => `
-                <tr><td class="p-2 font-bold">${i.desc}</td><td class="p-2 text-center">${i.cantidad}</td><td class="p-2 text-right">$${(i.venta * i.cantidad).toLocaleString()}</td></tr>
-            `).join('');
-            document.getElementById("grand-total").innerText = `$${(data.costos_totales?.total || 0).toLocaleString()}`;
+            // FINANZAS
+            if (data.items && data.items.length > 0) {
+                document.getElementById("area-financiera").classList.remove("hidden");
+                document.getElementById("lista-items").innerHTML = data.items.map(i => `
+                    <div class="flex justify-between items-center bg-white/5 p-3 rounded-lg border border-white/5">
+                        <span class="text-[10px] font-bold uppercase">${i.desc}</span>
+                        <span class="text-xs font-black text-cyan-400">$${(Number(i.venta) * Number(i.cantidad)).toLocaleString()}</span>
+                    </div>
+                `).join('');
+                document.getElementById("total-final").innerText = `$${(data.costos_totales?.total || 0).toLocaleString()}`;
+                
+                // Botonera Inteligente
+                const btnBox = document.getElementById("btn-container");
+                if (est === "COTIZACION" && !data.aprobada) {
+                    btnBox.innerHTML = `<button onclick="aprobar()" class="w-full bg-white text-black py-4 orbitron font-black text-xs rounded-sm hover:bg-cyan-400 transition-all uppercase">Autorizar Reparación</button>`;
+                } else if (est === "LISTO") {
+                    btnBox.innerHTML = `<button onclick="window.open('https://checkout.bold.co/payment/OT_${data.placa}')" class="w-full bg-green-600 text-white py-4 orbitron font-black text-xs rounded-sm uppercase italic">Pagar vía BOLD Segura</button>`;
+                } else {
+                    btnBox.innerHTML = `<p class="text-[9px] orbitron text-center text-slate-500 tracking-widest">DOCUMENTO_PARA_VISUALIZACIÓN</p>`;
+                }
+            }
         }
-    }
 
-    // Acción de aprobación remota
-    window.approve = async () => {
-        if(confirm("¿Confirma la autorización de este presupuesto?")) {
-            await updateDoc(doc(db, "ordenes", id), { aprobada: true, estado: 'REPARACION' });
+        window.aprobar = async () => {
+            const id = fullId.split('_').pop();
+            if(confirm("¿Desea autorizar el presupuesto?")) {
+                await updateDoc(doc(db, "ordenes", id), { aprobada: true, estado: 'DIAGNOSTICO' });
+            }
         }
-    };
-</script>
-
+    </script>
 </body>
 </html>
