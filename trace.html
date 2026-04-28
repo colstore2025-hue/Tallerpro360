@@ -144,14 +144,19 @@
     }
 
     async function iniciarProtocoloRastreo(id) {
-        // Buscador Inteligente: Intenta ID directo, luego Placa
-        const docRef = doc(db, "ordenes", id);
+        // Extraemos el ID numérico del final por si viene como OT_PLACA_ID
+        const partes = id.split('_');
+        const idNumerico = partes[partes.length - 1]; 
+        
+        // 1. Intento por ID directo (el más rápido)
+        const docRef = doc(db, "ordenes", idNumerico);
         
         onSnapshot(docRef, async (snap) => {
             if (snap.exists()) {
                 renderTrazabilidad(snap.data(), snap.id);
             } else {
-                const placaLimpia = id.includes('_') ? id.split('_')[1] : id;
+                // 2. Búsqueda de rescate por campo 'placa'
+                const placaLimpia = partes.length > 1 ? partes[1] : id;
                 const q = query(collection(db, "ordenes"), where("placa", "==", placaLimpia.toUpperCase()));
                 const querySnap = await getDocs(q);
                 
@@ -168,21 +173,17 @@
         document.getElementById("timestamp").innerText = `LAST_SYNC: ${new Date().toLocaleTimeString()}`;
         document.getElementById("placa").innerText = o.placa || "N/A";
         
-        // --- MOTOR DE BITÁCORA INVERTIDA (Novedades Primero) ---
         const timelineContainer = document.getElementById("timeline-container");
         
-        // Combinamos todas las fuentes de texto posibles
+        // Unificamos bitácora, notas y observaciones
         const rawContent = `${o.bitacora_ia || ''}\n${o.notas || ''}\n${o.observaciones || ''}`;
-        
-        // Limpiamos y separamos por líneas, eliminando líneas vacías
         let lineas = rawContent.split('\n').filter(l => l.trim() !== "");
 
         // REGLA DE ORO: Lo más nuevo arriba
         lineas.reverse(); 
 
         timelineContainer.innerHTML = lineas.map(linea => {
-            // Detectar si es un mensaje de sistema o IA
-            const esAI = linea.includes('[NEXUS-PRICING]') || linea.includes('[SISTEMA]');
+            const esAI = linea.includes('[NEXUS') || linea.includes('[SISTEMA]');
             const esUrgente = linea.includes('HALLAZGO') || linea.includes('URGENTE');
             
             return `
@@ -192,7 +193,6 @@
                             <span class="text-[7px] orbitron font-bold ${esAI ? 'text-cyan-400' : 'text-slate-400'}">
                                 ${esAI ? 'NEXUS_CORE_AI' : 'DIRECTOR_TECNICO'}
                             </span>
-                            <span class="text-[6px] orbitron opacity-40 italic">STAMP_VERIFIED</span>
                         </div>
                         <p class="text-[11px] leading-relaxed tracking-tight">
                             ${linea.replace(/\[.*?\]:?/, '').trim()}
@@ -202,28 +202,25 @@
             `;
         }).join('');
 
-        // --- GESTIÓN DE ESTADOS Y COSTOS ---
+        // Estados y Barra de Progreso
         const badge = document.getElementById("badge-estado");
         const est = (o.estado || 'INGRESO').toUpperCase();
         badge.innerText = est;
-        
         const niveles = { 'COTIZACION': 15, 'INGRESO': 30, 'DIAGNOSTICO': 50, 'REPARACION': 75, 'LISTO': 90, 'ENTREGADO': 100 };
         document.getElementById("progreso-bar").style.width = `${niveles[est] || 5}%`;
 
-        // Area Financiera
+        // Costos
         const total = Number(o.costos_totales?.total || o.total || 0);
         if (total > 0) {
             document.getElementById("area-financiera").classList.remove("hidden");
             document.getElementById("waiting-msg").classList.add("hidden");
-            
-            // Formateo de moneda colombiana
             document.getElementById("total-final").innerText = new Intl.NumberFormat('es-CO', {
                 style: 'currency', currency: 'COP', minimumFractionDigits: 0
             }).format(total);
 
             if (o.items) {
                 document.getElementById("lista-items").innerHTML = o.items.map(i => `
-                    <div class="flex justify-between items-center bg-white/[0.02] p-3 rounded-xl border border-white/5 hover:bg-white/10 transition-all">
+                    <div class="flex justify-between items-center bg-white/[0.02] p-3 rounded-xl border border-white/5 mb-2">
                         <div class="max-w-[70%]">
                             <p class="text-[10px] font-bold text-white uppercase truncate">${i.desc || i.descripcion}</p>
                             <p class="text-[7px] text-slate-500 orbitron uppercase">${i.tipo || 'SERVICIO'} x${i.cantidad || 1}</p>
@@ -232,8 +229,6 @@
                     </div>
                 `).join('');
             }
-            
-            // Botones de Acción
             gestionarInteraccion(o, docId);
         }
     }
@@ -242,21 +237,15 @@
         const btnAprobar = document.getElementById("btn-aprobar");
         const btnPagar = document.getElementById("btn-pagar");
 
-        // Caso: Pendiente por Aprobación
         if (o.estado === 'COTIZACION' && !o.aprobada) {
             btnAprobar.classList.remove("hidden");
             btnAprobar.onclick = async () => {
-                if(confirm("¿Autoriza los ítems y valores descritos para iniciar la reparación?")) {
-                    await updateDoc(doc(db, "ordenes", docId), { 
-                        aprobada: true, 
-                        estado: 'DIAGNOSTICO',
-                        bitacora_ia: (o.bitacora_ia || "") + `\n[SISTEMA]: PRESUPUESTO AUTORIZADO POR CLIENTE - ${new Date().toLocaleString()}`
-                    });
+                if(confirm("¿Autoriza la reparación?")) {
+                    await updateDoc(doc(db, "ordenes", docId), { aprobada: true, estado: 'DIAGNOSTICO' });
                 }
             };
         } else { btnAprobar.classList.add("hidden"); }
 
-        // Caso: Vehículo Listo (Pago)
         if (o.estado === 'LISTO') {
             btnPagar.classList.remove("hidden");
             btnPagar.onclick = () => window.open(`https://checkout.bold.co/payment/OT_${o.placa}`, '_blank');
