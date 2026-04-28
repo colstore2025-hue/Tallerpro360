@@ -107,36 +107,59 @@ export default async function contabilidad(container) {
     };
 
     const cargarVistaCuentas = async () => {
-        const content = document.getElementById("cont-dynamic-content");
-        content.innerHTML = `<div class="p-20 text-center orbitron text-cyan-500 animate-pulse uppercase tracking-[0.5em]">Consolidando Activos...</div>`;
+    const content = document.getElementById("cont-dynamic-content");
+    // 1. EFECTO VISUAL DE CARGA NEXUS
+    content.innerHTML = `<div class="p-20 text-center orbitron text-cyan-500 animate-pulse uppercase tracking-[0.5em]">Consolidando Activos...</div>`;
+    
+    try {
+        const q = query(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), where("empresaId", "==", empresaId));
+        const snap = await getDocs(q);
         
-        try {
-            const q = query(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), where("empresaId", "==", empresaId));
-            const snap = await getDocs(q);
-            let p = { ing: 0, gas: 0 };
+        // 2. ACUMULADORES BLINDADOS
+        let p = { ing: 0, gas: 0 };
 
-            snap.forEach(d => {
-                const data = d.data();
-                // PROTECCIÓN TOTAL CONTRA NaN
-                const valor = Number(data.monto) || 0; 
-                esIngreso(data.tipo) ? p.ing += valor : p.gas += valor;
-            });
-
-            content.innerHTML = `
-            <div class="bg-[#0d1117] p-12 rounded-[4rem] border border-white/5 shadow-3xl animate-in zoom-in duration-500">
-                <h3 class="orbitron text-xl font-black text-amber-400 mb-10 italic uppercase text-center">Balance Consolidado Nexus-X</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    ${renderPucCard("TOTAL INGRESOS", p.ing, "border-emerald-500/20", "text-emerald-400")}
-                    ${renderPucCard("TOTAL EGRESOS", p.gas, "border-red-500/20", "text-red-500")}
-                    ${renderPucCard("RESULTADO NETO", p.ing - p.gas, "border-cyan-500/20", "text-cyan-400")}
-                </div>
-            </div>`;
+        snap.forEach(d => {
+            const data = d.data();
             
-            actualizarDash(p.ing, p.gas);
-        } catch (e) {
-            content.innerHTML = `<div class="p-20 text-center orbitron text-red-500">ERROR EN CRONOLOGÍA FINANCIERA</div>`;
-        }
-    };
+            // 3. CAPTURA MULTI-ORIGEN (Detección forense de montos)
+            // Esto atrapa el valor si se guardó como 'monto', 'total' o 'valor'
+            const valorRaw = data.monto ?? data.total ?? data.valor ?? 0;
+            const valor = Number(valorRaw);
+
+            // 4. FILTRO DE INTEGRIDAD
+            if (!isNaN(valor) && isFinite(valor)) {
+                if (esIngreso(data.tipo)) {
+                    p.ing += valor;
+                } else {
+                    p.gas += valor;
+                }
+            }
+        });
+
+        // 5. INYECCIÓN DE INTERFAZ DE ALTO IMPACTO
+        content.innerHTML = `
+        <div class="bg-[#0d1117] p-12 rounded-[4rem] border border-white/5 shadow-3xl animate-in zoom-in duration-500">
+            <h3 class="orbitron text-xl font-black text-amber-400 mb-10 italic uppercase text-center tracking-widest">Balance Consolidado Nexus-X</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                ${renderPucCard("TOTAL INGRESOS", p.ing, "border-emerald-500/20", "text-emerald-400")}
+                ${renderPucCard("TOTAL EGRESOS", p.gas, "border-red-500/20", "text-red-500")}
+                ${renderPucCard("RESULTADO NETO", p.ing - p.gas, "border-cyan-500/20", "text-cyan-400")}
+            </div>
+        </div>`;
+        
+        // 6. SINCRONIZACIÓN CON EL DASHBOARD SUPERIOR
+        actualizarDash(p.ing, p.gas);
+
+    } catch (e) {
+        console.error("CRITICAL_BI_FAILURE:", e);
+        content.innerHTML = `
+        <div class="p-20 text-center border border-red-600/20 rounded-[3rem] bg-red-600/5">
+            <i class="fas fa-radiation text-red-500 text-4xl mb-4 animate-pulse"></i>
+            <div class="orbitron text-red-500 font-black">ERROR EN CRONOLOGÍA FINANCIERA</div>
+            <p class="text-[8px] text-slate-500 mt-2 uppercase">Fallo en sincronización de activos - Verifique conexión Cloud</p>
+        </div>`;
+    }
+};
 
     async function registrarMovimiento() {
         const inputConcepto = document.getElementById("acc-concepto");
