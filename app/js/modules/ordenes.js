@@ -217,127 +217,158 @@ export default async function ordenes(container) {
     };
 
     /**
- * 🚀 EJECUTAR SINCRONIZACIÓN TOTAL - NEXUS-X V22.0
- * OPTIMIZACIÓN QUANTUM-SAP: Sincronización Multicapa y Auditoría de Bóveda
+ * 🛰️ EJECUTAR SINCRONIZACIÓN TOTAL - PROTOCOLO TERMINATOR 2030
+ * MANIOBRA: Control de Flujo de Caja Real vs Saldo Contable
  */
 const ejecutarSincronizacionTotal = async () => {
     const btn = document.getElementById("btnSincronizar");
     if (!btn) return;
 
-    // BLOQUEO DE PROTOCOLO PARA EVITAR DOBLE SUBMIT
     btn.disabled = true;
-    btn.innerHTML = `<i class="fas fa-satellite animate-spin"></i> UPLOADING_TO_CLOUD...`;
+    btn.innerHTML = `<i class="fas fa-satellite animate-spin"></i> CALCULATING_LOGISTICS...`;
 
     try {
         const batch = writeBatch(db);
         const placa = document.getElementById("f-placa").value.trim().toUpperCase();
-        
         if (!placa) throw new Error("IDENTIFICADOR_PLACA_REQUERIDO");
 
-        // GENERACIÓN DE ID ÚNICO O RECUPERACIÓN DE SESIÓN
         const id = ordenActiva.id || `OT_${placa}_${Date.now()}`;
         const tOrd = document.getElementById("f-tipo-orden").value;
+        const estadoActual = document.getElementById("f-estado").value;
         
-        // CAPTURA DE DATOS FINANCIEROS NORMALIZADOS
+        // CAPTURA DE VALORES FINANCIEROS
         const vAnticipo = Number(document.getElementById("f-anticipo").value) || 0;
-        const vInsumosIVA = Number(document.getElementById("f-insumos-iva").value) || 0;
-        const vInsumosNoIVA = Number(document.getElementById("f-insumos-no-iva").value) || 0;
-        
-        // CONSOLIDADO DE MISIÓN (ORDEN DE SERVICIO)
+        const vTotalOrden = Number(ordenActiva.costos_totales?.total) || 0;
+        const vUtilidadEstimada = Number(ordenActiva.costos_totales?.ebitda) || 0;
+
+        // --- MANIOBRA 1: CONSOLIDACIÓN DE LA MISIÓN (FIREBASE ORDENES) ---
         const dataMision = {
             ...ordenActiva,
             id,
             placa,
             empresaId,
             tipo_orden: tOrd,
+            estado: estadoActual,
             cliente: document.getElementById("f-cliente").value.toUpperCase(),
             telefono: document.getElementById("f-telefono").value,
             anticipo: vAnticipo,
-            insumos: vInsumosIVA,
-            insumos_no_iva: vInsumosNoIVA,
+            insumos: Number(document.getElementById("f-insumos-iva").value) || 0,
+            insumos_no_iva: Number(document.getElementById("f-insumos-no-iva").value) || 0,
             bitacora_ia: document.getElementById("ai-log-display").value,
             updatedAt: serverTimestamp(),
-            // Estructura de costos blindada para Reportes BI
-            total: ordenActiva.costos_totales.total,
-            utilidad_neta: ordenActiva.costos_totales.ebitda,
-            saldo_pendiente: ordenActiva.costos_totales.saldo
+            // Auditoría Forense Integrada
+            total: vTotalOrden,
+            utilidad_neta: vUtilidadEstimada,
+            saldo_pendiente: vTotalOrden - vAnticipo
         };
-
-        // --- MANIOBRA 1: PERSISTENCIA EN COLECCIÓN ÓRDENES ---
         batch.set(doc(db, "ordenes", id), dataMision);
 
-        // --- MANIOBRA 2: INYECCIÓN EN BÓVEDA CONTABLE (Sincronización con contabilidad.js) ---
-        // Usamos 'monto' para que el Dashboard de V21.8 lo sume automáticamente
+        // --- MANIOBRA 2: MOTOR DE CONTABILIDAD SELECTIVA (CASH FLOW REAL) ---
+        // Solo inyectamos a contabilidad si hay un movimiento de dinero real.
         const contabilidadRef = doc(db, "contabilidad", `CONT_${id}`);
-        batch.set(contabilidadRef, {
-            empresaId,
-            id_referencia: id,
-            placa: placa,
-            concepto: `SERVICIO TÉCNICO NEXUS-X: ${placa}`,
-            tipo: "ingreso_ot", // Trigger para esIngreso()
-            monto: dataMision.total, 
-            utilidad: dataMision.utilidad_neta,
-            anticipo_aplicado: vAnticipo,
-            metodo: "MIXTO",
-            fecha: serverTimestamp(),
-            creadoEn: serverTimestamp() // Necesario para el Client-Side Sorting de contabilidad.js
-        });
+        
+        let montoContable = 0;
+        let conceptoContable = "";
 
-        // EJECUCIÓN ATÓMICA (O se guarda todo, o nada)
+        if (estadoActual === 'ENTREGADO') {
+            // Si el vehículo se entrega, se registra el ingreso TOTAL (Cierre de Caja)
+            montoContable = vTotalOrden;
+            conceptoContable = `CIERRE TOTAL SERVICIO: ${placa}`;
+        } else if (vAnticipo > 0) {
+            // Si está en proceso pero hay dinero, solo registramos el ANTICIPO
+            montoContable = vAnticipo;
+            conceptoContable = `ANTICIPO RECIBIDO: ${placa}`;
+        }
+
+        // Solo escribimos en contabilidad si el monto es mayor a cero para no ensuciar el Libro Diario
+        if (montoContable > 0) {
+            batch.set(contabilidadRef, {
+                empresaId,
+                id_referencia: id,
+                placa,
+                concepto: conceptoContable,
+                tipo: "ingreso_ot", // Trigger para esIngreso() en contabilidad.js
+                monto: montoContable, 
+                utilidad: estadoActual === 'ENTREGADO' ? vUtilidadEstimada : (vUtilidadEstimada * (vAnticipo / vTotalOrden || 0)),
+                fecha: serverTimestamp(),
+                creadoEn: serverTimestamp()
+            });
+        }
+
         await batch.commit();
 
-        // ACTUALIZACIÓN DE ESTADO LOCAL
+        // --- MANIOBRA 3: ACTUALIZACIÓN DE UI Y SENSÓRICA ---
         ordenActiva.id = id;
-        
-        hablar("Misión sincronizada en la nube Nexus");
+        hablar(estadoActual === 'ENTREGADO' ? "Misión finalizada. Caja cerrada." : "Misión sincronizada.");
         
         Swal.fire({ 
-            title: '🛰️ SYNC_COMPLETE', 
-            text: `UNIDAD ${placa} ENCRIPTADA EN CLOUD`,
-            icon: 'success', 
-            background: '#0d1117', 
-            color: '#06b6d4',
-            confirmButtonColor: '#06b6d4'
+            title: '🛰️ NEXUS_SYNC_OK', 
+            text: `LOGÍSTICA ${placa} ACTUALIZADA`,
+            icon: 'success', background: '#0d1117', color: '#06b6d4'
         });
 
         document.getElementById("nexus-terminal").classList.add("hidden");
 
     } catch (e) {
-        console.error("CRITICAL_SYNC_ERROR:", e);
+        console.error("QUANTUM_CORE_FAIL:", e);
         btn.disabled = false;
-        btn.innerHTML = `🛰️ REINTENTAR_PUSH`;
-        
-        Swal.fire({ 
-            title: '🚨 ERROR_DE_SATELLITE', 
-            text: e.message,
-            icon: 'error', 
-            background: '#0d1117', 
-            color: '#ff0000' 
-        });
+        btn.innerHTML = `🛰️ PUSH_TO_NEXUS_CLOUD`;
+        Swal.fire({ title: '🚨 ERROR', text: e.message, icon: 'error', background: '#0d1117', color: '#f87171' });
     }
 };
 
-    const cargarEscuchaOrdenes = () => {
-        const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
-        onSnapshot(q, (snap) => {
-            const grid = document.getElementById("grid-ordenes");
-            if (!grid) return;
-            grid.innerHTML = snap.docs.map(d => {
-                const info = d.data();
-                const config = NEXUS_ASCENSOR[info.tipo_orden] || NEXUS_ASCENSOR.MECANICA;
-                return `
-                <div onclick="window.abrirTerminalNexus('${d.id}')" class="bg-[#0d1117] p-8 border border-white/5 rounded-[2.5rem] hover:border-cyan-500 transition-all cursor-pointer group relative overflow-hidden">
-                    <div class="absolute top-4 right-4"><i class="fas ${config.icon} text-xs text-cyan-500 opacity-30"></i></div>
-                    <h4 class="orbitron text-4xl font-black text-white group-hover:text-cyan-400 mb-1">${info.placa}</h4>
-                    <p class="text-[9px] text-slate-500 font-black uppercase mb-4 tracking-tighter">${info.cliente || 'S/N'}</p>
-                    <div class="pt-4 border-t border-white/5 flex justify-between items-center">
-                        <span class="text-[9px] orbitron font-black px-2 py-1 rounded-md" style="background: ${config.color}20; color: ${config.color}">${config.label}</span>
-                        <span class="text-[8px] orbitron bg-red-600/20 text-red-500 px-3 py-1 rounded-full font-black uppercase">${info.estado}</span>
+/**
+ * 🏛️ CARGAR ESCUCHA DE ORDENES (GRID DINÁMICO)
+ * Optimizada para no saturar memoria y reflejar estados Terminator
+ */
+const cargarEscuchaOrdenes = () => {
+    const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
+    
+    onSnapshot(q, (snap) => {
+        const grid = document.getElementById("grid-ordenes");
+        if (!grid) return;
+
+        // Renderizado por fragmentos para máxima velocidad
+        grid.innerHTML = snap.docs.map(d => {
+            const info = d.data();
+            const config = NEXUS_ASCENSOR[info.tipo_orden] || NEXUS_ASCENSOR.MECANICA;
+            const saldoColor = info.saldo_pendiente > 0 ? 'text-red-400' : 'text-emerald-400';
+            
+            return `
+            <div onclick="window.abrirTerminalNexus('${d.id}')" 
+                 class="bg-[#0d1117] p-8 border border-white/5 rounded-[2.5rem] hover:border-cyan-500 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition-all cursor-pointer group relative overflow-hidden">
+                
+                <div class="absolute top-4 right-4 flex gap-2">
+                    <i class="fas ${config.icon} text-[10px] text-cyan-500 opacity-30"></i>
+                </div>
+
+                <div class="mb-6">
+                    <h4 class="orbitron text-4xl font-black text-white group-hover:text-cyan-400 transition-colors">${info.placa}</h4>
+                    <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest">${info.cliente || 'OPERACIÓN_ANÓNIMA'}</p>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl border border-white/5">
+                        <span class="text-[8px] orbitron text-slate-500 uppercase">Estado</span>
+                        <span class="text-[9px] orbitron font-black ${info.estado === 'ENTREGADO' ? 'text-green-400' : 'text-amber-400'}">${info.estado}</span>
                     </div>
-                </div>`;
-            }).join('');
-        });
-    };
+                    <div class="flex justify-between items-center px-1">
+                        <span class="text-[8px] orbitron text-slate-600 uppercase">Saldo Pendiente</span>
+                        <span class="text-[10px] orbitron font-black ${saldoColor}">$${(info.saldo_pendiente || 0).toLocaleString()}</span>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-white/5 flex justify-between items-center">
+                    <span class="text-[8px] orbitron font-black px-3 py-1 rounded-md" 
+                          style="background: ${config.color}20; color: ${config.color}">
+                        ${config.label.toUpperCase()}
+                    </span>
+                    <i class="fas fa-chevron-right text-slate-700 group-hover:text-cyan-500 group-hover:translate-x-2 transition-all"></i>
+                </div>
+            </div>`;
+        }).join('');
+    });
+};
 
     window.updateItem = (idx, campo, val) => { ordenActiva.items[idx][campo] = (campo==='costo'||campo==='venta'||campo==='cantidad')?Number(val):val; recalcularFinanzas(); };
     window.removeItemNexus = (idx) => { if(confirm("¿Eliminar?")) { ordenActiva.items.splice(idx, 1); recalcularFinanzas(); } };
