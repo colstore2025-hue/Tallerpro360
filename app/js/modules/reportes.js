@@ -1,7 +1,7 @@
 /**
- * 🏛️ NEXUS-X COMMANDER V45.0 - SAP INDUSTRIAL HYPER-DRIVE
+ * 🏛️ NEXUS-X COMMANDER BI V50.0 - SAP INDUSTRIAL HYPER-DRIVE
  * William Jeffry Urquijo Cubillos // Nexus AI 2026-2030
- * Propósito: Inteligencia Temporal, Auditoría Forense y Control de Utilidad Neta Real.
+ * Maniobra: Auditoría Forense y Visualización de Márgenes de Utilidad Neta.
  */
 
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -10,14 +10,17 @@ import { db } from "../core/firebase-config.js";
 export default async function nexusReportes(container) {
     const empresaId = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
     
-    // --- MOTOR DE VOZ NEXUS ---
-    const speakAlert = (msg) => {
-        if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(msg);
-        utter.lang = 'es-ES';
-        utter.rate = 0.9;
-        window.speechSynthesis.speak(utter);
+    // --- MOTOR DE FORMATEO PROFESIONAL (Corrige el error de puntos/comas) ---
+    const fmt = (v) => {
+        return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(v);
     };
+
+    const pct = (v) => `${v.toFixed(1)}%`;
 
     let state = {
         ordenesMaster: [],
@@ -37,71 +40,74 @@ export default async function nexusReportes(container) {
     const injectNexusStyles = () => {
         const style = document.createElement('style');
         style.innerHTML = `
-            .filter-btn { padding: 8px 16px; border-radius: 12px; font-size: 9px; font-weight: 900; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #64748b; transition: 0.3s; cursor: pointer; font-family: 'Orbitron'; }
-            .filter-btn.active { background: #06b6d4; color: #000; border-color: #06b6d4; box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); }
-            .filter-btn:hover:not(.active) { border-color: #06b6d4; color: #fff; }
-            .sap-input { background: #000; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #06b6d4; padding: 5px 10px; font-size: 10px; outline: none; }
+            .filter-btn { padding: 10px 20px; border-radius: 15px; font-size: 10px; font-weight: 900; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #64748b; transition: 0.4s; cursor: pointer; font-family: 'Orbitron'; text-transform: uppercase; }
+            .filter-btn.active { background: #06b6d4; color: #000; border-color: #06b6d4; box-shadow: 0 0 20px rgba(6, 182, 212, 0.4); }
+            .sap-input { background: #000; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; color: #06b6d4; padding: 8px 12px; font-size: 11px; outline: none; transition: 0.3s; }
+            .sap-input:focus { border-color: #06b6d4; box-shadow: 0 0 10px rgba(6,182,212,0.2); }
+            .kpi-card { position: relative; overflow: hidden; background: #0d1117; padding: 2rem; border-radius: 2.5rem; border: 1px solid rgba(255,255,255,0.05); transition: 0.5s; }
+            .kpi-card:hover { border-color: rgba(6, 182, 212, 0.3); transform: translateY(-5px); }
+            .chart-container { background: #0d1117; padding: 2rem; border-radius: 3rem; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
         `;
         document.head.appendChild(style);
     };
 
     const renderLayout = () => {
         container.innerHTML = `
-        <div class="bg-[#010409] min-h-screen text-slate-100 p-4 lg:p-8 orbitron animate-in fade-in duration-700">
-            <header class="flex flex-col gap-6 mb-10 border-b border-white/5 pb-8">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div class="bg-[#010409] min-h-screen text-slate-100 p-4 lg:p-10 orbitron animate-in fade-in duration-1000">
+            <header class="flex flex-col gap-8 mb-12 border-b border-white/5 pb-10 text-center md:text-left">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-8">
                     <div>
-                        <h1 class="text-4xl font-black italic tracking-tighter text-white uppercase">Nexus<span class="text-cyan-500">_BI_V45</span></h1>
-                        <p class="text-[9px] text-slate-500 tracking-[0.4em] font-bold uppercase mt-2">Strategic Intelligence // William Urquijo</p>
+                        <h1 class="text-5xl font-black italic tracking-tighter text-white uppercase">Nexus<span class="text-cyan-500">_Intelligence</span></h1>
+                        <p class="text-[10px] text-slate-500 tracking-[0.5em] font-bold uppercase mt-3 italic">Industrial Audit System // Edición Looker-X</p>
                     </div>
-                    <div class="flex gap-4">
-                        <button id="btnExportGlobal" class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-6 py-3 rounded-xl text-[10px] font-black hover:bg-emerald-500 hover:text-black transition-all flex items-center gap-2">
-                            <i class="fas fa-file-excel"></i> EXPORTAR MASTER SAP
-                        </button>
-                    </div>
+                    <button id="btnExportGlobal" class="bg-emerald-500 text-black px-8 py-4 rounded-2xl text-[11px] font-black hover:scale-105 transition-all flex items-center gap-3 shadow-[0_10px_20px_rgba(16,185,129,0.2)]">
+                        <i class="fas fa-file-csv text-lg"></i> EXPORTAR DATA BI
+                    </button>
                 </div>
 
-                <div class="w-full flex flex-wrap gap-3 mt-4 bg-white/5 p-5 rounded-[2rem] border border-white/5 items-center">
-                    <p class="w-full md:w-auto text-[8px] text-slate-500 font-black orbitron mr-4 uppercase">Rango de Auditoría:</p>
-                    <button onclick="window.nexusFilter(0, this)" class="filter-btn active">HISTÓRICO TOTAL</button>
-                    <button onclick="window.nexusFilter(30, this)" class="filter-btn">ÚLTIMOS 30 DÍAS</button>
-                    <button onclick="window.nexusFilter(7, this)" class="filter-btn">ESTA SEMANA</button>
-                    <div class="flex-grow"></div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-[8px] text-slate-600 font-bold">FECHA MANUAL:</span>
+                <div class="w-full flex flex-wrap gap-4 mt-6 bg-white/5 p-6 rounded-[2.5rem] border border-white/5 items-center justify-center md:justify-start">
+                    <span class="text-[9px] text-cyan-500 font-black uppercase tracking-widest mr-4">Rango de Auditoría:</span>
+                    <button onclick="window.nexusFilter(0, this)" class="filter-btn active">Histórico</button>
+                    <button onclick="window.nexusFilter(30, this)" class="filter-btn">Mensual</button>
+                    <button onclick="window.nexusFilter(7, this)" class="filter-btn">Semanal</button>
+                    <div class="flex items-center gap-4 ml-auto">
+                        <i class="fas fa-calendar-alt text-slate-600"></i>
                         <input type="date" id="datePicker" class="sap-input orbitron">
                     </div>
                 </div>
             </header>
 
-            <div id="kpi-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10"></div>
+            <div id="kpi-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12"></div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-                <div class="lg:col-span-2 bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 shadow-2xl">
-                    <h3 class="text-xs font-black text-cyan-500 uppercase tracking-widest italic mb-6">Utilidad por Unidad en Periodo</h3>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 mb-12">
+                <div class="lg:col-span-2 chart-container">
+                    <div class="flex justify-between items-center mb-8">
+                        <h3 class="text-xs font-black text-cyan-500 uppercase tracking-widest italic">Utilidad Neta por Unidad ($)</h3>
+                        <span class="text-[9px] text-slate-500 orbitron uppercase">Tiempo Real</span>
+                    </div>
                     <div class="h-80"><canvas id="mainChart"></canvas></div>
                 </div>
-                <div class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 shadow-2xl">
-                    <h3 class="text-xs font-black text-amber-500 uppercase tracking-widest italic mb-6">Mix Operativo</h3>
+                <div class="chart-container">
+                    <h3 class="text-xs font-black text-amber-500 uppercase tracking-widest italic mb-8">Mix Operativo de Flota</h3>
                     <div class="h-64"><canvas id="pieChart"></canvas></div>
                 </div>
             </div>
 
-            <div class="bg-[#0d1117] rounded-[3rem] border border-white/5 shadow-2xl overflow-hidden">
-                <div class="p-8 border-b border-white/5 flex justify-between items-center">
-                    <h3 class="text-xs font-black text-white uppercase italic tracking-widest">Análisis Forense de Misiones</h3>
-                    <span id="counterTag" class="text-[9px] bg-cyan-500/10 text-cyan-400 px-4 py-1 rounded-full font-black font-orbitron">0 UNIDADES</span>
+            <div class="bg-[#0d1117] rounded-[3.5rem] border border-white/5 shadow-2xl overflow-hidden mb-20">
+                <div class="p-10 border-b border-white/5 flex justify-between items-center bg-black/20">
+                    <h3 class="text-xs font-black text-white uppercase italic tracking-widest">Análisis Forense de Misiones (Facturación vs Utilidad)</h3>
+                    <span id="counterTag" class="text-[10px] bg-cyan-500/10 text-cyan-400 px-6 py-2 rounded-full font-black border border-cyan-500/20 uppercase">Calculando...</span>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
                         <thead class="bg-black/40 text-slate-500 text-[10px] uppercase font-black">
                             <tr>
-                                <th class="p-6">Unidad / Placa</th>
-                                <th class="p-6">Especialidad</th>
-                                <th class="p-6">Eficiencia MO</th>
-                                <th class="p-6 text-center">Días Taller</th>
-                                <th class="p-6 text-right">Utilidad Neta</th>
-                                <th class="p-6 text-center">Acción</th>
+                                <th class="p-8">Identificación</th>
+                                <th class="p-8">Misión / Área</th>
+                                <th class="p-8">Facturación Bruta</th>
+                                <th class="p-8 text-center">Lead Time</th>
+                                <th class="p-8 text-right">Margen (EBITDA)</th>
+                                <th class="p-8 text-center">Acción</th>
                             </tr>
                         </thead>
                         <tbody id="report-table-body" class="text-sm"></tbody>
@@ -111,73 +117,48 @@ export default async function nexusReportes(container) {
         </div>`;
     };
 
-    /**
- * 🛰️ fetchData - NEXUS-X BI QUANTUM-CORE V45.2
- * MANIOBRA: AUDITORÍA FORENSE DE ACTIVOS Y PASIVOS
- */
-const fetchData = async () => {
-    try {
-        // 1. SINCRONIZACIÓN PARALELA DE ALTA VELOCIDAD
-        const [snapOrders, snapAcc] = await Promise.all([
-            getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId))),
-            getDocs(query(collection(db, "contabilidad"), where("empresaId", "==", empresaId)))
-        ]);
+    const fetchData = async () => {
+        try {
+            const [snapOrders, snapAcc] = await Promise.all([
+                getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId))),
+                getDocs(query(collection(db, "contabilidad"), where("empresaId", "==", empresaId)))
+            ]);
 
-        // 2. CÁLCULO DE EGRESOS Y GASTOS (Filtro por tipo 'gasto')
-        // Aseguramos que solo sume lo que no es un ingreso para el cálculo del punto de equilibrio
-        state.gastosFijos = snapAcc.docs.reduce((acc, d) => {
-            const data = d.data();
-            const esGasto = !['ingreso_ot', 'ingreso', 'VENTA_SERVICIO'].includes(data.tipo);
-            const monto = Number(data.monto || data.total || 0);
-            return esGasto ? acc + monto : acc;
-        }, 0);
-        
-        // 3. MAPEO MAESTRO DE ÓRDENES (Normalización de Objetos Anidados)
-        state.ordenesMaster = snapOrders.docs.map(doc => {
-            const o = doc.data();
+            state.gastosFijos = snapAcc.docs.reduce((acc, d) => {
+                const data = d.data();
+                const esGasto = !['ingreso_ot', 'ingreso', 'VENTA_SERVICIO'].includes(data.tipo);
+                return esGasto ? acc + Number(data.monto || data.total || 0) : acc;
+            }, 0);
             
-            // INTELIGENCIA DE DATOS: Buscamos el total en la raíz o dentro del objeto financiero
-            const totalFacturado = Number(
-                o.costos_totales?.total || 
-                o.total || 
-                o.costos_totales?.gran_total || 0
-            );
+            state.ordenesMaster = snapOrders.docs.map(doc => {
+                const o = doc.data();
+                const facturacion = Number(o.costos_totales?.total || o.total || 0);
+                const costos = Number(o.costos_totales?.base || o.costo_total || 0);
+                const utilidad = facturacion - costos;
+                
+                const fechaInicio = o.createdAt?.toDate ? o.createdAt.toDate() : new Date();
+                const diasTaller = Math.ceil(Math.abs(new Date() - fechaInicio) / (1000 * 60 * 60 * 24)) || 1;
+                
+                return {
+                    id: doc.id,
+                    placa: (o.placa || 'S/N').toUpperCase(),
+                    area: o.tipo_orden || 'MECANICA',
+                    total: facturacion,
+                    utilidad: utilidad,
+                    margenPorcentaje: facturacion > 0 ? (utilidad / facturacion) * 100 : 0,
+                    dias: diasTaller,
+                    cliente: o.cliente || 'OPERACIÓN_NEXUS',
+                    estado: o.estado || 'PENDIENTE',
+                    fecha: fechaInicio
+                };
+            });
 
-            // CÁLCULO DE COSTO OPERATIVO (Insumos + Repuestos + Labor)
-            // Si el costo_total no existe, lo calculamos de la base para no falsear la utilidad
-            const costoOperativo = Number(
-                o.costo_total || 
-                o.costos_totales?.base || 0
-            );
+            processAndRender(state.ordenesMaster);
 
-            // LÓGICA TEMPORAL (MTTR - Mean Time To Repair)
-            // Priorizamos createdAt sobre updatedAt para medir la estancia real
-            const fechaInicio = o.createdAt?.toDate() ? o.createdAt.toDate() : new Date();
-            const hoy = new Date();
-            const diffTiempo = Math.abs(hoy - fechaInicio);
-            const diasTaller = Math.ceil(diffTiempo / (1000 * 60 * 60 * 24)) || 1;
-            
-            return {
-                id: doc.id,
-                placa: (o.placa || 'S/N').toUpperCase(),
-                area: o.tipo_orden || 'MECANICA',
-                total: totalFacturado,
-                utilidad: totalFacturado - costoOperativo,
-                dias: diasTaller,
-                cliente: o.cliente || 'CLIENTE_GENERICO_NEXUS',
-                estado: o.estado || 'DESCONOCIDO',
-                fecha: fechaInicio
-            };
-        });
-
-        // 4. DISPARO DE RENDERIZADO BI
-        processAndRender(state.ordenesMaster);
-
-    } catch (e) {
-        console.error("🚨 CRITICAL_BI_DATA_CORRUPTION:", e);
-        speakAlert("Error crítico en la telemetría de datos. Verifique consola.");
-    }
-};
+        } catch (e) {
+            console.error("DATA_FAULT:", e);
+        }
+    };
 
     const processAndRender = (data) => {
         state.dataActual = data;
@@ -187,58 +168,63 @@ const fetchData = async () => {
         const totalMTTR = data.reduce((a, b) => a + b.dias, 0);
 
         const metrics = {
-            ebitda: totalUtilidadBruta - (state.gastosFijos / 12), // Ajuste proporcional mensual estimado
+            ebitda: totalUtilidadBruta - (state.gastosFijos / (data.length || 1)),
             mttr: totalMTTR / (data.length || 1),
-            fuga: data.filter(o => o.dias > 5).reduce((a, b) => a + (b.utilidad * 0.1), 0),
+            margenGeneral: totalFacturado > 0 ? (totalUtilidadBruta / totalFacturado) * 100 : 0,
             ticket: totalFacturado / (data.length || 1)
         };
 
         renderKPIs(metrics);
         renderCharts(data);
         renderTable(data);
-        document.getElementById("counterTag").innerText = `${data.length} UNIDADES EN PERIODO`;
+        document.getElementById("counterTag").innerText = `${data.length} UNIDADES ACTIVAS`;
     };
 
     const renderKPIs = (m) => {
         const grid = document.getElementById("kpi-grid");
         grid.innerHTML = `
-            ${kpiCard("EBITDA ESTIMADO", `$${m.ebitda.toLocaleString()}`, "fa-wallet", m.ebitda > 0 ? "text-emerald-400" : "text-red-500")}
-            ${kpiCard("MTTR INDUSTRIAL", `${m.mttr.toFixed(1)} DÍAS`, "fa-clock", m.mttr > 4 ? "text-amber-500" : "text-cyan-400")}
-            ${kpiCard("TICKET PROM.", `$${m.ticket.toLocaleString()}`, "fa-microchip", "text-white")}
-            ${kpiCard("FUGA POR RETRASO", `$${m.fuga.toLocaleString()}`, "fa-radiation", m.fuga > 0 ? "text-red-500 animate-pulse" : "text-slate-500")}
+            ${kpiCard("EBITDA ESTIMADO", fmt(m.ebitda), "fa-wallet", m.ebitda > 0 ? "text-emerald-400" : "text-red-500", pct(m.margenGeneral))}
+            ${kpiCard("TIEMPO EN TALLER", `${m.mttr.toFixed(1)} DÍAS`, "fa-clock", m.mttr > 5 ? "text-amber-500" : "text-cyan-400", "PROMEDIO MTTR")}
+            ${kpiCard("TICKET PROMEDIO", fmt(m.ticket), "fa-tag", "text-white", "VALOR MEDIO / OT")}
+            ${kpiCard("MARGEN OPERATIVO", pct(m.margenGeneral), "fa-chart-pie", "text-cyan-500", "RENTABILIDAD BRUTA")}
         `;
     };
 
-    const kpiCard = (t, v, i, c) => `
-        <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden group hover:border-cyan-500/30 transition-all">
-            <i class="fas ${i} absolute -right-4 -bottom-4 text-7xl opacity-5"></i>
-            <p class="text-[8px] font-black text-slate-500 mb-2 tracking-[0.3em] uppercase">${t}</p>
-            <h2 class="text-2xl font-black orbitron ${c}">${v}</h2>
+    const kpiCard = (t, v, i, c, sub) => `
+        <div class="kpi-card group">
+            <i class="fas ${i} absolute -right-4 -bottom-4 text-7xl opacity-5 group-hover:scale-110 transition-transform duration-700"></i>
+            <p class="text-[9px] font-black text-slate-500 mb-2 tracking-[0.2em] uppercase">${t}</p>
+            <h2 class="text-2xl font-black orbitron ${c} mb-1">${v}</h2>
+            <p class="text-[8px] text-slate-600 font-bold orbitron uppercase">${sub}</p>
         </div>`;
 
     const renderTable = (data) => {
         const body = document.getElementById("report-table-body");
         body.innerHTML = data.map(o => `
             <tr class="border-b border-white/[0.02] hover:bg-cyan-500/5 transition-all group">
-                <td class="p-6">
-                    <p class="font-black text-white orbitron">${o.placa}</p>
-                    <p class="text-[8px] text-slate-500 uppercase">${o.cliente.substring(0,15)}</p>
+                <td class="p-8">
+                    <p class="font-black text-white orbitron text-base">${o.placa}</p>
+                    <p class="text-[8px] text-slate-500 uppercase tracking-widest">${o.cliente.substring(0,20)}</p>
                 </td>
-                <td class="p-6">
-                    <span class="px-3 py-1 rounded-lg text-[9px] font-black bg-white/5 border border-white/10 ${o.area === 'MECANICA' ? 'text-cyan-400' : 'text-amber-400'} uppercase">
+                <td class="p-8">
+                    <span class="px-4 py-2 rounded-xl text-[9px] font-black bg-black border border-white/10 ${o.area === 'MECANICA' ? 'text-cyan-400' : 'text-amber-400'} uppercase">
                         ${o.area}
                     </span>
                 </td>
-                <td class="p-6">
-                    <div class="w-24 bg-white/5 h-1 rounded-full overflow-hidden">
-                        <div class="bg-cyan-500 h-full" style="width: 70%"></div>
-                    </div>
+                <td class="p-8">
+                    <p class="text-white font-black orbitron text-xs">${fmt(o.total)}</p>
+                    <p class="text-[8px] text-slate-600">BRUTO FACTURADO</p>
                 </td>
-                <td class="p-6 text-center orbitron ${o.dias > 5 ? 'text-red-500 font-black' : 'text-slate-400'}">${o.dias} D</td>
-                <td class="p-6 text-right font-black text-emerald-400 orbitron">$${o.utilidad.toLocaleString()}</td>
-                <td class="p-6 text-center">
-                    <button onclick="window.exportSingleOT('${o.id}')" class="text-slate-600 hover:text-cyan-400 transition-all">
-                        <i class="fas fa-file-invoice text-lg"></i>
+                <td class="p-8 text-center">
+                    <span class="orbitron font-black ${o.dias > 5 ? 'text-red-500' : 'text-slate-400'}">${o.dias} DÍAS</span>
+                </td>
+                <td class="p-8 text-right">
+                    <p class="font-black text-emerald-400 orbitron text-base">${fmt(o.utilidad)}</p>
+                    <p class="text-[9px] text-emerald-500/50 font-black orbitron">${pct(o.margenPorcentaje)} MARGEN</p>
+                </td>
+                <td class="p-8 text-center">
+                    <button onclick="window.exportSingleOT('${o.id}')" class="h-12 w-12 rounded-full bg-white/5 border border-white/10 text-slate-400 hover:text-cyan-400 hover:border-cyan-500/50 transition-all flex items-center justify-center">
+                        <i class="fas fa-file-invoice"></i>
                     </button>
                 </td>
             </tr>
@@ -246,27 +232,44 @@ const fetchData = async () => {
     };
 
     const renderCharts = (data) => {
-        const createChart = (id, type, config) => {
-            if (state.charts[id]) state.charts[id].destroy();
-            state.charts[id] = new Chart(document.getElementById(id), { type, ...config });
-        };
+        const labels = data.slice(-10).map(o => o.placa);
+        const vals = data.slice(-10).map(o => o.utilidad);
+        const colors = data.slice(-10).map(o => o.utilidad > 0 ? '#06b6d4' : '#ef4444');
 
-        createChart('mainChart', 'line', {
+        if (state.charts.main) state.charts.main.destroy();
+        state.charts.main = new Chart(document.getElementById('mainChart'), {
+            type: 'bar',
             data: {
-                labels: data.slice(-12).map(o => o.placa),
+                labels: labels,
                 datasets: [{
-                    label: 'Utilidad',
-                    data: data.slice(-12).map(o => o.utilidad),
-                    borderColor: '#06b6d4',
-                    backgroundColor: 'rgba(6, 182, 212, 0.1)',
-                    fill: true,
-                    tension: 0.4
+                    label: 'Utilidad por Unidad',
+                    data: vals,
+                    backgroundColor: colors,
+                    borderRadius: 8,
+                    borderWidth: 0
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) { return fmt(context.raw); }
+                        }
+                    }
+                },
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { family: 'Orbitron', size: 8 } } },
+                    x: { grid: { display: false }, ticks: { color: '#64748b', font: { family: 'Orbitron', size: 8 } } }
+                }
+            }
         });
 
-        createChart('pieChart', 'doughnut', {
+        if (state.charts.pie) state.charts.pie.destroy();
+        state.charts.pie = new Chart(document.getElementById('pieChart'), {
+            type: 'doughnut',
             data: {
                 labels: ['MEC', 'LAT', 'ELE'],
                 datasets: [{
@@ -276,56 +279,30 @@ const fetchData = async () => {
                         data.filter(o => o.area === 'ELECTRICO').length
                     ],
                     backgroundColor: ['#06b6d4', '#fbbf24', '#a855f7'],
-                    borderWidth: 0
+                    borderWidth: 0,
+                    hoverOffset: 20
                 }]
             },
-            options: { cutout: '85%', plugins: { legend: { display: false } } }
+            options: { cutout: '80%', plugins: { legend: { display: false } } }
         });
     };
 
-    // --- MANIOBRAS DE FILTRADO ---
     window.nexusFilter = (dias, btn) => {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-
-        if (dias === 0) {
-            processAndRender(state.ordenesMaster);
-            speakAlert("Mostrando auditoría histórica total.");
-            return;
-        }
-
-        const limite = new Date();
-        limite.setDate(limite.getDate() - dias);
-        const filtrados = state.ordenesMaster.filter(o => o.fecha >= limite);
-        
+        const filtrados = dias === 0 ? state.ordenesMaster : state.ordenesMaster.filter(o => o.fecha >= new Date(Date.now() - dias * 24 * 60 * 60 * 1000));
         processAndRender(filtrados);
-        speakAlert(`Auditoría actualizada: Últimos ${dias} días.`);
     };
 
     const setupEventListeners = () => {
         document.getElementById("btnExportGlobal").onclick = () => {
-            const rows = state.dataActual.map(o => ({
-                "PLACA": o.placa,
-                "CLIENTE": o.cliente,
-                "FACTURACION": o.total,
-                "UTILIDAD_NETA": o.utilidad,
-                "DIAS_TALLER": o.dias,
-                "AREA": o.area,
-                "FECHA": o.fecha.toLocaleDateString()
-            }));
-            const ws = XLSX.utils.json_to_sheet(rows);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "NEXUS_REPORT");
-            XLSX.writeFile(wb, `Nexus_Global_Audit_${Date.now()}.xlsx`);
+            const ws = XLSX.utils.json_to_sheet(state.dataActual.map(o => ({
+                "UNIDAD": o.placa, "CLIENTE": o.cliente, "BRUTO": o.total, "UTILIDAD": o.utilidad, "MARGEN": o.margenPorcentaje, "DÍAS": o.dias
+            })));
+            XLSX.utils.book_append_sheet(wb, ws, "NEXUS_DATA");
+            XLSX.writeFile(wb, `Nexus_Audit_${Date.now()}.xlsx`);
         };
-    };
-
-    window.exportSingleOT = (id) => {
-        const o = state.ordenesMaster.find(x => x.id === id);
-        const ws = XLSX.utils.json_to_sheet([o]);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "DETALLE_OT");
-        XLSX.writeFile(wb, `Audit_OT_${o.placa}.xlsx`);
     };
 
     const loadDependencies = async () => {
