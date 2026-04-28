@@ -318,52 +318,75 @@ const ejecutarSincronizacionTotal = async () => {
 };
 
 /**
- * 🏛️ CARGAR ESCUCHA DE ORDENES (GRID DINÁMICO)
- * Optimizada para no saturar memoria y reflejar estados Terminator
+ * 🏛️ CARGAR ESCUCHA DE ORDENES (GRID DINÁMICO) - V23.4 DEPURED
+ * Optimizada para detectar cambios de saldo en tiempo real desde pagosTaller.js
  */
 const cargarEscuchaOrdenes = () => {
+    // Usamos el listener de Firebase para que sea reactivo
     const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
     
     onSnapshot(q, (snap) => {
         const grid = document.getElementById("grid-ordenes");
         if (!grid) return;
 
-        // Renderizado por fragmentos para máxima velocidad
         grid.innerHTML = snap.docs.map(d => {
             const info = d.data();
             const config = NEXUS_ASCENSOR[info.tipo_orden] || NEXUS_ASCENSOR.MECANICA;
-            const saldoColor = info.saldo_pendiente > 0 ? 'text-red-400' : 'text-emerald-400';
+            
+            // --- DEPURACIÓN DE FINANZAS EN TIEMPO REAL ---
+            // Intentamos leer el saldo desde 3 posibles ubicaciones para evitar el error de las fotos
+            const total = Number(info.total || info.costos_totales?.total || 0);
+            const anticiposTotales = Number(info.anticipo || 0); 
+            
+            // Si saldo_pendiente no existe, lo calculamos al vuelo para que el usuario nunca vea datos viejos
+            const saldoReal = info.saldo_pendiente !== undefined 
+                ? Number(info.saldo_pendiente) 
+                : (total - anticiposTotales);
+
+            const saldoColor = saldoReal > 0 ? 'text-red-400' : 'text-emerald-400';
+            const statusIcon = saldoReal <= 0 ? 'fa-check-circle' : 'fa-clock';
             
             return `
             <div onclick="window.abrirTerminalNexus('${d.id}')" 
-                 class="bg-[#0d1117] p-8 border border-white/5 rounded-[2.5rem] hover:border-cyan-500 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition-all cursor-pointer group relative overflow-hidden">
+                 class="bg-[#0d1117] p-8 border border-white/5 rounded-[2.5rem] hover:border-cyan-500 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition-all cursor-pointer group relative overflow-hidden animate-in fade-in duration-500">
                 
                 <div class="absolute top-4 right-4 flex gap-2">
+                    <i class="fas ${statusIcon} text-[10px] ${saldoColor} opacity-50"></i>
                     <i class="fas ${config.icon} text-[10px] text-cyan-500 opacity-30"></i>
                 </div>
 
                 <div class="mb-6">
-                    <h4 class="orbitron text-4xl font-black text-white group-hover:text-cyan-400 transition-colors">${info.placa}</h4>
-                    <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest">${info.cliente || 'OPERACIÓN_ANÓNIMA'}</p>
+                    <h4 class="orbitron text-4xl font-black text-white group-hover:text-cyan-400 transition-colors tracking-tighter">${info.placa}</h4>
+                    <p class="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em]">${info.cliente || 'OPERACIÓN_ANÓNIMA'}</p>
                 </div>
 
                 <div class="space-y-3">
                     <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl border border-white/5">
-                        <span class="text-[8px] orbitron text-slate-500 uppercase">Estado</span>
-                        <span class="text-[9px] orbitron font-black ${info.estado === 'ENTREGADO' ? 'text-green-400' : 'text-amber-400'}">${info.estado}</span>
+                        <span class="text-[8px] orbitron text-slate-500 uppercase tracking-widest">Fase Actual</span>
+                        <span class="text-[9px] orbitron font-black ${info.estado === 'ENTREGADO' ? 'text-green-400' : 'text-amber-400'} animate-pulse">
+                            ${info.estado}
+                        </span>
                     </div>
-                    <div class="flex justify-between items-center px-1">
-                        <span class="text-[8px] orbitron text-slate-600 uppercase">Saldo Pendiente</span>
-                        <span class="text-[10px] orbitron font-black ${saldoColor}">$${(info.saldo_pendiente || 0).toLocaleString()}</span>
+                    
+                    <div class="flex justify-between items-center px-1 bg-white/5 p-2 rounded-lg">
+                        <span class="text-[8px] orbitron text-slate-400 uppercase">Saldo Pendiente</span>
+                        <span class="text-[11px] orbitron font-black ${saldoColor}">
+                            $${saldoReal.toLocaleString()}
+                        </span>
                     </div>
                 </div>
 
                 <div class="mt-6 pt-4 border-t border-white/5 flex justify-between items-center">
-                    <span class="text-[8px] orbitron font-black px-3 py-1 rounded-md" 
-                          style="background: ${config.color}20; color: ${config.color}">
-                        ${config.label.toUpperCase()}
-                    </span>
-                    <i class="fas fa-chevron-right text-slate-700 group-hover:text-cyan-500 group-hover:translate-x-2 transition-all"></i>
+                    <div class="flex flex-col">
+                        <span class="text-[8px] orbitron font-black px-3 py-1 rounded-md text-center" 
+                              style="background: ${config.color}20; color: ${config.color}">
+                            ${config.label.toUpperCase()}
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                         <span class="text-[7px] text-slate-600 orbitron">${info.tipo_orden === 'DIAGNOSTICO' ? 'SCANNING' : 'REPAIRING'}</span>
+                         <i class="fas fa-arrow-right text-slate-700 group-hover:text-cyan-500 group-hover:translate-x-1 transition-all text-xs"></i>
+                    </div>
                 </div>
             </div>`;
         }).join('');
