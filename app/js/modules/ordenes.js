@@ -216,34 +216,106 @@ export default async function ordenes(container) {
         document.getElementById("nexus-terminal").classList.remove("hidden");
     };
 
-    const ejecutarSincronizacionTotal = async () => {
-        const btn = document.getElementById("btnSincronizar");
-        btn.disabled = true;
-        btn.innerHTML = `<i class="fas fa-satellite animate-spin"></i> SYNCING...`;
-        try {
-            const batch = writeBatch(db);
-            const placa = document.getElementById("f-placa").value.toUpperCase();
-            const id = ordenActiva.id || `OT_${placa}_${Date.now()}`;
-            const tOrd = document.getElementById("f-tipo-orden").value;
-            const data = {
-                ...ordenActiva, id, placa, empresaId, tipo_orden: tOrd,
-                cliente: document.getElementById("f-cliente").value.toUpperCase(),
-                telefono: document.getElementById("f-telefono").value,
-                anticipo: Number(document.getElementById("f-anticipo").value),
-                insumos: Number(document.getElementById("f-insumos-iva").value),
-                insumos_no_iva: Number(document.getElementById("f-insumos-no-iva").value),
-                bitacora_ia: document.getElementById("ai-log-display").value,
-                updatedAt: serverTimestamp()
-            };
-            batch.set(doc(db, "ordenes", id), data);
-            batch.set(doc(db, "contabilidad", `CONT_${id}`), { empresaId, tipo_orden: tOrd, total: data.costos_totales.total, utilidad: data.costos_totales.ebitda, fecha: serverTimestamp(), placa });
-            await batch.commit();
-            ordenActiva.id = id;
-            hablar("Nexus Cloud Sincronizado");
-            Swal.fire({ title: '✅ MISION GUARDADA', icon: 'success', background: '#0d1117', color: '#fff' });
-            document.getElementById("nexus-terminal").classList.add("hidden");
-        } catch (e) { btn.disabled = false; btn.innerHTML = `🛰️ PUSH_TO_NEXUS_CLOUD`; }
-    };
+    /**
+ * 🚀 EJECUTAR SINCRONIZACIÓN TOTAL - NEXUS-X V22.0
+ * OPTIMIZACIÓN QUANTUM-SAP: Sincronización Multicapa y Auditoría de Bóveda
+ */
+const ejecutarSincronizacionTotal = async () => {
+    const btn = document.getElementById("btnSincronizar");
+    if (!btn) return;
+
+    // BLOQUEO DE PROTOCOLO PARA EVITAR DOBLE SUBMIT
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-satellite animate-spin"></i> UPLOADING_TO_CLOUD...`;
+
+    try {
+        const batch = writeBatch(db);
+        const placa = document.getElementById("f-placa").value.trim().toUpperCase();
+        
+        if (!placa) throw new Error("IDENTIFICADOR_PLACA_REQUERIDO");
+
+        // GENERACIÓN DE ID ÚNICO O RECUPERACIÓN DE SESIÓN
+        const id = ordenActiva.id || `OT_${placa}_${Date.now()}`;
+        const tOrd = document.getElementById("f-tipo-orden").value;
+        
+        // CAPTURA DE DATOS FINANCIEROS NORMALIZADOS
+        const vAnticipo = Number(document.getElementById("f-anticipo").value) || 0;
+        const vInsumosIVA = Number(document.getElementById("f-insumos-iva").value) || 0;
+        const vInsumosNoIVA = Number(document.getElementById("f-insumos-no-iva").value) || 0;
+        
+        // CONSOLIDADO DE MISIÓN (ORDEN DE SERVICIO)
+        const dataMision = {
+            ...ordenActiva,
+            id,
+            placa,
+            empresaId,
+            tipo_orden: tOrd,
+            cliente: document.getElementById("f-cliente").value.toUpperCase(),
+            telefono: document.getElementById("f-telefono").value,
+            anticipo: vAnticipo,
+            insumos: vInsumosIVA,
+            insumos_no_iva: vInsumosNoIVA,
+            bitacora_ia: document.getElementById("ai-log-display").value,
+            updatedAt: serverTimestamp(),
+            // Estructura de costos blindada para Reportes BI
+            total: ordenActiva.costos_totales.total,
+            utilidad_neta: ordenActiva.costos_totales.ebitda,
+            saldo_pendiente: ordenActiva.costos_totales.saldo
+        };
+
+        // --- MANIOBRA 1: PERSISTENCIA EN COLECCIÓN ÓRDENES ---
+        batch.set(doc(db, "ordenes", id), dataMision);
+
+        // --- MANIOBRA 2: INYECCIÓN EN BÓVEDA CONTABLE (Sincronización con contabilidad.js) ---
+        // Usamos 'monto' para que el Dashboard de V21.8 lo sume automáticamente
+        const contabilidadRef = doc(db, "contabilidad", `CONT_${id}`);
+        batch.set(contabilidadRef, {
+            empresaId,
+            id_referencia: id,
+            placa: placa,
+            concepto: `SERVICIO TÉCNICO NEXUS-X: ${placa}`,
+            tipo: "ingreso_ot", // Trigger para esIngreso()
+            monto: dataMision.total, 
+            utilidad: dataMision.utilidad_neta,
+            anticipo_aplicado: vAnticipo,
+            metodo: "MIXTO",
+            fecha: serverTimestamp(),
+            creadoEn: serverTimestamp() // Necesario para el Client-Side Sorting de contabilidad.js
+        });
+
+        // EJECUCIÓN ATÓMICA (O se guarda todo, o nada)
+        await batch.commit();
+
+        // ACTUALIZACIÓN DE ESTADO LOCAL
+        ordenActiva.id = id;
+        
+        hablar("Misión sincronizada en la nube Nexus");
+        
+        Swal.fire({ 
+            title: '🛰️ SYNC_COMPLETE', 
+            text: `UNIDAD ${placa} ENCRIPTADA EN CLOUD`,
+            icon: 'success', 
+            background: '#0d1117', 
+            color: '#06b6d4',
+            confirmButtonColor: '#06b6d4'
+        });
+
+        document.getElementById("nexus-terminal").classList.add("hidden");
+
+    } catch (e) {
+        console.error("CRITICAL_SYNC_ERROR:", e);
+        btn.disabled = false;
+        btn.innerHTML = `🛰️ REINTENTAR_PUSH`;
+        
+        Swal.fire({ 
+            title: '🚨 ERROR_DE_SATELLITE', 
+            text: e.message,
+            icon: 'error', 
+            background: '#0d1117', 
+            color: '#ff0000' 
+        });
+    }
+};
 
     const cargarEscuchaOrdenes = () => {
         const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
