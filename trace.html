@@ -132,131 +132,136 @@
 
     <script type="module">
     import { db } from "./core/firebase-config.js";
-    import { doc, onSnapshot, query, collection, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { doc, onSnapshot, query, collection, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const params = new URLSearchParams(window.location.search);
     const rawId = params.get("id");
 
     if (!rawId) {
-        document.body.innerHTML = "<div class='p-20 text-center orbitron text-red-500'>ERROR: NO_ID_LINKED</div>";
+        document.body.innerHTML = "<div class='p-20 text-center orbitron text-red-500 uppercase'>ERROR: NO_MISSION_ID_PROVIDED</div>";
     } else {
-        ejecutarBusquedaMaestra(rawId);
+        iniciarProtocoloRastreo(rawId);
     }
 
-    async function ejecutarBusquedaMaestra(idOriginal) {
-        console.log("Iniciando escaneo para:", idOriginal);
-        
-        // 1. INTENTO POR ID DIRECTO (El ID largo de Firebase)
-        const docRef = doc(db, "ordenes", idOriginal);
+    async function iniciarProtocoloRastreo(id) {
+        // Buscador Inteligente: Intenta ID directo, luego Placa
+        const docRef = doc(db, "ordenes", id);
         
         onSnapshot(docRef, async (snap) => {
             if (snap.exists()) {
-                console.log("Localizado por ID directo.");
                 renderTrazabilidad(snap.data(), snap.id);
             } else {
-                // 2. BÚSQUEDA POR CAMPO 'placa' (Si el ID del doc es distinto a la placa)
-                // Limpiamos el ID por si viene como OT_GHR876...
-                const placaLimpia = idOriginal.includes('_') ? idOriginal.split('_')[1] : idOriginal;
-                
-                console.warn("Buscando por campo placa:", placaLimpia);
-                const qPlaca = query(collection(db, "ordenes"), where("placa", "==", placaLimpia.toUpperCase()));
-                const querySnap = await getDocs(qPlaca);
+                const placaLimpia = id.includes('_') ? id.split('_')[1] : id;
+                const q = query(collection(db, "ordenes"), where("placa", "==", placaLimpia.toUpperCase()));
+                const querySnap = await getDocs(q);
                 
                 if (!querySnap.empty) {
-                    const docEncontrado = querySnap.docs[0];
-                    renderTrazabilidad(docEncontrado.data(), docEncontrado.id);
+                    renderTrazabilidad(querySnap.docs[0].data(), querySnap.docs[0].id);
                 } else {
-                    // 3. ÚLTIMO RECURSO: Búsqueda por campo 'id' interno
-                    const qIdInterno = query(collection(db, "ordenes"), where("id", "==", idOriginal));
-                    const querySnapId = await getDocs(qIdInterno);
-                    
-                    if(!querySnapId.empty) {
-                        renderTrazabilidad(querySnapId.docs[0].data(), querySnapId.docs[0].id);
-                    } else {
-                        document.getElementById("waiting-msg").innerHTML = `
-                            <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
-                            <p class="orbitron text-xs text-red-400">UNIDAD ${idOriginal} NO ENCONTRADA EN NUBE</p>
-                        `;
-                    }
+                    document.getElementById("waiting-msg").innerHTML = `<p class="text-red-500 orbitron text-[10px]">UNIDAD ${id} FUERA DE ALCANCE SATELITAL</p>`;
                 }
             }
         });
     }
 
     function renderTrazabilidad(o, docId) {
-        // Marcador de Sincronización
         document.getElementById("timestamp").innerText = `LAST_SYNC: ${new Date().toLocaleTimeString()}`;
         document.getElementById("placa").innerText = o.placa || "N/A";
         
-        // Render de Bitácora (Priorizamos lo que escribes en 'notas' o 'bitacora_ia')
+        // --- MOTOR DE BITÁCORA INVERTIDA (Novedades Primero) ---
         const timelineContainer = document.getElementById("timeline-container");
-        const contenido = o.bitacora_ia || o.notas || o.observaciones || "[NEXUS]: Vehículo en base, pendiente por diagnóstico.";
         
-        timelineContainer.innerHTML = contenido.split('\n').filter(l => l.trim() !== "").map(linea => {
-            const esSistema = linea.includes('[NEXUS') || linea.includes('[SISTEMA]');
+        // Combinamos todas las fuentes de texto posibles
+        const rawContent = `${o.bitacora_ia || ''}\n${o.notas || ''}\n${o.observaciones || ''}`;
+        
+        // Limpiamos y separamos por líneas, eliminando líneas vacías
+        let lineas = rawContent.split('\n').filter(l => l.trim() !== "");
+
+        // REGLA DE ORO: Lo más nuevo arriba
+        lineas.reverse(); 
+
+        timelineContainer.innerHTML = lineas.map(linea => {
+            // Detectar si es un mensaje de sistema o IA
+            const esAI = linea.includes('[NEXUS-PRICING]') || linea.includes('[SISTEMA]');
+            const esUrgente = linea.includes('HALLAZGO') || linea.includes('URGENTE');
+            
             return `
-                <div class="flex ${esSistema ? 'justify-start' : 'justify-end'} mb-4">
-                    <div class="p-4 rounded-2xl max-w-[85%] ${esSistema ? 'bg-cyan-500/10 border-l-2 border-cyan-500' : 'bg-white/5 border-r-2 border-white'}">
-                        <p class="text-[7px] orbitron opacity-50 mb-1 uppercase">${esSistema ? 'SYSTEM_MSG' : 'TECH_REPORT'}</p>
-                        <p class="text-[11px] leading-tight">${linea.replace(/\[.*?\]:?/, '')}</p>
+                <div class="flex ${esAI ? 'justify-start' : 'justify-end'} mb-4 animate-in fade-in slide-in-from-top-4 duration-700">
+                    <div class="p-4 rounded-2xl max-w-[90%] ${esAI ? 'log-system border-l-2 border-cyan-500 bg-cyan-500/5' : 'log-tech border-r-2 border-white bg-white/5'} ${esUrgente ? 'border-red-500 bg-red-500/10' : ''}">
+                        <div class="flex justify-between items-center mb-2 gap-4">
+                            <span class="text-[7px] orbitron font-bold ${esAI ? 'text-cyan-400' : 'text-slate-400'}">
+                                ${esAI ? 'NEXUS_CORE_AI' : 'DIRECTOR_TECNICO'}
+                            </span>
+                            <span class="text-[6px] orbitron opacity-40 italic">STAMP_VERIFIED</span>
+                        </div>
+                        <p class="text-[11px] leading-relaxed tracking-tight">
+                            ${linea.replace(/\[.*?\]:?/, '').trim()}
+                        </p>
                     </div>
                 </div>
             `;
         }).join('');
-        
-        timelineContainer.scrollTop = timelineContainer.scrollHeight;
 
-        // Gestión de Estados y Progreso
+        // --- GESTIÓN DE ESTADOS Y COSTOS ---
         const badge = document.getElementById("badge-estado");
         const est = (o.estado || 'INGRESO').toUpperCase();
         badge.innerText = est;
         
-        const niveles = { 'COTIZACION': 10, 'INGRESO': 25, 'DIAGNOSTICO': 45, 'REPARACION': 70, 'LISTO': 90, 'ENTREGADO': 100 };
+        const niveles = { 'COTIZACION': 15, 'INGRESO': 30, 'DIAGNOSTICO': 50, 'REPARACION': 75, 'LISTO': 90, 'ENTREGADO': 100 };
         document.getElementById("progreso-bar").style.width = `${niveles[est] || 5}%`;
 
-        // Lógica Financiera
+        // Area Financiera
         const total = Number(o.costos_totales?.total || o.total || 0);
         if (total > 0) {
             document.getElementById("area-financiera").classList.remove("hidden");
             document.getElementById("waiting-msg").classList.add("hidden");
+            
+            // Formateo de moneda colombiana
             document.getElementById("total-final").innerText = new Intl.NumberFormat('es-CO', {
                 style: 'currency', currency: 'COP', minimumFractionDigits: 0
             }).format(total);
+
+            if (o.items) {
+                document.getElementById("lista-items").innerHTML = o.items.map(i => `
+                    <div class="flex justify-between items-center bg-white/[0.02] p-3 rounded-xl border border-white/5 hover:bg-white/10 transition-all">
+                        <div class="max-w-[70%]">
+                            <p class="text-[10px] font-bold text-white uppercase truncate">${i.desc || i.descripcion}</p>
+                            <p class="text-[7px] text-slate-500 orbitron uppercase">${i.tipo || 'SERVICIO'} x${i.cantidad || 1}</p>
+                        </div>
+                        <div class="text-xs font-black text-cyan-400">$${Math.round((i.venta || 0) * (i.cantidad || 1)).toLocaleString()}</div>
+                    </div>
+                `).join('');
+            }
             
-            if (o.items) renderItems(o.items);
-            gestionarBotones(o, docId);
+            // Botones de Acción
+            gestionarInteraccion(o, docId);
         }
     }
 
-    function gestionarBotones(o, docId) {
+    function gestionarInteraccion(o, docId) {
         const btnAprobar = document.getElementById("btn-aprobar");
         const btnPagar = document.getElementById("btn-pagar");
 
-        // Botón Aprobar
+        // Caso: Pendiente por Aprobación
         if (o.estado === 'COTIZACION' && !o.aprobada) {
             btnAprobar.classList.remove("hidden");
             btnAprobar.onclick = async () => {
-                const ref = doc(db, "ordenes", docId);
-                await updateDoc(ref, { aprobada: true, estado: 'DIAGNOSTICO' });
+                if(confirm("¿Autoriza los ítems y valores descritos para iniciar la reparación?")) {
+                    await updateDoc(doc(db, "ordenes", docId), { 
+                        aprobada: true, 
+                        estado: 'DIAGNOSTICO',
+                        bitacora_ia: (o.bitacora_ia || "") + `\n[SISTEMA]: PRESUPUESTO AUTORIZADO POR CLIENTE - ${new Date().toLocaleString()}`
+                    });
+                }
             };
         } else { btnAprobar.classList.add("hidden"); }
 
-        // Botón Pagar
+        // Caso: Vehículo Listo (Pago)
         if (o.estado === 'LISTO') {
             btnPagar.classList.remove("hidden");
             btnPagar.onclick = () => window.open(`https://checkout.bold.co/payment/OT_${o.placa}`, '_blank');
         } else { btnPagar.classList.add("hidden"); }
     }
-
-    function renderItems(items) {
-        document.getElementById("lista-items").innerHTML = items.map(i => `
-            <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl mb-2">
-                <p class="text-[10px] font-bold uppercase">${i.desc || i.descripcion}</p>
-                <p class="text-xs font-black text-cyan-400">$${Math.round((i.venta || 0) * (i.cantidad || 1)).toLocaleString()}</p>
-            </div>
-        `).join('');
-    }
-
 </script>
 </body>
 </html>
