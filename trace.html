@@ -131,97 +131,136 @@
     </main>
 
     <script type="module">
-        import { db } from "./core/firebase-config.js";
-        import { doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { db } from "./core/firebase-config.js";
+    import { doc, onSnapshot, query, collection, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        const params = new URLSearchParams(window.location.search);
-        const orderId = params.get("id");
+    const params = new URLSearchParams(window.location.search);
+    const rawId = params.get("id"); // Puede venir como Placa o como OT_ID
 
-        if (orderId) {
-            // ESCUCHA EN TIEMPO REAL (onSnapshot)
-            onSnapshot(doc(db, "ordenes", orderId), (snap) => {
-                if (snap.exists()) {
-                    renderTrazabilidad(snap.data());
-                } else {
-                    document.body.innerHTML = "<div class='p-20 text-center orbitron text-red-500'>ERROR: MISSION_ID_NOT_FOUND</div>";
-                }
-            });
-        }
+    if (!rawId) {
+        document.body.innerHTML = "<div class='p-20 text-center orbitron text-red-500'>ERROR: NO_MISSION_ID_PROVIDED</div>";
+    } else {
+        iniciarRastreo(rawId);
+    }
 
-        function renderTrazabilidad(o) {
-            document.getElementById("timestamp").innerText = `LAST_SYNC: ${new Date().toLocaleTimeString()}`;
-            document.getElementById("placa").innerText = o.placa;
-            
-            // 1. Render Timeline Dinámico
-            const timelineContainer = document.getElementById("timeline-container");
-            const lineas = (o.bitacora_ia || "").split('\n');
-            timelineContainer.innerHTML = lineas.filter(l => l.trim() !== "").map(linea => {
-                const esSistema = linea.includes('[NEXUS') || linea.includes('[SISTEMA]');
-                return `
-                    <div class="flex ${esSistema ? 'justify-start' : 'justify-end'} animate-in slide-in-from-bottom-2 duration-500">
-                        <div class="p-4 rounded-2xl max-w-[90%] ${esSistema ? 'log-system' : 'log-tech shadow-xl'}">
-                            <p class="text-[8px] orbitron opacity-50 mb-1">${esSistema ? 'CORE_ENGINE' : 'CHIEF_TECHNICIAN'}</p>
-                            <p class="text-[11px] font-medium tracking-tight">${linea.replace(/\[.*?\]:?/, '')}</p>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            timelineContainer.scrollTop = timelineContainer.scrollHeight;
-
-            // 2. Estado y Barra
-            const badge = document.getElementById("badge-estado");
-            badge.innerText = o.estado;
-            const niveles = { 'COTIZACION': 15, 'INGRESO': 30, 'DIAGNOSTICO': 50, 'REPARACION': 75, 'LISTO': 100, 'ENTREGADO': 100 };
-            document.getElementById("progreso-bar").style.width = `${niveles[o.estado] || 5}%`;
-            
-            // Colores por fase
-            if(o.estado === 'REPARACION') badge.className = "px-6 py-2 bg-red-600 text-white orbitron text-[12px] font-black italic rounded-bl-2xl";
-            if(o.estado === 'LISTO') badge.className = "px-6 py-2 bg-green-500 text-black orbitron text-[12px] font-black italic rounded-bl-2xl";
-
-            // 3. Área Financiera e Interacción
-            if (o.items && o.items.length > 0) {
-                document.getElementById("area-financiera").classList.remove("hidden");
-                document.getElementById("waiting-msg").classList.add("hidden");
-                renderItems(o.items);
-                document.getElementById("total-final").innerText = `$${Math.round(o.costos_totales?.total || 0).toLocaleString()}`;
+    async function iniciarRastreo(id) {
+        // MANIOBRA DE LOCALIZACIÓN DUAL:
+        // 1. Intentar acceso directo por ID de documento
+        const docRef = doc(db, "ordenes", id);
+        
+        onSnapshot(docRef, async (snap) => {
+            if (snap.exists()) {
+                renderTrazabilidad(snap.data(), snap.id);
+            } else {
+                // 2. Si falla, buscar por campo 'placa' o 'id_ot' (Búsqueda de Rescate)
+                console.warn("ID Directo no hallado. Iniciando búsqueda de rescate...");
+                const q = query(collection(db, "ordenes"), where("placa", "==", id.replace('OT_', '').split('_')[0]));
+                const querySnap = await getDocs(q);
                 
-                // Lógica de botones
-                const btnAprobar = document.getElementById("btn-aprobar");
-                const btnPagar = document.getElementById("btn-pagar");
-
-                if (!o.aprobada && o.estado === 'COTIZACION') {
-                    btnAprobar.classList.remove("hidden");
-                    btnAprobar.onclick = async () => {
-                        if(confirm("¿Autoriza el presupuesto para iniciar la intervención técnica?")) {
-                            await updateDoc(doc(db, "ordenes", o.id), { 
-                                aprobada: true, 
-                                bitacora_ia: (o.bitacora_ia || "") + `\n[SISTEMA]: MISIÓN AUTORIZADA POR CLIENTE - ${new Date().toLocaleString()}`
-                            });
-                        }
-                    };
+                if (!querySnap.empty) {
+                    renderTrazabilidad(querySnap.docs[0].data(), querySnap.docs[0].id);
                 } else {
-                    btnAprobar.classList.add("hidden");
-                }
-
-                if (o.estado === 'LISTO') {
-                    btnPagar.classList.remove("hidden");
-                    btnPagar.onclick = () => window.open(`https://checkout.bold.co/payment/OT_${o.placa}`, '_blank');
+                    document.getElementById("placa").innerText = "UNKNOWN";
+                    document.getElementById("waiting-msg").innerHTML = `<p class='text-red-500'>MISIÓN ${id} NO LOCALIZADA EN NEXUS_CLOUD</p>`;
                 }
             }
-        }
+        });
+    }
 
-        function renderItems(items) {
-            const container = document.getElementById("lista-items");
-            container.innerHTML = items.map(i => `
-                <div class="flex justify-between items-center bg-white/[0.03] p-4 rounded-xl border border-white/5 hover:bg-white/[0.06] transition-all">
-                    <div>
-                        <p class="text-[11px] font-bold text-white uppercase tracking-tighter">${i.desc}</p>
-                        <p class="text-[8px] text-slate-500 orbitron">${i.tipo} | QTY: ${i.cantidad}</p>
+    function renderTrazabilidad(o, docId) {
+        // Limpieza de interfaz
+        document.getElementById("timestamp").innerText = `SYNC_OK: ${new Date().toLocaleTimeString()}`;
+        document.getElementById("placa").innerText = o.placa || "N/A";
+        
+        // 1. MOTOR DE BITÁCORA (Fusiona IA + Notas Técnicas)
+        const timelineContainer = document.getElementById("timeline-container");
+        const contenidoBitacora = o.bitacora_ia || o.notas || o.observaciones || "[SISTEMA]: Iniciando secuencia de diagnóstico...";
+        
+        const lineas = contenidoBitacora.split('\n');
+        timelineContainer.innerHTML = lineas.filter(l => l.trim() !== "").map(linea => {
+            const esSistema = linea.includes('[NEXUS') || linea.includes('[SISTEMA]');
+            return `
+                <div class="flex ${esSistema ? 'justify-start' : 'justify-end'} animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div class="p-4 rounded-2xl max-w-[90%] ${esSistema ? 'log-system border-l-2 border-cyan-500 bg-cyan-500/5' : 'log-tech border-r-2 border-white bg-white/5'}">
+                        <p class="text-[7px] orbitron opacity-50 mb-1 uppercase">${esSistema ? 'NEXUS_CORE' : 'FIELD_OPERATIONS'}</p>
+                        <p class="text-[11px] font-medium leading-tight">${linea.replace(/\[.*?\]:?/, '')}</p>
                     </div>
-                    <div class="text-sm font-black text-cyan-400">$${Math.round(i.venta * i.cantidad).toLocaleString()}</div>
                 </div>
-            `).join('');
+            `;
+        }).join('');
+        
+        // Auto-scroll al último evento
+        timelineContainer.scrollTo({ top: timelineContainer.scrollHeight, behavior: 'smooth' });
+
+        // 2. SISTEMA DE FASES (Normalización de estados)
+        const badge = document.getElementById("badge-estado");
+        const estadoActual = (o.estado || 'INGRESO').toUpperCase();
+        badge.innerText = estadoActual;
+        
+        const niveles = { 'COTIZACION': 10, 'INGRESO': 25, 'DIAGNOSTICO': 45, 'REPARACION': 70, 'LISTO': 90, 'ENTREGADO': 100 };
+        const progreso = niveles[estadoActual] || 5;
+        document.getElementById("progreso-bar").style.width = `${progreso}%`;
+        
+        // 3. CAPA FINANCIERA (Fuerza Bruta para hallar el Total)
+        const totalReal = Number(o.costos_totales?.total || o.total || o.gran_total || 0);
+        
+        if (totalReal > 0) {
+            document.getElementById("area-financiera").classList.remove("hidden");
+            document.getElementById("waiting-msg").classList.add("hidden");
+            
+            document.getElementById("total-final").innerText = new Intl.NumberFormat('es-CO', {
+                style: 'currency', currency: 'COP', minimumFractionDigits: 0
+            }).format(totalReal);
+
+            if (o.items && o.items.length > 0) renderItems(o.items);
+            
+            // Lógica de botones de acción
+            gestionarAcciones(o, docId);
         }
-    </script>
+    }
+
+    function gestionarAcciones(o, docId) {
+        const btnAprobar = document.getElementById("btn-aprobar");
+        const btnPagar = document.getElementById("btn-pagar");
+        
+        // Si el estado es COTIZACION y no está aprobada
+        if (o.estado === 'COTIZACION' && !o.aprobada) {
+            btnAprobar.classList.remove("hidden");
+            btnAprobar.onclick = async () => {
+                if(confirm("¿Autoriza el presupuesto para iniciar intervención técnica?")) {
+                    await updateDoc(doc(db, "ordenes", docId), { 
+                        aprobada: true,
+                        estado: 'DIAGNOSTICO',
+                        bitacora_ia: (o.bitacora_ia || "") + `\n[SISTEMA]: MISIÓN AUTORIZADA POR CLIENTE VIA TRACE.`
+                    });
+                }
+            };
+        } else { btnAprobar.classList.add("hidden"); }
+
+        // Si el estado es LISTO, habilitar pago BOLD
+        if (o.estado === 'LISTO') {
+            btnPagar.classList.remove("hidden");
+            btnPagar.onclick = () => {
+                const montoBold = Math.round(o.costos_totales?.total || o.total || 0);
+                window.open(`https://checkout.bold.co/payment/OT_${o.placa}?monto=${montoBold}`, '_blank');
+            };
+        } else { btnPagar.classList.add("hidden"); }
+    }
+
+    function renderItems(items) {
+        const container = document.getElementById("lista-items");
+        container.innerHTML = items.map(i => `
+            <div class="flex justify-between items-center bg-white/[0.02] p-3 rounded-xl border border-white/5 mb-2">
+                <div class="pr-4">
+                    <p class="text-[10px] font-bold text-white uppercase">${i.desc || i.descripcion}</p>
+                    <p class="text-[7px] text-slate-500 orbitron">${i.tipo || 'SERVICIO'} | QTY: ${i.cantidad || 1}</p>
+                </div>
+                <div class="text-xs font-black text-cyan-400">
+                    $${Math.round((i.venta || i.precio || 0) * (i.cantidad || 1)).toLocaleString()}
+                </div>
+            </div>
+        `).join('');
+    }
+</script>
 </body>
 </html>
