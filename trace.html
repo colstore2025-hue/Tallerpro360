@@ -75,86 +75,35 @@
     </main>
 
     <script type="module">
-        import { db } from "./core/firebase-config.js";
-        import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    // Asegúrate de que esta ruta sea exacta a donde tienes tu config
+    import { db } from "./core/firebase-config.js"; 
+    import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // 1. LIMPIEZA DE ID QUIRÚRGICA
-        const params = new URLSearchParams(window.location.search);
-        let raw = params.get("id");
+    const params = new URLSearchParams(window.location.search);
+    const rawId = params.get("id");
+
+    console.log("Intento de conexión con ID Raw:", rawId);
+
+    if (rawId) {
+        // Esta línea es CRÍTICA: extrae el número del final
+        const idLimpio = rawId.split('_').pop().trim();
+        console.log("ID Limpio para buscar en Firestore:", idLimpio);
         
-        if (raw) {
-            // Si viene OT_FAB345_177... extrae solo el 177...
-            const cleanId = raw.includes('_') ? raw.split('_').pop() : raw;
-            console.log("🛰️ NEXUS_X: Intentando conectar a ID:", cleanId);
-            conectar(cleanId.trim());
-        }
+        const docRef = doc(db, "ordenes", idLimpio);
 
-        function conectar(idDoc) {
-            const docRef = doc(db, "ordenes", idDoc);
-            
-            onSnapshot(docRef, (snap) => {
-                if (snap.exists()) {
-                    console.log("✅ DATOS_RECIBIDOS:", snap.data());
-                    actualizarUI(snap.data(), snap.id);
-                } else {
-                    console.error("❌ DOCUMENTO_NO_EXISTE en Firestore");
-                    document.getElementById("loader").innerHTML = "<p class='text-red-500 orbitron text-xs'>ERROR: ENLACE ROTO (ID NO EXISTE)</p>";
-                }
-            }, (error) => {
-                console.error("🔥 FIREBASE_ERROR:", error);
-            });
-        }
-
-        function actualizarUI(data, id) {
-            document.getElementById("loader").classList.add("hidden");
-            
-            // Textos básicos
-            document.getElementById("taller-aliado").innerText = data.taller_aliado || "NEXUS_X PARTNER";
-            document.getElementById("doc-id").innerText = `#${id.slice(-6)}`;
-            document.getElementById("placa").innerText = data.placa || "N/A";
-            document.getElementById("estado").innerText = (data.estado || "PENDIENTE").toUpperCase();
-            
-            // Kilometraje (Ya que lo mencionaste, lo dejamos listo para cuando lo agregues)
-            document.getElementById("km-info").innerText = data.kilometraje ? `${Number(data.kilometraje).toLocaleString()} KM` : "NO_REGISTRADO";
-
-            // Bitácora Inteligente (Fusiona bitacora_ia con notas y observaciones)
-            const logBox = document.getElementById("timeline-container");
-            const combinedLogs = [data.bitacora_ia, data.notas, data.observaciones]
-                .filter(txt => txt && txt.trim() !== "")
-                .join('\n');
-            
-            const lineas = combinedLogs.split('\n').filter(l => l.trim()).reverse();
-            logBox.innerHTML = lineas.map(l => `
-                <div class="bitacora-entry">
-                    <p class="text-[7px] orbitron text-cyan-500 mb-1 tracking-tighter">DATA_SYNC_OK > VERIFIED</p>
-                    <p class="text-sm font-light leading-relaxed">${l}</p>
-                </div>
-            `).join('') || "<p class='text-slate-600 text-[10px] italic orbitron'>Esperando reporte de bitácora...</p>";
-
-            // Costos y Botón Bold
-            if (data.items && data.items.length > 0) {
-                document.getElementById("area-financiera").classList.remove("hidden");
-                document.getElementById("lista-items").innerHTML = data.items.map(i => `
-                    <div class="flex justify-between items-center bg-white/5 p-3 rounded border border-white/5">
-                        <span class="text-[10px] font-bold uppercase tracking-tight">${i.desc || i.descripcion}</span>
-                        <span class="text-xs font-black text-cyan-400">$${(Number(i.venta) * Number(i.cantidad || 1)).toLocaleString()}</span>
-                    </div>
-                `).join('');
-                
-                const total = data.costos_totales?.total || data.total || 0;
-                document.getElementById("total-final").innerText = `$${Number(total).toLocaleString()}`;
-                
-                // Botón dinámico según estado
-                const btnBox = document.getElementById("btn-acciones");
-                const est = (data.estado || '').toUpperCase();
-                
-                if (est === 'LISTO') {
-                    btnBox.innerHTML = `<button onclick="window.open('https://checkout.bold.co/payment/OT_${data.placa}')" class="w-full bg-green-600 text-white py-4 orbitron font-black text-xs rounded shadow-[0_0_15px_#10b981] uppercase">Pagar con BOLD</button>`;
-                } else if (est === 'COTIZACION') {
-                    btnBox.innerHTML = `<p class="text-center text-[10px] orbitron text-amber-500 animate-pulse">PRESUPUESTO PENDIENTE DE APROBACIÓN</p>`;
-                }
+        onSnapshot(docRef, (snap) => {
+            if (snap.exists()) {
+                console.log("¡Datos encontrados!", snap.data());
+                actualizarUI(snap.data(), snap.id);
+            } else {
+                console.error("No se encontró el documento con ID:", idLimpio);
+                document.getElementById("loader").innerHTML = `<p class='text-red-500 orbitron text-[10px]'>ERROR: ID ${idLimpio} NO LOCALIZADO</p>`;
             }
-        }
-    </script>
+        }, (error) => {
+            console.error("Error de Firebase:", error.code, error.message);
+            document.getElementById("loader").innerHTML = `<p class='text-red-500 orbitron text-[10px]'>ERROR DE RED: ${error.code}</p>`;
+        });
+    }
+</script>
 </body>
 </html>
