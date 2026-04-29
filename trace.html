@@ -3,114 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS-X | STATUS</title>
+    <title>NEXUS_X | TELEMETRÍA DE MISIÓN</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #05070a; color: #e2e8f0; font-family: 'JetBrains Mono', monospace; }
+        body { background-color: #05070a; color: #e2e8f0; font-family: 'Rajdhani', sans-serif; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        .neon-border { border: 1px solid rgba(0, 242, 255, 0.2); box-shadow: 0 0 15px rgba(0, 242, 255, 0.05); }
-        .bitacora-line { border-left: 2px solid #00f2ff; background: rgba(255,255,255,0.02); padding: 12px; margin-bottom: 8px; border-radius: 0 8px 8px 0; }
+        .glass { background: rgba(13, 17, 23, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(6, 182, 212, 0.2); }
+        .neon-border { box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); border: 1px solid #06b6d4; }
+        .scanline { background: linear-gradient(to bottom, transparent 50%, rgba(6, 182, 212, 0.05) 50%); background-size: 100% 4px; }
     </style>
 </head>
-<body class="p-6">
-    <div class="max-w-4xl mx-auto">
-        <header class="flex justify-between items-end mb-10 border-b border-cyan-500/30 pb-6">
+<body class="scanline min-h-screen p-4 md:p-8">
+
+    <header class="max-w-4xl mx-auto flex justify-between items-center mb-8">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-cyan-500 rounded-sm flex items-center justify-center neon-border">
+                <i class="fas fa-satellite text-black animate-pulse"></i>
+            </div>
             <div>
-                <h1 class="orbitron text-3xl font-black italic text-white uppercase">NEXUS<span class="text-red-600">_X</span></h1>
-                <p id="ui-taller" class="text-[9px] orbitron text-cyan-400 tracking-[0.3em]">CARGANDO_SISTEMA...</p>
+                <h1 class="orbitron text-xl font-bold tracking-tighter text-cyan-400">NEXUS_X</h1>
+                <p class="text-[10px] text-cyan-700 leading-none">PROTOCOL_STARLINK_ACTIVE</p>
             </div>
-            <div class="text-right">
-                <span id="ui-placa" class="orbitron text-4xl font-black text-white">---</span>
-                <div id="ui-estado" class="text-[10px] font-bold bg-cyan-500 text-black px-2 py-0.5 rounded mt-1">SINC...</div>
+        </div>
+        <div id="status-badge" class="px-4 py-1 bg-cyan-900/30 border border-cyan-500 text-cyan-400 orbitron text-[12px] rounded-full">
+            SINCRONIZANDO...
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto space-y-6">
+        
+        <section class="glass p-6 rounded-xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-2 text-[8px] text-cyan-900 orbitron">V16.0_STABLE</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <label class="text-cyan-600 text-xs orbitron uppercase tracking-widest">Identificador_Unidad</label>
+                    <div id="placa" class="orbitron text-5xl font-black text-white italic">------</div>
+                </div>
+                <div class="flex flex-col justify-end">
+                    <div class="flex justify-between text-sm mb-2">
+                        <span class="text-slate-500 italic">Progreso de Misión</span>
+                        <span id="progreso-txt" class="text-cyan-400 orbitron">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div id="progreso-bar" class="bg-cyan-500 h-full transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                </div>
             </div>
-        </header>
+        </section>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="space-y-6">
-                <div class="neon-border p-5 rounded-2xl bg-white/5">
-                    <p class="text-[8px] text-slate-500 orbitron mb-1 uppercase font-bold">Registro de Odómetro</p>
-                    <p id="ui-km" class="text-2xl font-black text-white">0 KM</p>
-                </div>
-                <div id="ui-area-cobro" class="neon-border p-5 rounded-2xl bg-cyan-500/5 hidden border-t-2 border-cyan-500">
-                    <p class="text-[8px] text-cyan-500 orbitron mb-1 uppercase font-bold">Total a Liquidar</p>
-                    <p id="ui-total" class="text-4xl font-black text-white">$ 0</p>
-                    <div id="ui-items" class="mt-4 space-y-2 text-[10px] border-t border-white/10 pt-4"></div>
+            <div class="md:col-span-2 glass p-6 rounded-xl space-y-4">
+                <h3 class="orbitron text-sm text-cyan-500 border-b border-cyan-900/50 pb-2">
+                    <i class="fas fa-microchip mr-2"></i> BITÁCORA TÉCNICA DE MISIÓN
+                </h3>
+                <div id="bitacora-ia" class="text-slate-300 text-lg leading-relaxed italic whitespace-pre-line">
+                    Esperando telemetría del taller...
                 </div>
             </div>
 
-            <div class="md:col-span-2">
-                <div class="neon-border p-6 rounded-3xl bg-white/5 min-h-[400px]">
-                    <h3 class="orbitron text-[10px] text-cyan-400 mb-6 font-black uppercase tracking-widest">
-                        <i class="fas fa-satellite-dish mr-2 animate-pulse"></i> Bitácora Técnica de Misión
-                    </h3>
-                    <div id="ui-bitacora" class="space-y-4 text-sm leading-relaxed">
-                        <p class="text-slate-600 italic">Esperando telemetría de taller...</p>
+            <div class="glass p-6 rounded-xl flex flex-col justify-between border-l-4 border-cyan-500">
+                <h3 class="orbitron text-sm text-cyan-500 mb-4">ESTADO_FINANCIERO</h3>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-[10px] text-slate-500 uppercase">Total_Servicio</p>
+                        <p id="v-total" class="orbitron text-2xl text-white">$0</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-500 uppercase">Anticipo_Registrado</p>
+                        <p id="v-anticipo" class="orbitron text-lg text-cyan-400">$0</p>
+                    </div>
+                    <div class="pt-4 border-t border-slate-800">
+                        <p class="text-[10px] text-red-500 uppercase font-bold">Saldo_Pendiente</p>
+                        <p id="v-saldo" class="orbitron text-3xl text-white font-black">$0</p>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-<script type="module">
-    import { db } from "./core/firebase-config.js";
-    import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    </main>
 
-    const getParam = (p) => new URLSearchParams(window.location.search).get(p);
+    <footer class="mt-12 text-center text-slate-700 text-[10px] orbitron tracking-[0.3em]">
+        SYSTEM_BY_TALLERPRO360 // ENLACE_RURAL_LOGISTICS_LLC
+    </footer>
 
-    const ejecutarTrace = () => {
-        const rawId = getParam("id");
-        if (!rawId) return;
+    <script type="module">
+        // IMPORTACIÓN SDK FIREBASE (AJUSTAR CON TU CONFIG)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        // MANIOBRA DE LIMPIEZA: Extraer el ID real de cualquier string sucio
-        const cleanId = rawId.split('_').pop();
-        console.log("🛰️ Nexus-X Trace activado para:", cleanId);
+        const firebaseConfig = { /* PEGA AQUÍ TU CONFIG DE FIREBASE */ };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        onSnapshot(doc(db, "ordenes", cleanId), (snap) => {
-            if (snap.exists()) {
-                const data = snap.data();
-                
-                // Mapeo Visual
-                document.getElementById("ui-taller").innerText = data.taller_aliado || "NEXUS-X LOGISTICS";
-                document.getElementById("ui-placa").innerText = data.placa || "S/P";
-                document.getElementById("ui-estado").innerText = (data.estado || "PROCESO").toUpperCase();
-                
-                // MANIOBRA KM: Mapeo inteligente (soporta km o kilometraje)
-                const km = data.kilometraje || data.km || "0";
-                document.getElementById("ui-km").innerText = `${Number(km).toLocaleString()} KM`;
+        // OBTENER ID DE LA URL
+        const params = new URLSearchParams(window.location.search);
+        const idOrden = params.get("id");
 
-                // MANIOBRA BITÁCORA: El núcleo del reporte
-                const log = data.bitacora_ia || "";
-                const logContainer = document.getElementById("ui-bitacora");
-                if (log) {
-                    logContainer.innerHTML = log.split('\n').filter(t => t.trim()).reverse().map(line => `
-                        <div class="bitacora-line">
-                            <span class="text-[8px] text-cyan-500 font-bold orbitron block mb-1">REPORTE_TECNICO_OK</span>
-                            ${line}
-                        </div>
-                    `).join('');
-                }
-
-                // MANIOBRA FINANCIERA
-                const total = data.total || data.costos_totales?.total || 0;
-                if (total > 0) {
-                    document.getElementById("ui-area-cobro").classList.remove("hidden");
-                    document.getElementById("ui-total").innerText = `$${Math.round(total).toLocaleString()}`;
+        if (idOrden) {
+            onSnapshot(doc(db, "ordenes", idOrden), (snap) => {
+                if (snap.exists()) {
+                    const d = snap.data();
                     
-                    const items = data.items || [];
-                    document.getElementById("ui-items").innerHTML = items.map(i => `
-                        <div class="flex justify-between text-slate-400">
-                            <span>${(i.desc || 'Servicio').toUpperCase()}</span>
-                            <span class="text-white font-bold">$${(Number(i.venta) * Number(i.cantidad || 1)).toLocaleString()}</span>
-                        </div>
-                    `).join('');
-                }
-            }
-        });
-    };
+                    // Inyección de Datos Estabilizada
+                    document.getElementById("placa").innerText = d.placa || "N/A";
+                    document.getElementById("bitacora-ia").innerText = d.bitacora_ia || "Iniciando secuencia de inspección...";
+                    
+                    // Finanzas
+                    document.getElementById("v-total").innerText = `$${Math.round(d.total || 0).toLocaleString()}`;
+                    document.getElementById("v-anticipo").innerText = `$${Math.round(d.anticipo || 0).toLocaleString()}`;
+                    document.getElementById("v-saldo").innerText = `$${Math.round(d.saldo_pendiente || 0).toLocaleString()}`;
 
-    ejecutarTrace();
-</script>
+                    // Lógica de Estado y Barra de Progreso
+                    let p = 10;
+                    let bColor = "border-cyan-500";
+                    if(d.estado === 'DIAGNOSTICO') p = 25;
+                    if(d.estado === 'REPARACION') p = 60;
+                    if(d.estado === 'ENTREGADO') { p = 100; bColor = "border-green-500"; }
+                    
+                    document.getElementById("progreso-bar").style.width = p + "%";
+                    document.getElementById("progreso-txt").innerText = p + "%";
+                    document.getElementById("status-badge").innerText = d.estado;
+                }
+            });
+        }
+    </script>
 </body>
 </html>
