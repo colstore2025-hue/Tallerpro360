@@ -3,130 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS_X | TELEMETRÍA DE MISIÓN</title>
+    <title>NEXUS-X | TERMINAL DE TELEMETRÍA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #05070a; color: #e2e8f0; font-family: 'Rajdhani', sans-serif; }
+        body { background-color: #030508; color: #00f2ff; font-family: 'Rajdhani', sans-serif; overflow-x: hidden; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        .glass { background: rgba(13, 17, 23, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(6, 182, 212, 0.2); }
-        .neon-border { box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); border: 1px solid #06b6d4; }
-        .scanline { background: linear-gradient(to bottom, transparent 50%, rgba(6, 182, 212, 0.05) 50%); background-size: 100% 4px; }
+        .glass { background: rgba(5, 15, 25, 0.9); border: 1px solid #00f2ff33; box-shadow: 0 0 20px #00f2ff11; }
+        .neon-text { text-shadow: 0 0 10px #00f2ff; }
+        .status-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        .glow-btn { transition: 0.3s; border: 1px solid #00f2ff55; }
+        .glow-btn:hover { background: #00f2ff; color: #000; box-shadow: 0 0 20px #00f2ff; }
     </style>
 </head>
-<body class="scanline min-h-screen p-4 md:p-8">
+<body class="p-4 md:p-8">
 
-    <header class="max-w-4xl mx-auto flex justify-between items-center mb-8">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-cyan-500 rounded-sm flex items-center justify-center neon-border">
-                <i class="fas fa-satellite text-black animate-pulse"></i>
-            </div>
-            <div>
-                <h1 class="orbitron text-xl font-bold tracking-tighter text-cyan-400">NEXUS_X</h1>
-                <p class="text-[10px] text-cyan-700 leading-none">PROTOCOL_STARLINK_ACTIVE</p>
-            </div>
+    <div class="max-w-4xl mx-auto flex justify-between items-center mb-6 border-b border-cyan-900 pb-4">
+        <div>
+            <h1 class="orbitron text-2xl font-bold neon-text">NEXUS-X <span class="text-xs font-light opacity-50 text-white">V.2030</span></h1>
+            <p id="fecha-mision" class="text-[10px] tracking-[0.3em] uppercase opacity-60">SISTEMA_ACTIVO</p>
         </div>
-        <div id="status-badge" class="px-4 py-1 bg-cyan-900/30 border border-cyan-500 text-cyan-400 orbitron text-[12px] rounded-full">
-            SINCRONIZANDO...
+        <div class="text-right">
+            <div id="status-label" class="orbitron text-[10px] px-3 py-1 border border-cyan-500 rounded status-pulse uppercase">Sincronizando...</div>
         </div>
-    </header>
+    </div>
 
     <main class="max-w-4xl mx-auto space-y-6">
         
-        <section class="glass p-6 rounded-xl relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-2 text-[8px] text-cyan-900 orbitron">V16.0_STABLE</div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="glass p-6 rounded-lg relative">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label class="text-cyan-600 text-xs orbitron uppercase tracking-widest">Identificador_Unidad</label>
-                    <div id="placa" class="orbitron text-5xl font-black text-white italic">------</div>
+                    <label class="text-[10px] orbitron opacity-50">UNIDAD_DETECTADA</label>
+                    <div id="placa" class="text-6xl font-black orbitron italic text-white">---</div>
+                    <div id="cliente" class="text-sm mt-2 opacity-80 uppercase tracking-widest">---</div>
                 </div>
-                <div class="flex flex-col justify-end">
-                    <div class="flex justify-between text-sm mb-2">
-                        <span class="text-slate-500 italic">Progreso de Misión</span>
-                        <span id="progreso-txt" class="text-cyan-400 orbitron">0%</span>
-                    </div>
-                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div class="flex flex-col justify-end text-right">
+                    <span id="progreso-txt" class="orbitron text-3xl font-bold">0%</span>
+                    <div class="w-full bg-cyan-900/30 h-1 mt-2">
                         <div id="progreso-bar" class="bg-cyan-500 h-full transition-all duration-1000" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="md:col-span-2 glass p-6 rounded-xl space-y-4">
-                <h3 class="orbitron text-sm text-cyan-500 border-b border-cyan-900/50 pb-2">
-                    <i class="fas fa-microchip mr-2"></i> BITÁCORA TÉCNICA DE MISIÓN
-                </h3>
-                <div id="bitacora-ia" class="text-slate-300 text-lg leading-relaxed italic whitespace-pre-line">
-                    Esperando telemetría del taller...
-                </div>
-            </div>
-
-            <div class="glass p-6 rounded-xl flex flex-col justify-between border-l-4 border-cyan-500">
-                <h3 class="orbitron text-sm text-cyan-500 mb-4">ESTADO_FINANCIERO</h3>
-                <div class="space-y-4">
-                    <div>
-                        <p class="text-[10px] text-slate-500 uppercase">Total_Servicio</p>
-                        <p id="v-total" class="orbitron text-2xl text-white">$0</p>
-                    </div>
-                    <div>
-                        <p class="text-[10px] text-slate-500 uppercase">Anticipo_Registrado</p>
-                        <p id="v-anticipo" class="orbitron text-lg text-cyan-400">$0</p>
-                    </div>
-                    <div class="pt-4 border-t border-slate-800">
-                        <p class="text-[10px] text-red-500 uppercase font-bold">Saldo_Pendiente</p>
-                        <p id="v-saldo" class="orbitron text-3xl text-white font-black">$0</p>
-                    </div>
-                </div>
+        <div class="glass p-6 rounded-lg border-l-4 border-cyan-500">
+            <h3 class="orbitron text-xs mb-4 flex items-center gap-2">
+                <i class="fas fa-terminal"></i> TRANSMISIÓN_IA_TERMINAL
+            </h3>
+            <div id="bitacora-display" class="font-mono text-sm md:text-base text-cyan-100 leading-relaxed min-h-[100px]">
+                <span class="status-pulse">_</span> Cargando registros de telemetría...
             </div>
         </div>
 
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <button id="btn-coti" class="glow-btn p-3 rounded text-[10px] orbitron opacity-30 cursor-not-allowed">
+                <i class="fas fa-file-invoice block text-lg mb-1"></i> COTIZACIÓN
+            </button>
+            <button id="btn-check" class="glow-btn p-3 rounded text-[10px] orbitron opacity-30 cursor-not-allowed">
+                <i class="fas fa-clipboard-check block text-lg mb-1"></i> CHECK-LIST
+            </button>
+            <button id="btn-orden" class="glow-btn p-3 rounded text-[10px] orbitron opacity-30 cursor-not-allowed">
+                <i class="fas fa-tools block text-lg mb-1"></i> ORDEN_TRABAJO
+            </button>
+            <button id="btn-factura" class="glow-btn p-3 rounded text-[10px] orbitron opacity-30 cursor-not-allowed">
+                <i class="fas fa-file-signature block text-lg mb-1"></i> FACTURA_LEGAL
+            </button>
+        </div>
+
+        <div class="glass p-6 rounded-lg border-t-2 border-cyan-500 flex justify-between items-center">
+            <div>
+                <p class="text-[10px] orbitron opacity-50">SALDO_PENDIENTE</p>
+                <h2 id="saldo-total" class="text-4xl font-bold orbitron text-white">$ 0</h2>
+            </div>
+            <button onclick="window.open('https://wa.me/573000000000')" class="bg-white text-black px-6 py-2 orbitron font-bold text-xs hover:bg-cyan-400 transition">
+                CONTACTAR ASESOR
+            </button>
+        </div>
     </main>
 
-    <footer class="mt-12 text-center text-slate-700 text-[10px] orbitron tracking-[0.3em]">
-        SYSTEM_BY_TALLERPRO360 // ENLACE_RURAL_LOGISTICS_LLC
-    </footer>
-
     <script type="module">
-        // IMPORTACIÓN SDK FIREBASE (AJUSTAR CON TU CONFIG)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        const firebaseConfig = { /* PEGA AQUÍ TU CONFIG DE FIREBASE */ };
+        const firebaseConfig = { /* TU CONFIGURACIÓN DE FIREBASE AQUÍ */ };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // OBTENER ID DE LA URL
         const params = new URLSearchParams(window.location.search);
         const idOrden = params.get("id");
 
         if (idOrden) {
-            onSnapshot(doc(db, "ordenes", idOrden), (snap) => {
-                if (snap.exists()) {
-                    const d = snap.data();
+            // BUSQUEDA DIRECTA POR ID (Largo o Corto según venga en la URL)
+            onSnapshot(doc(db, "ordenes", idOrden), (docSnap) => {
+                if (docSnap.exists()) {
+                    const d = docSnap.data();
                     
-                    // Inyección de Datos Estabilizada
+                    // Inyección Maestra
                     document.getElementById("placa").innerText = d.placa || "N/A";
-                    document.getElementById("bitacora-ia").innerText = d.bitacora_ia || "Iniciando secuencia de inspección...";
+                    document.getElementById("cliente").innerText = d.cliente || "CLIENTE NO IDENTIFICADO";
+                    document.getElementById("saldo-total").innerText = `$ ${Math.round(d.saldo_pendiente || 0).toLocaleString()}`;
                     
-                    // Finanzas
-                    document.getElementById("v-total").innerText = `$${Math.round(d.total || 0).toLocaleString()}`;
-                    document.getElementById("v-anticipo").innerText = `$${Math.round(d.anticipo || 0).toLocaleString()}`;
-                    document.getElementById("v-saldo").innerText = `$${Math.round(d.saldo_pendiente || 0).toLocaleString()}`;
+                    // Lógica de Bitácora (Efecto IA)
+                    const bitacoraTexto = d.bitacora_ia || "Iniciando análisis de sensores...";
+                    document.getElementById("bitacora-display").innerHTML = `> ${bitacoraTexto.replace(/\n/g, '<br>> ')}`;
 
-                    // Lógica de Estado y Barra de Progreso
-                    let p = 10;
-                    let bColor = "border-cyan-500";
-                    if(d.estado === 'DIAGNOSTICO') p = 25;
-                    if(d.estado === 'REPARACION') p = 60;
-                    if(d.estado === 'ENTREGADO') { p = 100; bColor = "border-green-500"; }
-                    
-                    document.getElementById("progreso-bar").style.width = p + "%";
-                    document.getElementById("progreso-txt").innerText = p + "%";
-                    document.getElementById("status-badge").innerText = d.estado;
+                    // Lógica de Estados y Documentos
+                    let progreso = 10;
+                    const estado = d.estado || "INGRESO";
+                    document.getElementById("status-label").innerText = estado;
+
+                    if(estado === "DIAGNOSTICO") { progreso = 30; habilitarBtn("btn-coti"); }
+                    if(estado === "REPARACION") { progreso = 65; habilitarBtn("btn-coti"); habilitarBtn("btn-orden"); }
+                    if(estado === "FINALIZADO") { progreso = 90; habilitarBtn("btn-coti"); habilitarBtn("btn-orden"); habilitarBtn("btn-check"); }
+                    if(estado === "ENTREGADO") { progreso = 100; habilitarBtn("btn-factura"); }
+
+                    document.getElementById("progreso-bar").style.width = progreso + "%";
+                    document.getElementById("progreso-txt").innerText = progreso + "%";
+                } else {
+                    document.getElementById("bitacora-display").innerHTML = "<span class='text-red-500'>ERROR_404: Misión no encontrada en la nube.</span>";
                 }
             });
+        }
+
+        function habilitarBtn(id) {
+            const el = document.getElementById(id);
+            el.classList.remove("opacity-30", "cursor-not-allowed");
+            el.classList.add("opacity-100", "cursor-pointer");
         }
     </script>
 </body>
