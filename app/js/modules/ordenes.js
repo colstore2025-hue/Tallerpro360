@@ -67,28 +67,69 @@ export default async function ordenes(container) {
             </div>`;
     };
 
-        window.enviarNotificacionNexus = (proceso) => {
-        const idOrden = ordenActiva.id || "PENDIENTE";
-        // CAMBIO ESTRATÉGICO: Apuntamos al motor de renderizado de Vercel que ya validaste
-        const linkTrace = `https://tallerpro360.vercel.app/trace?id=${idOrden}`;
-        
-        // Formateo de Bitácora para impacto visual
-        const bitacoraCorta = ordenActiva.bitacora_ia ? `%0A📝 *BITÁCORA:* ${ordenActiva.bitacora_ia.substring(0, 150).toUpperCase()}...` : "";
-        const totalFormatted = `$${Math.round(ordenActiva.costos_totales?.total || 0).toLocaleString()}`;
-        
-        let msj = "";
-        if (proceso === 'INGRESO') {
-            msj = `🛰️ *NEXUS_X: INGRESO CONFIRMADO*%0A%0AHola *${ordenActiva.cliente}*, recibimos su vehículo *${ordenActiva.placa}*. Hemos iniciado la fase de diagnóstico digital.${bitacoraCorta}%0A%0A🌐 *Siga el progreso en tiempo real aquí:*%0A${linkTrace}`;
-        } else if (proceso === 'FINAL') {
-            msj = `✅ *NEXUS_X: MISIÓN COMPLETADA*%0A%0AVehículo *${ordenActiva.placa}* se encuentra en zona de entrega.%0A💰 *VALOR TOTAL:* ${totalFormatted}%0A%0A📥 *DESCARGUE SU REPORTE TÉCNICO AQUÍ:*%0A${linkTrace}`;
-        } else {
-            msj = `🛰️ *NEXUS_X: ACTUALIZACIÓN DE ESTADO*%0A%0AHola *${ordenActiva.cliente}*, la bitácora técnica de su vehículo *${ordenActiva.placa}* tiene nuevas actualizaciones.%0A%0A🌐 *VER DETALLE Y COSTOS:*%0A${linkTrace}`;
-        }
+        /**
+ * 🛰️ PROTOCOLO DE COMUNICACIÓN EXTERNA - NEXUS-X V16.0
+ * MANIOBRA: Sincronización de Link Trace y Notificación WA
+ */
+window.enviarNotificacionNexus = (proceso) => {
+    // 🛡️ VALIDACIÓN DE SEGURIDAD
+    // Aseguramos que la orden tenga un ID. Si no, abortamos para no enviar links rotos.
+    const idOrden = ordenActiva.id;
+    
+    if (!idOrden || idOrden === "PENDIENTE") {
+        Swal.fire({ 
+            title: 'SINC_REQUIRED', 
+            text: 'Debe sincronizar (Push to Nexus) antes de enviar la notificación.', 
+            icon: 'warning', background: '#0d1117', color: '#06b6d4' 
+        });
+        return;
+    }
 
-        // Validación de número para evitar errores de envío
-        const tel = ordenActiva.telefono ? ordenActiva.telefono.replace(/\D/g, '') : "";
-        window.open(`https://wa.me/57${tel}?text=${msj}`, '_blank');
-    };
+    // 🌐 ENDPOINT ESTRATÉGICO (Vercel Ready)
+    const linkTrace = `https://tallerpro360.vercel.app/trace?id=${idOrden}`;
+    
+    // 📝 FORMATEO DE BITÁCORA (Solo IA_LOG)
+    const bitacoraRaw = ordenActiva.bitacora_ia || "";
+    const bitacoraCorta = bitacoraRaw 
+        ? `%0A📝 *BITÁCORA:* ${bitacoraRaw.substring(0, 120).toUpperCase()}...` 
+        : "";
+    
+    // 💰 FORMATEO FINANCIERO
+    const totalFinal = Math.round(ordenActiva.costos_totales?.total || 0);
+    const totalFormatted = `$${totalFinal.toLocaleString()}`;
+    
+    // 👤 DATOS DE MISIÓN
+    const cliente = (ordenActiva.cliente || "CLIENTE").toUpperCase();
+    const placa = (ordenActiva.placa || "N/A").toUpperCase();
+    
+    let msj = "";
+
+    // ⚡ LÓGICA DE MENSAJERÍA SEGÚN ESTADO
+    if (proceso === 'INGRESO') {
+        msj = `🛰️ *NEXUS_X: INGRESO CONFIRMADO*%0A%0AHola *${cliente}*, recibimos su vehículo *${placa}*. Hemos iniciado la fase de diagnóstico digital.${bitacoraCorta}%0A%0A🌐 *Siga el progreso en tiempo real aquí:*%0A${linkTrace}`;
+    } else if (proceso === 'FINAL') {
+        msj = `✅ *NEXUS_X: MISIÓN COMPLETADA*%0A%0AVehículo *${placa}* se encuentra en zona de entrega.%0A💰 *VALOR TOTAL:* ${totalFormatted}%0A%0A📥 *REPORTE TÉCNICO Y PAGO AQUÍ:*%0A${linkTrace}`;
+    } else {
+        msj = `🛰️ *NEXUS_X: ACTUALIZACIÓN DE ESTADO*%0A%0AHola *${cliente}*, la bitácora técnica de su vehículo *${placa}* tiene nuevas actualizaciones.%0A%0A🌐 *VER DETALLE Y COSTOS:*%0A${linkTrace}`;
+    }
+
+    // 📱 VALIDACIÓN TELEFÓNICA (Limpieza de caracteres)
+    const telRaw = ordenActiva.telefono || "";
+    const tel = telRaw.replace(/\D/g, '');
+
+    if (tel.length < 10) {
+        Swal.fire({ 
+            title: 'ERROR_PHONE', 
+            text: 'El número de teléfono no es válido para WhatsApp.', 
+            icon: 'error', background: '#0d1117', color: '#f87171' 
+        });
+        return;
+    }
+
+    // 🚀 DISPARO DE MENSAJE
+    // Usamos el prefijo 57 por defecto (Colombia)
+    window.open(`https://wa.me/57${tel}?text=${msj}`, '_blank');
+};
 
     const renderBase = () => {
         container.innerHTML = `
