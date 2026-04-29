@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS_X | DOCUMENTO OFICIAL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #05070a; color: #e2e8f0; font-family: 'Rajdhani', sans-serif; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .paper { background: white; color: #1a1a1a; min-height: 29.7cm; width: 100%; max-width: 21cm; margin: auto; padding: 1.5cm; position: relative; overflow: hidden; }
+        .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 8rem; opacity: 0.03; font-family: 'Orbitron'; pointer-events: none; }
+        /* Variaciones de Color según Tipo */
+        .theme-cotizacion { border-top: 15px solid #fbbf24; } /* Oro */
+        .theme-diagnostico { border-top: 15px solid #22d3ee; } /* Cian */
+        .theme-factura { border-top: 15px solid #22c55e; }    /* Verde */
+        .theme-reparacion { border-top: 15px solid #ef4444; } /* Rojo */
+        @media print { body { background: white; } .paper { margin: 0; padding: 1cm; box-shadow: none; } .no-print { display: none; } }
+    </style>
+</head>
+<body class="p-0 md:p-10">
+
+    <div id="loader" class="text-center py-20 orbitron animate-pulse text-cyan-400">
+        🛰️ ACCEDIENDO A SERVIDOR NEXUS_X...
+    </div>
+
+    <div id="main-doc" class="paper shadow-2xl hidden transition-all duration-700">
+        <div class="watermark orbitron" id="bg-watermark">NEXUS_X</div>
+
+        <div class="flex justify-between items-start border-bottom pb-6">
+            <div>
+                <h1 id="taller-nombre" class="orbitron text-2xl font-black uppercase leading-none">---</h1>
+                <p id="taller-nit" class="text-xs font-bold text-gray-500 tracking-widest">NIT: ---</p>
+                <p id="taller-regimen" class="text-[9px] uppercase text-gray-400 font-bold mt-1">---</p>
+            </div>
+            <div class="text-right">
+                <h2 id="doc-titulo" class="orbitron text-xl font-bold italic tracking-tighter">---</h2>
+                <p id="doc-id" class="text-xs font-mono">ID: ---</p>
+                <p id="doc-fecha" class="text-[10px] text-gray-400 mt-1">---</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-8 my-8 bg-gray-50 p-4 border border-gray-100">
+            <div>
+                <label class="text-[9px] font-bold text-cyan-700 block orbitron">DESTINATARIO_MISIÓN</label>
+                <p id="v-cliente" class="text-lg font-bold uppercase italic">---</p>
+                <p id="v-tel" class="text-xs text-gray-500 italic">---</p>
+            </div>
+            <div class="text-right border-l-2 border-gray-200 pl-4">
+                <label class="text-[9px] font-bold text-cyan-700 block orbitron">UNIDAD_TELEMETRÍA</label>
+                <p id="v-placa" class="text-3xl font-black orbitron">---</p>
+                <p id="v-detalles" class="text-xs text-gray-500 italic">---</p>
+            </div>
+        </div>
+
+        <div id="section-bitacora" class="mb-8 p-4 bg-slate-900 text-cyan-100 border-l-4 border-cyan-400 italic font-mono text-xs">
+            <span class="block mb-1 font-bold text-cyan-400 opacity-70 tracking-widest uppercase">/ TRANSMISIÓN_IA:</span>
+            <p id="v-bitacora">---</p>
+        </div>
+
+        <div class="mb-10">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-100 orbitron text-[10px] text-gray-600">
+                    <tr>
+                        <th class="p-2 text-left">DESCRIPCIÓN_SISTEMA_SERVICIO</th>
+                        <th class="p-2 text-right">CANT</th>
+                        <th class="p-2 text-right">VALOR_UNITARIO</th>
+                        <th class="p-2 text-right">SUBTOTAL</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-items" class="text-[12px] border-b border-gray-100">
+                    </tbody>
+            </table>
+        </div>
+
+        <div class="flex justify-end mt-10">
+            <div class="w-64 space-y-2 border-t-2 border-gray-900 pt-4">
+                <div class="flex justify-between text-xs font-bold">
+                    <span>NETO_MISIÓN:</span>
+                    <span id="f-neto">$ 0</span>
+                </div>
+                <div id="row-iva" class="flex justify-between text-xs text-gray-500">
+                    <span>IVA_APLICADO:</span>
+                    <span id="f-iva">$ 0</span>
+                </div>
+                <div class="flex justify-between text-xl orbitron font-black border-t pt-2 border-dashed">
+                    <span>TOTAL:</span>
+                    <span id="f-total">$ 0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-20 border-t pt-4 text-[9px] text-gray-400 leading-tight">
+            <p id="legal-taller">---</p>
+            <p class="mt-2 uppercase font-bold text-gray-300 tracking-[0.2em]">System_Powered_By_TallerPRO360_Nexus_X_Core</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+      apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+      authDomain: "tallerpro360.firebaseapp.com",
+      projectId: "tallerpro360",
+      storageBucket: "tallerpro360.firebasestorage.app",
+      messagingSenderId: "636224778184",
+      appId: "1:636224778184:web:9bd7351b6458a1ef625afd",
+      measurementId: "G-VEC2C0QX2G"
+    };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get("id");
+        const tipo = params.get("tipo"); // cotizacion, diagnostico, factura, etc.
+
+        async function cargarMision() {
+            if (!id) return;
+            const docRef = doc(db, "ordenes", id);
+            const snap = await getDoc(docRef);
+
+            if (snap.exists()) {
+                const d = snap.data();
+                inyectarDatos(d);
+            }
+        }
+
+        function inyectarDatos(d) {
+            document.getElementById("loader").style.display = "none";
+            document.getElementById("main-doc").classList.remove("hidden");
+            
+            // Estilo por Tipo
+            const docFrame = document.getElementById("main-doc");
+            docFrame.classList.add(`theme-${tipo}`);
+            document.getElementById("bg-watermark").innerText = tipo.toUpperCase();
+            document.getElementById("doc-titulo").innerText = tipo.toUpperCase() + "_OFICIAL";
+
+            // Datos Taller (Nexus-Logic por NIT)
+            const nit = d.empresa_nit || "900.000.000-1";
+            document.getElementById("taller-nombre").innerText = d.empresa_nombre || "TALLER AFILIADO";
+            document.getElementById("taller-nit").innerText = "NIT: " + nit;
+            
+            // 🇨🇴 LÓGICA TRIBUTARIA COLOMBIANA AUTOMÁTICA
+            // Simplificado: Si el NIT tiene menos de 10 dígitos (cédula) o lógica interna
+            const esResponsableIVA = nit.replace(/\D/g, '').length > 9; 
+            document.getElementById("taller-regimen").innerText = esResponsableIVA ? "Régimen Ordinario - Responsable de IVA" : "Régimen Simplificado - No Responsable de IVA";
+            if(!esResponsableIVA) document.getElementById("row-iva").style.display = "none";
+
+            // Datos Vehículo/Cliente
+            document.getElementById("v-cliente").innerText = d.cliente;
+            document.getElementById("v-placa").innerText = d.placa;
+            document.getElementById("v-bitacora").innerText = d.bitacora_ia || "SIN REGISTROS TÉCNICOS ADICIONALES.";
+            document.getElementById("doc-id").innerText = "ID: " + d.id;
+
+            // Totales
+            document.getElementById("f-total").innerText = `$ ${Math.round(d.total || 0).toLocaleString()}`;
+            document.getElementById("f-neto").innerText = `$ ${Math.round(d.total / (esResponsableIVA ? 1.19 : 1)).toLocaleString()}`;
+            document.getElementById("f-iva").innerText = `$ ${Math.round(d.total - (d.total / 1.19)).toLocaleString()}`;
+
+            // Tabla de Items (Si tienes el array en Firestore, si no, mostramos el total)
+            const tbody = document.getElementById("tabla-items");
+            tbody.innerHTML = `<tr><td class="p-2 border-b">SERVICIO TÉCNICO INTEGRAL / MANO DE OBRA</td><td class="p-2 text-right border-b">1</td><td class="p-2 text-right border-b">$ ${Math.round(d.total || 0).toLocaleString()}</td><td class="p-2 text-right border-b">$ ${Math.round(d.total || 0).toLocaleString()}</td></tr>`;
+        }
+
+        cargarMision();
+    </script>
+</body>
+</html>
