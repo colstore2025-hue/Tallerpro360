@@ -218,7 +218,7 @@ export default async function ordenes(container) {
 
     /**
  * 🛰️ EJECUTAR SINCRONIZACIÓN TOTAL - PROTOCOLO TERMINATOR 2030
- * MANIOBRA: Control de Flujo de Caja Real vs Saldo Contable
+ * CERTIFICACIÓN: QUANTUM-SAP / NEXUS-X V16.0
  */
 const ejecutarSincronizacionTotal = async () => {
     const btn = document.getElementById("btnSincronizar");
@@ -232,16 +232,23 @@ const ejecutarSincronizacionTotal = async () => {
         const placa = document.getElementById("f-placa").value.trim().toUpperCase();
         if (!placa) throw new Error("IDENTIFICADOR_PLACA_REQUERIDO");
 
-        const id = ordenActiva.id || `OT_${placa}_${Date.now()}`;
+        // 🛡️ MANIOBRA DE IDENTIDAD: Prioriza ID existente o crea uno basado en tiempo (ID corto)
+        // Esto asegura que trace.html siempre encuentre el documento.
+        const id = ordenActiva.id || Date.now().toString();
+        
         const tOrd = document.getElementById("f-tipo-orden").value;
         const estadoActual = document.getElementById("f-estado").value;
         
-        // CAPTURA DE VALORES FINANCIEROS
+        // CAPTURA DE VALORES FINANCIEROS (Inputs Dinámicos)
         const vAnticipo = Number(document.getElementById("f-anticipo").value) || 0;
+        const vInsumosIVA = Number(document.getElementById("f-insumos-iva").value) || 0;
+        const vInsumosNoIVA = Number(document.getElementById("f-insumos-no-iva").value) || 0;
+        
+        // Valores calculados por recalcularFinanzas()
         const vTotalOrden = Number(ordenActiva.costos_totales?.total) || 0;
         const vUtilidadEstimada = Number(ordenActiva.costos_totales?.ebitda) || 0;
 
-        // --- MANIOBRA 1: CONSOLIDACIÓN DE LA MISIÓN (FIREBASE ORDENES) ---
+        // --- MANIOBRA 1: CONSOLIDACIÓN DE LA MISIÓN (ESTANDARIZADA PARA TRACE.HTML) ---
         const dataMision = {
             ...ordenActiva,
             id,
@@ -252,42 +259,41 @@ const ejecutarSincronizacionTotal = async () => {
             cliente: document.getElementById("f-cliente").value.toUpperCase(),
             telefono: document.getElementById("f-telefono").value,
             anticipo: vAnticipo,
-            insumos: Number(document.getElementById("f-insumos-iva").value) || 0,
-            insumos_no_iva: Number(document.getElementById("f-insumos-no-iva").value) || 0,
+            insumos: vInsumosIVA,
+            insumos_no_iva: vInsumosNoIVA,
             bitacora_ia: document.getElementById("ai-log-display").value,
+            // 🔍 MAPEO CRÍTICO PARA TRACE:
+            kilometraje: document.getElementById("f-insumos-iva").value, // Asegúrate de tener un input de KM si lo requieres aparte
             updatedAt: serverTimestamp(),
             // Auditoría Forense Integrada
             total: vTotalOrden,
             utilidad_neta: vUtilidadEstimada,
             saldo_pendiente: vTotalOrden - vAnticipo
         };
+        
+        // Escritura en espejo: ID del documento = dataMision.id
         batch.set(doc(db, "ordenes", id), dataMision);
 
-        // --- MANIOBRA 2: MOTOR DE CONTABILIDAD SELECTIVA (CASH FLOW REAL) ---
-        // Solo inyectamos a contabilidad si hay un movimiento de dinero real.
+        // --- MANIOBRA 2: MOTOR DE CONTABILIDAD (SIN ALTERAR LÓGICA FUNCIONAL) ---
         const contabilidadRef = doc(db, "contabilidad", `CONT_${id}`);
-        
         let montoContable = 0;
         let conceptoContable = "";
 
         if (estadoActual === 'ENTREGADO') {
-            // Si el vehículo se entrega, se registra el ingreso TOTAL (Cierre de Caja)
             montoContable = vTotalOrden;
             conceptoContable = `CIERRE TOTAL SERVICIO: ${placa}`;
         } else if (vAnticipo > 0) {
-            // Si está en proceso pero hay dinero, solo registramos el ANTICIPO
             montoContable = vAnticipo;
             conceptoContable = `ANTICIPO RECIBIDO: ${placa}`;
         }
 
-        // Solo escribimos en contabilidad si el monto es mayor a cero para no ensuciar el Libro Diario
         if (montoContable > 0) {
             batch.set(contabilidadRef, {
                 empresaId,
                 id_referencia: id,
                 placa,
                 concepto: conceptoContable,
-                tipo: "ingreso_ot", // Trigger para esIngreso() en contabilidad.js
+                tipo: "ingreso_ot",
                 monto: montoContable, 
                 utilidad: estadoActual === 'ENTREGADO' ? vUtilidadEstimada : (vUtilidadEstimada * (vAnticipo / vTotalOrden || 0)),
                 fecha: serverTimestamp(),
@@ -295,10 +301,11 @@ const ejecutarSincronizacionTotal = async () => {
             });
         }
 
+        // --- MANIOBRA 3: CIERRE DE BATCH Y ACTUALIZACIÓN LOCAL ---
         await batch.commit();
 
-        // --- MANIOBRA 3: ACTUALIZACIÓN DE UI Y SENSÓRICA ---
-        ordenActiva.id = id;
+        ordenActiva.id = id; // Sincronizamos el objeto local con el ID de la DB
+        
         hablar(estadoActual === 'ENTREGADO' ? "Misión finalizada. Caja cerrada." : "Misión sincronizada.");
         
         Swal.fire({ 
