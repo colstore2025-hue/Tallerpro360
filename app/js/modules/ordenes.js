@@ -259,7 +259,7 @@ window.enviarNotificacionNexus = (proceso) => {
 
     /**
  * 🛰️ EJECUTAR SINCRONIZACIÓN TOTAL - PROTOCOLO TERMINATOR 2030
- * CERTIFICACIÓN: QUANTUM-SAP / NEXUS-X V16.0
+ * CERTIFICACIÓN: QUANTUM-SAP / NEXUS-X V16.5 (ESTABILIZACIÓN CERO PARCHES)
  */
 const ejecutarSincronizacionTotal = async () => {
     const btn = document.getElementById("btnSincronizar");
@@ -273,23 +273,24 @@ const ejecutarSincronizacionTotal = async () => {
         const placa = document.getElementById("f-placa").value.trim().toUpperCase();
         if (!placa) throw new Error("IDENTIFICADOR_PLACA_REQUERIDO");
 
-        // 🛡️ MANIOBRA DE IDENTIDAD: Prioriza ID existente o crea uno basado en tiempo (ID corto)
-        // Esto asegura que trace.html siempre encuentre el documento.
-        const id = ordenActiva.id || Date.now().toString();
+        // 🛡️ MANIOBRA DE IDENTIDAD ABSOLUTA
+        // Respetamos el ID que ya existe (prefijo OT_...) para no romper el historial.
+        // Si es nueva, generamos el ID estándar para el ecosistema Nexus.
+        const id = ordenActiva.id || `OT_${placa}_${Date.now()}`;
         
         const tOrd = document.getElementById("f-tipo-orden").value;
         const estadoActual = document.getElementById("f-estado").value;
         
-        // CAPTURA DE VALORES FINANCIEROS (Inputs Dinámicos)
+        // CAPTURA DE VALORES FINANCIEROS (Sanitización de Datos)
         const vAnticipo = Number(document.getElementById("f-anticipo").value) || 0;
         const vInsumosIVA = Number(document.getElementById("f-insumos-iva").value) || 0;
         const vInsumosNoIVA = Number(document.getElementById("f-insumos-no-iva").value) || 0;
         
-        // Valores calculados por recalcularFinanzas()
+        // Valores del Motor Financiero
         const vTotalOrden = Number(ordenActiva.costos_totales?.total) || 0;
         const vUtilidadEstimada = Number(ordenActiva.costos_totales?.ebitda) || 0;
 
-        // --- MANIOBRA 1: CONSOLIDACIÓN DE LA MISIÓN (ESTANDARIZADA PARA TRACE.HTML) ---
+        // --- MANIOBRA 1: CONSOLIDACIÓN DE TELEMETRÍA (PARA TRACE.HTML PROFESIONAL) ---
         const dataMision = {
             ...ordenActiva,
             id,
@@ -302,20 +303,28 @@ const ejecutarSincronizacionTotal = async () => {
             anticipo: vAnticipo,
             insumos: vInsumosIVA,
             insumos_no_iva: vInsumosNoIVA,
-            bitacora_ia: document.getElementById("ai-log-display").value,
-            // 🔍 MAPEO CRÍTICO PARA TRACE:
-            kilometraje: document.getElementById("f-insumos-iva").value, // Asegúrate de tener un input de KM si lo requieres aparte
+            bitacora_ia: document.getElementById("ai-log-display")?.value || "INICIANDO TELEMETRÍA...",
+            
+            // 🔍 MAPEO DE ALTO NIVEL PARA EL TRACE FUTURISTA
+            // Creamos campos específicos que el Trace leerá para activar botones de PDF
+            documentos: {
+                coti_url: ordenActiva.documentos?.coti_url || null,
+                checklist_url: ordenActiva.documentos?.checklist_url || null,
+                factura_url: ordenActiva.documentos?.factura_url || null,
+                trazabilidad_url: ordenActiva.documentos?.trazabilidad_url || null
+            },
+            
+            kilometraje: document.getElementById("f-insumos-iva")?.value || "0", // Ajustar ID de input según corresponda
             updatedAt: serverTimestamp(),
-            // Auditoría Forense Integrada
             total: vTotalOrden,
             utilidad_neta: vUtilidadEstimada,
             saldo_pendiente: vTotalOrden - vAnticipo
         };
         
-        // Escritura en espejo: ID del documento = dataMision.id
+        // 💾 PERSISTENCIA EN NUBE
         batch.set(doc(db, "ordenes", id), dataMision);
 
-        // --- MANIOBRA 2: MOTOR DE CONTABILIDAD (SIN ALTERAR LÓGICA FUNCIONAL) ---
+        // --- MANIOBRA 2: INTEGRIDAD CONTABLE (SIN ALTERAR CONTABILIDAD.JS) ---
         const contabilidadRef = doc(db, "contabilidad", `CONT_${id}`);
         let montoContable = 0;
         let conceptoContable = "";
@@ -334,25 +343,28 @@ const ejecutarSincronizacionTotal = async () => {
                 id_referencia: id,
                 placa,
                 concepto: conceptoContable,
-                tipo: "ingreso_ot",
+                tipo: "ingreso_ot", 
                 monto: montoContable, 
-                utilidad: estadoActual === 'ENTREGADO' ? vUtilidadEstimada : (vUtilidadEstimada * (vAnticipo / vTotalOrden || 0)),
+                utilidad: estadoActual === 'ENTREGADO' ? vUtilidadEstimada : (vUtilidadEstimada * (vAnticipo / vTotalOrden || 1)),
                 fecha: serverTimestamp(),
-                creadoEn: serverTimestamp()
+                creadoEn: serverTimestamp(),
+                vendedor: auth.currentUser?.email || "SISTEMA_NEXUS"
             });
         }
 
-        // --- MANIOBRA 3: CIERRE DE BATCH Y ACTUALIZACIÓN LOCAL ---
+        // --- MANIOBRA 3: CIERRE DE BATCH Y ACTUALIZACIÓN DE UI ---
         await batch.commit();
 
-        ordenActiva.id = id; // Sincronizamos el objeto local con el ID de la DB
+        // 🧠 ACTUALIZACIÓN DEL ESTADO LOCAL (Vital para evitar links vacíos)
+        ordenActiva = { ...dataMision }; 
         
-        hablar(estadoActual === 'ENTREGADO' ? "Misión finalizada. Caja cerrada." : "Misión sincronizada.");
+        hablar(estadoActual === 'ENTREGADO' ? "Misión finalizada. Caja cerrada." : "Misión sincronizada en la nube de Nexus.");
         
         Swal.fire({ 
             title: '🛰️ NEXUS_SYNC_OK', 
-            text: `LOGÍSTICA ${placa} ACTUALIZADA`,
-            icon: 'success', background: '#0d1117', color: '#06b6d4'
+            text: `TELEMETRÍA DE ${placa} ACTUALIZADA`,
+            icon: 'success', background: '#0d1117', color: '#06b6d4',
+            confirmButtonColor: '#06b6d4'
         });
 
         document.getElementById("nexus-terminal").classList.add("hidden");
@@ -361,7 +373,13 @@ const ejecutarSincronizacionTotal = async () => {
         console.error("QUANTUM_CORE_FAIL:", e);
         btn.disabled = false;
         btn.innerHTML = `🛰️ PUSH_TO_NEXUS_CLOUD`;
-        Swal.fire({ title: '🚨 ERROR', text: e.message, icon: 'error', background: '#0d1117', color: '#f87171' });
+        Swal.fire({ 
+            title: '🚨 CRITICAL_ERROR', 
+            text: `FALLO EN SINCRONIZACIÓN: ${e.message}`, 
+            icon: 'error', 
+            background: '#0d1117', 
+            color: '#f87171' 
+        });
     }
 };
 
