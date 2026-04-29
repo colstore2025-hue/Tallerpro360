@@ -3,21 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS-X | STATUS LIVE</title>
+    <title>NEXUS-X | LIVE TRACE</title>
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
     <style>
         :root { --neon-cyan: #00f2ff; --dark-bg: #05070a; }
-        body { background: radial-gradient(circle at top, #0d1117 0%, var(--dark-bg) 100%); color: #e2e8f0; font-family: 'JetBrains Mono', monospace; min-height: 100vh; overflow-x: hidden; }
+        body { background: radial-gradient(circle at top, #0d1117 0%, var(--dark-bg) 100%); color: #e2e8f0; font-family: 'JetBrains Mono', monospace; min-height: 100vh; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .glow-text { text-shadow: 0 0 15px rgba(0, 242, 255, 0.6); }
-        .bitacora-entry { border-left: 3px solid var(--neon-cyan); background: linear-gradient(90deg, rgba(0, 242, 255, 0.07) 0%, transparent 100%); padding: 15px; margin-bottom: 12px; border-radius: 0 8px 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
+        .bitacora-entry { border-left: 3px solid var(--neon-cyan); background: linear-gradient(90deg, rgba(0, 242, 255, 0.07) 0%, transparent 100%); padding: 15px; margin-bottom: 12px; }
         .hud-line { height: 1px; background: linear-gradient(90deg, var(--neon-cyan), transparent); }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 10px; }
     </style>
 </head>
 <body class="p-4 lg:p-10">
@@ -25,10 +23,10 @@
     <main class="max-w-5xl mx-auto">
         <header class="flex justify-between items-center mb-8">
             <div class="flex items-center gap-4">
-                <img src="assets/favicon.png" alt="Nexus-X" class="w-10 h-10 object-contain">
+                <img src="assets/favicon.png" alt="Nexus-X" class="w-10 h-10">
                 <div>
                     <h1 class="orbitron text-2xl font-black italic tracking-tighter glow-text uppercase">Nexus<span class="text-red-600">_X</span></h1>
-                    <p id="taller-aliado" class="text-[9px] orbitron text-cyan-400 tracking-widest uppercase italic">Cargando Sistema...</p>
+                    <p id="taller-aliado" class="text-[9px] orbitron text-cyan-400 tracking-widest uppercase">Protocolo Starlink Activo</p>
                 </div>
             </div>
             <div class="text-right">
@@ -40,31 +38,29 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div class="lg:col-span-7 space-y-6">
                 <div class="glass p-8 rounded-2xl border-l-4 border-cyan-500">
-                    <p class="text-[9px] orbitron text-cyan-500 mb-2 tracking-widest">IDENTIFICADOR_UNIDAD</p>
-                    <h2 id="placa" class="orbitron text-6xl font-black italic text-white tracking-tighter uppercase">------</h2>
+                    <p class="text-[9px] orbitron text-cyan-500 mb-2">IDENTIFICADOR_UNIDAD</p>
+                    <h2 id="placa" class="orbitron text-6xl font-black italic text-white tracking-tighter">------</h2>
                     <div class="hud-line my-4"></div>
                     <div class="flex gap-6 text-[10px] orbitron">
                         <p class="text-slate-400 uppercase">Estado: <span id="estado" class="text-white font-bold tracking-widest">---</span></p>
-                        <p class="text-slate-400 uppercase">Kilometraje: <span id="km-info" class="text-white">---</span></p>
+                        <p class="text-slate-400 uppercase">Recorrido: <span id="km-info" class="text-white">---</span></p>
                     </div>
                 </div>
 
                 <div class="glass p-6 rounded-2xl">
-                    <h3 class="orbitron text-[10px] text-cyan-500 font-bold mb-6 tracking-widest uppercase flex items-center gap-2">
-                        <i class="fas fa-satellite-dish animate-pulse"></i> Bitácora de Misión
-                    </h3>
-                    <div id="timeline-container" class="space-y-4 max-h-[450px] overflow-y-auto pr-2">
-                        <p class="text-slate-500 text-xs italic">Iniciando protocolo de recepción...</p>
+                    <h3 class="orbitron text-[10px] text-cyan-500 font-bold mb-6 tracking-widest uppercase"><i class="fas fa-satellite-dish mr-2 animate-pulse"></i> Bitácora Técnica de Misión</h3>
+                    <div id="timeline-container" class="space-y-4 max-h-[400px] overflow-y-auto">
+                        <p class="text-slate-500 text-xs italic">Escaneando paquetes de datos...</p>
                     </div>
                 </div>
             </div>
 
             <div class="lg:col-span-5 space-y-6">
                 <div id="area-financiera" class="glass p-8 rounded-3xl border-t-2 border-cyan-500 hidden">
-                    <h3 class="orbitron text-[10px] text-cyan-500 font-bold mb-6 uppercase tracking-widest">Liquidación de Orden</h3>
+                    <h3 class="orbitron text-[10px] text-cyan-500 font-bold mb-6 uppercase">Costos de Misión</h3>
                     <div id="lista-items" class="space-y-3 mb-8"></div>
                     <div class="border-t border-white/10 pt-6 text-right">
-                        <p class="text-[9px] orbitron text-slate-500 mb-1 font-bold uppercase">Total_A_Pagar</p>
+                        <p class="text-[9px] orbitron text-slate-500 mb-1 font-bold uppercase">Total_Liquidación</p>
                         <div id="total-final" class="text-5xl font-black orbitron text-white italic tracking-tighter">$ 0</div>
                     </div>
                     <div id="btn-acciones" class="mt-8"></div>
@@ -72,7 +68,7 @@
 
                 <div id="loader" class="glass p-10 rounded-3xl text-center">
                     <i class="fas fa-spinner animate-spin text-cyan-500 text-3xl mb-4"></i>
-                    <p class="orbitron text-[10px] tracking-widest">ENLAZANDO CON STARLINK...</p>
+                    <p class="orbitron text-[10px] tracking-widest">DESCIFRANDO ENLACE STARLINK...</p>
                 </div>
             </div>
         </div>
@@ -82,61 +78,61 @@
     import { db as moduleDb } from "./core/firebase-config.js";
     import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const iniciarSecuencia = () => {
+    const iniciarRastreo = () => {
         const db = moduleDb || window.db;
         const params = new URLSearchParams(window.location.search);
         const rawId = params.get("id");
 
         if (rawId && db) {
-            // Limpieza: OT_FAB345_177... -> 177...
-            const cleanId = rawId.split('_').pop().trim();
-            console.log("🛰️ Buscando en Firestore:", cleanId);
+            // MANIOBRA FORENSE: Extraer el ID real (el número del final)
+            const idReal = rawId.split('_').pop().trim();
+            console.log("🛰️ Nexus-X: Conectando con ID:", idReal);
+            
+            const docRef = doc(db, "ordenes", idReal);
 
-            onSnapshot(doc(db, "ordenes", cleanId), (snap) => {
+            onSnapshot(docRef, (snap) => {
                 if (snap.exists()) {
-                    actualizarInterfaz(snap.data(), snap.id);
+                    actualizarUI(snap.data(), snap.id);
                 } else {
-                    document.getElementById("loader").innerHTML = `<p class="text-red-500 orbitron text-[10px]">ERROR: DOCUMENTO_NO_ENCONTRADO</p>`;
+                    document.getElementById("loader").innerHTML = `<div class="text-red-500 orbitron text-[10px]">ERROR_ID_NOT_FOUND: ${idReal}</div>`;
                 }
             }, (error) => {
-                console.error(error);
-                document.getElementById("loader").innerHTML = `<p class="text-red-500 orbitron text-[9px]">ERROR_PERMISOS_FIREBASE</p>`;
+                console.error("Error Firebase:", error);
+                document.getElementById("loader").innerHTML = `<p class="text-red-500 text-[10px]">PERMISO_DENEGADO</p>`;
             });
         } else if (!db) {
-            setTimeout(iniciarSecuencia, 500);
+            setTimeout(iniciarRastreo, 500);
         }
     };
 
-    function actualizarInterfaz(data, id) {
+    function actualizarUI(data, id) {
         document.getElementById("loader").classList.add("hidden");
         
-        // Datos de Identidad
-        document.getElementById("taller-aliado").innerText = data.taller_aliado || "NEXUS_X LOGISTICS";
+        // Mapeo de Identidad
+        document.getElementById("taller-aliado").innerText = data.taller_aliado || "NEXUS-X PARTNER";
         document.getElementById("doc-id").innerText = `#${id.slice(-6).toUpperCase()}`;
-        document.getElementById("placa").innerText = data.placa || "S/P";
+        document.getElementById("placa").innerText = data.placa || "S/N";
+        document.getElementById("estado").innerText = (data.estado || "PROCESANDO").toUpperCase();
         
-        const est = (data.estado || "PROCESANDO").toUpperCase();
-        document.getElementById("estado").innerText = est;
-        
-        // Kilometraje (Estabilizado)
-        const km = data.kilometraje || data.km || "0";
-        document.getElementById("km-info").innerText = `${Number(km).toLocaleString()} KM`;
+        // Kilometraje (Soporte para ambos nombres de campo)
+        const kmValue = data.kilometraje || data.km || "0";
+        document.getElementById("km-info").innerText = `${kmValue} KM`;
 
-        // EL ÉXITO: LA BITÁCORA
+        // ÉXITO DE MISIÓN: La Bitácora
         const logBox = document.getElementById("timeline-container");
-        // Prioridad: 1. bitacora_ia, 2. notas, 3. observaciones
-        const contenidoLog = data.bitacora_ia || data.notas || data.observaciones || "";
+        // Fusionamos bitacora_ia con el campo bitacora normal por seguridad
+        const logsRaw = [data.bitacora_ia, data.bitacora, data.notas].filter(x => x && x.trim() !== "").join('\n');
         
-        if (contenidoLog) {
-            const lineas = contenidoLog.split('\n').filter(l => l.trim()).reverse();
-            logBox.innerHTML = lineas.map(linea => `
+        if (logsRaw) {
+            const lineas = logsRaw.split('\n').filter(l => l.trim()).reverse();
+            logBox.innerHTML = lineas.map(l => `
                 <div class="bitacora-entry">
-                    <p class="text-[7px] orbitron text-cyan-500 mb-1 tracking-tighter opacity-70 italic font-bold">NEXUS_REPORT > DATA_VERIFIED</p>
-                    <p class="text-sm font-light leading-relaxed">${linea}</p>
+                    <p class="text-[7px] orbitron text-cyan-500 mb-1 tracking-tighter opacity-70">DATA_SYNC_OK > VERIFIED</p>
+                    <p class="text-sm font-light leading-relaxed">${l}</p>
                 </div>
             `).join('');
         } else {
-            logBox.innerHTML = `<p class="text-slate-600 text-[10px] orbitron italic">Esperando reporte técnico del taller...</p>`;
+            logBox.innerHTML = "<p class='text-slate-600 text-[10px] italic orbitron'>Sin reportes técnicos aún...</p>";
         }
 
         // Finanzas
@@ -146,7 +142,7 @@
             document.getElementById("lista-items").innerHTML = items.map(i => `
                 <div class="flex justify-between items-center bg-white/5 p-3 rounded border border-white/5">
                     <span class="text-[10px] font-bold uppercase tracking-tight">${i.desc || i.descripcion || 'Servicio'}</span>
-                    <span class="text-xs font-black text-cyan-400">$${(Number(i.venta || 0) * Number(i.cantidad || 1)).toLocaleString()}</span>
+                    <span class="text-xs font-black text-cyan-400">$${(Number(i.venta) * Number(i.cantidad || 1)).toLocaleString()}</span>
                 </div>
             `).join('');
             
@@ -154,15 +150,14 @@
             document.getElementById("total-final").innerText = `$${Number(total).toLocaleString()}`;
             
             const btnBox = document.getElementById("btn-acciones");
+            const est = (data.estado || '').toUpperCase();
             if (est === 'LISTO') {
-                btnBox.innerHTML = `<button onclick="window.open('https://checkout.bold.co/payment/OT_${data.placa}')" class="w-full bg-green-600 text-white py-4 orbitron font-black text-xs rounded shadow-[0_0_20px_rgba(16,185,129,0.3)] uppercase italic">Pagar vía BOLD</button>`;
-            } else if (est === 'COTIZACION') {
-                btnBox.innerHTML = `<div class="p-3 bg-amber-500/10 border border-amber-500/50 rounded text-center font-bold text-[10px] orbitron text-amber-500">APROBACIÓN PENDIENTE</div>`;
+                btnBox.innerHTML = `<button onclick="window.open('https://checkout.bold.co/payment/OT_${data.placa}')" class="w-full bg-green-600 text-white py-4 orbitron font-black text-xs rounded shadow-[0_0_15px_#10b981] uppercase">Pagar Misión con BOLD</button>`;
             }
         }
     }
 
-    iniciarSecuencia();
+    iniciarRastreo();
 </script>
 </body>
 </html>
