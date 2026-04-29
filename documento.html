@@ -118,19 +118,37 @@
         const tipo = params.get("tipo"); // cotizacion, diagnostico, factura, etc.
 
         async function cargarMision() {
-            if (!id) return;
-            const docRef = doc(db, "ordenes", id);
-            const snap = await getDoc(docRef);
+    if (!id) return;
+    
+    try {
+        // 1. Obtener los datos de la Orden primero
+        const docRef = doc(db, "ordenes", id);
+        const snap = await getDoc(docRef);
 
-            if (snap.exists()) {
-                const d = snap.data();
-                inyectarDatos(d);
+        if (snap.exists()) {
+            const dataOrden = snap.data();
+            
+            // 2. DINAMISMO PURO: 
+            // Buscamos el ID de la empresa que está guardado DENTRO de la orden.
+            // Si por alguna razón no existe, usamos 'taller_001' por defecto.
+            const idEmpresaDinamico = dataOrden.empresaId || "taller_001";
+            
+            const empresaRef = doc(db, "empresas", idEmpresaDinamico);
+            const empresaSnap = await getDoc(empresaRef);
+            
+            let dataEmpresa = {};
+            if (empresaSnap.exists()) {
+                dataEmpresa = empresaSnap.data();
             }
-        }
 
-        function inyectarDatos(d) {
-            document.getElementById("loader").style.display = "none";
-            document.getElementById("main-doc").classList.remove("hidden");
+            // 3. Inyectamos los datos de la orden y los datos de SU taller específico
+            inyectarDatos(dataOrden, dataEmpresa);
+        }
+    } catch (error) {
+        console.error("Error Nexus-X:", error);
+        document.getElementById("loader").innerText = "ERROR_CONEXIÓN_SATELITAL";
+    }
+}
             
             // Estilo por Tipo
             const docFrame = document.getElementById("main-doc");
