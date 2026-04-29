@@ -121,32 +121,41 @@
     if (!id) return;
     
     try {
-        // 1. Obtener los datos de la Orden primero
+        // 1. Intentar traer la orden
         const docRef = doc(db, "ordenes", id);
         const snap = await getDoc(docRef);
 
         if (snap.exists()) {
-            const dataOrden = snap.data();
+            const d = snap.data();
             
-            // 2. DINAMISMO PURO: 
-            // Buscamos el ID de la empresa que está guardado DENTRO de la orden.
-            // Si por alguna razón no existe, usamos 'taller_001' por defecto.
-            const idEmpresaDinamico = dataOrden.empresaId || "taller_001";
-            
-            const empresaRef = doc(db, "empresas", idEmpresaDinamico);
-            const empresaSnap = await getDoc(empresaRef);
-            
-            let dataEmpresa = {};
-            if (empresaSnap.exists()) {
-                dataEmpresa = empresaSnap.data();
+            // 🛡️ AUTO-DETECCIÓN DE TIPO (Por si el link falla)
+            if (!tipo) {
+                const mapEstados = { 'COTIZACION': 'cotizacion', 'FINALIZADO': 'factura', 'INGRESO': 'diagnostico' };
+                tipo = mapEstados[d.estado] || 'diagnostico';
             }
 
-            // 3. Inyectamos los datos de la orden y los datos de SU taller específico
-            inyectarDatos(dataOrden, dataEmpresa);
+            // 2. Intentar traer la empresa con PROTECCIÓN
+            let dataEmpresa = { nombre: "TALLER LOS MOTORES", nit: "41532245" }; // Datos de respaldo
+            try {
+                const idEmpresa = d.empresaId || "taller_001";
+                const empSnap = await getDoc(doc(db, "empresas", idEmpresa));
+                if (empSnap.exists()) {
+                    dataEmpresa = empSnap.data();
+                }
+            } catch (e) {
+                console.warn("Usando datos de respaldo para empresa");
+            }
+
+            // 3. Renderizar
+            inyectarDatos(d, dataEmpresa);
+        } else {
+            document.getElementById("loader").innerText = "ORDEN NO ENCONTRADA EN SISTEMA";
         }
     } catch (error) {
-        console.error("Error Nexus-X:", error);
-        document.getElementById("loader").innerText = "ERROR_CONEXIÓN_SATELITAL";
+        console.error("Fallo crítico:", error);
+        document.getElementById("loader").innerText = "RECONECTANDO CON SERVIDOR...";
+        // Intento de renderizado forzado con lo que haya
+        if(id) location.reload(); 
     }
 }
             
