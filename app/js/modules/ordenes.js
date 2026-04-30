@@ -80,21 +80,23 @@ window.enviarNotificacionNexus = (proceso) => {
         return;
     }
 
-    // 🧠 MAPEO QUANTUM-SAP (Ajustado a tus fotos de prueba)
+        // 🧠 MAPEO REFORZADO (Aseguramos que siempre haya un valor)
     const mapaNexus = {
-        'INGRESO':    { tipo: 'diagnostico', emoji: '🛰️', tag: 'INGRESO_CONFIRMADO' },
-        'COTIZACION': { tipo: 'cotizacion',  emoji: '💰', tag: 'PROPUESTA_TÉCNICA' },
-        'REPARACION': { tipo: 'reparacion',  emoji: '⚙️', tag: 'AVANCE_DE_MISIÓN' },
-        'LISTO':      { tipo: 'factura',     emoji: '✅', tag: 'MISIÓN_COMPLETADA' },
-        'ENTREGADO':  { tipo: 'factura',     emoji: '✅', tag: 'MISIÓN_COMPLETADA' },
-        'FINAL':      { tipo: 'factura',     emoji: '✅', tag: 'MISIÓN_COMPLETADA' }
+        'INGRESO':    'diagnostico',
+        'COTIZACION': 'cotizacion',
+        'REPARACION': 'reparacion',
+        'LISTO':      'factura',
+        'ENTREGADO':  'factura',
+        'FINAL':      'factura'
     };
 
-    // Obtenemos la configuración basada en el proceso enviado
-    const config = mapaNexus[proceso] || { tipo: 'diagnostico', emoji: '🛰️', tag: 'ACTUALIZACIÓN' };
+    // Forzamos el tipo: si no viene proceso, buscamos el estado real en la ordenActiva
+    const tipoFinal = mapaNexus[proceso] || mapaNexus[ordenActiva.estado] || 'diagnostico';
 
-    // 🌐 CONSTRUCCIÓN DEL LINK (Idéntico al que te funcionó)
-    const linkNexus = `https://tallerpro360.vercel.app/documento?id=${idOrden}&tipo=${config.tipo}`;
+    // 🌐 CONSTRUCCIÓN MANUAL DEL LINK (Evitamos errores de objeto)
+    // Usamos el signo '?' para el ID y '&' para el tipo
+    const baseLink = "https://tallerpro360.vercel.app/documento";
+    const linkNexus = baseLink + "?id=" + idOrden + "&tipo=" + tipoFinal;
 
     // 📝 CONSTRUCCIÓN DEL MENSAJE
     const cliente = (ordenActiva.cliente || "CLIENTE").toUpperCase();
