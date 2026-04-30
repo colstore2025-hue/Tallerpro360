@@ -71,7 +71,7 @@ export default async function ordenes(container) {
  * 🛰️ PROTOCOLO DE COMUNICACIÓN EXTERNA - NEXUS-X V16.5
  * ESTRATEGIA: Dynamic Document Dispatcher (documento.html)
  * CERTIFICACIÓN: QUANTUM-SAP 2030
- * ESTADO: FINANCIERO_PROTEGIDO
+ * ESTADO: INYECCIÓN_MAESTRA_CONFIRMADA
  */
 window.enviarNotificacionNexus = (proceso) => {
     // 🛡️ VALIDACIÓN DE SEGURIDAD DE IDENTIDAD
@@ -87,24 +87,25 @@ window.enviarNotificacionNexus = (proceso) => {
     }
 
     // 🧠 MOTOR DE DIRECCIONAMIENTO DINÁMICO REFORZADO
-    // Mapeamos el proceso al 'tipo' exacto que el documento.html interpreta.
+    // Mapeo absoluto para evitar errores de referencia config.tipo
     const mapaNexus = {
-        'INGRESO':    { tipo: 'diagnostico', emoji: '🛰️', tag: 'INGRESO_CONFIRMADO' },
-        'COTIZACION': { tipo: 'cotizacion',  emoji: '💰', tag: 'PROPUESTA_TÉCNICA' },
-        'REPARACION': { tipo: 'reparacion',  emoji: '⚙️', tag: 'AVANCE_DE_MISIÓN' },
-        'LISTO':      { tipo: 'factura',     emoji: '✅', tag: 'MISIÓN_COMPLETADA' },
-        'FINAL':      { tipo: 'factura',     emoji: '✅', tag: 'MISIÓN_COMPLETADA' },
-        'ENTREGADO':  { tipo: 'factura',     emoji: '🏁', tag: 'REPORTE_HISTÓRICO' }
+        'INGRESO':    { slug: 'diagnostico', emoji: '🛰️', tag: 'INGRESO_CONFIRMADO' },
+        'COTIZACION': { slug: 'cotizacion',  emoji: '💰', tag: 'PROPUESTA_TÉCNICA' },
+        'REPARACION': { slug: 'reparacion',  emoji: '⚙️', tag: 'AVANCE_DE_MISIÓN' },
+        'LISTO':      { slug: 'factura',     emoji: '✅', tag: 'MISIÓN_COMPLETADA' },
+        'FINAL':      { slug: 'factura',     emoji: '✅', tag: 'MISIÓN_COMPLETADA' },
+        'ENTREGADO':  { slug: 'factura',     emoji: '🏁', tag: 'REPORTE_HISTÓRICO' }
     };
 
-    // Obtenemos configuración. Si el proceso es desconocido, default a diagnóstico.
-    const config = mapaNexus[proceso] || { tipo: 'diagnostico', emoji: '🛰️', tag: 'ACTUALIZACIÓN' };
+    // Extracción de metadatos según proceso
+    const meta = mapaNexus[proceso] || { slug: 'diagnostico', emoji: '🛰️', tag: 'ACTUALIZACIÓN' };
+    const tipoFinal = meta.slug; // Asignación directa para evitar config.tipo
 
-    // 🌐 CONSTRUCCIÓN DE LINK MAESTRO DE PRECISIÓN
-    // Se fuerza la concatenación para que no haya errores de interpretación de URL
-    const linkNexus = "https://tallerpro360.vercel.app/documento?id=" + idOrden + "&tipo=" + config.tipo;
+    // 🌐 CONSTRUCCIÓN DE LINK MAESTRO DE PRECISIÓN (Inyección Física)
+    const baseUri = "https://tallerpro360.vercel.app/documento";
+    const linkNexus = baseUri + "?id=" + idOrden + "&tipo=" + tipoFinal;
     
-    // 💰 FORMATEO FINANCIERO DE PRECISIÓN (Blindaje contra Nulos)
+    // 💰 FORMATEO FINANCIERO DE PRECISIÓN
     const totalFinal = Math.round(ordenActiva.total || (ordenActiva.costos_totales && ordenActiva.costos_totales.total) || 0);
     const totalFormatted = "$" + totalFinal.toLocaleString();
     
@@ -113,31 +114,31 @@ window.enviarNotificacionNexus = (proceso) => {
     const placa = (ordenActiva.placa || "N/A").toUpperCase();
     
     // 📝 CONSTRUCCIÓN DEL MENSAJE (Estética Nexus-X Starlink)
-    let msj = config.emoji + " *NEXUS_X: " + config.tag + "*%0A%0A";
+    let msj = meta.emoji + " *NEXUS_X: " + meta.tag + "*%0A%0A";
     msj += "Hola *" + cliente + "*, la unidad *" + placa + "* presenta novedades en el sistema.%0A%0A";
 
-    // Inyección de Bitácora IA (Máximo 150 caracteres)
+    // Inyección de Bitácora IA (Seguridad de caracteres)
     if (ordenActiva.bitacora_ia) {
         const logIA = ordenActiva.bitacora_ia.substring(0, 150).toUpperCase();
         msj += "📝 *LOG_IA:* " + logIA + "...%0A%0A";
     }
 
     // 🏗️ LÓGICA DE CIERRE SEGÚN TIPO DE DOCUMENTO
-    if (config.tipo === 'factura') {
+    if (tipoFinal === 'factura') {
         msj += "💰 *VALOR SERVICIO:* " + totalFormatted + "%0A%0A";
         msj += "📥 *DESCARGUE SU FACTURA Y REPORTE AQUÍ:*%0A";
-    } else if (config.tipo === 'cotizacion') {
+    } else if (tipoFinal === 'cotizacion') {
         msj += "💰 *PRESUPUESTO ESTIMADO:* " + totalFormatted + "%0A%0A";
         msj += "📑 *REVISE Y APRUEBE LA COTIZACIÓN AQUÍ:*%0A";
     } else {
         msj += "🌐 *VER TRAZABILIDAD Y DOCUMENTO:*%0A";
     }
 
-    // Inyección final del link perfecto
+    // Inyección del link validado en laboratorio
     msj += linkNexus + "%0A%0A";
     msj += "_Powered by TallerPRO360 Core_";
 
-    // 📱 PROTOCOLO TELCO (Limpieza de caracteres y prefijo Colombia)
+    // 📱 PROTOCOLO TELCO
     const telRaw = (ordenActiva.telefono || "").toString().replace(/\D/g, '');
     
     if (telRaw.length < 10) {
