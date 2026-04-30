@@ -67,11 +67,11 @@ export default async function ordenes(container) {
             </div>`;
     };
 
-        /**
+     /**
  * 🛰️ PROTOCOLO DE COMUNICACIÓN EXTERNA - NEXUS-X V16.5
  * ESTRATEGIA: Dynamic Document Dispatcher (documento.html)
  * CERTIFICACIÓN: QUANTUM-SAP 2030
- * OBJETIVO: Sincronización perfecta de links con parámetro &tipo=
+ * ESTADO: FINANCIERO_PROTEGIDO
  */
 window.enviarNotificacionNexus = (proceso) => {
     // 🛡️ VALIDACIÓN DE SEGURIDAD DE IDENTIDAD
@@ -87,7 +87,7 @@ window.enviarNotificacionNexus = (proceso) => {
     }
 
     // 🧠 MOTOR DE DIRECCIONAMIENTO DINÁMICO REFORZADO
-    // Mapeamos el proceso al 'tipo' exacto que el documento.html interpreta para el diseño
+    // Mapeamos el proceso al 'tipo' exacto que el documento.html interpreta.
     const mapaNexus = {
         'INGRESO':    { tipo: 'diagnostico', emoji: '🛰️', tag: 'INGRESO_CONFIRMADO' },
         'COTIZACION': { tipo: 'cotizacion',  emoji: '💰', tag: 'PROPUESTA_TÉCNICA' },
@@ -100,42 +100,42 @@ window.enviarNotificacionNexus = (proceso) => {
     // Obtenemos configuración. Si el proceso es desconocido, default a diagnóstico.
     const config = mapaNexus[proceso] || { tipo: 'diagnostico', emoji: '🛰️', tag: 'ACTUALIZACIÓN' };
 
-    // 🌐 CONSTRUCCIÓN DE LINK MAESTRO DE PRECISIÓN (Garantiza el &tipo= al final)
-    const urlBase = "https://tallerpro360.vercel.app/documento";
-    const linkNexus = `${urlBase}?id=${idOrden}&tipo=${config.tipo}`;
+    // 🌐 CONSTRUCCIÓN DE LINK MAESTRO DE PRECISIÓN
+    // Se fuerza la concatenación para que no haya errores de interpretación de URL
+    const linkNexus = "https://tallerpro360.vercel.app/documento?id=" + idOrden + "&tipo=" + config.tipo;
     
-    // 💰 FORMATEO FINANCIERO DE PRECISIÓN
-    const totalFinal = Math.round(ordenActiva.total || ordenActiva.costos_totales?.total || 0);
-    const totalFormatted = `$${totalFinal.toLocaleString()}`;
+    // 💰 FORMATEO FINANCIERO DE PRECISIÓN (Blindaje contra Nulos)
+    const totalFinal = Math.round(ordenActiva.total || (ordenActiva.costos_totales && ordenActiva.costos_totales.total) || 0);
+    const totalFormatted = "$" + totalFinal.toLocaleString();
     
     // 👤 EXTRACCIÓN DE DATOS DE UNIDAD
     const cliente = (ordenActiva.cliente || "CLIENTE").toUpperCase();
     const placa = (ordenActiva.placa || "N/A").toUpperCase();
     
     // 📝 CONSTRUCCIÓN DEL MENSAJE (Estética Nexus-X Starlink)
-    let msj = `${config.emoji} *NEXUS_X: ${config.tag}*%0A%0A`;
-    msj += `Hola *${cliente}*, la unidad *${placa}* presenta novedades en el sistema.%0A%0A`;
+    let msj = config.emoji + " *NEXUS_X: " + config.tag + "*%0A%0A";
+    msj += "Hola *" + cliente + "*, la unidad *" + placa + "* presenta novedades en el sistema.%0A%0A";
 
-    // Inyección de Bitácora IA (Máximo 150 caracteres para evitar saturación de URL)
+    // Inyección de Bitácora IA (Máximo 150 caracteres)
     if (ordenActiva.bitacora_ia) {
         const logIA = ordenActiva.bitacora_ia.substring(0, 150).toUpperCase();
-        msj += `📝 *LOG_IA:* ${logIA}...%0A%0A`;
+        msj += "📝 *LOG_IA:* " + logIA + "...%0A%0A";
     }
 
-    // Bloque Dinámico según el Tipo de Documento
+    // 🏗️ LÓGICA DE CIERRE SEGÚN TIPO DE DOCUMENTO
     if (config.tipo === 'factura') {
-        msj += `💰 *VALOR SERVICIO:* ${totalFormatted}%0A%0A`;
-        msj += `📥 *DESCARGUE SU FACTURA Y REPORTE AQUÍ:*%0A`;
+        msj += "💰 *VALOR SERVICIO:* " + totalFormatted + "%0A%0A";
+        msj += "📥 *DESCARGUE SU FACTURA Y REPORTE AQUÍ:*%0A";
     } else if (config.tipo === 'cotizacion') {
-        msj += `💰 *PRESUPUESTO ESTIMADO:* ${totalFormatted}%0A%0A`;
-        msj += `📑 *REVISE Y APRUEBE LA COTIZACIÓN AQUÍ:*%0A`;
+        msj += "💰 *PRESUPUESTO ESTIMADO:* " + totalFormatted + "%0A%0A";
+        msj += "📑 *REVISE Y APRUEBE LA COTIZACIÓN AQUÍ:*%0A";
     } else {
-        msj += `🌐 *VER TRAZABILIDAD Y DOCUMENTO:*%0A`;
+        msj += "🌐 *VER TRAZABILIDAD Y DOCUMENTO:*%0A";
     }
 
-    // El corazón de la solución: el link con sus dos parámetros inyectados
-    msj += `${linkNexus}%0A%0A`;
-    msj += `_Powered by TallerPRO360 Core_`;
+    // Inyección final del link perfecto
+    msj += linkNexus + "%0A%0A";
+    msj += "_Powered by TallerPRO360 Core_";
 
     // 📱 PROTOCOLO TELCO (Limpieza de caracteres y prefijo Colombia)
     const telRaw = (ordenActiva.telefono || "").toString().replace(/\D/g, '');
@@ -150,7 +150,7 @@ window.enviarNotificacionNexus = (proceso) => {
     }
 
     // 🚀 DISPARO AL SATÉLITE WHATSAPP
-    const whatsappUrl = `https://wa.me/57${telRaw}?text=${msj}`;
+    const whatsappUrl = "https://wa.me/57" + telRaw + "?text=" + msj;
     window.open(whatsappUrl, '_blank');
 };
 
