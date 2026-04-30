@@ -71,59 +71,87 @@ export default async function ordenes(container) {
  * 🛰️ PROTOCOLO DE COMUNICACIÓN EXTERNA - NEXUS-X V16.5
  * ESTRATEGIA: Dynamic Document Dispatcher (documento.html)
  * CERTIFICACIÓN: QUANTUM-SAP 2030
+ * OBJETIVO: Sincronización perfecta de links con parámetro &tipo=
  */
 window.enviarNotificacionNexus = (proceso) => {
+    // 🛡️ VALIDACIÓN DE SEGURIDAD DE IDENTIDAD
     const idOrden = ordenActiva.id;
     
     if (!idOrden || idOrden === "PENDIENTE") {
-        Swal.fire({ title: 'ERROR', text: 'Sincronice primero.', icon: 'warning' });
+        Swal.fire({ 
+            title: '🚨 SYNC_REQUIRED', 
+            text: 'Debe sincronizar la misión en la nube antes de notificar.', 
+            icon: 'warning', background: '#0d1117', color: '#06b6d4' 
+        });
         return;
     }
 
-        // 🧠 MAPEO REFORZADO (Aseguramos que siempre haya un valor)
+    // 🧠 MOTOR DE DIRECCIONAMIENTO DINÁMICO REFORZADO
+    // Mapeamos el proceso al 'tipo' exacto que el documento.html interpreta para el diseño
     const mapaNexus = {
-        'INGRESO':    'diagnostico',
-        'COTIZACION': 'cotizacion',
-        'REPARACION': 'reparacion',
-        'LISTO':      'factura',
-        'ENTREGADO':  'factura',
-        'FINAL':      'factura'
+        'INGRESO':    { tipo: 'diagnostico', emoji: '🛰️', tag: 'INGRESO_CONFIRMADO' },
+        'COTIZACION': { tipo: 'cotizacion',  emoji: '💰', tag: 'PROPUESTA_TÉCNICA' },
+        'REPARACION': { tipo: 'reparacion',  emoji: '⚙️', tag: 'AVANCE_DE_MISIÓN' },
+        'LISTO':      { tipo: 'factura',     emoji: '✅', tag: 'MISIÓN_COMPLETADA' },
+        'FINAL':      { tipo: 'factura',     emoji: '✅', tag: 'MISIÓN_COMPLETADA' },
+        'ENTREGADO':  { tipo: 'factura',     emoji: '🏁', tag: 'REPORTE_HISTÓRICO' }
     };
 
-    // Forzamos el tipo: si no viene proceso, buscamos el estado real en la ordenActiva
-    const tipoFinal = mapaNexus[proceso] || mapaNexus[ordenActiva.estado] || 'diagnostico';
+    // Obtenemos configuración. Si el proceso es desconocido, default a diagnóstico.
+    const config = mapaNexus[proceso] || { tipo: 'diagnostico', emoji: '🛰️', tag: 'ACTUALIZACIÓN' };
 
-    // 🌐 CONSTRUCCIÓN MANUAL DEL LINK (Evitamos errores de objeto)
-    // Usamos el signo '?' para el ID y '&' para el tipo
-    const baseLink = "https://tallerpro360.vercel.app/documento";
-    const linkNexus = baseLink + "?id=" + idOrden + "&tipo=" + tipoFinal;
-
-    // 📝 CONSTRUCCIÓN DEL MENSAJE
+    // 🌐 CONSTRUCCIÓN DE LINK MAESTRO DE PRECISIÓN (Garantiza el &tipo= al final)
+    const urlBase = "https://tallerpro360.vercel.app/documento";
+    const linkNexus = `${urlBase}?id=${idOrden}&tipo=${config.tipo}`;
+    
+    // 💰 FORMATEO FINANCIERO DE PRECISIÓN
+    const totalFinal = Math.round(ordenActiva.total || ordenActiva.costos_totales?.total || 0);
+    const totalFormatted = `$${totalFinal.toLocaleString()}`;
+    
+    // 👤 EXTRACCIÓN DE DATOS DE UNIDAD
     const cliente = (ordenActiva.cliente || "CLIENTE").toUpperCase();
     const placa = (ordenActiva.placa || "N/A").toUpperCase();
-    const total = Math.round(ordenActiva.total || ordenActiva.costos_totales?.total || 0).toLocaleString();
-
+    
+    // 📝 CONSTRUCCIÓN DEL MENSAJE (Estética Nexus-X Starlink)
     let msj = `${config.emoji} *NEXUS_X: ${config.tag}*%0A%0A`;
     msj += `Hola *${cliente}*, la unidad *${placa}* presenta novedades en el sistema.%0A%0A`;
-    
+
+    // Inyección de Bitácora IA (Máximo 150 caracteres para evitar saturación de URL)
     if (ordenActiva.bitacora_ia) {
-        msj += `📝 *LOG_IA:* ${ordenActiva.bitacora_ia.substring(0, 120).toUpperCase()}...%0A%0A`;
+        const logIA = ordenActiva.bitacora_ia.substring(0, 150).toUpperCase();
+        msj += `📝 *LOG_IA:* ${logIA}...%0A%0A`;
     }
 
-    // Diferenciación de cierre según el documento
+    // Bloque Dinámico según el Tipo de Documento
     if (config.tipo === 'factura') {
-        msj += `💰 *VALOR SERVICIO:* $${total}%0A%0A📥 *DESCARGUE SU FACTURA Y REPORTE AQUÍ:*%0A`;
+        msj += `💰 *VALOR SERVICIO:* ${totalFormatted}%0A%0A`;
+        msj += `📥 *DESCARGUE SU FACTURA Y REPORTE AQUÍ:*%0A`;
     } else if (config.tipo === 'cotizacion') {
-        msj += `💰 *PRESUPUESTO:* $${total}%0A%0A📑 *REVISE Y APRUEBE LA COTIZACIÓN AQUÍ:*%0A`;
+        msj += `💰 *PRESUPUESTO ESTIMADO:* ${totalFormatted}%0A%0A`;
+        msj += `📑 *REVISE Y APRUEBE LA COTIZACIÓN AQUÍ:*%0A`;
     } else {
         msj += `🌐 *VER TRAZABILIDAD Y DOCUMENTO:*%0A`;
     }
 
-    msj += `${linkNexus}%0A%0A_System Powered by TallerPRO360_`;
+    // El corazón de la solución: el link con sus dos parámetros inyectados
+    msj += `${linkNexus}%0A%0A`;
+    msj += `_Powered by TallerPRO360 Core_`;
 
-    // 🚀 DISPARO A WHATSAPP (Prefijo 57 Colombia)
-    const tel = (ordenActiva.telefono || "").toString().replace(/\D/g, '');
-    window.open(`https://wa.me/57${tel}?text=${msj}`, '_blank');
+    // 📱 PROTOCOLO TELCO (Limpieza de caracteres y prefijo Colombia)
+    const telRaw = (ordenActiva.telefono || "").toString().replace(/\D/g, '');
+    
+    if (telRaw.length < 10) {
+        Swal.fire({ 
+            title: '🚨 PHONE_ERROR', 
+            text: 'Número de contacto insuficiente.', 
+            icon: 'error', background: '#0d1117', color: '#f87171' 
+        });
+        return;
+    }
+
+    // 🚀 DISPARO AL SATÉLITE WHATSAPP
+    const whatsappUrl = `https://wa.me/57${telRaw}?text=${msj}`;
+    window.open(whatsappUrl, '_blank');
 };
 
     const renderBase = () => {
