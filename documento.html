@@ -7,98 +7,92 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #05070a; color: #e2e8f0; font-family: 'Rajdhani', sans-serif; }
+        body { background-color: #05070a; color: #e2e8f0; font-family: 'Rajdhani', sans-serif; margin: 0; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        .paper { background: white; color: #1a1a1a; min-height: 29.7cm; width: 100%; max-width: 21cm; margin: auto; padding: 1.5cm; position: relative; overflow: hidden; }
-        .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 8rem; opacity: 0.03; font-family: 'Orbitron'; pointer-events: none; }
-        
-        /* Temas Dinámicos NEXUS */
+        .paper { background: white; color: #1a1a1a; min-height: 29.7cm; width: 100%; max-width: 21cm; margin: auto; padding: 1.5cm; position: relative; }
+        .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 8rem; opacity: 0.03; font-family: 'Orbitron'; pointer-events: none; z-index: 0; }
         .theme-cotizacion { border-top: 15px solid #fbbf24; } 
         .theme-diagnostico { border-top: 15px solid #22d3ee; } 
         .theme-factura { border-top: 15px solid #22c55e; }    
         .theme-reparacion { border-top: 15px solid #ef4444; } 
         .theme-entregado { border-top: 15px solid #6366f1; }
-
         @media print { body { background: white; } .paper { margin: 0; padding: 1cm; box-shadow: none; } .no-print { display: none; } }
     </style>
 </head>
 <body class="p-0 md:p-10">
 
     <div id="loader" class="text-center py-40 orbitron animate-pulse text-cyan-400">
-        🛰️ ACCEDIENDO A SERVIDOR NEXUS_X...<br>
-        <span class="text-[10px] text-gray-500">ESTABLECIENDO ENLACE DE TELEMETRÍA</span>
+        🛰️ ENLAZANDO TELEMETRÍA NEXUS_X...
     </div>
 
-    <div id="main-doc" class="paper shadow-2xl hidden transition-all duration-700">
+    <div id="main-doc" class="paper shadow-2xl hidden">
         <div class="watermark orbitron" id="bg-watermark">NEXUS_X</div>
 
-        <div class="flex justify-between items-start border-b-2 border-gray-100 pb-6">
-            <div class="flex flex-col">
-                <img src="assets/favicon.png" alt="Logo" class="w-16 h-16 mb-2 object-contain shadow-sm">
-                <h1 id="taller-nombre" class="orbitron text-2xl font-black uppercase leading-none text-gray-800">---</h1>
-                <p id="taller-nit" class="text-xs font-bold text-gray-500 tracking-widest">NIT: ---</p>
-                <p id="taller-regimen" class="text-[9px] uppercase text-gray-400 font-bold mt-1">---</p>
+        <div class="flex justify-between items-start border-b-2 border-gray-100 pb-6 relative z-10">
+            <div>
+                <img src="assets/favicon.png" alt="Logo" class="w-16 h-16 mb-2 object-contain">
+                <h1 id="taller-nombre" class="orbitron text-2xl font-black uppercase text-gray-800 leading-none">---</h1>
+                <p id="taller-nit" class="text-xs font-bold text-gray-500">NIT: ---</p>
+                <p id="taller-regimen" class="text-[9px] uppercase text-gray-400 font-bold">---</p>
             </div>
             <div class="text-right">
-                <h2 id="doc-titulo" class="orbitron text-xl font-bold italic tracking-tighter text-cyan-600">---</h2>
-                <p id="doc-id" class="text-xs font-mono font-bold bg-gray-100 px-2 py-1 inline-block">ID: ---</p>
-                <p id="doc-fecha" class="text-[10px] text-gray-400 mt-2">---</p>
+                <h2 id="doc-titulo" class="orbitron text-xl font-bold italic text-cyan-600">---</h2>
+                <p id="doc-id" class="text-xs font-mono font-bold bg-gray-100 px-2 py-1 inline-block mt-1">ID: ---</p>
+                <p id="doc-fecha" class="text-[10px] text-gray-400 mt-2 font-bold">---</p>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-8 my-8 bg-gray-50 p-6 border border-gray-100 rounded-lg">
+        <div class="grid grid-cols-2 gap-8 my-8 bg-gray-50 p-6 border border-gray-100 rounded-lg relative z-10">
             <div>
-                <label class="text-[9px] font-bold text-cyan-700 block orbitron mb-1 italic">DESTINATARIO_MISIÓN</label>
+                <label class="text-[9px] font-bold text-cyan-700 block orbitron italic mb-1">DESTINATARIO_MISIÓN</label>
                 <p id="v-cliente" class="text-lg font-bold uppercase text-gray-800">---</p>
-                <p id="v-tel" class="text-xs text-gray-500 font-medium">---</p>
+                <p id="v-tel" class="text-xs text-gray-500">---</p>
             </div>
             <div class="text-right border-l-2 border-gray-200 pl-6">
-                <label class="text-[9px] font-bold text-cyan-700 block orbitron mb-1 italic">UNIDAD_TELEMETRÍA</label>
+                <label class="text-[9px] font-bold text-cyan-700 block orbitron italic mb-1">UNIDAD_TELEMETRÍA</label>
                 <p id="v-placa" class="text-4xl font-black orbitron text-gray-900">---</p>
-                <p id="v-detalles" class="text-xs text-gray-400 font-mono">MODELO_VERIFIED</p>
             </div>
         </div>
 
-        <div id="section-bitacora" class="mb-8 p-4 bg-slate-900 text-cyan-100 border-l-4 border-cyan-400 font-mono text-[11px] leading-relaxed">
-            <span class="block mb-2 font-bold text-cyan-400 opacity-70 tracking-widest uppercase">/ TRANSMISIÓN_LOG_IA:</span>
-            <p id="v-bitacora">SINCRONIZANDO REGISTROS TÉCNICOS...</p>
+        <div id="section-bitacora" class="mb-8 p-4 bg-slate-900 text-cyan-100 border-l-4 border-cyan-400 font-mono text-[11px] relative z-10">
+            <span class="block mb-2 font-bold text-cyan-400 opacity-70 uppercase tracking-tighter">/ LOG_IA_SISTEMA:</span>
+            <p id="v-bitacora">Sincronizando...</p>
         </div>
 
-        <div class="mb-10">
+        <div class="mb-10 relative z-10">
             <table class="w-full text-sm">
                 <thead class="bg-gray-800 orbitron text-[10px] text-white">
                     <tr>
-                        <th class="p-3 text-left tracking-widest">DESCRIPCIÓN_DEL_SERVICIO</th>
+                        <th class="p-3 text-left">DESCRIPCIÓN_SISTEMA</th>
                         <th class="p-3 text-right">CANT</th>
-                        <th class="p-3 text-right">UNIDAD</th>
+                        <th class="p-3 text-right">VALOR_UNIT</th>
                         <th class="p-3 text-right">TOTAL</th>
                     </tr>
                 </thead>
-                <tbody id="tabla-items" class="text-[12px] text-gray-700">
-                    </tbody>
+                <tbody id="tabla-items" class="text-[12px] text-gray-700"></tbody>
             </table>
         </div>
 
-        <div class="flex justify-end mt-10">
+        <div class="flex justify-end mt-10 relative z-10">
             <div class="w-72 space-y-3 border-t-4 border-gray-900 pt-6">
                 <div class="flex justify-between text-xs font-bold px-2">
                     <span>NETO_MISIÓN:</span>
                     <span id="f-neto">$ 0</span>
                 </div>
                 <div id="row-iva" class="flex justify-between text-xs text-gray-500 px-2">
-                    <span>IVA_APLICADO (19%):</span>
+                    <span>IVA_APLICADO:</span>
                     <span id="f-iva">$ 0</span>
                 </div>
-                <div class="flex justify-between text-2xl orbitron font-black bg-gray-900 text-white p-3 rounded shadow-lg">
+                <div class="flex justify-between text-2xl orbitron font-black bg-gray-900 text-white p-3 rounded">
                     <span>TOTAL:</span>
                     <span id="f-total">$ 0</span>
                 </div>
             </div>
         </div>
 
-        <div class="mt-20 border-t pt-6 text-[10px] text-gray-400 leading-tight">
-            <p id="legal-taller" class="italic">---</p>
-            <p class="mt-4 uppercase font-bold text-gray-300 tracking-[0.3em] text-center border-y py-2 border-gray-50">System_Powered_By_TallerPRO360_Nexus_X_Core_V16.5</p>
+        <div class="mt-20 border-t pt-6 text-[10px] text-gray-400 text-center relative z-10">
+            <p id="legal-taller" class="italic mb-4">---</p>
+            <p class="font-bold text-gray-300 tracking-[0.3em]">SYSTEM_POWERED_BY_NEXUS_X_CORE</p>
         </div>
     </div>
 
@@ -123,105 +117,62 @@
         const id = params.get("id");
         const tipo = (params.get("tipo") || "diagnostico").toLowerCase();
 
-        async function cargarDocumento() {
+        async function init() {
             if (!id) {
-                document.getElementById("loader").innerHTML = "🚨 ID_ERROR: DOCUMENTO NO IDENTIFICADO";
+                document.getElementById("loader").innerText = "🚨 ID_REQUERIDO";
                 return;
             }
-
             try {
-                // Consulta 1: La Orden de Trabajo
-                const docRef = doc(db, "ordenes", id);
-                const snap = await getDoc(docRef);
-
+                const snap = await getDoc(doc(db, "ordenes", id));
                 if (snap.exists()) {
                     const orden = snap.data();
-                    
-                    // Consulta 2: La Empresa (Multitenant SAP Logic)
-                    const empId = orden.empresaId || "taller_001";
-                    const empRef = doc(db, "empresas", empId);
-                    const empSnap = await getDoc(empRef);
-                    const empresa = empSnap.exists() ? empSnap.data() : {};
-
-                    hidratarInterfaz(orden, empresa);
+                    const empSnap = await getDoc(doc(db, "empresas", orden.empresaId || "taller_001"));
+                    render(orden, empSnap.exists() ? empSnap.data() : {});
                 } else {
-                    document.getElementById("loader").innerHTML = "🚨 NEXUS_X: LA ORDEN NO EXISTE EN LA NUBE";
+                    document.getElementById("loader").innerText = "🚨 ORDEN_NO_ENCONTRADA";
                 }
-            } catch (error) {
-                console.error("Critical Failure:", error);
-                document.getElementById("loader").innerHTML = "🚨 TELEMETRY_FAILURE: ERROR DE CONEXIÓN";
+            } catch (e) {
+                document.getElementById("loader").innerHTML = "🚨 TELEMETRY_FAILURE: ERROR_CONEXION";
             }
         }
 
-        function hidratarInterfaz(orden, empresa) {
+        function render(o, e) {
             document.getElementById("loader").style.display = "none";
-            const main = document.getElementById("main-doc");
-            main.classList.remove("hidden");
+            document.getElementById("main-doc").classList.remove("hidden");
+            document.getElementById("main-doc").className = `paper shadow-2xl theme-${tipo}`;
             
-            // Configuración Visual según Tipo
-            main.className = `paper shadow-2xl transition-all duration-700 theme-${tipo}`;
             document.getElementById("bg-watermark").innerText = tipo.toUpperCase();
-            document.getElementById("doc-titulo").innerText = tipo.toUpperCase().replace("_", " ") + " OFICIAL";
-            document.getElementById("doc-fecha").innerText = "FECHA_GENERACIÓN: " + (orden.fecha_creacion || new Date().toLocaleDateString());
+            document.getElementById("doc-titulo").innerText = tipo.toUpperCase() + "_OFICIAL";
+            document.getElementById("taller-nombre").innerText = e.nombre || o.empresa_nombre || "TALLER AFILIADO";
+            document.getElementById("taller-nit").innerText = "NIT: " + (e.nit || "900.000.000-1");
+            document.getElementById("taller-regimen").innerText = e.regimen || "Régimen Simplificado";
+            document.getElementById("v-cliente").innerText = (o.cliente || "---").toUpperCase();
+            document.getElementById("v-placa").innerText = (o.placa || "---").toUpperCase();
+            document.getElementById("v-bitacora").innerText = o.bitacora_ia || "SIN REGISTROS TÉCNICOS.";
+            document.getElementById("doc-id").innerText = "ID: " + (o.id || id);
+            document.getElementById("doc-fecha").innerText = o.fecha_creacion || new Date().toLocaleDateString();
+            document.getElementById("legal-taller").innerText = e.terminos || "Documento oficial del sistema Nexus-X.";
 
-            // Datos Dinámicos del Taller (Desde Colección Empresas)
-            document.getElementById("taller-nombre").innerText = empresa.nombre || orden.empresa_nombre || "TALLER ASOCIADO";
-            document.getElementById("taller-nit").innerText = "NIT: " + (empresa.nit || "900.000.000-1");
-            document.getElementById("taller-regimen").innerText = empresa.regimen || "Responsable de IVA";
-            document.getElementById("legal-taller").innerText = empresa.terminos || "Este documento representa un estado oficial del vehículo.";
-
-            // Datos del Cliente y Unidad
-            document.getElementById("v-cliente").innerText = (orden.cliente || "CLIENTE NO DEFINIDO").toUpperCase();
-            document.getElementById("v-placa").innerText = (orden.placa || "S/P").toUpperCase();
-            document.getElementById("v-tel").innerText = "CANAL_CONTACTO: " + (orden.telefono || "N/A");
-            document.getElementById("v-bitacora").innerText = orden.bitacora_ia || "SIN REGISTROS TÉCNICOS EN EL LOG DE IA.";
-            document.getElementById("doc-id").innerText = "ID_TRANSACCIÓN: " + (orden.id || id);
-
-            // --- MOTOR DE DESGLOSE DE ITEMS (SAP BI LOGIC) ---
             const tbody = document.getElementById("tabla-items");
-            tbody.innerHTML = "";
+            const items = [...(o.servicios || []), ...(o.repuestos || [])];
             
-            // Unificamos cualquier array de costos
-            const items = [...(orden.servicios || []), ...(orden.repuestos || [])];
-
             if (items.length > 0) {
-                items.forEach(item => {
-                    const valorU = parseFloat(item.precio || item.valor || 0);
-                    const cant = parseInt(item.cantidad || 1);
-                    const sub = valorU * cant;
-                    
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-gray-50 border-b border-gray-100">
-                            <td class="p-3 font-medium uppercase text-gray-600">${item.descripcion || item.nombre || 'SERVICIO'}</td>
-                            <td class="p-3 text-right">${cant}</td>
-                            <td class="p-3 text-right font-mono">$ ${Math.round(valorU).toLocaleString()}</td>
-                            <td class="p-3 text-right font-bold text-gray-800">$ ${Math.round(sub).toLocaleString()}</td>
-                        </tr>`;
+                items.forEach(i => {
+                    const val = parseFloat(i.precio || i.valor || 0);
+                    const cant = parseInt(i.cantidad || 1);
+                    tbody.innerHTML += `<tr class="border-b border-gray-100"><td class="p-3 uppercase">${i.descripcion || i.nombre}</td><td class="p-3 text-right">${cant}</td><td class="p-3 text-right">$ ${Math.round(val).toLocaleString()}</td><td class="p-3 text-right font-bold">$ ${Math.round(val*cant).toLocaleString()}</td></tr>`;
                 });
             } else {
-                // Fallback de Seguridad: Si no hay array, muestra el total reportado
-                tbody.innerHTML = `
-                    <tr class="border-b border-gray-100">
-                        <td class="p-3 font-bold uppercase text-cyan-700 tracking-tighter">SERVICIO TÉCNICO INTEGRAL / MANO DE OBRA</td>
-                        <td class="p-3 text-right">1</td>
-                        <td class="p-3 text-right font-mono">$ ${Math.round(orden.total || 0).toLocaleString()}</td>
-                        <td class="p-3 text-right font-bold">$ ${Math.round(orden.total || 0).toLocaleString()}</td>
-                    </tr>`;
+                tbody.innerHTML = `<tr><td class="p-3 font-bold text-cyan-700">SERVICIO TÉCNICO INTEGRAL</td><td class="p-3 text-right">1</td><td class="p-3 text-right">$ ${Math.round(o.total || 0).toLocaleString()}</td><td class="p-3 text-right font-bold">$ ${Math.round(o.total || 0).toLocaleString()}</td></tr>`;
             }
 
-            // Cálculos Financieros Finales
-            const total = parseFloat(orden.total || 0);
-            const esResponsable = (empresa.regimen || "").toLowerCase().includes("responsable");
-            const neto = esResponsable ? (total / 1.19) : total;
-            const iva = total - neto;
-
+            const total = parseFloat(o.total || 0);
+            const neto = total / 1.19;
             document.getElementById("f-total").innerText = `$ ${Math.round(total).toLocaleString()}`;
             document.getElementById("f-neto").innerText = `$ ${Math.round(neto).toLocaleString()}`;
-            document.getElementById("f-iva").innerText = `$ ${Math.round(iva).toLocaleString()}`;
-            if (!esResponsable) document.getElementById("row-iva").style.display = "none";
+            document.getElementById("f-iva").innerText = `$ ${Math.round(total - neto).toLocaleString()}`;
         }
-
-        cargarDocumento();
+        init();
     </script>
 </body>
 </html>
