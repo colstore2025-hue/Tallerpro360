@@ -38,7 +38,7 @@
 
     const container = document.createElement('div');
     container.id = 'quantum-tech-assistant';
-    container.style.cssText = `position:fixed; bottom:25px; right:20px; z-index:9999999 !important; display:flex; flex-direction:column-reverse; gap:12px; align-items:flex-end;`;
+    container.style.cssText = `position:fixed; bottom:25px; left: 20px; z-index:9999999 !important; display:flex; flex-direction:column-reverse; gap:12px; align-items:flex-end;`;
 
     // Botón Principal (Trigger)
     const mainBtn = document.createElement('button');
