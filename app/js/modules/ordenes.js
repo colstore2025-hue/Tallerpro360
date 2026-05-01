@@ -69,11 +69,11 @@ export default async function ordenes(container) {
 
      /**
  * 🛰️ PROTOCOLO DE COMUNICACIÓN EXTERNA - NEXUS-X V16.5
- * ESTRATEGIA: Dynamic Document Dispatcher (documento.html)
+ * ESTRATEGIA: Dynamic Document Dispatcher (Single HTML Architecture)
  * CERTIFICACIÓN: QUANTUM-SAP 2030
- * ESTADO: INYECCIÓN_MAESTRA_CONFIRMADA
+ * ESTADO: OPERATIVO_UNIVERSAL_SINCRO
  */
-window.enviarNotificacionNexus = (proceso) => {
+window.enviarNotificacionNexus = (procesoEnviado) => {
     // 🛡️ VALIDACIÓN DE SEGURIDAD DE IDENTIDAD
     const idOrden = ordenActiva.id;
     
@@ -86,8 +86,7 @@ window.enviarNotificacionNexus = (proceso) => {
         return;
     }
 
-    // 🧠 MOTOR DE DIRECCIONAMIENTO DINÁMICO REFORZADO
-    // Mapeo absoluto para evitar errores de referencia config.tipo
+    // 🧠 MOTOR DE INTELIGENCIA DE ESTADOS (Mapeo Universal)
     const mapaNexus = {
         'INGRESO':    { slug: 'diagnostico', emoji: '🛰️', tag: 'INGRESO_CONFIRMADO' },
         'COTIZACION': { slug: 'cotizacion',  emoji: '💰', tag: 'PROPUESTA_TÉCNICA' },
@@ -97,15 +96,17 @@ window.enviarNotificacionNexus = (proceso) => {
         'ENTREGADO':  { slug: 'factura',     emoji: '🏁', tag: 'REPORTE_HISTÓRICO' }
     };
 
-    // Extracción de metadatos según proceso
-    const meta = mapaNexus[proceso] || { slug: 'diagnostico', emoji: '🛰️', tag: 'ACTUALIZACIÓN' };
-    const tipoFinal = meta.slug; // Asignación directa para evitar config.tipo
-
-    // 🌐 CONSTRUCCIÓN DE LINK MAESTRO DE PRECISIÓN (Inyección Física)
-    const baseUri = "https://tallerpro360.vercel.app/documento";
-    const linkNexus = baseUri + "?id=" + idOrden + "&tipo=" + tipoFinal;
+    // 🔄 DETECTOR DE ESTADO FALLBACK
+    // Si 'procesoEnviado' viene vacío, el sistema detecta el estado real de la ordenActiva
+    const procesoReal = procesoEnviado || ordenActiva.estado || 'INGRESO';
+    const meta = mapaNexus[procesoReal.toUpperCase()] || mapaNexus['INGRESO'];
     
-    // 💰 FORMATEO FINANCIERO DE PRECISIÓN
+    // 🌐 CONSTRUCCIÓN DE LINK MAESTRO (Inyección Física Obligatoria)
+    // Se usa concatenación pura para evitar que el navegador ignore el parámetro &tipo
+    const baseUri = "https://tallerpro360.vercel.app/documento";
+    const linkNexus = baseUri + "?id=" + idOrden + "&tipo=" + meta.slug;
+    
+    // 💰 FORMATEO FINANCIERO (Blindaje de precisión)
     const totalFinal = Math.round(ordenActiva.total || (ordenActiva.costos_totales && ordenActiva.costos_totales.total) || 0);
     const totalFormatted = "$" + totalFinal.toLocaleString();
     
@@ -117,42 +118,36 @@ window.enviarNotificacionNexus = (proceso) => {
     let msj = meta.emoji + " *NEXUS_X: " + meta.tag + "*%0A%0A";
     msj += "Hola *" + cliente + "*, la unidad *" + placa + "* presenta novedades en el sistema.%0A%0A";
 
-    // Inyección de Bitácora IA (Seguridad de caracteres)
+    // Inyección de Bitácora IA
     if (ordenActiva.bitacora_ia) {
         const logIA = ordenActiva.bitacora_ia.substring(0, 150).toUpperCase();
         msj += "📝 *LOG_IA:* " + logIA + "...%0A%0A";
     }
 
-    // 🏗️ LÓGICA DE CIERRE SEGÚN TIPO DE DOCUMENTO
-    if (tipoFinal === 'factura') {
+    // Bloque Dinámico según Tipo
+    if (meta.slug === 'factura') {
         msj += "💰 *VALOR SERVICIO:* " + totalFormatted + "%0A%0A";
         msj += "📥 *DESCARGUE SU FACTURA Y REPORTE AQUÍ:*%0A";
-    } else if (tipoFinal === 'cotizacion') {
+    } else if (meta.slug === 'cotizacion') {
         msj += "💰 *PRESUPUESTO ESTIMADO:* " + totalFormatted + "%0A%0A";
         msj += "📑 *REVISE Y APRUEBE LA COTIZACIÓN AQUÍ:*%0A";
     } else {
         msj += "🌐 *VER TRAZABILIDAD Y DOCUMENTO:*%0A";
     }
 
-    // Inyección del link validado en laboratorio
     msj += linkNexus + "%0A%0A";
     msj += "_Powered by TallerPRO360 Core_";
 
-    // 📱 PROTOCOLO TELCO
+    // 📱 PROTOCOLO TELCO (Limpieza y Prefijo Latam)
     const telRaw = (ordenActiva.telefono || "").toString().replace(/\D/g, '');
     
     if (telRaw.length < 10) {
-        Swal.fire({ 
-            title: '🚨 PHONE_ERROR', 
-            text: 'Número de contacto insuficiente.', 
-            icon: 'error', background: '#0d1117', color: '#f87171' 
-        });
+        Swal.fire({ title: '🚨 PHONE_ERROR', text: 'Número insuficiente.', icon: 'error' });
         return;
     }
 
     // 🚀 DISPARO AL SATÉLITE WHATSAPP
-    const whatsappUrl = "https://wa.me/57" + telRaw + "?text=" + msj;
-    window.open(whatsappUrl, '_blank');
+    window.open("https://wa.me/57" + telRaw + "?text=" + msj, '_blank');
 };
 
     const renderBase = () => {
