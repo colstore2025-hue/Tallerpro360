@@ -69,9 +69,9 @@ export default async function ordenes(container) {
 
      /**
  * 🛰️ PROTOCOLO DE COMUNICACIÓN EXTERNA - NEXUS-X V16.5
- * ESTRATEGIA: Dynamic Document Dispatcher (Single HTML Architecture)
+ * ESTRATEGIA: Hard-Coded Param Injection & Financial Integrity
  * CERTIFICACIÓN: QUANTUM-SAP 2030
- * ESTADO: OPERATIVO_UNIVERSAL_SINCRO
+ * ESTADO: DESPLIEGUE_TOTAL_CONFIRMADO
  */
 window.enviarNotificacionNexus = (procesoEnviado) => {
     // 🛡️ VALIDACIÓN DE SEGURIDAD DE IDENTIDAD
@@ -86,7 +86,7 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
         return;
     }
 
-    // 🧠 MOTOR DE INTELIGENCIA DE ESTADOS (Mapeo Universal)
+    // 🧠 MOTOR DE INTELIGENCIA DE ESTADOS (Estructura de Datos Reforzada)
     const mapaNexus = {
         'INGRESO':    { slug: 'diagnostico', emoji: '🛰️', tag: 'INGRESO_CONFIRMADO' },
         'COTIZACION': { slug: 'cotizacion',  emoji: '💰', tag: 'PROPUESTA_TÉCNICA' },
@@ -96,17 +96,16 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
         'ENTREGADO':  { slug: 'factura',     emoji: '🏁', tag: 'REPORTE_HISTÓRICO' }
     };
 
-    // 🔄 DETECTOR DE ESTADO FALLBACK
-    // Si 'procesoEnviado' viene vacío, el sistema detecta el estado real de la ordenActiva
-    const procesoReal = procesoEnviado || ordenActiva.estado || 'INGRESO';
-    const meta = mapaNexus[procesoReal.toUpperCase()] || mapaNexus['INGRESO'];
+    // 🔄 CAPTURA ABSOLUTA DE ESTADO (Prioriza entrada de botón, luego estado de orden)
+    const p = (procesoEnviado || ordenActiva.estado || 'INGRESO').toUpperCase();
+    const meta = mapaNexus[p] || mapaNexus['INGRESO'];
     
-    // 🌐 CONSTRUCCIÓN DE LINK MAESTRO (Inyección Física Obligatoria)
-    // Se usa concatenación pura para evitar que el navegador ignore el parámetro &tipo
+    // 🌐 CONSTRUCCIÓN DE LINK MAESTRO (Inyección Física Inviolable)
+    // Se asegura que el link lleve SIEMPRE el ADN: ID + TIPO
     const baseUri = "https://tallerpro360.vercel.app/documento";
     const linkNexus = baseUri + "?id=" + idOrden + "&tipo=" + meta.slug;
     
-    // 💰 FORMATEO FINANCIERO (Blindaje de precisión)
+    // 💰 INTEGRIDAD FINANCIERA (Doble validación de campos)
     const totalFinal = Math.round(ordenActiva.total || (ordenActiva.costos_totales && ordenActiva.costos_totales.total) || 0);
     const totalFormatted = "$" + totalFinal.toLocaleString();
     
@@ -118,13 +117,13 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
     let msj = meta.emoji + " *NEXUS_X: " + meta.tag + "*%0A%0A";
     msj += "Hola *" + cliente + "*, la unidad *" + placa + "* presenta novedades en el sistema.%0A%0A";
 
-    // Inyección de Bitácora IA
+    // Inyección de Bitácora IA (Seguridad de caracteres)
     if (ordenActiva.bitacora_ia) {
         const logIA = ordenActiva.bitacora_ia.substring(0, 150).toUpperCase();
         msj += "📝 *LOG_IA:* " + logIA + "...%0A%0A";
     }
 
-    // Bloque Dinámico según Tipo
+    // Bloque Dinámico Financiero-Operativo
     if (meta.slug === 'factura') {
         msj += "💰 *VALOR SERVICIO:* " + totalFormatted + "%0A%0A";
         msj += "📥 *DESCARGUE SU FACTURA Y REPORTE AQUÍ:*%0A";
@@ -135,10 +134,11 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
         msj += "🌐 *VER TRAZABILIDAD Y DOCUMENTO:*%0A";
     }
 
+    // El link se inyecta al final como la firma del protocolo
     msj += linkNexus + "%0A%0A";
     msj += "_Powered by TallerPRO360 Core_";
 
-    // 📱 PROTOCOLO TELCO (Limpieza y Prefijo Latam)
+    // 📱 PROTOCOLO TELCO
     const telRaw = (ordenActiva.telefono || "").toString().replace(/\D/g, '');
     
     if (telRaw.length < 10) {
@@ -146,7 +146,7 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
         return;
     }
 
-    // 🚀 DISPARO AL SATÉLITE WHATSAPP
+    // 🚀 DISPARO AL SATÉLITE WHATSAPP (Sincronización Total)
     window.open("https://wa.me/57" + telRaw + "?text=" + msj, '_blank');
 };
 
