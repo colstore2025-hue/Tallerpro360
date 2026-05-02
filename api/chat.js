@@ -1,35 +1,39 @@
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ response: "Acceso denegado." });
+  if (req.method !== 'POST') return res.status(405).json({ response: "Acceso Denegado." });
 
-  // Forzamos la lectura ÚNICAMENTE de la clave de Gemini
-  const apiKey = process.env.GEMINI_API_KEY; 
+  const apiKey = process.env.GEMINI_API_KEY;
   const { prompt } = req.body;
 
   try {
-    // Usamos el modelo Pro estable para saltar cualquier restricción de modelos Flash nuevos
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
+    // RUTA QUIRÚRGICA: gemini-1.5-flash es el estándar actual para v1beta
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: "Contexto: Eres el experto de TallerPRO360. Responde al Comandante: " + prompt }] }]
+        contents: [{ parts: [{ text: "Actúa como el experto de TallerPRO360. Responde al Comandante sobre: " + prompt }] }]
       })
     });
 
     const data = await response.json();
 
-    // Si por error se estuviera usando una clave de OpenAI, Google responderá con un error 400 o 403
+    // Captura de errores de Google
     if (data.error) {
       return res.status(200).json({ 
-        response: `Aviso del Núcleo: ${data.error.message}. Verifique que en Vercel la variable GEMINI_API_KEY sea la correcta.` 
+        response: `Aviso del Núcleo: ${data.error.message} (Por favor, verifique la clave en Vercel).` 
       });
     }
 
-    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    return res.status(200).json({ response: aiText || "Señal recibida sin datos." });
+    // Extracción segura del texto
+    if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+      const aiResponse = data.candidates[0].content.parts[0].text;
+      return res.status(200).json({ response: aiResponse });
+    } else {
+      return res.status(200).json({ response: "Conexión exitosa, pero el Núcleo no envió texto. Intente de nuevo, Comandante." });
+    }
 
   } catch (error) {
-    return res.status(500).json({ response: "Falla crítica Nexus-X. Posible conflicto de protocolos." });
+    return res.status(500).json({ response: "Falla crítica en el hardware Nexus-X." });
   }
 }
