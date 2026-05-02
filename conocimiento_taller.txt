@@ -5,4 +5,282 @@ Funciones Clave: > - Recepción de vehículos con fotos del estado inicial (clav
 ​Seguimiento de reparaciones en tiempo real para el cliente.
 ​Gestión de inventario de repuestos y órdenes de servicio digitales.
 ​Módulo de Mecatrónica: Registro de escaneos y fallas electrónicas.
-Precios: [Tu estrategia de precios aquí].
+Precios: [autolab y car3 + aldata + autozone].herramientas para costos de mantenimiento,  mas ayudas al mecánico en su labor técnica. somos un sistema integrado. 
+
+
+CONOCIMIENTO MAESTRO - TALLERPRO360
+
+1. IDENTIDAD:
+TallerPRO360 es una plataforma PWA (Progressive Web App) de última generación para la gestión integral de talleres automotrices en Colombia. No requiere descarga desde Play Store o App Store, se accede mediante un link, ahorrando espacio y datos.
+
+2. NICHOS DE ATAQUE:
+- Mecánica General: Control de preventivos y correctivos.
+- Latonería y Pintura: Registro fotográfico del estado del vehículo (evita reclamos por golpes previos).
+- Eléctrico y Mecatrónica: Gestión de escaneos, diagramas y fallas electrónicas.
+
+3. FUNCIONES CLAVE (VENTAJAS COMPETITIVAS):
+- Órdenes de Servicio Digitales: Adiós al papel manchado de grasa.
+- Recepción con Evidencia: Captura de fotos iniciales del vehículo.
+- Seguimiento Starlink/Nexus: El cliente puede ver el avance de su reparación desde su propio celular en tiempo real.
+- Inventario Inteligente: Control de repuestos para evitar fugas de dinero.
+- Historial Clínico: Hoja de vida completa de cada placa/vehículo que entra al taller.
+
+4. PLANES Y PAGOS (Sincronización Boldsync):
+Ofrecemos flexibilidad total mediante ciclos de órbita:
+- 1 Mes (Ciclo Lunar)
+- 3 Meses (Trimestre Estelar)
+- 6 Meses (Semestre Galáctico)
+- 12 Meses (Año Luz) - Es el plan con máximo ahorro.
+Los pagos se procesan de forma segura a través del sistema Boldsync en la landing page.
+
+5. TONO DE COMUNICACIÓN:
+- Saludo: Siempre cordial, usando "Maestro", "Jefe" o "Estimado".
+- Estilo: Profesional pero aterrizado al lenguaje del taller colombiano. 
+- Objetivo: Convencer de que la digitalización trae más clientes y más orden.
+
+6. RESPUESTAS TÉCNICAS FRECUENTES:
+- ¿Funciona sin internet? Al ser PWA, carga rápido, pero requiere conexión para sincronizar datos con la nube de Nexus-X.
+- ¿Es difícil de usar? No, está diseñado para usarse con una sola mano mientras se trabaja en el motor.
+- ¿Cómo se instala? No se instala. Se añade a la pantalla de inicio del celular como un acceso directo.
+
+Universidad TallerPRO360 
+
+1. Integración Bold.
+​⚡ Guía de Activación: API Key Bold
+​Siga estos pasos para vincular su cuenta y habilitar la generación automática de botones de pago:
+• ​Acceso al Portal: Inicie sesión en su cuenta oficial en bold.co.
+• ​Ruta de Configuración: En el menú principal, diríjase a Configuración y luego seleccione la pestaña API.
+• ​Copia de Credenciales: Localice la sección API Key de Producción. Verá un código que inicia con el prefijo pk_live_....
+• ​Vinculación: Copie ese código y péguelo en el campo Cerebro de Pago de su plataforma.
+​💡 Beneficios Inmediatos para su Taller
+​Al activar esta llave, el sistema habilitará automáticamente:
+• ​Botones de Pago: Disponibles en cada orden de servicio o factura de manera instantánea.
+• ​Cifrado de Seguridad: Protección de datos bajo estándar de grado militar.
+• ​Conciliación Automática: Los pagos recibidos se verán reflejados en el estado de cuenta del taller sin procesos manuales.
+​Nota de Seguridad: Nunca comparta su pk_live por chats abiertos o correos electrónicos. Solo debe ser ingresada en el panel de configuración cifrado de su software.
+
+
+2. Configuración en TallerPRO360:
+TALLERPRO360 CORE | MANUAL DE ACTIVACIÓN DEL NODO: NXS_CONFIG
+​INTRODUCCIÓN: INICIANDO EL PROTOCOLO NEXUS
+​Bienvenido, Operador Central. El módulo NXS_CONFIG es el núcleo de su taller. Desde este centro de comando, usted establecerá la identidad de su negocio, activará los canales de comunicación satelital y vinculará los sistemas financieros de alta potencia.
+​Objetivo: Lograr una sincronización completa del taller antes de procesar órdenes de servicio.
+
+​FASE 1: DESPLIEGUE DE IDENTIDAD CENTRAL (NODO GENERAL)
+​Referencia Visual: Imagen 1 (image_1.png)
+​En esta fase, definimos los datos maestros que identifican a su estación de servicio ante sus clientes y el sistema central.
+• ​Navegación al Módulo: En el menú inferior, seleccione AJUSTES (ícono de dial de ecualización). La pantalla superior indicará NXS_CONFIG.
+• ​Activación de la Pestaña 'IDENTIDAD': Asegúrese de que la primera pestaña esté seleccionada (resaltada en cian).
+• ​Registro de Datos Maestros: 
+• ​Logo del Taller: Haga clic en el recuadro negro para cargar el archivo visual de su logo. Este logo aparecerá en todos los reportes y facturas. (Ejemplo visual muestra el logo TallerPRO 360).
+• ​Razón Social del Taller: Ingrese el nombre legal completo. (Ejemplo visual: TALLER LOS MOTORES).
+• ​Identificador Tributario (NIT/ID): Ingrese el número de identificación fiscal oficial. (Ejemplo visual: 41456789.
+• ​Verificación: Estos campos son críticos para la legalidad de sus facturas. Revíselos con precisión.
+​FASE 2: ACTIVACIÓN DE CANALES SATELITALES (CLOUD MASTER LINE)
+​Referencia Visual: Imagen 2 (image_2.png)
+​El sistema Nexus requiere una línea de emisión para el envío de reportes, confirmaciones y estados de cuenta a sus clientes.
+• ​Activación de la Pestaña 'CANALES': Seleccione la segunda pestaña en el menú superior.
+• ​Identificación de Emisor: Visualice la sección CLOUD MASTER LINE. Esta es su frecuencia de transmisión dedicada.
+• ​Configuración del Número Emisor: 
+• ​Verá el código de país (ej. +57) y el campo de número.
+• ​Ingrese el número móvil que funcionará como el "Emisor Satelital" de reportes PDF y confirmaciones automáticas de misión. (Ejemplo visual: 3200000000).
+• ​Sincronización de WhatsApp: Este nodo requiere un escaneo de código QR (no mostrado en la captura, pero implícito para la activación de la línea). Asegúrese de vincular su WhatsApp Business aquí.
+​🛰️ ALERTA DE SISTEMA: Al vincular exitosamente la línea, el ícono de WhatsApp adyacente se tornará verde.
+
+​FASE 3: VINCULACIÓN DE DESPLIEGUE FINANCIERO (NEURAL BOLD_LINK)
+​Referencia Visual: Imagen 3 (image_3.png)
+​Este es el núcleo de pagos para los planes de alta potencia.
+• ​Activación de la Pestaña 'BOLD_LINK': Seleccione la tercera pestaña en el menú superior.
+• ​Validación de Nivel de Potencia: Recuerde que esta funcionalidad SOLO está activa para los niveles PLAN PRO y ELITE.
+• ​Integración del Cerebro de Pago: 
+• ​Siga la Guía Táctica de Activación que aparece en pantalla: 
+• ​Inicie sesión en bold.co.
+• ​Vaya a Configuración y luego a API.
+• ​Copie la API Key de Producción (pk_live_...).
+• ​Pegue el código en el campo CEREBRO DE PAGO (API KEY). (Ejemplo visual muestra el código enmascarado y cifrado).
+• ​Confirmación de Seguridad: El sistema confirmará con un ícono de escudo y el texto: Cifrado de Grado Militar Activo.
+​💡 Beneficio de Sincronización: Una vez activo este nodo, el sistema generará botones de pago automáticos en cada PDF enviado a sus clientes.
+
+​FASE 4: AJUSTE DE ÓRBITA Y NIVEL DE POTENCIA (BILLING STARLINK)
+​Referencia Visual: Imágenes 4 (image_4.png) y 5 (image_5.png)
+​Finalmente, definimos la potencia operativa de su nodo y el ciclo de sincronización global.
+• ​Activación de la Pestaña 'SUSCRIPCIÓN': Seleccione la cuarta pestaña en el menú superior.
+• ​Selección de Nivel de Potencia (Plan): 
+• ​Haga clic en el menú desplegable bajo NIVEL DE POTENCIA. (Ejemplo visual en image_5.png).
+• ​Seleccione su nivel de despliegue: 
+• ​PLAN BÁSICO NEXUS: Operaciones esenciales.
+• ​PLAN PRO STARLINK: Incluye Bold_Link y funciones avanzadas de red.
+• ​PLAN ELITE NASA-TECH: Despliegue completo con IA y reportes avanzados.
+• ​Selección del Ciclo de Órbita: Elija el período de renovación de la suscripción (ej. 1 mes, 12 meses). (Ejemplo visual: 1 MES ÓRBITA ESTÁNDAR).
+• ​Costo de Sincronización Global: El sistema mostrará el valor total a facturar. (Ejemplo visual: $ 79,900).
+​FASE 5: SINCRONIZACIÓN FINAL DEL NODO
+​Referencia Visual: Sección inferior de todas las capturas
+​Una vez completadas las cuatro fases, el despliegue no será efectivo hasta que se ejecute la sincronización final.
+• ​Haga clic en el botón cian ubicado en la parte inferior de la pantalla, etiquetado SINCRONIZAR NODO 🛰️.
+• ​El sistema confirmará la sincronización exitosa de todos los datos maestros, canales y vínculos financieros.
+​🛑 CONTROL DE MISIÓN FINALIZADO. NODO NXS_CONFIG ACTIVADO.
+
+3. Que es Dashboard TallerPRO360:
+​🚀 ESTRATEGIA DE MANDO: DASHBOARD CENTRAL TALLERPRO360
+​El Dashboard o Tablero de Control es el "Maestro de Orquesta" del ecosistema Nexus-X Starlink. No es solo una vista estática; es la interfaz de inteligencia donde convergen los datos operativos, financieros y de personal para ofrecer una radiografía exacta del negocio en tiempo real.
+​1. INTEGRACIÓN TOTAL (PUNTO DE CONFLUENCIA)
+​El Dashboard actúa como el núcleo donde se entrelazan los módulos core:
+• ​Operativo: Muestra el flujo de vehículos por placa y el estado de las misiones activas.
+• ​Financiero: Refleja la liquidez inmediata capturada en el módulo de Pagos y Caja.
+• ​Inventario: Notifica niveles críticos de stock directamente en el panel principal.
+• ​Staff: Supervisa el rendimiento de la tripulación técnica asignada.
+​2. MÉTRICAS DE PRIMERA GENERACIÓN
+​En esta fase inicial, el tablero se enfoca en los indicadores vitales:
+• ​Volumen de Operación: Conteo de órdenes de servicio (Abiertas, En Proceso, Listas).
+• ​Monitor de Recaudo: Visualización de ingresos totales frente a cuentas por cobrar.
+• ​Eficiencia Técnica: Identificación de cuellos de botella en el proceso de reparación.
+​3. VISIÓN DE FUTURO: SISTEMA INTEGRADO DE ÚLTIMA GENERACIÓN
+​Este es solo el comienzo. La arquitectura está diseñada para evolucionar hacia:
+• ​Gráficas Avanzadas: Proyecciones de crecimiento y análisis de estacionalidad.
+• ​Mapas de Calor: Distribución de carga de trabajo por especialista.
+• ​Predicción AI: Sugerencias de compra de repuestos basadas en tendencias históricas.
+​4. EL MAESTRO DE ORQUESTA
+​Desde este panel, el dueño del taller deja de ser un operario para convertirse en un estratega. La información deja de estar en papeles o chats para vivir en una plataforma digital cifrada y siempre disponible.
+
+
+Características del Dashboard Maestro:
+• ​Integración Total: Conexión neural entre Operativo, Finanzas, Inventario y Staff.
+• ​Visibilidad 360: Panel diseñado para que el dueño sea el "Maestro de Orquesta" de su taller.
+• ​Alertas Críticas: Monitorización de saldos, stock y flujo de vehículos en un solo vistazo.
+• ​Escalabilidad: Preparado para integrar futuras métricas de inteligencia artificial y gráficas de rendimiento avanzado.
+​He utilizado una paleta de colores índigo y cósmica para este manual, reflejando su rol como el cerebro superior de la red Nexus-X Starlink.
+
+4. Pagos ó caja TallerPRO360:
+
+​💳 PROTOCOLO DE RECAUDO: MÓDULO DE PAGOS Y CAJA
+​El módulo de Pagos y Caja en TallerPRO360 actúa como el puente definitivo entre el servicio técnico y la salud financiera del negocio. Su diseño está orientado a simplificar el cobro, profesionalizar la relación con el cliente y automatizar la contabilidad.
+​1. VÍNCULO NEURAL: PLACA ↔ PAGO
+​El sistema no trabaja con datos aislados; utiliza la identidad del vehículo como llave de acceso:
+• ​Búsqueda Inteligente: Al ingresar la placa, el módulo llama automáticamente la Orden de Servicio activa, mostrando saldos, repuestos instalados y mano de obra pendiente.
+• ​Gestión de Anticipos: Permite registrar abonos iniciales para compra de repuestos, descontándolos automáticamente del gran total.
+• ​Liquidación Final: Procesa el pago de cierre una vez el vehículo está en estado "Listo", moviendo la orden al historial de "Entregados".
+​2. BOLD_LINK: RECAUDO DIGITAL
+​Si el administrador ha vinculado su API Key de Bold en la configuración, el módulo habilita capacidades de pago remoto:
+• ​Generación de Link: Crea un enlace de pago único que se envía al cliente por WhatsApp.
+• ​Omnicanalidad: El cliente puede pagar desde su casa mediante PSE, tarjetas de crédito o débito.
+• ​Sincronización: Una vez aprobado el pago en Bold, el sistema marca la orden como "Pagada" sin intervención manual.
+​3. EDUCACIÓN FINANCIERA PARA EL DUEÑO
+​Más que una herramienta de cobro, este módulo es un asistente de gestión:
+• ​Registro Sistemático: Instaura la disciplina de registrar cada movimiento (entrada y salida), evitando la fuga de capital "hormiga".
+• ​Conexión ACCOUNTING.JS: Cada pago alimenta el libro diario de contabilidad.
+• ​Alimentación DASHBOARD.JS: Los datos de caja se transforman en gráficas de rendimiento y flujo de efectivo semanal/mensual.
+​4. EL PLUS TALLERPRO360
+​Este módulo transforma un taller convencional en una empresa tecnológica, ofreciendo una experiencia de pago transparente para el cliente y una auditoría permanente para el dueño del taller.
+
+
+
+Puntos clave del protocolo:
+• ​Vínculo por Placa: Operación centrada en el vehículo para evitar errores de asignación de cobros.
+• ​Puente de Anticipos: Facilita la recepción de capital inicial para repuestos y suministros.
+• ​Neural Bold-Link: Automatización de cobros vía links de pago cuando la API está activa.
+• ​Cierre del Ecosistema: Sincronización nativa con contabilidad.js y dashboard.js para una visión 360 del negocio.
+
+5. Módulo Clientes ó CRM
+Cambios Estratégicos Implementados:
+• ​Arquitectura de Datos Expandida: Ahora el cliente no es solo un nombre; incluye segmentacion, puntos_lealtad, total_facturado y ultimo_servicio para alimentar el motor financiero.
+• ​Motor de Insights Real: El sistema ahora analiza el retorno y el EBITDA acumulado para sugerir acciones de marketing automáticas.
+• ​Interfaz "Cyber-Nexus": Diseño optimizado para legibilidad masiva con indicadores de estado visual (Badges de Segmentación).
+• ​Inyección de Hooks de Comunicación: Preparado para que cuando una Orden de Trabajo se cierre, este módulo actualice el historial del cliente sin intervención humana
+
+6. Módulo Vehículos:
+V19.0 (Nexus-X Fleet Sentinel). He transformado el expediente estático en un Core de Telemetría y Recepción Profesional, integrando el Checklist de Auditoría 360° y la sincronización bidireccional con clientes.js.
+​Mejoras de Grado SAP implementadas:
+• ​Protocolo de Recepción (Checklist): Ahora el expediente incluye una matriz de inspección (Combustible, Luces, Carrocería, Inventario Interno).
+• ​Sincronización Transversal: Al actualizar un vehículo, el sistema busca al cliente en clientes.js y actualiza su historial de puntos y última placa de forma atómica.
+• ​Indicadores de Salud de Activo: Algoritmo visual que cambia el estilo de la tarjeta según el estado de garantía o kilometraje crítico.
+• ​Arquitectura Limpia: Manejo de estados de Firebase optimizado para evitar fugas de memoria y asegurar la persistencia en el localStorage de la empresa.
+
+
+7. Módulo Inventario :
+Contenido del Protocolo de Inventario:
+• ​Arquitectura de Stock: Registro de suministros, marcas y ubicaciones físicas.
+• ​Alertas de Reabastecimiento: Notificaciones de stock crítico para evitar paradas operativas.
+• ​Flujo Automático: El sistema descuenta unidades y asigna costos al cliente de forma instantánea al usar el repuesto.
+• ​Valorización: Control de compras a proveedores y cálculo de utilidad bruta para el Dashboard.
+
+8. Módulo Estrategico ordenes de trabajo:
+​📑 PROTOCOLO DE OPERACIÓN: NEXUS_V8 & TALLER-PRO-EVO
+​Este módulo constituye el Cerebro Operativo del sistema. Su función principal es la captura de datos en tiempo real durante el ciclo de vida del vehículo en el taller, asegurando que cada acción técnica se transforme automáticamente en un registro financiero y contable.
+​1. NÚCLEO DE ESTADOS (FLUJO DE MISIÓN)
+​El sistema gestiona el vehículo a través de un pipeline dinámico. Cada cambio de estado dispara una notificación al cliente y prepara los asientos contables correspondientes:
+• ​COTIZACIÓN: Fase de diagnóstico inicial y presupuesto. No genera deuda, pero reserva disponibilidad de repuestos.
+• ​INGRESO: Apertura formal de la orden de servicio. Captura de datos del cliente y estado físico del vehículo.
+• ​DIAGNÓSTICO: Registro técnico de hallazgos. En esta fase se asignan los Especialistas encargados.
+• ​REPARACIÓN: Ejecución de la mano de obra y consumo de insumos.
+• ​LISTO: Verificación de calidad. El sistema consolida el Gran Total de Factura.
+• ​ENTREGADO: Cierre de misión. Los datos se transmiten al Dashboard de Finanzas y se emite el reporte final.
+​2. INTERFAZ DE CAPTURA INTELIGENTE (PLACA)
+​Para maximizar la eficiencia en el patio de servicio, el sistema utiliza herramientas de entrada rápida:
+• ​AI Neural Log (Capturar Voz): Permite al técnico describir las novedades del vehículo mediante comandos de voz, que el sistema transcribe y vincula a la orden.
+• ​Evidencia Visual: Integración de cámara para registro fotográfico y de video del estado del vehículo y el progreso de la reparación.
+• ​Sincronización Nexus: Botón de validación final que empuja los datos locales hacia la nube de Starlink para actualización global.
+​3. DESGLOSE FINANCIERO INTEGRADO
+​Cada orden de servicio desagrega los costos para una contabilidad precisa:
+
+Componente
+Descripción
+Impacto Contable
+Repuestos
+Insumos nuevos o usados instalados.
+Salida de Inventario / Costo de Ventas
+Mano de Obra
+Tiempo y especialidad técnica aplicada.
+Ingreso por Servicios / Pago de Nómina
+Gastos
+Costos indirectos o compras locales urgentes.
+Egresos Operativos
+Anticipo (Bold/Efect)
+Pagos parciales realizados por el cliente.
+Flujo de Caja (Entrada)
+
+4. CONTROL DE TRIPULACIÓN (CREW CONTROL)
+​Gestión de niveles de acceso y responsabilidades dentro del nodo operativo:
+• ​Admin: Control total de la configuración, precios y visualización de reportes financieros.
+• ​Técnico: Acceso limitado a la carga de diagnósticos, fotos y estados de reparación.
+• ​Especialista: Búsqueda y asignación de responsables por placa para el cálculo automático de comisiones y rendimiento.
+​5. CONECTIVIDAD Y FACTURACIÓN (NEURAL BOLD_LINK)
+​El sistema utiliza el Cerebro de Pago (API Key) para la activación táctica de cobros:
+• ​Generación automática de botones de pago en cada PDF enviado por WhatsApp.
+• ​Cifrado de grado militar para la protección de transacciones financieras.
+• ​Sincronización inmediata con el módulo de suscripción (Billing Starlink) para mantener el nodo operativo.
+​ESTADO DEL SISTEMA: 🟢 ACTIVO
+NODO: TALLER_001
+PROTOCOLO: NEXUS X STARLINK
+Aspectos Destacados de este Módulo:
+• ​Ciclo de Misión: Detalla el pipeline desde el ingreso del vehículo hasta la transmisión global de datos.
+• ​Integración Contable: Tabla técnica que muestra cómo se transforman los repuestos y la mano de obra en asientos financieros.
+• ​Dashboard de Mando: Explica la visibilidad total que tiene el Dueño sobre la rentabilidad neta por placa.
+• ​Estética Green-Nexus: Utiliza una paleta de verdes y cianes para diferenciarlo de los módulos de configuración y staff, resaltando su naturaleza operativa y de crecimiento.
+
+
+9. Módulo reportes:
+​🎯 LA VISIÓN: "EL TALLER NO SE GESTIONA, SE COMANDA"
+​Modulo - reportes no es vender una tabla de datos; es vender el Ojo de Dios sobre la operación industrial. En 2030, el tiempo no es dinero, el tiempo es supervivencia. Si no puedes ver tu fuga de capital en tiempo real, ya estás muerto.
+​💎 ARGUMENTOS DE VENTA (THE CORE ASSETS)
+​1. Inteligencia Táctica Basada en MTTR
+​"Tu taller no es una bodega de vehículos, es un reactor de flujo."
+
+• ​El Gancho: "NEXUS-X calcula automáticamente el Mean Time To Repair (MTTR). Si una unidad excede los 5 días, el sistema activa una alerta roja. No permitas que un vehículo 'muerto' en el elevador devore tu rentabilidad."
+​2. El Radar de Fuga de Capital (Anti-Entropy)
+• ​El Gancho: "Implementamos un algoritmo de Fuga Potencial. Cada segundo que una Orden de Trabajo (OT) se desvía del plan, NEXUS-X calcula cuánta utilidad neta estás perdiendo por costo de oportunidad. Visualizamos el dinero que se te escapa entre los dedos para que puedas detenerlo."
+​3. Interfaz de Comando Cyber-Industrial
+• ​El Gancho: "Olvida los reportes aburridos de oficina. Hemos diseñado una Terminal de Control SAP Hyper-Drive. Con tipografías Orbitron y estética táctica, el dueño del taller siente el poder de una estación espacial de logística. Es software de guerra para el mercado civil."
+​4. Sistema de Voz Sintética "Nexus Voice"
+• ​El Gancho: "El sistema te habla. Te informa de desviaciones críticas sin que tengas que mirar la pantalla. Es como tener a un auditor de SAP invisible susurrándote dónde está el cuello de botella."
+​📊 TABLA DE COMPARACIÓN: ¿POR QUÉ NEXUS-X?
+ 
+🛠️ PITCH DE CIERRE (EL HANDSHAKE FINAL)
+​"Señores socios, no estamos aquí para ver cuánto facturamos ayer. Eso es historia. Estamos aquí para ver cuánta utilidad estamos asegurando mañana. NEXUS-X les da el control total sobre la intensidad técnica de sus operarios y la eficiencia de cada centavo invertido en repuestos.
+​¿Quieren un administrador que les diga qué pasó, o quieren un Comandante Estratégico que les diga qué corregir ahora mismo?
+​Nexus-X: El futuro de la logística industrial ya está aquí. Y habla por ti."
+​🛡️ NOTA DEL DESARROLLADOR (TERMINATOR MODE):
+​Comandante , este módulo es su obra maestra. Se ha construido con la precisión de un motor de 1200cc y la robustez de un chasis Toyota. Nos sentimos orgullosos: Se ha creado una herramienta que no solo organiza, sino que domina el caos operativo.
+
+10. Lo demas consulta: Para probar el sistema en PLAN GRATI-CORE a:
+
+https://tallerpro360.vercel.app/home
