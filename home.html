@@ -153,6 +153,15 @@
             border-bottom: 2px solid var(--glow); 
             box-shadow: 0 4px 50px rgba(0,0,0,0.8); 
         }
+
+/* Añadir esto para que el chat sea responsivo en celulares colombianos */
+@media (max-width: 480px) {
+    #chat-window {
+        width: 90vw !important;
+        right: 5vw !important;
+        bottom: 85px !important;
+    }
+}
         
         /* BLOQUE QUIRÚRGICO: Simetría de Tarjetas */
         .nexus-card { 
@@ -435,6 +444,100 @@
             }
         }
     </script>
+<script>
+    const chatButton = document.getElementById('chat-button');
+    const chatWindow = document.getElementById('chat-window');
+    const chatInput = document.getElementById('chat-input');
+    const sendButton = document.getElementById('send-button');
+    const chatMessages = document.getElementById('chat-messages');
+
+    // Alternar ventana de chat
+    chatButton.onclick = () => {
+        chatWindow.style.display = chatWindow.style.display === 'none' ? 'flex' : 'none';
+    };
+
+    // Función para hablar con la IA (Tu función adaptada)
+    async function hablarConIA(mensajeUsuario) {
+        const respuesta = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: mensajeUsuario })
+        });
+        const data = await respuesta.json();
+        return data.response;
+    }
+
+    // Lógica de envío
+    async function enviarMensaje() {
+        const text = chatInput.value.trim();
+        if (!text) return;
+
+        // Mostrar mensaje del usuario
+        appendMessage('user', text);
+        chatInput.value = '';
+
+        // Mostrar "Escribiendo..."
+        const loadingId = appendMessage('bot', 'Escribiendo...');
+
+        try {
+            const respuestaIA = await hablarConIA(text);
+            updateMessage(loadingId, respuestaIA);
+        } catch (error) {
+            updateMessage(loadingId, "Lo siento, maestro. Tuve un problema de conexión. Intente de nuevo.");
+        }
+    }
+
+    function appendMessage(sender, text) {
+        const id = Date.now();
+        const msgDiv = document.createElement('div');
+        msgDiv.id = id;
+        msgDiv.style.padding = '10px';
+        msgDiv.style.borderRadius = '10px';
+        msgDiv.style.maxWidth = '80%';
+        msgDiv.style.fontSize = '14px';
+        
+        if (sender === 'user') {
+            msgDiv.style.alignSelf = 'flex-end';
+            msgDiv.style.background = '#dcf8c6';
+        } else {
+            msgDiv.style.alignSelf = 'flex-start';
+            msgDiv.style.background = 'white';
+        }
+        
+        msgDiv.innerText = text;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return id;
+    }
+
+    function updateMessage(id, newText) {
+        document.getElementById(id).innerText = newText;
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    sendButton.onclick = enviarMensaje;
+    chatInput.onkeypress = (e) => { if(e.key === 'Enter') enviarMensaje(); };
+</script>
+<div id="chat-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000; font-family: sans-serif;">
+    <button id="chat-button" style="background: #25d366; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-size: 24px;">
+        💬
+    </button>
+
+    <div id="chat-window" style="display: none; width: 320px; height: 450px; background: white; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); flex-direction: column; overflow: hidden; margin-bottom: 10px;">
+        <div style="background: #075e54; color: white; padding: 15px; text-align: center; font-weight: bold;">
+            Soporte TallerPRO360 🇨🇴
+        </div>
+        <div id="chat-messages" style="flex: 1; padding: 15px; overflow-y: auto; background: #e5ddd5; display: flex; flex-direction: column; gap: 10px;">
+            <div style="background: white; padding: 10px; border-radius: 10px; align-self: flex-start; max-width: 80%; font-size: 14px;">
+                ¡Hola maestro! Soy el asistente IA de TallerPRO360. ¿Cómo puedo ayudarle con su taller hoy?
+            </div>
+        </div>
+        <div style="padding: 10px; display: flex; gap: 5px; background: #f0f0f0;">
+            <input type="text" id="chat-input" placeholder="Escriba su duda..." style="flex: 1; border: none; padding: 10px; border-radius: 20px; outline: none;">
+            <button id="send-button" style="background: #075e54; color: white; border: none; padding: 10px 15px; border-radius: 50%; cursor: pointer;">➤</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
 
