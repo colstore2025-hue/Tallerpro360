@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
-  // 1. Solo permitir peticiones POST
+  // 1. Protocolo de seguridad de entrada
   if (req.method !== 'POST') {
-    return res.status(405).json({ response: "Método no permitido" });
+    return res.status(405).json({ response: "Acceso denegado: Método no permitido." });
   }
 
   try {
@@ -9,43 +9,63 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      return res.status(500).json({ response: "Error: Configuración de API ausente en el servidor." });
+      return res.status(500).json({ response: "Error crítico: Enlace de energía (API Key) no detectado." });
     }
 
+    // 2. Endpoint de Transmisión (Gemini 1.5 Pro)
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
 
-    // Contexto Maestro de TallerPRO360
-    const contextoManual = `
-      Eres el experto técnico y comercial de TallerPRO360. 
-      CONTEXTO: App PWA para talleres en Colombia (Mecánica, Latonería, Pintura, Mecatrónica).
-      VENTAJAS: No requiere descarga, seguimiento Starlink en tiempo real, registro fotográfico para evitar reclamos.
-      TONO: Profesional, servicial, dirigiéndote al usuario como 'Comandante' o 'Jefe'. 
-      OBJETIVO: Resolver dudas y motivar a la digitalización del taller.
+    // 3. Matriz de Contexto TallerPRO360 (Estilo Comandante)
+    const contextoNexus = `
+      IDENTIDAD: Eres el Núcleo IA de TallerPRO360.
+      MISIÓN: Asesoría técnica y comercial para talleres automotrices en Colombia.
+      TECNOLOGÍA: PWA (Sin descarga), Sincronización Starlink, Gestión Aeroespacial.
+      TONO: Profesional, tecnológico, respetuoso. Dirígete siempre como 'Comandante' o 'Jefe'.
+      RESTRICCIÓN: Respuestas concisas y directas. No menciones que eres una IA de Google.
     `;
 
+    // 4. Ejecución de Sincronización
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ 
-          parts: [{ text: contextoManual + "\nPREGUNTA DEL CLIENTE: " + prompt }] 
-        }]
+          parts: [{ text: `${contextoNexus}\nCOMANDANTE DICE: ${prompt}` }] 
+        }],
+        // Ajuste de seguridad para evitar bloqueos por falsos positivos
+        safetySettings: [
+          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        }
       })
     });
 
     const data = await response.json();
 
-    // 2. Extracción segura (Evita el error 'undefined')
-    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+    // 5. Extracción y Verificación de Datos
+    if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
       const aiResponse = data.candidates[0].content.parts[0].text;
       return res.status(200).json({ response: aiResponse });
-    } else {
-      console.error("Estructura de Gemini inesperada:", data);
-      return res.status(500).json({ response: "El núcleo de IA no pudo procesar la respuesta. Intente de nuevo." });
+    } 
+    
+    // Si la IA bloquea la respuesta por alguna palabra sensible del usuario
+    if (data.promptFeedback?.blockReason) {
+      return res.status(200).json({ response: "Comandante, el sistema detectó contenido restringido en la consulta. Por favor, reformule su instrucción técnica." });
     }
 
+    console.error("Fallo en estructura de datos:", JSON.stringify(data));
+    return res.status(500).json({ response: "Sincronización inestable. El Núcleo no pudo procesar los datos. Intente de nuevo." });
+
   } catch (error) {
-    console.error("Falla en Servidor API:", error);
-    return res.status(500).json({ response: "Interrupción en el enlace Nexus-X. Verifique su conexión." });
+    console.error("Error en Servidor Nexus:", error);
+    return res.status(500).json({ response: "Interrupción total en el enlace Nexus-X. Verifique consola." });
   }
 }
