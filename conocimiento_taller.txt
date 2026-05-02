@@ -1,0 +1,8 @@
+Nombre: TallerPRO360.
+Nicho: Talleres en Colombia (Mecánica, Latonería, Pintura, Electricidad, Mecatrónica).
+Funcionamiento: Es una PWA (no requiere descarga).
+Funciones Clave: > - Recepción de vehículos con fotos del estado inicial (clave para Latonería).
+​Seguimiento de reparaciones en tiempo real para el cliente.
+​Gestión de inventario de repuestos y órdenes de servicio digitales.
+​Módulo de Mecatrónica: Registro de escaneos y fallas electrónicas.
+Precios: [Tu estrategia de precios aquí].
