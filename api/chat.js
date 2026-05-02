@@ -5,23 +5,22 @@ export default async function handler(req, res) {
   const { prompt } = req.body;
 
   try {
-    // RUTA UNIVERSAL: Esta ruta no falla porque usa la estructura de modelos v1beta mejorada
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+    // RUTA MAESTRA: gemini-1.5-flash es el modelo más compatible y veloz actualmente
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: "Actúa como experto de TallerPRO360. Responde al Comandante: " + prompt }] }]
+        contents: [{ parts: [{ text: "Actúa como el Núcleo IA de TallerPRO360. Responde al Comandante de forma técnica y profesional sobre: " + prompt }] }]
       })
     });
 
     const data = await response.json();
     
-    // Si la clave tiene problemas de permisos, aquí lo sabremos
     if (data.error) {
       return res.status(200).json({ 
-        response: `Error de Enlace: ${data.error.message} (Verifique si la API Key está activa en Google AI Studio)` 
+        response: `Error de Sincronización: ${data.error.message}. Comandante, verifique que la nueva clave esté activa.` 
       });
     }
 
@@ -30,10 +29,10 @@ export default async function handler(req, res) {
     if (aiText) {
       return res.status(200).json({ response: aiText });
     } else {
-      return res.status(200).json({ response: "Sincronización completa, pero el Núcleo devolvió una señal vacía. Reintente." });
+      return res.status(200).json({ response: "Enlace establecido, pero la señal de datos es nula. Reintente el comando." });
     }
 
   } catch (error) {
-    return res.status(500).json({ response: "Falla crítica en el hardware de red Nexus-X." });
+    return res.status(500).json({ response: "Falla crítica en el hardware Nexus-X. Reinicie el sistema." });
   }
 }
