@@ -18,6 +18,8 @@ TallerPRO360 es una plataforma PWA (Progressive Web App) de última generación 
 - Latonería y Pintura: Registro fotográfico del estado del vehículo (evita reclamos por golpes previos).
 - Eléctrico y Mecatrónica: Gestión de escaneos, diagramas y fallas electrónicas.
 
+​"Si el cliente pregunta qué es el Nodo Maestro, dile que es el corazón de TallerPRO360 donde se centralizan todas las órdenes de servicio del taller."
+
 3. FUNCIONES CLAVE (VENTAJAS COMPETITIVAS):
 - Órdenes de Servicio Digitales: Adiós al papel manchado de grasa.
 - Recepción con Evidencia: Captura de fotos iniciales del vehículo.
