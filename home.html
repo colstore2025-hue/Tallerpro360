@@ -435,28 +435,30 @@
             }
         }
     </script>
-<div id="chat-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000; font-family: 'Orbitron', sans-serif;">
-    <button id="chat-button" style="background: #25d366; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); font-size: 28px; display: flex; align-items: center; justify-content: center; transition: transform 0.3s ease;">
+<div id="chat-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: 'Orbitron', sans-serif;">
+    <button id="chat-button" style="background: #25d366; color: white; border: none; border-radius: 50%; width: 65px; height: 65px; cursor: pointer; box-shadow: 0 0 20px rgba(37, 211, 102, 0.4); font-size: 30px; display: flex; align-items: center; justify-content: center; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
         💬
     </button>
 
-    <div id="chat-window" style="display: none; width: 340px; height: 500px; background: #fff; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.3); flex-direction: column; overflow: hidden; position: absolute; bottom: 80px; right: 0; border: 1px solid rgba(6, 182, 212, 0.2);">
+    <div id="chat-window" style="display: none; width: 350px; height: 550px; background: #FFFFFF; border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.5); flex-direction: column; overflow: hidden; position: absolute; bottom: 85px; right: 0; border: 1px solid #06b6d4;">
         
-        <div style="background: #075e54; color: white; padding: 15px; text-align: center; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 5px;">
-            <span style="font-size: 14px; letter-spacing: 1px;">SOPORTE TALLERPRO360</span>
-            <span style="font-size: 10px; opacity: 0.8; font-family: sans-serif;">Sistema Nexus-X | Conexión Starlink 🇨🇴</span>
+        <div style="background: linear-gradient(135deg, #075e54 0%, #0c0f17 100%); color: white; padding: 20px; text-align: center; border-bottom: 2px solid #06b6d4;">
+            <div style="font-size: 14px; font-weight: 900; letter-spacing: 2px; color: #06b6d4;">SOPORTE TALLERPRO360</div>
+            <div style="font-size: 10px; opacity: 0.9; font-family: 'Orbitron'; margin-top: 5px;">CONEXIÓN NEXUS-X STARLINK 🚀</div>
         </div>
 
-        <div id="chat-messages" style="flex: 1; padding: 15px; overflow-y: auto; background: #e5ddd5; display: flex; flex-direction: column; gap: 12px; font-family: sans-serif;">
-            <div style="background: white; color: #000; padding: 12px; border-radius: 12px; align-self: flex-start; max-width: 85%; font-size: 13px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); border-bottom-left-radius: 2px;">
-                ¡Hola maestro! Soy el asistente IA de TallerPRO360. ¿Cómo puedo ayudarle con la gestión de su taller hoy?
+        <div id="chat-messages" style="flex: 1; padding: 20px; overflow-y: auto; background: #F8FAFC; display: flex; flex-direction: column; gap: 15px; font-family: 'Inter', sans-serif;">
+            <div style="background: #FFFFFF; color: #000000 !important; padding: 15px; border-radius: 15px; align-self: flex-start; max-width: 85%; font-size: 14px; line-height: 1.5; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #E2E8F0; border-bottom-left-radius: 2px; font-weight: 500;">
+                ¡Saludos, maestro! Soy el núcleo IA de TallerPRO360. ¿Cómo puedo optimizar la gestión de su taller hoy?
             </div>
         </div>
 
-        <div style="padding: 12px; display: flex; gap: 8px; background: #f0f0f0; align-items: center;">
-            <input type="text" id="chat-input" placeholder="Escriba su duda aquí..." style="flex: 1; border: none; padding: 12px 15px; border-radius: 25px; outline: none; font-size: 14px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
-            <button id="send-button" style="background: #075e54; color: white; border: none; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: background 0.3s;">
-                <span style="transform: rotate(-45deg); margin-left: 3px; font-size: 18px;">➤</span>
+        <div style="padding: 15px; background: #FFFFFF; border-top: 1px solid #E2E8F0; display: flex; gap: 10px; align-items: center;">
+            <input type="text" id="chat-input" placeholder="Escriba su consulta técnica..." 
+                style="flex: 1; border: 2px solid #F1F5F9; padding: 12px 18px; border-radius: 30px; outline: none; font-size: 14px; color: #000000 !important; background: #F8FAFC; font-weight: 600; transition: border 0.3s ease;">
+            
+            <button id="send-button" style="background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(7, 94, 84, 0.3); transition: transform 0.2s;">
+                <span style="transform: rotate(-45deg); font-size: 20px;">➤</span>
             </button>
         </div>
     </div>
@@ -464,90 +466,87 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const chatButton = document.getElementById('chat-button');
-        const chatWindow = document.getElementById('chat-window');
-        const chatInput = document.getElementById('chat-input');
-        const sendButton = document.getElementById('send-button');
-        const chatMessages = document.getElementById('chat-messages');
+        const chatBtn = document.getElementById('chat-button');
+        const chatWin = document.getElementById('chat-window');
+        const chatInp = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-button');
+        const messagesArea = document.getElementById('chat-messages');
 
-        // Alternar Ventana
-        chatButton.onclick = () => {
-            const isHidden = chatWindow.style.display === 'none' || chatWindow.style.display === '';
-            chatWindow.style.display = isHidden ? 'flex' : 'none';
-            if(isHidden) chatInput.focus();
+        // ACTIVACIÓN DE NODO
+        chatBtn.onclick = () => {
+            const isVisible = chatWin.style.display === 'flex';
+            chatWin.style.display = isVisible ? 'none' : 'flex';
+            if(!isVisible) chatInp.focus();
+            chatBtn.style.transform = isVisible ? 'scale(1)' : 'scale(0.9)';
         };
 
-        // Función de conexión con Vercel API
-        async function hablarConIA(mensajeUsuario) {
+        // PROTOCOLO DE COMUNICACIÓN API
+        async function nexusFetch(prompt) {
             try {
-                const respuesta = await fetch('/api/chat', {
+                const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: mensajeUsuario })
+                    body: JSON.stringify({ prompt: prompt })
                 });
-                const data = await respuesta.json();
+                const data = await response.json();
                 return data.response;
             } catch (err) {
-                console.error("Error en conexión:", err);
-                return "Maestro, tengo una pequeña interferencia en la señal. ¿Podría repetir su pregunta?";
+                return "ERROR DE SINCRONIZACIÓN: Reintente conexión Starlink.";
             }
         }
 
-        // Lógica de Envío
-        async function enviarMensaje() {
-            const text = chatInput.value.trim();
-            if (!text) return;
-
-            appendMessage('user', text);
-            chatInput.value = '';
-
-            const loadingId = appendMessage('bot', 'Analizando datos...');
-
-            const respuestaIA = await hablarConIA(text);
-            updateMessage(loadingId, respuestaIA);
-        }
-
-        function appendMessage(sender, text) {
-            const id = Date.now();
-            const msgDiv = document.createElement('div');
-            msgDiv.id = id;
-            msgDiv.style.padding = '12px';
-            msgDiv.style.borderRadius = '12px';
-            msgDiv.style.maxWidth = '85%';
-            msgDiv.style.fontSize = '13px';
-            msgDiv.style.color = '#000'; // Texto negro garantizado
-            msgDiv.style.wordWrap = 'break-word';
-            msgDiv.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
-            msgDiv.style.fontFamily = 'sans-serif';
+        // INYECCIÓN DE DATOS EN INTERFAZ
+        function renderMsg(role, text) {
+            const msg = document.createElement('div');
+            msg.style.padding = '15px';
+            msg.style.borderRadius = '15px';
+            msg.style.maxWidth = '85%';
+            msg.style.fontSize = '14px';
+            msg.style.lineHeight = '1.5';
+            msg.style.fontWeight = '500';
+            msg.style.wordWrap = 'break-word';
+            msg.style.color = '#000000'; // FUERZA NEGRO ABSOLUTO
+            msg.style.boxShadow = '0 4px 6px rgba(0,0,0,0.05)';
+            msg.style.fontFamily = 'sans-serif';
             
-            if (sender === 'user') {
-                msgDiv.style.alignSelf = 'flex-end';
-                msgDiv.style.background = '#dcf8c6';
-                msgDiv.style.borderBottomRightRadius = '2px';
+            if (role === 'user') {
+                msg.style.alignSelf = 'flex-end';
+                msg.style.background = '#dcf8c6';
+                msg.style.borderBottomRightRadius = '2px';
+                msg.style.border = '1px solid #c5e1a5';
             } else {
-                msgDiv.style.alignSelf = 'flex-start';
-                msgDiv.style.background = '#fff';
-                msgDiv.style.borderBottomLeftRadius = '2px';
+                msg.style.alignSelf = 'flex-start';
+                msg.style.background = '#FFFFFF';
+                msg.style.borderBottomLeftRadius = '2px';
+                msg.style.border = '1px solid #E2E8F0';
             }
             
-            msgDiv.innerText = text;
-            chatMessages.appendChild(msgDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            return id;
+            msg.innerText = text;
+            messagesArea.appendChild(msg);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+            return msg;
         }
 
-        function updateMessage(id, newText) {
-            const el = document.getElementById(id);
-            if(el) {
-                el.innerText = newText;
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
+        async function processSync() {
+            const val = chatInp.value.trim();
+            if (!val) return;
+
+            renderMsg('user', val);
+            chatInp.value = '';
+
+            const loadingMsg = renderMsg('bot', 'Sincronizando con Gemini 1.5 Pro...');
+            
+            const aiData = await nexusFetch(val);
+            loadingMsg.innerText = aiData;
+            messagesArea.scrollTop = messagesArea.scrollHeight;
         }
 
-        sendButton.onclick = enviarMensaje;
-        chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') enviarMensaje();
-        });
+        sendBtn.onclick = processSync;
+        chatInp.onkeypress = (e) => { if(e.key === 'Enter') processSync(); };
+        
+        // FOCUS VISUAL
+        chatInp.onfocus = () => chatInp.style.border = '2px solid #06b6d4';
+        chatInp.onblur = () => chatInp.style.border = '2px solid #F1F5F9';
     });
 </script>
 </body>
