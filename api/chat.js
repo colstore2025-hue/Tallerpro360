@@ -1,23 +1,19 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ response: "Acceso Denegado." });
 
-  // Usamos la clave de OpenAI que ya tiene en Vercel
-  const apiKey = process.env.OPENAI_API_KEY;
+  // Pegue aquí la CLAVE NUEVA directamente para probar, o asegúrese de cambiarla en Vercel
+  const apiKey = process.env.GEMINI_API_KEY;
   const { prompt } = req.body;
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    // Usamos la ruta más sencilla del mundo para Gemini
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    
+    const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo", // O "gpt-4" si su cuenta lo permite
-        messages: [
-          { role: "system", content: "Eres el experto técnico de TallerPRO360. Responde al Comandante de forma profesional." },
-          { role: "user", content: prompt }
-        ]
+        contents: [{ parts: [{ text: "Eres el experto de TallerPRO360. Responde breve: " + prompt }] }]
       })
     });
 
@@ -25,14 +21,14 @@ export default async function handler(req, res) {
 
     if (data.error) {
       return res.status(200).json({ 
-        response: `Aviso de OpenAI: ${data.error.message}. Comandante, revise el saldo en su cuenta de OpenAI.` 
+        response: `Error Final: ${data.error.message}. Comandante, la única opción es usar una clave generada en un 'Nuevo Proyecto' dentro de AI Studio.` 
       });
     }
 
-    const aiText = data.choices[0].message.content;
-    return res.status(200).json({ response: aiText });
+    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    return res.status(200).json({ response: aiText || "El núcleo no responde." });
 
   } catch (error) {
-    return res.status(500).json({ response: "Falla crítica en el hardware Nexus-X (OpenAI Bridge)." });
+    return res.status(500).json({ response: "Falla total del sistema Nexus-X." });
   }
 }
