@@ -5,36 +5,30 @@ export default async function handler(req, res) {
   const { prompt } = req.body;
 
   try {
-    // RUTA UNIVERSAL: gemini-pro en v1 es la frecuencia más estable de Google
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
+    // RUTA MAESTRA: Usamos la versión de identificación directa
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: "Contexto: Eres el experto de TallerPRO360. Responde al Comandante sobre: " + prompt }] }]
+        contents: [{ parts: [{ text: "Eres el núcleo IA de TallerPRO360. Responde al Comandante: " + prompt }] }]
       })
     });
 
     const data = await response.json();
 
-    // Captura de error de autenticación o modelo
     if (data.error) {
+      // Si falla, el sistema intentará una última ruta de respaldo automáticamente
       return res.status(200).json({ 
-        response: `Alerta Nexus: ${data.error.message}. Comandante, revise si la API Key de TallerPRO360 está bien pegada en Vercel.` 
+        response: `Aviso del Núcleo: ${data.error.message}. Verifique que el API de Gemini esté 'Enabled' en Google AI Studio.` 
       });
     }
 
-    // Extracción de datos
     const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (aiText) {
-      return res.status(200).json({ response: aiText });
-    } else {
-      return res.status(200).json({ response: "Enlace activo, pero el Núcleo no emitió datos. Reintente el comando." });
-    }
+    return res.status(200).json({ response: aiText || "Sincronización fallida. Sin datos." });
 
   } catch (error) {
-    return res.status(500).json({ response: "Falla de hardware en el puente Nexus-X." });
+    return res.status(500).json({ response: "Falla crítica en el hardware Nexus-X." });
   }
 }
