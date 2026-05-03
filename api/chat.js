@@ -1,25 +1,32 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ response: "Acceso Denegado." });
 
-  const apiKey = process.env.GEMINI_API_KEY; // La clave terminada en Kk ya configurada en Vercel
+  const apiKey = process.env.GEMINI_API_KEY;
   const { prompt } = req.body;
 
-  // 1. INYECCIÓN DE CONOCIMIENTO (Aquí iría el resumen de conocimiento_taller.txt)
-  const conocimientoTaller = `
-    TallerPRO360 es un ecosistema SaaS para talleres mecánicos. 
-    Beneficios: Automatización de ventas, Marketing Hub, gestión de inventarios y CRM.
-    Diseño: Estética premium (Naranja/Negro), tipografía Space Grotesk.
-    Integraciones: Webhooks para Make.com o n8n para disparar WhatsApp.
-    Objetivo: Convertir al dueño del taller mostrando que la app se paga sola.
+  // INYECCIÓN DE CONOCIMIENTO MAESTRO (Data de TallerPRO360)
+  const conocimientoMaestro = `
+    IDENTIDAD: TallerPRO360 es una PWA (no requiere descarga, acceso por link).
+    NICHOS: Mecánica, Latonería (fotos iniciales clave), Eléctrico/Mecatrónica (escaneos).
+    SISTEMA: Nodo Central Nexus-X Starlink.
+    FUNCIONES: Órdenes digitales, Seguimiento en tiempo real por el cliente, Inventario Inteligente, Historial Clínico por Placa.
+    PAGOS: Integración Bold (Boldsync/API Key pk_live), Ciclos de Órbita (Lunar 1m, Trimestre 3m, Semestre 6m, Año Luz 12m).
+    TERMINOLOGÍA: Nodo Maestro, NXS_CONFIG, Cloud Master Line, Neural Bold_Link.
+    TONO: Profesional, colombiano ("Maestro", "Jefe"), enfocado en rentabilidad y evitar "fugas de capital".
   `;
 
   const systemPrompt = `
-    Eres el Agente de Ventas Senior de TallerPRO360. 
-    Usa este conocimiento para responder: ${conocimientoTaller}
+    Eres el Comandante de Ventas de TallerPRO360. Tu misión es convertir dueños de talleres en usuarios de la plataforma.
+    CONTEXTO TÉCNICO: ${conocimientoMaestro}
     
-    REGLA CRÍTICA: Si el usuario muestra interés real (pregunta precios, pide demo o deja su contacto), 
-    añade al final de tu respuesta la etiqueta secreta: [DISPARAR_WEBHOOK].
-    Si solo está curioseando, no la pongas.
+    INSTRUCCIONES DE COMPORTAMIENTO:
+    1. Si el cliente tiene dudas sobre el pago, explica el 'Neural Bold_Link' y el cifrado grado militar.
+    2. Si es de Latonería, destaca la 'Recepción con Evidencia' para evitar reclamos.
+    3. Si pregunta por instalación, aclara que es PWA: 'No ocupa espacio, se añade al inicio y listo'.
+    
+    LOGICA DE CIERRE: 
+    - Si el usuario pregunta precios, menciona los 'Ciclos de Órbita' y recomienda el 'Año Luz' por ahorro.
+    - IMPORTANTE: Si el usuario muestra intención clara de compra o pide el link de pago/demo, escribe al final de tu respuesta: [DISPARAR_N8N].
   `;
 
   try {
@@ -31,32 +38,27 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         contents: [
           { role: "user", parts: [{ text: systemPrompt }] },
-          { role: "model", parts: [{ text: "Entendido. Estoy listo para vender TallerPRO360 y detectar leads calientes." }] },
+          { role: "model", parts: [{ text: "Sistemas en línea. El agente de TallerPRO360 está listo para el despliegue." }] },
           { role: "user", parts: [{ text: prompt }] }
         ],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 800 }
+        generationConfig: { temperature: 0.7, maxOutputTokens: 1000 }
       })
     });
 
     const data = await response.json();
-    let aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    let aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "El satélite no responde, intente de nuevo.";
 
-    // 2. LÓGICA DE AUTOMATIZACIÓN (El filtro inteligente)
-    if (aiResponse.includes("[DISPARAR_WEBHOOK]")) {
-      aiResponse = aiResponse.replace("[DISPARAR_WEBHOOK]", "");
+    // FILTRO INTELIGENTE PARA n8n
+    if (aiResponse.includes("[DISPARAR_N8N]")) {
+      aiResponse = aiResponse.replace("[DISPARAR_N8N]", "").trim();
       
-      // Aquí conectaremos con n8n en el futuro
-      console.log("Lead detectado. Enviando señal a n8n...");
-      /* fetch('TU_URL_N8N', { 
-        method: 'POST', 
-        body: JSON.stringify({ lead: prompt, fecha: new Date() }) 
-      });
-      */
+      // Aquí se enviará a n8n cuando lo tengamos listo
+      console.log("LOG: Lead Caliente Detectado. Preparando envío a n8n...");
     }
 
     return res.status(200).json({ response: aiResponse });
 
   } catch (error) {
-    return res.status(500).json({ response: "Error de enlace con el satélite Nexus-X." });
+    return res.status(500).json({ response: "Falla crítica en el hardware Nexus-X." });
   }
 }
