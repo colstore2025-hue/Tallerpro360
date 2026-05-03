@@ -100,10 +100,11 @@ export default async function handler(req, res) {
       /* MAÑANA ACTIVAREMOS ESTO:
          await fetch('TU_URL_DE_N8N', {
            method: 'POST',
-           body: JSON.stringify({ lead: prompt, ai_summary: aiResponse })
-         });
-      */
-    }
+           body: JSON.stringify({
+  contents: [{
+    parts: [{ text: systemPrompt + "\n\nUsuario dice: " + prompt }]
+  }]
+})
 
     // 7. RESPUESTA FINAL AL USUARIO
     return res.status(200).json({ 
