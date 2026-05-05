@@ -215,7 +215,45 @@ export default async function configModule(container, state) {
             };
         });
 
-        // Logo Upload
+        /**
+ * NEXUS-X CONFIGURATION MODULE - "THE TITAN" 🛰️
+ * Gestión de Identidad, Órbita y Persistencia Local
+ */
+
+export default function config(container) {
+    const empresaId = localStorage.getItem("nexus_empresaId");
+    let logoBase64 = "";
+
+    const setupLogic = () => {
+        const docRef = doc(db, "empresas", empresaId);
+
+        // --- 1. CARGA DE DATA MAESTRA (LoadCore) ---
+        const loadCore = async () => {
+            try {
+                const snap = await getDoc(docRef);
+                if (snap.exists()) {
+                    const d = snap.data();
+                    document.getElementById("inNombre").value = d.nombre || "";
+                    document.getElementById("inNit").value = d.nit || "";
+                    document.getElementById("inWs").value = d.whatsapp || "";
+                    // El campo Bold se omite por seguridad (Vercel Env)
+                    
+                    if (d.logo) {
+                        logoBase64 = d.logo;
+                        const prev = document.getElementById("prevLogo");
+                        prev.src = d.logo;
+                        prev.classList.remove("hidden");
+                        document.getElementById("camOverlay").classList.add("opacity-0");
+                    }
+                    
+                    if(d.planNexus) document.getElementById("selPlan").value = d.planNexus;
+                }
+            } catch (e) { 
+                console.error("Critical Load Error:", e); 
+            }
+        };
+
+        // --- 2. GESTIÓN DE LOGO (FileReader) ---
         document.getElementById("inputLogo").onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -231,34 +269,13 @@ export default async function configModule(container, state) {
             }
         };
 
-        const docRef = doc(db, "empresas", empresaId);
-        
-        const loadCore = async () => {
-            try {
-                const snap = await getDoc(docRef);
-                if (snap.exists()) {
-                    const d = snap.data();
-                    document.getElementById("inNombre").value = d.nombre || "";
-                    document.getElementById("inNit").value = d.nit || "";
-                    document.getElementById("inWs").value = d.whatsapp || "";
-                    document.getElementById("inBoldKey").value = d.bold_api_key || "";
-                    
-                    if (d.logo) {
-                        logoBase64 = d.logo;
-                        document.getElementById("prevLogo").src = d.logo;
-                        document.getElementById("prevLogo").classList.remove("hidden");
-                        document.getElementById("camOverlay").classList.add("opacity-0");
-                    }
-                }
-                calcularPrecios();
-            } catch (e) { console.error("Load Error:", e); }
-        };
-
-        // Guardado Maestro
+        // --- 3. GUARDADO MAESTRO (Sincro Cloud + Local) ---
         document.getElementById("btnSaveAll").onclick = async () => {
             const btn = document.getElementById("btnSaveAll");
-            const boldKeyVal = document.getElementById("inBoldKey").value.trim();
             const nombreVal = document.getElementById("inNombre").value.trim().toUpperCase();
+            const nitVal = document.getElementById("inNit").value.trim();
+            const wsVal = document.getElementById("inWs").value.trim();
+            const planVal = document.getElementById("selPlan").value;
 
             btn.disabled = true;
             btn.innerHTML = `TRANSMITIENDO... <i class="fas fa-sync fa-spin"></i>`;
@@ -268,36 +285,54 @@ export default async function configModule(container, state) {
 
                 const payload = {
                     nombre: nombreVal,
-                    nit: document.getElementById("inNit").value.trim(),
-                    whatsapp: document.getElementById("inWs").value.trim(),
-                    bold_api_key: boldKeyVal,
+                    nit: nitVal,
+                    whatsapp: wsVal,
                     logo: logoBase64,
                     lastUpdate: serverTimestamp(),
                     empresaId: empresaId,
-                    planNexus: selPlan.value
+                    planNexus: planVal
                 };
 
+                // Sincronización Cloud
                 await setDoc(docRef, payload, { merge: true });
-                
-                // Persistencia inmediata
-                localStorage.setItem("nexus_empresaNombre", payload.nombre);
-                localStorage.setItem("nexus_bold_api_key", boldKeyVal);
 
+                // Persistencia Local Inmediata para Documento.html
+                localStorage.setItem("nexus_empresaNombre", payload.nombre);
+                localStorage.setItem("nexus_empresaNit", payload.nit);
+                localStorage.setItem("nexus_empresaWs", payload.whatsapp);
+                if (logoBase64) localStorage.setItem("nexus_empresaLogo", logoBase64);
+
+                // Feedback Éxito
                 btn.innerHTML = `SINCRO EXITOSA <i class="fas fa-check-circle"></i>`;
                 btn.style.background = "#10b981";
                 
-                hablar("Nivel de órbita y configuración financiera actualizados. Reiniciando enlace.");
+                hablar("Configuración de órbita actualizada. Enlace de identidad establecido.");
                 setTimeout(() => location.reload(), 1500);
+
             } catch (e) {
                 btn.disabled = false;
                 btn.innerHTML = `FALLO: ${e.message.toUpperCase()}`;
                 btn.style.background = "#ef4444";
+                hablar("Error en la transmisión.");
             }
         };
 
+        // Encendido inicial de data
         loadCore();
     };
 
+    // --- 4. RENDERIZADO Y ARRANQUE ---
+    const renderLayout = () => {
+        container.innerHTML = `
+            <div class="p-8 space-y-6 orbitron">
+                <h2 class="text-white text-2xl font-black italic">CONFIG_NEXUS_X</h2>
+                <button id="btnSaveAll" class="w-full py-4 bg-cyan-600 text-black font-black rounded-xl transition-all">
+                    GUARDAR_CONFIGURACIÓN
+                </button>
+            </div>
+        `;
+    };
+
     renderLayout();
-    setupLogic();
+    setupLogic(); // El motor se activa solo cuando el escenario está listo
 }
