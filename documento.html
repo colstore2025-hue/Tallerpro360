@@ -3,74 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS_X | DOCUMENTO OFICIAL</title>
+    <title>NEXUS_X | Ecosistema de Documentación Inteligente</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #05070a; color: #e2e8f0; font-family: 'Rajdhani', sans-serif; margin: 0; }
+        body { background-color: #0a0c10; color: #e2e8f0; font-family: 'Rajdhani', sans-serif; margin: 0; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        .paper { background: white; color: #1a1a1a; min-height: 29.7cm; width: 100%; max-width: 21cm; margin: auto; padding: 1.5cm; position: relative; }
-        .theme-cotizacion { border-top: 15px solid #fbbf24; } 
-        .theme-diagnostico { border-top: 15px solid #22d3ee; } 
-        .theme-factura { border-top: 15px solid #22c55e; }    
-        .theme-entregado { border-top: 15px solid #6366f1; }
-        .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 8rem; opacity: 0.03; font-family: 'Orbitron'; pointer-events: none; }
+        
+        /* Formato A4 Profesional */
+        .paper { 
+            background: white; 
+            color: #1a1a1a; 
+            min-height: 29.7cm; 
+            width: 21cm; 
+            margin: 20px auto; 
+            padding: 1.5cm; 
+            position: relative; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        /* Temas según Misión */
+        .theme-cotizacion { border-top: 20px solid #fbbf24; } 
+        .theme-orden { border-top: 20px solid #22d3ee; } 
+        .theme-factura { border-top: 20px solid #10b981; }    
+        
+        .watermark { 
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%) rotate(-45deg); 
+            font-size: 10rem; opacity: 0.03; font-family: 'Orbitron'; 
+            font-weight: 900; pointer-events: none; white-space: nowrap;
+        }
+
+        @media print {
+            body { background: white; }
+            .paper { margin: 0; box-shadow: none; width: 100%; }
+            .no-print { display: none; }
+        }
     </style>
 </head>
 <body>
 
-    <div id="loader" class="text-center py-40 orbitron animate-pulse text-cyan-400">
-        🛰️ ENLAZANDO TELEMETRÍA NEXUS_X...
+    <div class="no-print fixed bottom-10 right-10 flex gap-4">
+        <button onclick="window.print()" class="bg-cyan-500 hover:bg-white text-black font-black p-6 rounded-full shadow-2xl transition-all orbitron italic">
+            IMPRIMIR_DOCUMENTO_🛰️
+        </button>
     </div>
 
-    <div id="main-doc" class="paper shadow-2xl hidden">
+    <div id="loader" class="text-center py-40 orbitron animate-pulse text-cyan-400">
+        🛰️ SINCRONIZANDO CON NODO NEXUS_X...
+    </div>
+
+    <div id="main-doc" class="paper hidden">
         <div class="watermark orbitron" id="bg-watermark">NEXUS_X</div>
 
-        <div class="flex justify-between items-start border-b-2 pb-6">
-            <div>
-                <img src="assets/favicon.png" alt="Logo" class="w-16 h-16 mb-2">
-                <h1 id="taller-nombre" class="orbitron text-2xl font-black uppercase text-gray-800">---</h1>
-                <p id="taller-nit" class="text-xs font-bold text-gray-500">NIT: ---</p>
+        <header class="flex justify-between items-start border-b-2 border-gray-900 pb-8 mb-8">
+            <div class="flex items-center gap-6">
+                <div class="w-24 h-24 bg-gray-50 rounded-2xl flex items-center justify-center overflow-hidden border border-gray-200">
+                    <img id="doc-logo" src="" alt="Logo Taller" class="hidden object-contain w-full h-full p-2">
+                    <span id="logo-placeholder" class="orbitron text-4xl text-gray-200 font-black">N_X</span>
+                </div>
+                <div>
+                    <h1 id="taller-nombre" class="orbitron text-3xl font-black uppercase text-gray-900 tracking-tighter">---</h1>
+                    <p id="taller-nit" class="text-sm font-bold text-gray-600">NIT: ---</p>
+                    <p id="taller-ws" class="text-xs font-medium text-gray-500">Contact: ---</p>
+                </div>
             </div>
             <div class="text-right">
-                <h2 id="doc-titulo" class="orbitron text-xl font-bold italic text-cyan-600">---</h2>
-                <p id="doc-id" class="text-xs font-mono font-bold bg-gray-100 px-2 py-1 inline-block mt-1">ID: ---</p>
+                <div id="doc-badge" class="orbitron text-sm font-black px-4 py-1 bg-gray-900 text-white inline-block italic mb-2">---</div>
+                <h2 id="doc-id" class="text-xl font-bold orbitron text-gray-900 block">ID: #---</h2>
+                <p id="doc-fecha" class="text-xs font-mono text-gray-400">FECHA_EMISION: ---</p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-2 gap-4 my-8">
+            <div class="bg-gray-900 p-6 rounded-l-3xl text-white">
+                <label class="text-[9px] font-black text-cyan-400 block orbitron mb-1 tracking-widest uppercase">Identificación Cliente</label>
+                <p id="v-cliente" class="text-xl font-bold uppercase truncate">---</p>
+                <p id="v-id-cliente" class="text-xs opacity-60 font-mono">CC/NIT: ---</p>
+            </div>
+            <div class="bg-gray-100 p-6 rounded-r-3xl border-y border-r text-right">
+                <label class="text-[9px] font-black text-gray-400 block orbitron mb-1 tracking-widest uppercase">Unidad Vehicular</label>
+                <p id="v-placa" class="text-5xl font-black orbitron text-gray-900">---</p>
+                <p id="v-km" class="text-xs font-bold text-cyan-600">KM: ---</p>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-8 my-8 bg-gray-50 p-6 border rounded-lg">
-            <div>
-                <label class="text-[9px] font-bold text-cyan-700 block orbitron">CLIENTE</label>
-                <p id="v-cliente" class="text-lg font-bold uppercase">---</p>
-            </div>
-            <div class="text-right border-l-2 pl-6">
-                <label class="text-[9px] font-bold text-cyan-700 block orbitron">PLACA</label>
-                <p id="v-placa" class="text-4xl font-black orbitron">---</p>
+        <div class="mb-8 relative">
+            <div class="absolute -top-3 left-6 bg-cyan-500 text-black px-3 py-0.5 text-[9px] font-black orbitron uppercase">Hallazgos_Técnicos_Nexus_IA</div>
+            <div class="p-6 bg-slate-50 border-2 border-slate-200 rounded-3xl font-mono text-[11px] text-slate-700 leading-relaxed italic">
+                <p id="v-bitacora">Sincronizando hallazgos desde la nube...</p>
             </div>
         </div>
 
-        <div class="mb-8 p-4 bg-slate-900 text-cyan-100 border-l-4 border-cyan-400 font-mono text-[11px]">
-            <span class="block mb-2 font-bold text-cyan-400 opacity-70 uppercase tracking-tighter">/ LOG_IA_SISTEMA:</span>
-            <p id="v-bitacora">---</p>
-        </div>
-
-        <div class="mb-10">
+        <div class="mb-10 overflow-hidden rounded-2xl border border-gray-200">
             <table class="w-full text-sm">
-                <thead class="bg-gray-800 orbitron text-[10px] text-white">
+                <thead class="bg-gray-900 orbitron text-[10px] text-white">
                     <tr>
-                        <th class="p-3 text-left">DESCRIPCIÓN</th>
-                        <th class="p-3 text-right">CANT</th>
-                        <th class="p-3 text-right">SUBTOTAL</th>
+                        <th class="p-4 text-left tracking-widest">DESCRIPCIÓN DEL SERVICIO / REPUESTO</th>
+                        <th class="p-4 text-center">TIPO</th>
+                        <th class="p-4 text-right">VALOR_UNIT</th>
                     </tr>
                 </thead>
-                <tbody id="tabla-items" class="text-[12px] text-gray-700"></tbody>
+                <tbody id="tabla-items" class="text-[12px] text-gray-800">
+                    </tbody>
             </table>
         </div>
 
-        <div class="flex justify-end mt-10">
-            <div class="w-72 space-y-3 border-t-4 border-gray-900 pt-6">
-                <div class="flex justify-between text-2xl orbitron font-black bg-gray-900 text-white p-3 rounded">
-                    <span>TOTAL:</span>
+        <div class="flex justify-between items-end mt-12">
+            <div id="legal-footer" class="max-w-md text-[9px] text-gray-400 font-mono leading-tight">
+                </div>
+            <div class="w-80 space-y-2 border-t-4 border-gray-900 pt-6">
+                <div class="flex justify-between text-xs font-bold px-2">
+                    <span class="text-gray-500">SUBTOTAL GRAVADO:</span>
+                    <span id="f-subtotal">$ 0</span>
+                </div>
+                <div class="flex justify-between text-xs font-bold px-2">
+                    <span class="text-gray-500">IVA (19%):</span>
+                    <span id="f-iva">$ 0</span>
+                </div>
+                <div class="flex justify-between text-3xl orbitron font-black bg-gray-900 text-white p-4 rounded-2xl shadow-xl italic">
+                    <span class="text-[10px] self-center opacity-50">TOTAL</span>
                     <span id="f-total">$ 0</span>
                 </div>
             </div>
@@ -95,60 +147,104 @@
 
         const params = new URLSearchParams(window.location.search);
         const id = params.get("id");
-        const tipo = (params.get("tipo") || "diagnostico").toLowerCase();
+        const tipo = (params.get("tipo") || "orden").toLowerCase(); // cotizacion, orden, factura
 
         async function init() {
             if (!id) return;
+            
+            // 1. Prioridad: Cargar Identidad del Taller desde LocalStorage (Lo que se hizo en config.js)
+            const configLocal = {
+                nombre: localStorage.getItem("nexus_empresaNombre") || "TALLER NO IDENTIFICADO",
+                nit: localStorage.getItem("nexus_empresaNit") || "---",
+                whatsapp: localStorage.getItem("nexus_empresaWs") || "---",
+                logo: localStorage.getItem("nexus_empresaLogo") || null
+            };
+
             try {
                 const snap = await getDoc(doc(db, "ordenes", id));
                 if (snap.exists()) {
-                    const orden = snap.data();
-                    
-                    // Intentar buscar empresa, si falla usa datos por defecto
-                    let empresa = {};
-                    try {
-                        const empSnap = await getDoc(doc(db, "empresas", orden.empresaId || "taller_001"));
-                        if(empSnap.exists()) empresa = empSnap.data();
-                    } catch(e) { console.log("Empresa no encontrada"); }
-
-                    render(orden, empresa);
+                    render(snap.data(), configLocal);
                 } else {
-                    document.getElementById("loader").innerText = "🚨 ORDEN NO ENCONTRADA";
+                    document.getElementById("loader").innerHTML = "🚨 ORDEN NO ENCONTRADA EN NODO";
                 }
             } catch (e) {
-                console.error(e);
-                document.getElementById("loader").innerText = "🚨 ERROR DE TELEMETRÍA: " + e.message;
+                document.getElementById("loader").innerHTML = "🚨 ERROR DE ENLACE: " + e.message;
             }
         }
 
-        function render(o, e) {
-            document.getElementById("loader").style.display = "none";
-            document.getElementById("main-doc").classList.remove("hidden");
-            document.getElementById("main-doc").className = `paper shadow-2xl theme-${tipo}`;
+        function render(o, config) {
+            document.getElementById("loader").classList.add("hidden");
+            const main = document.getElementById("main-doc");
+            main.classList.remove("hidden");
+            main.className = `paper shadow-2xl theme-${tipo}`;
+
+            // Inyectar Configuración del Taller (Config.js data)
+            document.getElementById("taller-nombre").innerText = config.nombre;
+            document.getElementById("taller-nit").innerText = "NIT: " + config.nit;
+            document.getElementById("taller-ws").innerText = "WHATSAPP: " + config.whatsapp;
             
-            document.getElementById("taller-nombre").innerText = e.nombre || o.empresa_nombre || "TALLER AFILIADO";
-            document.getElementById("taller-nit").innerText = "NIT: " + (e.nit || "900.000.000-1");
-            document.getElementById("doc-titulo").innerText = tipo.toUpperCase() + "_OFICIAL";
-            document.getElementById("v-cliente").innerText = (o.cliente || "---").toUpperCase();
-            document.getElementById("v-placa").innerText = (o.placa || "---").toUpperCase();
-            document.getElementById("v-bitacora").innerText = o.bitacora_ia || "SIN REGISTROS TÉCNICOS.";
-            document.getElementById("doc-id").innerText = "ID: " + id;
+            if (config.logo) {
+                const img = document.getElementById("doc-logo");
+                img.src = config.logo;
+                img.classList.remove("hidden");
+                document.getElementById("logo-placeholder").classList.add("hidden");
+            }
+
+            // Textos de Documento
+            const titulos = {
+                cotizacion: "COTIZACIÓN_COMERCIAL",
+                orden: "ORDEN_DE_TRABAJO",
+                factura: "FACTURA_DE_VENTA"
+            };
+            document.getElementById("doc-badge").innerText = titulos[tipo] || "DOCUMENTO";
             document.getElementById("bg-watermark").innerText = tipo.toUpperCase();
+            document.getElementById("doc-id").innerText = "ID: " + id.split('_')[1] || id;
+            document.getElementById("doc-fecha").innerText = "EMISIÓN: " + new Date().toLocaleDateString();
 
-            // Tabla robusta: busca en 'servicios', 'repuestos' o usa el total directo
+            // Datos del Vehículo/Cliente
+            document.getElementById("v-cliente").innerText = o.cliente;
+            document.getElementById("v-id-cliente").innerText = "ID: " + (o.identificacion || "---");
+            document.getElementById("v-placa").innerText = o.placa;
+            document.getElementById("v-km").innerText = "KILOMETRAJE: " + (o.km || "0");
+            document.getElementById("v-bitacora").innerText = o.bitacora || "SIN REGISTROS TÉCNICOS ADICIONALES.";
+
+            // Tabla de Items
             const tbody = document.getElementById("tabla-items");
-            const items = [...(o.servicios || []), ...(o.repuestos || [])];
-            
-            if (items.length > 0) {
-                items.forEach(i => {
-                    tbody.innerHTML += `<tr class="border-b"><td class="p-3">${i.descripcion || i.nombre}</td><td class="p-3 text-right">${i.cantidad || 1}</td><td class="p-3 text-right">$ ${Math.round(i.precio || i.valor || 0).toLocaleString()}</td></tr>`;
-                });
-            } else {
-                tbody.innerHTML = `<tr><td class="p-3">SERVICIO TÉCNICO INTEGRAL</td><td class="p-3 text-right">1</td><td class="p-3 text-right">$ ${Math.round(o.total || 0).toLocaleString()}</td></tr>`;
-            }
+            tbody.innerHTML = "";
+            const items = o.items || [];
 
-            document.getElementById("f-total").innerText = `$ ${Math.round(o.total || 0).toLocaleString()}`;
+            items.forEach(i => {
+                tbody.innerHTML += `
+                    <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td class="p-4 font-bold text-gray-700">
+                            ${i.desc.toUpperCase()}
+                            <div class="text-[8px] text-gray-400 orbitron">${i.origen || 'TALLER'}</div>
+                        </td>
+                        <td class="p-4 text-center font-mono text-[10px] text-cyan-600">${i.tipo}</td>
+                        <td class="p-4 text-right font-black">$ ${Math.round(i.venta).toLocaleString()}</td>
+                    </tr>`;
+            });
+
+            // Cálculos Financieros Estilo SAP
+            const total = o.costos_totales?.total || 0;
+            const subtotal = o.costos_totales?.base || total;
+            const iva = o.costos_totales?.iva || 0;
+
+            document.getElementById("f-subtotal").innerText = `$ ${Math.round(subtotal).toLocaleString()}`;
+            document.getElementById("f-iva").innerText = `$ ${Math.round(iva).toLocaleString()}`;
+            document.getElementById("f-total").innerText = `$ ${Math.round(total).toLocaleString()}`;
+
+            // Footer Legal según Régimen (Basado en NIT)
+            const footer = document.getElementById("legal-footer");
+            if (config.nit.includes("-")) {
+                footer.innerHTML = `
+                    <p>REPRESENTACIÓN GRÁFICA DE DOCUMENTO INTERNO NEXUS_X.</p>
+                    <p>ESTE DOCUMENTO NO SUSTITUYE LA FACTURACIÓN ELECTRÓNICA DIAN SI EL AFILIADO PERTENECE AL RÉGIMEN COMÚN.</p>
+                    <p>DESARROLLADO POR COLOMBIAN TRUCKS LOGISTICS LLC PARA EL ECOSISTEMA TALLERPRO360.</p>
+                `;
+            }
         }
+
         init();
     </script>
 </body>
