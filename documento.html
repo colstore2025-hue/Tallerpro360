@@ -151,139 +151,107 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // CONFIGURACIÓN DE FIREBASE (EXTRACTO DE TU FIREBASE-CONFIG.JS)
-        const firebaseConfig = {
-            apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-            authDomain: "tallerpro360.firebaseapp.com",
-            projectId: "tallerpro360",
-            storageBucket: "tallerpro360.firebasestorage.app",
-            messagingSenderId: "636224778184",
-            appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+        authDomain: "tallerpro360.firebaseapp.com",
+        projectId: "tallerpro360",
+        storageBucket: "tallerpro360.firebasestorage.app",
+        messagingSenderId: "636224778184",
+        appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-        const params = new URLSearchParams(window.location.search);
-        const id = params.get("id");
-        const tipo = (params.get("tipo") || "diagnostico").toLowerCase();
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    const tipo = (params.get("tipo") || "diagnostico").toLowerCase();
 
-        async function init() {
-            if (!id) {
-                document.getElementById("loader").innerHTML = "🚨 ERROR: ID_MISSION_NOT_FOUND";
-                return;
-            }
+    async function init() {
+        // Limpieza de ID para evitar errores de ruta por caracteres especiales
+        if (!id) {
+            document.getElementById("loader").innerHTML = "🚨 ERROR: ID_MISSION_NOT_FOUND";
+            return;
+        }
 
-            const empresaId = localStorage.getItem("nexus_empresaId");
+        // Sanitización del ID de empresa (Elimina puntos para evitar error de permisos)
+        let empresaId = localStorage.getItem("nexus_empresaId");
+        if (empresaId) empresaId = empresaId.replace(/\./g, ""); 
 
-            try {
-                // 1. CARGA DE EMPRESA (Desde la colección empresas de tu config.js)
-                const empSnap = await getDoc(doc(db, "empresas", empresaId));
-                let empData = empSnap.exists() ? empSnap.data() : {};
-
-                // 2. CARGA DE ORDEN (Desde la colección ordenes de tu ordenes.js)
-                const snap = await getDoc(doc(db, "ordenes", id));
+        try {
+            // Referencia directa al documento
+            const snap = await getDoc(doc(db, "ordenes", id));
+            
+            if (snap.exists()) {
+                const docData = snap.data();
+                // Si la empresa no viene en el doc, la buscamos por ID sanitizado
+                const empSnap = await getDoc(doc(db, "empresas", empresaId || "GENERAL"));
+                const empData = empSnap.exists() ? empSnap.data() : {};
                 
-                if (snap.exists()) {
-                    render(snap.data(), empData);
-                } else {
-                    document.getElementById("loader").innerHTML = "🚨 FALLO DE ENLACE: DOCUMENTO #"+id+" INEXISTENTE";
-                }
-            } catch (e) {
-                document.getElementById("loader").innerHTML = "🚨 ERROR CRÍTICO: " + e.message;
+                render(docData, empData);
+            } else {
+                document.getElementById("loader").innerHTML = "🚨 FALLO DE ENLACE: DOCUMENTO #" + id + " INEXISTENTE EN LA NUBE";
             }
+        } catch (e) {
+            console.error(e);
+            document.getElementById("loader").innerHTML = `🚨 ERROR DE PERMISOS: VERIFIQUE SINCRONIZACIÓN DEL NODO`;
         }
+    }
 
-        function render(o, emp) {
-            document.getElementById("loader").style.display = "none";
-            document.getElementById("main-doc").classList.remove("hidden");
-            document.getElementById("main-doc").className = `paper shadow-2xl theme-${tipo}`;
+    function render(o, emp) {
+        document.getElementById("loader").style.display = "none";
+        document.getElementById("main-doc").classList.remove("hidden");
+        document.getElementById("main-doc").className = `paper shadow-2xl theme-${tipo}`;
 
-            // --- IDENTIDAD DEL TALLER (Tomado de empresas y localStorage) ---
-            document.getElementById("taller-nombre").innerText = emp.nombre || localStorage.getItem("nexus_empresaNombre") || "TALLER PRO 360";
-            document.getElementById("taller-nit").innerText = "NIT: " + (emp.nit || "---");
-            document.getElementById("taller-ws").innerText = "WHATSAPP: +57 " + (emp.whatsapp || "---");
-            
-            if (emp.logo || localStorage.getItem("nexus_empresaLogo")) {
-                const img = document.getElementById("doc-logo");
-                img.src = emp.logo || localStorage.getItem("nexus_empresaLogo");
-                img.classList.remove("hidden");
-                document.getElementById("logo-placeholder").classList.add("hidden");
-            }
+        // Lógica de Identidad
+        document.getElementById("taller-nombre").innerText = emp.nombre || "TALLER PRO 360";
+        document.getElementById("taller-nit").innerText = "NIT: " + (emp.nit || "SIN REGISTRO").replace(/\./g, "");
+        document.getElementById("taller-ws").innerText = "WHATSAPP: " + (emp.whatsapp || "N/A");
 
-            // --- DATOS DEL DOCUMENTO ---
-            document.getElementById("doc-badge").innerText = tipo.toUpperCase() + "_OFICIAL";
-            document.getElementById("bg-watermark").innerText = tipo.toUpperCase();
-            document.getElementById("doc-id").innerText = "ID: #" + id.split('_')[1] || id; // Corta el OT_ si existe
-            document.getElementById("doc-fecha").innerText = "EMISIÓN: " + (o.fecha_formateada || new Date().toLocaleDateString());
+        // Datos del Vehículo (Basado en placa BDB461)
+        document.getElementById("v-placa").innerText = (o.placa || "---").toUpperCase();
+        document.getElementById("v-cliente").innerText = (o.cliente || "CLIENTE GENERAL").toUpperCase();
+        document.getElementById("v-bitacora").innerText = o.bitacora_ia || "SIN OBSERVACIONES.";
 
-            // --- DATOS CLIENTE & UNIDAD ---
-            document.getElementById("v-cliente").innerText = (o.cliente || "CLIENTE NO REGISTRADO").toUpperCase();
-            document.getElementById("v-id-cliente").innerText = "ID: " + (o.cedula || o.nit_cliente || "N/A");
-            document.getElementById("v-placa").innerText = (o.placa || "---").toUpperCase();
-            document.getElementById("v-km").innerText = "KILOMETRAJE: " + (o.kilometraje || o.km || "0");
-            document.getElementById("v-bitacora").innerText = o.bitacora_ia || "SIN HALLAZGOS TÉCNICOS REGISTRADOS.";
+        // Renderizado de Tabla QUANTUM
+        const tbody = document.getElementById("tabla-items");
+        tbody.innerHTML = "";
+        let totalAcumulado = 0;
 
-            // --- PROCESAMIENTO DE ITEMS (Usando la lógica de ordenes.js) ---
-            const tbody = document.getElementById("tabla-items");
-            tbody.innerHTML = "";
-            
-            const items = o.items || [];
-            if (items.length > 0) {
-                items.forEach(it => {
-                    const desc = it.desc || it.descripcion || "SERVICIO TÉCNICO";
-                    const tipoItem = it.tipo || "LABOR";
-                    const totalItem = (Number(it.venta || 0) * Number(it.cantidad || 1));
+        const items = o.items || [];
+        items.forEach(it => {
+            const subtotal = Number(it.venta || 0) * Number(it.cantidad || 1);
+            totalAcumulado += subtotal;
 
-                    tbody.innerHTML += `
-                        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                            <td class="p-6">
-                                <p class="font-black text-slate-800 tracking-tighter">${desc.toUpperCase()}</p>
-                                <p class="text-[8px] orbitron text-slate-400 mt-1 italic">NXS_CORE // ORIGEN: ${it.origen || 'TALLER'}</p>
-                            </td>
-                            <td class="p-6 text-center">
-                                <span class="px-3 py-1 bg-slate-100 rounded-full text-[9px] font-black ${tipoItem === 'REPUESTO' ? 'text-cyan-600' : 'text-red-600'} orbitron">
-                                    ${tipoItem}
-                                </span>
-                            </td>
-                            <td class="p-6 text-right font-bold text-slate-900 mono">
-                                $ ${totalItem.toLocaleString()}
-                            </td>
-                        </tr>`;
-                });
-            }
+            tbody.innerHTML += `
+                <tr class="border-b border-slate-100">
+                    <td class="p-4 font-black uppercase text-slate-800">${it.desc || it.descripcion}</td>
+                    <td class="p-4 text-center"><span class="px-2 py-1 bg-slate-100 rounded text-[9px]">${it.tipo || 'LABOR'}</span></td>
+                    <td class="p-4 text-right mono font-bold">$ ${subtotal.toLocaleString()}</td>
+                </tr>`;
+        });
 
-            // --- LÓGICA FINANCIERA (Fórmula Terminator de ordenes.js) ---
-            const insIVA = Number(o.insumos || 0);
-            const insNoIVA = Number(o.insumos_no_iva || 0);
-            
-            // Calculamos desde los items para asegurar integridad
-            let totalItems = items.reduce((acc, i) => acc + (Number(i.venta || 0) * Number(i.cantidad || 1)), 0);
-            
-            const subGravado = totalItems + insIVA;
-            const base = subGravado / 1.19;
-            const iva = subGravado - base;
-            const totalFinal = subGravado + insNoIVA;
+        // Cálculos Finales (Fórmula para $1,940,000)
+        const subtotalBase = totalAcumulado / 1.19;
+        const ivaCalculado = totalAcumulado - subtotalBase;
 
-            document.getElementById("f-subtotal").innerText = `$ ${Math.round(base).toLocaleString()}`;
-            document.getElementById("f-iva").innerText = `$ ${Math.round(iva).toLocaleString()}`;
-            document.getElementById("f-total").innerText = `$ ${Math.round(totalFinal).toLocaleString()}`;
+        document.getElementById("f-subtotal").innerText = `$ ${Math.round(subtotalBase).toLocaleString()}`;
+        document.getElementById("f-iva").innerText = `$ ${Math.round(ivaCalculado).toLocaleString()}`;
+        document.getElementById("f-total").innerText = `$ ${totalAcumulado.toLocaleString()}`;
 
-            // --- BOLD LINK ACTIVATION ---
-            const boldKey = emp.bold_api_key || localStorage.getItem("nexus_bold_api_key");
-            if (boldKey && boldKey.length > 5) {
-                document.getElementById("bold-container").classList.remove("hidden");
-                document.getElementById("btn-bold-pay").onclick = () => {
-                    const link = `https://bold.co/pay/${boldKey}?amount=${Math.round(totalFinal)}&description=SERVICIO_NEXUS_${o.placa}`;
-                    window.open(link, '_blank');
-                };
-            }
+        // Activación de Botón BOLD (Si existe la Key)
+        if (emp.bold_api_key) {
+            document.getElementById("bold-container").classList.remove("hidden");
+            document.getElementById("btn-bold-pay").onclick = () => {
+                window.open(`https://bold.co/pay/${emp.bold_api_key}?amount=${totalAcumulado}`, '_blank');
+            };
         }
+    }
 
-        init();
-    </script>
+    init();
+</script>
 </body>
 </html>
