@@ -197,6 +197,14 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
                         <h4 class="orbitron font-black text-cyan-500 text-[11px] mb-6 uppercase">Expediente Cliente</h4>
                         <input id="f-cliente" value="${ordenActiva.cliente || ''}" placeholder="CLIENTE" class="w-full bg-black p-4 mb-4 text-white font-black uppercase text-xs border border-white/10 rounded-xl">
                         <input id="f-telefono" value="${ordenActiva.telefono || ''}" placeholder="WHATSAPP (+57)" class="w-full bg-black p-4 mb-6 text-green-400 font-bold border border-white/10 rounded-xl">
+<div class="mb-6 p-4 bg-black/40 border border-cyan-500/20 rounded-xl">
+    <label class="orbitron text-[8px] text-cyan-400 block mb-2 font-black uppercase">🛰️ Telemetría Drive (Auto-Link)</label>
+    <input id="f-link-drive" 
+           value="${ordenActiva.documentos?.trazabilidad_url || ''}" 
+           placeholder="LINK GENERADO AL SINCRONIZAR" 
+           readonly 
+           class="w-full bg-transparent text-[9px] text-slate-400 font-mono border-none outline-none italic">
+</div>
                         <div class="grid grid-cols-3 gap-2">
                             <button onclick="window.enviarNotificacionNexus('INGRESO')" class="py-3 bg-green-600/10 text-green-500 orbitron text-[8px] font-black rounded-lg border border-green-600/20">ENTRY_WA</button>
                             <button onclick="window.enviarNotificacionNexus('UPDATE')" class="py-3 bg-cyan-600/10 text-cyan-500 orbitron text-[8px] font-black rounded-lg border border-cyan-600/20">QUOTE_WA</button>
@@ -309,7 +317,12 @@ const ejecutarSincronizacionTotal = async () => {
         const vTotalOrden = Number(ordenActiva.costos_totales?.total) || 0;
         const vUtilidadEstimada = Number(ordenActiva.costos_totales?.ebitda) || 0;
 
-        // --- MANIOBRA 1: CONSOLIDACIÓN DE TELEMETRÍA (PARA TRACE.HTML PROFESIONAL) ---
+                // --- MANIOBRA 1: CONSOLIDACIÓN DE TELEMETRÍA QUANTUM-SAP 2030 ---
+        
+        // Verificamos si ya existe link de drive o si hay que marcarlo para creación
+        const currentDrive = ordenActiva.documentos?.trazabilidad_url || null;
+        const driveVault = currentDrive ? currentDrive : `GENERATING_NEXUS_VAULT_${placa}`;
+
         const dataMision = {
             ...ordenActiva,
             id,
@@ -325,15 +338,20 @@ const ejecutarSincronizacionTotal = async () => {
             bitacora_ia: document.getElementById("ai-log-display")?.value || "INICIANDO TELEMETRÍA...",
             
             // 🔍 MAPEO DE ALTO NIVEL PARA EL TRACE FUTURISTA
-            // Creamos campos específicos que el Trace leerá para activar botones de PDF
             documentos: {
                 coti_url: ordenActiva.documentos?.coti_url || null,
                 checklist_url: ordenActiva.documentos?.checklist_url || null,
                 factura_url: ordenActiva.documentos?.factura_url || null,
-                trazabilidad_url: ordenActiva.documentos?.trazabilidad_url || null
+                trazabilidad_url: driveVault // Inyección automática de Drive
             },
             
-            kilometraje: document.getElementById("f-insumos-iva")?.value || "0", // Ajustar ID de input según corresponda
+            // Campo espejo para el sensor del documento.html
+            link_evidencia: driveVault,
+
+            // 🏎️ DATOS DE UNIDAD (Integración Terminator)
+            marca_vehiculo: document.getElementById("f-marca")?.value.toUpperCase() || (ordenActiva.marca_vehiculo || "N/A"),
+            kilometraje: document.getElementById("f-km")?.value || (ordenActiva.kilometraje || "0"),
+            
             updatedAt: serverTimestamp(),
             total: vTotalOrden,
             utilidad_neta: vUtilidadEstimada,
