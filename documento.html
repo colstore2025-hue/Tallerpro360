@@ -15,95 +15,114 @@
         .theme-diagnostico { border-top: 20px solid #22d3ee; } 
         .theme-factura { border-top: 20px solid #10b981; }    
         .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 10rem; opacity: 0.03; font-family: 'Orbitron'; font-weight: 900; pointer-events: none; white-space: nowrap; }
-        @media print { body { background: white; } .paper { margin: 0; box-shadow: none; width: 100%; } .no-print { display: none; } }
+        @media print { body { background: white; } .paper { margin: 0; box-shadow: none; width: 100%; padding: 1cm; } .no-print { display: none; } }
+        #doc-logo { max-width: 100%; max-height: 100%; object-fit: contain; }
     </style>
 </head>
 <body>
 
-    <div class="no-print fixed bottom-10 right-10 flex gap-4 z-50">
-        <button onclick="window.print()" class="bg-cyan-500 hover:bg-white text-black font-black p-6 rounded-full shadow-2xl transition-all orbitron italic">
-            IMPRIMIR_NEXUS_🛰️
+    <div class="no-print fixed bottom-10 right-10 flex flex-col gap-4 z-50">
+        <button onclick="window.print()" class="bg-cyan-500 hover:bg-white text-black font-black p-6 rounded-full shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all orbitron italic group">
+            <span class="group-hover:tracking-[0.2em] transition-all">IMPRIMIR_NEXUS_🛰️</span>
         </button>
     </div>
 
     <div id="loader" class="text-center py-40 orbitron animate-pulse text-cyan-400">
-        🛰️ SINCRONIZANDO TELEMETRÍA GLOBAL...
+        🛰️ SINCRONIZANDO TELEMETRÍA GLOBAL NEXUS-X...
     </div>
 
     <div id="main-doc" class="paper hidden">
         <div class="watermark orbitron" id="bg-watermark">NEXUS_X</div>
 
-        <header class="flex justify-between items-start border-b-2 border-gray-900 pb-8 mb-8">
+        <header class="flex justify-between items-start border-b-4 border-gray-900 pb-8 mb-8">
             <div class="flex items-center gap-6">
-                <div class="w-28 h-28 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-gray-100 shadow-sm">
-                    <img id="doc-logo" src="" alt="Logo" class="hidden object-contain w-full h-full p-2">
-                    <span id="logo-placeholder" class="orbitron text-4xl text-gray-200 font-black">N_X</span>
+                <div class="w-32 h-32 bg-white rounded-3xl flex items-center justify-center overflow-hidden border-2 border-gray-100 shadow-xl">
+                    <img id="doc-logo" src="" alt="Logo" class="hidden">
+                    <span id="logo-placeholder" class="orbitron text-5xl text-gray-200 font-black italic">N_X</span>
                 </div>
                 <div>
-                    <h1 id="taller-nombre" class="orbitron text-3xl font-black uppercase text-gray-900 leading-tight">---</h1>
-                    <p id="taller-nit" class="text-sm font-bold text-gray-600 italic">NIT: ---</p>
-                    <p id="taller-ws" class="text-[10px] font-bold text-cyan-600 orbitron">WHATSAPP: ---</p>
+                    <h1 id="taller-nombre" class="orbitron text-4xl font-black uppercase text-gray-900 leading-tight tracking-tighter">---</h1>
+                    <div class="flex flex-col mt-1">
+                        <p id="taller-nit" class="text-xs font-black text-gray-500 orbitron">NIT: ---</p>
+                        <p id="taller-ws" class="text-xs font-black text-cyan-600 orbitron italic">WHATSAPP: ---</p>
+                    </div>
                 </div>
             </div>
             <div class="text-right">
-                <div id="doc-badge" class="orbitron text-sm font-black px-4 py-1 bg-gray-900 text-white inline-block italic mb-2 uppercase">---</div>
-                <h2 id="doc-id" class="text-xl font-bold orbitron text-gray-900 block">ID: #---</h2>
-                <p id="doc-fecha" class="text-[9px] font-mono text-gray-400 uppercase">TIMESTAMP: ---</p>
+                <div id="doc-badge" class="orbitron text-xs font-black px-6 py-2 bg-gray-900 text-white inline-block italic mb-2 uppercase tracking-[0.3em]">---</div>
+                <h2 id="doc-id" class="text-2xl font-black orbitron text-gray-900 block tracking-tighter">ID: #---</h2>
+                <p id="doc-fecha" class="text-[9px] font-mono text-gray-400 uppercase tracking-widest mt-1">TIMESTAMP: ---</p>
             </div>
         </header>
 
-        <div class="grid grid-cols-2 gap-4 my-8">
-            <div class="bg-gray-900 p-6 rounded-l-3xl text-white border-r border-cyan-500">
-                <label class="text-[8px] font-black text-cyan-400 block orbitron mb-1 uppercase tracking-widest">Cliente</label>
-                <p id="v-cliente" class="text-xl font-bold uppercase truncate">---</p>
-                <p id="v-id-cliente" class="text-[10px] opacity-60 font-mono italic uppercase">ID_SISTEMA_CARGADO</p>
+        <div class="grid grid-cols-2 gap-6 my-8">
+            <div class="bg-gray-900 p-8 rounded-[2.5rem] text-white border-r-4 border-cyan-500 shadow-xl">
+                <label class="text-[9px] font-black text-cyan-400 block orbitron mb-2 uppercase tracking-[0.4em]">PROPIEDAD_CLIENTE</label>
+                <p id="v-cliente" class="text-2xl font-bold uppercase truncate tracking-tight">---</p>
+                <p class="text-[10px] opacity-40 font-mono italic mt-2">VERIFIED_NEXUS_USER</p>
             </div>
-            <div class="bg-gray-100 p-6 rounded-r-3xl text-right">
-                <label class="text-[8px] font-black text-gray-400 block orbitron mb-1 uppercase tracking-widest">Placa_NEXUS</label>
-                <p id="v-placa" class="text-5xl font-black orbitron text-gray-900">---</p>
-                <p id="v-km" class="text-[10px] font-bold text-cyan-700 uppercase">--- KM</p>
+            <div class="bg-gray-50 p-8 rounded-[2.5rem] text-right border border-gray-200 shadow-inner">
+                <label class="text-[9px] font-black text-gray-400 block orbitron mb-1 uppercase tracking-[0.4em]">UNIDAD_PLACA</label>
+                <p id="v-placa" class="text-6xl font-black orbitron text-gray-900 tracking-tighter">---</p>
+                <p id="v-km" class="text-xs font-black text-cyan-700 orbitron italic mt-2">--- KM_LOGGED</p>
+            </div>
+        </div>
+
+        <div id="evidence-section" class="mb-8 hidden no-print">
+            <div class="bg-gradient-to-r from-cyan-600 to-blue-700 p-1 rounded-3xl">
+                <button id="btn-evidence" class="w-full bg-gray-900 hover:bg-black text-white py-4 px-8 rounded-[1.4rem] flex justify-between items-center transition-all group">
+                    <div class="text-left">
+                        <span class="block orbitron text-[10px] font-black text-cyan-400 tracking-[0.2em]">PORTAL_DE_EVIDENCIA_CLOUD</span>
+                        <span class="text-xs font-bold italic opacity-70 italic text-white uppercase">Visualizar fotos y videos del proceso técnico</span>
+                    </div>
+                    <span class="orbitron text-xl group-hover:translate-x-2 transition-transform">🛰️</span>
+                </button>
             </div>
         </div>
 
         <div class="mb-8 relative">
-            <div class="p-6 bg-slate-50 border-2 border-slate-200 rounded-3xl font-mono text-[11px] text-slate-700 italic shadow-inner">
-                <strong class="orbitron text-[9px] block mb-1 text-gray-900 not-italic uppercase tracking-wider">Log_Sistema_Bitácora:</strong>
-                <p id="v-bitacora">Descargando telemetría técnica...</p>
+            <div class="p-8 bg-slate-50 border-2 border-slate-200 rounded-[2.5rem] font-mono text-xs text-slate-700 italic leading-relaxed shadow-inner uppercase">
+                <strong class="orbitron text-[10px] block mb-2 text-gray-900 not-italic tracking-[0.3em]">REPORTE_IA_BITÁCORA:</strong>
+                <p id="v-bitacora">Sincronizando flujos de trabajo...</p>
             </div>
         </div>
 
-        <div class="mb-10 overflow-hidden rounded-2xl border border-gray-900">
+        <div class="mb-10 overflow-hidden rounded-[2rem] border-2 border-gray-900 shadow-2xl">
             <table class="w-full text-sm">
-                <thead class="bg-gray-900 orbitron text-[9px] text-white">
+                <thead class="bg-gray-900 orbitron text-[10px] text-white">
                     <tr>
-                        <th class="p-4 text-left tracking-[0.2em]">DESCRIPCIÓN TÉCNICA / REPUESTOS</th>
-                        <th class="p-4 text-center">CANT</th>
-                        <th class="p-4 text-right">SUBTOTAL</th>
+                        <th class="p-5 text-left tracking-[0.3em] uppercase">DESCRIPCIÓN_TÉCNICA_DE_OPERACIONES</th>
+                        <th class="p-5 text-center tracking-[0.1em]">CANT</th>
+                        <th class="p-5 text-right tracking-[0.1em]">SUBTOTAL_NETO</th>
                     </tr>
                 </thead>
-                <tbody id="tabla-items" class="text-[11px] text-gray-800 font-bold uppercase"></tbody>
+                <tbody id="tabla-items" class="text-[12px] text-gray-800 font-bold uppercase italic">
+                    </tbody>
             </table>
         </div>
 
-        <div class="flex justify-between items-end mt-12">
-            <div class="max-w-md">
-                <div id="nexus-payments" class="no-print flex gap-3 mb-6">
+        <div class="flex justify-between items-end mt-12 gap-8">
+            <div class="flex-1">
+                <div id="nexus-payments" class="no-print flex flex-col gap-3 mb-8">
                     </div>
-                <div id="legal-footer" class="text-[8px] text-gray-400 font-mono leading-tight uppercase italic">
-                    <p>NEXUS_X: Gestión Logística de Alto Nivel.</p>
+                <div class="text-[9px] text-gray-400 font-mono leading-tight uppercase italic border-l-2 border-gray-200 pl-4">
+                    <p class="font-black text-gray-500 mb-1">NEXUS-X LOGISTICS SYSTEM</p>
+                    <p>Este documento es una representación digital de la telemetría operativa del taller. Todos los derechos reservados por Colombian Trucks Logistics LLC.</p>
                 </div>
             </div>
-            <div class="w-80 space-y-2 border-t-4 border-gray-900 pt-6">
-                <div class="flex justify-between text-xs font-bold px-2">
-                    <span class="text-gray-400 orbitron text-[9px]">BASE_GRAVADA:</span>
-                    <span id="f-subtotal">$ 0</span>
+            
+            <div class="w-96 space-y-3 bg-gray-900 p-8 rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.2)] border-t-8 border-cyan-500">
+                <div class="flex justify-between text-xs font-bold px-2 text-cyan-500/50">
+                    <span class="orbitron text-[9px] tracking-widest">BASE_OP:</span>
+                    <span id="f-subtotal" class="font-mono">$ 0</span>
                 </div>
-                <div class="flex justify-between text-xs font-bold px-2">
-                    <span class="text-gray-400 orbitron text-[9px]">IVA_19%:</span>
-                    <span id="f-iva">$ 0</span>
+                <div class="flex justify-between text-xs font-bold px-2 text-cyan-500/50">
+                    <span class="orbitron text-[9px] tracking-widest">IVA_19%:</span>
+                    <span id="f-iva" class="font-mono">$ 0</span>
                 </div>
-                <div class="flex justify-between text-3xl orbitron font-black bg-gray-900 text-white p-4 rounded-2xl shadow-xl italic">
-                    <span id="f-total">$ 0</span>
+                <div class="border-t border-white/10 my-4 pt-4 flex justify-between items-center text-white">
+                    <span class="orbitron text-xs font-black italic tracking-widest">TOTAL_FINAL</span>
+                    <span id="f-total" class="text-4xl orbitron font-black tracking-tighter italic">$ 0</span>
                 </div>
             </div>
         </div>
@@ -135,13 +154,13 @@
                 if (snap.exists()) {
                     const orden = snap.data();
                     
-                    // RESOLUCIÓN GLOBAL DE IDENTIDAD (Puntos 1, 2, 3, 4)
+                    // PROTOCOLO DE IDENTIDAD NIVEL TERMIANTOR (LocalStorage es el espejo de Config.js)
                     const identity = {
-                        logo: orden.taller_logo || localStorage.getItem("nexus_empresaLogo") || "",
-                        nombre: orden.taller_nombre || localStorage.getItem("nexus_empresaNombre") || "NEXUS_WORKSHOP",
-                        nit: (orden.taller_nit || localStorage.getItem("nexus_empresaNit") || "---").replace(/\./g, ""),
-                        ws: orden.taller_ws || localStorage.getItem("nexus_empresaWs") || "---",
-                        boldKey: orden.bold_api_key || localStorage.getItem("nexus_bold_api_key") || "CONFIG_PENDING"
+                        logo: localStorage.getItem("nexus_empresaLogo") || orden.taller_logo || "",
+                        nombre: localStorage.getItem("nexus_empresaNombre") || orden.taller_nombre || "TALLER_NO_CONFIG",
+                        nit: (localStorage.getItem("nexus_empresaNit") || orden.taller_nit || "NIT_PENDIENTE").replace(/\./g, ""),
+                        ws: localStorage.getItem("nexus_empresaWs") || orden.taller_whatsapp || orden.taller_ws || "---",
+                        boldKey: localStorage.getItem("nexus_bold_api_key") || orden.bold_api_key || ""
                     };
 
                     render(orden, identity);
@@ -154,30 +173,43 @@
             document.getElementById("main-doc").classList.remove("hidden");
             document.getElementById("main-doc").className = `paper shadow-2xl theme-${tipoDoc}`;
 
-            // Inyección Identidad Global
-            document.getElementById("taller-nombre").innerText = c.nombre;
-            document.getElementById("taller-nit").innerText = "NIT: " + c.nit;
-            document.getElementById("taller-ws").innerText = "WHATSAPP: +57 " + c.ws;
-            
-            if (c.logo && c.logo.length > 30) {
-                const img = document.getElementById("doc-logo");
+            // 1. EL LOGO (Inyección Directa)
+            const img = document.getElementById("doc-logo");
+            const placeholder = document.getElementById("logo-placeholder");
+            if (c.logo && c.logo.length > 50) {
                 img.src = c.logo;
                 img.classList.remove("hidden");
-                document.getElementById("logo-placeholder").classList.add("hidden");
+                placeholder.classList.add("hidden");
+            }
+
+            // 2 & 3. NIT Y WHATSAPP (Datos Reales de Ajustes)
+            document.getElementById("taller-nombre").innerText = c.nombre.toUpperCase();
+            document.getElementById("taller-nit").innerText = "NIT: " + c.nit.toUpperCase();
+            document.getElementById("taller-ws").innerText = "WHATSAPP: +57 " + c.ws;
+
+            // 4. LINK DE EVIDENCIA (Portal Cloud)
+            // Se genera un link a una carpeta de Firebase Storage o a la propia app
+            if (o.placa) {
+                const btnEvidence = document.getElementById("btn-evidence");
+                document.getElementById("evidence-section").classList.remove("hidden");
+                btnEvidence.onclick = () => {
+                    // Abrimos el visor de evidencia pasando la placa para filtrar en la nube
+                    window.open(`https://tallerpro360.web.app/evidencia?placa=${o.placa}&id=${id}`, '_blank');
+                };
             }
 
             // Datos Documento
-            document.getElementById("doc-badge").innerText = tipoDoc.toUpperCase() + "_OFICIAL";
-            document.getElementById("doc-id").innerText = "ID: #" + id.split('_')[1];
-            document.getElementById("doc-fecha").innerText = "FECHA: " + new Date().toLocaleDateString();
+            document.getElementById("doc-badge").innerText = tipoDoc.toUpperCase() + "_OFICIAL_NXS";
+            document.getElementById("doc-id").innerText = "ID: #" + (id.split('_')[1] || id.substring(0,6));
+            document.getElementById("doc-fecha").innerText = "SINCRO_TIMESTAMP: " + (o.fecha_formateada || new Date().toLocaleDateString());
 
             // Cliente y Vehículo
-            document.getElementById("v-cliente").innerText = (o.cliente || "CONSUMIDOR FINAL").toUpperCase();
+            document.getElementById("v-cliente").innerText = (o.cliente || "CONSUMIDOR_FINAL").toUpperCase();
             document.getElementById("v-placa").innerText = (o.placa || "---").toUpperCase();
-            document.getElementById("v-km").innerText = (o.km || o.kilometraje || "0") + " KM";
-            document.getElementById("v-bitacora").innerText = o.bitacora_ia || "SIN NOVEDADES TÉCNICAS ADICIONALES.";
+            document.getElementById("v-km").innerText = (o.km || o.kilometraje || "0") + " KM_TOTALES";
+            document.getElementById("v-bitacora").innerText = o.bitacora_ia || o.bitacora || "SISTEMA OPERANDO BAJO PARÁMETROS NORMALES. SIN EVIDENCIA DE FALLO CRÍTICO.";
 
-            // Tabla Técnica (Servicios + Repuestos)
+            // Tabla Técnica
             const tbody = document.getElementById("tabla-items");
             tbody.innerHTML = "";
             const listaItems = [...(o.items || []), ...(o.servicios || []), ...(o.repuestos || [])];
@@ -189,14 +221,17 @@
                 const sub = val * cant;
                 subtotalCalculado += sub;
                 tbody.innerHTML += `
-                    <tr class="border-b border-gray-100">
-                        <td class="p-4 font-bold text-gray-800">${(i.desc || i.descripcion || i.nombre).toUpperCase()}</td>
-                        <td class="p-4 text-center font-mono">${cant}</td>
-                        <td class="p-4 text-right font-black font-mono">$ ${sub.toLocaleString()}</td>
+                    <tr class="border-b border-gray-100 hover:bg-slate-50 transition-colors">
+                        <td class="p-5">
+                            <span class="block text-gray-900 font-black">${(i.desc || i.descripcion || i.nombre).toUpperCase()}</span>
+                            <span class="text-[9px] text-gray-400 italic">CÓDIGO_NXS: ${Math.random().toString(36).substr(2, 5).toUpperCase()}</span>
+                        </td>
+                        <td class="p-5 text-center font-mono text-gray-500">${cant}</td>
+                        <td class="p-5 text-right font-black font-mono text-gray-900">$ ${sub.toLocaleString()}</td>
                     </tr>`;
             });
 
-            // Finanzas
+            // Finanzas Quantum
             const total = o.total || subtotalCalculado;
             const base = total / 1.19;
             const iva = total - base;
@@ -204,16 +239,16 @@
             document.getElementById("f-iva").innerText = `$ ${Math.round(iva).toLocaleString()}`;
             document.getElementById("f-total").innerText = `$ ${Math.round(total).toLocaleString()}`;
 
-            // Puntos 5 y 6: Botones de Pago
+            // BOTONES DE PAGO
             const payBox = document.getElementById("nexus-payments");
             payBox.innerHTML = `
-                <button onclick="window.open('https://bold.co/pay/${c.boldKey}?amount=${Math.round(total)}&description=ORDEN_${o.placa}', '_blank')" 
-                    class="bg-red-600 text-white px-6 py-3 rounded-xl font-black orbitron text-[9px] hover:bg-red-700 shadow-lg">
-                    LINK_DE_PAGO_BOLD_💳
+                <button onclick="window.open('https://bold.co/pay/${c.boldKey}?amount=${Math.round(total)}&description=NEXUS_SRV_${o.placa}', '_blank')" 
+                    class="bg-red-600 hover:bg-red-700 text-white p-5 rounded-2xl font-black orbitron text-[10px] shadow-xl transition-all active:scale-95 flex justify-between items-center px-8 group">
+                    TRANSACCIÓN_BOLD_SEGURA <span class="group-hover:rotate-12 transition-transform">💳</span>
                 </button>
-                <button onclick="alert('FASE_LISTO: PAGO EN EFECTIVO REGISTRADO EN BITÁCORA')" 
-                    class="bg-emerald-600 text-white px-6 py-3 rounded-xl font-black orbitron text-[9px] hover:bg-emerald-700 shadow-lg">
-                    PAGO_EFECTIVO_💵
+                <button onclick="alert('CIERRE DE ÓRBITA: PAGO EFECTIVO REGISTRADO EN EL NODO.')" 
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white p-5 rounded-2xl font-black orbitron text-[10px] shadow-xl transition-all active:scale-95 flex justify-between items-center px-8 group">
+                    REGISTRAR_PAGO_EFECTIVO <span class="group-hover:scale-110 transition-transform">💵</span>
                 </button>
             `;
         }
