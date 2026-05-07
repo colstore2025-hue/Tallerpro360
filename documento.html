@@ -128,7 +128,7 @@
         const id = params.get("id");
         const tipoDoc = (params.get("tipo") || "factura").toLowerCase();
 
-        async function init() {
+                async function init() {
             if (!id) return;
             try {
                 const snap = await getDoc(doc(db, "ordenes", id));
@@ -136,12 +136,13 @@
                     const orden = snap.data();
                     
                     // RESOLUCIÓN GLOBAL DE IDENTIDAD (Puntos 1, 2, 3, 4)
+                    // Forzamos la lectura de localStorage para asegurar que traiga lo de config.js
                     const identity = {
-                        logo: orden.taller_logo || localStorage.getItem("nexus_empresaLogo") || "",
-                        nombre: orden.taller_nombre || localStorage.getItem("nexus_empresaNombre") || "NEXUS_WORKSHOP",
-                        nit: (orden.taller_nit || localStorage.getItem("nexus_empresaNit") || "---").replace(/\./g, ""),
-                        ws: orden.taller_ws || localStorage.getItem("nexus_empresaWs") || "---",
-                        boldKey: orden.bold_api_key || localStorage.getItem("nexus_bold_api_key") || "CONFIG_PENDING"
+                        logo: localStorage.getItem("nexus_empresaLogo") || orden.taller_logo || "",
+                        nombre: localStorage.getItem("nexus_empresaNombre") || orden.taller_nombre || "NEXUS_WORKSHOP",
+                        nit: (localStorage.getItem("nexus_empresaNit") || orden.taller_nit || "---").replace(/\./g, ""),
+                        ws: localStorage.getItem("nexus_empresaWs") || orden.taller_ws || "---",
+                        boldKey: localStorage.getItem("nexus_bold_api_key") || orden.bold_api_key || "CONFIG_PENDING"
                     };
 
                     render(orden, identity);
@@ -154,8 +155,24 @@
             document.getElementById("main-doc").classList.remove("hidden");
             document.getElementById("main-doc").className = `paper shadow-2xl theme-${tipoDoc}`;
 
+            // --- LÓGICA MAESTRA DEL LOGO ---
+            const imgElement = document.getElementById("doc-logo");
+            const placeholder = document.getElementById("logo-placeholder");
+
+            if (c.logo && c.logo.length > 50) { // Si la cadena es válida (Base64 o URL)
+                imgElement.src = c.logo;
+                imgElement.onload = () => {
+                    imgElement.classList.remove("hidden");
+                    placeholder.classList.add("hidden");
+                };
+                imgElement.onerror = () => {
+                    console.error("Error cargando el logo de la configuración.");
+                    placeholder.innerText = c.nombre.substring(0, 2).toUpperCase();
+                };
+            }
+
             // Inyección Identidad Global
-            document.getElementById("taller-nombre").innerText = c.nombre;
+            document.getElementById("taller-nombre").innerText = c.nombre.toUpperCase();
             document.getElementById("taller-nit").innerText = "NIT: " + c.nit;
             document.getElementById("taller-ws").innerText = "WHATSAPP: +57 " + c.ws;
             
