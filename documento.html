@@ -117,130 +117,120 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
-            authDomain: "tallerpro360.firebaseapp.com",
-            projectId: "tallerpro360",
-            storageBucket: "tallerpro360.firebasestorage.app",
-            messagingSenderId: "636224778184",
-            appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
+        authDomain: "tallerpro360.firebaseapp.com",
+        projectId: "tallerpro360",
+        storageBucket: "tallerpro360.firebasestorage.app",
+        messagingSenderId: "636224778184",
+        appId: "1:636224778184:web:9bd7351b6458a1ef625afd"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-        const params = new URLSearchParams(window.location.search);
-        const id = params.get("id");
-        const tipoParam = (params.get("tipo") || "orden").toLowerCase();
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    const tipoParam = (params.get("tipo") || "factura").toLowerCase();
 
-        async function init() {
-            if (!id) return;
-            
-            // 1. CARGA DE CONFIGURACIÓN DESDE LOCALSTORAGE (Config.js)
-            const configLocal = {
-                nombre: localStorage.getItem("nexus_empresaNombre") || "TALLER PRO 360",
-                nit: localStorage.getItem("nexus_empresaNit") || "900.000.000-1",
-                whatsapp: localStorage.getItem("nexus_empresaWs") || "3000000000",
-                logo: localStorage.getItem("nexus_empresaLogo") || null,
-                boldKey: localStorage.getItem("nexus_bold_api_key") // Halar link de Bold
-            };
+    async function init() {
+        if (!id) return;
 
-            try {
-                const snap = await getDoc(doc(db, "ordenes", id));
-                if (snap.exists()) {
-                    render(snap.data(), configLocal);
-                } else {
-                    document.getElementById("loader").innerHTML = "🚨 ERROR: MISIÓN #" + id + " NO LOCALIZADA";
-                }
-            } catch (e) {
-                document.getElementById("loader").innerHTML = "🚨 FALLO DE ENLACE: " + e.message;
-            }
-        }
-
-        function render(o, config) {
-            document.getElementById("loader").style.display = "none";
-            const main = document.getElementById("main-doc");
-            main.classList.remove("hidden");
-            main.className = `paper shadow-2xl theme-${tipoParam}`;
-
-            // 2 & 3. HALAR NIT Y WHATSAPP DESDE CONFIG
-            document.getElementById("taller-nombre").innerText = config.nombre;
-            document.getElementById("taller-nit").innerText = "NIT: " + config.nit.replace(/\./g, ""); // Limpia puntos para el NIT
-            document.getElementById("taller-ws").innerText = "WHATSAPP: +57 " + config.whatsapp;
-            
-            if (config.logo) {
-                const img = document.getElementById("doc-logo");
-                img.src = config.logo;
-                img.classList.remove("hidden");
-                document.getElementById("logo-placeholder").classList.add("hidden");
-            }
-
-            // Datos Documento
-            document.getElementById("doc-badge").innerText = tipoParam.toUpperCase() + "_OFICIAL";
-            document.getElementById("bg-watermark").innerText = tipoParam.toUpperCase();
-            document.getElementById("doc-id").innerText = "ID: #" + id.split('_')[1] || id;
-            document.getElementById("doc-fecha").innerText = "EMISIÓN: " + (o.fecha_formateada || new Date().toLocaleDateString());
-
-            // Datos Cliente / Vehículo
-            document.getElementById("v-cliente").innerText = (o.cliente || "CONSUMIDOR FINAL").toUpperCase();
-            document.getElementById("v-id-cliente").innerText = "ID: " + (o.cedula || o.nit_cliente || "N/A");
-            document.getElementById("v-placa").innerText = (o.placa || "---").toUpperCase();
-            document.getElementById("v-km").innerText = "RECORRIDO: " + (o.kilometraje || o.km || "0") + " KM";
-            document.getElementById("v-bitacora").innerText = o.bitacora_ia || "OPERACIÓN TÉCNICA SIN HALLAZGOS ADICIONALES.";
-
-            // 1. DESCRIPCIÓN TÉCNICA (Unificando Items de la OT_BDB461)
-            const tbody = document.getElementById("tabla-items");
-            tbody.innerHTML = "";
-            
-            // Consolidamos items (servicios + repuestos + items generales)
-            const listaItems = [...(o.items || []), ...(o.servicios || []), ...(o.repuestos || [])];
-
-            let totalCalculado = 0;
-
-            if (listaItems.length > 0) {
-                listaItems.forEach(i => {
-                    const cant = Number(i.cantidad || 1);
-                    const precio = Number(i.venta || i.precio || i.valor || 0);
-                    const subItem = cant * precio;
-                    totalCalculado += subItem;
-
-                    tbody.innerHTML += `
-                        <tr class="border-b border-gray-100">
-                            <td class="p-4">
-                                <span class="block font-black text-gray-800">${(i.desc || i.descripcion || i.nombre || 'SERVICIO').toUpperCase()}</span>
-                                <span class="text-[7px] orbitron text-gray-400 uppercase tracking-widest">REF: ${i.referencia || 'NXS-CORE'} // ${o.placa}</span>
-                            </td>
-                            <td class="p-4 text-center font-mono">${cant}</td>
-                            <td class="p-4 text-right font-black font-mono">$ ${subItem.toLocaleString()}</td>
-                        </tr>`;
-                });
-            } else {
-                tbody.innerHTML = `<tr><td colspan="3" class="p-10 text-center orbitron text-gray-300 italic uppercase">Esperando telemetría de items...</td></tr>`;
-            }
-
-            // FINANZAS (Ajuste para que el total sea el que manda la Orden)
-            const totalFinal = o.total || totalCalculado;
-            const baseGravada = totalFinal / 1.19;
-            const ivaConsolidado = totalFinal - baseGravada;
-
-            document.getElementById("f-subtotal").innerText = `$ ${Math.round(baseGravada).toLocaleString()}`;
-            document.getElementById("f-iva").innerText = `$ ${Math.round(ivaConsolidado).toLocaleString()}`;
-            document.getElementById("f-total").innerText = `$ ${Math.round(totalFinal).toLocaleString()}`;
-
-            // 4. LINK DE PAGO BOLD
-            if (config.boldKey) {
-                document.getElementById("bold-container").classList.remove("hidden");
-                document.getElementById("btn-bold-pay").onclick = () => {
-                    const boldURL = `https://bold.co/pay/${config.boldKey}?amount=${Math.round(totalFinal)}&description=ORDEN_${o.placa}`;
-                    window.open(boldURL, '_blank');
+        try {
+            const snap = await getDoc(doc(db, "ordenes", id));
+            if (snap.exists()) {
+                const o = snap.data();
+                
+                // --- LÓGICA DE IDENTIDAD (PUNTO 2 Y 3) ---
+                // Buscamos la info de la empresa de 3 fuentes para que no falle el logo
+                const configEmpresa = {
+                    nombre: o.taller_nombre || localStorage.getItem("nexus_empresaNombre") || "NEXUS WORKSHOP",
+                    nit: o.taller_nit || localStorage.getItem("nexus_empresaNit") || "---",
+                    whatsapp: o.taller_ws || localStorage.getItem("nexus_empresaWs") || "---",
+                    logo: o.taller_logo || localStorage.getItem("nexus_empresaLogo") || "",
+                    boldKey: o.bold_api_key || localStorage.getItem("nexus_bold_api_key") || ""
                 };
+
+                render(o, configEmpresa);
             }
+        } catch (e) {
+            console.error("Error Nexus_X:", e);
+        }
+    }
+
+    function render(o, config) {
+        document.getElementById("loader").style.display = "none";
+        document.getElementById("main-doc").classList.remove("hidden");
+        document.getElementById("main-doc").className = `paper shadow-2xl theme-${tipoParam}`;
+
+        // Inyectar Identidad
+        document.getElementById("taller-nombre").innerText = config.nombre.toUpperCase();
+        document.getElementById("taller-nit").innerText = "NIT: " + config.nit.replace(/\./g, "");
+        document.getElementById("taller-ws").innerText = "WHATSAPP: +57 " + config.whatsapp;
+        
+        if (config.logo && config.logo.length > 10) {
+            const img = document.getElementById("doc-logo");
+            img.src = config.logo;
+            img.classList.remove("hidden");
+            document.getElementById("logo-placeholder").classList.add("hidden");
         }
 
-        init();
-    </script>
+        // Datos del Documento
+        document.getElementById("doc-badge").innerText = tipoParam === 'factura' ? "FASE_LISTO_ENTREGA" : tipoParam.toUpperCase();
+        document.getElementById("doc-id").innerText = "ID: #" + id.split('_')[1];
+        document.getElementById("v-placa").innerText = (o.placa || "---").toUpperCase();
+        document.getElementById("v-cliente").innerText = (o.cliente || "CLIENTE").toUpperCase();
+        document.getElementById("v-bitacora").innerText = o.bitacora_ia || "MISIÓN COMPLETADA EXITOSAMENTE.";
+
+        // --- TABLA DE ITEMS ---
+        const tbody = document.getElementById("tabla-items");
+        tbody.innerHTML = "";
+        const lista = [...(o.items || []), ...(o.servicios || []), ...(o.repuestos || [])];
+        let subtotalAcumulado = 0;
+
+        lista.forEach(i => {
+            const val = Number(i.venta || i.precio || 0);
+            const cant = Number(i.cantidad || 1);
+            const sub = val * cant;
+            subtotalAcumulado += sub;
+            tbody.innerHTML += `
+                <tr class="border-b border-gray-100 uppercase">
+                    <td class="p-4 font-bold text-gray-800">${i.desc || i.descripcion || i.nombre}</td>
+                    <td class="p-4 text-center">${cant}</td>
+                    <td class="p-4 text-right font-black">$ ${sub.toLocaleString()}</td>
+                </tr>`;
+        });
+
+        // --- FINANZAS ---
+        const total = o.total || subtotalAcumulado;
+        const base = total / 1.19;
+        const iva = total - base;
+
+        document.getElementById("f-subtotal").innerText = `$ ${Math.round(base).toLocaleString()}`;
+        document.getElementById("f-iva").innerText = `$ ${Math.round(iva).toLocaleString()}`;
+        document.getElementById("f-total").innerText = `$ ${Math.round(total).toLocaleString()}`;
+
+        // --- PAGO FASE LISTO ---
+        const footer = document.getElementById("legal-footer");
+        footer.innerHTML = `
+            <div class="flex gap-4 mt-4 no-print">
+                ${config.boldKey ? `
+                    <button onclick="window.open('https://bold.co/pay/${config.boldKey}?amount=${Math.round(total)}&description=SERVICIO_${o.placa}', '_blank')" 
+                            class="bg-red-600 text-white px-6 py-2 rounded-lg font-black orbitron text-[10px]">
+                        PAGAR_CON_BOLD 💳
+                    </button>` : ''}
+                <button onclick="alert('REGISTRANDO PAGO EN EFECTIVO...')" 
+                        class="bg-green-600 text-white px-6 py-2 rounded-lg font-black orbitron text-[10px]">
+                    PAGO_EFECTIVO 💵
+                </button>
+            </div>
+            <p class="mt-4">NEXUS_X: Sistema de Gestión Logística Automotriz.</p>
+        `;
+    }
+    init();
+</script>
 </body>
 </html>
