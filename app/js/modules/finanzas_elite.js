@@ -1,7 +1,7 @@
 /**
- * 🦾 NEXUS-X TERMINATOR CORE V22.5 - FINANZAS ELITE
- * ESTRATEGIA: QUANTUM-SAP 2030 VISUAL AUDIT
- * OBJETIVO: Dashboards de Combustible Financiero + Reporte PDF Ejecutivo
+ * 🦾 NEXUS-X TERMINATOR CORE V22.6 - FINANZAS ELITE
+ * ESTRATEGIA: QUANTUM-SAP 2030 VISUAL AUDIT + PREDICTIVE BURN-RATE
+ * OBJETIVO: Dashboards de Combustible Financiero + Autonomía de Caja + Reporte PDF
  * Director: William Jeffry Urquijo Cubillos
  */
 import { 
@@ -23,7 +23,8 @@ export default async function finanzasElite(container) {
     let activeListeners = [];
     
     let dbData = { 
-        ingresos: 0, gastos: 0, comisiones: 0, rampa: 0, stock: 0, cancelados: 0 
+        ingresos: 0, gastos: 0, comisiones: 0, rampa: 0, stock: 0, 
+        runway: 0, burnRate: 0 
     };
 
     const renderLayout = async () => {
@@ -66,21 +67,37 @@ export default async function finanzasElite(container) {
             </header>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16">
-                <div class="lg:col-span-5 bg-[#0d1117] p-10 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden flex flex-col items-center">
-                    <h3 class="orbitron text-[11px] font-black text-cyan-400 uppercase mb-8 tracking-widest italic w-full text-left">Combustible Operativo</h3>
-                    <div class="relative w-full h-[300px]">
-                        <canvas id="chartTermometro"></canvas>
-                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-10">
-                            <span id="txtUtilidad" class="text-4xl font-black orbitron text-white">$0</span>
-                            <span class="text-[9px] orbitron text-slate-500 uppercase tracking-widest">Utilidad Neta</span>
+                <div class="lg:col-span-5 flex flex-col gap-8">
+                    <div class="bg-[#0d1117] p-10 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden flex flex-col items-center">
+                        <h3 class="orbitron text-[11px] font-black text-cyan-400 uppercase mb-8 tracking-widest italic w-full text-left">Combustible Operativo</h3>
+                        <div class="relative w-full h-[280px]">
+                            <canvas id="chartTermometro"></canvas>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-10">
+                                <span id="txtUtilidad" class="text-4xl font-black orbitron text-white">$0</span>
+                                <span class="text-[9px] orbitron text-slate-500 uppercase tracking-widest">Utilidad Neta</span>
+                            </div>
                         </div>
+                    </div>
+
+                    <div class="bg-[#0d1117] border-t-4 border-red-600 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="orbitron text-[10px] font-black text-red-500 uppercase tracking-widest italic">Autonomía Operativa (Runway)</h4>
+                            <i class="fas fa-hourglass-half text-red-500/20 group-hover:animate-spin"></i>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span id="runway-days" class="text-6xl font-black orbitron text-white">0</span>
+                            <span class="text-xs font-bold text-slate-500 uppercase italic">Días de Vida</span>
+                        </div>
+                        <p class="text-[8px] text-slate-600 uppercase mt-4 font-black tracking-tighter">
+                            Basado en un Burn Rate de <span id="burn-rate-val" class="text-red-400">$0</span> / día
+                        </p>
                     </div>
                 </div>
 
                 <div class="lg:col-span-7 space-y-6">
                     <div class="bg-gradient-to-br from-cyan-600 to-blue-900 p-10 rounded-[3rem] text-white shadow-2xl relative group">
                         <div class="absolute top-4 right-8 text-4xl opacity-20 group-hover:rotate-12 transition-transform"><i class="fas fa-brain"></i></div>
-                        <h4 class="orbitron font-black text-[11px] uppercase mb-4 italic tracking-widest">Nexus-AI Strategic Insight</h4>
+                        <h4 class="orbitron font-black text-[11px] uppercase mb-4 italic tracking-widest text-white/70">Nexus-AI Strategic Insight</h4>
                         <p id="ai-diagnostico" class="text-xl font-medium leading-tight italic border-l-4 border-white/30 pl-6">Iniciando escaneo de rampa y flujos...</p>
                     </div>
                     
@@ -155,7 +172,7 @@ export default async function finanzasElite(container) {
 
         // 2. Órdenes y Nómina
         const qOrd = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
-        onSnapshot(qOrd, (snap) => {
+        const unsubOrd = onSnapshot(qOrd, (snap) => {
             dbData.rampa = 0; dbData.comisiones = 0;
             const nomina = {};
             
@@ -176,18 +193,39 @@ export default async function finanzasElite(container) {
             renderNomina(nomina);
             updateUI();
         });
+        activeListeners.push(unsubOrd);
     };
 
     const updateUI = () => {
         const u = dbData.ingresos - dbData.gastos - dbData.comisiones;
+        
+        // --- LÓGICA QUANTUM BURN-RATE & RUNWAY ---
+        const diasDelMes = 30;
+        const burnRateDiario = dbData.gastos / diasDelMes;
+        const diasSupervivencia = burnRateDiario > 0 ? Math.floor(u / burnRateDiario) : "∞";
+
+        // Actualización de IDs de Supervivencia
+        const runwayDom = document.getElementById("runway-days");
+        if(runwayDom) {
+            runwayDom.innerText = diasSupervivencia;
+            // Dinámica de color por riesgo
+            runwayDom.className = "text-6xl font-black orbitron transition-colors " + 
+                (diasSupervivencia < 10 ? "text-red-500" : (diasSupervivencia < 20 ? "text-amber-500" : "text-white"));
+        }
+        
+        const burnRateDom = document.getElementById("burn-rate-val");
+        if(burnRateDom) burnRateDom.innerText = `$${Math.round(burnRateDiario).toLocaleString()}`;
+
+        // KPIs Estándar
         document.getElementById("kpi-ingreso").innerText = `$${dbData.ingresos.toLocaleString()}`;
         document.getElementById("kpi-rampa").innerText = `$${dbData.rampa.toLocaleString()}`;
         document.getElementById("kpi-gasto").innerText = `$${dbData.gastos.toLocaleString()}`;
         document.getElementById("txtUtilidad").innerText = `$${u.toLocaleString()}`;
         
+        // Diagnóstico IA Proactivo con Runway
         const aiMsg = u > 0 ? 
-            `ROI POSITIVO: Tu estructura soporta los costos. Sugerencia: Liquidar los $${dbData.rampa.toLocaleString()} en rampa para reinvertir en stock.` :
-            `ALERTA DE BURN-RATE: Los gastos superan el recaudo neta. Prioridad: Saneamiento de cartera urgente.`;
+            `ESTADO SALUDABLE: Tienes ${diasSupervivencia} días de autonomía operativa. Para extenderla a ${diasSupervivencia + 15} días, necesitas liquidar el 20% de la rampa ($${(dbData.rampa * 0.2).toLocaleString()}).` :
+            `ALERTA DE INSOLVENCIA: El Burn Rate de $${Math.round(burnRateDiario).toLocaleString()} diario está consumiendo tu capital. Saneamiento de cartera urgente.`;
         document.getElementById("ai-diagnostico").innerText = aiMsg;
 
         if (chartTermometro) {
@@ -197,7 +235,9 @@ export default async function finanzasElite(container) {
     };
 
     const renderNomina = (data) => {
-        document.getElementById("gridNomina").innerHTML = Object.entries(data).map(([n, s]) => `
+        const containerNomina = document.getElementById("gridNomina");
+        if(!containerNomina) return;
+        containerNomina.innerHTML = Object.entries(data).map(([n, s]) => `
             <div class="bg-[#0d1117] p-6 rounded-[2rem] border border-emerald-500/10 flex justify-between items-center group hover:bg-emerald-500/5 transition-all">
                 <div>
                     <h4 class="text-xs font-black uppercase text-white">${n}</h4>
