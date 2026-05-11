@@ -10,6 +10,9 @@ import {
 import { db } from "../core/firebase-config.js";
 import { NEXUS_CONFIG } from "./nexus_constants.js";
 
+// --- IMPORTACIÓN DE LIBRERÍA DE EXPORTACIÓN (CORRECCIÓN DE SEGURIDAD) ---
+const XLSX_URL = "https://cdn.sheetjs.com/xlsx-0.20.2/package/xlsx.full.min.js";
+
 export default async function contabilidad(container) {
     const empresaId = (localStorage.getItem("nexus_empresaId") || "").trim();
     if (!empresaId) {
