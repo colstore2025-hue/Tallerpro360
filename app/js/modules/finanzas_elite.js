@@ -1,261 +1,267 @@
 /**
- * 🦾 NEXUS-X TERMINATOR CORE V22.1 - FINANZAS ELITE
- * ESTRATEGIA: QUANTUM-SAP 2030 AUDIT PROTOCOL
- * OBJETIVO: Auditoría en Tiempo Real vs Contabilidad Tradicional
+ * 🦾 NEXUS-X TERMINATOR CORE V22.5 - FINANZAS ELITE
+ * ESTRATEGIA: QUANTUM-SAP 2030 VISUAL AUDIT
+ * OBJETIVO: Dashboards de Combustible Financiero + Reporte PDF Ejecutivo
  * Director: William Jeffry Urquijo Cubillos
  */
 import { 
-    collection, query, where, getDocs, onSnapshot, serverTimestamp, doc, setDoc, Timestamp 
+    collection, query, where, getDocs, onSnapshot, Timestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 import { NEXUS_CONFIG } from "./nexus_constants.js";
 
+// --- MOTOR DE INYECCIÓN DE LIBRERÍAS DE ÉLITE ---
+const loadNexusDep = (id, src) => new Promise(res => {
+    if (window[id]) return res();
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; document.head.appendChild(s);
+});
+
 export default async function finanzasElite(container) {
     const empresaId = localStorage.getItem("nexus_empresaId");
+    let chartTermometro = null;
     let activeListeners = [];
     
-    // Motor de Estado Financiero (Nivel Auditoría)
-    let estadoFinanciero = { 
-        cajaEfectiva: 0,     // 1105
-        cuentasPorCobrar: 0, // 1305
-        gastosOperativos: 0, // 51
-        patrimonioStock: 0,  // 14
-        comisionesPendientes: 0,
-        utilidadReal: 0,
-        burnRate: 0 
+    let dbData = { 
+        ingresos: 0, gastos: 0, comisiones: 0, rampa: 0, stock: 0, cancelados: 0 
     };
 
-    const CATEGORIAS_SAP = {
-        INGRESOS: ["ingreso_ot", "venta_repuestos", "saneamiento_deuda", "anticipo_cliente", "inyeccion_capital"],
-        GASTOS: ["gasto_operativo", "compra_repuestos", "pago_nomina", "pago_servicios", "arrendamientos"]
-    };
+    const renderLayout = async () => {
+        // Carga paralela de motores: Gráficas, PDF y Excel
+        await Promise.all([
+            loadNexusDep('Chart', "https://cdn.jsdelivr.net/npm/chart.js"),
+            loadNexusDep('jspdf', "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"),
+            loadNexusDep('XLSX', "https://cdn.sheetjs.com/xlsx-0.20.2/package/xlsx.full.min.js")
+        ]);
 
-    const renderLayout = () => {
         container.innerHTML = `
-        <div class="p-6 lg:p-12 animate-in fade-in duration-700 pb-40 bg-[#010409] min-h-screen text-white font-sans">
+        <div class="p-6 lg:p-12 animate-in fade-in duration-1000 pb-40 bg-[#010409] min-h-screen text-white font-sans selection:bg-cyan-500">
             
-            <header class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-16 border-b-2 border-cyan-500/20 pb-10 gap-8 relative">
-                <div class="absolute -top-10 left-0 text-[100px] font-black opacity-5 italic select-none orbitron uppercase">Audit</div>
+            <header class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-12 border-b-2 border-cyan-500/20 pb-10 gap-8 relative">
+                <div class="absolute -top-10 left-0 text-[120px] font-black opacity-5 italic select-none orbitron uppercase">Elite</div>
                 <div class="relative z-10">
-                    <h1 class="orbitron text-6xl font-black italic tracking-tighter uppercase leading-none text-white">
+                    <h1 class="orbitron text-7xl font-black italic tracking-tighter uppercase leading-none text-white">
                         FINANZAS <span class="text-cyan-400">ELITE</span>
                     </h1>
-                    <p class="text-[9px] text-slate-400 font-black uppercase tracking-[0.4em] orbitron mt-4">
+                    <p class="text-[10px] text-slate-400 font-black uppercase tracking-[0.5em] orbitron mt-4 flex items-center gap-2">
+                        <span class="w-2 h-2 bg-cyan-500 animate-pulse rounded-full"></span> 
                         Quantum-SAP Auditor // Authorized by W.J. Urquijo
                     </p>
                 </div>
                 
-                <div class="flex flex-wrap gap-4 items-center bg-[#0d1117] p-6 rounded-[2rem] border border-white/10 shadow-2xl">
+                <div class="flex flex-wrap gap-3 items-center bg-[#0d1117] p-5 rounded-[2.5rem] border border-white/10 shadow-2xl">
                     <div class="flex flex-col px-4 border-r border-white/10">
-                        <label class="text-[8px] orbitron text-cyan-500 font-black mb-1 italic">RANGO DE AUDITORÍA ANALÍTICA</label>
-                        <div class="flex gap-2">
-                            <input type="date" id="fechaInicio" class="bg-transparent text-xs font-bold text-white outline-none cursor-pointer">
-                            <span class="text-slate-600 text-xs font-black">>></span>
-                            <input type="date" id="fechaFin" class="bg-transparent text-xs font-bold text-white outline-none cursor-pointer">
-                        </div>
+                        <label class="text-[8px] orbitron text-cyan-500 font-black mb-1 italic">RANGO ANALÍTICO</label>
+                        <input type="date" id="fInicio" class="bg-transparent text-xs font-bold text-white outline-none">
+                        <input type="date" id="fFin" class="bg-transparent text-xs font-bold text-white outline-none">
                     </div>
-                    <button id="btnFiltrar" class="w-12 h-12 bg-cyan-500 text-black rounded-xl hover:rotate-180 transition-all duration-500 flex items-center justify-center">
-                        <i class="fas fa-sync-alt"></i>
+                    <button id="btnPDF" class="px-6 py-4 bg-white text-black rounded-2xl flex items-center gap-3 hover:bg-cyan-400 transition-all font-black group">
+                        <i class="fas fa-file-pdf group-hover:scale-125 transition-transform"></i>
+                        <span class="orbitron text-[9px] uppercase">Brief Ejecutivo</span>
                     </button>
-                    <button id="btnExportarExcel" class="px-8 py-4 bg-emerald-600 text-black rounded-xl flex items-center gap-4 hover:bg-white transition-all font-black">
+                    <button id="btnXLS" class="w-14 h-14 bg-[#0d1117] border border-emerald-500/30 text-emerald-500 rounded-2xl flex items-center justify-center hover:bg-emerald-500 hover:text-black transition-all shadow-lg">
                         <i class="fas fa-file-excel"></i>
-                        <span class="orbitron text-[10px] uppercase">Exportar SAP-XLSX</span>
                     </button>
                 </div>
             </header>
 
-            <div id="kpiGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-12"></div>
-
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16">
-                <div class="lg:col-span-8 bg-gradient-to-br from-[#0d1117] to-[#010409] border border-white/5 rounded-[3rem] p-10 relative overflow-hidden shadow-2xl">
-                     <div class="flex flex-col md:flex-row items-center gap-10 relative z-10">
-                        <div class="relative w-32 h-32 bg-cyan-500/10 rounded-full flex items-center justify-center border border-cyan-500/30">
-                            <div class="text-center">
-                                <span class="text-[8px] orbitron text-slate-500 block uppercase">Balance</span>
-                                <span id="roiPct" class="text-xl font-black orbitron text-cyan-400">0%</span>
-                            </div>
+                <div class="lg:col-span-5 bg-[#0d1117] p-10 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden flex flex-col items-center">
+                    <h3 class="orbitron text-[11px] font-black text-cyan-400 uppercase mb-8 tracking-widest italic w-full text-left">Combustible Operativo</h3>
+                    <div class="relative w-full h-[300px]">
+                        <canvas id="chartTermometro"></canvas>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-10">
+                            <span id="txtUtilidad" class="text-4xl font-black orbitron text-white">$0</span>
+                            <span class="text-[9px] orbitron text-slate-500 uppercase tracking-widest">Utilidad Neta</span>
                         </div>
-                        <div class="flex-1">
-                            <h5 class="text-[10px] font-black uppercase text-cyan-400 mb-2 orbitron tracking-widest italic">NEXUS-AI Operational Advisor</h5>
-                            <div id="txtConsejo" class="text-lg text-slate-300 leading-tight font-medium italic border-l-2 border-cyan-500 pl-6 py-2">Escaneando flujos de caja...</div>
-                        </div>
-                     </div>
+                    </div>
                 </div>
 
-                <div class="lg:col-span-4 bg-[#0d1117] border border-red-500/30 rounded-[3rem] p-8 shadow-2xl">
-                    <h3 class="orbitron text-[10px] font-black text-red-500 uppercase mb-6 flex items-center gap-2">
-                        <i class="fas fa-skull-crossbones animate-pulse"></i> Fugas (Cancelaciones)
-                    </h3>
-                    <div id="listFuga" class="space-y-3 max-h-[200px] overflow-y-auto custom-scroll pr-2"></div>
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="bg-gradient-to-br from-cyan-600 to-blue-900 p-10 rounded-[3rem] text-white shadow-2xl relative group">
+                        <div class="absolute top-4 right-8 text-4xl opacity-20 group-hover:rotate-12 transition-transform"><i class="fas fa-brain"></i></div>
+                        <h4 class="orbitron font-black text-[11px] uppercase mb-4 italic tracking-widest">Nexus-AI Strategic Insight</h4>
+                        <p id="ai-diagnostico" class="text-xl font-medium leading-tight italic border-l-4 border-white/30 pl-6">Iniciando escaneo de rampa y flujos...</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        ${renderKPI("Recaudo (1105)", "kpi-ingreso", "text-emerald-400", "fa-wallet")}
+                        ${renderKPI("Rampa (1305)", "kpi-rampa", "text-cyan-400", "fa-microchip")}
+                        ${renderKPI("Gastos (51)", "kpi-gasto", "text-red-400", "fa-file-invoice-dollar")}
+                        ${renderKPI("Stock (14)", "kpi-stock", "text-amber-400", "fa-box-open")}
+                    </div>
                 </div>
             </div>
 
-            <div class="mb-12">
-                <div class="flex items-center justify-between mb-8 border-l-4 border-emerald-500 pl-6">
-                    <h3 class="text-[14px] font-black text-white uppercase tracking-[0.5em] orbitron">Performance <span class="text-emerald-500">& Nómina</span></h3>
-                </div>
-                <div id="gridNomina" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+            <div class="mb-12 border-l-4 border-emerald-500 pl-8">
+                <h3 class="text-[16px] font-black text-white uppercase tracking-[0.6em] orbitron italic">Performance <span class="text-emerald-500">& Nómina</span></h3>
+                <div id="gridNomina" class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8"></div>
             </div>
 
-            <div class="mb-8 flex items-center justify-between border-l-4 border-cyan-500 pl-6">
-                <h3 class="text-[14px] font-black text-white uppercase tracking-[0.5em] orbitron italic">Capital en <span class="text-cyan-500 uppercase">Rampa</span></h3>
-                <div id="rampaCount" class="px-6 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-full orbitron text-[10px] font-black text-cyan-400 italic tracking-widest">---</div>
-            </div>
-            <div id="gridRampa" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"></div>
         </div>`;
-
+        
         setupEvents();
+        initTermometro();
         sincronizarNucleo();
     };
 
-    const setupEvents = () => {
-        document.getElementById("btnFiltrar").onclick = () => sincronizarNucleo(true);
-        // Aquí conectaremos el exportarExcel de la v22.0.2
-        const hoy = new Date();
-        document.getElementById("fechaInicio").value = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split('T')[0];
-        document.getElementById("fechaFin").value = hoy.toISOString().split('T')[0];
+    const renderKPI = (label, id, color, icon) => `
+        <div class="bg-[#0d1117] p-6 rounded-[2rem] border border-white/5 flex items-center justify-between group hover:border-cyan-500/20 transition-all">
+            <div>
+                <p class="text-[8px] orbitron text-slate-500 uppercase font-black mb-1">${label}</p>
+                <h2 id="${id}" class="text-2xl font-black orbitron ${color}">$0</h2>
+            </div>
+            <i class="fas ${icon} text-slate-700 group-hover:${color} transition-all"></i>
+        </div>`;
+
+    const initTermometro = () => {
+        const ctx = document.getElementById('chartTermometro').getContext('2d');
+        chartTermometro = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Gastos', 'Comisiones', 'Utilidad'],
+                datasets: [{
+                    data: [1, 1, 1],
+                    backgroundColor: ['#ef4444', '#f59e0b', '#06b6d4'],
+                    borderWidth: 0,
+                    cutout: '85%'
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                animation: { animateScale: true }
+            }
+        });
     };
 
     const sincronizarNucleo = async () => {
-        activeListeners.forEach(unsub => unsub());
-        const fInicio = new Date(document.getElementById("fechaInicio").value + "T00:00:00");
-        const fFin = new Date(document.getElementById("fechaFin").value + "T23:59:59");
+        const fInicio = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        const fFin = new Date();
+        document.getElementById("fInicio").value = fInicio.toISOString().split('T')[0];
+        document.getElementById("fFin").value = fFin.toISOString().split('T')[0];
 
-        // 🟢 1. Sincronización con el PUC de Contabilidad
+        // 1. Auditoría Contable (PUC)
         const qCont = query(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), where("empresaId", "==", empresaId));
         const snapCont = await getDocs(qCont);
+        dbData.ingresos = 0; dbData.gastos = 0;
         
-        estadoFinanciero.cajaEfectiva = 0;
-        estadoFinanciero.gastosOperativos = 0;
-        
-        snapCont.docs.forEach(doc => {
-            const data = doc.data();
-            const fechaDoc = data.creadoEn?.toDate();
-            if (fechaDoc >= fInicio && fechaDoc <= fFin) {
-                const monto = data.monto || 0;
-                if (CATEGORIAS_SAP.INGRESOS.includes(data.tipo)) estadoFinanciero.cajaEfectiva += monto;
-                if (CATEGORIAS_SAP.GASTOS.includes(data.tipo)) estadoFinanciero.gastosOperativos += monto;
-            }
+        snapCont.docs.forEach(d => {
+            const m = d.data();
+            const val = m.monto || 0;
+            if (["ingreso_ot", "venta_repuestos", "saneamiento_deuda"].includes(m.tipo)) dbData.ingresos += val;
+            if (["gasto_operativo", "compra_repuestos", "pago_nomina"].includes(m.tipo)) dbData.gastos += val;
         });
 
-        // 🔧 2. Telemetría de Órdenes (Cartera y Nómina)
+        // 2. Órdenes y Nómina
         const qOrd = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
-        const unsubOrd = onSnapshot(qOrd, (snap) => {
-            const ords = snap.docs.map(d => ({id: d.id, ...d.data()}));
-            procesarRampaYFugas(ords);
-            procesarNomina(ords);
-        });
-        activeListeners.push(unsubOrd);
-
-        // 📦 3. Auditoría de Inventario
-        const qInv = query(collection(db, "inventario"), where("empresaId", "==", empresaId));
-        const snapInv = await getDocs(qInv);
-        estadoFinanciero.patrimonioStock = snapInv.docs.reduce((acc, d) => {
-            const i = d.data();
-            return acc + (Number(i.precioCosto || 0) * Number(i.stock || 0));
-        }, 0);
-        
-        updateUI();
-    };
-
-    const procesarNomina = (ordenes) => {
-        const comisionGlobal = 0.30; // 30% como estándar
-        const nomina = {};
-        estadoFinanciero.comisionesPendientes = 0;
-
-        ordenes.forEach(o => {
-            if (['LISTO', 'ENTREGADO'].includes(o.estado)) {
-                const tecnico = o.tecnico_asignado || "POR_ASIGNAR";
-                const mObra = o.items?.filter(i => i.tipo === 'SERVICIO')
-                              .reduce((acc, i) => acc + (Number(i.venta) * Number(i.cantidad)), 0) || 0;
-                const comi = mObra * comisionGlobal;
+        onSnapshot(qOrd, (snap) => {
+            dbData.rampa = 0; dbData.comisiones = 0;
+            const nomina = {};
+            
+            snap.docs.forEach(d => {
+                const o = d.data();
+                const total = Number(o.costos_totales?.total || 0);
                 
-                if (!nomina[tecnico]) nomina[tecnico] = { total: 0, q: 0 };
-                nomina[tecnico].total += comi;
-                nomina[tecnico].q += 1;
-                estadoFinanciero.comisionesPendientes += comi;
-            }
+                if (['INGRESO', 'DIAGNOSTICO', 'REPARACION'].includes(o.estado)) dbData.rampa += total;
+                if (['LISTO', 'ENTREGADO'].includes(o.estado)) {
+                    const tecnico = o.tecnico_asignado || "POR_DEFINIR";
+                    const mo = o.items?.filter(i => i.tipo === 'SERVICIO').reduce((acc, i) => acc + (Number(i.venta) * Number(i.cantidad)), 0) || 0;
+                    const comi = mo * 0.30;
+                    dbData.comisiones += comi;
+                    if (!nomina[tecnico]) nomina[tecnico] = { total: 0, q: 0 };
+                    nomina[tecnico].total += comi; nomina[tecnico].q += 1;
+                }
+            });
+            renderNomina(nomina);
+            updateUI();
         });
-        renderNominaUI(nomina);
     };
 
     const updateUI = () => {
-        const util = estadoFinanciero.cajaEfectiva - estadoFinanciero.gastosOperativos - estadoFinanciero.comisionesPendientes;
-        const roi = estadoFinanciero.gastosOperativos > 0 ? (util / estadoFinanciero.gastosOperativos) * 100 : 0;
+        const u = dbData.ingresos - dbData.gastos - dbData.comisiones;
+        document.getElementById("kpi-ingreso").innerText = `$${dbData.ingresos.toLocaleString()}`;
+        document.getElementById("kpi-rampa").innerText = `$${dbData.rampa.toLocaleString()}`;
+        document.getElementById("kpi-gasto").innerText = `$${dbData.gastos.toLocaleString()}`;
+        document.getElementById("txtUtilidad").innerText = `$${u.toLocaleString()}`;
+        
+        const aiMsg = u > 0 ? 
+            `ROI POSITIVO: Tu estructura soporta los costos. Sugerencia: Liquidar los $${dbData.rampa.toLocaleString()} en rampa para reinvertir en stock.` :
+            `ALERTA DE BURN-RATE: Los gastos superan el recaudo neta. Prioridad: Saneamiento de cartera urgente.`;
+        document.getElementById("ai-diagnostico").innerText = aiMsg;
 
-        document.getElementById("kpiGrid").innerHTML = `
-            ${renderStatBox("Caja Neta (1105)", estadoFinanciero.cajaEfectiva, "fa-wallet", "text-emerald-400", "Recaudado Real")}
-            ${renderStatBox("Proyectado (1305)", estadoFinanciero.cuentasPorCobrar, "fa-microchip", "text-cyan-400", "Capital en Rampa")}
-            ${renderStatBox("Egresos (51)", estadoFinanciero.gastosOperativos, "fa-file-invoice-dollar", "text-red-400", "Costos Fijos/Variables")}
-            ${renderStatBox("Pasivo Laboral", estadoFinanciero.comisionesPendientes, "fa-user-tag", "text-amber-400", "Comisiones Técnicos")}
-        `;
-
-        document.getElementById("roiPct").innerText = `${Math.round(roi)}%`;
-        document.getElementById("txtConsejo").innerHTML = generarDiagnosticoIA(util);
+        if (chartTermometro) {
+            chartTermometro.data.datasets[0].data = [dbData.gastos, dbData.comisiones, Math.max(0, u)];
+            chartTermometro.update();
+        }
     };
 
-    const renderStatBox = (title, val, icon, color, subtitle) => `
-        <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 relative group hover:border-cyan-500/20 transition-all shadow-2xl">
-            <div class="flex items-center gap-4 mb-4 text-slate-500">
-                <i class="fas ${icon} text-lg group-hover:${color} transition-all"></i>
-                <h6 class="text-[9px] orbitron font-black uppercase tracking-widest">${title}</h6>
-            </div>
-            <p class="text-3xl font-black orbitron ${color}">$ ${Math.round(val).toLocaleString()}</p>
-            <p class="text-[7px] text-slate-600 uppercase font-black mt-2 italic">${subtitle}</p>
-        </div>`;
-
-    const renderNominaUI = (data) => {
-        const container = document.getElementById("gridNomina");
-        if (!container) return;
-        container.innerHTML = Object.entries(data).map(([nombre, s]) => `
-            <div class="bg-[#0d1117] p-6 rounded-3xl border border-white/5 flex justify-between items-center">
+    const renderNomina = (data) => {
+        document.getElementById("gridNomina").innerHTML = Object.entries(data).map(([n, s]) => `
+            <div class="bg-[#0d1117] p-6 rounded-[2rem] border border-emerald-500/10 flex justify-between items-center group hover:bg-emerald-500/5 transition-all">
                 <div>
-                    <h4 class="text-xs font-black uppercase">${nombre}</h4>
-                    <p class="text-[8px] text-slate-500 orbitron uppercase">${s.q} Órdenes Finalizadas</p>
+                    <h4 class="text-xs font-black uppercase text-white">${n}</h4>
+                    <p class="text-[8px] orbitron text-slate-500 uppercase">${s.q} Órdenes</p>
                 </div>
                 <div class="text-right">
-                    <p class="text-sm font-black orbitron text-emerald-400">$${Math.round(s.total).toLocaleString()}</p>
-                    <p class="text-[7px] text-slate-600 uppercase">Comisión</p>
+                    <p class="text-lg font-black orbitron text-emerald-400">$${Math.round(s.total).toLocaleString()}</p>
+                    <p class="text-[7px] text-slate-600 uppercase font-bold">Comisión 30%</p>
                 </div>
             </div>`).join('');
     };
 
-    const procesarRampaYFugas = (ordenes) => {
-        estadoFinanciero.cuentasPorCobrar = 0;
-        let rampaHTML = ""; let fugaHTML = "";
-        let countRampa = 0;
+    const setupEvents = () => {
+        document.getElementById("btnPDF").onclick = generarReportePDF;
+        document.getElementById("btnXLS").onclick = exportarExcelForense;
+    };
 
-        ordenes.forEach(o => {
-            const totalOT = Number(o.costos_totales?.total || 0);
-            if (['INGRESO', 'DIAGNOSTICO', 'REPARACION'].includes(o.estado)) {
-                estadoFinanciero.cuentasPorCobrar += totalOT;
-                countRampa++;
-                rampaHTML += `
-                <div class="bg-black/40 p-5 rounded-3xl border border-white/5 group hover:border-cyan-500/30 transition-all">
-                    <div class="flex justify-between text-[8px] orbitron text-cyan-500 mb-2"><span>${o.estado}</span><i class="fas fa-clock"></i></div>
-                    <p class="text-xs font-black uppercase truncate">${o.cliente || 'ANONIMO'}</p>
-                    <p class="text-xl font-black orbitron text-white">${o.placa || 'UNIT'}</p>
-                    <p class="text-[10px] text-slate-500 font-bold mt-2">DEUDA: $${totalOT.toLocaleString()}</p>
-                </div>`;
-            } else if (o.estado === 'CANCELADO') {
-                fugaHTML += `
-                <div class="flex justify-between items-center p-3 bg-red-500/5 rounded-xl border border-red-500/10">
-                    <span class="text-[9px] font-black orbitron uppercase">${o.placa}</span>
-                    <span class="text-red-500 font-black orbitron text-[10px]">-$${totalOT.toLocaleString()}</span>
-                </div>`;
-            }
+    async function generarReportePDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const u = dbData.ingresos - dbData.gastos - dbData.comisiones;
+
+        // Estética Quantum-SAP (Negro/Cian)
+        doc.setFillColor(1, 4, 9); doc.rect(0, 0, 210, 297, 'F');
+        doc.setTextColor(6, 182, 212); doc.setFontSize(22); doc.text("NEXUS-X EXECUTIVE BRIEF", 20, 30);
+        
+        doc.setTextColor(255, 255, 255); doc.setFontSize(10);
+        doc.text(`Taller ID: ${empresaId}`, 20, 40);
+        doc.text(`Generado: ${new Date().toLocaleString()}`, 20, 45);
+
+        doc.setDrawColor(6, 182, 212); doc.line(20, 50, 190, 50);
+
+        // Bloque de Resultados
+        const rows = [
+            ["CONCEPTO", "VALOR AUDITADO"],
+            ["Recaudo Efectivo (1105)", `$${dbData.ingresos.toLocaleString()}`],
+            ["Gastos Operativos (51)", `$${dbData.gastos.toLocaleString()}`],
+            ["Pasivo Laboral (Comisiones)", `$${dbData.comisiones.toLocaleString()}`],
+            ["UTILIDAD NETA REAL", `$${u.toLocaleString()}`],
+            ["Capital en Rampa (Por Cobrar)", `$${dbData.rampa.toLocaleString()}`]
+        ];
+
+        let y = 70;
+        rows.forEach((r, i) => {
+            if(i === 0) doc.setTextColor(6, 182, 212); else doc.setTextColor(255, 255, 255);
+            doc.text(r[0], 25, y); doc.text(r[1], 140, y);
+            y += 10;
         });
 
-        document.getElementById("gridRampa").innerHTML = rampaHTML;
-        document.getElementById("listFuga").innerHTML = fugaHTML;
-        document.getElementById("rampaCount").innerText = `${countRampa} Unidades en proceso`;
-        updateUI();
-    };
+        doc.save(`Nexus_Audit_${empresaId}.pdf`);
+    }
 
-    const generarDiagnosticoIA = (utilidad) => {
-        if (utilidad < 0) return `<span class="text-red-500 font-black underline uppercase">CRÍTICO:</span> Balance negativo detectado. <br><span class="text-white">AUDITORÍA:</span> Los gastos + comisiones superan los ingresos recaudados en el rango seleccionado. Urge liquidar Cartera (Rampa).`;
-        return `<span class="text-emerald-400 font-black uppercase tracking-tighter italic">SISTEMA EN OPTIMIZACIÓN:</span> Utilidad real detectada tras deducir pasivos laborales. <br><span class="text-white">CONSEJO:</span> Proyecta el 15% de esta utilidad para reposición de equipo.`;
-    };
+    async function exportarExcelForense() {
+        const ws = window.XLSX.utils.json_to_sheet([
+            { Concepto: "Recaudo", Valor: dbData.ingresos },
+            { Concepto: "Gastos", Valor: dbData.gastos },
+            { Concepto: "Comisiones", Valor: dbData.comisiones },
+            { Concepto: "Utilidad", Valor: dbData.ingresos - dbData.gastos - dbData.comisiones },
+            { Concepto: "En Rampa", Valor: dbData.rampa }
+        ]);
+        const wb = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(wb, ws, "Auditoria");
+        window.XLSX.writeFile(wb, `Forense_Nexus_${empresaId}.xlsx`);
+    }
 
     renderLayout();
 }
