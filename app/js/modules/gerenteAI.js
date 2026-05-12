@@ -1,9 +1,12 @@
 /**
- * gerenteAI.js - TallerPRO360 NEXUS-X V6.0 👑
- * EL CENTRO DE COMANDO ESTRATÉGICO: INTELIGENCIA PREDICTIVA REAL
- * @author William Jeffry Urquijo Cubillos & Gemini AI
+ * 🦾 NEXUS-X STRATEGIC COMMAND V6.1 - GERENTE AI
+ * FUSIÓN: AUDITORÍA DE BÓVEDA + MOTOR DE DECISIÓN QUANTUM
+ * Objetivo: Transformar telemetría real en misiones tácticas.
+ * Director: William Jeffry Urquijo Cubillos & Gemini AI
  */
-import { collection, query, where, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { 
+    collection, query, where, getDocs, onSnapshot 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 import { NEXUS_CONFIG } from "./nexus_constants.js";
@@ -14,26 +17,28 @@ export default async function gerenteAI(container) {
 
     const renderLayout = () => {
         container.innerHTML = `
-        <div class="p-6 lg:p-12 bg-[#010409] min-h-screen text-white animate-in fade-in duration-700 pb-48">
-            <header class="flex flex-col xl:flex-row justify-between items-start gap-12 mb-16 border-l-4 border-cyan-500 pl-8">
-                <div>
-                    <h1 class="orbitron text-5xl font-black italic tracking-tighter text-white leading-none uppercase">
-                        STRATEGIC <span class="text-cyan-400">NEXUS_V6</span>
+        <div class="p-6 lg:p-12 bg-[#010409] min-h-screen text-white animate-in fade-in duration-1000 pb-48 selection:bg-cyan-500">
+            
+            <header class="flex flex-col xl:flex-row justify-between items-start gap-12 mb-16 border-l-4 border-cyan-500 pl-8 relative">
+                <div class="absolute -top-10 -left-10 text-[120px] font-black opacity-5 italic select-none orbitron uppercase">NEXUS</div>
+                <div class="relative z-10">
+                    <h1 class="orbitron text-6xl font-black italic tracking-tighter text-white leading-none uppercase">
+                        STRATEGIC <span class="text-cyan-400">COMMAND</span>
                     </h1>
                     <div class="flex items-center gap-4 mt-4">
-                        <span class="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-[8px] orbitron font-black text-cyan-400 uppercase">Estado: Consciencia Activa</span>
-                        <p class="text-[9px] orbitron tracking-[0.6em] text-slate-500 uppercase italic font-black">Analizando Telemetría de ${empresaId}</p>
+                        <span class="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-[8px] orbitron font-black text-cyan-400 uppercase animate-pulse">Consciencia Activa</span>
+                        <p class="text-[9px] orbitron tracking-[0.6em] text-slate-500 uppercase italic font-black">Telemetría de Bóveda: ${empresaId}</p>
                     </div>
                 </div>
-                <button id="btnVozIA" class="group w-24 h-24 bg-white rounded-[2rem] flex flex-col items-center justify-center text-black shadow-[0_0_50px_rgba(255,255,255,0.1)] hover:bg-cyan-500 hover:text-white transition-all">
-                    <i class="fas fa-brain text-2xl mb-2"></i>
-                    <span class="text-[8px] font-black orbitron uppercase">Briefing</span>
+                <button id="btnVozIA" class="group w-28 h-28 bg-white rounded-[2.5rem] flex flex-col items-center justify-center text-black shadow-[0_0_50px_rgba(255,255,255,0.05)] hover:bg-cyan-500 hover:text-white transition-all transform hover:scale-105 active:scale-95">
+                    <i class="fas fa-brain text-3xl mb-2 group-hover:animate-bounce"></i>
+                    <span class="text-[8px] font-black orbitron uppercase tracking-widest">Briefing</span>
                 </button>
             </header>
 
             <div id="panelIA" class="grid grid-cols-1 xl:grid-cols-12 gap-10">
                 <div class="col-span-full py-40 flex flex-col items-center">
-                    <div class="spinner-nexus"></div>
+                    <div class="w-16 h-16 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
                     <p class="mt-8 orbitron text-[10px] tracking-[1em] text-cyan-400 animate-pulse uppercase">Extrayendo Datos de la Bóveda...</p>
                 </div>
             </div>
@@ -42,142 +47,155 @@ export default async function gerenteAI(container) {
 
     const realizarDiagnostico = async () => {
         try {
-            // 1. DATA MINING REAL
-            const qOrdenes = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
-            const qContable = query(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), where("empresaId", "==", empresaId));
-            const qInv = query(collection(db, "inventario"), where("empresaId", "==", empresaId));
-            
+            // 1. DATA MINING DE BÓVEDA
             const [snapOrdenes, snapContable, snapInv] = await Promise.all([
-                getDocs(qOrdenes), getDocs(qContable), getDocs(qInv)
+                getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId))),
+                getDocs(query(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), where("empresaId", "==", empresaId))),
+                getDocs(query(collection(db, "inventario"), where("empresaId", "==", empresaId)))
             ]);
 
             // 2. ANALÍTICA DE PRECISIÓN
-            let ingresosMes = 0, gastosMes = 0;
-            let otActivas = 0, otTerminadas = 0;
-            let valorInventario = 0;
-            let serviciosMasRentables = {};
+            let ingresos = 0, gastos = 0, rampa = 0, invValor = 0;
+            let otTerminadas = 0, otActivas = 0;
 
-            // Procesar Contabilidad Real
             snapContable.forEach(doc => {
                 const m = doc.data();
                 const v = Number(m.monto || 0);
-                const esIng = [NEXUS_CONFIG.FINANCE_TYPES.REVENUE_OT, 'ingreso'].includes(m.tipo);
-                if (esIng) ingresosMes += v; else gastosMes += v;
+                if (['ingreso_ot', 'ingreso'].includes(m.tipo)) ingresos += v; else gastos += v;
             });
 
-            // Procesar Órdenes para Eficiencia
             snapOrdenes.forEach(doc => {
                 const ot = doc.data();
-                if (['FINALIZADA', 'ENTREGADO'].includes(ot.estado)) otTerminadas++;
-                else otActivas++;
-                
-                // Mapear servicios populares
-                const serv = ot.servicio || "General";
-                serviciosMasRentables[serv] = (serviciosMasRentables[serv] || 0) + 1;
+                const total = Number(ot.costos_totales?.total || 0);
+                if (['LISTO', 'ENTREGADO', 'FINALIZADA'].includes(ot.estado)) otTerminadas++;
+                else { otActivas++; rampa += total; }
             });
 
-            // Procesar Inventario (Capital Atrapado)
             snapInv.forEach(doc => {
-                const item = doc.data();
-                valorInventario += (Number(item.cantidad || 0) * Number(item.precioCosto || 0));
+                const it = doc.data();
+                invValor += (Number(it.cantidad || 0) * Number(it.precioCosto || 0));
             });
 
-            // 3. MOTOR DE INFERENCIA (Lógica de Decisión)
-            const utilidad = ingresosMes - gastosMes;
-            const saludFinanciera = ingresosMes > 0 ? (utilidad / ingresosMes) * 100 : 0;
-            const eficienciaRampa = (otTerminadas / (otActivas + otTerminadas || 1)) * 100;
+            const utilidad = ingresos - gastos;
+            const burnRateDiario = gastos / 30;
+            const salud = ingresos > 0 ? (utilidad / ingresos) * 100 : 0;
+            const eficiencia = (otTerminadas / (otActivas + otTerminadas || 1)) * 100;
 
-            const analisis = {
-                actual: ingresosMes,
-                utilidad: utilidad,
-                salud: saludFinanciera.toFixed(1),
-                eficiencia: eficienciaRampa.toFixed(1),
-                puntosCriticos: [
-                    { t: "Margen Operativo", v: `${saludFinanciera.toFixed(1)}%`, desc: utilidad > 0 ? "Flujo de caja saludable." : "Alerta de insolvencia operativa." },
-                    { t: "Capital en Bodega", v: `$${valorInventario.toLocaleString()}`, desc: "Valor total de repuestos en stock." }
-                ],
-                planMaestro: generarPlanMaestro(utilidad, eficienciaRampa, valorInventario)
-            };
+            // 3. MOTOR DE INFERENCIA: GENERACIÓN DE MISIONES
+            const misiones = [];
+            if (rampa > utilidad) {
+                misiones.push({
+                    id: "caja-rapida", nivel: "CRÍTICO", icon: "fa-bolt-lightning",
+                    t: "Operación 'Caja Rápida'",
+                    d: `Tienes $${rampa.toLocaleString()} atrapados en rampa. Liquidar 2 OT hoy incrementará la utilidad en un ${((rampa*0.2/utilidad)*100).toFixed(0)}%.`
+                });
+            }
+            if (invValor > utilidad * 1.5) {
+                misiones.push({
+                    id: "stock-auditoria", nivel: "ESTRATEGIA", icon: "fa-box-open",
+                    t: "Protocolo de Stock Pasivo",
+                    d: `El inventario ($${invValor.toLocaleString()}) supera tu utilidad neta. Pausa compras y prioriza repuestos internos.`
+                });
+            }
+            if (eficiencia < 70) {
+                misiones.push({
+                    id: "rampa-cuello", nivel: "OPERACIONES", icon: "fa-microchip",
+                    t: "Cuello de Botella Detectado",
+                    d: "La rampa se está moviendo lento. Revisa el rendimiento de técnicos con más de 3 órdenes pendientes."
+                });
+            }
+            if (misiones.length === 0) {
+                misiones.push({
+                    id: "crecimiento", nivel: "EXPANSIÓN", icon: "fa-rocket",
+                    t: "Crecimiento Exponencial",
+                    d: "Ecosistema saludable. Es el momento de invertir en pauta digital o expansión de servicios."
+                });
+            }
 
-            renderAnalisis(analisis);
-        } catch (e) { console.error("Error en Diagnóstico Forense:", e); }
+            renderPanel({ ingresos, utilidad, salud, eficiencia, misiones, burnRateDiario, invValor });
+
+        } catch (e) { console.error("Error en Nexus Command:", e); }
     };
 
-    const generarPlanMaestro = (utilidad, eficiencia, inventario) => {
-        const plan = [];
-        if (utilidad <= 0) plan.push({ fase: "URGENTE", accion: "Recortar gastos operativos no críticos y revisar costos de insumos." });
-        if (eficiencia < 60) plan.push({ fase: "OPERACIONES", accion: "Cuello de botella detectado en rampa. Optimizar tiempos de entrega." });
-        if (inventario > utilidad) plan.push({ fase: "ESTRATEGIA", accion: "Exceso de stock. Priorizar uso de repuestos propios en próximas OT." });
-        
-        // Plan por defecto si todo va bien
-        if (plan.length === 0) plan.push({ fase: "CRECIMIENTO", accion: "Invertir excedente en Taller Móvil y marketing localizado." });
-        
-        return plan.length >= 3 ? plan : [...plan, { fase: "NEXUS-X", accion: "Mantener monitoreo de KPIs en tiempo real." }];
-    };
-
-    const renderAnalisis = (data) => {
+    const renderPanel = (data) => {
         const panel = document.getElementById("panelIA");
         panel.innerHTML = `
             <div class="xl:col-span-8 space-y-10">
+                
                 <div class="bg-[#0d1117] p-12 rounded-[4rem] border border-white/5 relative overflow-hidden group shadow-2xl">
                     <div class="absolute -right-10 -top-10 text-cyan-500/5 text-9xl orbitron font-black italic">DATA</div>
-                    <h3 class="orbitron text-xs font-black text-cyan-400 mb-12 uppercase tracking-widest italic flex items-center gap-3">
+                    <h3 class="orbitron text-[10px] font-black text-cyan-400 mb-12 uppercase tracking-[0.3em] italic flex items-center gap-3">
                         <span class="w-2 h-2 bg-cyan-500 animate-ping rounded-full"></span> Auditoría de Bóveda & Salud Fiscal
                     </h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-16">
                         <div>
-                            <p class="text-[9px] text-slate-500 font-black uppercase mb-4 tracking-widest">Ingresos Reales Detectados</p>
-                            <h2 class="text-7xl font-black text-white orbitron italic tracking-tighter">$ ${data.actual.toLocaleString()}</h2>
+                            <p class="text-[9px] text-slate-500 font-black uppercase mb-4 tracking-widest italic">Recaudo Bruto Detectado</p>
+                            <h2 class="text-7xl font-black text-white orbitron italic tracking-tighter leading-none">$${data.ingresos.toLocaleString()}</h2>
                         </div>
                         <div class="relative border-l border-white/10 pl-12">
-                            <p class="text-[9px] text-amber-400 font-black uppercase mb-4 tracking-widest">Utilidad Neta (Libre)</p>
-                            <h2 class="text-6xl font-black ${data.utilidad >= 0 ? 'text-emerald-500' : 'text-red-500'} orbitron italic tracking-tighter opacity-80">$ ${data.utilidad.toLocaleString()}</h2>
-                            <span class="absolute right-0 top-0 text-[10px] bg-white/5 text-white px-3 py-1 rounded-full font-black uppercase">${data.salud}% MARGEN</span>
+                            <p class="text-[9px] text-amber-400 font-black uppercase mb-4 tracking-widest italic">Utilidad Neta Real</p>
+                            <h2 class="text-6xl font-black ${data.utilidad >= 0 ? 'text-emerald-500' : 'text-red-500'} orbitron italic tracking-tighter opacity-80">$${data.utilidad.toLocaleString()}</h2>
+                            <span class="absolute right-0 top-0 text-[10px] bg-white/10 text-cyan-400 px-4 py-2 rounded-full font-black uppercase orbitron">${data.salud.toFixed(1)}% MARGEN</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-[#0d1117] p-12 rounded-[4rem] border border-white/5">
-                    <h3 class="orbitron text-xs font-black text-white mb-10 uppercase tracking-widest italic">Acciones Recomendadas por IA</h3>
-                    <div class="space-y-6">
-                        ${data.planMaestro.map((step, i) => `
-                            <div class="flex items-center gap-8 p-6 bg-black/40 rounded-3xl border border-white/5 hover:border-cyan-500/30 transition-all">
-                                <div class="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center orbitron text-xs font-black text-cyan-500 border border-cyan-500/20">${i+1}</div>
-                                <div>
-                                    <p class="text-[8px] font-black text-slate-500 uppercase mb-1">${step.fase}</p>
-                                    <p class="text-sm font-bold text-slate-200 uppercase tracking-tight">${step.accion}</p>
-                                </div>
+                <div class="space-y-6">
+                    <h3 class="orbitron text-[11px] font-black text-white/50 uppercase tracking-[0.4em] italic mb-8">Misiones de Comando Gerencial</h3>
+                    ${data.misiones.map(m => `
+                        <div class="bg-[#0d1117] border border-white/5 p-8 rounded-[2.5rem] flex items-center gap-8 group hover:border-cyan-500/30 transition-all relative overflow-hidden shadow-xl">
+                            <div class="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center text-3xl transition-transform group-hover:scale-110">
+                                <i class="fas ${m.icon} ${m.nivel === 'CRÍTICO' ? 'text-red-500 animate-pulse' : 'text-cyan-400'}"></i>
                             </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-
-            <div class="xl:col-span-4 space-y-10">
-                <div class="bg-gradient-to-br from-cyan-600 to-blue-700 p-10 rounded-[4rem] text-white relative overflow-hidden group shadow-2xl">
-                    <i class="fas fa-microchip absolute -right-4 -bottom-4 text-8xl opacity-10 rotate-12 group-hover:scale-125 transition-transform"></i>
-                    <h4 class="orbitron text-[10px] font-black mb-8 uppercase tracking-widest">Eficiencia de Rampa</h4>
-                    <p class="text-5xl font-black orbitron mb-4">${data.eficiencia}%</p>
-                    <p class="text-[10px] font-black italic leading-tight uppercase opacity-80">"Comandante ${nombreUsuario}, el rendimiento del equipo técnico está en niveles ${Number(data.eficiencia) > 70 ? 'ÓPTIMOS' : 'CRÍTICOS'}."</p>
-                </div>
-
-                <div class="bg-[#0d1117] p-10 rounded-[4rem] border border-white/5">
-                    <h4 class="orbitron text-[10px] font-black text-slate-500 mb-8 uppercase tracking-widest italic">Diagnóstico de Activos</h4>
-                    ${data.puntosCriticos.map(p => `
-                        <div class="mb-6 p-6 bg-black/40 rounded-3xl border border-white/5">
-                            <p class="text-[8px] font-black text-cyan-400 uppercase mb-1">${p.t}</p>
-                            <p class="text-2xl font-black orbitron mb-2">${p.v}</p>
-                            <p class="text-[9px] text-slate-600 uppercase font-bold tracking-tighter">${p.desc}</p>
+                            <div class="flex-1">
+                                <span class="text-[9px] font-black uppercase px-3 py-1 rounded-full ${m.nivel === 'CRÍTICO' ? 'bg-red-500/10 text-red-500' : 'bg-cyan-500/10 text-cyan-400'} orbitron">
+                                    ${m.nivel}
+                                </span>
+                                <h4 class="text-2xl font-black mt-2 orbitron italic">${m.t}</h4>
+                                <p class="text-slate-400 text-sm mt-1 italic font-medium">${m.d}</p>
+                            </div>
+                            <button class="px-8 py-4 bg-white text-black text-[10px] font-black rounded-2xl hover:bg-cyan-500 hover:text-white transition-all uppercase orbitron">Ejecutar</button>
                         </div>
                     `).join('')}
                 </div>
             </div>
+
+            <div class="xl:col-span-4 space-y-10">
+                <div class="bg-gradient-to-br from-cyan-600 to-blue-900 p-10 rounded-[4rem] text-white relative overflow-hidden group shadow-2xl">
+                    <i class="fas fa-microchip absolute -right-4 -bottom-4 text-9xl opacity-10 rotate-12 group-hover:scale-125 transition-transform"></i>
+                    <h4 class="orbitron text-[10px] font-black mb-8 uppercase tracking-widest opacity-70 italic">Eficiencia de Rampa</h4>
+                    <p class="text-6xl font-black orbitron mb-4 italic tracking-tighter">${data.eficiencia.toFixed(1)}%</p>
+                    <div class="h-1.5 w-full bg-black/20 rounded-full overflow-hidden mb-6">
+                        <div class="h-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)]" style="width: ${data.eficiencia}%"></div>
+                    </div>
+                    <p class="text-[10px] font-bold italic leading-tight uppercase opacity-90">
+                        "Comandante ${nombreUsuario}, el rendimiento del equipo técnico está en niveles ${data.eficiencia > 75 ? 'ÓPTIMOS' : 'PARA REVISIÓN'}."
+                    </p>
+                </div>
+
+                <div class="bg-[#0d1117] p-10 rounded-[4rem] border border-white/5 space-y-6">
+                    <h4 class="orbitron text-[10px] font-black text-slate-500 mb-6 uppercase tracking-widest italic">Activos Inmovilizados</h4>
+                    
+                    <div class="p-6 bg-black/40 rounded-3xl border border-white/5">
+                        <p class="text-[9px] font-black text-cyan-400 uppercase mb-2">Capital en Bodega</p>
+                        <p class="text-3xl font-black orbitron italic text-white">$${data.invValor.toLocaleString()}</p>
+                        <p class="text-[8px] text-slate-600 uppercase mt-2 font-bold italic">Valoración total de repuestos</p>
+                    </div>
+
+                    <div class="p-6 bg-black/40 rounded-3xl border border-white/5">
+                        <p class="text-[9px] font-black text-red-400 uppercase mb-2">Burn Rate Diario</p>
+                        <p class="text-3xl font-black orbitron italic text-white">$${Math.round(data.burnRateDiario).toLocaleString()}</p>
+                        <p class="text-[8px] text-slate-600 uppercase mt-2 font-bold italic">Costo de existir (gastos/30)</p>
+                    </div>
+                </div>
+            </div>
         `;
 
+        // VOZ IA BRIEFING
         document.getElementById("btnVozIA").onclick = () => {
-            const mensaje = `Comandante ${nombreUsuario}. Reporte de telemetría listo. Tenemos una utilidad neta de ${data.utilidad} pesos con un margen de salud del ${data.salud} por ciento. La eficiencia en rampa es del ${data.eficiencia} por ciento. He actualizado el plan maestro con tres acciones inmediatas.`;
-            hablar(mensaje);
+            const msn = `Comandante ${nombreUsuario}. Reporte táctico listo. La utilidad neta es de ${Math.round(data.utilidad)} pesos con un margen de salud del ${data.salud.toFixed(0)} por ciento. He detectado ${data.misiones.length} misiones críticas para optimizar la caja. ¿Iniciamos la ejecución?`;
+            hablar(msn);
         };
     };
 
