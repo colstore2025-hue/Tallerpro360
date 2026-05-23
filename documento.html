@@ -179,10 +179,21 @@
                 }
                 
                 const orden = snap.data();
+                const empresaId = orden.empresaId || localStorage.getItem("nexus_empresaId") || "taller_003";
                 
-                // LÓGICA BLINDADA: No dependemos de colecciones externas para abrir.
+                // EXTRACTOR QUIRÚRGICO DE LOGO DESDE CONFIG.JS (BÓVEDA FIRESTORE DE LA EMPRESA)
+                let logoTaller = orden.taller_logo || "";
+                try {
+                    const snapConfig = await getDoc(doc(db, "config_empresas", empresaId));
+                    if (snapConfig.exists() && snapConfig.data().logo) {
+                        logoTaller = snapConfig.data().logo;
+                    }
+                } catch (errConfig) {
+                    console.log("Fallback activo: usando identidad inyectada en orden.");
+                }
+
                 const identity = {
-                    logo: orden.taller_logo || "",
+                    logo: logoTaller || orden.taller_logo || "",
                     nombre: orden.taller_nombre || "NEXUS_WORKSHOP",
                     nit: (orden.taller_nit || "---").toString().replace(/\./g, ""),
                     ws: orden.taller_ws || "---",
@@ -201,7 +212,7 @@
             document.getElementById("main-doc").classList.remove("hidden");
             document.getElementById("main-doc").className = `paper shadow-2xl theme-${tipoDoc}`;
 
-            // IDENTIDAD
+            // IDENTIDAD GRAPHIC COMPONENT
             document.getElementById("taller-nombre").innerText = c.nombre.toUpperCase();
             document.getElementById("taller-nit").innerText = "DATA_REG: " + c.nit.toUpperCase();
             document.getElementById("taller-ws").innerText = "LINK_COMMS: +57 " + c.ws;
