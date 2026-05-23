@@ -151,8 +151,8 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
@@ -172,33 +172,44 @@
         async function init() {
             if (!id) return;
             try {
+                // 1. OBTENER ORDEN DE TRABAJO
                 const snap = await getDoc(doc(db, "ordenes", id));
                 if (!snap.exists()) {
                     document.getElementById("loader").innerText = "❌ ERROR: MISIÓN NO ENCONTRADA";
                     return;
                 }
-                
                 const orden = snap.data();
-                const empresaId = orden.empresaId || localStorage.getItem("nexus_empresaId") || "taller_003";
                 
-                // EXTRACTOR QUIRÚRGICO DE LOGO DESDE CONFIG.JS (BÓVEDA FIRESTORE DE LA EMPRESA)
-                let logoTaller = orden.taller_logo || "";
-                try {
-                    const snapConfig = await getDoc(doc(db, "config_empresas", empresaId));
-                    if (snapConfig.exists() && snapConfig.data().logo) {
-                        logoTaller = snapConfig.data().logo;
+                // Extraer el ID de empresa dinámicamente de la orden o del localStorage
+                const empresaId = orden.empresaId || localStorage.getItem("nexus_empresaId");
+
+                // 2. CONEXIÓN DIRECTA CON BÓVEDA CONFIG.JS (COLECCIÓN: "empresas")
+                let identity = {
+                    logo: localStorage.getItem("nexus_empresaLogo") || orden.taller_logo || "",
+                    nombre: localStorage.getItem("nexus_empresaNombre") || orden.taller_nombre || "NEXUS_WORKSHOP",
+                    nit: (orden.taller_nit || "---").toString(),
+                    ws: orden.taller_ws || "---",
+                    boldKey: localStorage.getItem("nexus_bold_api_key") || orden.bold_api_key || ""
+                };
+
+                if (empresaId) {
+                    try {
+                        const snapEmpresa = await getDoc(doc(db, "empresas", empresaId));
+                        if (snapEmpresa.exists()) {
+                            const empData = snapEmpresa.data();
+                            identity.logo = empData.logo || identity.logo;
+                            identity.nombre = empData.nombre || identity.nombre;
+                            identity.nit = empData.nit || identity.nit;
+                            identity.ws = empData.whatsapp || identity.ws;
+                            identity.boldKey = empData.bold_api_key || identity.boldKey;
+                        }
+                    } catch (errEmpresa) {
+                        console.warn("⚠️ Telemetría de respaldo local activada:", errEmpresa);
                     }
-                } catch (errConfig) {
-                    console.log("Fallback activo: usando identidad inyectada en orden.");
                 }
 
-                const identity = {
-                    logo: logoTaller || orden.taller_logo || "",
-                    nombre: orden.taller_nombre || "NEXUS_WORKSHOP",
-                    nit: (orden.taller_nit || "---").toString().replace(/\./g, ""),
-                    ws: orden.taller_ws || "---",
-                    boldKey: orden.bold_api_key || ""
-                };
+                // Ajustar formato del NIT
+                identity.nit = identity.nit.replace(/\./g, "");
 
                 render(orden, identity);
             } catch (e) { 
@@ -212,7 +223,7 @@
             document.getElementById("main-doc").classList.remove("hidden");
             document.getElementById("main-doc").className = `paper shadow-2xl theme-${tipoDoc}`;
 
-            // IDENTIDAD GRAPHIC COMPONENT
+            // IDENTIDAD CORREGIDA SEGÚN CONFIG.JS
             document.getElementById("taller-nombre").innerText = c.nombre.toUpperCase();
             document.getElementById("taller-nit").innerText = "DATA_REG: " + c.nit.toUpperCase();
             document.getElementById("taller-ws").innerText = "LINK_COMMS: +57 " + c.ws;
@@ -222,6 +233,9 @@
                 logoImg.src = c.logo;
                 logoImg.classList.remove("hidden");
                 document.getElementById("logo-placeholder").classList.add("hidden");
+            } else {
+                logoImg.classList.add("hidden");
+                document.getElementById("logo-placeholder").classList.remove("hidden");
             }
 
             // EVIDENCIAS (WhatsApp vs Drive)
@@ -283,7 +297,7 @@
             document.getElementById("f-iva").innerText = `$ ${Math.round(iva).toLocaleString()}`;
             document.getElementById("f-total").innerText = `$ ${Math.round(total).toLocaleString()}`;
 
-            // BOTÓN DE PAGO
+            // BOTÓN DE PAGO DINÁMICO ASOCIADO AL BOLD_API_KEY
             const payBox = document.getElementById("nexus-payments");
             payBox.innerHTML = `
                 <button onclick="window.open('https://bold.co/pay/${c.boldKey}?amount=${Math.round(total)}&description=NXS_${o.placa}', '_blank')" 
