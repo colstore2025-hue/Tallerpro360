@@ -9,7 +9,7 @@
     <style>
         body { background-color: #05070a; color: #e2e8f0; font-family: 'Rajdhani', sans-serif; margin: 0; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        .paper { background: white; color: #1a1a1a; min-height: 29.7cm; width: 21cm; margin: 20px auto; padding: 1.5cm; position: relative; box-shadow: 0 0 80px rgba(6,182,212,0.2); }
+        .paper { background: white; color: #1a1a1a; min-height: 29.7cm; width: 21cm; margin: 20px auto; padding: 1.5cm; position: relative; box-shadow: 0 0 80px rgba(6,182,212,0.2); border-radius: 2rem; }
         
         .theme-cotizacion { border-top: 24px solid #fbbf24; } 
         .theme-orden { border-top: 24px solid #22d3ee; } 
@@ -22,7 +22,7 @@
         
         @media print { 
             body { background: white; } 
-            .paper { margin: 0; box-shadow: none; width: 100%; border-radius: 0; padding: 1cm; } 
+            .paper { margin: 0; box-shadow: none; width: 100%; border-radius: 0; padding: 1cm; border-top: none !important; } 
             .no-print { display: none !important; } 
         }
     </style>
@@ -37,7 +37,7 @@
 
     <div id="loader" class="flex flex-col items-center justify-center min-h-screen orbitron text-cyan-400">
         <div class="w-20 h-20 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p class="animate-pulse tracking-[0.5em]">SYNC_TELEMETRÍA_NEXUS_X</p>
+        <p id="loader-text" class="animate-pulse tracking-[0.5em]">SYNC_TELEMETRÍA_NEXUS_X</p>
     </div>
 
     <div id="main-doc" class="paper hidden">
@@ -72,7 +72,7 @@
             </div>
             <div class="bg-gray-50 p-8 rounded-[3rem] text-right border border-gray-200 shadow-inner">
                 <label class="text-[9px] font-black text-gray-400 block orbitron mb-1 tracking-[0.4em]">UNIDAD_TELEMETRÍA</label>
-                <p id="v-placa" class="text-6xl font-black orbitron text-gray-900 tracking-tighter leading-none">---</p>
+                <p id="v-placa" class="text-6xl font-black orbitron text-gray-900 tracking-tighter leading-none uppercase">---</p>
                 <p id="v-km" class="text-xs font-black text-cyan-700 orbitron italic mt-2">--- KM_LOGGED</p>
             </div>
         </div>
@@ -170,18 +170,24 @@
         const tipoDoc = (params.get("tipo") || "factura").toLowerCase();
 
         async function init() {
-            if (!id) return;
+            if (!id) {
+                document.getElementById("loader-text").innerText = "❌ ERROR: FALTA ID DE ORDEN";
+                return;
+            }
             try {
+                // 1. EXTRACTOR DE TELEMETRÍA DE LA ORDEN DE TRABAJO
                 const snap = await getDoc(doc(db, "ordenes", id));
                 if (!snap.exists()) {
-                    document.getElementById("loader").innerText = "❌ ERROR: MISIÓN NO ENCONTRADA";
+                    document.getElementById("loader-text").innerText = "❌ ERROR: ORDEN INEXISTENTE";
                     return;
                 }
-                
                 const orden = snap.data();
                 
-                // LÓGICA BLINDADA: No dependemos de colecciones externas para abrir.
-                const identity = {
+                // 2. ENRUTAMIENTO DINÁMICO GLOBAL DE IDENTIDAD (QUANTUM-SAP)
+                // Buscamos el token identificador del taller dentro de la propia orden de trabajo
+                const empresaIdDinamico = orden.empresaId || orden.id_empresa || localStorage.getItem("nexus_empresaId");
+
+                let identity = {
                     logo: orden.taller_logo || "",
                     nombre: orden.taller_nombre || "NEXUS_WORKSHOP",
                     nit: (orden.taller_nit || "---").toString().replace(/\./g, ""),
@@ -189,31 +195,52 @@
                     boldKey: orden.bold_api_key || ""
                 };
 
+                // Si la orden contiene la relación de empresa, cruzamos datos en vivo con config.js
+                if (empresaIdDinamico) {
+                    try {
+                        const snapEmpresa = await getDoc(doc(db, "empresas", empresaIdDinamico));
+                        if (snapEmpresa.exists()) {
+                            const empData = snapEmpresa.data();
+                            identity.logo = empData.logo || identity.logo;
+                            identity.nombre = empData.nombre || identity.nombre;
+                            identity.nit = empData.nit || identity.nit;
+                            identity.ws = empData.whatsapp || identity.ws;
+                            identity.boldKey = empData.bold_api_key || identity.boldKey;
+                        }
+                    } catch (errCruce) {
+                        console.warn("⚠️ Falló cruce en tiempo real. Usando datos internos del documento:", errCruce);
+                    }
+                }
+
+                // Ejecución de renderizado sin fallos
                 render(orden, identity);
             } catch (e) { 
                 console.error("Critical Failure:", e); 
-                document.getElementById("loader").innerText = "❌ ERROR_TELEMETRÍA";
+                document.getElementById("loader-text").innerText = "❌ CRITICAL_TELEMETRÍA_FAILURE";
             }
         }
 
         function render(o, c) {
             document.getElementById("loader").style.display = "none";
             document.getElementById("main-doc").classList.remove("hidden");
-            document.getElementById("main-doc").className = `paper shadow-2xl theme-${tipoDoc}`;
+            document.getElementById("main-doc").className = `paper theme-${tipoDoc}`;
 
-            // IDENTIDAD
+            // CONTROL DINÁMICO DE IDENTIDAD GLOBAL
             document.getElementById("taller-nombre").innerText = c.nombre.toUpperCase();
-            document.getElementById("taller-nit").innerText = "DATA_REG: " + c.nit.toUpperCase();
-            document.getElementById("taller-ws").innerText = "LINK_COMMS: +57 " + c.ws;
+            document.getElementById("taller-nit").innerText = "NIT: " + c.nit.toUpperCase();
+            document.getElementById("taller-ws").innerText = "COMMS: +57 " + c.ws;
             
             const logoImg = document.getElementById("doc-logo");
             if (c.logo && c.logo.length > 20) {
                 logoImg.src = c.logo;
                 logoImg.classList.remove("hidden");
                 document.getElementById("logo-placeholder").classList.add("hidden");
+            } else {
+                logoImg.classList.add("hidden");
+                document.getElementById("logo-placeholder").classList.remove("hidden");
             }
 
-            // EVIDENCIAS (WhatsApp vs Drive)
+            // ENLACE INTERACTIVO DE EVIDENCIAS DIGITALES
             const btnEvidence = document.getElementById("btn-evidence");
             const linkDrive = o.link_evidencia || o.google_drive_folder || o.link_drive;
 
@@ -223,22 +250,25 @@
                 document.getElementById("evidence-label").innerText = "SOLICITAR_REGISTRO_FOTOGRÁFICO";
                 document.getElementById("evidence-icon").innerText = "📲";
                 btnEvidence.onclick = () => {
-                    const msg = `Nexus_HQ: Solicito telemetría visual (Fotos/Video) de mi unidad Placa ${o.placa}. ID de Misión #${id.substring(0,6)}`;
+                    const msg = `Nexus_HQ: Solicito telemetría visual (Fotos/Video) de mi unidad Placa ${o.placa || '---'}. ID de Misión #${id.substring(0,6)}`;
                     window.open(`https://wa.me/57${c.ws}?text=${encodeURIComponent(msg)}`, '_blank');
                 };
             }
 
-            // DATOS GENERALES
+            // MAPEADO DE CAMPOS TÉCNICOS DE LA UNIDAD
             document.getElementById("doc-id").innerText = "#" + (id.split('_')[1] || id.substring(0,6));
             document.getElementById("doc-badge").innerText = tipoDoc.toUpperCase() + "_NEXUS_PROTOCOL";
-            document.getElementById("doc-fecha").innerText = "SINCRO_DATA_TIME: " + (o.fecha_formateada || new Date().toLocaleDateString());
+            document.getElementById("doc-fecha").innerText = "SINCRO: " + (o.fecha_formateada || new Date().toLocaleDateString());
 
             document.getElementById("v-cliente").innerText = (o.cliente || "USUARIO_FINAL").toUpperCase();
             document.getElementById("v-placa").innerText = (o.placa || "---").toUpperCase();
             document.getElementById("v-km").innerText = (o.km || o.kilometraje || "0") + " KM_LOGGED";
-            document.getElementById("v-bitacora").innerText = o.bitacora_ia || o.bitacora || "SISTEMAS NOMINALES. SIN NOVEDADES.";
+            
+            // Tratamiento de saltos de línea para la bitácora técnica
+            const bitacoraTexto = o.bitacora_ia || o.bitacora || "SISTEMAS NOMINALES. SIN NOVEDADES.";
+            document.getElementById("v-bitacora").innerHTML = bitacoraTexto.replace(/\n/g, "<br>");
 
-            // MOTOR FINANCIERO (TRIPLE FILTRO: Servicios, Repuestos, Items)
+            // ALGORITMO ACUMULADOR DE RUBROS (Servicios, Repuestos e Ítems generales)
             const tbody = document.getElementById("tabla-items");
             tbody.innerHTML = "";
             const listaItems = [...(o.servicios || []), ...(o.repuestos || []), ...(o.items || [])];
@@ -263,7 +293,7 @@
                     </tr>`;
             });
 
-            // FINANZAS
+            // LOGÍSTICA MATEMÁTICA Y DESGLOSE IMPOSITIVO
             const total = o.total || subtotalCalculado;
             const base = total / 1.19;
             const iva = total - base;
@@ -272,10 +302,10 @@
             document.getElementById("f-iva").innerText = `$ ${Math.round(iva).toLocaleString()}`;
             document.getElementById("f-total").innerText = `$ ${Math.round(total).toLocaleString()}`;
 
-            // BOTÓN DE PAGO
+            // PASARELA DE RECAUDO INTELIGENTE (Inyección Dinámica de API Key de Bold)
             const payBox = document.getElementById("nexus-payments");
             payBox.innerHTML = `
-                <button onclick="window.open('https://bold.co/pay/${c.boldKey}?amount=${Math.round(total)}&description=NXS_${o.placa}', '_blank')" 
+                <button onclick="window.open('https://bold.co/pay/${c.boldKey}?amount=${Math.round(total)}&description=NXS_${o.placa || 'OT'}', '_blank')" 
                     class="bg-red-600 hover:bg-red-700 text-white p-5 rounded-[1.5rem] font-black orbitron text-[10px] shadow-xl flex justify-between items-center px-10 transition-all active:scale-95 group">
                     EJECUTAR_PAGO_BOLD_⚡ <span class="group-hover:rotate-12 transition-transform">💳</span>
                 </button>
@@ -285,6 +315,7 @@
                 </button>
             `;
         }
+
         init();
     </script>
 </body>
