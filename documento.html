@@ -20,7 +20,6 @@
         
         .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 12rem; opacity: 0.02; font-family: 'Orbitron'; font-weight: 900; pointer-events: none; white-space: nowrap; }
         
-        /* Contenedor optimizado para listas largas (Evita scroll infinito del layout) */
         .table-container { max-height: 480px; overflow-y: auto; border: 2px solid #111827; border-radius: 2rem; }
 
         @media print {
@@ -173,6 +172,9 @@
         const id = params.get("id");
         const tipoDoc = (params.get("tipo") || "factura").toLowerCase();
 
+        // Raíz de almacenamiento global de evidencias en la nube
+        const GLOBAL_DRIVE_FALLBACK = "https://drive.google.com/drive/folders/1-51Jy7F0xN6ZLLB2dmI2U4XHrlR3AXGo";
+
         async function init() {
             if (!id) {
                 document.getElementById("loader-text").innerText = "❌ ERROR: FALTA ID DE ORDEN";
@@ -187,14 +189,16 @@
                 const orden = snap.data();
                 const empresaIdDinamico = orden.empresaId || orden.id_empresa || orden.taller_id || "taller_003";
 
+                // Mapeo inicial de redundancia estructural interna de la orden
                 let identity = {
                     logo: orden.taller_logo || orden.logo || "",
                     nombre: orden.taller_nombre || orden.nombre_taller || "NEXUS_WORKSHOP",
-                    nit: (orden.taller_nit || orden.nit || "---").toString(),
-                    ws: orden.taller_ws || orden.whatsapp || "---",
-                    boldKey: orden.bold_api_key || ""
+                    nit: orden.taller_nit || orden.nit || "",
+                    ws: orden.taller_ws || orden.whatsapp || "",
+                    boldKey: orden.bold_api_key || orden.boldKey || ""
                 };
 
+                // Cruce asíncrono mandatorio con el nodo principal "empresas"
                 if (empresaIdDinamico) {
                     try {
                         const snapEmpresa = await getDoc(doc(db, "empresas", empresaIdDinamico));
@@ -202,14 +206,18 @@
                             const empData = snapEmpresa.data();
                             identity.logo = empData.logo || identity.logo;
                             identity.nombre = empData.nombre || empData.razon_social || identity.nombre;
-                            identity.nit = (empData.nit || identity.nit).toString();
+                            identity.nit = empData.nit || empData.nit_taller || identity.nit;
                             identity.ws = empData.whatsapp || empData.telefono || identity.ws;
-                            identity.boldKey = empData.bold_api_key || identity.boldKey;
+                            identity.boldKey = empData.bold_api_key || empData.boldKey || identity.boldKey;
                         }
                     } catch (errCruce) {
-                        console.warn("⚠️ Falló cruce en tiempo real. Utilizando redundancia.", errCruce);
+                        console.warn("⚠️ Falló resolución externa de identidad. Aplicando fallbacks internos.", errCruce);
                     }
                 }
+
+                // Limpieza estructural de variables críticas para evitar rupturas de string
+                identity.nit = identity.nit ? identity.nit.toString().trim() : "---";
+                identity.ws = identity.ws ? identity.ws.toString().trim() : "---";
 
                 render(orden, identity);
             } catch (e) {
@@ -230,8 +238,9 @@
             const logoImg = document.getElementById("doc-logo");
             const placeholder = document.getElementById("logo-placeholder");
 
-            if (c.logo && (c.logo.startsWith("data:image") || c.logo.trim().length > 20)) {
-                logoImg.src = c.logo;
+            // Evaluación segura del String Base64 para evitar desbordamiento del layout
+            if (c.logo && c.logo.trim().length > 40) {
+                logoImg.src = c.logo.trim();
                 logoImg.classList.remove("hidden");
                 placeholder.classList.add("hidden");
             } else {
@@ -239,17 +248,16 @@
                 placeholder.classList.remove("hidden");
             }
 
+            // Gestión Inteligente de Repositorio de Evidencias (Quantum Cloud Drive Integration)
             const btnEvidence = document.getElementById("btn-evidence");
             const linkDrive = o.link_evidencia || o.google_drive_folder || o.link_drive;
 
             if (linkDrive && linkDrive.trim() !== "") {
-                btnEvidence.onclick = () => window.open(linkDrive, '_blank');
+                btnEvidence.onclick = () => window.open(linkDrive.trim(), '_blank');
             } else {
-                const placaIdentificador = (o.placa || "UNIDAD_NXS").toUpperCase();
                 document.getElementById("evidence-label").innerText = "ABRIR_SATELLITE_DRIVE_📂";
                 btnEvidence.onclick = () => {
-                    const msg = `Nexus_HQ_Log: Solicito acceso directo a la carpeta Drive de la unidad [Placa: ${placaIdentificador}].`;
-                    window.open(`https://wa.me/57${c.ws}?text=${encodeURIComponent(msg)}`, '_blank');
+                    window.open(GLOBAL_DRIVE_FALLBACK, '_blank');
                 };
             }
 
@@ -277,7 +285,6 @@
 
                 const desc = (i.desc || i.descripcion || i.nombre || "SERVICIO TÉCNICO").toUpperCase();
 
-                // Filas compactas con padding ajustado para optimizar espacio visual
                 const row = document.createElement("tr");
                 row.className = "border-b border-gray-100 hover:bg-cyan-50/30";
                 row.innerHTML = `
@@ -302,11 +309,12 @@
             const payBox = document.getElementById("nexus-payments");
             payBox.innerHTML = "";
 
-            if (c.boldKey && c.boldKey.trim() !== "") {
+            // Validación estricta y limpia de la pasarela Bold API
+            if (c.boldKey && c.boldKey.trim().length > 5) {
                 const boldBtn = document.createElement("button");
                 boldBtn.className = "w-full bg-red-600 hover:bg-red-700 text-white p-5 rounded-[1.5rem] font-black orbitron text-[10px] shadow-xl flex justify-between items-center px-10 transition-all active:scale-95 group";
                 boldBtn.innerHTML = `EJECUTAR_PAGO_BOLD_⚡ <span class="group-hover:rotate-12 transition-transform">💳</span>`;
-                boldBtn.onclick = () => window.open(`https://bold.co/pay/${c.boldKey}?amount=${Math.round(total)}&description=NXS_${o.placa || 'OT'}`, '_blank');
+                boldBtn.onclick = () => window.open(`https://bold.co/pay/${c.boldKey.trim()}?amount=${Math.round(total)}&description=NXS_${(o.placa || 'OT').toUpperCase()}`, '_blank');
                 payBox.appendChild(boldBtn);
             } else {
                 const alertDiv = document.createElement("div");
