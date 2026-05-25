@@ -183,36 +183,41 @@
                 }
                 const orden = snap.data();
                 
-                // 2. ENRUTAMIENTO DINÁMICO GLOBAL DE IDENTIDAD (QUANTUM-SAP)
-                // Buscamos el token identificador del taller dentro de la propia orden de trabajo
-                const empresaIdDinamico = orden.empresaId || orden.id_empresa || localStorage.getItem("nexus_empresaId");
+                // 2. ENRUTAMIENTO DINÁMICO GLOBAL DE IDENTIDAD (QUANTUM-SAP MAPPER)
+                // Extrae de forma flexible el id de la empresa vinculada
+                const empresaIdDinamico = orden.empresaId || orden.id_empresa || orden.taller_id || "taller_003";
 
+                // Valores base de contingencia (Fallback) extraídos de la orden
                 let identity = {
-                    logo: orden.taller_logo || "",
-                    nombre: orden.taller_nombre || "NEXUS_WORKSHOP",
-                    nit: (orden.taller_nit || "---").toString().replace(/\./g, ""),
-                    ws: orden.taller_ws || "---",
+                    logo: orden.taller_logo || orden.logo || "",
+                    nombre: orden.taller_nombre || orden.nombre_taller || "NEXUS_WORKSHOP",
+                    nit: (orden.taller_nit || orden.nit || "---").toString().replace(/\./g, ""),
+                    ws: orden.taller_ws || orden.whatsapp || "---",
                     boldKey: orden.bold_api_key || ""
                 };
 
-                // Si la orden contiene la relación de empresa, cruzamos datos en vivo con config.js
+                // Realiza el cruce en vivo con la colección maestra "empresas"
                 if (empresaIdDinamico) {
                     try {
                         const snapEmpresa = await getDoc(doc(db, "empresas", empresaIdDinamico));
                         if (snapEmpresa.exists()) {
                             const empData = snapEmpresa.data();
-                            identity.logo = empData.logo || identity.logo;
-                            identity.nombre = empData.nombre || identity.nombre;
-                            identity.nit = empData.nit || identity.nit;
-                            identity.ws = empData.whatsapp || identity.ws;
-                            identity.boldKey = empData.bold_api_key || identity.boldKey;
+                            
+                            // TRIPLE FILTRO DE CAMPOS DINÁMICOS PARA EL LOGO
+                            identity.logo = empData.logo || empData.taller_logo || empData.url_logo || identity.logo;
+                            
+                            // Filtro de campos para Razón Social y NIT
+                            identity.nombre = empData.nombre || empData.razon_social || empData.taller_nombre || identity.nombre;
+                            identity.nit = (empData.nit || empData.identificador_tributario || identity.nit).toString().replace(/\./g, "");
+                            identity.ws = empData.whatsapp || empData.telefono || empData.ws || identity.ws;
+                            identity.boldKey = empData.bold_api_key || empData.bold_key || identity.boldKey;
                         }
                     } catch (errCruce) {
-                        console.warn("⚠️ Falló cruce en tiempo real. Usando datos internos del documento:", errCruce);
+                        console.warn("⚠️ Falló cruce en tiempo real. Utilizando redundancia interna de la orden.", errCruce);
                     }
                 }
 
-                // Ejecución de renderizado sin fallos
+                // Renderizar el documento con los datos normalizados
                 render(orden, identity);
             } catch (e) { 
                 console.error("Critical Failure:", e); 
@@ -230,14 +235,17 @@
             document.getElementById("taller-nit").innerText = "NIT: " + c.nit.toUpperCase();
             document.getElementById("taller-ws").innerText = "COMMS: +57 " + c.ws;
             
+            // FILTRO DE VALIDACIÓN DE LOGO SEGURIZADO
             const logoImg = document.getElementById("doc-logo");
-            if (c.logo && c.logo.length > 20) {
+            const placeholder = document.getElementById("logo-placeholder");
+            
+            if (c.logo && c.logo.trim().length > 15) {
                 logoImg.src = c.logo;
                 logoImg.classList.remove("hidden");
-                document.getElementById("logo-placeholder").classList.add("hidden");
+                placeholder.classList.add("hidden");
             } else {
                 logoImg.classList.add("hidden");
-                document.getElementById("logo-placeholder").classList.remove("hidden");
+                placeholder.classList.remove("hidden");
             }
 
             // ENLACE INTERACTIVO DE EVIDENCIAS DIGITALES
@@ -264,7 +272,7 @@
             document.getElementById("v-placa").innerText = (o.placa || "---").toUpperCase();
             document.getElementById("v-km").innerText = (o.km || o.kilometraje || "0") + " KM_LOGGED";
             
-            // Tratamiento de saltos de línea para la bitácora técnica
+            // Formateo estricto de saltos de línea de la bitácora técnica de IA
             const bitacoraTexto = o.bitacora_ia || o.bitacora || "SISTEMAS NOMINALES. SIN NOVEDADES.";
             document.getElementById("v-bitacora").innerHTML = bitacoraTexto.replace(/\n/g, "<br>");
 
