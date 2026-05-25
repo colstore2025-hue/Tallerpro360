@@ -20,10 +20,14 @@ body { background-color: #05070a; color: #e2e8f0; font-family: 'Rajdhani', sans-
 
 .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 12rem; opacity: 0.02; font-family: 'Orbitron'; font-weight: 900; pointer-events: none; white-space: nowrap; }
 
+/* Contenedor optimizado para listas largas (Evita scroll infinito del layout) */
+.table-container { max-height: 480px; overflow-y: auto; border: 2px solid #111827; border-radius: 2rem; }
+
 @media print {
 body { background: white; }
 .paper { margin: 0; box-shadow: none; width: 100%; border-radius: 0; padding: 1cm; border-top: none !important; }
 .no-print { display: none !important; }
+.table-container { max-height: none; overflow: visible; border: none; }
 }
 </style>
 </head>
@@ -111,9 +115,9 @@ body { background: white; }
 </div>
 </div>
 
-<div class="mb-10 overflow-hidden rounded-[2rem] border-2 border-gray-900">
+<div class="mb-10 table-container">
 <table class="w-full text-sm">
-<thead class="bg-gray-900 orbitron text-[10px] text-white">
+<thead class="bg-gray-900 orbitron text-[10px] text-white sticky top-0 z-10">
 <tr>
 <th class="p-6 text-left tracking-[0.3em] uppercase">OPERACIÓN_TÉCNICA / SUMINISTROS</th>
 <th class="p-6 text-center">CANT</th>
@@ -171,44 +175,38 @@ document.getElementById("loader-text").innerText = "❌ ERROR: FALTA ID DE ORDEN
 return;
 }
 try {
-// 1. EXTRACTOR DE TELEMETRÍA DE LA ORDEN DE TRABAJO
 const snap = await getDoc(doc(db, "ordenes", id));
 if (!snap.exists()) {
 document.getElementById("loader-text").innerText = "❌ ERROR: ORDEN INEXISTENTE";
 return;
 }
 const orden = snap.data();
-
-// 2. ENRUTAMIENTO DINÁMICO GLOBAL DE IDENTIDAD (QUANTUM-SAP)
-// Buscamos el token identificador del taller dentro de la propia orden de trabajo
-const empresaIdDinamico = orden.empresaId || orden.id_empresa || localStorage.getItem("nexus_empresaId");
+const empresaIdDinamico = orden.empresaId || orden.id_empresa || orden.taller_id || "taller_003";
 
 let identity = {
-logo: orden.taller_logo || "",
-nombre: orden.taller_nombre || "NEXUS_WORKSHOP",
-nit: (orden.taller_nit || "---").toString().replace(/./g, ""),
-ws: orden.taller_ws || "---",
+logo: orden.taller_logo || orden.logo || "",
+nombre: orden.taller_nombre || orden.nombre_taller || "NEXUS_WORKSHOP",
+nit: (orden.taller_nit || orden.nit || "---").toString(),
+ws: orden.taller_ws || orden.whatsapp || "---",
 boldKey: orden.bold_api_key || ""
 };
 
-// Si la orden contiene la relación de empresa, cruzamos datos en vivo con config.js
 if (empresaIdDinamico) {
 try {
 const snapEmpresa = await getDoc(doc(db, "empresas", empresaIdDinamico));
 if (snapEmpresa.exists()) {
 const empData = snapEmpresa.data();
 identity.logo = empData.logo || identity.logo;
-identity.nombre = empData.nombre || identity.nombre;
-identity.nit = empData.nit || identity.nit;
-identity.ws = empData.whatsapp || identity.ws;
+identity.nombre = empData.nombre || empData.razon_social || identity.nombre;
+identity.nit = (empData.nit || identity.nit).toString();
+identity.ws = empData.whatsapp || empData.telefono || identity.ws;
 identity.boldKey = empData.bold_api_key || identity.boldKey;
 }
 } catch (errCruce) {
-console.warn("⚠️ Falló cruce en tiempo real. Usando datos internos del documento:", errCruce);
+console.warn("⚠️ Falló cruce en tiempo real. Utilizando redundancia.", errCruce);
 }
 }
 
-// Ejecución de renderizado sin fallos
 render(orden, identity);
 } catch (e) {
 console.error("Critical Failure:", e);
@@ -221,38 +219,36 @@ document.getElementById("loader").style.display = "none";
 document.getElementById("main-doc").classList.remove("hidden");
 document.getElementById("main-doc").className = paper theme-${tipoDoc}`;
 
-// CONTROL DINÁMICO DE IDENTIDAD GLOBAL
 document.getElementById("taller-nombre").innerText = c.nombre.toUpperCase();
 document.getElementById("taller-nit").innerText = "NIT: " + c.nit.toUpperCase();
 document.getElementById("taller-ws").innerText = "COMMS: +57 " + c.ws;
 
 const logoImg = document.getElementById("doc-logo");
-if (c.logo && c.logo.length > 20) {
+const placeholder = document.getElementById("logo-placeholder");
+
+if (c.logo && (c.logo.startsWith("data:image") || c.logo.trim().length > 20)) {
 logoImg.src = c.logo;
 logoImg.classList.remove("hidden");
-document.getElementById("logo-placeholder").classList.add("hidden");
+placeholder.classList.add("hidden");
 } else {
 logoImg.classList.add("hidden");
-document.getElementById("logo-placeholder").classList.remove("hidden");
+placeholder.classList.remove("hidden");
 }
 
-// ENLACE INTERACTIVO DE EVIDENCIAS DIGITALES
 const btnEvidence = document.getElementById("btn-evidence");
 const linkDrive = o.link_evidencia || o.google_drive_folder || o.link_drive;
 
-if (linkDrive) {
+if (linkDrive && linkDrive.trim() !== "") {
 btnEvidence.onclick = () => window.open(linkDrive, '_blank');
 } else {
-document.getElementById("evidence-label").innerText = "SOLICITAR_REGISTRO_FOTOGRÁFICO";
-document.getElementById("evidence-icon").innerText = "📲";
+const placaIdentificador = (o.placa || "UNIDAD_NXS").toUpperCase();
+document.getElementById("evidence-label").innerText = "ABRIR_SATELLITE_DRIVE_📂";
 btnEvidence.onclick = () => {
-const msg = Nexus_HQ: Solicito telemetría visual (Fotos/Video) de mi unidad Placa ${o.placa || '---'}. ID de Misión #${id.substring(0,6)};
-window.open(https://wa.me/57${c.ws}?text=${encodeURIComponent(msg)}, '_blank');
+const msg = Nexus_HQ_Log: Solicito acceso directo a la carpeta Drive de la unidad [Placa: ${placaIdentificador}].; window.open(https://wa.me/57${c.ws}?text=${encodeURIComponent(msg)}`, '_blank');
 };
 }
 
-// MAPEADO DE CAMPOS TÉCNICOS DE LA UNIDAD
-document.getElementById("doc-id").innerText = "#" + (id.split('_')[1] || id.substring(0,6));
+document.getElementById("doc-id").innerText = "#" + (id.split('_')[1] || id.substring(0, 6));
 document.getElementById("doc-badge").innerText = tipoDoc.toUpperCase() + "_NEXUS_PROTOCOL";
 document.getElementById("doc-fecha").innerText = "SINCRO: " + (o.fecha_formateada || new Date().toLocaleDateString());
 
@@ -260,11 +256,9 @@ document.getElementById("v-cliente").innerText = (o.cliente || "USUARIO_FINAL").
 document.getElementById("v-placa").innerText = (o.placa || "---").toUpperCase();
 document.getElementById("v-km").innerText = (o.km || o.kilometraje || "0") + " KM_LOGGED";
 
-// Tratamiento de saltos de línea para la bitácora técnica
 const bitacoraTexto = o.bitacora_ia || o.bitacora || "SISTEMAS NOMINALES. SIN NOVEDADES.";
 document.getElementById("v-bitacora").innerHTML = bitacoraTexto.replace(/\n/g, "<br>");
 
-// ALGORITMO ACUMULADOR DE RUBROS (Servicios, Repuestos e Ítems generales)
 const tbody = document.getElementById("tabla-items");
 tbody.innerHTML = "";
 const listaItems = [...(o.servicios || []), ...(o.repuestos || []), ...(o.items || [])];
@@ -278,24 +272,46 @@ subtotalCalculado += itemTotal;
 
 const desc = (i.desc || i.descripcion || i.nombre || "SERVICIO TÉCNICO").toUpperCase();
 
-tbody.innerHTML += &lt;tr class="border-b border-gray-100 hover:bg-cyan-50/30"&gt; &lt;td class="p-6"&gt; &lt;span class="block text-gray-900"&gt;${desc}</span>
+// Filas compactas con padding ajustado para optimizar espacio visual
+const row = document.createElement("tr");
+row.className = "border-b border-gray-100 hover:bg-cyan-50/30";
+row.innerHTML = &lt;td class="p-4 text-left"&gt; &lt;span class="block text-gray-900"&gt;${desc}</span>
 <span class="text-[9px] text-gray-400 font-mono tracking-widest italic uppercase">Verified_Task</span>
 </td>
-<td class="p-6 text-center font-mono text-gray-500">${cant}&lt;/td&gt; &lt;td class="p-6 text-right font-black font-mono text-gray-900"&gt;$${itemTotal.toLocaleString()}&lt;/td&gt; &lt;/tr>;
+<td class="p-4 text-center font-mono text-gray-500">  ${itemTotal.toLocaleString()}&lt;/td&gt;;
+tbody.appendChild(row);
 });
 
-// LOGÍSTICA MATEMÁTICA Y DESGLOSE IMPOSITIVO
-const total = o.total || subtotalCalculado;
+const total = Number(o.total || subtotalCalculado);
 const base = total / 1.19;
 const iva = total - base;
 
-document.getElementById("f-subtotal").innerText = $${Math.round(base).toLocaleString()};
-document.getElementById("f-iva").innerText = $${Math.round(iva).toLocaleString()};
-document.getElementById("f-total").innerText = $${Math.round(total).toLocaleString()};
+document.getElementById("f-subtotal").innerText = $ $`{Math.round(base).toLocaleString()}`; document.getElementById("f-iva").innerText =$   ${Math.round(total).toLocaleString()};
 
-// PASARELA DE RECAUDO INTELIGENTE (Inyección Dinámica de API Key de Bold)
 const payBox = document.getElementById("nexus-payments");
-payBox.innerHTML = &lt;button onclick="window.open('https://bold.co/pay/${c.boldKey}?amount=${Math.round(total)}&description=NXS_${o.placa || 'OT'}', '_blank')" class="bg-red-600 hover:bg-red-700 text-white p-5 rounded-[1.5rem] font-black orbitron text-[10px] shadow-xl flex justify-between items-center px-10 transition-all active:scale-95 group"&gt; EJECUTAR_PAGO_BOLD_⚡ &lt;span class="group-hover:rotate-12 transition-transform"&gt;💳&lt;/span&gt; &lt;/button&gt; &lt;button onclick="alert('CIERRE_NODO: REGISTRO DE EFECTIVO COMPLETADO.')" class="bg-emerald-600 hover:bg-emerald-700 text-white p-5 rounded-[1.5rem] font-black orbitron text-[10px] shadow-xl flex justify-between items-center px-10 transition-all active:scale-95 group"&gt; CONFIRMAR_EFECTIVO_💵 &lt;span class="group-hover:scale-110 transition-transform"&gt;✅&lt;/span&gt; &lt;/button&gt;;
+payBox.innerHTML = "";
+
+if (c.boldKey && c.boldKey.trim() !== "") {
+const boldBtn = document.createElement("button");
+boldBtn.className = "w-full bg-red-600 hover:bg-red-700 text-white p-5 rounded-[1.5rem] font-black orbitron text-[10px] shadow-xl flex justify-between items-center px-10 transition-all active:scale-95 group";
+boldBtn.innerHTML = EJECUTAR_PAGO_BOLD_⚡ &lt;span class="group-hover:rotate-12 transition-transform"&gt;💳&lt;/span>;
+boldBtn.onclick = () => window.open(https://bold.co/pay/${c.boldKey}?amount=latex
+{Math.round(total)}&description=NXS_
+
+{o.placa || 'OT'}`, '_blank');
+payBox.appendChild(boldBtn);
+} else {
+const alertDiv = document.createElement("div");
+alertDiv.className = "bg-gray-950/20 text-gray-400 p-4 rounded-[1.5rem] font-mono text-[10px] text-center uppercase italic border border-gray-200/60";
+alertDiv.innerText = "⚠️ PASARELA_BOLD_PENDIENTE_DE_CONFIGURACIÓN";
+payBox.appendChild(alertDiv);
+}
+
+const cashBtn = document.createElement("button");
+cashBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white p-5 rounded-[1.5rem] font-black orbitron text-[10px] shadow-xl flex justify-between items-center px-10 transition-all active:scale-95 group mt-2";
+cashBtn.innerHTML = CONFIRMAR_EFECTIVO_💵 &lt;span class="group-hover:scale-110 transition-transform"&gt;✅&lt;/span>;
+cashBtn.onclick = () => alert('CIERRE_NODO: REGISTRO DE EFECTIVO COMPLETADO.');
+payBox.appendChild(cashBtn);
 }
 
 init();
