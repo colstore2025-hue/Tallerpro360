@@ -183,7 +183,7 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
         cargarEscuchaOrdenes();
     };
 
-    const renderTerminal = () => {
+        const renderTerminal = () => {
         const modal = document.getElementById("nexus-terminal");
         modal.innerHTML = `
         <div class="max-w-[1600px] mx-auto pb-40 animate-in zoom-in duration-300">
@@ -213,14 +213,14 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
                         <h4 class="orbitron font-black text-cyan-500 text-[11px] mb-6 uppercase">Expediente Cliente</h4>
                         <input id="f-cliente" value="${ordenActiva.cliente || ''}" placeholder="CLIENTE" class="w-full bg-black p-4 mb-4 text-white font-black uppercase text-xs border border-white/10 rounded-xl">
                         <input id="f-telefono" value="${ordenActiva.telefono || ''}" placeholder="WHATSAPP (+57)" class="w-full bg-black p-4 mb-6 text-green-400 font-bold border border-white/10 rounded-xl">
-<div class="mb-6 p-4 bg-black/40 border border-cyan-500/20 rounded-xl">
-    <label class="orbitron text-[8px] text-cyan-400 block mb-2 font-black uppercase">🛰️ Telemetría Drive (Auto-Link)</label>
-    <input id="f-link-drive" 
-           value="${ordenActiva.documentos?.trazabilidad_url || ''}" 
-           placeholder="LINK GENERADO AL SINCRONIZAR" 
-           readonly 
-           class="w-full bg-transparent text-[9px] text-slate-400 font-mono border-none outline-none italic">
-</div>
+                        <div class="mb-6 p-4 bg-black/40 border border-cyan-500/20 rounded-xl">
+                            <label class="orbitron text-[8px] text-cyan-400 block mb-2 font-black uppercase">🛰️ Telemetría Drive (Auto-Link)</label>
+                            <input id="f-link-drive" 
+                                   value="${ordenActiva.documentos?.trazabilidad_url || ''}" 
+                                   placeholder="LINK GENERADO AL SINCRONIZAR" 
+                                   readonly 
+                                   class="w-full bg-transparent text-[9px] text-slate-400 font-mono border-none outline-none italic">
+                        </div>
                         <div class="grid grid-cols-3 gap-2">
                             <button onclick="window.enviarNotificacionNexus('INGRESO')" class="py-3 bg-green-600/10 text-green-500 orbitron text-[8px] font-black rounded-lg border border-green-600/20">ENTRY_WA</button>
                             <button onclick="window.enviarNotificacionNexus('UPDATE')" class="py-3 bg-cyan-600/10 text-cyan-500 orbitron text-[8px] font-black rounded-lg border border-cyan-600/20">QUOTE_WA</button>
@@ -229,14 +229,14 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
                     </div>
                     <div id="pricing-engine-container" class="bg-white/5 p-8 border border-white/5 rounded-3xl"></div>
                     <div class="bg-black p-8 border border-red-600/20 rounded-3xl relative">
-    <textarea id="ai-log-display" 
-        oninput="window.syncBitacoraLive(this.value)" 
-        class="w-full bg-transparent text-slate-300 text-xs h-32 outline-none font-mono" 
-        placeholder="Escuchando voz técnica...">${ordenActiva.bitacora_ia || ''}</textarea>
-    <button onclick="window.nexusDictarBitacora()" class="absolute bottom-6 right-6 w-12 h-12 bg-white text-black rounded-full shadow-2xl">
-        <i class="fas fa-microphone"></i>
-    </button>
-</div>
+                        <textarea id="ai-log-display" 
+                            oninput="window.syncBitacoraLive(this.value)" 
+                            class="w-full bg-transparent text-slate-300 text-xs h-32 outline-none font-mono" 
+                            placeholder="Escuchando voz técnica...">${ordenActiva.bitacora_ia || ''}</textarea>
+                        <button onclick="window.nexusDictarBitacora()" class="absolute bottom-6 right-6 w-12 h-12 bg-white text-black rounded-full shadow-2xl">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="lg:col-span-8 space-y-8">
@@ -245,6 +245,18 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
                             <h2 id="total-factura" class="orbitron text-[8rem] font-black text-white italic leading-none">$ 0</h2>
                             <div id="finance-summary" class="w-80"></div>
                         </div>
+
+                        <div class="mb-6 p-5 bg-slate-950/80 rounded-2xl border border-cyan-500/30 flex items-center justify-between shadow-[0_0_20px_rgba(6,182,212,0.05)]">
+                            <div>
+                                <h4 class="orbitron text-[11px] font-black text-cyan-400 tracking-wider">QUANTUM_VISION_OCR</h4>
+                                <p class="text-[10px] italic text-slate-400 uppercase">Procesamiento inmediato de facturas y soportes de repuestos</p>
+                            </div>
+                            <label class="bg-cyan-500 hover:bg-white text-black font-black py-3 px-5 rounded-xl cursor-pointer orbitron text-[10px] tracking-wider transition-all duration-300 flex items-center gap-2 shadow-[0_4px_15px_rgba(6,182,212,0.2)]">
+                                <span id="lbl-vision-status">ESC_FOTO_RECIBO_📸</span>
+                                <input type="file" id="ai-gasto-file-direct" accept="image/*" class="hidden" onchange="window.ejecutarFlujoVisionDirecto(this)">
+                            </label>
+                        </div>
+
                         <div id="items-container" class="space-y-4 max-h-[400px] overflow-y-auto pr-4 custom-scroll"></div>
                         <div class="grid grid-cols-3 gap-4 mt-12">
                             <button onclick="window.agregarDesdeInventario()" class="py-6 border-2 border-cyan-500/50 orbitron text-[10px] font-black text-cyan-400 hover:bg-cyan-500 hover:text-black transition-all rounded-2xl"><i class="fas fa-search text-xl"></i> LUPA STOCK</button>
@@ -265,6 +277,105 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
         document.getElementById("btnCloseTerminal").onclick = () => document.getElementById("nexus-terminal").classList.add("hidden");
         document.getElementById("btnSincronizar").onclick = ejecutarSincronizacionTotal;
         recalcularFinanzas();
+    };
+
+    // MOTOR DE EXTRACCIÓN TELEMÉTRICA MULTIMODAL GEMINI
+    window.ejecutarFlujoVisionDirecto = async (inputElement) => {
+        const file = inputElement.files[0];
+        if (!file) return;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const idOrdenActiva = ordenActiva.id || urlParams.get("id");
+
+        if (!idOrdenActiva || idOrdenActiva === "PENDIENTE") {
+            Swal.fire({ 
+                title: '🚨 SYNC_REQUIRED', 
+                text: 'Guarde u organice la orden en la nube antes de escanear soportes físicos.', 
+                icon: 'warning', background: '#0d1117', color: '#06b6d4' 
+            });
+            inputElement.value = "";
+            return;
+        }
+
+        const lblStatus = document.getElementById("lbl-vision-status");
+        const originalText = lblStatus.innerText;
+        lblStatus.innerText = "IA_ANALIZANDO_🛰️";
+        inputElement.disabled = true;
+
+        try {
+            // Conversión nativa limpia del archivo a Base64 sin romper hilos de ejecución
+            const base64Convert = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve({ base64: reader.result.split(',')[1], type: file.type || "image/jpeg" });
+                reader.onerror = error => reject(error);
+            });
+
+            // Payload optimizado con instrucciones estrictas de salida JSON estructurada
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: "Analiza minuciosamente este recibo, remisión o factura de repuestos de taller mecánico. Extrae el nombre simplificado del repuesto o servicio principal (máximo 40 caracteres en MAYÚSCULAS), la cantidad exacta y el valor neto total facturado. Devuelve EXCLUSIVAMENTE un objeto JSON plano sin bloques markdown ni texto explicativo, con este esquema: {\"descripcion\": \"TXT\", \"cantidad\": 1, \"precio\": 100}" },
+                        { inlineData: { mimeType: base64Convert.type, data: base64Convert.base64 } }
+                    ]
+                }],
+                generationConfig: { responseMimeType: "application/json" }
+            };
+
+            const response = await fetch(GEMINI_ENDPOINT, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error("Fallo de comunicación en la capa analítica de la IA.");
+
+            const resData = await response.json();
+            const rawText = resData.candidates[0].content.parts[0].text;
+            const dataExtraida = JSON.parse(rawText);
+
+            if (dataExtraida && dataExtraida.precio) {
+                // Inyección atómica respetando la estructura de costos e ítems del Titan Core
+                const nuevoItemOcr = {
+                    tipo: "REPUESTO",
+                    desc: `AI: ${dataExtraida.descripcion.toUpperCase().trim()}`,
+                    costo: Number(dataExtraida.precio),
+                    venta: analizarPrecioSugerido({ tipo: "repuesto", costo: Number(dataExtraida.precio) }) || Number(dataExtraida.precio),
+                    cantidad: Number(dataExtraida.cantidad || 1),
+                    origen: "TALLER",
+                    tecnico: "VISION_AI_SYSTEM",
+                    fecha: new Date().toISOString()
+                };
+
+                ordenActiva.items.push(nuevoItemOcr);
+                hablar(`Repuesto ${dataExtraida.descripcion} procesado por inteligencia artificial`);
+                
+                // Recálculo financiero inmediato y refresco de tabla en caliente
+                recalcularFinanzas();
+                Swal.fire({
+                    title: '🛰️ QUANTUM_OCR_OK',
+                    text: `DETECTOR DE VISIÓN: ${nuevoItemOcr.desc} | INYECTADO: $${nuevoItemOcr.costo.toLocaleString()}`,
+                    icon: 'success', background: '#0d1117', color: '#06b6d4', confirmButtonColor: '#06b6d4'
+                });
+            } else {
+                Swal.fire({
+                    title: '⚠️ DATA_NOT_FOUND',
+                    text: 'La IA procesó el documento pero no localizó un formato contable o de precios coherente.',
+                    icon: 'warning', background: '#0d1117', color: '#fbbf24'
+                });
+            }
+        } catch (error) {
+            console.error("❌ Fallo crítico en módulo Vision AI:", error);
+            Swal.fire({
+                title: '🚨 VISION_CORE_ERROR',
+                text: 'Error de análisis óptico. Verifique la nitidez de la captura o la vigencia de su llave de IA Studio.',
+                icon: 'error', background: '#0d1117', color: '#f87171'
+            });
+        } finally {
+            lblStatus.innerText = originalText;
+            inputElement.disabled = false;
+            inputElement.value = "";
+        }
     };
 
     window.agregarDesdeInventario = async () => {
