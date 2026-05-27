@@ -12,6 +12,11 @@ import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 import { analizarPrecioSugerido, renderModuloPricing } from "../ai/pricingEnginePRO360.js";
 
+/ CONFIGURACIÓN MAESTRA DEL CEREBRO DE VISIÓN DIRECTA (PLAN GRATUITO - COSTO $0)
+// Coloca tu API Key de Google AI Studio aquí para activar el escaneo cuántico de recibos
+const GEMINI_API_KEY = "TU_GEMINI_API_KEY_AQUI"; 
+const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
 const NEXUS_ASCENSOR = {
     MECANICA: { label: 'Mecánica', color: '#06b6d4', icon: 'fa-tools' },
     LATONERIA_PINTURA: { label: 'Latonería y Pintura', color: '#fbbf24', icon: 'fa-paint-roller' },
@@ -29,6 +34,17 @@ export default async function ordenes(container) {
     if (!empresaId) {
         container.innerHTML = `<div class="p-10 orbitron text-red-500">ERROR: NO_EMPRESA_ID_DETECTED</div>`;
         return;
+    }
+
+ // Carga asíncrona inmediata de la parametrización de la empresa (NIT, Logo, Nombre Comercial)
+    try {
+        const empSnap = await getDoc(doc(db, "empresas", empresaId));
+        if (empSnap.exists()) {
+            datosEmpresaGlobal = empSnap.data();
+            console.log("🛰️ CONFIG_EMPRESA_LOADED -> NIT:", datosEmpresaGlobal.nit);
+        }
+    } catch (err) {
+        console.error("🚨 ERROR AL RECUPERAR METADATOS DE EMPRESA:", err);
     }
 
     const recalcularFinanzas = () => {
