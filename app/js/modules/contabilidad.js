@@ -263,7 +263,7 @@ export default async function contabilidad(container) {
         </div>`;
     }
 
-    function renderStatCard(title, val, color, sub) {
+        function renderStatCard(title, val, color, sub) {
         return `<div class="p-8 bg-black/40 rounded-[2.5rem] border border-white/5 shadow-inner group hover:border-cyan-500/20 transition-all">
             <p class="text-[9px] orbitron ${color} mb-2 uppercase font-black tracking-widest">${title}</p>
             <span class="text-3xl font-black orbitron ${color}">$ ${val.toLocaleString()}</span>
@@ -271,5 +271,55 @@ export default async function contabilidad(container) {
         </div>`;
     }
 
+    // =========================================================================
+    // 🛰️ ANEXO QUIRÚRGICO QUANTUM-SAP: RECEPTOR PASIVO DE TELEMETRÍA ÓPTICA
+    // =========================================================================
+    window.addEventListener("NEXUS_QUANTUM_VISION_BURST", (e) => {
+        const datosVision = e.detail;
+        
+        // El módulo de contabilidad sintoniza la frecuencia si se detecta un gasto o factura externa
+        if (datosVision && datosVision.tipoDocumento === "FACTURA_PROVEEDOR") {
+            
+            // 1. Selección y asignación automática del PUC para compras/insumos
+            const selectTipo = document.getElementById("acc-tipo");
+            if (selectTipo) {
+                selectTipo.value = "compra_repuestos"; // Forzamos por defecto al nodo 5195
+            }
+
+            // 2. Sincronización del valor numérico limpio extraído por el OCR
+            const inputMonto = document.getElementById("acc-monto");
+            if (inputMonto && datosVision.monto > 0) {
+                inputMonto.value = datosVision.monto;
+            }
+
+            // 3. Estructuración del concepto contable con metadatos del proveedor
+            const inputConcepto = document.getElementById("acc-concepto");
+            if (inputConcepto) {
+                const nitInfo = datosVision.nit ? ` | NIT: ${datosVision.nit}` : "";
+                const refInfo = datosVision.referencia ? ` | REF: ${datosVision.referencia}` : "";
+                inputConcepto.value = `COMPRA_INSUMOS_OCR${nitInfo}${refInfo}`;
+            }
+
+            // 4. Mapeo de placa administrativa o asignación si la factura la incluye
+            const inputPlaca = document.getElementById("acc-placa");
+            if (inputPlaca) {
+                inputPlaca.value = datosVision.placa || "ADMIN";
+            }
+
+            // Notificación auditiva y visual de telemetría exitosa en el ecosistema contable
+            hablar("Factura detectada de forma óptica. Datos cargados en precierre.");
+            
+            Swal.fire({
+                title: '🛰️ CONT_NEXUS_LINK',
+                text: `GASTO DETECTADO: $${datosVision.monto.toLocaleString()} | LISTO PARA SINCRONIZAR`,
+                icon: 'success',
+                background: '#05070a',
+                color: '#fff',
+                confirmButtonColor: '#06b6d4'
+            });
+        }
+    });
+
     renderLayout();
-}
+} // <-- ESTA ES LA ÚLTIMA LLAVE INTACTA QUE CIERRA LA FUNCIÓN PRINCIPAL DEL MÓDULO
+
