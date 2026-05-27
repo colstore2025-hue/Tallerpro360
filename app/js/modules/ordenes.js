@@ -623,31 +623,87 @@ const cargarEscuchaOrdenes = () => {
     });
 };
 
-    window.updateItem = (idx, campo, val) => { ordenActiva.items[idx][campo] = (campo==='costo'||campo==='venta'||campo==='cantidad')?Number(val):val; recalcularFinanzas(); };
-    window.removeItemNexus = (idx) => { if(confirm("¿Eliminar?")) { ordenActiva.items.splice(idx, 1); recalcularFinanzas(); } };
-    window.nexusEscuchaPlaca = () => { if(!recognition) return; recognition.start(); hablar("Placa"); recognition.onresult = (e) => { document.getElementById('f-placa').value = e.results[0][0].transcript.replace(/\s/g, '').toUpperCase(); }; };
-    window.nexusDictarBitacora = () => { if(!recognition) return; recognition.start(); hablar("Dicte hallazgo"); recognition.onresult = (e) => { document.getElementById('ai-log-display').value += `\n[${new Date().toLocaleTimeString()}] ${e.results[0][0].transcript.toUpperCase()}`; }; };
-    window.cambiarEstado = async (n) => { if(!ordenActiva.id) return; await setDoc(doc(db, "ordenes", ordenActiva.id), { estado: n, updatedAt: serverTimestamp() }, { merge: true }); hablar(`Fase ${n}`); };
+        window.updateItem = (idx, campo, val) => { 
+        ordenActiva.items[idx][campo] = (campo === 'costo' || campo === 'venta' || campo === 'cantidad') ? Number(val) : val; 
+        recalcularFinanzas(); 
+    };
+
+    window.removeItemNexus = (idx) => { 
+        if (confirm("¿Eliminar?")) { 
+            ordenActiva.items.splice(idx, 1); 
+            recalcularFinanzas(); 
+        } 
+    };
+
+    window.nexusEscuchaPlaca = () => { 
+        if (!recognition) return; 
+        recognition.start(); 
+        hablar("Placa"); 
+        recognition.onresult = (e) => { 
+            document.getElementById('f-placa').value = e.results[0][0].transcript.replace(/\s/g, '').toUpperCase(); 
+        }; 
+    };
+
+    window.nexusDictarBitacora = () => { 
+        if (!recognition) return; 
+        recognition.start(); 
+        hablar("Dicte hallazgo"); 
+        recognition.onresult = (e) => { 
+            document.getElementById('ai-log-display').value += `\n[${new Date().toLocaleTimeString()}] ${e.results[0][0].transcript.toUpperCase()}`; 
+        }; 
+    };
+
+    window.cambiarEstado = async (n) => { 
+        if (!ordenActiva.id) return; 
+        await setDoc(doc(db, "ordenes", ordenActiva.id), { estado: n, updatedAt: serverTimestamp() }, { merge: true }); 
+        hablar(`Fase ${n}`); 
+    };
 
     window.addItemNexus = async (tipo) => {
         let origen = 'TALLER', tec = 'INTERNO', costo = 0, venta = 0;
-        if (tipo === 'REPUESTO') { const { value: r } = await Swal.fire({ title: 'ORIGEN', input: 'select', inputOptions: { 'TALLER': 'Stock', 'CLIENTE': 'Cliente' }, background: '#0d1117', color: '#fff' }); origen = r || 'TALLER'; }
-        else { const { value: c } = await Swal.fire({ title: 'COSTO LABOR', input: 'number', background: '#0d1117', color: '#fff' }); costo = Number(c || 0); venta = analizarPrecioSugerido({ tipo: "mano_obra", costo }); tec = 'TECNICO NEXUS'; }
-        ordenActiva.items.push({ tipo, desc: `NUEVO ${tipo}`, costo, venta, origen, tecnico: tec, cantidad: 1, fecha: new Date().toISOString() });
+        if (tipo === 'REPUESTO') { 
+            const { value: r } = await Swal.fire({ 
+                title: 'ORIGEN', 
+                input: 'select', 
+                inputOptions: { 'TALLER': 'Stock', 'CLIENTE': 'Cliente' }, 
+                background: '#0d1117', color: '#fff' 
+            }); 
+            origen = r || 'TALLER'; 
+        } else { 
+            const { value: c } = await Swal.fire({ 
+                title: 'COSTO LABOR', 
+                input: 'number', 
+                background: '#0d1117', color: '#fff' 
+            }); 
+            costo = Number(c || 0); 
+            venta = analizarPrecioSugerido({ tipo: "mano_obra", costo }) || costo; 
+            tec = 'TECNICO NEXUS'; 
+        }
+        
+        ordenActiva.items.push({ 
+            tipo, 
+            desc: `NUEVO ${tipo}`, 
+            costo, 
+            venta, 
+            origen, 
+            tecnico: tec, 
+            cantidad: 1, 
+            fecha: new Date().toISOString() 
+        });
         recalcularFinanzas();
     };
 
-window.syncBitacoraLive = async (val) => {
-    ordenActiva.bitacora_ia = val;
-    if (ordenActiva.id) {
-        const docRef = doc(db, "ordenes", ordenActiva.id);
-        await setDoc(docRef, { bitacora_ia: val, updatedAt: serverTimestamp() }, { merge: true });
-        // Esto envía el dato a Firestore cada vez que escribes o dictas, sin cerrar la terminal.
-    }
-};
+    window.syncBitacoraLive = async (val) => {
+        ordenActiva.bitacora_ia = val;
+        if (ordenActiva.id) {
+            const docRef = doc(db, "ordenes", ordenActiva.id);
+            await setDoc(docRef, { bitacora_ia: val, updatedAt: serverTimestamp() }, { merge: true });
+        }
+    };
 
     window.renderItems = () => {
-        const c = document.getElementById("items-container"); if (!c) return;
+        const c = document.getElementById("items-container"); 
+        if (!c) return;
         c.innerHTML = ordenActiva.items.map((it, i) => `
             <div class="flex flex-col gap-3 bg-white/[0.03] p-5 rounded-2xl border border-white/10 mb-4 relative overflow-hidden group">
                 <div class="absolute top-0 left-0 h-full w-1 ${it.tipo === 'REPUESTO' ? 'bg-cyan-500' : 'bg-red-600'}"></div>
@@ -657,13 +713,22 @@ window.syncBitacoraLive = async (val) => {
                     <button onclick="window.removeItemNexus(${i})" class="text-slate-600 hover:text-red-500"><i class="fas fa-trash-alt"></i></button>
                 </div>
                 <div class="grid grid-cols-4 gap-4 items-end">
-                    <div><label class="text-[7px] orbitron text-slate-500 block uppercase">Costo</label><input type="number" onchange="window.updateItem(${i}, 'costo', this.value)" value="${it.costo}" class="bg-black/50 p-2 text-red-400 text-xs rounded w-full border border-white/5 outline-none font-black orbitron"></div>
-                    <div><label class="text-[7px] orbitron text-green-500 block uppercase">Venta</label><input type="number" onchange="window.updateItem(${i}, 'venta', this.value)" value="${it.venta}" class="bg-black/50 p-2 text-green-400 text-xs rounded w-full border border-white/5 outline-none font-black orbitron"></div>
-                    <div><label class="text-[7px] orbitron text-slate-500 block uppercase font-black">Cant</label><input type="number" onchange="window.updateItem(${i}, 'cantidad', this.value)" value="${it.cantidad || 1}" class="bg-black/50 p-2 text-white text-xs rounded w-full border border-white/5 outline-none font-black orbitron"></div>
+                    <div>
+                        <label class="text-[7px] orbitron text-slate-500 block uppercase">Costo</label>
+                        <input type="number" onchange="window.updateItem(${i}, 'costo', this.value)" value="${it.costo}" class="bg-black/50 p-2 text-red-400 text-xs rounded w-full border border-white/5 outline-none font-black orbitron">
+                    </div>
+                    <div>
+                        <label class="text-[7px] orbitron text-green-500 block uppercase">Venta</label>
+                        <input type="number" onchange="window.updateItem(${i}, 'venta', this.value)" value="${it.venta}" class="bg-black/50 p-2 text-green-400 text-xs rounded w-full border border-white/5 outline-none font-black orbitron">
+                    </div>
+                    <div>
+                        <label class="text-[7px] orbitron text-slate-500 block uppercase font-black">Cant</label>
+                        <input type="number" onchange="window.updateItem(${i}, 'cantidad', this.value)" value="${it.cantidad || 1}" class="bg-black/50 p-2 text-white text-xs rounded w-full border border-white/5 outline-none font-black orbitron">
+                    </div>
                     <div class="text-right text-xs font-black orbitron text-white italic">$${(it.venta * (it.cantidad || 1)).toLocaleString()}</div>
                 </div>
             </div>`).join('');
     };
 
     renderBase();
-}
+};
