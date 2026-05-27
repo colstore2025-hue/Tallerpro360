@@ -14,7 +14,7 @@ import { analizarPrecioSugerido, renderModuloPricing } from "../ai/pricingEngine
 
 / CONFIGURACIÓN MAESTRA DEL CEREBRO DE VISIÓN DIRECTA (PLAN GRATUITO - COSTO $0)
 // Coloca tu API Key de Google AI Studio aquí para activar el escaneo cuántico de recibos
-const GEMINI_API_KEY = "TU_GEMINI_API_KEY_AQUI"; 
+const GEMINI_API_KEY = "AIzaSyDcRMUoyU4IWtsaPxH0jZayawaNXUb8ySY"; 
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 const NEXUS_ASCENSOR = {
