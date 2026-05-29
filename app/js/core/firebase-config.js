@@ -16,6 +16,12 @@ const firebaseConfig = {
   measurementId: "G-VEC2C0QX2G"
 };
 
+// app/js/modules/firebase-config.js o dentro de tu inicializador de IA
+export const NEXUS_AI_CONFIG = {
+    GEMINI_API_KEY: "AIzaSyDcRMUoyU4IWtsaPxH0jZayawaNXUb8ySY",
+    MODEL_NAME: "gemini-1.5-flash" // El modelo ideal para OCR y lectura rápida de imágenes
+};
+
 // 1. Inicialización Única
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
