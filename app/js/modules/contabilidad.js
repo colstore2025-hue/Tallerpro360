@@ -306,9 +306,9 @@ export default async function contabilidad(container) {
                 inputPlaca.value = datosVision.placa || "ADMIN";
             }
 
-            // Notificación auditiva y visual de telemetría exitosa en el ecosistema contable
+                        // Notificación auditiva y visual de telemetría exitosa en el ecosistema contable
             hablar("Factura detectada de forma óptica. Datos cargados en precierre.");
-            
+
             Swal.fire({
                 title: '🛰️ CONT_NEXUS_LINK',
                 text: `GASTO DETECTADO: $${datosVision.monto.toLocaleString()} | LISTO PARA SINCRONIZAR`,
@@ -321,5 +321,6 @@ export default async function contabilidad(container) {
     });
 
     renderLayout();
-} // <-- ESTA ES LA ÚLTIMA LLAVE INTACTA QUE CIERRA LA FUNCIÓN PRINCIPAL DEL MÓDULO
+}
+
 
