@@ -309,7 +309,7 @@ export default async function contabilidad(container) {
                         // Notificación auditiva y visual de telemetría exitosa en el ecosistema contable
             hablar("Factura detectada de forma óptica. Datos cargados en precierre.");
 
-            Swal.fire({
+                        Swal.fire({
                 title: '🛰️ CONT_NEXUS_LINK',
                 text: `GASTO DETECTADO: $${datosVision.monto.toLocaleString()} | LISTO PARA SINCRONIZAR`,
                 icon: 'success',
