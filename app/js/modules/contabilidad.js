@@ -198,6 +198,57 @@ export default async function contabilidad(container) {
         document.getElementById("acc-monto").value = "";
     }
 
+    function conectarCapturaCamara() {
+        const btnVision = document.getElementById("btn-activar-vision");
+        const cameraInput = document.getElementById("quantum-camera-input");
+
+        if (!btnVision || !cameraInput) return;
+
+        // Redirección de click estético al hardware de captura nativa
+        btnVision.onclick = () => cameraInput.click();
+
+        // Escucha activa del sensor de la cámara
+        cameraInput.onchange = async (event) => {
+            const archivo = event.target.files[0];
+            if (!archivo) return;
+
+            // Transición de UI a modo Procesamiento de Matriz Óptica
+            btnVision.innerHTML = `<span class="animate-spin text-amber-400">⚡</span> PROCESANDO MATRIZ ÓPTICA...`;
+            btnVision.className = "w-full bg-slate-900 text-amber-400 font-black orbitron py-4 rounded-2xl border border-amber-500/40 text-[10px] tracking-widest text-center animate-pulse shadow-[0_0_15px_rgba(245,158,11,0.1)]";
+
+            try {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const base64Image = reader.result;
+
+                    // Despacho del evento global asíncrono con el buffer de la imagen
+                    const eventoVision = new CustomEvent("SOLICITUD_ANALISIS_VISION", {
+                        detail: { 
+                            imagen: base64Image, 
+                            modulo: "CONTABILIDAD"
+                        }
+                    });
+                    window.dispatchEvent(eventoVision);
+                };
+                reader.readAsDataURL(archivo);
+
+            } catch (error) {
+                // Mitigación y rollback ante fallos en el bus de datos local
+                Swal.fire({
+                    title: "ERROR OPTICAL_BUS",
+                    text: "Falla al procesar el mapa de bits en la memoria RAM.",
+                    icon: "error",
+                    background: "#05070a",
+                    color: "#fff"
+                });
+                
+                // Restauración del estado original del botón
+                btnVision.innerHTML = `<span class="animate-pulse text-cyan-300">●</span> ESCANEAR FACTURA (AI)`;
+                btnVision.className = "w-full bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-black orbitron py-4 rounded-2xl hover:from-cyan-400 hover:to-blue-400 transition-all uppercase text-[10px] tracking-widest flex justify-center items-center gap-2 border border-cyan-400/30";
+            }
+        };
+    }
+
     function escucharDatos() {
         if (unsubscribe) unsubscribe();
         const q = query(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), where("empresaId", "==", empresaId));
