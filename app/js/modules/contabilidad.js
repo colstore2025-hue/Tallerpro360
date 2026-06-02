@@ -1,8 +1,8 @@
 /**
- * 🏛️ contabilidad.js - NEXUS-X MASTER-CORE V22.0.2 [QUANTUM-SAP EDITION]
- * Auditoría: Nivel Software Contable Real (SAP-Standard)
- * UNIFICACIÓN: Excel Forense + Estados de Auditoría Real
- * Director: William Jeffry Urquijo Cubillos
+ * 🏛️ contabilidad.js - NEXUS-X MASTER-CORE V22.1.0 [QUANTUM-SAP FORENSIC]
+ * Auditoría: Nivel Software Contable Real (SAP-Standard) - Cierre Mensual Avanzado
+ * UNIFICACIÓN: CRUD Operativo + Telemetría de Libros Manuales (Partida Doble)
+ * Director: William Jeffry Urquijo Cubillos // Nexus AI 2026
  */
 import { 
     collection, query, where, orderBy, onSnapshot, serverTimestamp, addDoc, getDocs, doc, updateDoc, deleteDoc, Timestamp 
@@ -10,7 +10,7 @@ import {
 import { db } from "../core/firebase-config.js";
 import { NEXUS_CONFIG } from "./nexus_constants.js";
 
-// --- MOTOR DE CARGA DE LIBRERÍAS EXTERNAS (EXCEL) ---
+// --- MOTOR DE CARGA DE LIBRERÍAS EXTERNES (EXCEL) ---
 function cargarMotorExcel() {
     return new Promise((resolve, reject) => {
         if (window.XLSX) return resolve(window.XLSX);
@@ -33,7 +33,7 @@ export default async function contabilidad(container) {
     let vistaActual = "DIARIO"; 
     let unsubscribe = null;
 
-    // --- CONFIGURACIÓN DE CATEGORÍAS NIVEL SAP (PUC VIRTUAL) ---
+    // --- CONFIGURACIÓN DE CATEGORÍAS NIVEL SAP (PUC VIRTUAL COLOMBIA/USA) ---
     const CATEGORIAS_CONTABLES = [
         { id: "ingreso_ot", label: "4135 - VENTA SERVICIO / MANO DE OBRA", requierePlaca: true, tipo: 'INGRESO' },
         { id: "venta_repuestos", label: "4135 - VENTA DE REPUESTOS", requierePlaca: true, tipo: 'INGRESO' },
@@ -64,7 +64,7 @@ export default async function contabilidad(container) {
     // --- MOTOR DE EXPORTACIÓN (ESTABLE) ---
     const exportarExcelSAP = async () => {
         try {
-            Swal.fire({ title: 'Sincronizando Excel...', didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: 'Sincronizando Excel Forense...', didOpen: () => Swal.showLoading() });
             const LibXLSX = await cargarMotorExcel();
             const q = query(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), where("empresaId", "==", empresaId));
             const snap = await getDocs(q);
@@ -77,10 +77,10 @@ export default async function contabilidad(container) {
                 const nat = clasificarMovimiento(m);
                 const codPUC = CATEGORIAS_CONTABLES.find(c => c.id === m.tipo)?.label.split(' - ')[0] || "9999";
                 return {
-                    "FECHA": m.creadoEn?.toDate().toLocaleDateString() || 'N/A',
+                    "FECHA": m.creadoEn?.toDate ? m.creadoEn.toDate().toLocaleDateString() : 'N/A',
                     "COD PUC": codPUC,
                     "CONCEPTO": (m.concepto || "").toUpperCase(),
-                    "PLACA": m.placa || "ADMIN",
+                    "PLACA": (m.placa || "ADMIN").toUpperCase().trim(),
                     "DEBITO (+)": nat === "INGRESO" ? monto : 0,
                     "CREDITO (-)": nat === "GASTO" ? monto : 0,
                     "AUDITOR": m.creadoPor || "SISTEMA"
@@ -90,7 +90,7 @@ export default async function contabilidad(container) {
             const ws = LibXLSX.utils.json_to_sheet(dataAudit);
             const wb = LibXLSX.utils.book_new();
             LibXLSX.utils.book_append_sheet(wb, ws, "LibroAuxiliar");
-            LibXLSX.writeFile(wb, `NEXUS_REPORTE_${empresaId}.xlsx`);
+            LibXLSX.writeFile(wb, `NEXUS_REPORTE_FORENSE_${empresaId}.xlsx`);
             Swal.close();
         } catch (e) { Swal.fire("Error SAP", "Falla en motor Excel", "error"); }
     };
@@ -102,7 +102,7 @@ export default async function contabilidad(container) {
             <header class="flex flex-col lg:flex-row justify-between items-center gap-8 mb-12 border-b border-white/10 pb-10">
                 <div class="text-center lg:text-left">
                     <h1 class="orbitron text-5xl font-black text-white italic tracking-tighter leading-none">FINANCE <span class="text-cyan-400">NEXUS</span></h1>
-                    <p class="text-[9px] text-slate-500 font-black uppercase tracking-[0.4em] orbitron mt-4">Taller: ${empresaId}</p>
+                    <p class="text-[9px] text-slate-500 font-black uppercase tracking-[0.4em] orbitron mt-4">Taller: ${empresaId} // Cierre Operativo Mayo</p>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full lg:w-auto">
                     ${renderDashCard("Ingresos", "dash-ingresos", "text-emerald-400")}
@@ -143,7 +143,7 @@ export default async function contabilidad(container) {
         btnE.onclick = exportarExcelSAP;
     };
 
-        const cargarVistaDiaria = () => {
+    const cargarVistaDiaria = () => {
         const content = document.getElementById("cont-dynamic-content");
         content.innerHTML = `
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -159,7 +159,7 @@ export default async function contabilidad(container) {
                         <div class="relative w-full">
                             <input type="file" id="quantum-camera-input" accept="image/*" capture="camera" class="hidden">
                             <button id="btn-activar-vision" type="button" class="w-full bg-gradient-to-r from-cyan-950 via-cyan-800 to-blue-950 text-cyan-400 font-black orbitron py-4 rounded-2xl hover:from-cyan-900 hover:to-blue-900 transition-all uppercase text-[10px] tracking-widest flex justify-center items-center gap-2 border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.1)]">
-                                <span class="animate-pulse text-cyan-400">●</span> ESCANEAR FACTURA (AI)
+                                <span class="animate-pulse text-cyan-400">●</span> ESCANEAR LIBRO / RECIBO (AI)
                             </button>
                         </div>
 
@@ -174,10 +174,7 @@ export default async function contabilidad(container) {
             </div>
         </div>`;
         document.getElementById("btnGuardar").onclick = registrarMovimiento;
-        
-        // Inicialización y enlace del hardware óptico
         conectarCapturaCamara();
-        
         escucharDatos();
     };
 
@@ -201,53 +198,111 @@ export default async function contabilidad(container) {
     function conectarCapturaCamara() {
         const btnVision = document.getElementById("btn-activar-vision");
         const cameraInput = document.getElementById("quantum-camera-input");
-
         if (!btnVision || !cameraInput) return;
 
-        // Redirección de click estético al hardware de captura nativa
         btnVision.onclick = () => cameraInput.click();
 
-        // Escucha activa del sensor de la cámara
         cameraInput.onchange = async (event) => {
             const archivo = event.target.files[0];
             if (!archivo) return;
 
-            // Transición de UI a modo Procesamiento de Matriz Óptica
-            btnVision.innerHTML = `<span class="animate-spin text-amber-400">⚡</span> PROCESANDO MATRIZ ÓPTICA...`;
+            btnVision.innerHTML = `<span class="animate-spin text-amber-400">⚡</span> DETECTANDO ASIENTOS...`;
             btnVision.className = "w-full bg-slate-900 text-amber-400 font-black orbitron py-4 rounded-2xl border border-amber-500/40 text-[10px] tracking-widest text-center animate-pulse shadow-[0_0_15px_rgba(245,158,11,0.1)]";
 
             try {
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     const base64Image = reader.result;
-
-                    // Despacho del evento global asíncrono con el buffer de la imagen
+                    // Se despacha la señal al bus con flag de auditoría de cierre de libro manual
                     const eventoVision = new CustomEvent("SOLICITUD_ANALISIS_VISION", {
                         detail: { 
                             imagen: base64Image, 
-                            modulo: "CONTABILIDAD"
+                            modulo: "CONTABILIDAD",
+                            modo: "CIERRE_MAYO_LIBRO"
                         }
                     });
                     window.dispatchEvent(eventoVision);
                 };
                 reader.readAsDataURL(archivo);
-
             } catch (error) {
-                // Mitigación y rollback ante fallos en el bus de datos local
-                Swal.fire({
-                    title: "ERROR OPTICAL_BUS",
-                    text: "Falla al procesar el mapa de bits en la memoria RAM.",
-                    icon: "error",
-                    background: "#05070a",
-                    color: "#fff"
-                });
-                
-                // Restauración del estado original del botón
-                btnVision.innerHTML = `<span class="animate-pulse text-cyan-300">●</span> ESCANEAR FACTURA (AI)`;
-                btnVision.className = "w-full bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-black orbitron py-4 rounded-2xl hover:from-cyan-400 hover:to-blue-400 transition-all uppercase text-[10px] tracking-widest flex justify-center items-center gap-2 border border-cyan-400/30";
+                Swal.fire({ title: "ERROR OPTICAL_BUS", text: "Falla al procesar matriz en RAM.", icon: "error", background: "#05070a", color: "#fff" });
+                btnVision.innerHTML = `<span class="animate-pulse text-cyan-300">●</span> ESCANEAR LIBRO / RECIBO (AI)`;
+                btnVision.className = "w-full bg-gradient-to-r from-cyan-950 via-cyan-800 to-blue-950 text-cyan-400 font-black orbitron py-4 rounded-2xl";
             }
         };
     }
+
+    // --- PASARELA CRUD INTERACTIVA EN TIEMPO REAL ---
+    window.nexusEditarRegistro = async (id, conceptoAct, montoAct, placaAct, tipoAct) => {
+        const { value: formValues } = await Swal.fire({
+            title: '🏛️ CORRECCIÓN DE ASIENTO CONTABLE',
+            background: '#0d1117',
+            color: '#fff',
+            confirmButtonColor: '#06b6d4',
+            cancelButtonColor: '#ef4444',
+            showCancelButton: true,
+            html: `
+                <div class="space-y-3 font-sans text-left text-xs p-2">
+                    <label class="block text-slate-400 orbitron font-black text-[9px] mb-1">PLACA O ÁREA:</label>
+                    <input id="swal-placa" class="w-full bg-black p-3 rounded-xl border border-white/10 text-white uppercase orbitron" value="${placaAct}">
+                    
+                    <label class="block text-slate-400 orbitron font-black text-[9px] mb-1">DESCRIPCIÓN DEL CONCEPTO:</label>
+                    <input id="swal-concepto" class="w-full bg-black p-3 rounded-xl border border-white/10 text-white uppercase" value="${conceptoAct}">
+                    
+                    <label class="block text-slate-400 orbitron font-black text-[9px] mb-1">VALOR ($):</label>
+                    <input id="swal-monto" type="number" class="w-full bg-black p-3 rounded-xl border border-white/10 text-cyan-400 orbitron" value="${montoAct}">
+                    
+                    <label class="block text-slate-400 orbitron font-black text-[9px] mb-1">CUENTA PUC (NEXUS-SAP):</label>
+                    <select id="swal-tipo" class="w-full bg-black p-3 rounded-xl border border-white/10 text-white text-xs">
+                        ${CATEGORIAS_CONTABLES.map(c => `<option value="${c.id}" ${c.id === tipoAct ? 'selected' : ''}>${c.label}</option>`).join('')}
+                    </select>
+                </div>
+            `,
+            focusConfirm: false,
+            preConfirm: () => {
+                return {
+                    placa: document.getElementById('swal-placa').value.trim().toUpperCase(),
+                    concepto: document.getElementById('swal-concepto').value.trim().toUpperCase(),
+                    monto: parseFloat(document.getElementById('swal-monto').value),
+                    tipo: document.getElementById('swal-tipo').value
+                }
+            }
+        });
+
+        if (formValues) {
+            if (!formValues.concepto || isNaN(formValues.monto)) return;
+            try {
+                const docRef = doc(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING, id);
+                await updateDoc(docRef, formValues);
+                Swal.fire({ title: 'Éxito', text: 'Asiento contable auditado y corregido.', icon: 'success', background: '#0d1117', color: '#fff' });
+            } catch (err) {
+                Swal.fire('Error', 'No se pudo actualizar el documento.', 'error');
+            }
+        }
+    };
+
+    window.nexusEliminarRegistro = async (id, concepto) => {
+        const result = await Swal.fire({
+            title: '¿ELIMINAR ASIENTO CONTABLE?',
+            text: `Esta acción alterará el EBITDA de la placa y los balances de cierre de mes. Registro: ${concepto}`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'SÍ, BORRAR DE FIRESTORE',
+            background: '#0d1117',
+            color: '#fff'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await deleteDoc(doc(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING, id));
+                Swal.fire({ title: 'Eliminado', text: 'El registro fue removido del libro auxiliar.', icon: 'success', background: '#0d1117', color: '#fff' });
+            } catch (err) {
+                Swal.fire('Error', 'Falla al remover el documento.', 'error');
+            }
+        }
+    };
 
     function escucharDatos() {
         if (unsubscribe) unsubscribe();
@@ -259,6 +314,12 @@ export default async function contabilidad(container) {
             const list = document.getElementById("listaFinanzas");
             if (!list) return;
 
+            if (docs.length === 0) {
+                list.innerHTML = `<div class="p-10 text-center text-slate-500 orbitron text-xs">LIBRO DIARIO VACÍO - ESPERANDO TELEMETRÍA ÓPTICA</div>`;
+                actualizarDashboards(0, 0, 0);
+                return;
+            }
+
             list.innerHTML = docs.map(m => {
                 const val = extraerMonto(m);
                 const n = clasificarMovimiento(m);
@@ -267,18 +328,33 @@ export default async function contabilidad(container) {
                 if (m.tipo?.includes("1305")) tC += val;
                 if (m.tipo?.includes("1105")) tC -= val;
 
+                const placaLimpia = (m.placa || "ADMIN").toUpperCase().trim();
+
                 return `
-                <div class="bg-[#0d1117] p-4 rounded-2xl border border-white/5 flex justify-between items-center group hover:border-cyan-500/30 transition-all">
+                <div class="bg-[#0d1117] p-5 rounded-2xl border border-white/5 flex justify-between items-center group hover:border-cyan-500/30 transition-all shadow-xl">
                     <div class="flex gap-4 items-center">
-                        <div class="w-1 h-8 rounded-full ${n === "INGRESO" ? 'bg-emerald-500' : 'bg-red-500'}"></div>
+                        <div class="w-1 h-10 rounded-full ${n === "INGRESO" ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-red-500 shadow-[0_0_10px_#ef4444]'}"></div>
                         <div>
-                            <p class="text-[11px] font-black text-white leading-tight uppercase">${m.concepto}</p>
-                            <p class="text-[8px] text-slate-500 orbitron uppercase">${m.placa} | ${m.tipo}</p>
+                            <p class="text-[11px] font-black text-white leading-tight uppercase tracking-tight">${m.concepto}</p>
+                            <p class="text-[8px] text-slate-400 orbitron uppercase mt-1">
+                                <span class="text-cyan-400 font-black">${placaLimpia}</span> | ${CATEGORIAS_CONTABLES.find(c => c.id === m.tipo)?.label || m.tipo}
+                            </p>
                         </div>
                     </div>
-                    <div class="text-right">
-                        <p class="text-sm font-black orbitron ${n === "INGRESO" ? 'text-emerald-400' : 'text-red-500'}">$ ${val.toLocaleString()}</p>
-                        <p class="text-[7px] text-slate-600">${m.creadoEn?.toDate().toLocaleDateString() || '...'}</p>
+                    <div class="flex items-center gap-6">
+                        <div class="text-right">
+                            <p class="text-sm font-black orbitron ${n === "INGRESO" ? 'text-emerald-400' : 'text-red-500'}">$ ${val.toLocaleString('es-CO')}</p>
+                            <p class="text-[7px] text-slate-600 font-bold orbitron mt-0.5">${m.creadoEn?.toDate ? m.creadoEn.toDate().toLocaleDateString() : '...'}</p>
+                        </div>
+                        
+                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <button onclick="window.nexusEditarRegistro('${m.id}', '${m.concepto}', ${val}, '${placaLimpia}', '${m.tipo}')" class="h-8 w-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-black transition-all flex items-center justify-center text-xs">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="window.nexusEliminarRegistro('${m.id}', '${m.concepto}')" class="h-8 w-8 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-black transition-all flex items-center justify-center text-xs">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>`;
             }).join("");
@@ -294,7 +370,6 @@ export default async function contabilidad(container) {
         });
     }
 
-    // --- RESTAURACIÓN DE ESTADOS Y AUDITORÍA (v21.9.9) ---
     async function cargarVistaCuentas() {
         const content = document.getElementById("cont-dynamic-content");
         content.innerHTML = `<div class="p-20 text-center orbitron text-cyan-500 animate-pulse italic">GENERANDO BALANCE ANALÍTICO NEXUS-SAP...</div>`;
@@ -326,7 +401,7 @@ export default async function contabilidad(container) {
         </div>`;
     }
 
-        function renderStatCard(title, val, color, sub) {
+    function renderStatCard(title, val, color, sub) {
         return `<div class="p-8 bg-black/40 rounded-[2.5rem] border border-white/5 shadow-inner group hover:border-cyan-500/20 transition-all">
             <p class="text-[9px] orbitron ${color} mb-2 uppercase font-black tracking-widest">${title}</p>
             <span class="text-3xl font-black orbitron ${color}">$ ${val.toLocaleString()}</span>
@@ -335,27 +410,69 @@ export default async function contabilidad(container) {
     }
 
     // =========================================================================
-    // 🛰️ ANEXO QUIRÚRGICO QUANTUM-SAP: RECEPTOR PASIVO DE TELEMETRÍA ÓPTICA
+    // 🛰️ RECEPTOR DE TELEMETRÍA ÓPTICA AVANZADO (PROCESADOR MULTI-ASIENTO)
     // =========================================================================
-    window.addEventListener("NEXUS_QUANTUM_VISION_BURST", (e) => {
+    window.addEventListener("NEXUS_QUANTUM_VISION_BURST", async (e) => {
         const datosVision = e.detail;
-        
-        // El módulo de contabilidad sintoniza la frecuencia si se detecta un gasto o factura externa
-        if (datosVision && datosVision.tipoDocumento === "FACTURA_PROVEEDOR") {
-            
-            // 1. Selección y asignación automática del PUC para compras/insumos
+        if (!datosVision) return;
+
+        // CANAL 1: Recepción de Libro Contable de Antiguos (Mayo)
+        if (datosVision.tipoDocumento === "LIBRO_MANUAL_CONTABLE" && Array.isArray(datosVision.asientos)) {
+            Swal.fire({
+                title: '🛰️ DETECTADO LIBRO MANUAL',
+                text: `Se identificaron ${datosVision.asientos.length} asientos contables. ¿Proceder con la inyección masiva en lote a Firestore?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                confirmButtonText: 'INYECTAR LOTE',
+                background: '#05070a',
+                color: '#fff'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'Procesando bloque contable...', didOpen: () => Swal.showLoading(), background: '#05070a', color: '#fff' });
+                    
+                    for (const asiento of datosVision.asientos) {
+                        const esCredito = asiento.naturaleza === "CREDITO" || asiento.credito > 0;
+                        const montoFinal = asiento.monto || (esCredito ? asiento.credito : asiento.debito) || 0;
+                        
+                        // Mapeo predictivo del PUC
+                        let tipoSugerido = esCredito ? "compra_repuestos" : "ingreso_ot";
+                        if (asiento.codigoPUC) {
+                            if (asiento.codigoPUC.startsWith("51")) tipoSugerido = "gasto_operativo";
+                            if (asiento.codigoPUC.startsWith("11") || asiento.codigoPUC.startsWith("41")) tipoSugerido = "ingreso_ot";
+                        }
+
+                        await addDoc(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), {
+                            empresaId,
+                            tipo: tipoSugerido,
+                            placa: (asiento.placa || "ADMIN").toUpperCase().trim(),
+                            concepto: `CIERRE_MAYO_MANUAL: ${(asiento.concepto || "ASIENTO_OCR").toUpperCase()}`,
+                            monto: Number(montoFinal),
+                            creadoPor: "QUANTUM_VISION_AI",
+                            creadoEn: serverTimestamp()
+                        });
+                    }
+                    Swal.fire({ title: 'Lote Sincronizado', icon: 'success', background: '#05070a', color: '#fff' });
+                    
+                    // Restauración estética del hardware visual
+                    const btnV = document.getElementById("btn-activar-vision");
+                    if (btnV) {
+                        btnV.innerHTML = `<span class="animate-pulse text-cyan-400">●</span> ESCANEAR LIBRO / RECIBO (AI)`;
+                        btnV.className = "w-full bg-gradient-to-r from-cyan-950 via-cyan-800 to-blue-950 text-cyan-400 font-black orbitron py-4 rounded-2xl";
+                    }
+                }
+            });
+            return;
+        }
+
+        // CANAL 2: Recepción de Facturas Estándar (Fallback)
+        if (datosVision.tipoDocumento === "FACTURA_PROVEEDOR") {
             const selectTipo = document.getElementById("acc-tipo");
-            if (selectTipo) {
-                selectTipo.value = "compra_repuestos"; // Forzamos por defecto al nodo 5195
-            }
+            if (selectTipo) selectTipo.value = "compra_repuestos";
 
-            // 2. Sincronización del valor numérico limpio extraído por el OCR
             const inputMonto = document.getElementById("acc-monto");
-            if (inputMonto && datosVision.monto > 0) {
-                inputMonto.value = datosVision.monto;
-            }
+            if (inputMonto && datosVision.monto > 0) inputMonto.value = datosVision.monto;
 
-            // 3. Estructuración del concepto contable con metadatos del proveedor
             const inputConcepto = document.getElementById("acc-concepto");
             if (inputConcepto) {
                 const nitInfo = datosVision.nit ? ` | NIT: ${datosVision.nit}` : "";
@@ -363,16 +480,12 @@ export default async function contabilidad(container) {
                 inputConcepto.value = `COMPRA_INSUMOS_OCR${nitInfo}${refInfo}`;
             }
 
-            // 4. Mapeo de placa administrativa o asignación si la factura la incluye
             const inputPlaca = document.getElementById("acc-placa");
-            if (inputPlaca) {
-                inputPlaca.value = datosVision.placa || "ADMIN";
-            }
+            if (inputPlaca) inputPlaca.value = (datosVision.placa || "ADMIN").toUpperCase().trim();
 
-                        // Notificación auditiva y visual de telemetría exitosa en el ecosistema contable
-            hablar("Factura detectada de forma óptica. Datos cargados en precierre.");
+            if (typeof hablar === 'function') hablar("Factura detectada de forma óptica. Datos cargados.");
 
-                        Swal.fire({
+            Swal.fire({
                 title: '🛰️ CONT_NEXUS_LINK',
                 text: `GASTO DETECTADO: $${datosVision.monto.toLocaleString()} | LISTO PARA SINCRONIZAR`,
                 icon: 'success',
@@ -380,10 +493,14 @@ export default async function contabilidad(container) {
                 color: '#fff',
                 confirmButtonColor: '#06b6d4'
             });
+            
+            const btnV = document.getElementById("btn-activar-vision");
+            if (btnV) {
+                btnV.innerHTML = `<span class="animate-pulse text-cyan-400">●</span> ESCANEAR LIBRO / RECIBO (AI)`;
+                btnV.className = "w-full bg-gradient-to-r from-cyan-950 via-cyan-800 to-blue-950 text-cyan-400 font-black orbitron py-4 rounded-2xl";
+            }
         }
     });
 
     renderLayout();
 }
-
-
