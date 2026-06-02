@@ -143,7 +143,7 @@ export default async function contabilidad(container) {
         btnE.onclick = exportarExcelSAP;
     };
 
-    const cargarVistaDiaria = () => {
+        const cargarVistaDiaria = () => {
         const content = document.getElementById("cont-dynamic-content");
         content.innerHTML = `
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -155,6 +155,14 @@ export default async function contabilidad(container) {
                             ${CATEGORIAS_CONTABLES.map(c => `<option value="${c.id}">${c.label}</option>`).join('')}
                         </select>
                         <input id="acc-placa" class="w-full bg-black p-5 rounded-2xl border border-white/10 text-white uppercase text-center font-black orbitron text-lg" placeholder="PLACA">
+                        
+                        <div class="relative w-full">
+                            <input type="file" id="quantum-camera-input" accept="image/*" capture="camera" class="hidden">
+                            <button id="btn-activar-vision" type="button" class="w-full bg-gradient-to-r from-cyan-950 via-cyan-800 to-blue-950 text-cyan-400 font-black orbitron py-4 rounded-2xl hover:from-cyan-900 hover:to-blue-900 transition-all uppercase text-[10px] tracking-widest flex justify-center items-center gap-2 border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.1)]">
+                                <span class="animate-pulse text-cyan-400">●</span> ESCANEAR FACTURA (AI)
+                            </button>
+                        </div>
+
                         <input id="acc-concepto" class="w-full bg-black p-5 rounded-2xl border border-white/10 text-white uppercase text-sm" placeholder="DESCRIPCIÓN">
                         <input id="acc-monto" type="number" class="w-full bg-black p-5 rounded-2xl border border-white/10 text-white font-black orbitron text-xl" placeholder="VALOR $">
                         <button id="btnGuardar" class="w-full bg-emerald-500 text-black font-black orbitron py-5 rounded-2xl hover:bg-emerald-400 transition-all uppercase">Sincronizar Nexus-SAP</button>
@@ -166,6 +174,10 @@ export default async function contabilidad(container) {
             </div>
         </div>`;
         document.getElementById("btnGuardar").onclick = registrarMovimiento;
+        
+        // Inicialización y enlace del hardware óptico
+        conectarCapturaCamara();
+        
         escucharDatos();
     };
 
