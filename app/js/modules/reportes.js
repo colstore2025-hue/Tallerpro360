@@ -129,7 +129,7 @@ export default async function nexusReportes(container) {
         </div>`;
     };
 
-    const fetchData = async () => {
+        const fetchData = async () => {
         try {
             const coleccionContabilidad = NEXUS_CONFIG?.COLLECTIONS?.ACCOUNTING || "contabilidad";
             
@@ -138,12 +138,24 @@ export default async function nexusReportes(container) {
                 getDocs(query(collection(db, coleccionContabilidad), where("empresaId", "==", empresaId)))
             ]);
 
+            // --- HELPER QUIRÚRGICO DE NORMALIZACIÓN (AISLAMIENTO DE PLACA PURA) ---
+            const aislarPlacaPura = (texto) => {
+                if (!texto) return 'S/N';
+                // Si viene "BDB461-TOYOTA BURBUJA", divide por el guion y toma "BDB461"
+                const base = texto.split('-')[0];
+                // Sanitiza eliminando espacios, caracteres especiales y fuerza mayúsculas
+                return base.toUpperCase().replace(/[^A-Z0-9]/g, '').trim().substring(0, 6);
+            };
+
             const mapaGastosPorPlaca = {};
             let gastosFijosGlobales = 0;
 
+            // ==========================================================================
+            // 1. PROCESAMIENTO DEL LIBRO DE CONTABILIDAD
+            // ==========================================================================
             snapAcc.docs.forEach(doc => {
                 const data = doc.data();
-                const monto = Number(data.monto || data.total || 0);
+                const monto = Number(data.monto || data.total || data.valor || 0);
                 const tipo = (data.tipo || "").toLowerCase();
                 
                 const esGasto = !(tipo.includes("ingreso") || tipo.includes("4135") || tipo.includes("saneamiento") || tipo.includes("1105") || tipo.includes("capital") || tipo.includes("2805"));
@@ -153,28 +165,37 @@ export default async function nexusReportes(container) {
                     if (placaRaw === "ADMIN" || !placaRaw) {
                         gastosFijosGlobales += monto;
                     } else {
-                        if (!mapaGastosPorPlaca[placaRaw]) mapaGastosPorPlaca[placaRaw] = 0;
-                        mapaGastosPorPlaca[placaRaw] += monto;
+                        // Extraemos la clave de 6 dígitos para asegurar compatibilidad total
+                        const placaClave = aislarPlacaPura(placaRaw);
+                        if (!mapaGastosPorPlaca[placaClave]) mapaGastosPorPlaca[placaClave] = 0;
+                        mapaGastosPorPlaca[placaClave] += monto;
                     }
                 }
             });
 
             state.gastosFijosGlobales = gastosFijosGlobales;
 
-                        // Consolidación Forense cruzando Órdenes de Servicio + Libro Auxiliar Contable
+            // ==========================================================================
+            // 2. CONSOLIDACIÓN DE ÓRDENES Y ENCAJE OPERATIVO EBITDA
+            // ==========================================================================
             state.ordenesMaster = snapOrders.docs.map(doc => {
                 const o = doc.data();
-                const placaKey = (o.placa || 'S/N').toUpperCase().trim();
                 
-                // 1. Captura del Ingreso Bruto (Total facturado al cliente con IVA incluido)
+                // Mantenemos la estructura visual intacta para la UI ("BDB461-TOYOTA BURBUJA")
+                const identificadorVisual = (o.placa || 'S/N').toUpperCase().trim();
+                
+                // AISLAMIENTO FINANCIERO: Extraemos los 6 caracteres limpios para buscar en el mapa contable
+                const placaFinancieraClave = aislarPlacaPura(identificadorVisual);
+                
+                // 1. Captura del Ingreso Bruto
                 const facturacionBruta = Number(o.costos_totales?.total || o.total || 0);
                 
                 // 2. Desglose Impositivo Exacto (Remoción matemática del 19%)
                 const ingresosNetos = facturacionBruta / (1 + IVA_FACTOR);
                 const ivaRetenido = facturacionBruta - ingresosNetos;
                 
-                // 3. Absorción de Gastos Contables desde el Libro Auxiliar
-                const gastosContablesAsignados = mapaGastosPorPlaca[placaKey] || 0;
+                // 3. EL CRUCE MAESTRO: Mapeo exacto contra la clave limpia de contabilidad
+                const gastosContablesAsignados = mapaGastosPorPlaca[placaFinancieraClave] || 0;
                 
                 // 4. REGLA DE NEGOCIO ESTRICTA: Facturación Bruta - IVA - Libro = EBITDA
                 const ebitdaRealPlaca = facturacionBruta - ivaRetenido - gastosContablesAsignados;
@@ -183,36 +204,30 @@ export default async function nexusReportes(container) {
                 const margenEbitdaPrc = ingresosNetos > 0 ? (ebitdaRealPlaca / ingresosNetos) * 100 : 0;
                 
                 // --- CONECTOR DINÁMICO DE LEAD TIME DESDE ORDENES.JS ---
-                // Identificar fecha de ingreso (soporta objeto Timestamp de Firebase o String ISO)
                 const fechaInicio = o.createdAt?.toDate ? o.createdAt.toDate() : (o.fecha_ingreso ? new Date(o.fecha_ingreso) : new Date());
-                
-                // Identificar si la orden ya fue cerrada/entregada en el taller
                 const fechaFin = o.fecha_entrega || o.fechas?.entrega || o.closedAt || o.fecha_cierre;
                 
                 let diasTaller = 1;
                 if (fechaFin) {
-                    // Orden finalizada: Tiempo de ciclo total (MTTR Cerrado)
                     const fechaCierre = fechaFin.toDate ? fechaFin.toDate() : new Date(fechaFin);
                     const diferenciaMilisegundos = fechaCierre - fechaInicio;
                     diasTaller = Math.ceil(diferenciaMilisegundos / (1000 * 60 * 60 * 24));
                 } else {
-                    // Orden activa: Días transcurridos en tiempo real hasta HOY (Work In Progress)
                     const hoy = new Date();
                     const diferenciaMilisegundos = hoy - fechaInicio;
                     diasTaller = Math.ceil(diferenciaMilisegundos / (1000 * 60 * 60 * 24));
                 }
                 
-                // Control preventivo por errores de digitación o fechas idénticas
                 if (diasTaller <= 0) diasTaller = 1;
                 
                 return {
                     id: doc.id,
-                    placa: placaKey,
+                    placa: identificadorVisual, // Se renderiza estético en la tabla del panel
                     area: o.tipo_orden || 'MECANICA',
                     total: facturacionBruta,
                     ingresosNetos: ingresosNetos,
                     iva: ivaRetenido,
-                    gastosContabilidad: gastosContablesAsignados,
+                    gastosContabilidad: gastosContablesAsignados, // <--- Cargará los $777.000 exactos cruzando por ID limpio
                     ebitda: ebitdaRealPlaca,
                     margenPorcentaje: margenEbitdaPrc,
                     dias: diasTaller,
