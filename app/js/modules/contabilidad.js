@@ -71,16 +71,27 @@ export default async function contabilidad(container) {
             
             if (snap.empty) return Swal.fire("Aviso", "Sin datos para exportar", "info");
 
-            const dataAudit = snap.docs.map(doc => {
+                        const dataAudit = snap.docs.map(doc => {
                 const m = doc.data();
                 const monto = extraerMonto(m);
                 const nat = clasificarMovimiento(m);
                 const codPUC = CATEGORIAS_CONTABLES.find(c => c.id === m.tipo)?.label.split(' - ')[0] || "9999";
+                
+                // --- NORMALIZACIÓN DE PLACA A 6 DÍGITOS PARA EXCEL (Looker-X Standard) ---
+                let placaProcesada = (m.placa || "ADMIN").toUpperCase().trim();
+                
+                // Si no es un gasto administrativo, extraemos estrictamente los primeros 6 caracteres alfanuméricos
+                if (placaProcesada !== "ADMIN") {
+                    placaProcesada = placaProcesada.replace(/[^A-Z0-9]/g, '').substring(0, 6);
+                    // Control de seguridad por si el campo venía vacío o con caracteres corruptos
+                    if (!placaProcesada) placaProcesada = "S/N";
+                }
+
                 return {
                     "FECHA": m.creadoEn?.toDate ? m.creadoEn.toDate().toLocaleDateString() : 'N/A',
                     "COD PUC": codPUC,
                     "CONCEPTO": (m.concepto || "").toUpperCase(),
-                    "PLACA": (m.placa || "ADMIN").toUpperCase().trim(),
+                    "PLACA": placaProcesada, // <--- BDB461 garantizado, limpio y listo para cruces
                     "DEBITO (+)": nat === "INGRESO" ? monto : 0,
                     "CREDITO (-)": nat === "GASTO" ? monto : 0,
                     "AUDITOR": m.creadoPor || "SISTEMA"
@@ -92,7 +103,10 @@ export default async function contabilidad(container) {
             LibXLSX.utils.book_append_sheet(wb, ws, "LibroAuxiliar");
             LibXLSX.writeFile(wb, `NEXUS_REPORTE_FORENSE_${empresaId}.xlsx`);
             Swal.close();
-        } catch (e) { Swal.fire("Error SAP", "Falla en motor Excel", "error"); }
+        } catch (e) { 
+            console.error("🚀 EXCEL_ENGINE_FAULT ->", e);
+            Swal.fire("Error SAP", "Falla en motor Excel", "error"); 
+        }
     };
 
     // --- INTERFAZ UI ---
