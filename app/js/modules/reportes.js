@@ -161,30 +161,49 @@ export default async function nexusReportes(container) {
 
             state.gastosFijosGlobales = gastosFijosGlobales;
 
+                        // Consolidación Forense cruzando Órdenes de Servicio + Libro Auxiliar Contable
             state.ordenesMaster = snapOrders.docs.map(doc => {
                 const o = doc.data();
                 const placaKey = (o.placa || 'S/N').toUpperCase().trim();
                 
+                // 1. Captura del Ingreso Bruto (Total facturado al cliente con IVA incluido)
                 const facturacionBruta = Number(o.costos_totales?.total || o.total || 0);
                 
-                // --- DESGLOSE DE IMPUESTOS (Quantum-SAP Precision) ---
+                // 2. Desglose Impositivo Exacto (Remoción matemática del 19%)
                 const ingresosNetos = facturacionBruta / (1 + IVA_FACTOR);
                 const ivaRetenido = facturacionBruta - ingresosNetos;
                 
+                // 3. Absorción de Gastos Contables desde el Libro Auxiliar
                 const gastosContablesAsignados = mapaGastosPorPlaca[placaKey] || 0;
                 
-                // --- ARQUITECTURA DE FÓRMULA SOLICITADA ---
-                // Facturación bruta - iva - libro = ebitda
+                // 4. REGLA DE NEGOCIO ESTRICTA: Facturación Bruta - IVA - Libro = EBITDA
                 const ebitdaRealPlaca = facturacionBruta - ivaRetenido - gastosContablesAsignados;
+                
+                // 5. El Margen Operativo se calcula sobre el Ingreso Neto Real (sin impuestos)
                 const margenEbitdaPrc = ingresosNetos > 0 ? (ebitdaRealPlaca / ingresosNetos) * 100 : 0;
                 
-                // --- EXTRACTOR DE LEAD TIME DESDE ORDENES.JS ---
+                // --- CONECTOR DINÁMICO DE LEAD TIME DESDE ORDENES.JS ---
+                // Identificar fecha de ingreso (soporta objeto Timestamp de Firebase o String ISO)
                 const fechaInicio = o.createdAt?.toDate ? o.createdAt.toDate() : (o.fecha_ingreso ? new Date(o.fecha_ingreso) : new Date());
-                const fechaFin = o.fecha_entrega || o.fechas?.entrega || o.closedAt;
-                const fechaCierre = fechaFin?.toDate ? fechaFin.toDate() : (fechaFin ? new Date(fechaFin) : new Date());
                 
-                // Si la orden sigue activa, el Lead Time calcula los días acumulados de taller en ejecución (WIP)
-                const diasTaller = Math.ceil(Math.abs(fechaCierre - fechaInicio) / (1000 * 60 * 60 * 24)) || 1;
+                // Identificar si la orden ya fue cerrada/entregada en el taller
+                const fechaFin = o.fecha_entrega || o.fechas?.entrega || o.closedAt || o.fecha_cierre;
+                
+                let diasTaller = 1;
+                if (fechaFin) {
+                    // Orden finalizada: Tiempo de ciclo total (MTTR Cerrado)
+                    const fechaCierre = fechaFin.toDate ? fechaFin.toDate() : new Date(fechaFin);
+                    const diferenciaMilisegundos = fechaCierre - fechaInicio;
+                    diasTaller = Math.ceil(diferenciaMilisegundos / (1000 * 60 * 60 * 24));
+                } else {
+                    // Orden activa: Días transcurridos en tiempo real hasta HOY (Work In Progress)
+                    const hoy = new Date();
+                    const diferenciaMilisegundos = hoy - fechaInicio;
+                    diasTaller = Math.ceil(diferenciaMilisegundos / (1000 * 60 * 60 * 24));
+                }
+                
+                // Control preventivo por errores de digitación o fechas idénticas
+                if (diasTaller <= 0) diasTaller = 1;
                 
                 return {
                     id: doc.id,
