@@ -1,7 +1,7 @@
 /**
- * 🏛️ NEXUS-X COMMANDER BI V50.1 - SAP INDUSTRIAL HYPER-DRIVE
+ * 🏛️ NEXUS-X COMMANDER BI V50.2 - SAP INDUSTRIAL HYPER-DRIVE
  * William Jeffry Urquijo Cubillos // Nexus AI 2026
- * Maniobra: Auditoría Forense y Visualización de Márgenes de Utilidad Neta y EBITDA Real por Placa.
+ * Maniobra: Auditoría Forense Avanzada, Desglose de IVA, Lead Time Real y Autosumas XLSX.
  */
 
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -15,6 +15,8 @@ export default async function nexusReportes(container) {
         container.innerHTML = `<div class="p-20 text-center text-red-500 orbitron">ERROR: SESIÓN DE TALLER NO IDENTIFICADA PARA INTELIGENCIA BI</div>`;
         return;
     }
+
+    const IVA_FACTOR = 0.19;
 
     // --- MOTOR DE FORMATEO PROFESIONAL ---
     const fmt = (v) => {
@@ -30,7 +32,7 @@ export default async function nexusReportes(container) {
 
     let state = {
         ordenesMaster: [],
-        gastosFijosGlobales: 0, // Gastos administrativos (ADMIN)
+        gastosFijosGlobales: 0, 
         dataActual: [],
         charts: {}
     };
@@ -115,7 +117,7 @@ export default async function nexusReportes(container) {
                                 <th class="p-8">Identificación</th>
                                 <th class="p-8">Misión / Área</th>
                                 <th class="p-8">Facturación Bruta (Ingresos)</th>
-                                <th class="p-8">Gastos / Costos Contables</th>
+                                <th class="p-8">Desglose Impositivo / Costos</th>
                                 <th class="p-8 text-right">EBITDA Real por Placa</th>
                                 <th class="p-8 text-center">Lead Time</th>
                             </tr>
@@ -129,7 +131,6 @@ export default async function nexusReportes(container) {
 
     const fetchData = async () => {
         try {
-            // Unificación de colecciones dinámicas según constante global o rutas puras
             const coleccionContabilidad = NEXUS_CONFIG?.COLLECTIONS?.ACCOUNTING || "contabilidad";
             
             const [snapOrders, snapAcc] = await Promise.all([
@@ -137,7 +138,6 @@ export default async function nexusReportes(container) {
                 getDocs(query(collection(db, coleccionContabilidad), where("empresaId", "==", empresaId)))
             ]);
 
-            // Mapeo Avanzado de Contabilidad indexado por Placas para velocidad de cómputo O(1)
             const mapaGastosPorPlaca = {};
             let gastosFijosGlobales = 0;
 
@@ -146,7 +146,6 @@ export default async function nexusReportes(container) {
                 const monto = Number(data.monto || data.total || 0);
                 const tipo = (data.tipo || "").toLowerCase();
                 
-                // Clasificación PUC: Excluir los nodos que son ingresos reales
                 const esGasto = !(tipo.includes("ingreso") || tipo.includes("4135") || tipo.includes("saneamiento") || tipo.includes("1105") || tipo.includes("capital") || tipo.includes("2805"));
                 
                 if (esGasto) {
@@ -162,30 +161,38 @@ export default async function nexusReportes(container) {
 
             state.gastosFijosGlobales = gastosFijosGlobales;
 
-            // Consolidación Forense cruzando Órdenes de Servicio + Libro Auxiliar Contable
             state.ordenesMaster = snapOrders.docs.map(doc => {
                 const o = doc.data();
                 const placaKey = (o.placa || 'S/N').toUpperCase().trim();
                 
                 const facturacionBruta = Number(o.costos_totales?.total || o.total || 0);
-                const costoInternoOT = Number(o.costos_totales?.base || o.costo_total || 0);
                 
-                // Absorción de Gastos Contables asignados quirúrgicamente a esta placa en contabilidad.js
+                // --- DESGLOSE DE IMPUESTOS (Quantum-SAP Precision) ---
+                const ingresosNetos = facturacionBruta / (1 + IVA_FACTOR);
+                const ivaRetenido = facturacionBruta - ingresosNetos;
+                
                 const gastosContablesAsignados = mapaGastosPorPlaca[placaKey] || 0;
                 
-                // Fórmula de EBITDA Nivel SAP: Ingresos de la OT menos los costos contables acumulados
-                const ebitdaRealPlaca = facturacionBruta - (costoInternoOT + gastosContablesAsignados);
-                const margenEbitdaPrc = facturacionBruta > 0 ? (ebitdaRealPlaca / facturacionBruta) * 100 : 0;
+                // --- ARQUITECTURA DE FÓRMULA SOLICITADA ---
+                // Facturación bruta - iva - libro = ebitda
+                const ebitdaRealPlaca = facturacionBruta - ivaRetenido - gastosContablesAsignados;
+                const margenEbitdaPrc = ingresosNetos > 0 ? (ebitdaRealPlaca / ingresosNetos) * 100 : 0;
                 
-                const fechaInicio = o.createdAt?.toDate ? o.createdAt.toDate() : new Date();
-                const diasTaller = Math.ceil(Math.abs(new Date() - fechaInicio) / (1000 * 60 * 60 * 24)) || 1;
+                // --- EXTRACTOR DE LEAD TIME DESDE ORDENES.JS ---
+                const fechaInicio = o.createdAt?.toDate ? o.createdAt.toDate() : (o.fecha_ingreso ? new Date(o.fecha_ingreso) : new Date());
+                const fechaFin = o.fecha_entrega || o.fechas?.entrega || o.closedAt;
+                const fechaCierre = fechaFin?.toDate ? fechaFin.toDate() : (fechaFin ? new Date(fechaFin) : new Date());
+                
+                // Si la orden sigue activa, el Lead Time calcula los días acumulados de taller en ejecución (WIP)
+                const diasTaller = Math.ceil(Math.abs(fechaCierre - fechaInicio) / (1000 * 60 * 60 * 24)) || 1;
                 
                 return {
                     id: doc.id,
                     placa: placaKey,
                     area: o.tipo_orden || 'MECANICA',
                     total: facturacionBruta,
-                    costoBase: costoInternoOT,
+                    ingresosNetos: ingresosNetos,
+                    iva: ivaRetenido,
                     gastosContabilidad: gastosContablesAsignados,
                     ebitda: ebitdaRealPlaca,
                     margenPorcentaje: margenEbitdaPrc,
@@ -258,18 +265,18 @@ export default async function nexusReportes(container) {
                 </td>
                 <td class="p-8">
                     <p class="text-white font-black orbitron text-xs">${fmt(o.total)}</p>
-                    <p class="text-[8px] text-slate-600">BRUTO EN ORDEN</p>
+                    <p class="text-[8px] text-slate-600">BRUTO CON IVA</p>
                 </td>
                 <td class="p-8">
-                    <p class="text-red-400 font-black orbitron text-xs">${fmt(o.costoBase + o.gastosContabilidad)}</p>
-                    <p class="text-[8px] text-slate-500">OT: ${fmt(o.costoBase)} | LIBRO: ${fmt(o.gastosContabilidad)}</p>
+                    <p class="text-slate-300 font-bold orbitron text-xs">IVA: ${fmt(o.iva)}</p>
+                    <p class="text-[10px] text-red-400 font-bold">LIBRO: ${fmt(o.gastosContabilidad)}</p>
                 </td>
                 <td class="p-8 text-right">
                     <p class="font-black orbitron text-base ${o.ebitda > 0 ? 'text-emerald-400' : 'text-red-500'}">${fmt(o.ebitda)}</p>
                     <p class="text-[9px] font-black orbitron ${o.ebitda > 0 ? 'text-emerald-500/50' : 'text-red-500/50'}">${pct(o.margenPorcentaje)} MARGEN</p>
                 </td>
                 <td class="p-8 text-center">
-                    <span class="orbitron font-black text-xs ${o.dias > 5 ? 'text-amber-400' : 'text-slate-400'}">${o.dias} DÍAS</span>
+                    <span class="orbitron font-black text-xs ${o.dias > 5 ? 'text-amber-400' : 'text-emerald-400'}">${o.dias} DÍAS</span>
                 </td>
             </tr>
         `).join("");
@@ -353,23 +360,51 @@ export default async function nexusReportes(container) {
                     Swal.fire("Error BI", "Librería de exportación no cargada completamente.", "error");
                     return;
                 }
-                const wb = XLSX.utils.book_new();
-                const ws = XLSX.utils.json_to_sheet(state.dataActual.map(o => ({
+                
+                // Mapeo estructurado inyectando la nueva columna de IVA
+                const baseRows = state.dataActual.map(o => ({
                     "PLACA_UNIDAD": o.placa, 
                     "CLIENTE": o.cliente, 
-                    "INGRESOS_BRUTOS": o.total, 
-                    "COSTOS_INTERNOS_OT": o.costoBase,
+                    "INGRESOS_BRUTOS": o.total,
+                    "IVA_19": o.iva,
+                    "INGRESOS_NETOS": o.ingresosNetos,
                     "GASTOS_LIBRO_DIARIO": o.gastosContabilidad,
                     "EBITDA_NETO": o.ebitda, 
-                    "MARGEN_EBITDA": pct(o.margenPorcentaje), 
+                    "MARGEN_EBITDA": o.margenPorcentaje / 100, // Formato nativo para Excel
                     "LEAD_TIME_DIAS": o.dias
-                })));
+                }));
+
+                const ws = XLSX.utils.json_to_sheet(baseRows);
+                const totalRows = baseRows.length;
+                const totalRowIndex = totalRows + 2; // Fila de autosumas (indexación 1-based + header)
+
+                // --- INYECCIÓN DE FORMULAS NATIVAS DE AUTOSUMA (QUANTUM-SAP LEVEL) ---
+                ws[`A${totalRowIndex}`] = { v: "TOTAL CONSOLIDADO", t: 's' };
+                ws[`C${totalRowIndex}`] = { f: `SUM(C2:C${totalRows + 1})`, t: 'n', z: '$#,##0' };
+                ws[`D${totalRowIndex}`] = { f: `SUM(D2:D${totalRows + 1})`, t: 'n', z: '$#,##0' };
+                ws[`E${totalRowIndex}`] = { f: `SUM(E2:E${totalRows + 1})`, t: 'n', z: '$#,##0' };
+                ws[`F${totalRowIndex}`] = { f: `SUM(F2:F${totalRows + 1})`, t: 'n', z: '$#,##0' };
+                ws[`G${totalRowIndex}`] = { f: `SUM(G2:G${totalRows + 1})`, t: 'n', z: '$#,##0' };
+                ws[`H${totalRowIndex}`] = { f: `AVERAGE(H2:H${totalRows + 1})`, t: 'n', z: '0.0%' };
+                ws[`I${totalRowIndex}`] = { f: `AVERAGE(I2:I${totalRows + 1})`, t: 'n', z: '0.0' };
+
+                // Formatear las columnas numéricas para que Excel las reconozca nativamente
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+                    ['C', 'D', 'E', 'F', 'G'].forEach(col => {
+                        const cell = ws[col + (R + 1)];
+                        if (cell && cell.t === 'n') cell.z = '$#,##0';
+                    });
+                    const pctCell = ws['H' + (R + 1)];
+                    if (pctCell && pctCell.t === 'n') pctCell.z = '0.0%';
+                }
+
+                const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "NEXUS_EBITDA_BI");
                 XLSX.writeFile(wb, `Nexus_Ebitda_Audit_${empresaId}_${Date.now()}.xlsx`);
             };
         }
 
-        // Setup de filtros nativos sin inyectar onclicks globales rotos
         const configurarFiltro = (id, dias) => {
             const btn = document.getElementById(id);
             if (btn) {
