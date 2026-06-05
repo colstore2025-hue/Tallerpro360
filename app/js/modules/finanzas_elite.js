@@ -214,12 +214,16 @@ export default async function finanzasElite(container) {
                 const cuenta = String(item.cuenta || item.puc || "");
                 const tipo = String(item.tipo || "");
 
-                // Convertir la fecha usando la tubería de coerción tolerante
-                const fechaRealDoc = normalizarObjetoFecha(item.fecha || item.fecha_registro);
+                                // --- TUBERÍA DE COERCIÓN TOLERANTE (MÁXIMA PRIORIDAD SAP-NEXUS) ---
+                // Se evalúa primero 'creadoEn' (Timestamp nativo), luego 'fecha_registro' (String de control) y finaliza en 'fecha'
+                const fechaRealDoc = normalizarObjetoFecha(item.creadoEn || item.fecha_registro || item.fecha);
 
-                // Si no tiene fecha, lo incluimos de forma histórica para no perder el rastro financiero
+                // Validación elástica de rango: si la fecha es válida, se filtra estrictamente el periodo Mayo - Junio 2026
                 if (fechaRealDoc) {
-                    if (fechaRealDoc < dateLimiteInicio || fechaRealDoc > dateLimiteFin) return; 
+                    if (fechaRealDoc < dateLimiteInicio || fechaRealDoc > dateLimiteFin) return;
+                } else {
+                    // Log de auditoría interna por si un documento huérfano pasa al histórico sin fecha parseable
+                    console.warn("🛰️ NEXUS-AUDIT -> Documento procesado en modo histórico (sin metadatos de tiempo válidos):", item.id || 'ID_N/A');
                 }
 
                 // CLASIFICACIÓN ROBUSTA INTEGRADA (Híbrido Códigos PUC y Estructura Modular Alterna)
