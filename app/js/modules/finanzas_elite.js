@@ -129,13 +129,14 @@ export default async function finanzasElite(container) {
         setupEvents();
         initTermometro();
         
-        // Inicializar fechas (Mes actual predeterminado)
-        const date = new Date();
-        const fInicio = new Date(date.getFullYear(), date.getMonth(), 1).toISOString().split('T')[0];
-        const fFin = new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().split('T')[0];
-        
-        document.getElementById("fInicio").value = fInicio;
-        document.getElementById("fFin").value = fFin;
+        // En lugar de limitar al mes actual al cargar por primera vez...
+// Le damos al administrador una vista inicial de los últimos 120 días por defecto
+const date = new Date();
+const fInicio = new Date(date.getTime() - (120 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]; // 120 días atrás
+const fFin = new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().split('T')[0];
+
+document.getElementById("fInicio").value = fInicio;
+document.getElementById("fFin").value = fFin;
 
         sincronizarNucleo();
     };
