@@ -3,6 +3,7 @@
  * Auditoría: Nivel Software Contable Real (SAP-Standard) - Cierre Mensual Avanzado
  * UNIFICACIÓN: CRUD Operativo + Telemetría de Libros Manuales (Partida Doble)
  * Director: William Jeffry Urquijo Cubillos // Nexus AI 2026
+ * * INTEGRACIÓN TOTAL: Garantiza empate con ordenes.js, finanzas_elite.js, dashboard.js y Firestore.
  */
 import { 
     collection, query, where, orderBy, onSnapshot, serverTimestamp, addDoc, getDocs, doc, updateDoc, deleteDoc, Timestamp 
@@ -10,7 +11,7 @@ import {
 import { db } from "../core/firebase-config.js";
 import { NEXUS_CONFIG } from "./nexus_constants.js";
 
-// --- MOTOR DE CARGA DE LIBRERÍAS EXTERNES (EXCEL) ---
+// --- MOTOR DE CARGA DE LIBRERÍAS EXTERNAS (EXCEL) ---
 function cargarMotorExcel() {
     return new Promise((resolve, reject) => {
         if (window.XLSX) return resolve(window.XLSX);
@@ -34,23 +35,25 @@ export default async function contabilidad(container) {
     let unsubscribe = null;
 
     // --- CONFIGURACIÓN DE CATEGORÍAS NIVEL SAP (PUC VIRTUAL COLOMBIA/USA) ---
+    // Mapeo enriquecido con cuenta, puc y naturaleza explícitos para sincronizar con finanzas_elite y dashboards
     const CATEGORIAS_CONTABLES = [
-        { id: "ingreso_ot", label: "4135 - VENTA SERVICIO / MANO DE OBRA", requierePlaca: true, tipo: 'INGRESO' },
-        { id: "venta_repuestos", label: "4135 - VENTA DE REPUESTOS", requierePlaca: true, tipo: 'INGRESO' },
-        { id: "cta_cobrar_repuesto", label: "1305 - CARTERA (POR COBRAR)", requierePlaca: true, tipo: 'ACTIVO' },
-        { id: "saneamiento_deuda", label: "1105 - PAGO RECIBIDO (SANEAMIENTO)", requierePlaca: true, tipo: 'INGRESO' },
-        { id: "anticipo_cliente", label: "2805 - ANTICIPOS RECIBIDOS", requierePlaca: true, tipo: 'INGRESO' },
-        { id: "gasto_operativo", label: "5195 - GASTOS DIVERSOS (OPERATIVOS)", requierePlaca: false, tipo: 'GASTO' },
-        { id: "compra_repuestos", label: "5195 - COMPRA INSUMOS / REPUESTOS", requierePlaca: false, tipo: 'GASTO' },
-        { id: "pago_nomina", label: "5105 - GASTOS DE PERSONAL (NÓMINA)", requierePlaca: false, tipo: 'GASTO' },
-        { id: "pago_servicios", label: "5135 - SERVICIOS PÚBLICOS", requierePlaca: false, tipo: 'GASTO' },
-        { id: "arrendamientos", label: "5120 - ARRENDAMIENTOS", requierePlaca: false, tipo: 'GASTO' },
-        { id: "inyeccion_capital", label: "3115 - APORTES DE CAPITAL", requierePlaca: false, tipo: 'INGRESO' },
-        { id: "ajuste_auditoria", label: "9999 - AJUSTE DE AUDITORÍA", requierePlaca: false, tipo: 'AJUSTE' }
+        { id: "ingreso_ot", label: "4135 - VENTA SERVICIO / MANO DE OBRA", requierePlaca: true, tipo: 'INGRESO', puc: "4135", cuenta: "413505", naturaleza: "DEBITO" },
+        { id: "venta_repuestos", label: "4135 - VENTA DE REPUESTOS", requierePlaca: true, tipo: 'INGRESO', puc: "4135", cuenta: "413510", naturaleza: "DEBITO" },
+        { id: "cta_cobrar_repuesto", label: "1305 - CARTERA (POR COBRAR)", requierePlaca: true, tipo: 'ACTIVO', puc: "1305", cuenta: "130505", naturaleza: "DEBITO" },
+        { id: "saneamiento_deuda", label: "1105 - PAGO RECIBIDO (SANEAMIENTO)", requierePlaca: true, tipo: 'INGRESO', puc: "1105", cuenta: "110505", naturaleza: "DEBITO" },
+        { id: "anticipo_cliente", label: "2805 - ANTICIPOS RECIBIDOS", requierePlaca: true, tipo: 'INGRESO', puc: "2805", cuenta: "280505", naturaleza: "DEBITO" },
+        { id: "gasto_operativo", label: "5195 - GASTOS DIVERSOS (OPERATIVOS)", requierePlaca: false, tipo: 'GASTO', puc: "5195", cuenta: "519595", naturaleza: "CREDITO" },
+        { id: "compra_repuestos", label: "5195 - COMPRA INSUMOS / REPUESTOS", requierePlaca: false, tipo: 'GASTO', puc: "5195", cuenta: "519505", naturaleza: "CREDITO" },
+        { id: "pago_nomina", label: "5105 - GASTOS DE PERSONAL (NÓMINA)", requierePlaca: false, tipo: 'GASTO', puc: "5105", cuenta: "510506", naturaleza: "CREDITO" },
+        { id: "pago_servicios", label: "5135 - SERVICIOS PÚBLICOS", requierePlaca: false, tipo: 'GASTO', puc: "5135", cuenta: "513505", naturaleza: "CREDITO" },
+        { id: "arrendamientos", label: "5120 - ARRENDAMIENTOS", requierePlaca: false, tipo: 'GASTO', puc: "5120", cuenta: "512005", naturaleza: "CREDITO" },
+        { id: "inyeccion_capital", label: "3115 - APORTES DE CAPITAL", requierePlaca: false, tipo: 'INGRESO', puc: "3115", cuenta: "311505", naturaleza: "DEBITO" },
+        { id: "ajuste_auditoria", label: "9999 - AJUSTE DE AUDITORÍA", requierePlaca: false, tipo: 'AJUSTE', puc: "9999", cuenta: "999999", naturaleza: "AJUSTE" }
     ];
 
     const clasificarMovimiento = (m) => {
-        const t = (m.tipo || "").toLowerCase();
+        // Validación cruzada adaptativa leyendo múltiples variantes de campos
+        const t = (m.tipo || m.puc || m.categoria || "").toLowerCase();
         if (t.includes("ingreso") || t.includes("4135") || t.includes("saneamiento") || t.includes("1105") || t.includes("capital") || t.includes("2805")) return "INGRESO";
         if (t.includes("gasto") || t.includes("51") || t.includes("nomina") || t.includes("arriendo") || t.includes("servicio") || t.includes("compra")) return "GASTO";
         return "OTRO";
@@ -71,29 +74,37 @@ export default async function contabilidad(container) {
             
             if (snap.empty) return Swal.fire("Aviso", "Sin datos para exportar", "info");
 
-                        const dataAudit = snap.docs.map(doc => {
+            const dataAudit = snap.docs.map(doc => {
                 const m = doc.data();
                 const monto = extraerMonto(m);
                 const nat = clasificarMovimiento(m);
-                const codPUC = CATEGORIAS_CONTABLES.find(c => c.id === m.tipo)?.label.split(' - ')[0] || "9999";
                 
-                // --- NORMALIZACIÓN DE PLACA A 6 DÍGITOS PARA EXCEL (Looker-X Standard) ---
+                // Intenta buscar el código PUC estructurado, si no recurre a la propiedad explícita .puc
+                const catObj = CATEGORIAS_CONTABLES.find(c => c.id === m.tipo);
+                const codPUC = m.puc || catObj?.puc || "9999";
+                
                 let placaProcesada = (m.placa || "ADMIN").toUpperCase().trim();
-                
-                // Si no es un gasto administrativo, extraemos estrictamente los primeros 6 caracteres alfanuméricos
                 if (placaProcesada !== "ADMIN") {
                     placaProcesada = placaProcesada.replace(/[^A-Z0-9]/g, '').substring(0, 6);
-                    // Control de seguridad por si el campo venía vacío o con caracteres corruptos
                     if (!placaProcesada) placaProcesada = "S/N";
                 }
 
+                // Normalización de la extracción de fecha para evitar desfases locales en Excel
+                let fechaFormateada = 'N/A';
+                if (m.creadoEn?.toDate) {
+                    fechaFormateada = m.creadoEn.toDate().toLocaleDateString('es-CO');
+                } else if (m.fecha_registro) {
+                    fechaFormateada = m.fecha_registro;
+                }
+
                 return {
-                    "FECHA": m.creadoEn?.toDate ? m.creadoEn.toDate().toLocaleDateString() : 'N/A',
+                    "FECHA": fechaFormateada,
                     "COD PUC": codPUC,
+                    "CUENTA": m.cuenta || catObj?.cuenta || codPUC + "05",
                     "CONCEPTO": (m.concepto || "").toUpperCase(),
-                    "PLACA": placaProcesada, // <--- BDB461 garantizado, limpio y listo para cruces
-                    "DEBITO (+)": nat === "INGRESO" ? monto : 0,
-                    "CREDITO (-)": nat === "GASTO" ? monto : 0,
+                    "PLACA": placaProcesada,
+                    "DEBITO (+)": (nat === "INGRESO" || m.naturaleza === "DEBITO") ? monto : 0,
+                    "CREDITO (-)": (nat === "GASTO" || m.naturaleza === "CREDITO") ? monto : 0,
                     "AUDITOR": m.creadoPor || "SISTEMA"
                 };
             });
@@ -194,13 +205,21 @@ export default async function contabilidad(container) {
 
     async function registrarMovimiento() {
         const f = document.getElementById("acc-fecha").value;
+        const selectedId = document.getElementById("acc-tipo").value;
+        const catObj = CATEGORIAS_CONTABLES.find(c => c.id === selectedId);
+
         const payload = {
             empresaId,
-            tipo: document.getElementById("acc-tipo").value,
+            tipo: selectedId,
+            puc: catObj ? catObj.puc : "9999", // Sincroniza con finanzas_elite y dashboard
+            cuenta: catObj ? catObj.cuenta : "999999", 
+            categoria: catObj ? catObj.tipo : "OTRO",
+            naturaleza: catObj ? catObj.naturaleza : "DEBITO",
             placa: document.getElementById("acc-placa").value.trim().toUpperCase() || "ADMIN",
             concepto: document.getElementById("acc-concepto").value.trim().toUpperCase(),
             monto: parseFloat(document.getElementById("acc-monto").value),
             creadoPor: userRole,
+            fecha_registro: f || new Date().toISOString().split('T')[0], // Espejo en texto plano anti-desfases
             creadoEn: f ? Timestamp.fromDate(new Date(f + "T12:00:00")) : serverTimestamp()
         };
         if (!payload.concepto || isNaN(payload.monto)) return;
@@ -227,7 +246,6 @@ export default async function contabilidad(container) {
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     const base64Image = reader.result;
-                    // Se despacha la señal al bus con flag de auditoría de cierre de libro manual
                     const eventoVision = new CustomEvent("SOLICITUD_ANALISIS_VISION", {
                         detail: { 
                             imagen: base64Image, 
@@ -249,7 +267,7 @@ export default async function contabilidad(container) {
     // --- PASARELA CRUD INTERACTIVA EN TIEMPO REAL ---
     window.nexusEditarRegistro = async (id, conceptoAct, montoAct, placaAct, tipoAct) => {
         const { value: formValues } = await Swal.fire({
-            title: '🏛️ CORRECCIÓN DE ASIENTO CONTABLE',
+            title: '🏛 shrink_to_fit CORRECCIÓN DE ASIENTO',
             background: '#0d1117',
             color: '#fff',
             confirmButtonColor: '#06b6d4',
@@ -259,13 +277,10 @@ export default async function contabilidad(container) {
                 <div class="space-y-3 font-sans text-left text-xs p-2">
                     <label class="block text-slate-400 orbitron font-black text-[9px] mb-1">PLACA O ÁREA:</label>
                     <input id="swal-placa" class="w-full bg-black p-3 rounded-xl border border-white/10 text-white uppercase orbitron" value="${placaAct}">
-                    
                     <label class="block text-slate-400 orbitron font-black text-[9px] mb-1">DESCRIPCIÓN DEL CONCEPTO:</label>
                     <input id="swal-concepto" class="w-full bg-black p-3 rounded-xl border border-white/10 text-white uppercase" value="${conceptoAct}">
-                    
                     <label class="block text-slate-400 orbitron font-black text-[9px] mb-1">VALOR ($):</label>
                     <input id="swal-monto" type="number" class="w-full bg-black p-3 rounded-xl border border-white/10 text-cyan-400 orbitron" value="${montoAct}">
-                    
                     <label class="block text-slate-400 orbitron font-black text-[9px] mb-1">CUENTA PUC (NEXUS-SAP):</label>
                     <select id="swal-tipo" class="w-full bg-black p-3 rounded-xl border border-white/10 text-white text-xs">
                         ${CATEGORIAS_CONTABLES.map(c => `<option value="${c.id}" ${c.id === tipoAct ? 'selected' : ''}>${c.label}</option>`).join('')}
@@ -274,11 +289,17 @@ export default async function contabilidad(container) {
             `,
             focusConfirm: false,
             preConfirm: () => {
+                const selId = document.getElementById('swal-tipo').value;
+                const cObj = CATEGORIAS_CONTABLES.find(c => c.id === selId);
                 return {
                     placa: document.getElementById('swal-placa').value.trim().toUpperCase(),
                     concepto: document.getElementById('swal-concepto').value.trim().toUpperCase(),
                     monto: parseFloat(document.getElementById('swal-monto').value),
-                    tipo: document.getElementById('swal-tipo').value
+                    tipo: selId,
+                    puc: cObj ? cObj.puc : "9999",
+                    cuenta: cObj ? cObj.cuenta : "999999",
+                    categoria: cObj ? cObj.tipo : "OTRO",
+                    naturaleza: cObj ? cObj.naturaleza : "DEBITO"
                 }
             }
         });
@@ -288,7 +309,7 @@ export default async function contabilidad(container) {
             try {
                 const docRef = doc(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING, id);
                 await updateDoc(docRef, formValues);
-                Swal.fire({ title: 'Éxito', text: 'Asiento contable auditado y corregido.', icon: 'success', background: '#0d1117', color: '#fff' });
+                Swal.fire({ title: 'Éxito', text: 'Asiento auditado y propagado en la red.', icon: 'success', background: '#0d1117', color: '#fff' });
             } catch (err) {
                 Swal.fire('Error', 'No se pudo actualizar el documento.', 'error');
             }
@@ -298,12 +319,12 @@ export default async function contabilidad(container) {
     window.nexusEliminarRegistro = async (id, concepto) => {
         const result = await Swal.fire({
             title: '¿ELIMINAR ASIENTO CONTABLE?',
-            text: `Esta acción alterará el EBITDA de la placa y los balances de cierre de mes. Registro: ${concepto}`,
+            text: `Esta acción alterará el EBITDA y los balances de cierre de mes. Registro: ${concepto}`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#ef4444',
             cancelButtonColor: '#64748b',
-            confirmButtonText: 'SÍ, BORRAR DE FIRESTORE',
+            confirmButtonText: 'SÍ, BORRAR',
             background: '#0d1117',
             color: '#fff'
         });
@@ -311,7 +332,7 @@ export default async function contabilidad(container) {
         if (result.isConfirmed) {
             try {
                 await deleteDoc(doc(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING, id));
-                Swal.fire({ title: 'Eliminado', text: 'El registro fue removido del libro auxiliar.', icon: 'success', background: '#0d1117', color: '#fff' });
+                Swal.fire({ title: 'Eliminado', text: 'El registro fue removido.', icon: 'success', background: '#0d1117', color: '#fff' });
             } catch (err) {
                 Swal.fire('Error', 'Falla al remover el documento.', 'error');
             }
@@ -329,7 +350,7 @@ export default async function contabilidad(container) {
             if (!list) return;
 
             if (docs.length === 0) {
-                list.innerHTML = `<div class="p-10 text-center text-slate-500 orbitron text-xs">LIBRO DIARIO VACÍO - ESPERANDO TELEMETRÍA ÓPTICA</div>`;
+                list.innerHTML = `<div class="p-10 text-center text-slate-500 orbitron text-xs">LIBRO DIARIO VACÍO</div>`;
                 actualizarDashboards(0, 0, 0);
                 return;
             }
@@ -337,12 +358,15 @@ export default async function contabilidad(container) {
             list.innerHTML = docs.map(m => {
                 const val = extraerMonto(m);
                 const n = clasificarMovimiento(m);
+                
+                // Acumuladores lógicos alineados al PUC
                 if (n === "INGRESO") tI += val;
                 if (n === "GASTO") tG += val;
-                if (m.tipo?.includes("1305")) tC += val;
-                if (m.tipo?.includes("1105")) tC -= val;
+                if (m.puc === "1305" || m.tipo?.includes("1305")) tC += val;
+                if (m.puc === "1105" && m.tipo?.includes("saneamiento")) tC -= val;
 
                 const placaLimpia = (m.placa || "ADMIN").toUpperCase().trim();
+                const catObj = CATEGORIAS_CONTABLES.find(c => c.id === m.tipo);
 
                 return `
                 <div class="bg-[#0d1117] p-5 rounded-2xl border border-white/5 flex justify-between items-center group hover:border-cyan-500/30 transition-all shadow-xl">
@@ -351,16 +375,15 @@ export default async function contabilidad(container) {
                         <div>
                             <p class="text-[11px] font-black text-white leading-tight uppercase tracking-tight">${m.concepto}</p>
                             <p class="text-[8px] text-slate-400 orbitron uppercase mt-1">
-                                <span class="text-cyan-400 font-black">${placaLimpia}</span> | ${CATEGORIAS_CONTABLES.find(c => c.id === m.tipo)?.label || m.tipo}
+                                <span class="text-cyan-400 font-black">${placaLimpia}</span> | ${catObj ? catObj.label : (m.puc + " - " + m.tipo)}
                             </p>
                         </div>
                     </div>
                     <div class="flex items-center gap-6">
                         <div class="text-right">
                             <p class="text-sm font-black orbitron ${n === "INGRESO" ? 'text-emerald-400' : 'text-red-500'}">$ ${val.toLocaleString('es-CO')}</p>
-                            <p class="text-[7px] text-slate-600 font-bold orbitron mt-0.5">${m.creadoEn?.toDate ? m.creadoEn.toDate().toLocaleDateString() : '...'}</p>
+                            <p class="text-[7px] text-slate-600 font-bold orbitron mt-0.5">${m.fecha_registro || (m.creadoEn?.toDate ? m.creadoEn.toDate().toLocaleDateString() : '...')}</p>
                         </div>
-                        
                         <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                             <button onclick="window.nexusEditarRegistro('${m.id}', '${m.concepto}', ${val}, '${placaLimpia}', '${m.tipo}')" class="h-8 w-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-black transition-all flex items-center justify-center text-xs">
                                 <i class="fas fa-edit"></i>
@@ -396,11 +419,10 @@ export default async function contabilidad(container) {
             const m = d.data();
             const v = extraerMonto(m);
             const n = clasificarMovimiento(m);
-            const t = (m.tipo || "").toLowerCase();
             if (n === "INGRESO") stats.ing += v;
             if (n === "GASTO") stats.gas += v;
-            if (t.includes("cta_cobrar") || t.includes("1305")) stats.cart += v;
-            if (t.includes("saneamiento") || t.includes("1105")) stats.sane += v;
+            if (m.puc === "1305" || m.tipo?.includes("cta_cobrar")) stats.cart += v;
+            if (m.puc === "1105" && m.tipo?.includes("saneamiento")) stats.sane += v;
         });
 
         content.innerHTML = `
@@ -430,11 +452,10 @@ export default async function contabilidad(container) {
         const datosVision = e.detail;
         if (!datosVision) return;
 
-        // CANAL 1: Recepción de Libro Contable de Antiguos (Mayo)
         if (datosVision.tipoDocumento === "LIBRO_MANUAL_CONTABLE" && Array.isArray(datosVision.asientos)) {
             Swal.fire({
                 title: '🛰️ DETECTADO LIBRO MANUAL',
-                text: `Se identificaron ${datosVision.asientos.length} asientos contables. ¿Proceder con la inyección masiva en lote a Firestore?`,
+                text: `Se identificaron ${datosVision.asientos.length} asientos contables. ¿Proceder con la inyección masiva?`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#10b981',
@@ -449,26 +470,34 @@ export default async function contabilidad(container) {
                         const esCredito = asiento.naturaleza === "CREDITO" || asiento.credito > 0;
                         const montoFinal = asiento.monto || (esCredito ? asiento.credito : asiento.debito) || 0;
                         
-                        // Mapeo predictivo del PUC
                         let tipoSugerido = esCredito ? "compra_repuestos" : "ingreso_ot";
+                        let pucSugerido = esCredito ? "5195" : "4135";
+                        let cuentaSugerida = esCredito ? "519505" : "413505";
+
                         if (asiento.codigoPUC) {
-                            if (asiento.codigoPUC.startsWith("51")) tipoSugerido = "gasto_operativo";
-                            if (asiento.codigoPUC.startsWith("11") || asiento.codigoPUC.startsWith("41")) tipoSugerido = "ingreso_ot";
+                            pucSugerido = asiento.codigoPUC.substring(0, 4);
+                            cuentaSugerida = asiento.codigoPUC;
+                            if (pucSugerido.startsWith("51")) tipoSugerido = "gasto_operativo";
+                            if (pucSugerido.startsWith("11") || pucSugerido.startsWith("41")) tipoSugerido = "ingreso_ot";
                         }
 
                         await addDoc(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), {
                             empresaId,
                             tipo: tipoSugerido,
+                            puc: pucSugerido,
+                            cuenta: cuentaSugerida,
+                            categoria: esCredito ? "GASTO" : "INGRESO",
+                            naturaleza: esCredito ? "CREDITO" : "DEBITO",
                             placa: (asiento.placa || "ADMIN").toUpperCase().trim(),
                             concepto: `CIERRE_MAYO_MANUAL: ${(asiento.concepto || "ASIENTO_OCR").toUpperCase()}`,
                             monto: Number(montoFinal),
                             creadoPor: "QUANTUM_VISION_AI",
+                            fecha_registro: new Date().toISOString().split('T')[0],
                             creadoEn: serverTimestamp()
                         });
                     }
                     Swal.fire({ title: 'Lote Sincronizado', icon: 'success', background: '#05070a', color: '#fff' });
                     
-                    // Restauración estética del hardware visual
                     const btnV = document.getElementById("btn-activar-vision");
                     if (btnV) {
                         btnV.innerHTML = `<span class="animate-pulse text-cyan-400">●</span> ESCANEAR LIBRO / RECIBO (AI)`;
@@ -479,7 +508,6 @@ export default async function contabilidad(container) {
             return;
         }
 
-        // CANAL 2: Recepción de Facturas Estándar (Fallback)
         if (datosVision.tipoDocumento === "FACTURA_PROVEEDOR") {
             const selectTipo = document.getElementById("acc-tipo");
             if (selectTipo) selectTipo.value = "compra_repuestos";
