@@ -1,6 +1,6 @@
 /**
  * 🦾 NEXUS-X TERMINATOR CORE V22.6 - FINANZAS ELITE
- * ESTRATEGIA: QUANTUM-SAP 2030 VISUAL AUDIT + PREDICTIVE BURN-RATE + ENLACE CONTABLE PERFECTO
+ * ESTRATEGIA: QUANTUM-SAP 2030 VISUAL AUDIT + PREDICTIVE BURN-RATE + PIPELINE TOLERANTE INTER-MODULOS
  * OBJETIVO: Dashboards de Combustible Financiero + Autonomía de Caja + Reporte PDF Corporativo
  * Director: William Jeffry Urquijo Cubillos
  */
@@ -23,11 +23,11 @@ export default async function finanzasElite(container) {
     
     // Dataset unificado con el Plan Único de Cuentas (PUC)
     let dbData = { 
-        ingresos: 0,  // Cuenta 1105 / 1110
-        gastos: 0,    // Cuenta 51 / 52
-        comisiones: 0,// Cuenta 5105 (Pasivo Laboral / Costo Operacional)
+        ingresos: 0,  // Cuenta 1105 / 1110 (Caja y Bancos)
+        gastos: 0,    // Cuenta 51 / 52 (Gastos Operacionales)
+        comisiones: 0,// Cuenta 5105 (Pasivo Laboral / Costo por Técnico)
         rampa: 0,     // Cuenta 1305 (Cuentas por Cobrar Órdenes Activas)
-        stock: 0,     // Cuenta 1435 (Inventario Repuestos)
+        stock: 0,     // Cuenta 1435 (Inventario Físico de Repuestos)
         burnRate: 0,
         runway: 0
     };
@@ -129,14 +129,14 @@ export default async function finanzasElite(container) {
         setupEvents();
         initTermometro();
         
-        // En lugar de limitar al mes actual al cargar por primera vez...
-// Le damos al administrador una vista inicial de los últimos 120 días por defecto
-const date = new Date();
-const fInicio = new Date(date.getTime() - (120 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]; // 120 días atrás
-const fFin = new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().split('T')[0];
-
-document.getElementById("fInicio").value = fInicio;
-document.getElementById("fFin").value = fFin;
+        // --- VENTANA TEMPORAL ELÁSTICA INTER-ANUAL ---
+        // Se inicializa apuntando a 365 días atrás para asegurar la recolección de todo el histórico de pruebas
+        const date = new Date();
+        const fInicio = new Date(date.getTime() - (365 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+        const fFin = new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().split('T')[0];
+        
+        document.getElementById("fInicio").value = fInicio;
+        document.getElementById("fFin").value = fFin;
 
         sincronizarNucleo();
     };
@@ -171,49 +171,71 @@ document.getElementById("fFin").value = fFin;
         });
     };
 
+    // FUNCIÓN DE COERCIÓN TEMPORAL UNIVERSAL (Evita rupturas de tipo)
+    const normalizarObjetoFecha = (campoFecha) => {
+        if (!campoFecha) return null;
+        if (typeof campoFecha.toDate === 'function') return campoFecha.toDate(); // Firebase Timestamp
+        if (campoFecha instanceof Date) return campoFecha;
+        if (campoFecha.seconds) return new Timestamp(campoFecha.seconds, campoFecha.nanoseconds || 0).toDate();
+        
+        // Si viene como string ISO o numérico (Epoch)
+        const parsed = new Date(campoFecha);
+        return isNaN(parsed.getTime()) ? null : parsed;
+    };
+
     const sincronizarNucleo = async () => {
-        // Remover listeners anteriores para evitar fugas de memoria por re-suscripción
         activeListeners.forEach(unsub => unsub());
         activeListeners = [];
 
         const strInicio = document.getElementById("fInicio").value;
         const strFin = document.getElementById("fFin").value;
         
-        const timestampInicio = Timestamp.fromDate(new Date(strInicio + "T00:00:00"));
-        const timestampFin = Timestamp.fromDate(new Date(strFin + "T23:59:59"));
+        // Delimitadores puros de comparación local
+        const dateLimiteInicio = new Date(strInicio + "T00:00:00");
+        const dateLimiteFin = new Date(strFin + "T23:59:59");
 
-        // 1. ESCANEO QUIRÚRGICO DE CONTABILIDAD (PUC cruzado por fechas)
+        // RESET DE DATASETS CONTABLES
+        dbData.ingresos = 0; 
+        dbData.gastos = 0; 
+        dbData.stock = 0;
+
+        // 1. ESCANEO ELÁSTICO DE LA COLECCIÓN CONTABLE
         const coleccionContable = NEXUS_CONFIG?.COLLECTIONS?.ACCOUNTING || "accounting";
-        const qCont = query(
-            collection(db, coleccionContable), 
-            where("empresaId", "==", empresaId),
-            where("fecha", ">=", timestampInicio),
-            where("fecha", "<=", timestampFin)
-        );
+        
+        // Descarga optimizada filtrando solo por Empresa (Elimina el requisito estricto de índices compuestos de rango)
+        const qCont = query(collection(db, coleccionContable), where("empresaId", "==", empresaId));
 
         try {
             const snapCont = await getDocs(qCont);
-            dbData.ingresos = 0; dbData.gastos = 0; dbData.stock = 0;
 
             snapCont.docs.forEach(d => {
                 const item = d.data();
-                const monto = Number(item.monto || item.valor || 0);
-                const cuenta = item.cuenta || item.puc || "";
+                const monto = Number(item.monto || item.valor || item.total || 0);
+                const cuenta = String(item.cuenta || item.puc || "");
+                const tipo = String(item.tipo || "");
 
-                // Clasificación estricta por estructura del Plan Único de Cuentas (PUC)
-                if (cuenta.startsWith("11") || ["ingreso_ot", "venta_repuestos"].includes(item.tipo)) {
+                // Convertir la fecha usando la tubería de coerción tolerante
+                const fechaRealDoc = normalizarObjetoFecha(item.fecha || item.fecha_registro);
+
+                // Si no tiene fecha, lo incluimos de forma histórica para no perder el rastro financiero
+                if (fechaRealDoc) {
+                    if (fechaRealDoc < dateLimiteInicio || fechaRealDoc > dateLimiteFin) return; 
+                }
+
+                // CLASIFICACIÓN ROBUSTA INTEGRADA (Híbrido Códigos PUC y Estructura Modular Alterna)
+                if (cuenta.startsWith("11") || ["ingreso_ot", "venta_repuestos", "ingreso"].includes(tipo)) {
                     dbData.ingresos += monto;
-                } else if (cuenta.startsWith("5") || ["gasto_operativo", "pago_nomina"].includes(item.tipo)) {
+                } else if (cuenta.startsWith("5") || ["gasto_operativo", "pago_nomina", "gasto", "egreso"].includes(tipo)) {
                     dbData.gastos += monto;
-                } else if (cuenta.startsWith("14") || ["compra_repuestos", "inventario"].includes(item.tipo)) {
+                } else if (cuenta.startsWith("14") || ["compra_repuestos", "inventario", "stock"].includes(tipo)) {
                     dbData.stock += monto;
                 }
             });
         } catch (err) {
-            console.error("Error cargando auditoría contable cruzada:", err);
+            console.error("Falla crítica en el procesamiento de la matriz contable:", err);
         }
 
-        // 2. ESCANEO EN TIEMPO REAL DE LA TRÁNSITO/RAMPA MECÁNICA (Órdenes)
+        // 2. ESCANEO EN TIEMPO REAL DE LAS ÓRDENES DE TRABAJO (Rampa y Nómina)
         const qOrd = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
         const unsubOrd = onSnapshot(qOrd, (snap) => {
             dbData.rampa = 0; 
@@ -223,28 +245,30 @@ document.getElementById("fFin").value = fFin;
             snap.docs.forEach(d => {
                 const o = d.data();
                 const totalOrden = Number(o.costos_totales?.total || o.total || 0);
+                const estado = String(o.estado || "").toUpperCase();
                 
-                // Cuentas por cobrar en proceso de rampa
-                if (['INGRESO', 'DIAGNOSTICO', 'REPARACION'].includes(o.estado)) {
+                // Mapeo Dinámico de Vehículos en Operación de Rampa Activa (Cuentas por cobrar en proceso)
+                if (['INGRESO', 'DIAGNOSTICO', 'REPARACION', 'PROCESO'].includes(estado)) {
                     dbData.rampa += totalOrden;
                 }
                 
-                // Consolidación de liquidaciones de nómina de órdenes cerradas o listas en el rango
-                if (['LISTO', 'ENTREGADO'].includes(o.estado)) {
-                    let cumpleFecha = true;
-                    if (o.fecha_cierre || o.fecha) {
-                        const fOrd = o.fecha_cierre ? new Date(o.fecha_cierre) : o.fecha.toDate();
-                        cumpleFecha = fOrd >= timestampInicio.toDate() && fOrd <= timestampFin.toDate();
+                // Módulo Forense de Nómina Pasiva sobre Misiones Entregadas/Listas
+                if (['LISTO', 'ENTREGADO', 'FINALIZADO'].includes(estado)) {
+                    const fechaOrdenRaw = o.fecha_cierre || o.fecha_entrega || o.fecha;
+                    const fechaOrdenProcesada = normalizarObjetoFecha(fechaOrdenRaw);
+
+                    let dentroRango = true;
+                    if (fechaOrdenProcesada) {
+                        dentroRango = fechaOrdenProcesada >= dateLimiteInicio && fechaOrdenProcesada <= dateLimiteFin;
                     }
 
-                    if (cumpleFecha) {
-                        const tecnico = o.tecnico_asignado || o.tecnico || "TÉCNICO_NO_ASIGNADO";
-                        // Extraer porcentaje dinámico del taller o aplicar factor estándar del 30%
+                    if (dentroRango) {
+                        const tecnico = o.tecnico_asignado || o.tecnico || "MECÁNICO_NO_REGISTRADO";
                         const pctComision = Number(o.porcentaje_tecnico || 30) / 100;
                         
                         const itemsServicio = o.items || o.servicios || [];
                         const baseManoObra = itemsServicio
-                            .filter(i => i.tipo === 'SERVICIO' || i.categoria === 'mano_obra')
+                            .filter(i => i.tipo === 'SERVICIO' || i.categoria === 'mano_obra' || i.isServicio)
                             .reduce((acc, i) => acc + (Number(i.venta || i.precio || 0) * Number(i.cantidad || 1)), 0);
                         
                         const comisionCalculada = baseManoObra * pctComision;
@@ -263,21 +287,19 @@ document.getElementById("fFin").value = fFin;
     };
 
     const updateUI = () => {
-        const utilidadNeta = dbData.ingresos - dbData.gastos - dbData.comisiones;
+        const formulaUtilidad = dbData.ingresos - dbData.gastos - dbData.comisiones;
         
-        // --- MÉTRICA PREDICTIVA DE BURN-RATE ---
         const fInicio = new Date(document.getElementById("fInicio").value);
         const fFin = new Date(document.getElementById("fFin").value);
         const diffTime = Math.abs(fFin - fInicio);
         const diasPeriodo = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 30;
 
         const burnRateDiario = dbData.gastos / diasPeriodo;
-        const diasSupervivencia = burnRateDiario > 0 && utilidadNeta > 0 ? Math.floor(utilidadNeta / burnRateDiario) : 0;
+        const diasSupervivencia = burnRateDiario > 0 && formulaUtilidad > 0 ? Math.floor(formulaUtilidad / burnRateDiario) : 0;
 
-        // Renderizado del Componente de Supervivencia de Caja
         const runwayDom = document.getElementById("runway-days");
         if(runwayDom) {
-            runwayDom.innerText = burnRateDiario === 0 && utilidadNeta > 0 ? "∞" : diasSupervivencia;
+            runwayDom.innerText = burnRateDiario === 0 && formulaUtilidad > 0 ? "∞" : diasSupervivencia;
             runwayDom.className = "text-6xl font-black orbitron transition-colors " + 
                 (diasSupervivencia < 10 ? "text-red-500" : (diasSupervivencia < 20 ? "text-amber-500" : "text-emerald-400"));
         }
@@ -285,21 +307,19 @@ document.getElementById("fFin").value = fFin;
         const burnRateDom = document.getElementById("burn-rate-val");
         if(burnRateDom) burnRateDom.innerText = `$${Math.round(burnRateDiario).toLocaleString()}`;
 
-        // Inyección de Valores en Tarjetas KPI
         document.getElementById("kpi-ingreso").innerText = `$${dbData.ingresos.toLocaleString()}`;
         document.getElementById("kpi-rampa").innerText = `$${dbData.rampa.toLocaleString()}`;
         document.getElementById("kpi-gasto").innerText = `$${dbData.gastos.toLocaleString()}`;
         document.getElementById("kpi-stock").innerText = `$${dbData.stock.toLocaleString()}`;
-        document.getElementById("txtUtilidad").innerText = `$${utilidadNeta.toLocaleString()}`;
+        document.getElementById("txtUtilidad").innerText = `$${formulaUtilidad.toLocaleString()}`;
         
-        // Motor de Diagnóstico Financiero Proactivo AI
-        const aiMsg = utilidadNeta > 0 ? 
+        const aiMsg = formulaUtilidad > 0 ? 
             `ESTADO NOMINAL: Margen operacional del periodo saludable. Cuentas con ${diasSupervivencia} días de autonomía de caja. Estrategia sugerida: Ejecutar cobro sobre el 30% de la rampa vehicular activa ($${Math.round(dbData.rampa * 0.3).toLocaleString()}) para aumentar liquidez en el Disponible.` :
             `ALERTA CRÍTICA: Déficit de flujo detectado. El Burn Rate diario de $${Math.round(burnRateDiario).toLocaleString()} está erosionando el balance. Detener compras no esenciales de stock e iniciar saneamiento inmediato de cartera en rampa.`;
         document.getElementById("ai-diagnostico").innerText = aiMsg;
 
         if (chartTermometro) {
-            chartTermometro.data.datasets[0].data = [dbData.gastos, dbData.comisiones, Math.max(0, utilidadNeta)];
+            chartTermometro.data.datasets[0].data = [dbData.gastos, dbData.comisiones, Math.max(0, formulaUtilidad)];
             chartTermometro.update();
         }
     };
@@ -339,12 +359,11 @@ document.getElementById("fFin").value = fFin;
     async function generarReportePDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'mm', 'a4');
-        const utilidadNeta = dbData.ingresos - dbData.gastos - dbData.comisiones;
+        const formulaUtilidad = dbData.ingresos - dbData.gastos - dbData.comisiones;
 
-        // Estructura Ejecutiva Limpia (Layout corporativo de Alta Gama)
         doc.setFillColor(17, 24, 39); doc.rect(0, 0, 210, 20, 'F');
         doc.setTextColor(255, 255, 255); doc.setFont("Helvetica", "Bold"); doc.setFontSize(11);
-        doc.text("TallerPRO360 - CONFIGURACIÓN DE INTELIGENCIA FINANCIERA", 15, 13);
+        doc.text("TALLERPRO360 - CONFIGURACIÓN DE INTELIGENCIA FINANCIERA", 15, 13);
 
         doc.setTextColor(17, 24, 39); doc.setFontSize(20);
         doc.text("ESTADO DE RESULTADOS & TELEMETRÍA DE CAJA", 15, 38);
@@ -354,7 +373,6 @@ document.getElementById("fFin").value = fFin;
         doc.text(`Rango de Auditoría: ${document.getElementById("fInicio").value} hasta ${document.getElementById("fFin").value}`, 15, 51);
         doc.text(`Fecha Impresión: ${new Date().toLocaleString()}`, 15, 56);
 
-        // Tabla Financiera Estructurada
         doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.5);
         doc.line(15, 62, 195, 62);
 
@@ -363,7 +381,7 @@ document.getElementById("fFin").value = fFin;
             ["1105 / 1110", "Disponible / Recaudo Efectivo", `$ ${dbData.ingresos.toLocaleString()}`],
             ["51 / 52", "Gastos de Operación Directos", `$ ${dbData.gastos.toLocaleString()}`],
             ["5105", "Pasivo de Nómina / Comisiones Causadas", `$ ${dbData.comisiones.toLocaleString()}`],
-            ["--", "UTILIDAD NETA OPERACIONAL", `$ ${utilidadNeta.toLocaleString()}`],
+            ["--", "UTILIDAD NETA OPERACIONAL", `$ ${formulaUtilidad.toLocaleString()}`],
             ["1305", "Capital de Carteras Activas (En Rampa)", `$ ${dbData.rampa.toLocaleString()}`],
             ["1435", "Activos en Repuestos & Insumos (Stock)", `$ ${dbData.stock.toLocaleString()}`]
         ];
@@ -373,7 +391,7 @@ document.getElementById("fFin").value = fFin;
             if(idx === 0) {
                 doc.setFont("Helvetica", "Bold"); doc.setTextColor(15, 23, 42);
             } else if(idx === 4) {
-                doc.setFont("Helvetica", "Bold"); doc.setTextColor(6, 182, 212); // Destacar utilidad
+                doc.setFont("Helvetica", "Bold"); doc.setTextColor(6, 182, 212);
             } else {
                 doc.setFont("Helvetica", "Normal"); doc.setTextColor(51, 65, 85);
             }
@@ -384,7 +402,6 @@ document.getElementById("fFin").value = fFin;
             ejeY += 11;
         });
 
-        // Bloque de Autenticación de Auditoría
         ejeY += 15;
         doc.setFont("Helvetica", "Bold"); doc.setTextColor(15, 23, 42); doc.setFontSize(10);
         doc.text("FIRMA DE AUDITORÍA Y CERTIFICACIÓN DE OPERACIÓN", 15, ejeY);
