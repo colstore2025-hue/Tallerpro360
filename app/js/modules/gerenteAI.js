@@ -1,8 +1,7 @@
 /**
- * 🦾 NEXUS-X STRATEGIC COMMAND V7.0 - GERENTE AI
- * FUSIÓN: AUDITORÍA DE BÓVEDA + EXPORTACIÓN VECTORIAL + FILTRADO TEMPORAL RECONSTITUIDO
+ * 🦾 NEXUS-X STRATEGIC COMMAND V7.1 - GERENTE AI (PRODUCTION READY)
+ * FUSIÓN: AUDITORÍA DE BÓVEDA + EXPORTACIÓN VECTORIAL EN MEMORIA + CAPTURA DE ÍNDICES FIRESTORE
  * Desarrollador: William Jeffry Urquijo Cubillos & Gemini AI Pro
- * Certificación de Código: Junio 2026
  */
 import { 
     collection, query, where, getDocs 
@@ -11,7 +10,7 @@ import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 import { NEXUS_CONFIG } from "./nexus_constants.js";
 
-// Inyección dinámica de la librería especializada de PDF para preservar el rendimiento PWA
+// Carga única y segura de la librería de exportación
 const cargarLibreriaPDF = () => {
     if (window.html2pdf) return Promise.resolve();
     return new Promise((resolve, reject) => {
@@ -27,14 +26,18 @@ export default async function gerenteAI(container) {
     const empresaId = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
     const nombreUsuario = localStorage.getItem("nexus_userName") || "Comandante";
     
-    // Inicialización del rango de tiempo: últimos 30 días por defecto
-    const hoy = new Date();
-    const haceUnMes = new Date();
-    haceUnMes.setDate(hoy.getDate() - 30);
+    // Persistencia de fechas en sesión para evitar doble trabajo al Gerente
+    if (!localStorage.getItem("nexus_tmp_f_inicio")) {
+        const hoy = new Date();
+        const haceUnMes = new Date();
+        haceUnMes.setDate(hoy.getDate() - 30);
+        localStorage.setItem("nexus_tmp_f_inicio", haceUnMes.toISOString().split('T')[0]);
+        localStorage.setItem("nexus_tmp_f_fin", hoy.toISOString().split('T')[0]);
+    }
 
-    let fechaInicioIso = haceUnMes.toISOString().split('T')[0];
-    let fechaFinIso = hoy.toISOString().split('T')[0];
-    let dataMemoriaLocal = null; // Backup para la inyección en el generador de PDF
+    let fechaInicioIso = localStorage.getItem("nexus_tmp_f_inicio");
+    let fechaFinIso = localStorage.getItem("nexus_tmp_f_fin");
+    let dataMemoriaLocal = null; 
 
     const renderLayout = () => {
         container.innerHTML = `
@@ -47,8 +50,8 @@ export default async function gerenteAI(container) {
                         STRATEGIC <span class="text-cyan-400">COMMAND</span>
                     </h1>
                     <div class="flex items-center gap-4 mt-4">
-                        <span class="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-[8px] orbitron font-black text-cyan-400 uppercase">Consciencia Activa V7.0</span>
-                        <p class="text-[9px] orbitron tracking-[0.6em] text-slate-500 uppercase italic font-black">Bóveda Corporativa: ${empresaId}</p>
+                        <span class="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-[8px] orbitron font-black text-cyan-400 uppercase">Consciencia Activa V7.1</span>
+                        <p class="text-[9px] orbitron tracking-[0.6em] text-slate-500 uppercase italic font-black">Bóveda: ${empresaId}</p>
                     </div>
                 </div>
 
@@ -92,12 +95,14 @@ export default async function gerenteAI(container) {
         try {
             fechaInicioIso = document.getElementById("filtro-fecha-inicio").value;
             fechaFinIso = document.getElementById("filtro-fecha-fin").value;
+            
+            // Guardar filtros para retener la persistencia táctica
+            localStorage.setItem("nexus_tmp_f_inicio", fechaInicioIso);
+            localStorage.setItem("nexus_tmp_f_fin", fechaFinIso);
 
-            // Formateo ISO extendido para garantizar el cruce exacto en la base de datos contable
             const timestampInicioStr = new Date(fechaInicioIso + "T00:00:00").toISOString();
             const timestampFinStr = new Date(fechaFinIso + "T23:59:59").toISOString();
 
-            // 1. DATA MINING DIRECTO CON FILTRADO CRONOLÓGICO INDEXADO
             const [snapOrdenes, snapContable, snapInv] = await Promise.all([
                 getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId))),
                 getDocs(query(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), 
@@ -110,14 +115,12 @@ export default async function gerenteAI(container) {
             let ingresos = 0, gastos = 0, rampa = 0, invValor = 0;
             let otTerminadas = 0, otActivas = 0;
 
-            // Analítica del Libro de Contabilidad Acotado
             snapContable.forEach(doc => {
                 const m = doc.data();
                 const v = Number(m.monto || 0);
                 if (['ingreso_ot', 'ingreso'].includes(m.tipo)) ingresos += v; else gastos += v;
             });
 
-            // Analítica de Órdenes Totales en Sistema
             snapOrdenes.forEach(doc => {
                 const ot = doc.data();
                 const total = Number(ot.costos_totales?.total || 0);
@@ -125,13 +128,11 @@ export default async function gerenteAI(container) {
                 else { otActivas++; rampa += total; }
             });
 
-            // Valoración de Activos de Bodega
             snapInv.forEach(doc => {
                 const it = doc.data();
                 invValor += (Number(it.cantidad || 0) * Number(it.precioCosto || 0));
             });
 
-            // Algoritmia de Desempeño Dinámico según el Rango de Días Elegido
             const diffTiempo = Math.abs(new Date(fechaFinIso) - new Date(fechaInicioIso));
             const diasAnalizados = Math.ceil(diffTiempo / (1000 * 60 * 60 * 24)) || 1;
 
@@ -140,7 +141,6 @@ export default async function gerenteAI(container) {
             const salud = ingresos > 0 ? (utilidad / ingresos) * 100 : 0;
             const eficiencia = (otTerminadas / (otActivas + otTerminadas || 1)) * 100;
 
-            // 2. MOTOR DE INFERENCIA LOGÍSTICA (MISIONES DE MANDO)
             const misiones = [];
             if (rampa > utilidad && rampa > 0) {
                 misiones.push({
@@ -153,7 +153,7 @@ export default async function gerenteAI(container) {
                 misiones.push({
                     id: "stock-auditoria", nivel: "ESTRATEGIA", icon: "fa-box-open",
                     t: "Protocolo de Stock Pasivo",
-                    d: `El valor de tu inventario ($${invValor.toLocaleString()}) está alto en relación al flujo neto. Congela compras externas no críticas.`
+                    d: `El valor de tu inventario ($${invValor.toLocaleString()}) está alto en relación al flujo de utilidad neta. Congela compras externas.`
                 });
             }
             if (eficiencia < 70) {
@@ -175,22 +175,30 @@ export default async function gerenteAI(container) {
             renderPanel(dataMemoriaLocal);
 
         } catch (e) { 
-            console.error("Critical Failure Nexus Gerente AI Core:", e); 
-            Swal.fire('FALLO_TELEMETRÍA', 'Error al consolidar la información de las bases de datos.', 'error');
+            console.error("Critical Failure Nexus Gerente AI Core:", e);
+            // Capturador inteligente de errores de índice de Firestore
+            if(e.message && e.message.includes("index")) {
+                Swal.fire({
+                    title: 'ÍNDICE REQUERIDO',
+                    text: 'Firestore requiere un índice compuesto para este rango de fechas. Revisa la consola del navegador para activarlo con el enlace oficial de Firebase.',
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido'
+                });
+            } else {
+                Swal.fire('FALLO_TELEMETRÍA', 'Error al consolidar la información de las bases de datos.', 'error');
+            }
         }
     };
 
     const renderPanel = (data) => {
         const panel = document.getElementById("panelIA");
-        
-        // Formateo estético de las fechas para la cabecera del informe
         const fFirmaInicio = new Date(fechaInicioIso + "T12:00:00").toLocaleDateString('es-CO', {day:'numeric', month:'short', year:'numeric'});
         const fFirmaFin = new Date(fechaFinIso + "T12:00:00").toLocaleDateString('es-CO', {day:'numeric', month:'short', year:'numeric'});
 
         panel.innerHTML = `
             <div class="hidden print:block col-span-full border-b border-cyan-500 pb-6 mb-8">
                 <h2 class="orbitron text-3xl font-black text-white">NEXUS-X SYSTEM // CONSOLIDADO GERENCIAL</h2>
-                <p class="text-xs font-mono text-slate-400">PERIODO DE ANÁLISIS FISCAL: ${fFirmaInicio} AL ${fFirmaFin} (${data.diasAnalizados} días analizados)</p>
+                <p class="text-xs font-mono text-slate-400">PERIODO DE ANÁLISIS FISCAL: ${fFirmaInicio} AL ${fFirmaFin} (${data.diasAnalizados} días)</p>
                 <p class="text-[10px] text-slate-500 uppercase">Director Operativo: William Jeffry Urquijo Cubillos</p>
             </div>
 
@@ -228,7 +236,6 @@ export default async function gerenteAI(container) {
                                 <h4 class="text-xl font-black mt-1 orbitron italic">${m.t}</h4>
                                 <p class="text-slate-400 text-xs mt-1 italic font-medium">${m.d}</p>
                             </div>
-                            <span class="print:hidden px-4 py-2 bg-white/5 text-slate-300 text-[8px] font-black rounded-xl uppercase orbitron border border-white/5">Estrategia</span>
                         </div>
                     `).join('')}
                 </div>
@@ -242,7 +249,7 @@ export default async function gerenteAI(container) {
                         <div class="h-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)]" style="width: ${data.eficiencia}%"></div>
                     </div>
                     <p class="text-[10px] font-bold italic leading-tight uppercase opacity-90">
-                        "Estatus técnico evaluado en rangos ${data.eficiencia > 75 ? 'EFICIENTES' : 'DE ATENCIÓN OPERATIVA'} para el volumen actual."
+                        "Estatus técnico evaluado en rangos ${data.eficiencia > 75 ? 'EFICIENTES' : 'DE ATENCIÓN OPERATIVA'}."
                     </p>
                 </div>
 
@@ -252,13 +259,11 @@ export default async function gerenteAI(container) {
                     <div class="p-6 bg-black/40 rounded-3xl border border-white/5">
                         <p class="text-[9px] font-black text-cyan-400 uppercase mb-1">Capital Total Inmovilizado</p>
                         <p class="text-3xl font-black orbitron italic text-white">$${data.invValor.toLocaleString()}</p>
-                        <p class="text-[8px] text-slate-600 uppercase mt-1 font-bold italic">Auditoría global de repuestos en stock</p>
                     </div>
 
                     <div class="p-6 bg-black/40 rounded-3xl border border-white/5">
                         <p class="text-[9px] font-black text-red-400 uppercase mb-1">Burn Rate del Periodo</p>
                         <p class="text-3xl font-black orbitron italic text-white">$${Math.round(data.burnRateDiario).toLocaleString()} / día</p>
-                        <p class="text-[8px] text-slate-600 uppercase mt-1 font-bold italic">Tasa real de quema de capital diario</p>
                     </div>
                 </div>
             </div>
@@ -276,16 +281,15 @@ export default async function gerenteAI(container) {
             </div>
         `;
 
-        // REPRODUCCIÓN DEL INFORME DE VOZ INTEGRADO
         document.getElementById("btnVozIA").onclick = () => {
-            const msn = `Comandante ${nombreUsuario}. Reporte de telemetría consolidado para este periodo. Registramos una utilidad neta de ${Math.round(data.utilidad)} pesos. El burn rate diario real se situó en ${Math.round(data.burnRateDiario)} pesos. He generado las misiones tácticas correspondientes.`;
+            const msn = `Comandante ${nombreUsuario}. Reporte de telemetría consolidado. Registramos una utilidad neta de ${Math.round(data.utilidad)} pesos con un burn rate diario real de ${Math.round(data.burnRateDiario)} pesos. He generado las misiones tácticas correspondientes.`;
             hablar(msn);
         };
     };
 
     /**
-     * 📄 EXPORTADOR COMPACTO DIGITAL PDF
-     * Aísla el nodo de datos, aplica hojas de estilos de impresión y descarga el reporte.
+     * 📄 EXPORTADOR DESKTOP-SANDBOX (FIX RESPONSIVO)
+     * Clona el elemento a un contenedor oculto con ancho estático para que el PDF no sufra daños responsivos en móviles.
      */
     async function ejecutarExportacionPDF() {
         if (!dataMemoriaLocal) return Swal.fire('SIN DATOS', 'Por favor espera a que finalice el escaneo de la bóveda.', 'warning');
@@ -295,17 +299,33 @@ export default async function gerenteAI(container) {
             
             await cargarLibreriaPDF();
             
-            const elementoAImprimir = document.getElementById("target-print-area");
+            const original = document.getElementById("target-print-area");
+            
+            // Creamos un clon aislado del área para independizarlo de la pantalla del dispositivo físico
+            const clonParaImpresion = original.cloneNode(true);
+            clonParaImpresion.style.width = "1024px";
+            clonParaImpresion.style.padding = "20px";
+            clonParaImpresion.style.position = "absolute";
+            clonParaImpresion.style.left = "-9999px";
+            clonParaImpresion.style.top = "-9999px";
+            document.body.appendChild(clonParaImpresion);
+            
+            // Forzar remoción de clases responsivas ocultas que deban imprimirse en el clon
+            const elementosOcultos = clonParaImpresion.querySelectorAll('.hidden');
+            elementosOcultos.forEach(el => el.classList.remove('hidden'));
+
             const opcionesConfig = {
-                margin:       [15, 15, 15, 15],
-                filename:     `NEXUS_COMMAND_REPORT_${fechaInicioIso}_AL_${fechaFinIso}.pdf`,
+                margin:       [12, 12, 12, 12],
+                filename:     `NEXUS_REPORT_${fechaInicioIso}_AL_${fechaFinIso}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, backgroundColor: '#010409', useCORS: true },
+                html2canvas:  { scale: 2, backgroundColor: '#010409', useCORS: true, width: 1024 },
                 jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
             };
 
-            // Ejecuta el renderizado asíncronamente y descarga el archivo vectorial
-            await html2pdf().set(opcionesConfig).from(elementoAImprimir).save();
+            await html2pdf().set(opcionesConfig).from(clonParaImpresion).save();
+            
+            // Limpieza de memoria del DOM
+            document.body.removeChild(clonParaImpresion);
             Swal.close();
             
         } catch (error) {
@@ -314,7 +334,6 @@ export default async function gerenteAI(container) {
         }
     }
 
-    // Vinculación de Escuchadores de Eventos del UI Gerencial
     renderLayout();
     await realizarDiagnostico();
 
