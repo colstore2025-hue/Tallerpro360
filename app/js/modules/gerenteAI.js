@@ -63,7 +63,7 @@ export default async function gerenteAI(container) {
 
             <div id="panelIA" class="grid grid-cols-1 xl:grid-cols-12 gap-10">
                 <div class="col-span-full py-40 flex flex-col items-center">
-                    <div class="spinner-nexus"></div>
+                    <div class="w-16 h-16 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
                     <p class="mt-8 orbitron text-[10px] tracking-[1em] text-cyan-400 animate-pulse uppercase">Mapeando Matriz Financiera...</p>
                 </div>
             </div>
@@ -78,7 +78,6 @@ export default async function gerenteAI(container) {
             localStorage.setItem("nexus_tmp_f_inicio", fechaInicioIso);
             localStorage.setItem("nexus_tmp_f_fin", fechaFinIso);
 
-            // Consultas Atómicas Optimizadas para Evitar Errores de Índices Compuestos
             const [snapOrdenes, snapContable, snapInv] = await Promise.all([
                 getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId))),
                 getDocs(query(collection(db, "contabilidad"), where("empresaId", "==", empresaId))),
@@ -88,17 +87,19 @@ export default async function gerenteAI(container) {
             let ingresos = 0, gastos = 0, rampaVal = 0, invValor = 0;
             let otTerminadas = 0, otActivas = 0;
 
-            // Pipeline de Filtrado Elástico en Memoria del Cliente (Garantiza Compatibilidad)
+            // Pipeline de Filtrado en Memoria (Convertidor e inmunizador de strings a números)
             snapContable.forEach(doc => {
                 const m = doc.data();
-                // Extracción segura del campo temporal (Soporta String e ISO)
                 const fechaRegistro = m.creadoEn || m.fecha;
                 if (!fechaRegistro) return;
                 
                 const rawFecha = typeof fechaRegistro === 'string' ? fechaRegistro.split('T')[0] : '';
                 
                 if (rawFecha >= fechaInicioIso && rawFecha <= fechaFinIso) {
-                    const v = Number(m.monto || m.valor || 0);
+                    // PARSER BLINDADO: Extrae el valor sea numérico o texto, eliminando caracteres extraños si existen
+                    const rawMonto = m.monto !== undefined ? m.monto : (m.valor !== undefined ? m.valor : 0);
+                    const v = typeof rawMonto === 'string' ? Number(rawMonto.replace(/[^0-9.-]/g, "")) : Number(rawMonto || 0);
+                    
                     if (['ingreso_ot', 'ingreso', 'INGRESO'].includes(m.tipo)) {
                         ingresos += v;
                     } else {
@@ -109,7 +110,9 @@ export default async function gerenteAI(container) {
 
             snapOrdenes.forEach(doc => {
                 const ot = doc.data();
-                const total = Number(ot.total || ot.costos_totales?.total || 0);
+                const rawTotal = ot.total !== undefined ? ot.total : (ot.costos_totales?.total !== undefined ? ot.costos_totales.total : 0);
+                const total = typeof rawTotal === 'string' ? Number(rawTotal.replace(/[^0-9.-]/g, "")) : Number(rawTotal || 0);
+                
                 if (['LISTO', 'ENTREGADO', 'FINALIZADA'].includes(ot.estado)) {
                     otTerminadas++;
                 } else {
@@ -120,10 +123,11 @@ export default async function gerenteAI(container) {
 
             snapInv.forEach(doc => {
                 const it = doc.data();
-                invValor += (Number(it.cantidad || 0) * Number(it.precioCosto || 0));
+                const cantidad = Number(it.cantidad || 0);
+                const precioCosto = Number(it.precioCosto || 0);
+                invValor += (cantidad * precioCosto);
             });
 
-            // Procesamiento de Métricas Avanzadas
             const diffTiempo = Math.abs(new Date(fechaFinIso + "T12:00:00") - new Date(fechaInicioIso + "T12:00:00"));
             const diasAnalizados = Math.ceil(diffTiempo / (1000 * 60 * 60 * 24)) || 1;
 
@@ -132,7 +136,6 @@ export default async function gerenteAI(container) {
             const salud = ingresos > 0 ? (utilidad / ingresos) * 100 : 0;
             const eficiencia = (otTerminadas / (otActivas + otTerminadas || 1)) * 100;
 
-            // Motor de Inferencia de Decisiones Corporativas
             const misiones = [];
             if (rampaVal > 0) {
                 misiones.push({
@@ -141,7 +144,7 @@ export default async function gerenteAI(container) {
                     d: `Detectamos $${rampaVal.toLocaleString()} en rampa de desarrollo. Agilizar la entrega de estas órdenes inyectará liquidez directa al taller.`
                 });
             }
-            if (invValor > 2000000) {
+            if (invValor > 0) {
                 misiones.push({
                     nivel: "ESTRATEGIA", icon: "fa-box-open",
                     t: "Protocolo de Stock Pasivo",
@@ -188,7 +191,7 @@ export default async function gerenteAI(container) {
                             <h2 class="text-6xl font-black text-white orbitron italic tracking-tighter leading-none">$ ${data.ingresos.toLocaleString()}</h2>
                         </div>
                         <div class="relative border-l border-white/10 pl-12">
-                            <p class="text-[9px] text-emerald-400 font-black uppercase mb-4 tracking-widest italic">Utilidad Neta Real</p>
+                            <p class="text-[9px] text-amber-400 font-black uppercase mb-4 tracking-widest italic">Utilidad Neta Real</p>
                             <h2 class="text-5xl font-black ${data.utilidad >= 0 ? 'text-emerald-500' : 'text-red-500'} orbitron italic tracking-tighter opacity-80">$ ${data.utilidad.toLocaleString()}</h2>
                             <span class="absolute right-0 top-0 text-[9px] bg-white/10 text-cyan-400 px-3 py-1 rounded-full font-black uppercase orbitron">${data.salud.toFixed(1)}% MARGEN</span>
                         </div>
