@@ -1,7 +1,7 @@
 /**
- * 🦾 NEXUS-X STRATEGIC COMMAND V7.1 - GERENTE AI (PRODUCTION READY)
- * FUSIÓN: AUDITORÍA DE BÓVEDA + EXPORTACIÓN VECTORIAL EN MEMORIA + CAPTURA DE ÍNDICES FIRESTORE
- * Desarrollador: William Jeffry Urquijo Cubillos & Gemini AI Pro
+ * 🦾 NEXUS-X STRATEGIC COMMAND V7.2 - GERENTE AI (EDICIÓN FINAL DE PRODUCCIÓN)
+ * RESOLUCIÓN: COMPENSACIÓN CRONOLÓGICA GMT-5 + RENDERIZADOR PDF CON AISLAMIENTO DE VIEWPORT
+ * Director General: William Jeffry Urquijo Cubillos & Gemini AI
  */
 import { 
     collection, query, where, getDocs 
@@ -10,23 +10,27 @@ import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 import { NEXUS_CONFIG } from "./nexus_constants.js";
 
-// Carga única y segura de la librería de exportación
+// Guardia de Inicialización: Previene duplicación de scripts en el Head de la PWA
+let cargandoPdfPromesa = null;
 const cargarLibreriaPDF = () => {
     if (window.html2pdf) return Promise.resolve();
-    return new Promise((resolve, reject) => {
+    if (cargandoPdfPromesa) return cargandoPdfPromesa;
+
+    cargandoPdfPromesa = new Promise((resolve, reject) => {
         const script = document.createElement("script");
         script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
-        script.onload = resolve;
-        script.onerror = reject;
+        script.onload = () => resolve();
+        script.onerror = (err) => { cargandoPdfPromesa = null; reject(err); };
         document.head.appendChild(script);
     });
+    return cargandoPdfPromesa;
 };
 
 export default async function gerenteAI(container) {
     const empresaId = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
     const nombreUsuario = localStorage.getItem("nexus_userName") || "Comandante";
     
-    // Persistencia de fechas en sesión para evitar doble trabajo al Gerente
+    // Persistencia del estado temporal de la sesión gerencial
     if (!localStorage.getItem("nexus_tmp_f_inicio")) {
         const hoy = new Date();
         const haceUnMes = new Date();
@@ -50,7 +54,7 @@ export default async function gerenteAI(container) {
                         STRATEGIC <span class="text-cyan-400">COMMAND</span>
                     </h1>
                     <div class="flex items-center gap-4 mt-4">
-                        <span class="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-[8px] orbitron font-black text-cyan-400 uppercase">Consciencia Activa V7.1</span>
+                        <span class="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-[8px] orbitron font-black text-cyan-400 uppercase">Consciencia Activa V7.2</span>
                         <p class="text-[9px] orbitron tracking-[0.6em] text-slate-500 uppercase italic font-black">Bóveda: ${empresaId}</p>
                     </div>
                 </div>
@@ -96,12 +100,12 @@ export default async function gerenteAI(container) {
             fechaInicioIso = document.getElementById("filtro-fecha-inicio").value;
             fechaFinIso = document.getElementById("filtro-fecha-fin").value;
             
-            // Guardar filtros para retener la persistencia táctica
             localStorage.setItem("nexus_tmp_f_inicio", fechaInicioIso);
             localStorage.setItem("nexus_tmp_f_fin", fechaFinIso);
 
-            const timestampInicioStr = new Date(fechaInicioIso + "T00:00:00").toISOString();
-            const timestampFinStr = new Date(fechaFinIso + "T23:59:59").toISOString();
+            // COMPENSACIÓN MILITAR DE HORA: Forzamos la medianoche absoluta de Colombia (GMT-5) sin depender del motor local
+            const timestampInicioStr = `${fechaInicioIso}T00:00:00.000-05:00`;
+            const timestampFinStr = `${fechaFinIso}T23:59:59.999-05:00`;
 
             const [snapOrdenes, snapContable, snapInv] = await Promise.all([
                 getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId))),
@@ -133,7 +137,7 @@ export default async function gerenteAI(container) {
                 invValor += (Number(it.cantidad || 0) * Number(it.precioCosto || 0));
             });
 
-            const diffTiempo = Math.abs(new Date(fechaFinIso) - new Date(fechaInicioIso));
+            const diffTiempo = Math.abs(new Date(fechaFinIso + "T12:00:00") - new Date(fechaInicioIso + "T12:00:00"));
             const diasAnalizados = Math.ceil(diffTiempo / (1000 * 60 * 60 * 24)) || 1;
 
             const utilidad = ingresos - gastos;
@@ -176,14 +180,8 @@ export default async function gerenteAI(container) {
 
         } catch (e) { 
             console.error("Critical Failure Nexus Gerente AI Core:", e);
-            // Capturador inteligente de errores de índice de Firestore
             if(e.message && e.message.includes("index")) {
-                Swal.fire({
-                    title: 'ÍNDICE REQUERIDO',
-                    text: 'Firestore requiere un índice compuesto para este rango de fechas. Revisa la consola del navegador para activarlo con el enlace oficial de Firebase.',
-                    icon: 'warning',
-                    confirmButtonText: 'Entendido'
-                });
+                Swal.fire('ÍNDICE REQUERIDO', 'Firestore requiere un índice compuesto para este rango de fechas. Revisa la consola del navegador.', 'warning');
             } else {
                 Swal.fire('FALLO_TELEMETRÍA', 'Error al consolidar la información de las bases de datos.', 'error');
             }
@@ -246,7 +244,7 @@ export default async function gerenteAI(container) {
                     <h4 class="orbitron text-[10px] font-black mb-8 uppercase tracking-widest opacity-70 italic">Eficiencia de Rampa</h4>
                     <p class="text-6xl font-black orbitron mb-4 italic tracking-tighter">${data.eficiencia.toFixed(1)}%</p>
                     <div class="h-1.5 w-full bg-black/20 rounded-full overflow-hidden mb-6">
-                        <div class="h-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)]" style="width: ${data.eficiencia}%"></div>
+                        <div class="h-full bg-white" style="width: ${data.eficiencia}%"></div>
                     </div>
                     <p class="text-[10px] font-bold italic leading-tight uppercase opacity-90">
                         "Estatus técnico evaluado en rangos ${data.eficiencia > 75 ? 'EFICIENTES' : 'DE ATENCIÓN OPERATIVA'}."
@@ -288,8 +286,7 @@ export default async function gerenteAI(container) {
     };
 
     /**
-     * 📄 EXPORTADOR DESKTOP-SANDBOX (FIX RESPONSIVO)
-     * Clona el elemento a un contenedor oculto con ancho estático para que el PDF no sufra daños responsivos en móviles.
+     * 📄 METODO SEGURO DE EXPORTACIÓN (SANDBOX DE RENDERIZADO ASÍNCRONO)
      */
     async function ejecutarExportacionPDF() {
         if (!dataMemoriaLocal) return Swal.fire('SIN DATOS', 'Por favor espera a que finalice el escaneo de la bóveda.', 'warning');
@@ -301,18 +298,22 @@ export default async function gerenteAI(container) {
             
             const original = document.getElementById("target-print-area");
             
-            // Creamos un clon aislado del área para independizarlo de la pantalla del dispositivo físico
-            const clonParaImpresion = original.cloneNode(true);
-            clonParaImpresion.style.width = "1024px";
-            clonParaImpresion.style.padding = "20px";
-            clonParaImpresion.style.position = "absolute";
-            clonParaImpresion.style.left = "-9999px";
-            clonParaImpresion.style.top = "-9999px";
-            document.body.appendChild(clonParaImpresion);
+            // SANDBOX DE RENDERIZADO: Creamos un contenedor aislado en memoria para evitar que afecte o sea afectado por la pantalla responsiva móvil
+            const sandboxContenedor = document.createElement("div");
+            sandboxContenedor.style.position = "fixed";
+            sandboxContenedor.style.left = "-9999px";
+            sandboxContenedor.style.top = "-9999px";
+            sandboxContenedor.style.width = "1024px"; // Garantiza consistencia visual idéntica a una pantalla de escritorio
+            sandboxContenedor.style.backgroundColor = "#010409";
+            sandboxContenedor.style.color = "#ffffff";
             
-            // Forzar remoción de clases responsivas ocultas que deban imprimirse en el clon
-            const elementosOcultos = clonParaImpresion.querySelectorAll('.hidden');
-            elementosOcultos.forEach(el => el.classList.remove('hidden'));
+            const clonParaImpresion = original.cloneNode(true);
+            sandboxContenedor.appendChild(clonParaImpresion);
+            document.body.appendChild(sandboxContenedor);
+            
+            // Remueve de forma segura la directiva de ocultamiento CSS sólo para los elementos de impresión dentro del Sandbox
+            const bloquesOcultos = sandboxContenedor.querySelectorAll('.hidden');
+            bloquesOcultos.forEach(el => el.style.display = 'block');
 
             const opcionesConfig = {
                 margin:       [12, 12, 12, 12],
@@ -322,10 +323,10 @@ export default async function gerenteAI(container) {
                 jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
             };
 
-            await html2pdf().set(opcionesConfig).from(clonParaImpresion).save();
+            await html2pdf().set(opcionesConfig).from(sandboxContenedor).save();
             
-            // Limpieza de memoria del DOM
-            document.body.removeChild(clonParaImpresion);
+            // Destrucción inmediata del contenedor flotante
+            document.body.removeChild(sandboxContenedor);
             Swal.close();
             
         } catch (error) {
