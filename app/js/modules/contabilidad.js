@@ -1,5 +1,5 @@
 /**
- * 🏛️ contabilidad.js - NEXUS-X MASTER-CORE V23.0.0 [QUANTUM-SAP FORENSIC]
+ * 🏛️ contabilidad.js - NEXUS-X MASTER-CORE V23.1.0 [QUANTUM-SAP FORENSIC]
  * Auditoría: Nivel Software Contable Real (SAP-Standard) - Cierre Mensual Avanzado
  * UNIFICACIÓN: CRUD Operativo + Telemetría de Libros Manuales + Cierres Blindados
  * Director: William Jeffry Urquijo Cubillos // Nexus AI 2026
@@ -32,8 +32,8 @@ export default async function contabilidad(container) {
     const userRole = localStorage.getItem("nexus_userRole") || "mecanico"; 
     let vistaActual = "DIARIO"; 
     let unsubscribe = null;
-    let registrosGlobales = []; // Cache local para filtros en tiempo real
-    let estadosCierreMes = {};  // Diccionario llave-valor para períodos cerrados: {'2026-05': true}
+    let registrosGlobales = []; 
+    let estadosCierreMes = {};  
 
     const CATEGORIAS_CONTABLES = [
         { id: "ingreso_ot", label: "4135 - VENTA SERVICIO / MANO DE OBRA", requierePlaca: true, tipo: 'INGRESO', puc: "4135", cuenta: "413505", naturaleza: "DEBITO" },
@@ -62,14 +62,12 @@ export default async function contabilidad(container) {
         return typeof raw === 'number' ? raw : parseFloat(raw) || 0;
     };
 
-    // --- VERIFICADOR DE PERÍODO BLOQUEADO ---
     const esPeriodoBloqueado = (fechaString) => {
         if (!fechaString) return false;
-        const periodo = fechaString.substring(0, 7); // Extrae 'YYYY-MM'
+        const periodo = fechaString.substring(0, 7); 
         return !!estadosCierreMes[periodo];
     };
 
-    // --- CARGA Y SINCRONIZACIÓN DE CIERRES MENSUALES ---
     const cargarEstadosCierre = async () => {
         try {
             const q = query(collection(db, "cierres_mensuales"), where("empresaId", "==", empresaId));
@@ -78,7 +76,7 @@ export default async function contabilidad(container) {
             snap.forEach(doc => {
                 const data = doc.data();
                 if (data.estado === "CERRADO") {
-                    estadosCierreMes[data.periodo] = doc.id; // Guarda ID para reversión posterior
+                    estadosCierreMes[data.periodo] = doc.id; 
                 }
             });
         } catch (e) {
@@ -86,9 +84,10 @@ export default async function contabilidad(container) {
         }
     };
 
+    // --- REQUERIMIENTO 2: EXPORTACIÓN CON TOTALIZACIÓN DIRECTA EN EXCEL ---
     const exportarExcelSAP = async () => {
         try {
-            Swal.fire({ title: 'Sincronizando Excel Forense...', didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: 'Generando Reporte con Totales SAP...', didOpen: () => Swal.showLoading() });
             const LibXLSX = await cargarMotorExcel();
             
             const rInicio = document.getElementById("filtro-fecha-inicio")?.value || "";
@@ -98,17 +97,26 @@ export default async function contabilidad(container) {
             if (rInicio) docsFiltrados = docsFiltrados.filter(m => m.fecha_registro >= rInicio);
             if (rFin) docsFiltrados = docsFiltrados.filter(m => m.fecha_registro <= rFin);
 
-            if (docsFiltrados.length === 0) return Swal.fire("Aviso", "Sin datos en el rango seleccionado para exportar", "info");
+            if (docsFiltrados.length === 0) return Swal.fire("Aviso", "Sin datos en el rango seleccionado", "info");
 
-            // Ordenamiento ascendente por fecha para el reporte estructurado
             docsFiltrados.sort((a, b) => a.fecha_registro.localeCompare(b.fecha_registro));
 
-            const dataAudit = docsFiltrados.map(m => {
+            let totalDebitosGbl = 0;
+            let totalCreditosGbl = 0;
+
+            // Mapeo estructurado de filas
+            const filasReporte = docsFiltrados.map(m => {
                 const monto = extraerMonto(m);
                 const nat = clasificarMovimiento(m);
                 const catObj = CATEGORIAS_CONTABLES.find(c => c.id === m.tipo);
                 const codPUC = m.puc || catObj?.puc || "9999";
                 
+                const debs = (nat === "INGRESO" || m.naturaleza === "DEBITO") ? monto : 0;
+                const creds = (nat === "GASTO" || m.naturaleza === "CREDITO") ? monto : 0;
+
+                totalDebitosGbl += debs;
+                totalCreditosGbl += creds;
+
                 return {
                     "FECHA": m.fecha_registro,
                     "PERÍODO": m.fecha_registro.substring(0, 7),
@@ -116,17 +124,31 @@ export default async function contabilidad(container) {
                     "CUENTA": m.cuenta || catObj?.cuenta || codPUC + "05",
                     "CONCEPTO": (m.concepto || "").toUpperCase(),
                     "PLACA": (m.placa || "ADMIN").toUpperCase(),
-                    "DEBITO (+)": (nat === "INGRESO" || m.naturaleza === "DEBITO") ? monto : 0,
-                    "CREDITO (-)": (nat === "GASTO" || m.naturaleza === "CREDITO") ? monto : 0,
-                    "AUDITOR": m.creadoPor || "SISTEMA",
-                    "ESTADO CIERRE": esPeriodoBloqueado(m.fecha_registro) ? "BLOQUEADO/CERRADO" : "ABIERTO"
+                    "DEBITO (+)": debs,
+                    "CREDITO (-)": creds,
+                    "AUDITOR": m.creadoPor || "SISTEMA"
                 };
             });
 
-            const ws = LibXLSX.utils.json_to_sheet(dataAudit);
+            // INYECCIÓN DE FILAS DE TOTALES AL FINAL DEL ARCHIVO
+            filasReporte.push({}); // Fila en blanco de separación
+            filasReporte.push({
+                "FECHA": "--- TOTALES ---",
+                "CONCEPTO": "SUMATORIA CONTROL DE AUDITORÍA",
+                "DEBITO (+)": totalDebitosGbl,
+                "CREDITO (-)": totalCreditosGbl
+            });
+            filasReporte.push({
+                "FECHA": "--- BALANCE ---",
+                "CONCEPTO": "EJERCICIO NETO DEL PERIODO",
+                "DEBITO (+)": totalDebitosGbl - totalCreditosGbl >= 0 ? totalDebitosGbl - totalCreditosGbl : 0,
+                "CREDITO (-)": totalDebitosGbl - totalCreditosGbl < 0 ? Math.abs(totalDebitosGbl - totalCreditosGbl) : 0
+            });
+
+            const ws = LibXLSX.utils.json_to_sheet(filasReporte);
             const wb = LibXLSX.utils.book_new();
-            LibXLSX.utils.book_append_sheet(wb, ws, "LibroAuxiliarSAP");
-            LibXLSX.writeFile(wb, `NEXUS_REPORTE_FORENSE_${empresaId}.xlsx`);
+            LibXLSX.utils.book_append_sheet(wb, ws, "Balance_Sincronizado");
+            LibXLSX.writeFile(wb, `NEXUS_REPORTE_PERIODO_${empresaId}.xlsx`);
             Swal.close();
         } catch (e) { 
             console.error("🚀 EXCEL_ENGINE_FAULT ->", e);
@@ -137,9 +159,9 @@ export default async function contabilidad(container) {
     const renderLayout = async () => {
         await cargarEstadosCierre();
         
-        // Inicialización de rango por defecto (Mes actual)
+        // CORRECCIÓN PUNTO 1: Rango inicial extendido desde Mayo para forzar visibilidad completa
         const hoy = new Date();
-        const fInicioDefecto = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split('T')[0];
+        const fInicioDefecto = "2026-05-01"; 
         const fFinDefecto = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).toISOString().split('T')[0];
 
         container.innerHTML = `
@@ -182,8 +204,6 @@ export default async function contabilidad(container) {
         
         setupNavigation();
         document.getElementById("btn-ejecutar-filtro").onclick = () => procesarYRenderizarDatos();
-        
-        // Iniciar enlace en tiempo real con Firestore
         escucharDatos();
     };
 
@@ -214,11 +234,7 @@ export default async function contabilidad(container) {
     };
 
     const procesarYRenderizarDatos = () => {
-        if (vistaActual === "DIARIO") {
-            cargarVistaDiaria();
-        } else {
-            cargarVistaCuentas();
-        }
+        vistaActual === "DIARIO" ? cargarVistaDiaria() : cargarVistaCuentas();
     };
 
     const cargarVistaDiaria = () => {
@@ -273,11 +289,10 @@ export default async function contabilidad(container) {
         const f = document.getElementById("acc-fecha").value;
         if (!f) return Swal.fire("Error SAP", "Se requiere estipular una fecha válida", "error");
 
-        // VALIDACIÓN CRÍTICA CONTRA CIERRE DE MES
         if (esPeriodoBloqueado(f)) {
             return Swal.fire({
                 title: "PERÍODO BLOQUEADO",
-                text: `El mes ${f.substring(0, 7)} ya cuenta con un Cierre Contable Consolidado y firmado. No se permiten nuevos asientos.`,
+                text: `El mes ${f.substring(0, 7)} ya cuenta con un Cierre Contable.`,
                 icon: "error",
                 background: "#0d1117",
                 color: "#fff"
@@ -309,7 +324,7 @@ export default async function contabilidad(container) {
         Swal.fire({ title: "Asiento Inyectado", icon: "success", toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
     }
 
-    // --- PIPELINE DE ORDENAMIENTO CRONOLÓGICO Y AGRUPACIÓN POR PERÍODOS ---
+    // --- PIPELINE ROBUSTO DE RECUPERACIÓN Y ORDENAMIENTO DE DATA ---
     const renderizarListaAgrupada = () => {
         const listContainer = document.getElementById("listaFinanzasAgrupada");
         if (!listContainer) return;
@@ -317,8 +332,19 @@ export default async function contabilidad(container) {
         const rInicio = document.getElementById("filtro-fecha-inicio")?.value || "";
         const rFin = document.getElementById("filtro-fecha-fin")?.value || "";
 
-        // Filtrado por el rango seleccionado
-        let docsFiltrados = [...registrosGlobales];
+        // PROCESADOR DE RESCATE: Normaliza los documentos viejos que carecen de 'fecha_registro'
+        const registrosNormalizados = registrosGlobales.map(m => {
+            let fechaAsignada = m.fecha_registro;
+            if (!fechaAsignada && m.creadoEn?.toDate) {
+                fechaAsignada = m.creadoEn.toDate().toISOString().split('T')[0];
+            } else if (!fechaAsignada) {
+                fechaAsignada = new Date().toISOString().split('T')[0];
+            }
+            return { ...m, fecha_registro: fechaAsignada };
+        });
+
+        // Aplicación estricta de filtros temporales sobre la data normalizada
+        let docsFiltrados = [...registrosNormalizados];
         if (rInicio) docsFiltrados = docsFiltrados.filter(m => m.fecha_registro >= rInicio);
         if (rFin) docsFiltrados = docsFiltrados.filter(m => m.fecha_registro <= rFin);
 
@@ -327,28 +353,20 @@ export default async function contabilidad(container) {
             return;
         }
 
-        // Agrupación de transacciones por mes (período 'YYYY-MM')
         const mapaPeriodos = {};
         docsFiltrados.forEach(m => {
-            const periodo = m.fecha_registro.substring(0, 7); // Mapea el mes
-            if (!mapaPeriodos[periodo]) {
-                mapaPeriodos[periodo] = [];
-            }
+            const periodo = m.fecha_registro.substring(0, 7); 
+            if (!mapaPeriodos[periodo]) mapaPeriodos[periodo] = [];
             mapaPeriodos[periodo].push(m);
         });
 
-        // Ordenar los períodos en orden cronológico ascendente
         const periodosOrdenados = Object.keys(mapaPeriodos).sort((a, b) => a.localeCompare(b));
-
         let htmlFinal = "";
 
         periodosOrdenados.forEach(per => {
             const transaccionesDelMes = mapaPeriodos[per];
-            
-            // Requerimiento 1: Ordenar transacciones mes a mes de forma ASCENDENTE
             transaccionesDelMes.sort((a, b) => a.fecha_registro.localeCompare(b.fecha_registro));
 
-            // Requerimiento 2: Totalizar Débitos y Créditos de cada columna del mes
             let totalDebitoMes = 0;
             let totalCreditoMes = 0;
 
@@ -361,7 +379,6 @@ export default async function contabilidad(container) {
 
             const esMesCerrado = !!estadosCierreMes[per];
 
-            // Renderizado de la cabecera del Mes con totales por columna
             htmlFinal += `
             <div class="bg-[#0d1117] rounded-[2.5rem] border ${esMesCerrado ? 'border-red-500/20 bg-gradient-to-b from-[#0d1117] to-red-950/10' : 'border-white/5'} p-6 shadow-xl space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-4 gap-2">
@@ -369,7 +386,7 @@ export default async function contabilidad(container) {
                         <span class="text-[7px] orbitron bg-white/5 border border-white/10 px-2 py-0.5 rounded text-slate-400">NEXUS_PERÍODO</span>
                         <h3 class="orbitron text-lg font-black text-white tracking-widest mt-1 uppercase flex items-center gap-2">
                             ${traducirPeriodo(per)} 
-                            ${esMesCerrado ? '<span class="text-[8px] bg-red-600/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded font-mono">🔒 SÉLLADO SAP</span>' : '<span class="text-[8px] bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-mono">🔓 ABIERTO</span>'}
+                            ${esMesCerrado ? '<span class="text-[8px] bg-red-600/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded font-mono">🔒 CERRADO</span>' : '<span class="text-[8px] bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-mono">🔓 ABIERTO</span>'}
                         </h3>
                     </div>
                     <div class="flex gap-4 bg-black/40 p-3 rounded-2xl border border-white/5">
@@ -396,7 +413,7 @@ export default async function contabilidad(container) {
                         <div class="bg-black/30 p-4 rounded-xl flex justify-between items-center group hover:bg-black/60 border border-white/0 hover:border-white/5 transition-all">
                             <div class="flex items-center gap-3">
                                 <div class="text-[9px] font-mono text-slate-500 bg-white/5 p-1.5 rounded text-center min-w-[45px]">
-                                    ${m.fecha_registro.substring(8, 10)} / ${m.fecha_registro.substring(5, 7)}
+                                    ${m.fecha_registro.substring(8, 10)}/${m.fecha_registro.substring(5, 7)}
                                 </div>
                                 <div>
                                     <h5 class="text-xs font-black text-slate-200 uppercase">${m.concepto}</h5>
@@ -410,7 +427,6 @@ export default async function contabilidad(container) {
                                     <p class="text-xs font-black orbitron ${esDeb ? 'text-emerald-400' : 'text-red-400'}">
                                         ${esDeb ? '+' : '-'} $ ${val.toLocaleString('es-CO')}
                                     </p>
-                                    <span class="text-[6px] uppercase font-black tracking-wider text-slate-600 block orbitron">${esDeb ? 'DÉBITO' : 'CRÉDITO'}</span>
                                 </div>
                                 <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
                                     <button onclick="window.nexusEditarRegistro('${m.id}', '${m.concepto}', ${val}, '${m.placa}', '${m.tipo}', '${m.fecha_registro}')" class="h-6 w-6 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-black transition-all flex items-center justify-center text-[10px]">
@@ -430,9 +446,7 @@ export default async function contabilidad(container) {
         listContainer.innerHTML = htmlFinal;
     };
 
-    // --- REQUERIMIENTO 3: CRUD REFORMADO CON FLEXIBILIDAD DE FECHAS ---
     window.nexusEditarRegistro = async (id, conceptoAct, montoAct, placaAct, tipoAct, fechaAct) => {
-        // VALIDACIÓN DE CIERRE PREVIA A LA EDICIÓN
         if (esPeriodoBloqueado(fechaAct)) {
             return Swal.fire("Bloqueo de Cierre", "Este asiento pertenece a un período sellado y no puede alterarse.", "error");
         }
@@ -446,18 +460,14 @@ export default async function contabilidad(container) {
             showCancelButton: true,
             html: `
                 <div class="space-y-3 font-sans text-left text-xs p-2">
-                    <label class="block text-slate-400 orbitron font-black text-[9px] mb-1">FECHA DEL MOVIMIENTO (NUEVA FECHA):</label>
+                    <label class="block text-slate-400 orbitron font-black text-[9px] mb-1">FECHA DEL MOVIMIENTO:</label>
                     <input id="swal-fecha" type="date" class="w-full bg-black p-3 rounded-xl border border-white/10 text-cyan-400 orbitron" value="${fechaAct}">
-                    
                     <label class="block text-slate-400 orbitron font-black text-[9px] mb-1">PLACA O ÁREA:</label>
                     <input id="swal-placa" class="w-full bg-black p-3 rounded-xl border border-white/10 text-white uppercase orbitron" value="${placaAct}">
-                    
                     <label class="block text-slate-400 orbitron font-black text-[9px] mb-1">DESCRIPCIÓN DEL CONCEPTO:</label>
                     <input id="swal-concepto" class="w-full bg-black p-3 rounded-xl border border-white/10 text-white uppercase" value="${conceptoAct}">
-                    
                     <label class="block text-slate-400 orbitron font-black text-[9px] mb-1">VALOR ($):</label>
                     <input id="swal-monto" type="number" class="w-full bg-black p-3 rounded-xl border border-white/10 text-cyan-400 orbitron" value="${montoAct}">
-                    
                     <label class="block text-slate-400 orbitron font-black text-[9px] mb-1">CUENTA PUC (NEXUS-SAP):</label>
                     <select id="swal-tipo" class="w-full bg-black p-3 rounded-xl border border-white/10 text-white text-xs">
                         ${CATEGORIAS_CONTABLES.map(c => `<option value="${c.id}" ${c.id === tipoAct ? 'selected' : ''}>${c.label}</option>`).join('')}
@@ -468,7 +478,7 @@ export default async function contabilidad(container) {
             preConfirm: () => {
                 const nuevaFecha = document.getElementById('swal-fecha').value;
                 if (!nuevaFecha) {
-                    Swal.showValidationMessage('La fecha es un requerimiento mandatorio de auditoría');
+                    Swal.showValidationMessage('La fecha es obligatoria');
                     return false;
                 }
                 const selId = document.getElementById('swal-tipo').value;
@@ -490,16 +500,14 @@ export default async function contabilidad(container) {
 
         if (formValues) {
             if (!formValues.concepto || isNaN(formValues.monto)) return;
-            
-            // Validar que la nueva fecha destino no esté bloqueada por cierres
             if (esPeriodoBloqueado(formValues.fecha_registro)) {
-                return Swal.fire("Operación Abortada", "La fecha destino seleccionada está bloqueada por un cierre activo.", "error");
+                return Swal.fire("Operación Abortada", "La fecha destino está bloqueada.", "error");
             }
 
             try {
                 const docRef = doc(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING, id);
                 await updateDoc(docRef, formValues);
-                Swal.fire({ title: 'Éxito', text: 'Asiento propagado relocalizado correctamente.', icon: 'success', background: '#0d1117', color: '#fff' });
+                Swal.fire({ title: 'Éxito', text: 'Asiento modificado correctamente.', icon: 'success', background: '#0d1117', color: '#fff' });
             } catch (err) {
                 Swal.fire('Error', 'Falla de transmisión a Firestore.', 'error');
             }
@@ -508,17 +516,15 @@ export default async function contabilidad(container) {
 
     window.nexusEliminarRegistro = async (id, concepto, fechaAct) => {
         if (esPeriodoBloqueado(fechaAct)) {
-            return Swal.fire("Acción Restringida", "No se permite remover transacciones de un período con sellado legal.", "error");
+            return Swal.fire("Acción Restringida", "No se permite remover transacciones de un período cerrado.", "error");
         }
 
         const result = await Swal.fire({
             title: '¿ELIMINAR ASIENTO CONTABLE?',
-            text: `Afectará saldos acumulados de mes y balances. Registro: ${concepto}`,
+            text: `Registro: ${concepto}`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#64748b',
-            confirmButtonText: 'SÍ, RETIRAR',
             background: '#0d1117',
             color: '#fff'
         });
@@ -533,7 +539,6 @@ export default async function contabilidad(container) {
         }
     };
 
-    // --- SISTEMA INTEGERRÉSIMO DE GESTIÓN Y REVERSIÓN DE CIERRE MENSUAL ---
     async function gestionarCierreMesModal() {
         const hoy = new Date();
         const periodoSugerido = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
@@ -542,12 +547,12 @@ export default async function contabilidad(container) {
             <div class="p-2 font-sans text-xs text-left space-y-4">
                 <div class="bg-black/30 p-3 rounded-xl border border-white/5">
                     <label class="block text-slate-400 orbitron text-[8px] font-black uppercase mb-1">Escribir Período a Gestionar (YYYY-MM):</label>
-                    <input id="cierre-periodo-input" class="w-full bg-black p-3 rounded-lg border border-white/10 text-white font-bold orbitron text-center uppercase tracking-widest" value="${periodoSugerido}" placeholder="Ej: 2026-05">
+                    <input id="cierre-periodo-input" class="w-full bg-black p-3 rounded-lg border border-white/10 text-white font-bold orbitron text-center uppercase tracking-widest" value="${periodoSugerido}">
                 </div>
                 <div class="border-t border-white/10 pt-3">
                     <h5 class="orbitron font-black text-[9px] text-amber-400 uppercase mb-2">Estatus de Períodos Mapeados:</h5>
                     <div class="max-h-[150px] overflow-y-auto space-y-1 pr-1">
-                        ${Object.keys(estadosCierreMes).length === 0 ? '<p class="text-slate-500 italic">No hay cierres definitivos registrados todavía.</p>' : 
+                        ${Object.keys(estadosCierreMes).length === 0 ? '<p class="text-slate-500 italic">No hay cierres definitivos registrados.</p>' : 
                           Object.keys(estadosCierreMes).map(p => `
                             <div class="flex justify-between items-center bg-red-950/20 border border-red-500/10 p-2 rounded-lg">
                                 <span class="font-bold text-slate-200 orbitron tracking-wider">${p}</span>
@@ -574,7 +579,7 @@ export default async function contabilidad(container) {
             preConfirm: () => {
                 const per = document.getElementById("cierre-periodo-input").value.trim();
                 if (!/^\d{4}-\d{2}$/.test(per)) {
-                    Swal.showValidationMessage('Formato de período inválido. Use YYYY-MM');
+                    Swal.showValidationMessage('Use el formato YYYY-MM');
                     return false;
                 }
                 return per;
@@ -584,57 +589,44 @@ export default async function contabilidad(container) {
             if (!per) return;
 
             if (result.isConfirmed) {
-                // FLUJO DE CIERRE DEFINITIVO
-                if (estadosCierreMes[per]) return Swal.fire("Aviso", "El mes seleccionado ya se encuentra en estatus de Cierre.", "info");
+                if (estadosCierreMes[per]) return Swal.fire("Aviso", "El mes ya está cerrado.", "info");
                 
-                // Calcular acumulados de control antes de cerrar
-                const transaccionesMes = registrosGlobales.filter(m => m.fecha_registro.startsWith(per));
-                if (transaccionesMes.length === 0) return Swal.fire("Error SAP", "No hay movimientos registrados para decretar cierre en ese período.", "error");
-
-                Swal.fire({
-                    title: `¿Confirmar Cierre de ${per}?`,
-                    text: "Se bloquearán las modificaciones de transacciones. El informe definitivo consolidará el día 1 del siguiente periodo.",
-                    icon: "warning",
-                    showCancelButton: true,
-                    confirmButtonText: "SÍ, SÉLLAR LIBRO",
-                    background: '#0d1117',
-                    color: '#fff'
-                }).then(async (cRes) => {
-                    if (cRes.isConfirmed) {
-                        await addDoc(collection(db, "cierres_mensuales"), {
-                            empresaId,
-                            periodo: per,
-                            estado: "CERRADO",
-                            fechaCierreSystem: new Date().toISOString(),
-                            ejecutadoPor: userRole
-                        });
-                        Swal.fire("Cierre Exitoso", `Libro contable del período ${per} asegurado contra manipulaciones de red.`, "success");
-                        renderLayout();
-                    }
+                await addDoc(collection(db, "cierres_mensuales"), {
+                    empresaId,
+                    periodo: per,
+                    estado: "CERRADO",
+                    fechaCierreSystem: new Date().toISOString(),
+                    ejecutadoPor: userRole
                 });
+                Swal.fire("Cierre Exitoso", `Libro contable del período ${per} sellado.`, "success");
+                renderLayout();
             } else if (result.isDenied) {
-                // FLUJO DE REVERSIÓN GERENCIAL (ROLLBACK DE SEGURIDAD)
                 const docId = estadosCierreMes[per];
-                if (!docId) return Swal.fire("Error", "El período estipulado no registra ningún bloqueo activo.", "error");
+                if (!docId) return Swal.fire("Error", "El período no registra bloqueos activos.", "error");
 
-                Swal.fire({
-                    title: `¿REVERTIR CIERRE DE ${per}?`,
-                    text: "Medida de alta criticidad. Se reabrirán los permisos CRUD de modificación sobre las cuentas PUC de este período.",
-                    icon: "warning",
-                    showCancelButton: true,
-                    confirmButtonColor: '#06b6d4',
-                    confirmButtonText: "SÍ, REABRIR LIBRO",
-                    background: '#0d1117',
-                    color: '#fff'
-                }).then(async (rRes) => {
-                    if (rRes.isConfirmed) {
-                        await deleteDoc(doc(db, "cierres_mensuales", docId));
-                        Swal.fire("Libro Liberado", `Se completó la reversión. El periodo ${per} se encuentra en estado ABIERTO.`, "success");
-                        renderLayout();
-                    }
-                });
+                await deleteDoc(doc(db, "cierres_mensuales", docId));
+                Swal.fire("Libro Liberado", `Se reabrió el periodo ${per} con éxito.`, "success");
+                renderLayout();
             }
         });
+    }
+
+    function conectarCapturaCamara() {
+        const btnVision = document.getElementById("btn-activar-vision");
+        const cameraInput = document.getElementById("quantum-camera-input");
+        if (!btnVision || !cameraInput) return;
+        btnVision.onclick = () => cameraInput.click();
+        cameraInput.onchange = async (e) => {
+            const archivo = e.target.files[0];
+            if (!archivo) return;
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                window.dispatchEvent(new CustomEvent("SOLICITUD_ANALISIS_VISION", {
+                    detail: { imagen: reader.result, modulo: "CONTABILIDAD", modo: "CIERRE_MAYO_LIBRO" }
+                }));
+            };
+            reader.readAsDataURL(archivo);
+        };
     }
 
     function escucharDatos() {
@@ -645,11 +637,9 @@ export default async function contabilidad(container) {
             registrosGlobales = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             
             let tI = 0, tG = 0, tC = 0;
-            
             registrosGlobales.forEach(m => {
                 const val = extraerMonto(m);
                 const n = clasificarMovimiento(m);
-                
                 if (n === "INGRESO") tI += val;
                 if (n === "GASTO") tG += val;
                 if (m.puc === "1305" || m.tipo?.includes("1305")) tC += val;
@@ -671,15 +661,12 @@ export default async function contabilidad(container) {
 
     async function cargarVistaCuentas() {
         const content = document.getElementById("cont-dynamic-content");
-        content.innerHTML = `<div class="p-20 text-center orbitron text-cyan-500 animate-pulse italic">GENERANDO BALANCE ANALÍTICO CUENTAS PUC...</div>`;
+        content.innerHTML = `<div class="p-20 text-center orbitron text-cyan-500 animate-pulse italic">GENERANDO BALANCE...</div>`;
         
         const rInicio = document.getElementById("filtro-fecha-inicio")?.value || "";
         const rFin = document.getElementById("filtro-fecha-fin")?.value || "";
 
         let docsFiltrados = [...registrosGlobales];
-        if (rInicio) docsFiltrados = docsFiltrados.filter(m => m.fecha_registro >= rInicio);
-        if (rFin) docsFiltrados = docsFiltrados.filter(m => m.fecha_registro <= rFin);
-
         let stats = { ing: 0, gas: 0, cart: 0, sane: 0 };
         docsFiltrados.forEach(d => {
             const v = extraerMonto(d);
@@ -691,23 +678,21 @@ export default async function contabilidad(container) {
         });
 
         content.innerHTML = `
-        <div class="bg-[#0d1117] p-10 rounded-[3rem] border border-white/5 shadow-2xl animate-in zoom-in duration-500 text-center max-w-5xl mx-auto">
-            <h2 class="orbitron text-2xl text-amber-500 mb-2 font-black uppercase tracking-[0.3em]">Auditoría de Cuentas PUC</h2>
-            <p class="text-[9px] text-slate-500 orbitron uppercase tracking-widest mb-10">Rango Evaluado: ${rInicio || 'INICIO'} AL ${rFin || 'FIN'}</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                ${renderStatCard("Flujo Bruto de Ingresos (4135)", stats.ing, "text-emerald-400", "Servicios, Ventas e Inyecciones")}
-                ${renderStatCard("Costo Operacional Consolidado (51)", stats.gas, "text-red-400", "Gastos de Personal, Arriendos y Diversos")}
-                ${renderStatCard("Cuentas por Cobrar Pendientes (1305)", stats.cart - stats.sane, "text-cyan-400", "Cartera en Patio Retenida")}
-                ${renderStatCard("EBITDA Neto del Rango", stats.ing - stats.gas, "text-amber-400", "Margen Real Operativo")}
+        <div class="bg-[#0d1117] p-10 rounded-[3rem] border border-white/5 shadow-2xl text-center max-w-5xl mx-auto">
+            <h2 class="orbitron text-2xl text-amber-500 mb-2 font-black">Auditoría de Cuentas PUC</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left mt-8">
+                ${renderStatCard("Flujo Bruto de Ingresos (4135)", stats.ing, "text-emerald-400", "Ventas")}
+                ${renderStatCard("Costo Operacional (51)", stats.gas, "text-red-400", "Gastos")}
+                ${renderStatCard("Cartera Activa (1305)", stats.cart - stats.sane, "text-cyan-400", "Por Cobrar")}
+                ${renderStatCard("Utilidad Neta", stats.ing - stats.gas, "text-amber-400", "Margen")}
             </div>
         </div>`;
     }
 
     function renderStatCard(title, val, color, sub) {
-        return `<div class="p-8 bg-black/40 rounded-[2.5rem] border border-white/5 shadow-inner hover:border-cyan-500/20 transition-all">
-            <p class="text-[9px] orbitron ${color} mb-2 uppercase font-black tracking-widest">${title}</p>
+        return `<div class="p-8 bg-black/40 rounded-[2.5rem] border border-white/5">
+            <p class="text-[9px] orbitron ${color} mb-2 uppercase font-black">${title}</p>
             <span class="text-3xl font-black orbitron ${color}">$ ${Math.round(val).toLocaleString('es-CO')}</span>
-            <p class="text-[7px] text-slate-600 mt-2 uppercase italic">${sub}</p>
         </div>`;
     }
 
@@ -716,87 +701,6 @@ export default async function contabilidad(container) {
         const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
         return `${meses[parseInt(mes) - 1]} ${ano}`;
     }
-
-    // --- RECEPTOR DE TELEMETRÍA ÓPTICA AVANZADO (PROCESADOR MULTI-ASIENTO OCR AI) ---
-    window.addEventListener("NEXUS_QUANTUM_VISION_BURST", async (e) => {
-        const datosVision = e.detail;
-        if (!datosVision) return;
-
-        if (datosVision.tipoDocumento === "LIBRO_MANUAL_CONTABLE" && Array.isArray(datosVision.asientos)) {
-            Swal.fire({
-                title: '🛰️ LIBRO MANUAL DETECTADO',
-                text: `Se identificaron ${datosVision.asientos.length} asientos contables. ¿Proceder con inyección masiva en lote?`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#10b981',
-                confirmButtonText: 'INYECTAR LOTE',
-                background: '#05070a',
-                color: '#fff'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({ title: 'Procesando bloque contable...', didOpen: () => Swal.showLoading(), background: '#05070a', color: '#fff' });
-                    
-                    for (const asiento of datosVision.asientos) {
-                        const esCredito = asiento.naturaleza === "CREDITO" || asiento.credito > 0;
-                        const montoFinal = asiento.monto || (esCredito ? asiento.credito : asiento.debito) || 0;
-                        const fReg = asiento.fecha || new Date().toISOString().split('T')[0];
-
-                        // Control estricto anti-inyección en períodos bloqueados
-                        if (esPeriodoBloqueado(fReg)) continue;
-
-                        let tipoSugerido = esCredito ? "compra_repuestos" : "ingreso_ot";
-                        let pucSugerido = esCredito ? "5195" : "4135";
-                        let cuentaSugerida = esCredito ? "519505" : "413505";
-
-                        if (asiento.codigoPUC) {
-                            pucSugerido = asiento.codigoPUC.substring(0, 4);
-                            cuentaSugerida = asiento.codigoPUC;
-                            if (pucSugerido.startsWith("51")) tipoSugerido = "gasto_operativo";
-                            if (pucSugerido.startsWith("11") || pucSugerido.startsWith("41")) tipoSugerido = "ingreso_ot";
-                        }
-
-                        await addDoc(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), {
-                            empresaId,
-                            tipo: tipoSugerido,
-                            puc: pucSugerido,
-                            cuenta: cuentaSugerida,
-                            categoria: esCredito ? "GASTO" : "INGRESO",
-                            naturaleza: esCredito ? "CREDITO" : "DEBITO",
-                            placa: (asiento.placa || "ADMIN").toUpperCase().trim(),
-                            concepto: `OCR_BATCH: ${(asiento.concepto || "ASIENTO_OCR").toUpperCase()}`,
-                            monto: Number(montoFinal),
-                            creadoPor: "QUANTUM_VISION_AI",
-                            fecha_registro: fReg,
-                            creadoEn: Timestamp.fromDate(new Date(fReg + "T12:00:00"))
-                        });
-                    }
-                    Swal.fire({ title: 'Lote Sincronizado', icon: 'success', background: '#05070a', color: '#fff' });
-                }
-            });
-            return;
-        }
-
-        if (datosVision.tipoDocumento === "FACTURA_PROVEEDOR") {
-            const fFactura = datosVision.fecha || new Date().toISOString().split('T')[0];
-            if (esPeriodoBloqueado(fFactura)) {
-                return Swal.fire("Gasto Bloqueado", "La factura corresponde a un período con cierre contable sellado.", "error");
-            }
-
-            const selectTipo = document.getElementById("acc-tipo");
-            if (selectTipo) selectTipo.value = "compra_repuestos";
-
-            const inputMonto = document.getElementById("acc-monto");
-            if (inputMonto && datosVision.monto > 0) inputMonto.value = datosVision.monto;
-
-            const inputConcepto = document.getElementById("acc-concepto");
-            if (inputConcepto) {
-                const nitInfo = datosVision.nit ? ` | NIT: ${datosVision.nit}` : "";
-                inputConcepto.value = `COMPRA_INSUMOS_OCR${nitInfo}`;
-            }
-
-            Swal.fire({ title: '🛰️ CONT_NEXUS_LINK', text: `GASTO DETECTADO: $${datosVision.monto.toLocaleString()} | PRECARGADO EN RAM`, icon: 'success', background: '#05070a', color: '#fff' });
-        }
-    });
 
     await renderLayout();
 }
