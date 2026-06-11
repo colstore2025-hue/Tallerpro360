@@ -1,9 +1,9 @@
 /**
- * 🏛️ contabilidad.js - NEXUS-X MASTER-CORE V23.5.2 [QUANTUM-SAP FORENSIC]
+ * 🏛️ contabilidad.js - NEXUS-X MASTER-CORE V23.5.3 [QUANTUM-SAP FORENSIC]
  * Auditoría: Nivel Software Contable Real (SAP-Standard) - Ajuste de Cartera Directa
  * UNIFICACIÓN: CRUD Operativo + Telemetría de Libros Manuales + Cierres Blindados
  * Director de Proyecto: William Jeffry Urquijo Cubillos // Nexus AI 2026
- * INTEGRACIÓN TOTAL: Sincronización en espejo con ordenes.js, finanzas_elite.js y dashboards.
+ * INTEGRACIÓN TOTAL: Sincronización en espejo con ordenes.js, finanzas_elite.js y gerenteAI.js
  */
 import { 
     collection, query, where, orderBy, onSnapshot, serverTimestamp, addDoc, getDocs, doc, updateDoc, deleteDoc, Timestamp 
@@ -105,7 +105,7 @@ export default async function contabilidad(container) {
 
     const exportarExcelSAP = async () => {
         try {
-            Swal.fire({ title: 'Generando Reporte Estilo QUANTUM-SAP...', text: 'Estructurando balances y sumatorias...', didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: 'Generando Reporte Estilo QUANTUM-SAP...', text: 'Estructurando balances por cuentas PUC...', didOpen: () => Swal.showLoading() });
             const LibXLSX = await cargarMotorExcel();
             
             const docsFiltrados = obtenerRegistrosFiltrados();
@@ -115,57 +115,89 @@ export default async function contabilidad(container) {
                 return Swal.fire("Aviso", "No se encontraron registros contables en el rango seleccionado.", "info");
             }
 
-            docsFiltrados.sort((a, b) => a.fecha_registro.localeCompare(b.fecha_registro));
+            // 🏛️ REFORMA FORENSE EXCEL: Agrupar por Cuenta PUC para claridad gerencial
+            const mapaPorPuc = {};
+            docsFiltrados.forEach(m => {
+                const catObj = CATEGORIAS_CONTABLES.find(c => c.id === m.tipo);
+                const codPUC = m.puc || catObj?.puc || "9999";
+                if (!mapaPorPuc[codPUC]) mapaPorPuc[codPUC] = [];
+                mapaPorPuc[codPUC].push(m);
+            });
 
+            const pucsOrdenados = Object.keys(mapaPorPuc).sort();
+            let filasReporte = [];
             let totalDebitosGbl = 0;
             let totalCreditosGbl = 0;
 
-            const filasReporte = docsFiltrados.map(m => {
-                const monto = extraerMonto(m);
-                const nat = clasificarMovimiento(m);
-                const catObj = CATEGORIAS_CONTABLES.find(c => c.id === m.tipo);
-                const codPUC = m.puc || catObj?.puc || "9999";
-                
-                const debs = (nat === "INGRESO" || m.naturaleza === "DEBITO") ? monto : 0;
-                const creds = (nat === "GASTO" || m.naturaleza === "CREDITO") ? monto : 0;
+            pucsOrdenados.forEach(pucKey => {
+                const transaccionesPuc = mapaPorPuc[pucKey];
+                transaccionesPuc.sort((a, b) => a.fecha_registro.localeCompare(b.fecha_registro));
 
-                totalDebitosGbl += debs;
-                totalCreditosGbl += creds;
+                let subtotalDebitoPuc = 0;
+                let subtotalCreditoPuc = 0;
 
-                return {
-                    "FECHA REGISTRO": m.fecha_registro,
-                    "PERÍODO": m.fecha_registro.substring(0, 7),
-                    "CÓDIGO PUC": codPUC,
-                    "CUENTA CONTABLE": m.cuenta || catObj?.cuenta || codPUC + "05",
-                    "CONCEPTO / DETALLE": (m.concepto || "").toUpperCase(),
-                    "PLACA ASOCIADA": (m.placa || "ADMIN").toUpperCase(),
-                    "DÉBITO (+)": debs,
-                    "CRÉDITO (-)": creds,
-                    "ORIGEN / AUDITOR": m.creadoPor || "SISTEMA"
-                };
+                // Cabecera de la sección de la cuenta
+                filasReporte.push({
+                    "FECHA REGISTRO": `--- CUENTA PUC ${pucKey} ---`,
+                    "CONCEPTO / DETALLE": `APERTURA DE REGISTROS DE AUDITORÍA`
+                });
+
+                transaccionesPuc.forEach(m => {
+                    const monto = extraerMonto(m);
+                    const nat = clasificarMovimiento(m);
+                    const catObj = CATEGORIAS_CONTABLES.find(c => c.id === m.tipo);
+                    
+                    const debs = (nat === "INGRESO" || m.naturaleza === "DEBITO") ? monto : 0;
+                    const creds = (nat === "GASTO" || m.naturaleza === "CREDITO") ? monto : 0;
+
+                    subtotalDebitoPuc += debs;
+                    subtotalCreditoPuc += creds;
+                    totalDebitosGbl += debs;
+                    totalCreditosGbl += creds;
+
+                    filasReporte.push({
+                        "FECHA REGISTRO": m.fecha_registro,
+                        "PERÍODO": m.fecha_registro.substring(0, 7),
+                        "CÓDIGO PUC": pucKey,
+                        "CUENTA CONTABLE": m.cuenta || catObj?.cuenta || pucKey + "05",
+                        "CONCEPTO / DETALLE": (m.concepto || "").toUpperCase(),
+                        "PLACA ASOCIADA": (m.placa || "ADMIN").toUpperCase(),
+                        "DÉBITO (+)": debs,
+                        "CRÉDITO (-)": creds,
+                        "ORIGEN / AUDITOR": m.creadoPor || "SISTEMA"
+                    });
+                });
+
+                // Fila de Subtotal por Cuenta PUC
+                filasReporte.push({
+                    "FECHA REGISTRO": `SUBTOTAL CUENTA ${pucKey}`,
+                    "CONCEPTO / DETALLE": `CONSOLIDADO DE MOVIMIENTOS INTERNOS DE LA CUENTA`,
+                    "DÉBITO (+)": subtotalDebitoPuc,
+                    "CRÉDITO (-)": subtotalCreditoPuc
+                });
+                filasReporte.push({}); // Fila en blanco separadora
             });
 
-            filasReporte.push({}); 
             filasReporte.push({
-                "FECHA REGISTRO": "TOTALES CONTROL",
-                "CONCEPTO / DETALLE": "SUMATORIA ACUMULADA DEL PERIODO EXPORTADO",
+                "FECHA REGISTRO": "TOTALES CONTROL CONTROLADOS",
+                "CONCEPTO / DETALLE": "SUMATORIA ACUMULADA CONSOLIDADA DEL PERIODO",
                 "DÉBITO (+)": totalDebitosGbl,
                 "CRÉDITO (-)": totalCreditosGbl
             });
             
             const balanceNeto = totalDebitosGbl - totalCreditosGbl;
             filasReporte.push({
-                "FECHA REGISTRO": "BALANCE NETO",
-                "CONCEPTO / DETALLE": "EJERCICIO DE UTILIDAD OPERACIONAL NETO",
+                "FECHA REGISTRO": "BALANCE NETO REAL",
+                "CONCEPTO / DETALLE": "UTILIDAD OPERACIONAL EJECUTADA (DIFERENCIA NETA)",
                 "DÉBITO (+)": balanceNeto >= 0 ? balanceNeto : 0,
                 "CRÉDITO (-)": balanceNeto < 0 ? Math.abs(balanceNeto) : 0
             });
 
             const ws = LibXLSX.utils.json_to_sheet(filasReporte);
             const wb = LibXLSX.utils.book_new();
-            LibXLSX.utils.book_append_sheet(wb, ws, "Libro_Auxiliar_Sincronizado");
+            LibXLSX.utils.book_append_sheet(wb, ws, "Libro_PUC_Agrupado_SAP");
             
-            ws['!cols'] = [{wch:16}, {wch:10}, {wch:12}, {wch:18}, {wch:40}, {wch:18}, {wch:15}, {wch:15}, {wch:16}];
+            ws['!cols'] = [{wch:18}, {wch:10}, {wch:12}, {wch:18}, {wch:45}, {wch:18}, {wch:15}, {wch:15}, {wch:16}];
 
             LibXLSX.writeFile(wb, `NEXUS_QUANTUM_SAP_REPORT_${empresaId}.xlsx`);
             Swal.close();
@@ -271,10 +303,11 @@ export default async function contabilidad(container) {
             const nat = clasificarMovimiento(m);
             const puc = String(m.puc || "").trim();
 
-            if (nat === "INGRESO") tI += val;
-            if (nat === "GASTO") tG += val;
+            // 🏛️ CORRECCIÓN DE TOTALES CENTRALES UNIFICADA: Auditoría matemática pura sin exclusiones
+            if (nat === "INGRESO" || m.naturaleza === "DEBITO") tI += val;
+            if (nat === "GASTO" || m.naturaleza === "CREDITO") tG += val;
 
-            // 🛠️ AUDITORÍA DE CARTERA ACTIVA CAMBIADA (PUNTO A): Balance neto directo filtrado de la 1305
+            // Balance neto directo y filtrado de cartera real activa (Cuenta 1305)
             if (puc.startsWith("1305")) {
                 tC += val;
             }
@@ -310,7 +343,7 @@ export default async function contabilidad(container) {
                 <div class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 sticky top-10 shadow-2xl space-y-4">
                     <h3 class="orbitron text-[10px] text-cyan-400 font-black tracking-widest uppercase border-b border-white/10 pb-2">Asiento Manual Real-Time</h3>
                     <div class="space-y-4">
-                        <input id="acc-fecha" type="date" class="w-full bg-black p-4 rounded-2xl border border-white/10 text-cyan-400 orbitron text-[10px]} " value="${new Date().toISOString().split('T')[0]}">
+                        <input id="acc-fecha" type="date" class="w-full bg-black p-4 rounded-2xl border border-white/10 text-cyan-400 orbitron text-[10px]" value="${new Date().toISOString().split('T')[0]}">
                         <select id="acc-tipo" class="w-full bg-black p-5 rounded-2xl border border-white/10 text-white orbitron text-[10px] uppercase">
                             ${CATEGORIAS_CONTABLES.map(c => `<option value="${c.id}">${c.label}</option>`).join('')}
                         </select>
@@ -412,7 +445,15 @@ export default async function contabilidad(container) {
 
         periodosOrdenados.forEach(per => {
             const transaccionesDelMes = mapaPeriodos[per];
-            transaccionesDelMes.sort((a, b) => a.fecha_registro.localeCompare(b.fecha_registro));
+            
+            // 🏛️ MEJORA VISUAL EN UI: Subagrupación por código PUC dentro del mes para el Gerente
+            const subMapaPuc = {};
+            transaccionesDelMes.forEach(m => {
+                const catObj = CATEGORIAS_CONTABLES.find(c => c.id === m.tipo);
+                const codPUC = m.puc || catObj?.puc || "9999";
+                if (!subMapaPuc[codPUC]) subMapaPuc[codPUC] = [];
+                subMapaPuc[codPUC].push(m);
+            });
 
             let totalDebitoMes = 0;
             let totalCreditoMes = 0;
@@ -449,40 +490,64 @@ export default async function contabilidad(container) {
                     </div>
                 </div>
                 
-                <div class="space-y-2">
-                    ${transaccionesDelMes.map(m => {
-                        const val = extraerMonto(m);
-                        const nat = clasificarMovimiento(m);
-                        const catObj = CATEGORIAS_CONTABLES.find(c => c.id === m.tipo);
-                        const esDeb = (nat === "INGRESO" || m.naturaleza === "DEBITO");
+                <div class="space-y-4">
+                    ${Object.keys(subMapaPuc).sort().map(pucKey => {
+                        let subDebitoPuc = 0;
+                        let subCreditoPuc = 0;
+                        
+                        subMapaPuc[pucKey].forEach(m => {
+                            const val = extraerMonto(m);
+                            const nat = clasificarMovimiento(m);
+                            if (nat === "INGRESO" || m.naturaleza === "DEBITO") subDebitoPuc += val;
+                            if (nat === "GASTO" || m.naturaleza === "CREDITO") subCreditoPuc += val;
+                        });
 
                         return `
-                        <div class="bg-black/30 p-4 rounded-xl flex justify-between items-center group hover:bg-black/60 border border-white/0 hover:border-white/5 transition-all">
-                            <div class="flex items-center gap-3">
-                                <div class="text-[9px] font-mono text-slate-500 bg-white/5 p-1.5 rounded text-center min-w-[45px]">
-                                    ${m.fecha_registro.substring(8, 10)}/${m.fecha_registro.substring(5, 7)}
-                                </div>
-                                <div>
-                                    <h5 class="text-xs font-black text-slate-200 uppercase tracking-wide">${m.concepto}</h5>
-                                    <p class="text-[8px] text-slate-500 uppercase orbitron mt-0.5">
-                                        PLACA: <span class="text-cyan-400 font-black">${m.placa || 'ADMIN'}</span> | CUENTA PUC: ${m.cuenta || catObj?.cuenta || '9999'}
-                                    </p>
+                        <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
+                            <div class="flex justify-between items-center mb-2 pb-1 border-b border-white/5">
+                                <span class="text-[9px] font-mono text-cyan-400 font-bold">CUENTA PUC: ${pucKey}</span>
+                                <div class="text-[8px] font-mono text-slate-400 flex gap-2">
+                                    <span>Db: <b class="text-emerald-400">$ ${subDebitoPuc.toLocaleString('es-CO')}</b></span>
+                                    <span>Cr: <b class="text-red-400">$ ${subCreditoPuc.toLocaleString('es-CO')}</b></span>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-4">
-                                <div class="text-right">
-                                    <p class="text-xs font-black orbitron ${esDeb ? 'text-emerald-400' : 'text-red-400'}">
-                                        ${esDeb ? '+' : '-'} $ ${val.toLocaleString('es-CO')}
-                                    </p>
-                                </div>
-                                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                                    <button onclick="window.nexusEditarRegistro('${m.id}', '${m.concepto}', ${val}, '${m.placa}', '${m.tipo}', '${m.fecha_registro}')" class="h-6 w-6 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-black transition-all flex items-center justify-center text-[10px]">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button onclick="window.nexusEliminarRegistro('${m.id}', '${m.concepto}', '${m.fecha_registro}')" class="h-6 w-6 rounded bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-black transition-all flex items-center justify-center text-[10px]">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                </div>
+                            <div class="space-y-1.5">
+                                ${subMapaPuc[pucKey].map(m => {
+                                    const val = extraerMonto(m);
+                                    const nat = clasificarMovimiento(m);
+                                    const catObj = CATEGORIAS_CONTABLES.find(c => c.id === m.tipo);
+                                    const esDeb = (nat === "INGRESO" || m.naturaleza === "DEBITO");
+
+                                    return `
+                                    <div class="bg-black/30 p-3 rounded-xl flex justify-between items-center group hover:bg-black/60 transition-all">
+                                        <div class="flex items-center gap-3">
+                                            <div class="text-[8px] font-mono text-slate-500 bg-white/5 p-1 rounded text-center min-w-[35px]">
+                                                ${m.fecha_registro.substring(8, 10)}
+                                            </div>
+                                            <div>
+                                                <h5 class="text-xs font-black text-slate-200 uppercase tracking-wide">${m.concepto}</h5>
+                                                <p class="text-[8px] text-slate-500 uppercase orbitron mt-0.5">
+                                                    PLACA: <span class="text-cyan-400 font-black">${m.placa || 'ADMIN'}</span> | CUENTA: ${m.cuenta || catObj?.cuenta || '9999'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-4">
+                                            <div class="text-right">
+                                                <p class="text-xs font-black orbitron ${esDeb ? 'text-emerald-400' : 'text-red-400'}">
+                                                    ${esDeb ? '+' : '-'} $ ${val.toLocaleString('es-CO')}
+                                                </p>
+                                            </div>
+                                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                                                <button onclick="window.nexusEditarRegistro('${m.id}', '${m.concepto}', ${val}, '${m.placa}', '${m.tipo}', '${m.fecha_registro}')" class="h-5 w-5 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-black transition-all flex items-center justify-center text-[9px]">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button onclick="window.nexusEliminarRegistro('${m.id}', '${m.concepto}', '${m.fecha_registro}')" class="h-5 w-5 rounded bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-black transition-all flex items-center justify-center text-[9px]">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>`;
+                                }).join("")}
                             </div>
                         </div>`;
                     }).join("")}
@@ -694,13 +759,14 @@ export default async function contabilidad(container) {
                     consolidadoMensualIE[per] = { ingresos: 0, gastos: 0, cartera: 0, cuentas: {} };
                 }
 
-                if (nat === "INGRESO") consolidadoMensualIE[per].ingresos += val;
-                if (nat === "GASTO") consolidadoMensualIE[per].gastos += val;
+                if (nat === "INGRESO" || m.naturaleza === "DEBITO") consolidadoMensualIE[per].ingresos += val;
+                if (nat === "GASTO" || m.naturaleza === "CREDITO") consolidadoMensualIE[per].gastos += val;
                 
                 const puc = m.puc || "9999";
                 consolidadoMensualIE[per].cuentas[puc] = (consolidadoMensualIE[per].cuentas[puc] || 0) + val;
             });
 
+            // 🤖 TELEMETRÍA GLOBAL: Mantiene alimentados finanzas_elite.js y gerenteAI.js en tiempo real
             window.NEXUS_ACCOUNTING_CONSOLIDATED = consolidadoMensualIE;
             recalcularMecanicaContable();
         });
@@ -722,8 +788,8 @@ export default async function contabilidad(container) {
         filtrados.forEach(d => {
             const v = extraerMonto(d);
             const n = clasificarMovimiento(d);
-            if (n === "INGRESO") stats.ing += v;
-            if (n === "GASTO") stats.gas += v;
+            if (n === "INGRESO" || d.naturaleza === "DEBITO") stats.ing += v;
+            if (n === "GASTO" || d.naturaleza === "CREDITO") stats.gas += v;
             if (d.puc === "1305") stats.cart += v;
             if (d.puc === "1105" && d.tipo === "saneamiento_deuda") stats.sane += v;
         });
