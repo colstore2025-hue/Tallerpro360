@@ -55,12 +55,13 @@ export default async function contabilidad(container) {
   const clasificarMovimiento = (m) => {
     const pucStr = String(m.puc || "").trim();
     if (pucStr.startsWith("41") || pucStr.startsWith("11") || pucStr.startsWith("28") || pucStr.startsWith("31")) return "INGRESO";
-    if (pucStr.startsWith("51") || pucStr.startsWith("52")) return "GASTO";
+    if (pucStr.startsWith("51") || pucStr.startsWith("52") || pucStr.startsWith("53") || pucStr.startsWith("61")) return "GASTO";
     return "OTRO";
   };
 
+  // POLÍTICA SAP RESCUE: Extrae montos crudos de forma redundante y segura
   const extraerMonto = (data) => {
-    const raw = data.monto ?? data.total ?? data.valor ?? 0;
+    const raw = data.monto ?? data.total ?? data.valor ?? data.debito ?? data.credito ?? 0;
     return typeof raw === 'number' ? raw : parseFloat(raw) || 0;
   };
 
@@ -101,6 +102,7 @@ export default async function contabilidad(container) {
     }).filter(m => m.fecha_registro >= rInicio && m.fecha_registro <= rFin);
   };
 
+  // EXPORTADOR CON REGLAS DE CONSOLIDACIÓN RÍGIDAS SAP/HANA
   const exportarExcelSAP = async () => {
     try {
       Swal.fire({ title: 'Generando Reporte Estilo QUANTUM-SAP...', text: 'Estructurando balances y sumatorias por subcuentas...', didOpen: () => Swal.showLoading() });
@@ -122,17 +124,28 @@ export default async function contabilidad(container) {
         const monto = extraerMonto(m);
         const nat = clasificarMovimiento(m);
         const catObj = CATEGORIAS_CONTABLES.find(c => c.id === m.tipo);
-        const codPUC = m.puc || catObj?.puc || "9999";
-        const cuentaContable = m.cuenta || catObj?.cuenta || codPUC + "05";
+        
+        // Saneamiento de campos "cuenta" y "puc" faltantes o vacíos
+        const codPUC = String(m.puc || catObj?.puc || "9999").trim();
+        const cuentaContable = String(m.cuenta || m.cuentaContable || catObj?.cuenta || codPUC + "05").trim();
 
-        const debs = (nat === "INGRESO" || m.naturaleza === "DEBITO") ? monto : 0;
-        const creds = (nat === "GASTO" || m.naturaleza === "CREDITO") ? monto : 0;
+        // REGLA SAP/HANA INQUEBRANTABLE: Determinar columna exacta según naturaleza
+        let debs = 0;
+        let creds = 0;
+
+        if (nat === "INGRESO" || m.naturaleza === "DEBITO" || codPUC.startsWith("41") || codPUC.startsWith("11") || codPUC.startsWith("28")) {
+          debs = monto;
+        } else if (nat === "GASTO" || m.naturaleza === "CREDITO" || codPUC.startsWith("51") || codPUC.startsWith("52") || codPUC.startsWith("61")) {
+          creds = monto;
+        } else {
+          debs = monto; // Fallback seguro
+        }
 
         totalDebitosGbl += debs;
         totalCreditosGbl += creds;
 
         if (!desgloseSubcuentas[cuentaContable]) {
-          desgloseSubcuentas[cuentaContable] = { label: catObj?.label || "OTRAS CUENTAS", debito: 0, credito: 0 };
+          desgloseSubcuentas[cuentaContable] = { label: catObj?.label || `CUENTA AUXILIAR GENERAL ${cuentaContable}`, debito: 0, credito: 0 };
         }
         desgloseSubcuentas[cuentaContable].debito += debs;
         desgloseSubcuentas[cuentaContable].credito += creds;
@@ -142,11 +155,11 @@ export default async function contabilidad(container) {
           "PERÍODO": m.fecha_registro.substring(0, 7),
           "CÓDIGO PUC": codPUC,
           "CUENTA CONTABLE": cuentaContable,
-          "CONCEPTO / DETALLE": (m.concepto || "").toUpperCase(),
+          "CONCEPTO / DETALLE": (m.concepto || "REGISTRO OPERATIVO DE BASE DE DATOS").toUpperCase(),
           "PLACA ASOCIADA": (m.placa || "ADMIN").toUpperCase(),
           "DÉBITO (+)": debs,
           "CRÉDITO (-)": creds,
-          "ORIGEN / AUDITOR": m.creadoPor || "SISTEMA"
+          "ORIGEN / AUDITOR": (m.creadoPor || "SISTEMA").toUpperCase()
         };
       });
 
@@ -174,7 +187,7 @@ export default async function contabilidad(container) {
       const balanceNeto = totalDebitosGbl - totalCreditosGbl;
       filasReporte.push({
         "FECHA REGISTRO": "BALANCE NETO",
-        "CONCEPTO / DETALLE": "EJERCICIO DE UTILIDAD OPERACIONAL NETO",
+        "CONCEPTO / DETALLE": "EJERCICIO DE UTILIDAD OPERACIONAL NETO (DIFERENCIA REAL)",
         "DÉBITO (+)": balanceNeto >= 0 ? balanceNeto : 0,
         "CRÉDITO (-)": balanceNeto < 0 ? Math.abs(balanceNeto) : 0
       });
@@ -188,7 +201,7 @@ export default async function contabilidad(container) {
       LibXLSX.writeFile(wb, `NEXUS_QUANTUM_SAP_REPORT_${empresaId}.xlsx`);
       Swal.close();
     } catch (e) {
-      console.error("🚀 QUANTUM_EXCEL_ENGINE_FAULT ->", e);
+      console.error("❌ QUANTUM_EXCEL_ENGINE_FAULT ->", e);
       Swal.fire("Error SAP", "Falla de compilación en las matrices de Excel.", "error");
     }
   };
@@ -277,6 +290,7 @@ export default async function contabilidad(container) {
     recalcularMecanicaContable();
   };
 
+  // RECALCULADOR DEL CORE: Sumatorias matemáticas en tiempo de renderizado
   const recalcularMecanicaContable = () => {
     const filtrados = obtenerRegistrosFiltrados();
 
@@ -288,8 +302,9 @@ export default async function contabilidad(container) {
       const nat = clasificarMovimiento(m);
       const puc = String(m.puc || "").trim();
 
-      if (nat === "INGRESO") tI += val;
-      if (nat === "GASTO") tG += val;
+      if (nat === "INGRESO" || puc.startsWith("41") || puc.startsWith("28")) tI += val;
+      if (nat === "GASTO" || puc.startsWith("51") || puc.startsWith("52") || puc.startsWith("61")) tG += val;
+      
       if (puc.startsWith("1305")) tC += val;
       if (puc.startsWith("1105") && m.tipo?.includes("saneamiento")) tC -= val;
 
@@ -389,6 +404,7 @@ export default async function contabilidad(container) {
       tipo: selectedId,
       puc: catObj ? catObj.puc : "9999",
       cuenta: catObj ? catObj.cuenta : "999999",
+      cuentaContable: catObj ? catObj.cuenta : "999999", // Doble asignación preventiva
       categoria: catObj ? catObj.tipo : "OTRO",
       naturaleza: catObj ? catObj.naturaleza : "DEBITO",
       placa: document.getElementById("acc-placa").value.trim().toUpperCase() || "ADMIN",
@@ -438,12 +454,15 @@ export default async function contabilidad(container) {
         const val = extraerMonto(m);
         const nat = clasificarMovimiento(m);
         const catObj = CATEGORIAS_CONTABLES.find(c => c.id === m.tipo);
-        const cta = m.cuenta || catObj?.cuenta || "999905";
+        const cta = m.cuenta || m.cuentaContable || catObj?.cuenta || (m.puc ? m.puc + "05" : "999905");
 
-        if (nat === "INGRESO" || m.naturaleza === "DEBITO") totalDebitoMes += val;
-        if (nat === "GASTO" || m.naturaleza === "CREDITO") totalCreditoMes += val;
+        if (nat === "INGRESO" || m.naturaleza === "DEBITO" || String(m.puc).startsWith("41")) {
+          totalDebitoMes += val;
+        } else {
+          totalCreditoMes += val;
+        }
 
-        if (!desglosesHTML[cta]) desglosesHTML[cta] = { label: catObj?.label.split(' - ')[1] || "OTROS", total: 0 };
+        if (!desglosesHTML[cta]) desglosesHTML[cta] = { label: catObj?.label.split(' - ')[1] || "OTROS FLUJOS", total: 0 };
         desglosesHTML[cta].total += val;
       });
 
@@ -461,12 +480,12 @@ export default async function contabilidad(container) {
             </div>
             <div class="flex gap-4 bg-black/40 p-3 rounded-2xl border border-white/5">
               <div class="text-right">
-                <span class="text-[7px] orbitron text-emerald-400 font-bold block uppercase">Débitos Período</span>
+                <span class="text-[7px] orbitron text-emerald-400 font-bold block uppercase">Débitos (Ingresos)</span>
                 <span class="text-xs font-black orbitron text-emerald-400">$ ${totalDebitoMes.toLocaleString('es-CO')}</span>
               </div>
               <div class="w-[1px] bg-white/10"></div>
               <div class="text-right">
-                <span class="text-[7px] orbitron text-red-400 font-bold block uppercase">Créditos Período</span>
+                <span class="text-[7px] orbitron text-red-400 font-bold block uppercase">Créditos (Egresos)</span>
                 <span class="text-xs font-black orbitron text-red-400">$ ${totalCreditoMes.toLocaleString('es-CO')}</span>
               </div>
             </div>
@@ -475,7 +494,7 @@ export default async function contabilidad(container) {
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-black/20 p-2 rounded-xl text-[9px] border border-white/5">
             ${Object.entries(desglosesHTML).map(([cuenta, dData]) => `
               <div class="p-1 border-r border-white/5 last:border-none">
-                <span class="text-slate-400 block font-mono">${cuenta}:</span>
+                <span class="text-slate-400 block font-mono">CUENTA ${cuenta}:</span>
                 <span class="font-bold text-slate-200">$ ${Math.round(dData.total).toLocaleString('es-CO')}</span>
               </div>
             `).join('')}
@@ -486,7 +505,7 @@ export default async function contabilidad(container) {
               const val = extraerMonto(m);
               const nat = clasificarMovimiento(m);
               const catObj = CATEGORIAS_CONTABLES.find(c => c.id === m.tipo);
-              const esDeb = (nat === "INGRESO" || m.naturaleza === "DEBITO");
+              const esDeb = (nat === "INGRESO" || m.naturaleza === "DEBITO" || String(m.puc).startsWith("41"));
 
               return `
                 <div class="bg-black/30 p-4 rounded-xl flex justify-between items-center group hover:bg-black/60 border border-white/0 hover:border-white/5 transition-all">
@@ -497,7 +516,7 @@ export default async function contabilidad(container) {
                     <div>
                       <h5 class="text-xs font-bold text-slate-200 uppercase">${m.concepto}</h5>
                       <p class="text-[8px] text-slate-500 uppercase orbitron mt-0.5">
-                        PLACA: <span class="text-cyan-400 font-black">${m.placa || 'ADMIN'}</span> // CUENTA: <span class="text-slate-400">${m.cuenta || catObj?.cuenta || '9999'}</span>
+                        PLACA: <span class="text-cyan-400 font-black">${m.placa || 'ADMIN'}</span> // CUENTA CONTABLE: <span class="text-slate-400">${m.cuenta || m.cuentaContable || catObj?.cuenta || m.puc || '9999'}</span>
                       </p>
                     </div>
                   </div>
@@ -531,7 +550,7 @@ export default async function contabilidad(container) {
     }
 
     const { value: formValues } = await Swal.fire({
-      title: '🏛️ REFORMA DE ASIENTO CONTABLE',
+      title: '🏛 ... REFORMA DE ASIENTO CONTABLE',
       background: '#0d1117',
       color: '#fff',
       confirmButtonColor: '#06b6d4',
@@ -570,6 +589,7 @@ export default async function contabilidad(container) {
           tipo: selId,
           puc: cObj ? cObj.puc : "9999",
           cuenta: cObj ? cObj.cuenta : "999999",
+          cuentaContable: cObj ? cObj.cuenta : "999999",
           categoria: cObj ? cObj.tipo : "OTRO",
           naturaleza: cObj ? cObj.naturaleza : "DEBITO"
         };
@@ -641,7 +661,7 @@ export default async function contabilidad(container) {
       </div>`;
 
     Swal.fire({
-      title: '🛰️ CONTROLES FISCALES NEXUS-SAP',
+      title: '🛰 ... CONTROLES FISCALES NEXUS-SAP',
       background: '#0d1117',
       color: '#fff',
       html: htmlPeriodos,
@@ -718,18 +738,22 @@ export default async function contabilidad(container) {
         const per = f.substring(0, 7);
         const val = extraerMonto(m);
         const nat = clasificarMovimiento(m);
+        const puc = String(m.puc || "9999").trim();
 
         if (!consolidadoMensualIE[per]) {
           consolidadoMensualIE[per] = { ingresos: 0, gastos: 0, cartera: 0, cuentas: {} };
         }
 
-        if (nat === "INGRESO") consolidadoMensualIE[per].ingresos += val;
-        if (nat === "GASTO") consolidadoMensualIE[per].gastos += val;
+        if (nat === "INGRESO" || puc.startsWith("41") || puc.startsWith("28")) {
+          consolidadoMensualIE[per].ingresos += val;
+        } else {
+          consolidadoMensualIE[per].gastos += val;
+        }
 
-        const puc = m.puc || "9999";
         consolidadoMensualIE[per].cuentas[puc] = (consolidadoMensualIE[per].cuentas[puc] || 0) + val;
       });
 
+      // Espejo global unificado para finanzas_elite.js
       window.NEXUS_ACCOUNTING_CONSOLIDATED = consolidadoMensualIE;
       recalcularMecanicaContable();
     });
@@ -751,10 +775,12 @@ export default async function contabilidad(container) {
     filtrados.forEach(d => {
       const v = extraerMonto(d);
       const n = clasificarMovimiento(d);
-      if (n === "INGRESO") stats.ing += v;
-      if (n === "GASTO") stats.gas += v;
-      if (d.puc === "1305") stats.cart += v;
-      if (d.puc === "1105" && d.tipo?.includes("saneamiento")) stats.sane += v;
+      const p = String(d.puc || "").trim();
+
+      if (n === "INGRESO" || p.startsWith("41") || p.startsWith("28")) stats.ing += v;
+      if (n === "GASTO" || p.startsWith("51") || p.startsWith("52") || p.startsWith("61")) stats.gas += v;
+      if (p === "1305") stats.cart += v;
+      if (p === "1105" && d.tipo?.includes("saneamiento")) stats.sane += v;
     });
 
     content.innerHTML = `
