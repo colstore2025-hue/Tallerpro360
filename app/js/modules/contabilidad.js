@@ -1,6 +1,6 @@
 /**
- * 🏛️ contabilidad.js - NEXUS-X MASTER-CORE V23.5.0 [QUANTUM-SAP FORENSIC]
- * Auditoría: Nivel Software Contable Real (SAP-Standard) - Cierre Mensual Avanzado
+ * 🏛️ contabilidad.js - NEXUS-X MASTER-CORE V23.5.2 [QUANTUM-SAP FORENSIC]
+ * Auditoría: Nivel Software Contable Real (SAP-Standard) - Ajuste de Cartera Directa
  * UNIFICACIÓN: CRUD Operativo + Telemetría de Libros Manuales + Cierres Blindados
  * Director de Proyecto: William Jeffry Urquijo Cubillos // Nexus AI 2026
  * INTEGRACIÓN TOTAL: Sincronización en espejo con ordenes.js, finanzas_elite.js y dashboards.
@@ -52,7 +52,6 @@ export default async function contabilidad(container) {
         { id: "ajuste_auditoria", label: "9999 - AJUSTE DE AUDITORÍA", requierePlaca: false, tipo: 'AJUSTE', puc: "9999", cuenta: "999999", naturaleza: "AJUSTE" }
     ];
 
-    // Clasificadores estrictos por código numérico PUC
     const clasificarMovimiento = (m) => {
         const pucStr = String(m.puc || "").trim();
         if (pucStr.startsWith("41") || pucStr.startsWith("11") || pucStr.startsWith("28") || pucStr.startsWith("31")) return "INGRESO";
@@ -87,7 +86,6 @@ export default async function contabilidad(container) {
         }
     };
 
-    // Helper centralizado para normalizar y filtrar por el rango del UI
     const obtenerRegistrosFiltrados = () => {
         const rInicio = document.getElementById("filtro-fecha-inicio")?.value || "2026-05-01";
         const rFin = document.getElementById("filtro-fecha-fin")?.value || "2026-06-10";
@@ -180,7 +178,7 @@ export default async function contabilidad(container) {
     const renderLayout = async () => {
         await cargarEstadosCierre();
         
-        const fInicioDefecto = "2026-04-01"; 
+        const fInicioDefecto = "2026-05-01"; 
         const fFinDefecto = "2026-06-10"; 
 
         container.innerHTML = `
@@ -275,8 +273,14 @@ export default async function contabilidad(container) {
 
             if (nat === "INGRESO") tI += val;
             if (nat === "GASTO") tG += val;
-            if (puc.startsWith("1305")) tC += val;
-            if (puc.startsWith("1105") && m.tipo?.includes("saneamiento")) tC -= val;
+
+            // 🛠️ AUDITORÍA DE CARTERA ACTIVA CAMBIADA (PUNTO A): Balance neto directo filtrado de la 1305
+            if (puc.startsWith("1305")) {
+                tC += val;
+            }
+            if (puc.startsWith("1105") && m.tipo === "saneamiento_deuda") {
+                tC -= val;
+            }
 
             if (puc.startsWith("4135")) p4135 += val;
             if (puc.startsWith("5195")) p5195 += val;
@@ -306,7 +310,7 @@ export default async function contabilidad(container) {
                 <div class="bg-[#0d1117] p-8 rounded-[3rem] border border-white/5 sticky top-10 shadow-2xl space-y-4">
                     <h3 class="orbitron text-[10px] text-cyan-400 font-black tracking-widest uppercase border-b border-white/10 pb-2">Asiento Manual Real-Time</h3>
                     <div class="space-y-4">
-                        <input id="acc-fecha" type="date" class="w-full bg-black p-4 rounded-2xl border border-white/10 text-cyan-400 orbitron text-[10px]" value="${new Date().toISOString().split('T')[0]}">
+                        <input id="acc-fecha" type="date" class="w-full bg-black p-4 rounded-2xl border border-white/10 text-cyan-400 orbitron text-[10px]} " value="${new Date().toISOString().split('T')[0]}">
                         <select id="acc-tipo" class="w-full bg-black p-5 rounded-2xl border border-white/10 text-white orbitron text-[10px] uppercase">
                             ${CATEGORIAS_CONTABLES.map(c => `<option value="${c.id}">${c.label}</option>`).join('')}
                         </select>
@@ -489,7 +493,6 @@ export default async function contabilidad(container) {
         listContainer.innerHTML = htmlFinal;
     };
 
-    // --- INTEGRACIÓN FULL DE VENTANAS MODALES CRUD ---
     window.nexusEditarRegistro = async (id, conceptoAct, montoAct, placaAct, tipoAct, fechaAct) => {
         if (esPeriodoBloqueado(fechaAct)) {
             return Swal.fire("Bloqueo SAP", "Este asiento pertenece a un período sellado y no puede alterarse.", "error");
@@ -673,7 +676,6 @@ export default async function contabilidad(container) {
         };
     }
 
-    // --- ESCUCHA REAL-TIME DE ALTA PRECISIÓN ---
     function escucharDatos() {
         if (unsubscribe) unsubscribe();
         const q = query(collection(db, NEXUS_CONFIG.COLLECTIONS.ACCOUNTING), where("empresaId", "==", empresaId));
@@ -681,7 +683,6 @@ export default async function contabilidad(container) {
         unsubscribe = onSnapshot(q, (snap) => {
             registrosGlobales = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             
-            // 🚀 DATA BRIDGE COMPLETO PARA finanzas_elite.js Y gerenteAI.js
             const consolidadoMensualIE = {};
             registrosGlobales.forEach(m => {
                 let f = m.fecha_registro || (m.creadoEn?.toDate ? m.creadoEn.toDate().toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
@@ -700,9 +701,7 @@ export default async function contabilidad(container) {
                 consolidadoMensualIE[per].cuentas[puc] = (consolidadoMensualIE[per].cuentas[puc] || 0) + val;
             });
 
-            // Exposición en el espacio de ejecución global de la ventana
             window.NEXUS_ACCOUNTING_CONSOLIDATED = consolidadoMensualIE;
-
             recalcularMecanicaContable();
         });
     }
@@ -726,7 +725,7 @@ export default async function contabilidad(container) {
             if (n === "INGRESO") stats.ing += v;
             if (n === "GASTO") stats.gas += v;
             if (d.puc === "1305") stats.cart += v;
-            if (d.puc === "1105" && d.tipo?.includes("saneamiento")) stats.sane += v;
+            if (d.puc === "1105" && d.tipo === "saneamiento_deuda") stats.sane += v;
         });
 
         content.innerHTML = `
