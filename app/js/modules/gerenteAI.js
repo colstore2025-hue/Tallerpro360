@@ -1,18 +1,18 @@
 /**
- * gerenteAI.js - TallerPRO360 NEXUS-X V6.2 👑
- * EL CENTRO DE COMANDO ESTRATÉGICO: INTELIGENCIA PREDICTIVA Y AUDITORÍA GLOBAL
+ * 👑 gerenteAI.js - TallerPRO360 NEXUS-X V6.5 
+ * EL CENTRO DE COMANDO ESTRATÉGICO: INTELIGENCIA PREDICTIVA Y DASHBOARDS LOOKER-ELITE
  * @author William Jeffry Urquijo Cubillos & Gemini AI
- * @version 6.2 - Rango de Control Cronológico Local (Tolerante a Dispositivos Móviles)
+ * @version 6.5 - Arquitectura Gráfica Reactiva con Chart.js
  */
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 
 export default async function gerenteAI(container) {
-    const empresaId = localStorage.getItem("nexus_empresaId");
+    const empresaId = (localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId") || "").trim();
     const nombreUsuario = localStorage.getItem("nexus_userName") || "Comandante";
     
-    // Inicialización del Estado Temporal del Filtro Cronológico
+    // Inicialización del Filtro Cronológico (Últimos 30 días por defecto)
     if (!localStorage.getItem("nexus_tmp_f_inicio")) {
         const hoy = new Date();
         const haceUnMes = new Date();
@@ -23,54 +23,112 @@ export default async function gerenteAI(container) {
 
     let fechaInicioIso = localStorage.getItem("nexus_tmp_f_inicio");
     let fechaFinIso = localStorage.getItem("nexus_tmp_f_fin");
+    let chartsInstanciados = {}; // Repositorio para destruir y recrear gráficas sin memory leaks
+
+    // Asegurar la carga ultraligera de Chart.js desde CDN para entorno PWA Móvil
+    const cargarChartJS = () => {
+        return new Promise((resolve) => {
+            if (window.Chart) return resolve();
+            const script = document.createElement("script");
+            script.src = "https://cdn.jsdelivr.net/npm/chart.js";
+            script.onload = () => resolve();
+            document.head.appendChild(script);
+        });
+    };
 
     const renderLayout = () => {
         container.innerHTML = `
-        <div class="p-6 lg:p-12 bg-[#010409] min-h-screen text-white animate-in fade-in duration-700 pb-48 selection:bg-cyan-500">
+        <div class="p-4 lg:p-8 bg-[#010409] min-h-screen text-white animate-in fade-in duration-500 pb-40 font-sans">
             
-            <header class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8 mb-12 border-l-4 border-cyan-500 pl-8 relative">
-                <div class="absolute -top-10 -left-10 text-[120px] font-black opacity-5 italic select-none orbitron uppercase">NEXUS</div>
+            <header class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-8 border-l-4 border-cyan-500 pl-4 relative">
                 <div>
-                    <h1 class="orbitron text-5xl font-black italic tracking-tighter text-white leading-none uppercase">
-                        STRATEGIC <span class="text-cyan-400">COMMAND</span>
+                    <h1 class="orbitron text-3xl font-black italic tracking-tighter text-white uppercase">
+                        STRATEGIC <span class="text-cyan-400">COMMAND CONTROL</span>
                     </h1>
-                    <div class="flex items-center gap-4 mt-4">
-                        <span class="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-[8px] orbitron font-black text-cyan-400 uppercase">Consciencia Activa V6.2</span>
-                        <p class="text-[9px] orbitron tracking-[0.6em] text-slate-500 uppercase italic font-black">Bóveda Operativa: ${empresaId}</p>
-                    </div>
+                    <p class="text-[9px] orbitron tracking-[0.4em] text-slate-500 uppercase mt-1">
+                        INTEGRACIÓN GLOBAL CONTABILIDAD & RENDIMIENTO // TALLERPRO360 V6.5
+                    </p>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-4 bg-[#0d1117] p-4 rounded-[2rem] border border-white/5 w-full xl:w-auto">
-                    <div class="flex items-center gap-2 px-3">
-                        <label class="text-[8px] orbitron font-black text-slate-500 uppercase">Desde:</label>
-                        <input type="date" id="filtro-fecha-inicio" value="${fechaInicioIso}" class="bg-transparent border-none text-xs font-bold text-cyan-400 font-mono focus:outline-none [color-scheme:dark]">
-                    </div>
-                    <div class="h-4 w-[1px] bg-white/10 hidden md:block"></div>
-                    <div class="flex items-center gap-2 px-3">
-                        <label class="text-[8px] orbitron font-black text-slate-500 uppercase">Hasta:</label>
-                        <input type="date" id="filtro-fecha-fin" value="${fechaFinIso}" class="bg-transparent border-none text-xs font-bold text-cyan-400 font-mono focus:outline-none [color-scheme:dark]">
-                    </div>
+                <div class="flex flex-wrap items-center gap-3 bg-[#0d1117] p-3 rounded-2xl border border-white/5 w-full xl:w-auto">
+                    <input type="date" id="filtro-fecha-inicio" value="${fechaInicioIso}" class="bg-black text-white text-xs p-2 rounded-xl border border-white/10 font-mono focus:outline-none">
+                    <input type="date" id="filtro-fecha-fin" value="${fechaFinIso}" class="bg-black text-white text-xs p-2 rounded-xl border border-white/10 font-mono focus:outline-none">
                     
-                    <button id="btnFiltrarRango" class="px-4 py-2 bg-cyan-500 text-black text-[9px] orbitron font-black uppercase rounded-xl hover:bg-white transition-all">
-                        <i class="fas fa-sync mr-1"></i> Sincronizar
+                    <button id="btnFiltrarRango" class="px-4 py-2 bg-cyan-600 text-black text-[10px] orbitron font-black uppercase rounded-xl hover:bg-cyan-400 transition-all">
+                        🚀 SINCRONIZAR PANALES
                     </button>
 
-                    <button id="btnVozIA" class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-black hover:bg-cyan-500 hover:text-white transition-all shadow-lg">
-                        <i class="fas fa-brain text-lg"></i>
+                    <button id="btnVozIA" class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-black hover:bg-cyan-500 hover:text-white transition-all shadow-lg">
+                        <i class="fas fa-brain text-sm"></i>
                     </button>
                 </div>
             </header>
 
-            <div id="panelIA" class="grid grid-cols-1 xl:grid-cols-12 gap-10">
-                <div class="col-span-full py-40 flex flex-col items-center">
-                    <div class="w-16 h-16 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
-                    <p class="mt-8 orbitron text-[10px] tracking-[1em] text-cyan-400 animate-pulse uppercase">Mapeando Matriz Financiera...</p>
+            <!-- Grid de Lienzos Gráficos Estilo Looker Studio (Optimizado para visualización móvil) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                
+                <!-- KPI 1: FLUJO DE CAJA TEMPORAL (Líneas Cruzadas) -->
+                <div class="bg-[#0d1117] p-5 rounded-2xl border border-white/5 shadow-2xl">
+                    <h3 class="orbitron text-xs font-black text-cyan-400 mb-4 uppercase tracking-wider flex items-center gap-2">
+                        📈 TENDENCIA DE FLUJO DE CAJA (INGRESO VS GASTO DIARIO)
+                    </h3>
+                    <div class="relative w-full h-64">
+                        <canvas id="chartFlujoCaja"></canvas>
+                    </div>
+                </div>
+
+                <!-- KPI 2: DISTRIBUCIÓN PUC DEL GASTO (Dona Ciberpunk) -->
+                <div class="bg-[#0d1117] p-5 rounded-2xl border border-white/5 shadow-2xl">
+                    <h3 class="orbitron text-xs font-black text-amber-400 mb-4 uppercase tracking-wider flex items-center gap-2">
+                        🍩 DISTRIBUCIÓN DE EGRESOS POR CUENTA PUC
+                    </h3>
+                    <div class="relative w-full h-64 flex justify-center">
+                        <canvas id="chartEgresosPUC"></canvas>
+                    </div>
+                </div>
+
+                <!-- KPI 3: EMBUDO DE EVACUACIÓN Y EFICIENCIA DE RAMPA (Barras Horizontales) -->
+                <div class="bg-[#0d1117] p-5 rounded-2xl border border-white/5 shadow-2xl">
+                    <h3 class="orbitron text-xs font-black text-emerald-400 mb-4 uppercase tracking-wider flex items-center gap-2">
+                        📊 EFICIENCIA EN PATIO Y RETENCIÓN EN RAMPA
+                    </h3>
+                    <div class="relative w-full h-64">
+                        <canvas id="chartEficienciaRampa"></canvas>
+                    </div>
+                </div>
+
+                <!-- KPI 4: ESCALABILIDAD FUTURA: ESTRUCTURA DE NÓMINA PASIVA VS RENDIMIENTO -->
+                <div class="bg-[#0d1117] p-5 rounded-2xl border border-white/5 shadow-2xl">
+                    <h3 class="orbitron text-xs font-black text-indigo-400 mb-4 uppercase tracking-wider flex items-center gap-2">
+                        💎 PERFORMANCE Y APORTACIÓN POR MECÁNICO (BASE 30%)
+                    </h3>
+                    <div class="relative w-full h-64">
+                        <canvas id="chartPerformanceMecanicos"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Panel Inferior de Insights Estratégicos Nexus AI -->
+            <div id="contenedorMisionesGerenciales" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 bg-cyan-950/20 border border-cyan-500/20 rounded-xl font-mono text-xs text-slate-300">
+                    <span class="text-cyan-400 font-bold block mb-1">🧠 NEXUS INSIGHT:</span>
+                    <p id="insightFlujo">Procesando telemetría de flujos...</p>
+                </div>
+                <div class="p-4 bg-amber-950/20 border border-amber-500/20 rounded-xl font-mono text-xs text-slate-300">
+                    <span class="text-amber-400 font-bold block mb-1">📦 VISIÓN DE STOCK:</span>
+                    <p id="insightStock">Analizando rotación de bodegas aliadas...</p>
+                </div>
+                <div class="p-4 bg-indigo-950/20 border border-indigo-500/20 rounded-xl font-mono text-xs text-slate-300">
+                    <span class="text-indigo-400 font-bold block mb-1">👔 ESCALABILIDAD FUTURA:</span>
+                    <p id="insightNomina">Estructura lista para absorción de nómina formal.</p>
                 </div>
             </div>
+
         </div>`;
     };
 
-    const realizarDiagnostico = async () => {
+    const ejecutarDiagnosticoVisual = async () => {
         try {
             fechaInicioIso = document.getElementById("filtro-fecha-inicio").value;
             fechaFinIso = document.getElementById("filtro-fecha-fin").value;
@@ -78,181 +136,159 @@ export default async function gerenteAI(container) {
             localStorage.setItem("nexus_tmp_f_inicio", fechaInicioIso);
             localStorage.setItem("nexus_tmp_f_fin", fechaFinIso);
 
-            const [snapOrdenes, snapContable, snapInv] = await Promise.all([
+            // 1. Extraer Órdenes de Trabajo e Inventarios en tiempo real
+            const [snapOrdenes, snapInv] = await Promise.all([
                 getDocs(query(collection(db, "ordenes"), where("empresaId", "==", empresaId))),
-                getDocs(query(collection(db, "contabilidad"), where("empresaId", "==", empresaId))),
                 getDocs(query(collection(db, "inventario"), where("empresaId", "==", empresaId)))
             ]);
 
-            let ingresos = 0, gastos = 0, rampaVal = 0, invValor = 0;
-            let otTerminadas = 0, otActivas = 0;
-
-            // Pipeline de Filtrado en Memoria (Convertidor e inmunizador de strings a números)
-            snapContable.forEach(doc => {
-                const m = doc.data();
-                const fechaRegistro = m.creadoEn || m.fecha;
-                if (!fechaRegistro) return;
-                
-                const rawFecha = typeof fechaRegistro === 'string' ? fechaRegistro.split('T')[0] : '';
-                
-                if (rawFecha >= fechaInicioIso && rawFecha <= fechaFinIso) {
-                    // PARSER BLINDADO: Extrae el valor sea numérico o texto, eliminando caracteres extraños si existen
-                    const rawMonto = m.monto !== undefined ? m.monto : (m.valor !== undefined ? m.valor : 0);
-                    const v = typeof rawMonto === 'string' ? Number(rawMonto.replace(/[^0-9.-]/g, "")) : Number(rawMonto || 0);
-                    
-                    if (['ingreso_ot', 'ingreso', 'INGRESO'].includes(m.tipo)) {
-                        ingresos += v;
-                    } else {
-                        gastos += v;
+            // 2. Sincronización Directa y Reactiva con el Libro Diario Abierto en contabilidad.js
+            let datasetContableDiario = {};
+            let rubrosPUC = { "613505 Compras Repuestos": 0, "5105 Nómina Operativa": 0, "5120 Arriendos/Servicios": 0, "Otros Egresos": 0 };
+            
+            if (window.NEXUS_ACCOUNTING_CONSOLIDATED) {
+                Object.entries(window.NEXUS_ACCOUNTING_CONSOLIDATED).forEach(([periodo, data]) => {
+                    // Mapeo detallado de cuentas PUC unificado
+                    if (data.cuentas) {
+                        Object.entries(data.cuentas).forEach(([cuenta, valor]) => {
+                            if (cuenta.startsWith("613505")) rubrosPUC["613505 Compras Repuestos"] += valor;
+                            else if (cuenta.startsWith("5105")) rubrosPUC["5105 Nómina Operativa"] += valor;
+                            else if (cuenta.startsWith("5120")) rubrosPUC["5120 Arriendos/Servicios"] += valor;
+                            else if (cuenta.startsWith("5")) rubrosPUC["Otros Egresos"] += valor;
+                        });
                     }
-                }
-            });
+                    
+                    // Extraer comportamiento diario para la gráfica temporal de flujo
+                    if (data.diario) {
+                        Object.entries(data.diario).forEach(([dia, metrics]) => {
+                            if (dia >= fechaInicioIso && dia <= fechaFinIso) {
+                                if (!datasetContableDiario[dia]) datasetContableDiario[dia] = { ingresos: 0, gastos: 0 };
+                                datasetContableDiario[dia].ingresos += (metrics.ingresos || 0);
+                                datasetContableDiario[dia].gastos += (metrics.egresos || 0);
+                            }
+                        });
+                    }
+                });
+            }
+
+            // 3. Procesar Métricas Operativas de Rampa y Personal (reportes.js Core)
+            let estadosRampa = { "INGRESO/PROCESO": 0, "FINALIZADO/LISTO": 0, "ENTREGADO": 0 };
+            let rankingMecanicos = {};
+            let rampaValTotal = 0;
 
             snapOrdenes.forEach(doc => {
                 const ot = doc.data();
-                const rawTotal = ot.total !== undefined ? ot.total : (ot.costos_totales?.total !== undefined ? ot.costos_totales.total : 0);
-                const total = typeof rawTotal === 'string' ? Number(rawTotal.replace(/[^0-9.-]/g, "")) : Number(rawTotal || 0);
-                
-                if (['LISTO', 'ENTREGADO', 'FINALIZADA'].includes(ot.estado)) {
-                    otTerminadas++;
-                } else {
-                    otActivas++;
-                    rampaVal += total;
+                const total = Number(String(ot.total || 0).replace(/[^0-9.-]/g, "")) || 0;
+                const est = String(ot.estado || "").toUpperCase();
+                const mec = ot.tecnico_asignado || "Mecánico por Asignar";
+
+                if (['INGRESO', 'PROCESO', 'REPARACION'].includes(est)) {
+                    estadosRampa["INGRESO/PROCESO"]++;
+                    rampaValTotal += total;
+                } else if (['LISTO', 'FINALIZADA'].includes(est)) {
+                    estadosRampa["FINALIZADO/LISTO"]++;
+                } else if (est === 'ENTREGADO') {
+                    estadosRampa["ENTREGADO"]++;
+                }
+
+                // Estructurar el análisis de aportación y comisiones por operario para el futuro automatizado
+                if (['LISTO', 'ENTREGADO', 'FINALIZADA'].includes(est)) {
+                    if (!rankingMecanicos[mec]) rankingMecanicos[mec] = 0;
+                    rankingMecanicos[mec] += total;
                 }
             });
 
+            let totalInvCosto = 0;
             snapInv.forEach(doc => {
                 const it = doc.data();
-                const cantidad = Number(it.cantidad || 0);
-                const precioCosto = Number(it.precioCosto || 0);
-                invValor += (cantidad * precioCosto);
+                totalInvCosto += (Number(it.cantidad || 0) * Number(it.precioCosto || 0));
             });
 
-            const diffTiempo = Math.abs(new Date(fechaFinIso + "T12:00:00") - new Date(fechaInicioIso + "T12:00:00"));
-            const diasAnalizados = Math.ceil(diffTiempo / (1000 * 60 * 60 * 24)) || 1;
+            // Generar e Inyectar Gráficas Looker Studio Ciberpunk
+            construirGraficasUI(datasetContableDiario, rubrosPUC, estadosRampa, rankingMecanicos);
+            
+            // Textualizar Insights Dinámicos de la Inteligencia de Negocio
+            document.getElementById("insightFlujo").innerText = `El patio retiene $${rampaValTotal.toLocaleString('es-CO')} en rampa. Liberar estos carros acelerará el flujo de caja sin recurrir a pasivos.`;
+            document.getElementById("insightStock").innerText = totalInvCosto > 0 
+                ? `Bodega registra $${totalInvCosto.toLocaleString('es-CO')} inmovilizados. Los talleres aliados muestran baja rotación de stock actualmente.` 
+                : `Operación Liviana en Inventarios: El taller no mantiene capital atrapado en stock pasivo; compras bajo demanda optimizadas por la 613505.`;
 
-            const utilidad = ingresos - gastos;
-            const burnRateDiario = gastos / diasAnalizados;
-            const salud = ingresos > 0 ? (utilidad / ingresos) * 100 : 0;
-            const eficiencia = (otTerminadas / (otActivas + otTerminadas || 1)) * 100;
+            document.getElementById("btnVozIA").onclick = () => {
+                hablar(`Comandante ${nombreUsuario}. Los tableros analíticos están unificados. Rampa retiene ${Math.round(rampaValTotal)} pesos y los canales de compras de repuestos por la seis uno treinta y cinco cero cinco están siendo monitoreados bajo demanda.`);
+            };
 
-            const misiones = [];
-            if (rampaVal > 0) {
-                misiones.push({
-                    nivel: "CRÍTICO", icon: "fa-bolt-lightning",
-                    t: "Operación 'Caja Rápida'",
-                    d: `Detectamos $${rampaVal.toLocaleString()} en rampa de desarrollo. Agilizar la entrega de estas órdenes inyectará liquidez directa al taller.`
-                });
-            }
-            if (invValor > 0) {
-                misiones.push({
-                    nivel: "ESTRATEGIA", icon: "fa-box-open",
-                    t: "Protocolo de Stock Pasivo",
-                    d: `Tu inventario actual suma $${invValor.toLocaleString()} en costo. Monitorea la rotación antes de autorizar nuevas compras en bodega.`
-                });
-            }
-            if (eficiencia < 80) {
-                misiones.push({
-                    nivel: "OPERACIONES", icon: "fa-microchip",
-                    t: "Optimización de Flujos",
-                    d: `La tasa de evacuación técnica se encuentra en un ${eficiencia.toFixed(1)}%. Reasigna tareas para balancear las bahías.`
-                });
-            }
-
-            renderPanel({ ingresos, utilidad, salud, eficiencia, misiones, burnRateDiario, invValor, diasAnalizados });
-
-        } catch (e) { 
-            console.error("Critical Failure Nexus Gerente AI Core:", e);
-            const panel = document.getElementById("panelIA");
-            if (panel) {
-                panel.innerHTML = `
-                    <div class="col-span-full text-center py-20 border border-red-500/20 bg-red-500/5 rounded-[2rem]">
-                        <p class="orbitron text-xs text-red-400 tracking-widest uppercase">Fallo de Sincronización Telemetría</p>
-                    </div>`;
-            }
+        } catch (e) {
+            console.error("Fallo Crítico en el Render del Gerente Analítico:", e);
         }
     };
 
-    const renderPanel = (data) => {
-        const panel = document.getElementById("panelIA");
-        if (!panel) return;
+    const construirGraficasUI = (flujoDiario, egresosPUC, rampaData, mecanicosData) => {
+        // Limpieza y Destrucción Segura de Instancias Previas para Evitar Superposiciones en Móviles
+        Object.keys(chartsInstanciados).forEach(k => { if (chartsInstanciados[k]) chartsInstanciados[k].destroy(); });
 
-        panel.innerHTML = `
-            <div class="xl:col-span-8 space-y-10">
-                <div class="bg-[#0d1117] p-12 rounded-[4rem] border border-white/5 relative overflow-hidden group shadow-2xl">
-                    <div class="absolute -right-10 -top-10 text-cyan-500/5 text-9xl orbitron font-black italic">DATA</div>
-                    <h3 class="orbitron text-xs font-black text-cyan-400 mb-12 uppercase tracking-widest italic flex items-center gap-3">
-                        <span class="w-2 h-2 bg-cyan-500 rounded-full animate-ping"></span> Auditoría de Bóveda & Salud Fiscal
-                    </h3>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-16">
-                        <div>
-                            <p class="text-[9px] text-slate-500 font-black uppercase mb-4 tracking-widest italic">Recaudo Bruto (Periodo)</p>
-                            <h2 class="text-6xl font-black text-white orbitron italic tracking-tighter leading-none">$ ${data.ingresos.toLocaleString()}</h2>
-                        </div>
-                        <div class="relative border-l border-white/10 pl-12">
-                            <p class="text-[9px] text-amber-400 font-black uppercase mb-4 tracking-widest italic">Utilidad Neta Real</p>
-                            <h2 class="text-5xl font-black ${data.utilidad >= 0 ? 'text-emerald-500' : 'text-red-500'} orbitron italic tracking-tighter opacity-80">$ ${data.utilidad.toLocaleString()}</h2>
-                            <span class="absolute right-0 top-0 text-[9px] bg-white/10 text-cyan-400 px-3 py-1 rounded-full font-black uppercase orbitron">${data.salud.toFixed(1)}% MARGEN</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-6">
-                    <h3 class="orbitron text-[11px] font-black text-white/50 uppercase tracking-[0.4em] italic mb-4">Misiones de Comando Gerencial</h3>
-                    ${data.misiones.map(m => `
-                        <div class="bg-[#0d1117] border border-white/5 p-8 rounded-[2.5rem] flex items-center gap-8 group hover:border-cyan-500/30 transition-all relative overflow-hidden shadow-xl">
-                            <div class="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-xl shrink-0">
-                                <i class="fas ${m.icon} ${m.nivel === 'CRÍTICO' ? 'text-red-500' : 'text-cyan-400'}"></i>
-                            </div>
-                            <div class="flex-1">
-                                <span class="text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${m.nivel === 'CRÍTICO' ? 'bg-red-500/10 text-red-500' : 'bg-cyan-500/10 text-cyan-400'} orbitron">
-                                    ${m.nivel}
-                                </span>
-                                <h4 class="text-xl font-black mt-1 orbitron italic">${m.t}</h4>
-                                <p class="text-slate-400 text-xs mt-1 italic font-medium">${m.d}</p>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-
-            <div class="xl:col-span-4 space-y-10">
-                <div class="bg-indigo-600 p-10 rounded-[4rem] text-white relative overflow-hidden group shadow-2xl">
-                    <h4 class="orbitron text-[10px] font-black mb-8 uppercase tracking-widest opacity-70 italic">Eficiencia de Rampa</h4>
-                    <p class="text-6xl font-black orbitron mb-4 italic tracking-tighter">${data.eficiencia.toFixed(1)}%</p>
-                    <div class="h-1.5 w-full bg-black/20 rounded-full overflow-hidden mb-6">
-                        <div class="h-full bg-white" style="width: ${data.eficiencia}%"></div>
-                    </div>
-                    <p class="text-[10px] font-bold italic leading-tight uppercase opacity-90">
-                        "William, balance de evacuación operativa en rangos estratégicos estables."
-                    </p>
-                </div>
-
-                <div class="bg-[#0d1117] p-10 rounded-[4rem] border border-white/5 space-y-6">
-                    <h4 class="orbitron text-[10px] font-black text-slate-500 mb-4 uppercase tracking-widest italic">Análisis de Estructuras</h4>
-                    
-                    <div class="p-6 bg-black/40 rounded-3xl border border-white/5">
-                        <p class="text-[9px] font-black text-cyan-400 uppercase mb-1">Capital Inmovilizado Bodega</p>
-                        <p class="text-3xl font-black orbitron italic text-white">$ ${data.invValor.toLocaleString()}</p>
-                    </div>
-
-                    <div class="p-6 bg-black/40 rounded-3xl border border-white/5">
-                        <p class="text-[9px] font-black text-red-400 uppercase mb-1">Burn Rate del Periodo</p>
-                        <p class="text-3xl font-black orbitron italic text-white">$ ${Math.round(data.burnRateDiario).toLocaleString()} / día</p>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        document.getElementById("btnVozIA").onclick = () => {
-            const msn = `Comandante ${nombreUsuario}. Reporte de telemetría consolidado. Registramos una utilidad neta de ${Math.round(data.utilidad)} pesos con un burn rate diario real de ${Math.round(data.burnRateDiario)} pesos. He generado las misiones tácticas correspondientes.`;
-            hablar(msn);
+        const opcionesComunes = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'monospace', size: 9 } } } },
+            scales: {
+                x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { size: 9 } } },
+                y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { size: 9 } } }
+            }
         };
+
+        // 📈 CHART 1: TENDENCIA DE FLUJO DE CAJA (Líneas)
+        const diasLabels = Object.keys(flujoDiario).sort();
+        chartsInstanciados.flujo = new Chart(document.getElementById('chartFlujoCaja'), {
+            type: 'line',
+            data: {
+                labels: diasLabels.map(d => d.substring(5)), // Simplificar fecha a MM-DD
+                datasets: [
+                    { label: 'Ingresos', data: diasLabels.map(d => flujoDiario[d].ingresos), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.3 },
+                    { label: 'Gastos', data: diasLabels.map(d => flujoDiario[d].gastos), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, tension: 0.3 }
+                ]
+            },
+            options: opcionesComunes
+        });
+
+        // 🍩 CHART 2: DISTRIBUCIÓN PUC (Dona)
+        chartsInstanciados.puc = new Chart(document.getElementById('chartEgresosPUC'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(egresosPUC),
+                datasets: [{
+                    data: Object.values(egresosPUC),
+                    backgroundColor: ['#f59e0b', '#6366f1', '#06b6d4', '#475569'],
+                    borderWidth: 0
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 9 } } } } }
+        });
+
+        // 📊 CHART 3: EFICIENCIA DE RAMPA (Barras Horizontales)
+        chartsInstanciados.rampa = new Chart(document.getElementById('chartEficienciaRampa'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(rampaData),
+                datasets: [{ label: 'Vehículos', data: Object.values(rampaData), backgroundColor: '#06b6d4', borderRadius: 8 }]
+            },
+            options: { ...opcionesComunes, indexAxis: 'y' }
+        });
+
+        // 💎 CHART 4: PERFORMANCE DE COLABORADORES Y FUTURA NÓMINA (Barras Verticales)
+        chartsInstanciados.mecanicos = new Chart(document.getElementById('chartPerformanceMecanicos'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(mecanicosData).length ? Object.keys(mecanicosData) : ['Sin Órdenes del Periodo'],
+                datasets: [{ label: 'Facturación Aportada ($)', data: Object.keys(mecanicosData).length ? Object.values(mecanicosData) : [0], backgroundColor: '#6366f1', borderRadius: 8 }]
+            },
+            options: opcionesComunes
+        });
     };
 
+    // Inicialización del Entorno
     renderLayout();
-    await realizarDiagnostico();
+    await cargarChartJS();
+    await ejecutarDiagnosticoVisual();
 
-    document.getElementById("btnFiltrarRango").onclick = realizarDiagnostico;
+    document.getElementById("btnFiltrarRango").onclick = ejecutarDiagnosticoVisual;
 }
