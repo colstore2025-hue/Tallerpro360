@@ -274,24 +274,36 @@ export default async function gerenteAI(container) {
             options: opcionesComunes
         });
 
-        // 🍩 CHART 2: DISTRIBUCIÓN PUC (Dona de Alto Impacto)
-        chartsInstanciados.puc = new Chart(document.getElementById('chartEgresosPUC'), {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(egresosPUC),
-                datasets: [{
-                    data: Object.values(egresosPUC),
-                    backgroundColor: ['#f59e0b', '#6366f1', '#06b6d4', '#334155'],
-                    borderWidth: 1,
-                    borderColor: '#0d1117'
-                }]
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                plugins: { legend: { position: 'right', labels: { color: '#f8fafc', font: { size: 10, family: 'monospace' } } } } 
-            }
-        });
+        // 🍩 CHART 2: DISTRIBUCIÓN PUC (Optimizado Anti-Líneas Parásitas)
+chartsInstanciados.puc = new Chart(document.getElementById('chartEgresosPUC'), {
+    type: 'doughnut',
+    data: {
+        labels: Object.keys(egresosPUC),
+        datasets: [{
+            data: Object.values(egresosPUC),
+            backgroundColor: ['#f59e0b', '#6366f1', '#06b6d4', '#334155'],
+            borderWidth: 2,
+            borderColor: '#0d1117', // Color de fondo para separar limpiamente las rebanadas
+            hoverOffset: 4
+        }]
+    },
+    options: { 
+        responsive: true, 
+        maintainAspectRatio: false,
+        layout: {
+            padding: 10 // Da espacio de amortiguación para que no se corten los bordes en el móvil
+        },
+        plugins: { 
+            legend: { 
+                position: 'right', 
+                labels: { 
+                    color: '#f8fafc', 
+                    font: { size: 10, family: 'monospace' } 
+                } 
+            } 
+        } 
+    }
+});
 
         // 📊 CHART 3: EFICIENCIA DE RAMPA (Barras Horizontales Looker-Style)
         chartsInstanciados.rampa = new Chart(document.getElementById('chartEficienciaRampa'), {
