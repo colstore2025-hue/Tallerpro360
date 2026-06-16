@@ -189,31 +189,39 @@ export default async function nexusFinanzasElite(container) {
                 const data = doc.data();
                 const monto = safeNumber(data.monto || data.total || data.valor || data.pago_mecanico || data.salario);
                 const tipo = (data.tipo || "").toLowerCase();
-                const detalle = (data.detalle || data.concepto || "").toLowerCase();
+                const detalle = (data.detalle || data.concepto || "").toUpperCase(); // Transformación nativa upper case
                 const cuentaPUC = String(data.puc || data.codigo || "");
 
                 const esGasto = !(tipo.includes("ingreso") || cuentaPUC.startsWith("4") || tipo.includes("4135") || tipo.includes("saneamiento") || tipo.includes("1105") || tipo.includes("capital") || tipo.includes("2805"));
                 
                 if (esGasto && monto > 0) {
                     const placaRaw = (data.placa || "ADMIN").toUpperCase().trim();
-                    const esNominaInformal = cuentaPUC.startsWith("5105") || cuentaPUC.startsWith("7205") || detalle.includes("nomina") || detalle.includes("quincena") || detalle.includes("semana") || detalle.includes("pago mecanico") || detalle.includes("ayudante");
+                    const esNominaInformal = cuentaPUC.startsWith("5105") || cuentaPUC.startsWith("7205") || detalle.includes("NOMINA") || detalle.includes("QUINCENA") || detalle.includes("SEMANA") || detalle.includes("PAGO MECANICO") || detalle.includes("AYUDANTE");
 
-                    // 💥 EXTRACCIÓN MAESTRA REGEX SAP/HANA: Escaneo analítico de descripciones complejas como "(IJV885-KIA RIO SPACE)"
-                    let placaEncontradaEnDetalle = null;
-                    const regexPlaca = /\(([^)]+)\)/;
-                    const match = detalle.match(regexPlaca);
-                    if (match && match[1]) {
-                        placaEncontradaEnDetalle = match[1].split('-')[0].replace(/[^A-Z0-9]/g, '').trim().substring(0, 6);
+                    // 💥 RE-INGENIERÍA DE EXTRACCIÓN DE PLACA DIRECTA (COMPATIBLE CON FORMATOS CON O SIN PARÉNTESIS)
+                    let placaClaveGasto = aislarPlacaPura(placaRaw);
+
+                    // Si el campo directo 'placa' es ADMIN o está vacío, escaneamos inductivamente el detalle/concepto string
+                    if (placaClaveGasto === 'ADMIN' || placaClaveGasto === '') {
+                        // Buscamos cualquier palabra o fragmento de texto en el detalle que coincida con el patrón contable ingresado
+                        // Al hacer split por espacios o guiones, limpiamos el fragmento
+                        const bloquesTexto = detalle.replace(/[()]/g, ' ').split(/[\s-]+/);
+                        for (const bloque of bloquesTexto) {
+                            const limpio = bloque.replace(/[^A-Z0-9]/g, '').trim();
+                            // Patrón estándar de placa colombiana: 3 letras y 3 números (6 caracteres)
+                            if (limpio.length === 6 && /^[A-Z]{3}[0-9]{3}$/.test(limpio)) {
+                                placaClaveGasto = limpio;
+                                break;
+                            }
+                        }
                     }
 
                     if (esNominaInformal) {
                         nominasInformalesGlobales += monto;
-                    } else if (cuentaPUC.startsWith("613505") || placaEncontradaEnDetalle) {
-                        // Cruce directo por cuenta de inventario de repuestos o por detección explícita en el detalle del asiento
-                        const claveAsignacion = placaEncontradaEnDetalle || aislarPlacaPura(placaRaw);
-                        if (claveAsignacion !== 'ADMIN' && claveAsignacion.length >= 3) {
-                            if (!mapaGastosPorPlaca[claveAsignacion]) mapaGastosPorPlaca[claveAsignacion] = 0;
-                            mapaGastosPorPlaca[claveAsignacion] += monto;
+                    } else if (cuentaPUC.startsWith("613505") || placaClaveGasto !== 'ADMIN') {
+                        if (placaClaveGasto !== 'ADMIN' && placaClaveGasto.length >= 3) {
+                            if (!mapaGastosPorPlaca[placaClaveGasto]) mapaGastosPorPlaca[placaClaveGasto] = 0;
+                            mapaGastosPorPlaca[placaClaveGasto] += monto;
                         } else {
                             gastosFijosGlobales += monto;
                         }
@@ -239,7 +247,6 @@ export default async function nexusFinanzasElite(container) {
                 const ingresosNetos = facturacionBruta / (1 + IVA_FACTOR);
                 const ivaRetenido = facturacionBruta - ingresosNetos;
                 
-                // Mapeo dinámico cruzando costo directo nativo u origen del libro auxiliar diario (incluyendo la 613505)
                 const costosInternosOrden = safeNumber(o.costos_totales?.costo_directo || o.costo_directo || o.costoDirecto || 0);
                 const gastosContablesAsignados = mapaGastosPorPlaca[placaFinancieraClave] || costosInternosOrden;
                 
