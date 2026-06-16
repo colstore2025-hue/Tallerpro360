@@ -198,8 +198,25 @@ export default async function nexusFinanzasElite(container) {
                     const placaRaw = (data.placa || "ADMIN").toUpperCase().trim();
                     const esNominaInformal = cuentaPUC.startsWith("5105") || cuentaPUC.startsWith("7205") || detalle.includes("nomina") || detalle.includes("quincena") || detalle.includes("semana") || detalle.includes("pago mecanico") || detalle.includes("ayudante");
 
+                    // 💥 EXTRACCIÓN MAESTRA REGEX SAP/HANA: Escaneo analítico de descripciones complejas como "(IJV885-KIA RIO SPACE)"
+                    let placaEncontradaEnDetalle = null;
+                    const regexPlaca = /\(([^)]+)\)/;
+                    const match = detalle.match(regexPlaca);
+                    if (match && match[1]) {
+                        placaEncontradaEnDetalle = match[1].split('-')[0].replace(/[^A-Z0-9]/g, '').trim().substring(0, 6);
+                    }
+
                     if (esNominaInformal) {
                         nominasInformalesGlobales += monto;
+                    } else if (cuentaPUC.startsWith("613505") || placaEncontradaEnDetalle) {
+                        // Cruce directo por cuenta de inventario de repuestos o por detección explícita en el detalle del asiento
+                        const claveAsignacion = placaEncontradaEnDetalle || aislarPlacaPura(placaRaw);
+                        if (claveAsignacion !== 'ADMIN' && claveAsignacion.length >= 3) {
+                            if (!mapaGastosPorPlaca[claveAsignacion]) mapaGastosPorPlaca[claveAsignacion] = 0;
+                            mapaGastosPorPlaca[claveAsignacion] += monto;
+                        } else {
+                            gastosFijosGlobales += monto;
+                        }
                     } else if (placaRaw === "ADMIN" || !placaRaw || placaRaw.includes("ADMIN")) {
                         gastosFijosGlobales += monto;
                     } else {
@@ -221,7 +238,10 @@ export default async function nexusFinanzasElite(container) {
                 const facturacionBruta = safeNumber(o.costos_totales?.total || o.total || 0);
                 const ingresosNetos = facturacionBruta / (1 + IVA_FACTOR);
                 const ivaRetenido = facturacionBruta - ingresosNetos;
-                const gastosContablesAsignados = mapaGastosPorPlaca[placaFinancieraClave] || 0;
+                
+                // Mapeo dinámico cruzando costo directo nativo u origen del libro auxiliar diario (incluyendo la 613505)
+                const costosInternosOrden = safeNumber(o.costos_totales?.costo_directo || o.costo_directo || o.costoDirecto || 0);
+                const gastosContablesAsignados = mapaGastosPorPlaca[placaFinancieraClave] || costosInternosOrden;
                 
                 const ebitdaRealPlaca = facturacionBruta - ivaRetenido - gastosContablesAsignados;
                 const margenEbitdaPrc = ingresosNetos > 0 ? (ebitdaRealPlaca / ingresosNetos) * 100 : 0;
