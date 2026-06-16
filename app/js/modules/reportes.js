@@ -1,8 +1,8 @@
 /**
- * 🏛️ TALLERPRO360 - FINANZAS ELITE V1.0 (QUANTUM-SAP ENGINE)
+ * 🏛️ TALLERPRO360 - FINANZAS ELITE V1.1 (QUANTUM-SAP ENGINE)
  * Desarrollado por: William Jeffry Urquijo Cubillos // Nexus AI 2026
- * Maniobra: Control de Frecuencias Informales de Nómina, Desinfección Cuántica Anti-NaN,
- * Cierre de Ejercicio Flexible Multitarea y Automatización de Autosumas XLSX.
+ * Maniobra: Control de Frecuencias Temporales Gerenciales, Sincronización Contable Maestra,
+ * Auditoría de Costo Directo por Placa y Cierre de Ejercicio Flexible.
  */
 
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -13,13 +13,16 @@ export default async function nexusFinanzasElite(container) {
     const empresaId = (localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId") || "").trim();
     
     if (!empresaId) {
-        container.innerHTML = `<div class="p-20 text-center text-red-500 orbitron">ERROR CRÍTICO: AUTENTICACIÓN SAP REQUERIDA PARA FINANZAS ELITE</div>`;
+        container.innerHTML = `<div class="p-20 text-center text-red-500 orbitron flex flex-col gap-4 justify-center items-center font-bold">
+            <i class="fas fa-exclamation-triangle text-4xl animate-pulse"></i>
+            <span>ERROR CRÍTICO: AUTENTICACIÓN SAP REQUERIDA PARA FINANZAS ELITE</span>
+        </div>`;
         return;
     }
 
     const IVA_FACTOR = 0.19;
 
-    // --- MOTOR DE DESINFECCIÓN CUÁNTICA ANTI-NaN (PROGRAMACIÓN DEFENSIVA SANITIZATION) ---
+    // --- MOTOR DE DESINFECCIÓN CUÁNTICA ANTI-NaN ---
     const safeNumber = (val) => {
         if (val === null || val === undefined) return 0;
         if (typeof val === 'number') return isNaN(val) ? 0 : val;
@@ -36,15 +39,10 @@ export default async function nexusFinanzasElite(container) {
         return isNaN(num) ? 0 : num;
     };
 
-    // --- FORMATEADORES PROFESIONALES ---
-    const fmt = (v) => {
-        return new Intl.NumberFormat('es-CO', {
-            style: 'currency',
-            currency: 'COP',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(safeNumber(v));
-    };
+    // --- FORMATEADORES ---
+    const fmt = (v) => new Intl.NumberFormat('es-CO', {
+        style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0
+    }).format(safeNumber(v));
 
     const pct = (v) => `${safeNumber(v).toFixed(1)}%`;
 
@@ -52,14 +50,17 @@ export default async function nexusFinanzasElite(container) {
         ordenesMaster: [],
         gastosFijosGlobales: 0, 
         nominasInformalesGlobales: 0,
+        mapaGastosPorPlaca: {}, // Enlace vivo con contabilidad.js
         dataActual: [],
         charts: {},
+        filtroFrecuencia: "mes", // Valores: total, semana, mes, trimestre, anio
+        fechaReferencia: new Date(),
         rangoCierre: { inicio: null, fin: null }
     };
 
     const init = async () => {
         injectEliteStyles();
-        calcularFechasCierreDinamico();
+        calcularRangoPorFrecuencia();
         renderLayout();
         await loadDependencies();
         await fetchData();
@@ -71,99 +72,135 @@ export default async function nexusFinanzasElite(container) {
         const style = document.createElement('style');
         style.id = "nexus-elite-styles";
         style.innerHTML = `
-            .filter-btn { padding: 10px 20px; border-radius: 15px; font-size: 10px; font-weight: 900; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #64748b; transition: 0.4s; cursor: pointer; font-family: 'Orbitron'; text-transform: uppercase; }
-            .filter-btn.active { background: #06b6d4; color: #000; border-color: #06b6d4; box-shadow: 0 0 20px rgba(6, 182, 212, 0.4); }
-            .sap-input { background: #000; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; color: #06b6d4; padding: 8px 12px; font-size: 11px; outline: none; transition: 0.3s; }
-            .sap-input:focus { border-color: #06b6d4; box-shadow: 0 0 10px rgba(6,182,212,0.2); }
-            .kpi-card { position: relative; overflow: hidden; background: #0d1117; padding: 2rem; border-radius: 2.5rem; border: 1px solid rgba(255,255,255,0.05); transition: 0.5s; }
-            .kpi-card:hover { border-color: rgba(6, 182, 212, 0.3); transform: translateY(-5px); }
-            .chart-container { background: #0d1117; padding: 2rem; border-radius: 3rem; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-            .alert-pill { background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.2); color: #fbbf24; padding: 4px 12px; border-radius: 20px; font-size: 9px; font-weight: bold; }
+            .filter-btn { padding: 8px 16px; border-radius: 12px; font-size: 10px; font-weight: 800; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); color: #94a3b8; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; font-family: 'Orbitron'; text-transform: uppercase; }
+            .filter-btn:hover { background: rgba(6, 182, 212, 0.1); color: #06b6d4; }
+            .filter-btn.active { background: #06b6d4; color: #000; border-color: #06b6d4; box-shadow: 0 0 15px rgba(6, 182, 212, 0.35); }
+            .sap-input { background: #090d16; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #06b6d4; padding: 10px 14px; font-size: 11px; outline: none; transition: 0.3s; }
+            .sap-input:focus { border-color: #06b6d4; box-shadow: 0 0 12px rgba(6,182,212,0.25); }
+            .kpi-card { position: relative; overflow: hidden; background: #0b0f17; padding: 1.8rem; border-radius: 2rem; border: 1px solid rgba(255,255,255,0.03); transition: all 0.4s ease; }
+            .kpi-card:hover { border-color: rgba(6, 182, 212, 0.25); transform: translateY(-3px); background: #0f1622; }
+            .chart-container { background: #0b0f17; padding: 2rem; border-radius: 2rem; border: 1px solid rgba(255,255,255,0.03); }
+            .alert-pill { background: rgba(6, 182, 212, 0.06); border: 1px solid rgba(6, 182, 212, 0.15); color: #22d3ee; padding: 6px 14px; border-radius: 14px; font-size: 9px; font-weight: bold; flex-shrink: 0; }
         `;
         document.head.appendChild(style);
     };
 
-    // --- SISTEMA DE CORTE Y FLEXIBILIDAD TEMPORAL (CIERRES EXTEMPORÁNEOS) ---
-    const calcularFechasCierreDinamico = () => {
-        const hoy = new Date();
-        if (hoy.getDate() <= 10) {
-            state.rangoCierre.inicio = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
-            state.rangoCierre.fin = new Date(hoy.getFullYear(), hoy.getMonth(), 0, 23, 59, 59);
-        } else {
-            state.rangoCierre.inicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-            state.rangoCierre.fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0, 23, 59, 59);
+    // --- MOTOR DE FRECUENCIAS GERENCIALES REQUERIDO POR GERENCIA ---
+    const calcularRangoPorFrecuencia = () => {
+        const ref = new Date(state.fechaReferencia);
+        
+        if (state.filtroFrecuencia === "total") {
+            state.rangoCierre = { inicio: null, fin: null };
+            return;
         }
+
+        let inicio, fin;
+
+        switch (state.filtroFrecuencia) {
+            case "semana":
+                const diaSemana = ref.getDay();
+                const diferencia = ref.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1); // Lunes
+                inicio = new Date(ref.setDate(diferencia));
+                inicio.setHours(0,0,0,0);
+                fin = new Date(inicio);
+                fin.setDate(inicio.getDate() + 6);
+                fin.setHours(23,59,59,999);
+                break;
+                
+            case "mes":
+                inicio = new Date(ref.getFullYear(), ref.getMonth(), 1);
+                fin = new Date(ref.getFullYear(), ref.getMonth() + 1, 0, 23, 59, 59, 999);
+                break;
+                
+            case "trimestre":
+                const trimestreActual = Math.floor(ref.getMonth() / 3);
+                inicio = new Date(ref.getFullYear(), trimestreActual * 3, 1);
+                fin = new Date(ref.getFullYear(), (trimestreActual + 1) * 3, 0, 23, 59, 59, 999);
+                break;
+                
+            case "anio":
+                inicio = new Date(ref.getFullYear(), 0, 1);
+                fin = new Date(ref.getFullYear(), 11, 31, 23, 59, 59, 999);
+                break;
+        }
+
+        state.rangoCierre = { inicio, fin };
     };
 
     const renderLayout = () => {
         container.innerHTML = `
-        <div class="bg-[#010409] min-h-screen text-slate-100 p-4 lg:p-10 orbitron animate-in fade-in duration-1000">
-            <header class="flex flex-col gap-8 mb-12 border-b border-white/5 pb-10 text-center md:text-left">
-                <div class="flex flex-col md:flex-row justify-between items-center gap-8">
-                    <div>
-                        <h1 class="text-5xl font-black italic tracking-tighter text-white uppercase">TallerPRO360<span class="text-cyan-400">_FinanzasElite</span></h1>
-                        <p class="text-[10px] text-slate-500 tracking-[0.5em] font-bold uppercase mt-3 italic">QUANTUM-SAP INTELLIGENCE ENGINE // Auditoría Forense y Flexibilidad Contable</p>
+        <div class="bg-[#020617] min-h-screen text-slate-200 p-4 lg:p-8 orbitron antialiased">
+            <header class="flex flex-col gap-6 mb-8 border-b border-white/5 pb-8">
+                <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
+                    <div class="text-center lg:text-left">
+                        <h1 class="text-4xl font-black tracking-tight text-white uppercase">TallerPRO360<span class="text-cyan-400">_FinanzasElite</span></h1>
+                        <p class="text-[9px] text-slate-500 tracking-[0.4em] font-bold uppercase mt-2">QUANTUM-SAP ENGINE V1.1 // Matriz Temporal Contable de Precisión</p>
                     </div>
-                    <button id="btnExportGlobal" class="bg-emerald-500 text-black px-8 py-4 rounded-2xl text-[11px] font-black hover:scale-105 transition-all flex items-center gap-3 shadow-[0_10px_20px_rgba(16,185,129,0.2)]">
-                        <i class="fas fa-file-excel text-lg"></i> EXPORTAR MATRIZ CONTABLE SAP
+                    <button id="btnExportGlobal" class="bg-emerald-500 text-slate-950 px-6 py-3.5 rounded-xl text-[11px] font-black hover:bg-emerald-400 transition-all flex items-center gap-2.5 shadow-lg shadow-emerald-500/10">
+                        <i class="fas fa-file-excel text-base"></i> EXPORTAR CONTROL FINANCIERO SAP
                     </button>
                 </div>
 
-                <div class="w-full flex flex-wrap gap-4 mt-6 bg-white/5 p-6 rounded-[2.5rem] border border-white/5 items-center justify-between">
-                    <div class="flex flex-wrap gap-4 items-center">
-                        <span class="text-[9px] text-cyan-500 font-black uppercase tracking-widest">Rango de Cierre Automático:</span>
-                        <button id="flt-hist" class="filter-btn">Histórico</button>
-                        <button id="flt-mes" class="filter-btn active">Mes Sugerido</button>
-                        <div class="alert-pill"><i class="fas fa-info-circle"></i> Tolerancia Activa a Registros Extemporáneos / Cierre Flex</div>
+                <div class="w-full flex flex-col md:flex-row gap-4 bg-slate-900/40 p-5 rounded-2xl border border-white/5 items-center justify-between mt-4">
+                    <div class="flex flex-wrap gap-2 items-center justify-center md:justify-start">
+                        <span class="text-[9px] text-cyan-400 font-bold uppercase tracking-wider mr-2">Frecuencia Gerencial:</span>
+                        <button id="freq-total" class="filter-btn">Histórico</button>
+                        <button id="freq-semana" class="filter-btn">Semanal</button>
+                        <button id="freq-mes" class="filter-btn active">Mensual</button>
+                        <button id="freq-trimestre" class="filter-btn">Trimestral</button>
+                        <button id="freq-anio" class="filter-btn">Anual</button>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <i class="fas fa-calendar-alt text-slate-600"></i>
+                    <div class="flex items-center gap-3">
+                        <div class="alert-pill text-center"><i class="fas fa-filter text-xs mr-1"></i> Filtro Activo Período Segregado</div>
                         <input type="date" id="datePicker" class="sap-input orbitron">
                     </div>
                 </div>
             </header>
 
-            <div id="kpi-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12"></div>
+            <div id="kpi-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"></div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 mb-12">
-                <div class="lg:col-span-2 chart-container">
-                    <div class="flex justify-between items-center mb-8">
-                        <h3 class="text-xs font-black text-cyan-500 uppercase tracking-widest italic">Rentabilidad Líquida Real y EBITDA por Unidad</h3>
-                        <span class="text-[9px] text-slate-500 orbitron uppercase">Desinfección Cuántica Activa</span>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div class="lg:col-span-2 chart-container flex flex-col justify-between">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xs font-black text-cyan-400 uppercase tracking-widest">Rentabilidad EBITDA Consolidada por Placa</h3>
+                        <span class="text-[8px] text-slate-500 uppercase tracking-widest">Mapeo de Libro Diario</span>
                     </div>
-                    <div class="h-80"><canvas id="mainChart"></canvas></div>
+                    <div class="h-72"><canvas id="mainChart"></canvas></div>
                 </div>
-                <div class="chart-container">
-                    <h3 class="text-xs font-black text-amber-500 uppercase tracking-widest italic mb-8">Estructura de Gastos e Insumos</h3>
+                <div class="chart-container flex flex-col justify-between">
+                    <h3 class="text-xs font-black text-amber-400 uppercase tracking-widest mb-6">Estructura Global de Egresos</h3>
                     <div class="h-64"><canvas id="pieChart"></canvas></div>
                 </div>
             </div>
 
-            <div class="bg-[#0d1117] rounded-[3.5rem] border border-white/5 shadow-2xl overflow-hidden mb-20">
-                <div class="p-10 border-b border-white/5 flex justify-between items-center bg-black/20">
+            <div class="bg-[#0b0f17] rounded-2xl border border-white/5 shadow-xl overflow-hidden mb-12">
+                <div class="p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-900/20">
                     <div>
-                        <h3 class="text-xs font-black text-white uppercase italic tracking-widest">Estado de Resultados Consolidado por Misiones de Flota</h3>
-                        <p class="text-[9px] text-slate-500 mt-1">Cruce Maestro del Libro Diario (Gastos Directos + Nóminas Semanales/Quincenales)</p>
+                        <h3 class="text-xs font-black text-white uppercase tracking-widest">Estado de Pérdidas y Ganancias por Unidades de Flota</h3>
+                        <p class="text-[9px] text-slate-500 mt-1">Cruce Maestro del Costo Directo de Contabilidad asignado a la Placa</p>
                     </div>
-                    <span id="counterTag" class="text-[10px] bg-cyan-500/10 text-cyan-400 px-6 py-2 rounded-full font-black border border-cyan-500/20 uppercase">Procesando Módulos...</span>
+                    <span id="counterTag" class="text-[9px] bg-cyan-500/10 text-cyan-400 px-4 py-1.5 rounded-md font-black border border-cyan-500/20 uppercase tracking-wider">Procesando Matriz...</span>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-black/40 text-slate-500 text-[10px] uppercase font-black">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-950/60 text-slate-400 text-[9px] uppercase font-black tracking-wider border-b border-white/5">
                             <tr>
-                                <th class="p-8">Identificación e Historial</th>
-                                <th class="p-8">Misión / Tipo</th>
-                                <th class="p-8">Facturación (Ingreso Bruto)</th>
-                                <th class="p-8">Desglose (IVA 19% / Libro)</th>
-                                <th class="p-8 text-right">EBITDA Real Operativo</th>
-                                <th class="p-8 text-center">Lead Time (Ciclo)</th>
+                                <th class="p-6">Unidad Vehículo / Cliente</th>
+                                <th class="p-6">Línea Operativa</th>
+                                <th class="p-6">Facturación Bruta</th>
+                                <th class="p-6">Costo Directo (Contabilidad Libro)</th>
+                                <th class="p-6 text-right">EBITDA Real Placa</th>
+                                <th class="p-6 text-center">Lead Time</th>
                             </tr>
                         </thead>
-                        <tbody id="report-table-body" class="text-sm"></tbody>
+                        <tbody id="report-table-body" class="text-xs divide-y divide-white/[0.02]"></tbody>
                     </table>
                 </div>
             </div>
         </div>`;
+        
+        // Sincronizar visualmente el input date con el estado actual
+        document.getElementById("datePicker").value = state.fechaReferencia.toISOString().split('T')[0];
     };
 
     const fetchData = async () => {
@@ -189,26 +226,22 @@ export default async function nexusFinanzasElite(container) {
                 const data = doc.data();
                 const monto = safeNumber(data.monto || data.total || data.valor || data.pago_mecanico || data.salario);
                 const tipo = (data.tipo || "").toLowerCase();
-                const detalle = (data.detalle || data.concepto || "").toUpperCase(); // Transformación nativa upper case
+                const detalle = (data.detalle || data.concepto || "").toUpperCase();
                 const cuentaPUC = String(data.puc || data.codigo || "");
 
+                // Excluir ingresos contables nativos
                 const esGasto = !(tipo.includes("ingreso") || cuentaPUC.startsWith("4") || tipo.includes("4135") || tipo.includes("saneamiento") || tipo.includes("1105") || tipo.includes("capital") || tipo.includes("2805"));
                 
                 if (esGasto && monto > 0) {
                     const placaRaw = (data.placa || "ADMIN").toUpperCase().trim();
                     const esNominaInformal = cuentaPUC.startsWith("5105") || cuentaPUC.startsWith("7205") || detalle.includes("NOMINA") || detalle.includes("QUINCENA") || detalle.includes("SEMANA") || detalle.includes("PAGO MECANICO") || detalle.includes("AYUDANTE");
 
-                    // 💥 RE-INGENIERÍA DE EXTRACCIÓN DE PLACA DIRECTA (COMPATIBLE CON FORMATOS CON O SIN PARÉNTESIS)
                     let placaClaveGasto = aislarPlacaPura(placaRaw);
 
-                    // Si el campo directo 'placa' es ADMIN o está vacío, escaneamos inductivamente el detalle/concepto string
                     if (placaClaveGasto === 'ADMIN' || placaClaveGasto === '') {
-                        // Buscamos cualquier palabra o fragmento de texto en el detalle que coincida con el patrón contable ingresado
-                        // Al hacer split por espacios o guiones, limpiamos el fragmento
                         const bloquesTexto = detalle.replace(/[()]/g, ' ').split(/[\s-]+/);
                         for (const bloque of bloquesTexto) {
                             const limpio = bloque.replace(/[^A-Z0-9]/g, '').trim();
-                            // Patrón estándar de placa colombiana: 3 letras y 3 números (6 caracteres)
                             if (limpio.length === 6 && /^[A-Z]{3}[0-9]{3}$/.test(limpio)) {
                                 placaClaveGasto = limpio;
                                 break;
@@ -237,6 +270,7 @@ export default async function nexusFinanzasElite(container) {
 
             state.gastosFijosGlobales = gastosFijosGlobales;
             state.nominasInformalesGlobales = nominasInformalesGlobales;
+            state.mapaGastosPorPlaca = mapaGastosPorPlaca; // Guardado en el estado para auditorías en tiempo de render
 
             state.ordenesMaster = snapOrders.docs.map(doc => {
                 const o = doc.data();
@@ -247,12 +281,14 @@ export default async function nexusFinanzasElite(container) {
                 const ingresosNetos = facturacionBruta / (1 + IVA_FACTOR);
                 const ivaRetenido = facturacionBruta - ingresosNetos;
                 
+                // Enlace perfecto con contabilidad: Si hay gasto directo en el mapa de contabilidad se asume ese, de lo contrario cae al costo directo interno.
                 const costosInternosOrden = safeNumber(o.costos_totales?.costo_directo || o.costo_directo || o.costoDirecto || 0);
-                const gastosContablesAsignados = mapaGastosPorPlaca[placaFinancieraClave] || costosInternosOrden;
+                const gastosContablesAsignados = mapaGastosPorPlaca[placaFinancieraClave] !== undefined ? mapaGastosPorPlaca[placaFinancieraClave] : costosInternosOrden;
                 
                 const ebitdaRealPlaca = facturacionBruta - ivaRetenido - gastosContablesAsignados;
                 const margenEbitdaPrc = ingresosNetos > 0 ? (ebitdaRealPlaca / ingresosNetos) * 100 : 0;
                 
+                // Sanitización de marcas de tiempo nativas
                 const fechaInicio = o.createdAt?.toDate ? o.createdAt.toDate() : (o.fecha_ingreso ? new Date(o.fecha_ingreso) : new Date());
                 const fechaFin = o.fecha_entrega || o.fechas?.entrega || o.closedAt || o.fecha_cierre;
                 
@@ -281,25 +317,33 @@ export default async function nexusFinanzasElite(container) {
                 };
             });
 
-            filtrarPorRangoCierreActual();
+            filtrarYProcesarDatos();
 
         } catch (e) {
-            console.error("🚀 QUANTUM_FAULT -> Colapso en el motor analítico:", e);
+            console.error("🚀 QUANTUM_FAULT -> Colapso contable mapeado:", e);
         }
     };
 
-    const filtrarPorRangoCierreActual = () => {
+    const filtrarYProcesarDatos = () => {
         if (!state.rangoCierre.inicio || !state.rangoCierre.fin) {
             processAndRender(state.ordenesMaster);
             return;
         }
-        const filtradas = state.ordenesMaster.filter(o => o.fecha >= state.rangoCierre.inicio && o.fecha <= state.rangoCierre.fin);
+        
+        // Filtro estricto del periodo seleccionado (Evita cruces accidentales de mayo o históricos)
+        const filtradas = state.ordenesMaster.filter(o => {
+            const tiempoOrden = o.fecha.getTime();
+            return tiempoOrden >= state.rangoCierre.inicio.getTime() && tiempoOrden <= state.rangoCierre.fin.getTime();
+        });
+        
         processAndRender(filtradas);
     };
 
     const processAndRender = (data) => {
         state.dataActual = data;
         const totalFacturadoBruto = data.reduce((a, b) => a + b.total, 0);
+        
+        // El EBITDA neto del taller sustrae los costos prorrateados globales del segmento evaluado
         const totalEbitdaConsolidado = data.reduce((a, b) => a + b.ebitda, 0) - state.gastosFijosGlobales - state.nominasInformalesGlobales;
         const totalMTTR = data.reduce((a, b) => a + b.dias, 0);
 
@@ -313,26 +357,26 @@ export default async function nexusFinanzasElite(container) {
         renderKPIs(metrics);
         renderCharts(data);
         renderTable(data);
-        document.getElementById("counterTag").innerText = `${data.length} UNIDADES LIQUIDADAS`;
+        document.getElementById("counterTag").innerText = `${data.length} VEHÍCULOS EN PERÍODO`;
     };
 
     const renderKPIs = (m) => {
         const grid = document.getElementById("kpi-grid");
         if (!grid) return;
         grid.innerHTML = `
-            ${kpiCard("EBITDA INDUSTRIAL SAP", fmt(m.ebitdaNeto), "fa-chart-line", m.ebitdaNeto > 0 ? "text-emerald-400" : "text-red-500", "NETO DE COSTOS Y NÓMINAS")}
-            ${kpiCard("CICLO PROMEDIO TALLER", `${m.mttr.toFixed(1)} DÍAS`, "fa-hourglass-half", m.mttr > 6 ? "text-amber-500" : "text-cyan-400", "LEAD TIME OPERATIVO")}
-            ${kpiCard("FLUJO PROMEDIO ORDEN", fmt(m.ticket), "fa-cash-register", "text-slate-100", "TICKET MEDIO DE INGRESO")}
-            ${kpiCard("MARGEN OPERATIVO TOTAL", pct(m.margenGeneral), "fa-percent", m.margenGeneral > 0 ? "text-cyan-400" : "text-red-400", "RENTABILIDAD BRUTA GLOBAL")}
+            ${kpiCard("EBITDA PERÍODO SAP", fmt(m.ebitdaNeto), "fa-chart-line", m.ebitdaNeto > 0 ? "text-emerald-400" : "text-red-500", "NETO CONTABLE DIRECTO")}
+            ${kpiCard("CICLO PROMEDIO GENERAL", `${m.mttr.toFixed(1)} DÍAS`, "fa-hourglass-half", m.mttr > 6 ? "text-amber-400" : "text-cyan-400", "LEAD TIME")}
+            ${kpiCard("TICKET PROMEDIO FLOTA", fmt(m.ticket), "fa-cash-register", "text-slate-200", "FLUJO POR VEHÍCULO")}
+            ${kpiCard("MARGEN OPERATIVO REAL", pct(m.margenGeneral), "fa-percent", m.margenGeneral > 0 ? "text-cyan-400" : "text-red-400", "EFICIENCIA EN SEGMENTO")}
         `;
     };
 
     const kpiCard = (t, v, i, c, sub) => `
         <div class="kpi-card group">
-            <i class="fas ${i} absolute -right-4 -bottom-4 text-7xl opacity-5 group-hover:scale-110 transition-transform duration-700"></i>
-            <p class="text-[9px] font-black text-slate-500 mb-2 tracking-[0.2em] uppercase">${t}</p>
-            <h2 class="text-2xl font-black orbitron ${c} mb-1">${v}</h2>
-            <p class="text-[8px] text-slate-600 font-bold orbitron uppercase">${sub}</p>
+            <i class="fas ${i} absolute -right-3 -bottom-3 text-6xl opacity-[0.02] group-hover:scale-110 transition-transform duration-500"></i>
+            <p class="text-[9px] font-bold text-slate-500 mb-1.5 tracking-wider uppercase">${t}</p>
+            <h2 class="text-xl font-black orbitron ${c} mb-0.5">${v}</h2>
+            <p class="text-[8px] text-slate-600 font-bold uppercase tracking-tight">${sub}</p>
         </div>`;
 
     const renderTable = (data) => {
@@ -340,42 +384,42 @@ export default async function nexusFinanzasElite(container) {
         if (!body) return;
         
         if (data.length === 0) {
-            body.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-slate-500 text-xs uppercase italic">Ninguna orden registrada en este periodo.</td></tr>`;
+            body.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-slate-500 text-[11px] uppercase italic tracking-widest">Ningún vehículo registrado en este período analítico.</td></tr>`;
             return;
         }
 
         body.innerHTML = data.map(o => `
-            <tr class="border-b border-white/[0.02] hover:bg-cyan-500/5 transition-all">
-                <td class="p-8">
-                    <p class="font-black text-white orbitron text-base">${o.placa}</p>
-                    <p class="text-[8px] text-slate-500 uppercase tracking-widest">${String(o.cliente).substring(0, 22)}</p>
+            <tr class="hover:bg-cyan-500/[0.02] transition-colors">
+                <td class="p-5">
+                    <p class="font-black text-white text-sm tracking-tight">${o.placa}</p>
+                    <p class="text-[8px] text-slate-500 uppercase">${String(o.cliente).substring(0, 24)}</p>
                 </td>
-                <td class="p-8">
-                    <span class="px-4 py-2 rounded-xl text-[9px] font-black bg-black border border-white/10 ${o.area.includes('MEC') ? 'text-cyan-400' : 'text-amber-400'} uppercase">
+                <td class="p-5">
+                    <span class="px-2.5 py-1 rounded-md text-[8px] font-black bg-slate-950 border border-white/5 ${o.area.includes('MEC') ? 'text-cyan-400' : 'text-amber-400'} uppercase">
                         ${o.area}
                     </span>
                 </td>
-                <td class="p-8">
-                    <p class="text-white font-black orbitron text-xs">${fmt(o.total)}</p>
-                    <p class="text-[8px] text-slate-600">BRUTO TOTAL</p>
+                <td class="p-5">
+                    <p class="text-white font-bold text-xs">${fmt(o.total)}</p>
+                    <p class="text-[8px] text-slate-500 uppercase">Bruto</p>
                 </td>
-                <td class="p-8">
-                    <p class="text-slate-300 font-bold orbitron text-xs">IVA (19%): ${fmt(o.iva)}</p>
-                    <p class="text-[10px] text-red-400 font-bold">COSTO DIRECTO: ${fmt(o.gastosContabilidad)}</p>
+                <td class="p-5">
+                    <p class="text-red-400 font-bold text-xs">${fmt(o.gastosContabilidad)}</p>
+                    <p class="text-[8px] text-slate-500 uppercase">Costo Directo Libro</p>
                 </td>
-                <td class="p-8 text-right">
-                    <p class="font-black orbitron text-base ${o.ebitda > 0 ? 'text-emerald-400' : 'text-red-500'}">${fmt(o.ebitda)}</p>
-                    <p class="text-[9px] font-black orbitron ${o.ebitda > 0 ? 'text-emerald-500/50' : 'text-red-500/50'}">${pct(o.margenPorcentaje)} MARGEN</p>
+                <td class="p-5 text-right">
+                    <p class="font-black text-sm ${o.ebitda > 0 ? 'text-emerald-400' : 'text-red-500'}">${fmt(o.ebitda)}</p>
+                    <p class="text-[8px] font-bold ${o.ebitda > 0 ? 'text-emerald-500/60' : 'text-red-500/60'}">${pct(o.margenPorcentaje)} MG</p>
                 </td>
-                <td class="p-8 text-center">
-                    <span class="orbitron font-black text-xs ${o.dias > 5 ? 'text-amber-400' : 'text-emerald-400'}">${o.dias} DÍAS</span>
+                <td class="p-5 text-center">
+                    <span class="font-bold text-xs ${o.dias > 5 ? 'text-amber-400' : 'text-emerald-400'}">${o.dias} DÍAS</span>
                 </td>
             </tr>
         `).join("");
     };
 
     const renderCharts = (data) => {
-        const ultimasUnidades = data.slice(-10);
+        const ultimasUnidades = data.slice(-8);
         const labels = ultimasUnidades.map(o => o.placa);
         const vals = ultimasUnidades.map(o => o.ebitda);
         const colors = ultimasUnidades.map(o => o.ebitda > 0 ? '#06b6d4' : '#ef4444');
@@ -387,20 +431,14 @@ export default async function nexusFinanzasElite(container) {
                 type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: 'EBITDA por Placa',
-                        data: vals,
-                        backgroundColor: colors,
-                        borderRadius: 8
-                    }]
+                    datasets: [{ data: vals, backgroundColor: colors, borderRadius: 6 }]
                 },
                 options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#64748b', font: { family: 'Orbitron', size: 8 } } },
-                        x: { grid: { display: false }, ticks: { color: '#64748b', font: { family: 'Orbitron', size: 8 } } }
+                        y: { grid: { color: 'rgba(255,255,255,0.01)' }, ticks: { color: '#475569', font: { family: 'Orbitron', size: 8 } } },
+                        x: { grid: { display: false }, ticks: { color: '#475569', font: { family: 'Orbitron', size: 8 } } }
                     }
                 }
             });
@@ -412,94 +450,96 @@ export default async function nexusFinanzasElite(container) {
             state.charts.pie = new Chart(ctxPie, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Fijos Admin', 'Nóminas Informales', 'Costos de Órdenes'],
+                    labels: ['Costos Fijos', 'Nóminas Extra', 'Costo Operativo Directo'],
                     datasets: [{
                         data: [
                             state.gastosFijosGlobales,
                             state.nominasInformalesGlobales,
-                            data.reduce((acc, current) => acc + current.gastosContabilidad, 0)
+                            data.reduce((acc, curr) => acc + curr.gastosContabilidad, 0)
                         ],
-                        backgroundColor: ['#ef4444', '#fbbf24', '#06b6d4'],
+                        backgroundColor: ['#f43f5e', '#f59e0b', '#06b6d4'],
                         borderWidth: 0
                     }]
                 },
-                options: { cutout: '75%', plugins: { legend: { display: false } } }
+                options: { cutout: '80%', plugins: { legend: { display: false } } }
             });
         }
     };
 
     const setupEventListeners = () => {
+        // Manejador del cambio de frecuencia requerido por Gerencia
+        const frecuencias = ["total", "semana", "mes", "trimestre", "anio"];
+        frecuencias.forEach(freq => {
+            const btn = document.getElementById(`freq-${freq}`);
+            if (btn) {
+                btn.onclick = (e) => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    state.filtroFrecuencia = freq;
+                    calcularRangoPorFrecuencia();
+                    filtrarYProcesarDatos();
+                };
+            }
+        });
+
+        const datePicker = document.getElementById("datePicker");
+        if (datePicker) {
+            datePicker.onchange = (e) => {
+                if(!e.target.value) return;
+                state.fechaReferencia = new Date(e.target.value + "T00:00:00");
+                calcularRangoPorFrecuencia();
+                filtrarYProcesarDatos();
+            };
+        }
+
         const btnExport = document.getElementById("btnExportGlobal");
         if (btnExport) {
             btnExport.onclick = () => {
                 if (typeof XLSX === 'undefined') {
-                    alert("Error SAP: Componente XLSX no inicializado.");
+                    alert("Error Módulo: XLSX Engine no inicializado en cliente.");
                     return;
                 }
                 
-                const baseRows = state.dataActual.map(o => ({
-                    "PLACA_UNIDAD": o.placa, 
-                    "CLIENTE_NEXUS": o.cliente, 
-                    "FACTURACION_BRUTA": o.total,
-                    "IVA_19_RETENIDO": o.iva,
-                    "INGRESOS_NETOS_REALES": o.ingresosNetos,
-                    "COSTOS_DIRECTOS_LIBRO": o.gastosContabilidad,
-                    "EBITDA_OPERATIVO_PLACA": o.ebitda, 
-                    "MARGEN_EBITDA": o.margenPorcentaje / 100, 
-                    "LEAD_TIME_CICLO_DIAS": o.dias
+                const rowsExcel = state.dataActual.map(o => ({
+                    "VEHICULO_PLACA": o.placa, 
+                    "CLIENTE_SOCIETARIO": o.cliente, 
+                    "INGRESOS_BRUTOS": o.total,
+                    "IVA_CREDITO": o.iva,
+                    "INGRESOS_NETOS": o.ingresosNetos,
+                    "COSTO_DIRECTO_CONTABLE": o.gastosContabilidad,
+                    "EBITDA_NETO_UNIDAD": o.ebitda, 
+                    "MARGEN_EBITDA_REAL": o.margenPorcentaje / 100, 
+                    "CICLO_DIAS": o.dias
                 }));
 
-                const ws = XLSX.utils.json_to_sheet(baseRows);
-                const totalRows = baseRows.length;
-                const totalRowIndex = totalRows + 2; 
+                const ws = XLSX.utils.json_to_sheet(rowsExcel);
+                const totalRows = rowsExcel.length;
+                const idxTotal = totalRows + 2; 
 
-                ws[`A${totalRowIndex}`] = { v: "TOTAL EXPORTACIÓN SAP", t: 's' };
-                ws[`C${totalRowIndex}`] = { f: `SUM(C2:C${totalRows + 1})`, t: 'n', z: '$#,##0' };
-                ws[`D${totalRowIndex}`] = { f: `SUM(D2:D${totalRows + 1})`, t: 'n', z: '$#,##0' };
-                ws[`E${totalRowIndex}`] = { f: `SUM(E2:E${totalRows + 1})`, t: 'n', z: '$#,##0' };
-                ws[`F${totalRowIndex}`] = { f: `SUM(F2:F${totalRows + 1})`, t: 'n', z: '$#,##0' };
+                ws[`A${idxTotal}`] = { v: "TOTAL EXPORTACIÓN CONTABLE SAP", t: 's' };
+                ws[`C${idxTotal}`] = { f: `SUM(C2:C${totalRows + 1})`, t: 'n' };
+                ws[`D${idxTotal}`] = { f: `SUM(D2:D${totalRows + 1})`, t: 'n' };
+                ws[`E${idxTotal}`] = { f: `SUM(E2:E${totalRows + 1})`, t: 'n' };
+                ws[`F${idxTotal}`] = { f: `SUM(F2:F${totalRows + 1})`, t: 'n' };
                 
-                const formulaEbitdaReal = `SUM(G2:G${totalRows + 1}) - ${state.gastosFijosGlobales} - ${state.nominasInformalesGlobales}`;
-                ws[`G${totalRowIndex}`] = { f: formulaEbitdaReal, t: 'n', z: '$#,##0' };
-                ws[`H${totalRowIndex}`] = { f: `AVERAGE(H2:H${totalRows + 1})`, t: 'n', z: '0.0%' };
-                ws[`I${totalRowIndex}`] = { f: `AVERAGE(I2:I${totalRows + 1})`, t: 'n', z: '0.0' };
+                const formulaEbitda = `SUM(G2:G${totalRows + 1}) - ${state.gastosFijosGlobales} - ${state.nominasInformalesGlobales}`;
+                ws[`G${idxTotal}`] = { f: formulaEbitda, t: 'n' };
+                ws[`H${idxTotal}`] = { f: `AVERAGE(H2:H${totalRows + 1})`, t: 'n' };
+                ws[`I${idxTotal}`] = { f: `AVERAGE(I2:I${totalRows + 1})`, t: 'n' };
 
                 const range = XLSX.utils.decode_range(ws['!ref']);
                 for (let R = range.s.r + 1; R <= range.e.r; ++R) {
                     ['C', 'D', 'E', 'F', 'G'].forEach(col => {
                         const cell = ws[col + (R + 1)];
-                        if (cell && cell.t === 'n') cell.z = '$#,##0';
+                        if (cell) cell.z = '$#,##0';
                     });
-                    const pctCell = ws['H' + (R + 1)];
-                    if (pctCell && pctCell.t === 'n') pctCell.z = '0.0%';
+                    const cellPct = ws['H' + (R + 1)];
+                    if (cellPct) cellPct.z = '0.0%';
                 }
 
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "SAP_ELITE_EBITDA");
-                XLSX.writeFile(wb, `TallerPRO360_Sap_Elite_${empresaId}_${Date.now()}.xlsx`);
-            };
-        }
-
-        document.getElementById("flt-hist").onclick = (e) => {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            state.rangoCierre = { inicio: null, fin: null };
-            processAndRender(state.ordenesMaster);
-        };
-
-        document.getElementById("flt-mes").onclick = (e) => {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            calcularFechasCierreDinamico();
-            filtrarPorRangoCierreActual();
-        };
-
-        const datePicker = document.getElementById("datePicker");
-        if (datePicker) {
-            datePicker.onchange = (e) => {
-                const fechaSel = new Date(e.target.value + "T00:00:00");
-                const filtrados = state.ordenesMaster.filter(o => o.fecha.toDateString() === fechaSel.toDateString());
-                processAndRender(filtrados);
+                XLSX.utils.book_append_sheet(wb, ws, "SAP_METRICS");
+                XLSX.writeFile(wb, `TallerPRO360_FinanzasElite_${state.filtroFrecuencia.toUpperCase()}_${Date.now()}.xlsx`);
             };
         }
     };
