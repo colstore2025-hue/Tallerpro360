@@ -432,9 +432,9 @@ export default async function ordenes(container) {
         }
     };
 
-    // ==========================================
-    // 📡 TRANSMISIÓN DE TELEMETRÍA Y AMARRE QUANTUM-SAP
-    // ==========================================
+        // =========================================================================
+    // 📡 TRANSMISIÓN DE TELEMETRÍA Y AMARRE QUANTUM-SAP / SAP-HANA ENTERPRISE
+    // =========================================================================
     const ejecutarSincronizacionTotal = async () => {
         const btn = document.getElementById("btnSincronizar");
         if (!btn) return;
@@ -504,8 +504,12 @@ export default async function ordenes(container) {
             
             batch.set(doc(db, "ordenes", id), dataMision);
 
-            // --- INYECCIÓN DE CRUCE AUTOMÁTICO EN EL LIBRO DIARIO (CONTABILIDAD) ---
-            const contabilidadRef = doc(db, "contabilidad", `CONT_${id}`);
+            // =========================================================================
+            // 🏛️ INYECCIÓN DE CRUCE EN EL LIBRO DIARIO DETALLADO (CONTABILIDAD)
+            // =========================================================================
+            
+            // 1️⃣ SUB-CAPA A: REGISTRO MASTER DE INGRESO / ANTICIPO
+            const contabilidadRef = doc(db, "contabilidad", `CONT_IN_${id}`);
             let montoContable = 0;
             let conceptoContable = "";
 
@@ -518,7 +522,6 @@ export default async function ordenes(container) {
             }
 
             if (montoContable > 0) {
-                // Sincronización perfecta con contabilidad.js v4.2.0 (Doble persistencia de placa)
                 batch.set(contabilidadRef, {
                     empresaId,
                     id_referencia: id,
@@ -527,27 +530,101 @@ export default async function ordenes(container) {
                     cuentaContable: estadoActual === 'ENTREGADO' ? "413505" : "110505",
                     concepto: conceptoContable.toUpperCase(),
                     tipo: "ingreso_ot", 
-                    debito: estadoActual === 'ENTREGADO' ? 0 : montoContable, // Asignación de naturaleza balanceada
+                    debito: estadoActual === 'ENTREGADO' ? 0 : montoContable, 
                     credito: estadoActual === 'ENTREGADO' ? montoContable : 0,
                     monto: montoContable, 
                     utilidad: estadoActual === 'ENTREGADO' ? vUtilidadEstimada : (vUtilidadEstimada * (vAnticipo / vTotalOrden || 1)),
-                    placa: placaPuraSola, // "IJV885" -> Llave atómica para finanzas_elite y reportes
-                    vehiculo_detalle: placaRaw.toUpperCase(), // "IJV885-KIA RIO SPACE" -> Consistencia de visualización
+                    placa: placaPuraSola, 
+                    vehiculo_detalle: placaRaw.toUpperCase(), 
                     fecha_registro: timestampFinal.split('T')[0],
                     fecha: timestampFinal.split('T')[0],
                     creadoEn: timestampFinal,
                     creadoPor: "SISTEMA_NEXUS"
-                });
+                }, { merge: true });
             }
 
+            // 2️⃣ SUB-CAPA B: DESGLOSE DE COSTOS Y GASTOS DIRECTOS ÍTEM POR ÍTEM (PROCESAMIENTO HIERARCHICAL PUC)
+            const itemsParaContabilidad = ordenActiva.items || [];
+            
+            itemsParaContabilidad.forEach((item, index) => {
+                // ID Determinista por Índice para anular duplicaciones en resincronizaciones
+                const costoItemRef = doc(db, "contabilidad", `CONT_COSTO_${id}_${index}`);
+                
+                let cuentaPUC = "613505"; // Por defecto: Costo de venta - Repuestos
+                let tipoRegistro = "costo_directo_ot";
+                let conceptoItem = "";
+
+                const costoTotalItem = Number(item.costo || 0) * (Number(item.cantidad) || 1);
+
+                // Clasificación matricial según el tipo de componente e insumo
+                if (item.tipo === 'REPUESTO') {
+                    cuentaPUC = "613505"; // Comercio al por mayor y menor: Repuestos y Accesorios
+                    conceptoItem = `COSTO REPUESTO (${item.origen || 'TALLER'}): ${item.desc.toUpperCase()}`;
+                } else if (item.tipo === 'MANO_OBRA' || item.tipo === 'LABOR') {
+                    cuentaPUC = "613520"; // Costos de Servicios / Operarios Externos e Internos
+                    conceptoItem = `COSTO MANO DE OBRA (${item.tecnico || 'TECNICO NEXUS'}): ${item.desc.toUpperCase()}`;
+                }
+
+                // Inyección atómica al batch si el ítem genera un costo real cargado en el libro diario
+                if (costoTotalItem > 0) {
+                    batch.set(costoItemRef, {
+                        empresaId,
+                        id_referencia: id,
+                        item_index: index,
+                        puc: cuentaPUC,
+                        cuenta: cuentaPUC,
+                        cuentaContable: cuentaPUC,
+                        concepto: `${conceptoItem} - PLACA: ${placaPuraSola}`,
+                        tipo: tipoRegistro,
+                        monto: costoTotalItem,
+                        debito: costoTotalItem, // Costos incrementan por el Débito
+                        credito: 0,
+                        placa: placaPuraSola,
+                        vehiculo_detalle: placaRaw.toUpperCase(),
+                        fecha_registro: timestampFinal.split('T')[0],
+                        fecha: timestampFinal.split('T')[0],
+                        creadoEn: timestampFinal,
+                        creadoPor: "SISTEMA_NEXUS"
+                    }, { merge: true });
+                }
+            });
+
+            // 3️⃣ SUB-CAPA C: ENTRADAS AUXILIARES DE INSUMOS MANUALES (Gasto Operativo Directo)
+            if (vInsumosIVA > 0) {
+                const insumoIvaRef = doc(db, "contabilidad", `CONT_GASTO_INS_IVA_${id}`);
+                batch.set(insumoIvaRef, {
+                    empresaId, id_referencia: id, puc: "519535", cuenta: "519535", cuentaContable: "519535",
+                    concepto: `GASTO INSUMOS CON IVA - OT: ${placaRaw.toUpperCase()}`,
+                    tipo: "gasto_insumo_ot", monto: vInsumosIVA, debito: vInsumosIVA, credito: 0,
+                    placa: placaPuraSola, vehiculo_detalle: placaRaw.toUpperCase(),
+                    fecha_registro: timestampFinal.split('T')[0], fecha: timestampFinal.split('T')[0],
+                    creadoEn: timestampFinal, creadoPor: "SISTEMA_NEXUS"
+                }, { merge: true });
+            }
+
+            if (vInsumosNoIVA > 0) {
+                const insumoNoIvaRef = doc(db, "contabilidad", `CONT_GASTO_INS_NOIVA_${id}`);
+                batch.set(insumoNoIvaRef, {
+                    empresaId, id_referencia: id, puc: "519535", cuenta: "519535", cuentaContable: "519535",
+                    concepto: `GASTO INSUMOS SIN IVA - OT: ${placaRaw.toUpperCase()}`,
+                    tipo: "gasto_insumo_ot", monto: vInsumosNoIVA, debito: vInsumosNoIVA, credito: 0,
+                    placa: placaPuraSola, vehiculo_detalle: placaRaw.toUpperCase(),
+                    fecha_registro: timestampFinal.split('T')[0], fecha: timestampFinal.split('T')[0],
+                    creadoEn: timestampFinal, creadoPor: "SISTEMA_NEXUS"
+                }, { merge: true });
+            }
+
+            // =========================================================================
+            // 🛰️ COMMIT ATÓMICO Y DEPLOYMENT DE DATOS
+            // =========================================================================
             await batch.commit();
             ordenActiva = { ...dataMision }; 
             
-            hablar(estadoActual === 'ENTREGADO' ? "Misión finalizada. Caja contable cerrada." : "Misión sincronizada en la nube de Nexus.");
+            hablar(estadoActual === 'ENTREGADO' ? "Misión finalizada. Caja contable desglosada y cerrada." : "Misión sincronizada en la nube de Nexus con desglose SAP/HANA.");
             
             Swal.fire({ 
                 title: '🛰️ NEXUS_SYNC_OK', 
-                text: `TELEMETRÍA DE ${placaPuraSola} ACTUALIZADA`,
+                text: `TELEMETRÍA DE ${placaPuraSola} ACTUALIZADA EN LIBRO DIARIO`,
                 icon: 'success', background: '#0d1117', color: '#06b6d4',
                 confirmButtonColor: '#06b6d4'
             });
@@ -558,7 +635,7 @@ export default async function ordenes(container) {
             console.error("QUANTUM_CORE_FAIL:", e);
             btn.disabled = false;
             btn.innerHTML = `🛰️ PUSH_TO_NEXUS_CLOUD`;
-            Swal.fire({ title: '🚨 CRITICAL_ERROR', text: `FALLO EN SINCRONIZACIÓN: ${e.message}`, icon: 'error', background: '#0d1117', color: '#f87171' });
+            Swal.fire({ title: '🚨 CRITICAL_ERROR', text: `FALLO EN SINCRONIZACIÓN AUTOMÁTICA: ${e.message}`, icon: 'error', background: '#0d1117', color: '#f87171' });
         }
     };
 
