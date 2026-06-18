@@ -1,14 +1,13 @@
 /**
  * 🧠 finanzas_elite.js - TALLERPRO360 QUANTUM-ERP AUDITOR (MÓDULO CONTABLE N°. 02)
- * Estado de Resultados Integral Forense, Sincronización PUC Reactiva y Generador PDF Corporativo
+ * Versión 2.0.4 - Optimizada para Tipado Nativo int64 de Firestore y Mapeo Polimórfico PUC
  * Autor: TallerPRO360 Core & W.J. Urquijo
- * Versión: 2026 - Optimizado para Junta de Socios
  */
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
 export default async function finanzasElite(container) {
-  container.innerHTML = `<div class="p-10 text-center orbitron text-xs text-cyan-400 animate-pulse">EXTRAYENDO MÉTRICAS CONSOLIDADAS QUANTUM...</div>`;
+  container.innerHTML = `<div class="p-10 text-center orbitron text-xs text-cyan-400 animate-pulse">EXTRAYENDO MÉTRICAS CONSOLIDADAS QUANTUM V2.0.4...</div>`;
 
   const empresaId = (localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId") || "").trim();
   if (!empresaId) {
@@ -16,18 +15,19 @@ export default async function finanzasElite(container) {
     return;
   }
 
-  // Estructura matricial de cuentas realineada a nivel de Grupo/Cuenta Principal (4 dígitos)
   let balanceEstructurado = {
-    ingresos_mo: 0,         // Cuenta 413505 o subcuentas de servicios
-    ingresos_rep: 0,        // Cuenta 413510 o subcuentas de repuestos
-    anticipos_diversos: 0,  // Cuenta 1105 (Efectivo/Caja)
-    costos_rep: 0,          // Cuenta 6135 (Costos directos)
-    gastos_personal: 0,     // Cuenta 5105 (Nómina)
-    arriendos_servicios: 0, // Cuenta 5120 (Arriendos)
-    gastos_diversos: 0      // Cuenta 5195 (Diversos/Insumos)
+    ingresos_mo: 0,         
+    ingresos_rep: 0,        
+    anticipos_diversos: 0,  
+    costos_rep: 0,          
+    gastos_personal: 0,     
+    arriendos_servicios: 0, 
+    gastos_diversos: 0      
   };
 
+  // Procesador de valores optimizado para soportar tipos int64 nativos y fallbacks de texto
   const safeNumber = (v) => {
+    if (typeof v === "number") return v;
     if (!v) return 0;
     let n = Number(String(v).replace(/[\$\s\.]/g, '').replace(',', '.'));
     return isNaN(n) ? 0 : n;
@@ -39,7 +39,7 @@ export default async function finanzasElite(container) {
         <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 border-b border-white/10 pb-6 gap-4">
           <div>
             <h1 class="orbitron text-3xl font-black uppercase tracking-tighter">FINANZAS <span class="text-cyan-400">ELITE</span></h1>
-            <p class="text-[9px] text-slate-500 font-mono tracking-[0.2em] mt-1">QUANTUM-ERP AUDITOR // MÓDULO CONTABLE N°. 02 // AUTHORIZED BY W.J. URQUIJO</p>
+            <p class="text-[9px] text-slate-500 font-mono tracking-[0.2em] mt-1">QUANTUM-ERP AUDITOR // MÓDULO CONTABLE N°. 02 // V2.0.4 // AUTHORIZED BY W.J. URQUIJO</p>
           </div>
           <div class="flex flex-wrap gap-2 items-center bg-[#0d1117] p-3 rounded-xl border border-white/5 w-full lg:w-auto">
             <input type="date" id="fInicio" class="bg-black text-white text-xs p-2 rounded-xl border border-white/10 font-mono">
@@ -60,7 +60,7 @@ export default async function finanzasElite(container) {
           <div class="md:col-span-2 space-y-4 flex flex-col justify-between">
             <div class="bg-red-950/20 border border-red-500/20 p-5 rounded-2xl">
               <span class="text-[8px] font-black orbitron text-red-400 block mb-1 uppercase tracking-widest">⚠️ AUTONOMÍA DE CAJA (RUNWAY)</span>
-              <p id="txtRunway" class="text-xs text-slate-300 font-mono">Calculando ciclos contables con base en el gasto fijo consolidado diario...</p>
+              <p id="txtRunway" class="text-xs text-slate-300 font-mono">Calculando ciclos contables...</p>
             </div>
             
             <div class="bg-cyan-950/20 border border-cyan-500/20 p-5 rounded-2xl">
@@ -99,7 +99,6 @@ export default async function finanzasElite(container) {
     let rampaActivaTotal = 0;
 
     try {
-      // CORRECCIÓN REQUERIDA: Apuntar al campo exacto "fecha_registro" utilizado en contabilidad.js
       const qCont = query(
         collection(db, "contabilidad"), 
         where("empresaId", "==", empresaId),
@@ -111,21 +110,23 @@ export default async function finanzasElite(container) {
 
       snapCont.docs.forEach(docSnap => {
         const transaccion = docSnap.data();
-        const pucCode = String(transaccion.puc || transaccion.cuentaContable || "").trim();
         
-        // Extraer valores debito/credito de forma homologada con el motor contable principal
-        let debito = parseFloat(transaccion.debito ?? 0);
-        let credito = parseFloat(transaccion.credito ?? 0);
-        if (debito === 0 && credito === 0 && transaccion.monto) {
-          if (pucCode.startsWith("4") || pucCode.startsWith("11")) debito = parseFloat(transaccion.monto);
-          else credito = parseFloat(transaccion.monto);
-        }
-        const valMonto = debito > 0 ? debito : credito;
+        // Mapeo unificado polimórfico para absorber variaciones de la base de datos
+        const pucCode = String(transaccion.puc || transaccion.cuentaContable || transaccion.cuenta || "").trim();
+        
+        // Lectura limpia y directa de datos numéricos int64 nativos
+        let debito = safeNumber(transaccion.debito);
+        let credito = safeNumber(transaccion.credito);
+        let monto = safeNumber(transaccion.monto);
+        
+        const valMonto = monto > 0 ? monto : (debito > 0 ? debito : credito);
 
-        // Clasificación robusta basada en raíces del PUC Maestro Colombiano
-        if (pucCode === "413505") {
+        if (valMonto === 0) return;
+
+        // Estructura de enrutamiento PUC robustecida a 4 y 6 dígitos
+        if (pucCode.startsWith("413505")) {
           balanceEstructurado.ingresos_mo += valMonto;
-        } else if (pucCode === "413510") {
+        } else if (pucCode.startsWith("413510") || (pucCode.startsWith("4135") && transaccion.tipo === "venta_repuestos")) {
           balanceEstructurado.ingresos_rep += valMonto;
         } else if (pucCode.startsWith("1105")) {
           balanceEstructurado.anticipos_diversos += valMonto;
@@ -165,17 +166,15 @@ export default async function finanzasElite(container) {
       renderNomina(nominaMap);
       actualizarPanelesUI(rampaActivaTotal);
     } catch (e) {
-      console.error("❌ Error crítico en auditoría forense financiera:", e);
+      console.error("❌ Error crítico en motor v2.0.4:", e);
     }
   };
 
   const actualizarPanelesUI = (rampaActivaTotal) => {
-    // Ingresos Operativos Totales del Taller (Servicios + Repuestos)
     const totalIngresosFacturados = balanceEstructurado.ingresos_mo + balanceEstructurado.ingresos_rep;
     const egConsolidados = balanceEstructurado.costos_rep + balanceEstructurado.gastos_personal + 
                            balanceEstructurado.arriendos_servicios + balanceEstructurado.gastos_diversos;
     
-    // EBITDA Real sobre lo devengado
     const utOperativaNeto = totalIngresosFacturados - egConsolidados;
 
     document.getElementById("elite-ingresos").innerText = `$ ${Math.round(totalIngresosFacturados).toLocaleString('es-CO')}`;
@@ -193,14 +192,14 @@ export default async function finanzasElite(container) {
     const diasRunway = costoDiario > 0 ? Math.max(0, Math.round((balanceEstructurado.anticipos_diversos) / costoDiario)) : 999;
     
     document.getElementById("txtRunway").innerText = diasRunway <= 0 
-      ? `🚨 CRÍTICO: 0 Días de Runway. El flujo disponible en caja no cubre el gasto fijo diario consolidado.` 
+      ? `🚨 CRÍTICO: 0 Días de Runway. El flujo disponible en caja no cubre el gasto operativo diario.` 
       : `💡 AUTONOMÍA DE CAJA DISPONIBLE: Se cuenta con aprox. ${diasRunway} días de vida de caja basándose en un gasto operativo de $${Math.round(costoDiario).toLocaleString('es-CO')}/día.`;
 
     const txtAlerta = document.getElementById("txtAlertaForense");
     if (utOperativaNeto < 0) {
-      txtAlerta.innerText = `ALERTA FORENSE: Pérdida operativa en el rango seleccionado. Monitorear costos de adquisición y acelerar el ciclo de facturación vehicular en rampa ($${Math.round(rampaActivaTotal).toLocaleString('es-CO')}).`;
+      txtAlerta.innerText = `ALERTA FORENSE: Pérdida operativa detectada. Monitorear costos de adquisición y ciclo de facturación vehicular en rampa ($${Math.round(rampaActivaTotal).toLocaleString('es-CO')}).`;
     } else {
-      txtAlerta.innerText = `NEXUS-AI ANALYTICS: Margen neto operativo saludable de $${Math.round(utOperativaNeto).toLocaleString('es-CO')}. Rendimiento óptimo en el punto de equilibrio estructural.`;
+      txtAlerta.innerText = `NEXUS-AI ANALYTICS: Margen neto operativo saludable de $${Math.round(utOperativaNeto).toLocaleString('es-CO')}. Rendimiento óptimo.`;
     }
   };
 
@@ -233,7 +232,6 @@ export default async function finanzasElite(container) {
     const utOperativaNeto = totalIngresosFacturados - egConsolidados;
     const rampaTotal = safeNumber(document.getElementById("elite-rampa").innerText.replace(/[^0-9]/g, ''));
 
-    // Indicadores clave para la mesa directiva
     const margenEbitda = totalIngresosFacturados > 0 ? ((utOperativaNeto / totalIngresosFacturados) * 100).toFixed(2) : 0;
 
     const printWindow = window.open('', '_blank');
@@ -243,27 +241,23 @@ export default async function finanzasElite(container) {
           <title>Estado_Resultados_Corporativo_${empresaId}</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-            body { font-family: 'Inter', sans-serif; color: #1e293b; padding: 50px; line-height: 1.6; bg-color: #ffffff; }
+            body { font-family: 'Inter', sans-serif; color: #1e293b; padding: 50px; line-height: 1.6; background-color: #ffffff; }
             .header-container { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #0f172a; padding-bottom: 20px; margin-bottom: 30px; }
             .brand-title { font-weight: 800; font-size: 24px; color: #0f172a; letter-spacing: -1px; text-transform: uppercase; }
             .brand-subtitle { font-size: 10px; color: #64748b; font-family: monospace; tracking: 2px; }
             .meta-box { text-align: right; font-size: 11px; color: #334155; font-family: monospace; }
-            
-            .kpi-grid { display: grid; grid-cols: 3; display: flex; gap: 15px; margin-bottom: 35px; }
+            .kpi-grid { display: flex; gap: 15px; margin-bottom: 35px; }
             .kpi-card { flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #f8fafc; }
             .kpi-title { font-size: 9px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
             .kpi-value { font-size: 18px; font-weight: 800; color: #0f172a; margin-top: 5px; }
-            
             table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
             th { text-align: left; padding: 12px 10px; color: #0f172a; border-bottom: 2px solid #0f172a; font-size: 11px; font-weight: 600; text-transform: uppercase; }
             td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
-            
             .row-group { font-weight: 600; background-color: #f1f5f9; color: #0f172a; }
             .row-total { font-weight: 800; background-color: #0f172a; color: #ffffff; }
             .text-right { text-align: right; }
-            
             .signature-block { margin-top: 80px; display: flex; justify-content: space-between; }
-            .firma { border-top: 1px solid #cbd5e1; width: 45%; pt-8px; font-size: 11px; color: #475569; padding-top: 10px; }
+            .firma { border-top: 1px solid #cbd5e1; width: 45%; font-size: 11px; color: #475569; padding-top: 10px; }
             @media print { body { padding: 20px; } .kpi-card { background: #f8fafc !important; print-color-adjust: exact; } }
           </style>
         </head>
@@ -341,14 +335,11 @@ export default async function finanzasElite(container) {
               Representante Legal - TallerPRO360
             </div>
           </div>
-
-          <script>
-            window.onload = function() { window.print(); }
-          </script>
         </body>
       </html>
     `);
     printWindow.document.close();
+    setTimeout(() => { printWindow.print(); }, 500);
   };
 
   renderLayout();
