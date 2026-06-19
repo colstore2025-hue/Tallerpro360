@@ -118,64 +118,70 @@ export default async function ordenes(container) {
             </div>`;
     };
 
-    window.enviarNotificacionNexus = (procesoEnviado) => {
-        const idOrden = ordenActiva.id;
-        if (!idOrden || idOrden === "PENDIENTE") {
-            Swal.fire({ 
-                title: '🚨 SYNC_REQUIRED', 
-                text: 'Debe sincronizar la misión en la nube antes de notificar por WhatsApp.', 
-                icon: 'warning', background: '#0d1117', color: '#06b6d4' 
-            });
-            return;
-        }
+    // =========================================================================
+// 🛰️ CONTROLADOR DE NOTIFICACIONES SANITIZADO PARA PLATAFORMA NEXUS-X
+// =========================================================================
+window.enviarNotificacionNexus = (procesoEnviado) => {
+    const idOrden = ordenActiva.id;
+    if (!idOrden || idOrden === "PENDIENTE") {
+        Swal.fire({ 
+            title: '🚨 SYNC_REQUIRED', 
+            text: 'Debe sincronizar la misión en la nube antes de notificar por WhatsApp.', 
+            icon: 'warning', background: '#0d1117', color: '#06b6d4' 
+        });
+        return;
+    }
 
-        const mapaNexus = {
-            'INGRESO':    { slug: 'diagnostico', emoji: '🛰️', tag: 'INGRESO_CONFIRMADO' },
-            'COTIZACION': { slug: 'cotizacion',  emoji: '💰', tag: 'PROPUESTA_TÉCNICA' },
-            'REPARACION': { slug: 'reparacion',  emoji: '⚙️', tag: 'AVANCE_DE_MISIÓN' },
-            'LISTO':      { slug: 'factura',     emoji: '✅', tag: 'MISIÓN_COMPLETADA' },
-            'FINAL':      { slug: 'factura',     emoji: '✅', tag: 'MISIÓN_COMPLETADA' },
-            'ENTREGADO':  { slug: 'factura',     emoji: '🏁', tag: 'REPORTE_HISTÓRICO' }
-        };
-
-        const p = (procesoEnviado || ordenActiva.estado || 'INGRESO').toUpperCase();
-        const meta = mapaNexus[p] || mapaNexus['INGRESO'];
-        const baseUri = "https://tallerpro360.vercel.app/documento";
-        const linkNexus = `${baseUri}?id=${idOrden}&tipo=${meta.slug}`;
-        const totalFinal = Math.round(ordenActiva.total || (ordenActiva.costos_totales && ordenActiva.costos_totales.total) || 0);
-        const totalFormatted = "$" + totalFinal.toLocaleString('es-CO');
-        const cliente = (ordenActiva.cliente || "CLIENTE").toUpperCase();
-        const placa = (ordenActiva.placa || "N/A").toUpperCase();
-        
-        let msj = meta.emoji + " *NEXUS_X: " + meta.tag + "*%0A%0A";
-        msj += "Hola *" + cliente + "*, la unidad *" + placa + "* presenta novedades en el sistema.%0A%0A";
-
-        if (ordenActiva.bitacora_ia) {
-            const logIA = ordenActiva.bitacora_ia.substring(0, 150).toUpperCase();
-            msj += "📝 *LOG_IA:* " + logIA + "...%0A%0A";
-        }
-
-        if (meta.slug === 'factura') {
-            msj += "💰 *VALOR SERVICIO:* " + totalFormatted + "%0A%0A";
-            msj += "📥 *DESCARGUE SU FACTURA Y REPORTE AQUÍ:*%0A";
-        } else if (meta.slug === 'cotizacion') {
-            msj += "💰 *PRESUPUESTO ESTIMADO:* " + totalFormatted + "%0A%0A";
-            msj += "📑 *REVISE Y APRUEBE LA COTIZACIÓN AQUÍ:*%0A";
-        } else {
-            msj += "🌐 *VER TRAZABILIDAD Y DOCUMENTO:*%0A";
-        }
-
-        msj += linkNexus + "%0A%0A";
-        msj += "_Powered by TallerPRO360 Core_";
-
-        const telRaw = (ordenActiva.telefono || "").toString().replace(/\D/g, '');
-        if (telRaw.length < 10) {
-            Swal.fire({ title: '🚨 PHONE_ERROR', text: 'Número de WhatsApp insuficiente o inválido.', icon: 'error', background: '#0d1117', color: '#f87171' });
-            return;
-        }
-
-        window.open("https://wa.me/57" + telRaw + "?text=" + msj, '_blank');
+    const mapaNexus = {
+        'INGRESO':    { slug: 'diagnostico', emoji: '🛰️', tag: 'INGRESO_CONFIRMADO' },
+        'COTIZACION': { slug: 'cotizacion',  emoji: '💰', tag: 'PROPUESTA_TÉCNICA' },
+        'REPARACION': { slug: 'reparacion',  emoji: '⚙️', tag: 'AVANCE_DE_MISIÓN' },
+        'LISTO':      { slug: 'factura',     emoji: '✅', tag: 'MISIÓN_COMPLETADA' },
+        'FINAL':      { slug: 'factura',     emoji: '✅', tag: 'MISIÓN_COMPLETADA' },
+        'ENTREGADO':  { slug: 'factura',     emoji: '🏁', tag: 'REPORTE_HISTÓRICO' }
     };
+
+    const p = (procesoEnviado || ordenActiva.estado || 'INGRESO').toUpperCase();
+    const meta = mapaNexus[p] || mapaNexus['INGRESO'];
+    const baseUri = "https://tallerpro360.vercel.app/documento";
+    const linkNexus = `${baseUri}?id=${idOrden}&tipo=${meta.slug}`;
+    const totalFinal = Math.round(ordenActiva.total || (ordenActiva.costos_totales && ordenActiva.costos_totales.total) || 0);
+    const totalFormatted = "$" + totalFinal.toLocaleString('es-CO');
+    const cliente = (ordenActiva.cliente || "CLIENTE").toUpperCase();
+    const placa = (ordenActiva.placa || "N/A").toUpperCase();
+    
+    // Construimos el mensaje usando saltos de línea estándar (\n) para evitar conflictos previos
+    let msj = `${meta.emoji} *NEXUS_X: ${meta.tag}*\n\n`;
+    msj += `Hola *${cliente}*, la unidad *${placa}* presenta novedades en el sistema.\n\n`;
+
+    if (ordenActiva.bitacora_ia) {
+        // Sanitizamos cortes de texto plano
+        const logIA = ordenActiva.bitacora_ia.substring(0, 150).toUpperCase().trim();
+        msj += `📝 *LOG_IA:* ${logIA}...\n\n`;
+    }
+
+    if (meta.slug === 'factura') {
+        msj += `💰 *VALOR SERVICIO:* ${totalFormatted}\n\n`;
+        msj += `📥 *DESCARGUE SU FACTURA Y REPORTE AQUÍ:*\n`;
+    } else if (meta.slug === 'cotizacion') {
+        msj += `💰 *PRESUPUESTO ESTIMADO:* ${totalFormatted}\n\n`;
+        msj += `📑 *REVISE Y APRUEBE LA COTIZACIÓN AQUÍ:*\n`;
+    } else {
+        msj += `🌐 *VER TRAZABILIDAD Y DOCUMENTO:*\n`;
+    }
+
+    msj += `${linkNexus}\n\n`;
+    msj += `_Powered by TallerPRO360 Core_`;
+
+    const telRaw = (ordenActiva.telefono || "").toString().replace(/\D/g, '');
+    if (telRaw.length < 10) {
+        Swal.fire({ title: '🚨 PHONE_ERROR', text: 'Número de WhatsApp insuficiente o inválido.', icon: 'error', background: '#0d1117', color: '#f87171' });
+        return;
+    }
+
+    // 🔥 LA CLAVE: El encodeURIComponent empaqueta todo de forma segura para la API de WhatsApp sin romper la URL
+    window.open("https://wa.me/57" + telRaw + "?text=" + encodeURIComponent(msj), '_blank');
+};
 
     const renderBase = () => {
         container.innerHTML = `
