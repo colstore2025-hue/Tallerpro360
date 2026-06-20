@@ -341,21 +341,21 @@ export default async function pagosTaller(container, state) {
     }
   }
 
-  /**
-   * 📊 CARGAR HISTORIAL DE AUDITORÍA EN TIEMPO REAL
-   * Renderiza los últimos 8 depósitos registrados para control visual rápido del operador.
+    /**
+   * 📊 CARGAR HISTORIAL DE AUDITORÍA (MÓVIL OPTIMIZADO)
+   * Renderiza los últimos movimientos sin forzar índices compuestos en Firebase.
    */
   async function cargarAuditoriaRecaudos() {
     const tbody = document.getElementById("auditoria-rows");
     if (!tbody) return;
 
     try {
+        // Quitamos el orderBy directo de la query para evitar la restricción de Firebase en móvil
         const q = query(
             collection(db, "contabilidad"), 
             where("empresaId", "==", empresaId),
             where("tipo", "==", "ingreso_ot"),
-            orderBy("fecha", "desc"),
-            limit(8)
+            limit(30) // Traemos un bloque para ordenar localmente
         );
         const snap = await getDocs(q);
 
@@ -364,9 +364,14 @@ export default async function pagosTaller(container, state) {
             return;
         }
 
+        // Ordenamos en caliente dentro del móvil por fecha de forma descendente
+        const documentosOrdenados = snap.docs
+            .map(d => d.data())
+            .sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0))
+            .slice(0, 8); // Nos quedamos con los 8 más recientes
+
         tbody.innerHTML = "";
-        snap.docs.forEach(docSnap => {
-            const data = docSnap.data();
+        documentosOrdenados.forEach(data => {
             const fContable = data.fecha ? data.fecha.split("T")[0] : "N/A";
             const tr = document.createElement("tr");
             tr.className = "hover:bg-white/5 transition-all";
