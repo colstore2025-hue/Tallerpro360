@@ -1,11 +1,10 @@
 /**
- * 💳 pagosTaller.js - NEXUS-X "THE STABILIZER" V21.0
- * PROTOCOLO: QUANTUM-SAP ATOMIC SYNC & CONTROL TEMPORAL RETROACTIVO
- * DESARROLLADOR: WILLIAM JEFFRY URQUIJO CUBILLOS & GEMINI AI PRO
+ * 💳 pagosTaller.js - NEXUS-X "THE STABILIZER" V22.0
+ * PROTOCOLO: QUANTUM-SAP ATOMIC SYNC & MONITOR DE RECAUDO EN TIEMPO REAL
  * CERTIFICACIÓN OPERATIVA: REFORMA INTEGRAL JUNIO 2026
  */
 import { 
-  collection, query, where, getDocs, doc, writeBatch, serverTimestamp 
+  collection, query, where, getDocs, doc, writeBatch, serverTimestamp, orderBy, limit 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
@@ -14,8 +13,14 @@ export default async function pagosTaller(container, state) {
   const empresaId = localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId");
   let ordenActiva = null;
 
+  // Diccionario Maestro de Cuentas PUC (Estructura Estilo SAP ERP)
+  const CUENTAS_PUC = {
+    "EFECTIVO": { codigo: "110505", nombre: "CAJA GENERAL" },
+    "BOLD":     { codigo: "111005", nombre: "BANCOS (PASARELA BOLD)" },
+    "VIRTUAL":  { codigo: "110512", nombre: "BILLETERAS VIRTUALES (NEQUI/DAVI)" }
+  };
+
   const renderLayout = () => {
-    // Definición de fecha por defecto del sistema local (YYYY-MM-DD)
     const fechaPorDefecto = new Date().toISOString().split('T')[0];
 
     container.innerHTML = `
@@ -30,12 +35,13 @@ export default async function pagosTaller(container, state) {
           <div class="flex gap-4">
               <div class="bg-[#0d1117] p-6 rounded-[2rem] border border-white/5 flex items-center gap-4 shadow-xl">
                   <div class="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                  <p class="text-[9px] orbitron font-black text-slate-400 uppercase tracking-widest text-center">Batch Sync:<br><span class="text-emerald-400">HIGH_STABILITY_ACTIVE</span></p>
+                  <p class="text-[9px] orbitron font-black text-slate-400 uppercase tracking-widest text-center">Batch Sync:<br><span class="text-emerald-400">SAP_HANA_LEDGER_ACTIVE</span></p>
               </div>
           </div>
       </header>
 
       <div class="max-w-5xl mx-auto space-y-10">
+          <!-- PANEL PRINCIPAL DE TRANSACCIONES -->
           <div class="bg-[#0d1117] p-12 rounded-[4rem] border border-white/5 shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden">
               <div class="absolute -top-24 -right-24 w-64 h-64 bg-cyan-500/5 rounded-full blur-[100px]"></div>
 
@@ -51,7 +57,6 @@ export default async function pagosTaller(container, state) {
                           </div>
                       </div>
 
-                      <!-- REFORMA TEMPORAL QUANTUM: SELECCIÓN DE FECHA FISCAL -->
                       <div class="bg-black/40 p-6 rounded-[2rem] border border-white/5 focus-within:border-amber-500/50 transition-all">
                           <label class="text-[9px] text-amber-500 font-black orbitron mb-2 block uppercase tracking-[0.2em]"><i class="fas fa-calendar-day"></i> Fecha Contable del Proceso</label>
                           <input type="date" id="f-fecha-pago" value="${fechaPorDefecto}" class="bg-transparent border-none outline-none text-xl font-black text-white w-full orbitron">
@@ -89,15 +94,47 @@ export default async function pagosTaller(container, state) {
                   </div>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16">
-                  <button id="btnEfectivo" class="group relative overflow-hidden bg-emerald-500 text-black py-10 rounded-[2.5rem] font-black orbitron text-[11px] uppercase tracking-[0.3em] hover:bg-white transition-all duration-500">
-                      <span class="relative z-10">REGISTRAR ENTRADA CASH <i class="fas fa-vault ml-3"></i></span>
+              <!-- CONTROLES ATÓMICOS DE LIQUIDACIÓN -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
+                  <button id="btnEfectivo" class="group relative overflow-hidden bg-emerald-500 text-black py-8 rounded-[2rem] font-black orbitron text-[10px] uppercase tracking-[0.2em] hover:bg-white transition-all duration-500">
+                      <span class="relative z-10">EFECTIVO [110505] <i class="fas fa-vault ml-2"></i></span>
                       <div class="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
                   </button>
                   
-                  <button id="btnCobrarBold" class="bg-[#010409] text-cyan-400 border border-cyan-500/30 py-10 rounded-[2.5rem] font-black orbitron text-[11px] uppercase tracking-[0.3em] hover:border-cyan-400 hover:shadow-[0_0_30px_rgba(6,182,212,0.2)] transition-all">
-                      PASARELA BOLD <i class="fas fa-bolt-lightning ml-3 animate-pulse"></i>
+                  <button id="btnCobrarBold" class="bg-[#010409] text-cyan-400 border border-cyan-500/30 py-8 rounded-[2rem] font-black orbitron text-[10px] uppercase tracking-[0.2em] hover:border-cyan-400 hover:shadow-[0_0_30px_rgba(6,182,212,0.2)] transition-all">
+                      PASARELA BOLD [111005] <i class="fas fa-bolt-lightning ml-2 animate-pulse"></i>
                   </button>
+
+                  <button id="btnVirtual" class="bg-[#010409] text-purple-400 border border-purple-500/30 py-8 rounded-[2rem] font-black orbitron text-[10px] uppercase tracking-[0.2em] hover:border-purple-400 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)] transition-all">
+                      BILLETERAS [110512] <i class="fas fa-mobile-alt ml-2"></i>
+                  </button>
+              </div>
+          </div>
+
+          <!-- 📊 REFORMA QUANTUM: MONITOR DE AUDITORÍA EN TIEMPO REAL -->
+          <div class="bg-[#0d1117] p-8 rounded-[2.5rem] border border-white/5 shadow-xl">
+              <div class="flex justify-between items-center mb-6 px-4">
+                  <div>
+                      <h3 class="orbitron font-black text-lg text-slate-300">AUDIT_MONITOR.X</h3>
+                      <p class="text-[9px] text-slate-500 font-mono tracking-widest uppercase">Últimos Flujos de Caja Registrados</p>
+                  </div>
+                  <i class="fas fa-list-check text-slate-700 text-xl"></i>
+              </div>
+              <div class="overflow-x-auto">
+                  <table class="w-full text-left text-xs font-mono">
+                      <thead>
+                          <tr class="border-b border-white/10 text-slate-500 uppercase text-[9px] orbitron">
+                              <th class="p-4">Fecha</th>
+                              <th class="p-4">Placa</th>
+                              <th class="p-4">Cuenta PUC</th>
+                              <th class="p-4">Concepto / Destino</th>
+                              <th class="p-4 text-right">Valor Inyectado</th>
+                          </tr>
+                      </thead>
+                      <tbody id="auditoria-rows" class="divide-y divide-white/5 text-slate-300">
+                          <tr><td colspan="5" class="p-4 text-center text-slate-600">Cargando bitácora financiera...</td></tr>
+                      </tbody>
+                  </table>
               </div>
           </div>
       </div>
@@ -107,6 +144,10 @@ export default async function pagosTaller(container, state) {
     document.getElementById("btnFetchOrden").onclick = buscarMisionesPlaca;
     document.getElementById("btnEfectivo").onclick = () => ejecutarPagoNexus("EFECTIVO");
     document.getElementById("btnCobrarBold").onclick = () => ejecutarPagoNexus("BOLD");
+    document.getElementById("btnVirtual").onclick = () => ejecutarPagoNexus("VIRTUAL");
+
+    // Invocar el cargador de auditoría
+    cargarAuditoriaRecaudos();
   };
 
   async function buscarMisionesPlaca() {
@@ -120,7 +161,6 @@ export default async function pagosTaller(container, state) {
 
         if(snap.empty) return Swal.fire('SIN DATOS', 'No hay misiones activas para la placa ingresada.', 'error');
 
-        // Filtra para no mostrar órdenes viejas ya cerradas
         const ordenes = snap.docs.map(d => ({id: d.id, ...d.data()}))
                             .filter(o => o.estado !== 'ENTREGADO');
 
@@ -175,10 +215,6 @@ export default async function pagosTaller(container, state) {
     window.evaluarTipoDePago();
   }
 
-  /**
-   * 📊 EVALUADOR FINANCIERO DINÁMICO
-   * Detecta si la cifra digitada corresponde a un pago parcial o total.
-   */
   window.evaluarTipoDePago = () => {
     if (!ordenActiva) return;
     const inputMonto = document.getElementById("montoIn");
@@ -205,14 +241,13 @@ export default async function pagosTaller(container, state) {
 
   /**
    * 🛠️ EJECUTAR PAGO NEXUS (PROTOCOLO ATÓMICO QUANTUM-SAP)
-   * Sincroniza Orden y Contabilidad bajo una misma estampa cronológica manual o automática.
+   * Resuelve la inyección con mapeo de cuenta contable PUC para evitar el error 'undefined'.
    */
   async function ejecutarPagoNexus(metodo) {
     const monto = Number(document.getElementById("montoIn").value);
     if(!ordenActiva || monto <= 0) return Swal.fire('ERROR_INPUT', 'Monto no válido o misión no seleccionada.', 'warning');
 
     const inputFecha = document.getElementById("f-fecha-pago").value;
-    // Forzamos hora estática al mediodía para mitigar distorsiones de husos horarios locales
     const timestampContable = inputFecha ? new Date(inputFecha + "T12:00:00").toISOString() : new Date().toISOString();
 
     const batch = writeBatch(db);
@@ -225,11 +260,12 @@ export default async function pagosTaller(container, state) {
     const nuevoAnticipo = anticipoPrevio + monto;
     const nuevoSaldo = totalOriginal - nuevoAnticipo;
 
-    // Si liquida el 100% de la cuenta, mutamos automáticamente el estado a 'LISTO'
     let estadoActualizado = ordenActiva.estado;
     if (nuevoSaldo <= 0 && ordenActiva.estado !== 'LISTO') {
         estadoActualizado = 'LISTO';
     }
+
+    const infoCuenta = CUENTAS_PUC[metodo];
 
     try {
         Swal.fire({ title: 'EXECUTING_BATCH_SYNC...', background: '#010409', color: '#fff', didOpen: () => Swal.showLoading() });
@@ -244,7 +280,7 @@ export default async function pagosTaller(container, state) {
             updatedAt: serverTimestamp()
         });
 
-        // B. INYECCIÓN LOGÍSTICA EN LIBRO DE CONTABILIDAD
+        // B. INYECCIÓN LOGÍSTICA EN LIBRO DE CONTABILIDAD COMPLETAMENTE MAPEADA
         const esCierreTotal = nuevoSaldo <= 0;
         batch.set(contabilidadRef, {
             empresaId,
@@ -252,18 +288,18 @@ export default async function pagosTaller(container, state) {
             monto: monto,
             tipo: "ingreso_ot", 
             metodo: metodo,
-            concepto: esCierreTotal ? `LIQUIDACIÓN TOTAL OT: ${ordenActiva.placa} | ${metodo}` : `ABONO PARCIAL OT: ${ordenActiva.placa} | ${metodo}`,
+            cuenta: infoCuenta.codigo,       // <-- 🔥 EXTIENDE EL ASIENTO CONTABLE PARA EVITAR UNDEFINED
+            cuenta_nombre: infoCuenta.nombre, // <-- 🔥 INYECTA NOMBRE DE LA CUENTA
+            concepto: esCierreTotal ? `LIQUIDACIÓN TOTAL OT: ${ordenActiva.placa} | ${infoCuenta.nombre}` : `ABONO PARCIAL OT: ${ordenActiva.placa} | ${infoCuenta.nombre}`,
             fecha: timestampContable, 
             creadoEn: serverTimestamp(),
             vendedor: "CAJA_NEXUS"
         });
 
-        // C. COMMIT EN UN SÓLO PULSO
         await batch.commit();
         
         hablar("Transacción procesada correctamente.");
 
-        // Captura de metadatos antes del reset para el comprobante externo
         const backupOrden = {
             placa: ordenActiva.placa,
             cliente: ordenActiva.cliente || "CLIENTE",
@@ -279,10 +315,12 @@ export default async function pagosTaller(container, state) {
         document.getElementById("display-info").classList.add("hidden");
         ordenActiva = null;
 
-        // D. NOTIFICACIÓN INTEGRAL DE RECAUDO VIA WHATSAPP
+        // Recargar el monitor inferior tras la inserción exitosa
+        cargarAuditoriaRecaudos();
+
         Swal.fire({
             title: '🛰️ SYNC_COMPLETE',
-            text: `Capital inyectado: $${monto.toLocaleString()}. Nuevo Saldo: $${nuevoSaldo.toLocaleString()}`,
+            text: `Capital inyectado: $${monto.toLocaleString()}. Cuenta: ${infoCuenta.codigo} (${infoCuenta.nombre})`,
             icon: 'success',
             background: '#0d1117',
             color: '#06b6d4',
@@ -304,9 +342,49 @@ export default async function pagosTaller(container, state) {
   }
 
   /**
-   * 📨 ENVIAR COMPROBANTE DIGITAL WA
-   * Despacha un recibo con la estructura estética de TallerPRO360.
+   * 📊 CARGAR HISTORIAL DE AUDITORÍA EN TIEMPO REAL
+   * Renderiza los últimos 8 depósitos registrados para control visual rápido del operador.
    */
+  async function cargarAuditoriaRecaudos() {
+    const tbody = document.getElementById("auditoria-rows");
+    if (!tbody) return;
+
+    try {
+        const q = query(
+            collection(db, "contabilidad"), 
+            where("empresaId", "==", empresaId),
+            where("tipo", "==", "ingreso_ot"),
+            orderBy("fecha", "desc"),
+            limit(8)
+        );
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+            tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">No se detectan movimientos de recaudo hoy.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = "";
+        snap.docs.forEach(docSnap => {
+            const data = docSnap.data();
+            const fContable = data.fecha ? data.fecha.split("T")[0] : "N/A";
+            const tr = document.createElement("tr");
+            tr.className = "hover:bg-white/5 transition-all";
+            tr.innerHTML = `
+                <td class="p-4 text-slate-400">${fContable}</td>
+                <td class="p-4 font-bold text-cyan-400">${data.placa || 'GLOBAL'}</td>
+                <td class="p-4 text-slate-400"><span class="bg-white/5 px-2 py-1 rounded text-white font-mono">${data.cuenta || '110505'}</span></td>
+                <td class="p-4 text-slate-400 max-w-xs truncate">${data.concepto || 'Ingreso de Caja'}</td>
+                <td class="p-4 text-right font-black text-emerald-400">$${Number(data.monto || 0).toLocaleString('es-CO')}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (error) {
+        console.error("AUDIT_FETCH_ERROR:", error);
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error al compilar auditoría financiera.</td></tr>`;
+    }
+  }
+
   function despacharMensajeRecaudo(meta) {
     if (!meta.telefono) {
         Swal.fire({ title: 'SIN TELÉFONO', text: 'Esta cuenta no posee un número de contacto vinculado.', icon: 'warning' });
