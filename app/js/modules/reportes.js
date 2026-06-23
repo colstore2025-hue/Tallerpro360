@@ -1,8 +1,7 @@
 /**
- * 🏛️ TALLERPRO360 - FINANZAS ELITE V1.1 (QUANTUM-SAP ENGINE)
+ * 🏛️ TALLERPRO360 - FINANZAS ELITE V1.2 (QUANTUM-SAP ENGINE)
  * Desarrollado por: William Jeffry Urquijo Cubillos // Nexus AI 2026
- * Maniobra: Control de Frecuencias Temporales Gerenciales, Sincronización Contable Maestra,
- * Auditoría de Costo Directo por Placa y Cierre de Ejercicio Flexible.
+ * CONFIGURACIÓN: Absorción total de egresos por Placa a Costo Directo.
  */
 
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -50,10 +49,10 @@ export default async function nexusFinanzasElite(container) {
         ordenesMaster: [],
         gastosFijosGlobales: 0, 
         nominasInformalesGlobales: 0,
-        mapaGastosPorPlaca: {}, // Enlace vivo con contabilidad.js
+        mapaGastosPorPlaca: {},
         dataActual: [],
         charts: {},
-        filtroFrecuencia: "mes", // Valores: total, semana, mes, trimestre, anio
+        filtroFrecuencia: "mes", 
         fechaReferencia: new Date(),
         rangoCierre: { inicio: null, fin: null }
     };
@@ -85,45 +84,38 @@ export default async function nexusFinanzasElite(container) {
         document.head.appendChild(style);
     };
 
-    // --- MOTOR DE FRECUENCIAS GERENCIALES REQUERIDO POR GERENCIA ---
     const calcularRangoPorFrecuencia = () => {
         const ref = new Date(state.fechaReferencia);
-        
         if (state.filtroFrecuencia === "total") {
             state.rangoCierre = { inicio: null, fin: null };
             return;
         }
 
         let inicio, fin;
-
         switch (state.filtroFrecuencia) {
             case "semana":
                 const diaSemana = ref.getDay();
-                const diferencia = ref.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1); // Lunes
+                const diferencia = ref.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1);
                 inicio = new Date(ref.setDate(diferencia));
                 inicio.setHours(0,0,0,0);
                 fin = new Date(inicio);
                 fin.setDate(inicio.getDate() + 6);
                 fin.setHours(23,59,59,999);
                 break;
-                
             case "mes":
                 inicio = new Date(ref.getFullYear(), ref.getMonth(), 1);
                 fin = new Date(ref.getFullYear(), ref.getMonth() + 1, 0, 23, 59, 59, 999);
                 break;
-                
             case "trimestre":
                 const trimestreActual = Math.floor(ref.getMonth() / 3);
                 inicio = new Date(ref.getFullYear(), trimestreActual * 3, 1);
                 fin = new Date(ref.getFullYear(), (trimestreActual + 1) * 3, 0, 23, 59, 59, 999);
                 break;
-                
             case "anio":
                 inicio = new Date(ref.getFullYear(), 0, 1);
                 fin = new Date(ref.getFullYear(), 11, 31, 23, 59, 59, 999);
                 break;
         }
-
         state.rangoCierre = { inicio, fin };
     };
 
@@ -134,7 +126,7 @@ export default async function nexusFinanzasElite(container) {
                 <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
                     <div class="text-center lg:text-left">
                         <h1 class="text-4xl font-black tracking-tight text-white uppercase">TallerPRO360<span class="text-cyan-400">_FinanzasElite</span></h1>
-                        <p class="text-[9px] text-slate-500 tracking-[0.4em] font-bold uppercase mt-2">QUANTUM-SAP ENGINE V1.1 // Matriz Temporal Contable de Precisión</p>
+                        <p class="text-[9px] text-slate-500 tracking-[0.4em] font-bold uppercase mt-2">QUANTUM-SAP ENGINE V1.2 // Matriz Temporal Contable de Precisión</p>
                     </div>
                     <button id="btnExportGlobal" class="bg-emerald-500 text-slate-950 px-6 py-3.5 rounded-xl text-[11px] font-black hover:bg-emerald-400 transition-all flex items-center gap-2.5 shadow-lg shadow-emerald-500/10">
                         <i class="fas fa-file-excel text-base"></i> EXPORTAR CONTROL FINANCIERO SAP
@@ -199,7 +191,6 @@ export default async function nexusFinanzasElite(container) {
             </div>
         </div>`;
         
-        // Sincronizar visualmente el input date con el estado actual
         document.getElementById("datePicker").value = state.fechaReferencia.toISOString().split('T')[0];
     };
 
@@ -227,10 +218,10 @@ export default async function nexusFinanzasElite(container) {
                 const monto = safeNumber(data.monto || data.total || data.valor || data.pago_mecanico || data.salario);
                 const tipo = (data.tipo || "").toLowerCase();
                 const detalle = (data.detalle || data.concepto || "").toUpperCase();
-                const cuentaPUC = String(data.puc || data.codigo || "");
+                const cuentaPUC = String(data.puc || data.codigo || data.cuenta || "");
 
-                // Excluir ingresos contables nativos
-                const esGasto = !(tipo.includes("ingreso") || cuentaPUC.startsWith("4") || tipo.includes("4135") || tipo.includes("saneamiento") || tipo.includes("1105") || tipo.includes("capital") || tipo.includes("2805"));
+                // Excluir ingresos nativos y cuentas de Caja/Bancos/Pasarelas
+                const esGasto = !(tipo.includes("ingreso") || cuentaPUC.startsWith("4") || tipo.includes("4135") || tipo.includes("saneamiento") || cuentaPUC.startsWith("11") || tipo.includes("capital") || tipo.includes("2805"));
                 
                 if (esGasto && monto > 0) {
                     const placaRaw = (data.placa || "ADMIN").toUpperCase().trim();
@@ -238,6 +229,7 @@ export default async function nexusFinanzasElite(container) {
 
                     let placaClaveGasto = aislarPlacaPura(placaRaw);
 
+                    // Extractor Avanzado SAP: Si dice ADMIN pero el concepto trae una placa (ej: UYT564), se captura de inmediato
                     if (placaClaveGasto === 'ADMIN' || placaClaveGasto === '') {
                         const bloquesTexto = detalle.replace(/[()]/g, ' ').split(/[\s-]+/);
                         for (const bloque of bloquesTexto) {
@@ -249,28 +241,23 @@ export default async function nexusFinanzasElite(container) {
                         }
                     }
 
+                    // --- 📊 REGENIERÍA MAESTRA DE COSTEO DIRECTO ---
                     if (esNominaInformal) {
                         nominasInformalesGlobales += monto;
-                    } else if (cuentaPUC.startsWith("613505") || placaClaveGasto !== 'ADMIN') {
-                        if (placaClaveGasto !== 'ADMIN' && placaClaveGasto.length >= 3) {
-                            if (!mapaGastosPorPlaca[placaClaveGasto]) mapaGastosPorPlaca[placaClaveGasto] = 0;
-                            mapaGastosPorPlaca[placaClaveGasto] += monto;
-                        } else {
-                            gastosFijosGlobales += monto;
-                        }
-                    } else if (placaRaw === "ADMIN" || !placaRaw || placaRaw.includes("ADMIN")) {
-                        gastosFijosGlobales += monto;
+                    } else if (placaClaveGasto !== 'ADMIN' && placaClaveGasto.length >= 3) {
+                        // 🔥 REFORMA ATÓMICA: Si el gasto tiene placa vinculada, afecta Directamente el costo de la placa, sin importar el PUC (6, 7, o 5)
+                        if (!mapaGastosPorPlaca[placaClaveGasto]) mapaGastosPorPlaca[placaClaveGasto] = 0;
+                        mapaGastosPorPlaca[placaClaveGasto] += monto;
                     } else {
-                        const placaClave = aislarPlacaPura(placaRaw);
-                        if (!mapaGastosPorPlaca[placaClave]) mapaGastosPorPlaca[placaClave] = 0;
-                        mapaGastosPorPlaca[placaClave] += monto;
+                        // Si no tiene placa y es una cuenta administrativa o de gasto común, cae a Fijos
+                        gastosFijosGlobales += monto;
                     }
                 }
             });
 
             state.gastosFijosGlobales = gastosFijosGlobales;
             state.nominasInformalesGlobales = nominasInformalesGlobales;
-            state.mapaGastosPorPlaca = mapaGastosPorPlaca; // Guardado en el estado para auditorías en tiempo de render
+            state.mapaGastosPorPlaca = mapaGastosPorPlaca; 
 
             state.ordenesMaster = snapOrders.docs.map(doc => {
                 const o = doc.data();
@@ -281,14 +268,14 @@ export default async function nexusFinanzasElite(container) {
                 const ingresosNetos = facturacionBruta / (1 + IVA_FACTOR);
                 const ivaRetenido = facturacionBruta - ingresosNetos;
                 
-                // Enlace perfecto con contabilidad: Si hay gasto directo en el mapa de contabilidad se asume ese, de lo contrario cae al costo directo interno.
                 const costosInternosOrden = safeNumber(o.costos_totales?.costo_directo || o.costo_directo || o.costoDirecto || 0);
-                const gastosContablesAsignados = mapaGastosPorPlaca[placaFinancieraClave] !== undefined ? mapaGastosPorPlaca[placaFinancieraClave] : costosInternosOrden;
+                
+                // 🔥 INTEGRACIÓN TOTAL: Se suma el costo interno acumulado en la orden MÁS todos los gastos inyectados manualmente desde contabilidad.js a esa placa
+                const gastosContablesAsignados = (mapaGastosPorPlaca[placaFinancieraClave] || 0) + costosInternosOrden;
                 
                 const ebitdaRealPlaca = facturacionBruta - ivaRetenido - gastosContablesAsignados;
                 const margenEbitdaPrc = ingresosNetos > 0 ? (ebitdaRealPlaca / ingresosNetos) * 100 : 0;
                 
-                // Sanitización de marcas de tiempo nativas
                 const fechaInicio = o.createdAt?.toDate ? o.createdAt.toDate() : (o.fecha_ingreso ? new Date(o.fecha_ingreso) : new Date());
                 const fechaFin = o.fecha_entrega || o.fechas?.entrega || o.closedAt || o.fecha_cierre;
                 
@@ -329,21 +316,16 @@ export default async function nexusFinanzasElite(container) {
             processAndRender(state.ordenesMaster);
             return;
         }
-        
-        // Filtro estricto del periodo seleccionado (Evita cruces accidentales de mayo o históricos)
         const filtradas = state.ordenesMaster.filter(o => {
             const tiempoOrden = o.fecha.getTime();
             return tiempoOrden >= state.rangoCierre.inicio.getTime() && tiempoOrden <= state.rangoCierre.fin.getTime();
         });
-        
         processAndRender(filtradas);
     };
 
     const processAndRender = (data) => {
         state.dataActual = data;
         const totalFacturadoBruto = data.reduce((a, b) => a + b.total, 0);
-        
-        // El EBITDA neto del taller sustrae los costos prorrateados globales del segmento evaluado
         const totalEbitdaConsolidado = data.reduce((a, b) => a + b.ebitda, 0) - state.gastosFijosGlobales - state.nominasInformalesGlobales;
         const totalMTTR = data.reduce((a, b) => a + b.dias, 0);
 
@@ -467,7 +449,6 @@ export default async function nexusFinanzasElite(container) {
     };
 
     const setupEventListeners = () => {
-        // Manejador del cambio de frecuencia requerido por Gerencia
         const frecuencias = ["total", "semana", "mes", "trimestre", "anio"];
         frecuencias.forEach(freq => {
             const btn = document.getElementById(`freq-${freq}`);
