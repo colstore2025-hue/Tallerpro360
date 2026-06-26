@@ -438,7 +438,7 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
         }
     };
 
-            // =========================================================================
+                // =========================================================================
     // 📡 TRANSMISIÓN DE TELEMETRÍA Y AMARRE QUANTUM-SAP / SAP-HANA ENTERPRISE
     // =========================================================================
     const ejecutarSincronizacionTotal = async () => {
@@ -453,9 +453,10 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
             const placaRaw = document.getElementById("f-placa").value.trim();
             if (!placaRaw) throw new Error("IDENTIFICADOR_PLACA_REQUERIDO");
 
-            // Estandarización de llaves de cruce master
-            const placaPuraSola = aislarPlacaPura(placaRaw);
+            // 🔥 REINGENIERÍA COGNITIVA: Aislamiento estricto de Placa Pura para Drive y Base de Datos
+            const placaPuraSola = placaRaw.split('-')[0].trim().toUpperCase();
             const id = ordenActiva.id || `OT_${placaPuraSola}_${Date.now()}`;
+            
             const tOrd = document.getElementById("f-tipo-orden").value;
             const estadoActual = document.getElementById("f-estado").value;
             
@@ -465,6 +466,9 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
             
             const vTotalOrden = Number(ordenActiva.costos_totales?.total) || 0;
             const vUtilidadEstimada = Number(ordenActiva.costos_totales?.ebitda) || 0;
+            
+            // Captura quirúrgica del kilometraje de ingreso
+            const vKilometraje = document.getElementById("f-kilometraje")?.value || document.getElementById("f-km")?.value || "0";
 
             const metaInventario = {
                 kit_herramientas: document.getElementById("inv-herramientas")?.checked || false,
@@ -481,10 +485,13 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
             const dataMision = {
                 ...ordenActiva,
                 id,
-                placa: placaRaw.toUpperCase(), // Almacena el formato híbrido completo para UX y WA
-                empresaId,
+                placa: placaRaw.toUpperCase(), // Mantiene el formato híbrido completo (ej: IZW700-TRACKER) para visualización
+                placa_limpia: placaPuraSola,   // Llave de cruce limpia para carpetas indexadas de Drive
+                empresaId: empresaId || "taller_003",
                 tipo_orden: tOrd,
                 estado: estadoActual,
+                kilometraje: vKilometraje,     // Inyección del kilometraje de ingreso real
+                km: vKilometraje,              // Redundancia de mapeo
                 cliente: document.getElementById("f-cliente").value.toUpperCase(),
                 telefono: document.getElementById("f-telefono").value,
                 anticipo: vAnticipo,
@@ -498,11 +505,9 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
                     coti_url: ordenActiva.documentos?.coti_url || null,
                     checklist_url: ordenActiva.documentos?.checklist_url || null,
                     factura_url: ordenActiva.documentos?.factura_url || null,
-                    // 🔥 MOD REINFORCEMENT: Enlaza dinámicamente link_evidencia para compatibilidad con documento.html
                     trazabilidad_url: ordenActiva.link_evidencia || ordenActiva.documentos?.trazabilidad_url || null
                 },
                 
-                kilometraje: "0", 
                 updatedAt: serverTimestamp(),
                 total: vTotalOrden,
                 utilidad_neta: vUtilidadEstimada,
