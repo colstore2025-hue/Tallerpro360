@@ -14,6 +14,8 @@
         
         .theme-cotizacion { border-top: 16px solid #fbbf24; }
         .theme-orden { border-top: 16px solid #22d3ee; }
+        .theme-diagnostico { border-top: 16px solid #06b6d4; }
+        .theme-reparacion { border-top: 16px solid #a855f7; }
         .theme-factura { border-top: 16px solid #10b981; }
 
         .timeline-step { position: relative; padding-left: 24px; border-left: 2px dashed #cbd5e1; }
@@ -155,8 +157,7 @@
 
         <div id="seccion-evidencias-directas" class="mb-6">
             <h3 class="orbitron text-[10px] font-black mb-4 text-gray-400 tracking-widest uppercase border-b border-gray-200 pb-2"><i class="fas fa-camera mr-2 text-cyan-500"></i> Registro de Evidencias Fotográficas del Servicio</h3>
-            <div id="galeria-evidencias" class="grid grid-cols-3 gap-3">
-                </div>
+            <div id="galeria-evidencias" class="grid grid-cols-3 gap-3"></div>
             <div class="mt-4 no-print">
                 <button id="btn-evidence" class="w-full bg-gray-100 border border-gray-300 text-gray-700 py-3 px-6 rounded-xl flex justify-between items-center hover:bg-gray-200 transition-all">
                     <div class="text-left font-sans">
@@ -178,11 +179,11 @@
             </ol>
         </footer>
     </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        // Configuración unificada nativa del ecosistema Firebase TallerPRO360
         const firebaseConfig = {
             apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
             authDomain: "tallerpro360.firebaseapp.com",
@@ -213,20 +214,18 @@
                     return;
                 }
                 const orden = snap.data();
-                
-                // Absorción de la variable de identidad desde la configuración dinámica corporativa
                 const empresaIdDinamico = orden.empresaId || orden.id_empresa || "taller_003";
 
                 let identity = {
-                    logo: orden.taller_logo || "",
-                    nombre: orden.taller_nombre || "NEXUS LOGISTICS WORKSHOP",
-                    nit: orden.taller_nit || "",
-                    ws: orden.taller_ws || "",
-                    direccion: "ÁREA DE LOGÍSTICA CENTRALIZED",
-                    boldKey: orden.bold_api_key || ""
+                    logo: "",
+                    nombre: "NEXUS LOGISTICS WORKSHOP",
+                    nit: "---",
+                    ws: "---",
+                    direccion: "ÁREA DE LOGÍSTICA CENTRALIZADA",
+                    boldKey: ""
                 };
 
-                // --- MANIOBRA QUIRÚRGICA: EMPALME ASÍNCRONO DIRECTO A CONFIG.JS / EMPRESAS ---
+                // --- 🏛️ MOTOR DE ABSORCIÓN ASÍNCRO DE MARCA (config.js / empresas) ---
                 if (empresaIdDinamico) {
                     try {
                         const snapEmpresa = await getDoc(doc(db, "empresas", empresaIdDinamico));
@@ -240,7 +239,7 @@
                             identity.boldKey = empData.bold_api_key || empData.boldKey || identity.boldKey;
                         }
                     } catch (errCruce) {
-                        console.warn("⚠️ Telemetría de empresa externa no localizada. Aplicando redundancia interna.", errCruce);
+                        console.warn("⚠️ Telemetría de empresa externa no localizada. Usando redundancia interna.", errCruce);
                     }
                 }
 
@@ -256,7 +255,7 @@
             document.getElementById("main-doc").classList.remove("hidden");
             document.getElementById("main-doc").className = `paper theme-${tipoDoc}`;
 
-            // Inyección de la cabecera corporativa perfecta
+            // Inyección de la cabecera corporativa perfecta basada en config.js
             document.getElementById("taller-nombre").innerText = c.nombre.toUpperCase();
             document.getElementById("taller-nit").innerText = "NIT: " + c.nit.toString().toUpperCase();
             document.getElementById("taller-direccion").innerHTML = `<i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> DIRECCIÓN: ` + c.direccion.toUpperCase();
@@ -270,28 +269,32 @@
                 placeholder.classList.add("hidden");
             }
 
-            // Mapeo Avanzado del Expediente del Propietario y Unidad
+            // Configurar el Badge del Tipo de Documento
+            document.getElementById("doc-badge").innerText = tipoDoc.toUpperCase();
+            document.getElementById("doc-id").innerText = `#${o.id ? o.id.slice(-6).toUpperCase() : '---'}`;
+            
+            if (o.fecha_creacion_manual) {
+                document.getElementById("doc-fecha").innerText = o.fecha_creacion_manual.split('T')[0];
+            }
+
+            // Mapeo Avanzado de Expediente
             document.getElementById("v-cliente").innerText = (o.cliente || "OPERACIÓN_ANÓNIMA").toUpperCase();
             document.getElementById("v-cc").innerHTML = `<i class="fas fa-id-card mr-1"></i> IDENTIFICACIÓN: ` + (o.cedula || o.nit_cliente || "N/A").toUpperCase();
             document.getElementById("v-tel").innerHTML = `<i class="fas fa-phone mr-1"></i> CELULAR: +57 ` + (o.telefono || "N/A");
             
             document.getElementById("v-placa").innerText = (o.placa || "S/N").toUpperCase();
             document.getElementById("v-marca").innerText = (o.marca || o.vehiculo || "VEHÍCULO").toUpperCase() + ` ` + (o.modelo || "");
-            document.getElementById("v-km").innerText = (o.km || o.kilometraje || "0").toLocaleString() + " KM_LOGGED";
+            document.getElementById("v-km").innerText = Number(o.km || o.kilometraje || 0).toLocaleString() + " KM_LOGGED";
 
-            // Datos de Control de la Grilla Operativa
-            if(o.tecnico || o.tecnico_asignado) {
+            if (o.tecnico || o.tecnico_asignado) {
                 document.getElementById("v-tecnico").innerText = (o.tecnico || o.tecnico_asignado).toUpperCase();
-            }
-            if(o.nivel_combustible || o.combustible) {
-                document.getElementById("v-combustible").innerHTML = `<i class="fas fa-gas-pump text-amber-500 mr-1"></i> ` + (o.nivel_combustible || o.combustible).toUpperCase();
             }
 
             // Formateo Seguro de Bitácora
-            const bitacoraTexto = o.bitacora_ia || o.bitacora || "SISTEMAS NOMINALES VÍA TELEMETRÍA AI.";
+            const bitacoraTexto = o.bitacora_ia || o.bitacora || "DIAGNOSTICO PENDIENTE";
             document.getElementById("v-bitacora").innerHTML = bitacoraTexto.replace(/\n/g, "<br>");
 
-            // Inyección y Desglose de Operaciones y Suministros Mecánicos
+            // Sincronización de Items Mecánicos
             const tbody = document.getElementById("tabla-items");
             tbody.innerHTML = "";
             const listaItems = [...(o.servicios || []), ...(o.repuestos || []), ...(o.items || [])];
@@ -319,7 +322,7 @@
                 tbody.appendChild(row);
             });
 
-            // Re-cálculo Financiero
+            // Re-cálculo de Totales Impuestos Inc.
             const total = Number(o.total || subtotalCalculated);
             const base = total / 1.19;
             const iva = total - base;
@@ -328,12 +331,12 @@
             document.getElementById("f-iva").innerText = `$ ${Math.round(iva).toLocaleString()}`;
             document.getElementById("f-total").innerText = `$ ${Math.round(total).toLocaleString()}`;
 
-            // --- INYECCIÓN DINÁMICA DE EVIDENCIAS FOTOGRÁFICAS (IGUAL QUE LA COMPETENCIA) ---
+            // --- 📸 ABSORCIÓN ESTRUCTURADA DE FOTOS DESDE INVENTARIO_INGRESO ---
             const galeria = document.getElementById("galeria-evidencias");
             galeria.innerHTML = "";
             
-            // Recopilación de fuentes de fotos en un array limpio
-            const fotosUrl = o.evidencias || o.fotos || o.fotos_ingreso || [];
+            // Unifica el array cruzando el modelo elástico de fotos del taller
+            const fotosUrl = o.evidencias || o.fotos || o.inventario_ingreso?.fotos || o.fotos_ingreso || [];
             
             if (Array.isArray(fotosUrl) && fotosUrl.length > 0) {
                 fotosUrl.forEach(url => {
@@ -345,15 +348,16 @@
                     }
                 });
             } else {
-                // Mensaje en caso de que no hayan evidencias cargadas aún
-                galeria.className = "block text-center p-6 bg-slate-50 border border-dashed border-slate-300 rounded-2xl text-[11px] font-bold text-slate-400 uppercase italic";
+                galeria.className = "block text-center p-6 bg-slate-50 border border-dashed border-slate-300 rounded-2xl text-[11px] font-bold text-slate-400 uppercase italic w-full col-span-3";
                 galeria.innerText = "No se registraron capturas multimedia directas en el expediente de la misión.";
             }
 
-            // Control del Botón del Histórico Extendible en la Nube
+            // --- 📂 CONTROL TOTAL DEL REPOSITORIO DE DRIVE VINCULADO ---
             const btnEvidence = document.getElementById("btn-evidence");
-            const linkDrive = o.link_evidencia || o.google_drive_folder || o.link_drive;
-            if (linkDrive && linkDrive.trim() !== "") {
+            // Amalgama jerárquica para leer el link sin importar el formato de la placa compuesta
+            const linkDrive = o.link_evidencia || o.documentos?.trazabilidad_url || o.google_drive_folder || o.link_drive;
+            
+            if (linkDrive && linkDrive.trim().length > 10) {
                 btnEvidence.onclick = () => window.open(linkDrive.trim(), '_blank');
             } else {
                 btnEvidence.onclick = () => window.open(GLOBAL_DRIVE_FALLBACK, '_blank');
