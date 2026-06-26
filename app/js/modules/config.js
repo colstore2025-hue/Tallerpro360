@@ -218,7 +218,7 @@ export default async function configModule(container, state) {
             calcular();
         };
 
-        // Guardado Maestro QUANTUM-SAP
+                // Guardado Maestro QUANTUM-SAP
         document.getElementById("btnSaveAll").onclick = async () => {
             const btn = document.getElementById("btnSaveAll");
             btn.innerHTML = `SINCRONIZANDO... <i class="fas fa-sync fa-spin"></i>`;
@@ -235,10 +235,12 @@ export default async function configModule(container, state) {
 
             await setDoc(docRef, payload, { merge: true });
             
-            // Persistencia para documento.html
+            // Persistencia blindada para documento.html y pasarelas de la misión
+            localStorage.setItem("nexus_empresaId", empresaId);
             localStorage.setItem("nexus_empresaNombre", payload.nombre);
             localStorage.setItem("nexus_empresaLogo", payload.logo || "");
-            localStorage.setItem("nexus_bold_api_key", payload.bold_api_key);
+            localStorage.setItem("nexus_empresaNit", payload.nit || "");
+            localStorage.setItem("nexus_empresaWs", payload.whatsapp || "");
 
             btn.innerHTML = `SINCRO EXITOSA <i class="fas fa-check"></i>`;
             hablar("Nivel de órbita y Bold Link actualizados.");
