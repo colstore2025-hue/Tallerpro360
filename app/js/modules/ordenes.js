@@ -388,7 +388,7 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
         } catch (e) { console.error("Sync Error:", e); }
     };
 
-    window.abrirTerminalNexus = (id = null) => {
+        window.abrirTerminalNexus = (id = null) => {
         if(id) { 
             getDoc(doc(db, "ordenes", id)).then(s => { 
                 ordenActiva = { id, ...s.data(), items: s.data().items || [] }; 
@@ -402,7 +402,7 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
                 anticipo:0, 
                 insumos:0, 
                 insumos_no_iva:0, 
-                bitacora_ia:'', 
+                bitacora_ia:'DIAGNOSTICO PENDIENTE\nSUBIR EVIDENCIAS', 
                 tipo_orden:'MECANICA',
                 fecha_creacion_manual: new Date().toISOString(),
                 inventario_ingreso: { kit_herramientas: false, documentos: false, repuesto_llanta: false, observaciones: '', fotos: [] }
@@ -490,7 +490,7 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
                 anticipo: vAnticipo,
                 insumos: vInsumosIVA,
                 insumos_no_iva: vInsumosNoIVA,
-                bitacora_ia: document.getElementById("ai-log-display")?.value || "INICIANDO TELEMETRÍA...",
+                bitacora_ia: document.getElementById("ai-log-display")?.value || "DIAGNOSTICO PENDIENTE - SUBIR EVIDENCIAS",
                 inventario_ingreso: metaInventario,
                 fecha_creacion_manual: timestampFinal,
                 
