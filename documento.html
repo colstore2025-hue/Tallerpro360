@@ -36,11 +36,14 @@
         </button>
     </div>
 
-    <div id="loader" class="flex flex-col items-center justify-center min-h-screen orbitron text-cyan-400">
-        <div class="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+    <!-- Contenedor del Loader -->
+    <div id="loader" class="flex flex-col items-center justify-center min-h-screen orbitron text-cyan-400 p-6 text-center">
+        <div id="loader-spinner" class="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
         <p id="loader-text" class="animate-pulse tracking-[0.4em] text-xs">NEXUS_CORE_BUILDING_UP_TELEMETRÍA</p>
+        <p id="error-debug" class="text-red-500 font-mono text-[11px] mt-4 max-w-lg hidden uppercase bg-red-950/30 p-4 rounded-xl border border-red-500/20"></p>
     </div>
 
+    <!-- Estructura del Documento -->
     <div id="main-doc" class="paper hidden">
         <div class="watermark orbitron">NEXUS_X</div>
 
@@ -147,7 +150,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
-        import { CONFIG_EMPRESA_FALLBACK } from "./config.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
@@ -167,32 +169,54 @@
 
         const GLOBAL_DRIVE_FALLBACK = "https://drive.google.com/drive/folders/1-51Jy7F0xN6ZLLB2dmI2U4XHrlR3AXGo";
 
+        // Fallback incrustado nativamente para blindaje total contra fallas de importación
+        const LOCAL_FALLBACKS = {
+            "taller_003": {
+                nombre: "CARROS COLOMBIA",
+                nit: "901345988-1",
+                whatsapp: "3107645306",
+                direccion: "CALLE 24 # 4-53 IBAGUÉ, TOLIMA"
+            }
+        };
+
+        function mostrarErrorEnPantalla(titulo, detalle = "") {
+            document.getElementById("loader-spinner").style.display = "none";
+            const textEl = document.getElementById("loader-text");
+            textEl.innerText = titulo;
+            textEl.classList.remove("animate-pulse");
+            textEl.style.color = "#ef4444";
+            if(detalle) {
+                const debugEl = document.getElementById("error-debug");
+                debugEl.innerText = detalle;
+                debugEl.classList.remove("hidden");
+            }
+        }
+
         async function init() {
             if (!id) {
-                document.getElementById("loader-text").innerText = "❌ ERROR: ID DE LA MISIÓN INEXISTENTE";
+                mostrarErrorEnPantalla("❌ ERROR: IDENTIFICADOR URL PARAMETER NOT FOUND");
                 return;
             }
             try {
                 const snap = await getDoc(doc(db, "ordenes", id));
                 if (!snap.exists()) {
-                    document.getElementById("loader-text").innerText = "❌ ERROR: LA ORDEN NO EXISTE EN LA NUBE";
+                    mostrarErrorEnPantalla("❌ ERROR: EXPEDIENTE INEXISTENTE EN FIREBASE", `ID buscado: ${id}`);
                     return;
                 }
                 const orden = snap.data();
                 
-                // Forzado al nodo dinámico maestro de taller_003
                 const empresaIdTarget = orden.empresaId || orden.id_empresa || "taller_003";
 
-                // Valores iniciales basados en config.js local
+                // Construcción de la identidad base
                 let identity = {
-                    nombre: CONFIG_EMPRESA_FALLBACK[empresaIdTarget]?.nombre || "CARROS COLOMBIA",
-                    nit: CONFIG_EMPRESA_FALLBACK[empresaIdTarget]?.nit || "901345988-1",
-                    ws: CONFIG_EMPRESA_FALLBACK[empresaIdTarget]?.whatsapp || "3107645306",
-                    direccion: CONFIG_EMPRESA_FALLBACK[empresaIdTarget]?.direccion || "CALLE 24 # 4-53 IBAGUÉ, TOLIMA",
+                    nombre: LOCAL_FALLBACKS[empresaIdTarget]?.nombre || "CARROS COLOMBIA",
+                    nit: LOCAL_FALLBACKS[empresaIdTarget]?.nit || "901345988-1",
+                    ws: LOCAL_FALLBACKS[empresaIdTarget]?.whatsapp || "3107645306",
+                    direccion: LOCAL_FALLBACKS[empresaIdTarget]?.direccion || "CALLE 24 # 4-53 IBAGUÉ, TOLIMA",
                     logo: ""
                 };
 
-                // ABSORCIÓN DIRECTA DEL NODO DE FIREBASE (Modificación para sincronización dinámica total)
+                // Lectura viva del nodo remoto de empresas
                 try {
                     const snapEmpresa = await getDoc(doc(db, "empresas", empresaIdTarget));
                     if (snapEmpresa.exists()) {
@@ -204,13 +228,13 @@
                         identity.logo = empData.logo || identity.logo;
                     }
                 } catch (errRemote) {
-                    console.warn("Conexión remota ocupada. Utilizando redundancia de config.js", errRemote);
+                    console.warn("Utilizando redundancia de seguridad local.", errRemote);
                 }
 
                 render(orden, identity);
             } catch (e) {
                 console.error(e);
-                document.getElementById("loader-text").innerText = "❌ CRITICAL_NEXUS_CORE_FAULT";
+                mostrarErrorEnPantalla("❌ CRITICAL_NEXUS_CORE_FAULT", e.message);
             }
         }
 
@@ -219,7 +243,6 @@
             document.getElementById("main-doc").classList.remove("hidden");
             document.getElementById("main-doc").className = `paper theme-${tipoDoc}`;
 
-            // Inyección limpia de datos dinámicos provenientes de config / firebase
             document.getElementById("taller-nombre").innerText = c.nombre.toUpperCase();
             document.getElementById("taller-nit").innerText = "NIT: " + c.nit;
             document.getElementById("taller-direccion").innerHTML = `<i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> DIRECCIÓN: ` + c.direccion.toUpperCase();
@@ -234,7 +257,14 @@
             }
 
             document.getElementById("doc-badge").innerText = tipoDoc.toUpperCase();
-            document.getElementById("doc-id").innerText = `#${id.includes("OT_") ? id.split("_")[2] || id.slice(-6).toUpperCase() : id.slice(-6).toUpperCase()}`;
+            
+            // Extracción limpia del ID del documento sin romper la cadena
+            let idLimpio = id;
+            if(id.includes("_")) {
+                const fragmentosId = id.split("_");
+                idLimpio = fragmentosId[fragmentosId.length - 1];
+            }
+            document.getElementById("doc-id").innerText = `#${idLimpio.toUpperCase()}`;
             document.getElementById("doc-fecha").innerText = o.fecha_creacion_manual ? o.fecha_creacion_manual.split('T')[0] : "SINCRO_TIME";
 
             document.getElementById("v-cliente").innerText = (o.cliente || "OPERACIÓN GENERAL").toUpperCase();
@@ -249,13 +279,11 @@
             document.getElementById("v-placa").innerText = placaLimpia;
             document.getElementById("v-marca").innerText = modeloExtraido;
             
-            // Extracción automatizada del kilometraje real
             const kilometrajeLogueado = o.kilometraje || o.km || 0;
             document.getElementById("v-km").innerText = Number(kilometrajeLogueado).toLocaleString() + " KM";
 
             document.getElementById("v-bitacora").innerHTML = (o.bitacora || "INGRESO REGISTRADO EN PLATAFORMA").replace(/\n/g, "<br>");
 
-            // Procesamiento de Servicios e Items
             const tbody = document.getElementById("tabla-items");
             tbody.innerHTML = "";
             const totalItems = [...(o.servicios || []), ...(o.repuestos || []), ...(o.items || [])];
@@ -286,18 +314,19 @@
             document.getElementById("f-iva").innerText = `$ ${Math.round(iva).toLocaleString()}`;
             document.getElementById("f-total").innerText = `$ ${Math.round(total).toLocaleString()}`;
 
-            // 📂 RESOLUCIÓN DEL BOTÓN DE GOOGLE DRIVE (Blindaje ante Placas Compuestas)
             const btnEvidence = document.getElementById("btn-evidence");
             if (o.link_drive || o.link_evidencia) {
                 const urlDirecta = o.link_drive || o.link_evidencia;
                 btnEvidence.onclick = () => window.open(urlDirecta.trim(), '_blank');
             } else if (placaLimpia.length >= 3) {
-                // Si la orden no trae un enlace duro, ejecuta la consulta estructurada en la nube usando la placa limpia
                 btnEvidence.onclick = () => window.open(`https://drive.google.com/drive/search?q=${placaLimpia}`, '_blank');
             } else {
                 btnEvidence.onclick = () => window.open(GLOBAL_DRIVE_FALLBACK, '_blank');
             }
         }
+
+        // Ejecutar el núcleo
+        init();
     </script>
 </body>
 </html>
