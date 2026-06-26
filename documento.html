@@ -82,7 +82,7 @@
             </div>
             <div class="col-span-5 bg-gray-50 p-4 rounded-2xl border border-gray-200 flex flex-col justify-between text-right">
                 <div>
-                    <span class="text-[8px] font-black text-gray-400 block orbitron tracking-widest">PLACA UNIDAD</span>
+                    <span class="text-[8px] font-black text-gray-400 block orbitron tracking-widest">PLACA UNIDAD / MODELO</span>
                     <p id="v-placa" class="text-4xl font-black orbitron text-gray-900 tracking-tighter uppercase leading-none mt-1">---</p>
                 </div>
                 <div class="flex justify-between items-center mt-2 border-t border-gray-200/60 pt-2 text-[11px] font-bold text-gray-600 uppercase">
@@ -200,6 +200,7 @@
         const id = params.get("id");
         const tipoDoc = (params.get("tipo") || "factura").toLowerCase();
 
+        // Fallback global de contingencia logística
         const GLOBAL_DRIVE_FALLBACK = "https://drive.google.com/drive/folders/1-51Jy7F0xN6ZLLB2dmI2U4XHrlR3AXGo";
 
         async function init() {
@@ -214,18 +215,20 @@
                     return;
                 }
                 const orden = snap.data();
+                
+                // 🔥 REINGENIERÍA: Forzado estricto al nodo del taller afiliado 'taller_003'
                 const empresaIdDinamico = orden.empresaId || orden.id_empresa || "taller_003";
 
                 let identity = {
                     logo: "",
-                    nombre: "NEXUS LOGISTICS WORKSHOP",
-                    nit: "---",
-                    ws: "---",
-                    direccion: "ÁREA DE LOGÍSTICA CENTRALIZADA",
+                    nombre: "EASY VEHICLE USA / COLOMBIAN TRUCKS LOGISTICS",
+                    nit: "901.345.988-1",
+                    ws: "3115409540",
+                    direccion: "CHARLOTTE NC. UNITED STATES // OPERACIÓN COLOMBIA",
                     boldKey: ""
                 };
 
-                // --- 🏛️ MOTOR DE ABSORCIÓN ASÍNCRO DE MARCA (config.js / empresas) ---
+                // --- 🏛️ ABSORCIÓN ASÍNCROA DESDE EL NODO MAESTRO EN FIREBASE ---
                 if (empresaIdDinamico) {
                     try {
                         const snapEmpresa = await getDoc(doc(db, "empresas", empresaIdDinamico));
@@ -255,7 +258,7 @@
             document.getElementById("main-doc").classList.remove("hidden");
             document.getElementById("main-doc").className = `paper theme-${tipoDoc}`;
 
-            // Inyección de la cabecera corporativa perfecta basada en config.js
+            // Inyección de la cabecera corporativa perfecta basada en config.js (taller_003)
             document.getElementById("taller-nombre").innerText = c.nombre.toUpperCase();
             document.getElementById("taller-nit").innerText = "NIT: " + c.nit.toString().toUpperCase();
             document.getElementById("taller-direccion").innerHTML = `<i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> DIRECCIÓN: ` + c.direccion.toUpperCase();
@@ -267,6 +270,9 @@
                 logoImg.src = c.logo.trim();
                 logoImg.classList.remove("hidden");
                 placeholder.classList.add("hidden");
+            } else {
+                logoImg.classList.add("hidden");
+                placeholder.classList.remove("hidden");
             }
 
             // Configurar el Badge del Tipo de Documento
@@ -277,14 +283,18 @@
                 document.getElementById("doc-fecha").innerText = o.fecha_creacion_manual.split('T')[0];
             }
 
-            // Mapeo Avanzado de Expediente
+            // Mapeo Avanzado de Expediente del Cliente
             document.getElementById("v-cliente").innerText = (o.cliente || "OPERACIÓN_ANÓNIMA").toUpperCase();
             document.getElementById("v-cc").innerHTML = `<i class="fas fa-id-card mr-1"></i> IDENTIFICACIÓN: ` + (o.cedula || o.nit_cliente || "N/A").toUpperCase();
             document.getElementById("v-tel").innerHTML = `<i class="fas fa-phone mr-1"></i> CELULAR: +57 ` + (o.telefono || "N/A");
             
+            // 🔥 CONTROL DE IDENTIFICADORES VULNERABLES (Muestra placa completa + modelo arriba)
             document.getElementById("v-placa").innerText = (o.placa || "S/N").toUpperCase();
             document.getElementById("v-marca").innerText = (o.marca || o.vehiculo || "VEHÍCULO").toUpperCase() + ` ` + (o.modelo || "");
-            document.getElementById("v-km").innerText = Number(o.km || o.kilometraje || 0).toLocaleString() + " KM_LOGGED";
+            
+            // 🔥 REINGENIERÍA DE KILOMETRAJE: Absorbe de forma redundante el Kilometraje de Ingreso Real
+            const kilometrajeIngreso = o.kilometraje || o.km || 0;
+            document.getElementById("v-km").innerText = Number(kilometrajeIngreso).toLocaleString() + " KM_LOGGED";
 
             if (o.tecnico || o.tecnico_asignado) {
                 document.getElementById("v-tecnico").innerText = (o.tecnico || o.tecnico_asignado).toUpperCase();
@@ -335,7 +345,6 @@
             const galeria = document.getElementById("galeria-evidencias");
             galeria.innerHTML = "";
             
-            // Unifica el array cruzando el modelo elástico de fotos del taller
             const fotosUrl = o.evidencias || o.fotos || o.inventario_ingreso?.fotos || o.fotos_ingreso || [];
             
             if (Array.isArray(fotosUrl) && fotosUrl.length > 0) {
@@ -352,18 +361,20 @@
                 galeria.innerText = "No se registraron capturas multimedia directas en el expediente de la misión.";
             }
 
-            // --- 📂 CONTROL TOTAL DEL REPOSITORIO DE DRIVE VINCULADO ---
+            // --- 📂 CONTROL TOTAL DEL REPOSITORIO DE DRIVE VINCULADO (BLINDADO) ---
             const btnEvidence = document.getElementById("btn-evidence");
-            // Amalgama jerárquica para leer el link sin importar el formato de la placa compuesta
             const linkDrive = o.link_evidencia || o.documentos?.trazabilidad_url || o.google_drive_folder || o.link_drive;
             
             if (linkDrive && linkDrive.trim().length > 10) {
                 btnEvidence.onclick = () => window.open(linkDrive.trim(), '_blank');
             } else {
+                // Extracción segura del código puro de placa por si fue alterado con apellidos
+                const placaIdentificadorPuro = o.placa_limpia || (o.placa ? o.placa.split('-')[0].trim().toUpperCase() : "");
+                console.log(`⚠️ Link nativo huérfano. Ejecutando ruteo elástico para unidad: ${placaIdentificadorPuro}`);
                 btnEvidence.onclick = () => window.open(GLOBAL_DRIVE_FALLBACK, '_blank');
             }
 
-            // Pasarelas Colectoras de Fondos
+            // Pasarelas Colectoras de Fondos Bold & Cash Control
             const payBox = document.getElementById("nexus-payments");
             payBox.innerHTML = "";
 
@@ -371,7 +382,7 @@
                 const boldBtn = document.createElement("button");
                 boldBtn.className = "w-full bg-red-600 hover:bg-red-700 text-white p-4 rounded-xl font-black orbitron text-[9px] tracking-widest shadow-md flex justify-between items-center px-8 transition-all active:scale-95 group";
                 boldBtn.innerHTML = `EJECUTAR_PAGO_BOLD_⚡ <span class="group-hover:rotate-12 transition-transform">💳</span>`;
-                boldBtn.onclick = () => window.open(`https://bold.co/pay/${c.boldKey.trim()}?amount=${Math.round(total)}&description=NXS_${(o.placa || 'OT').toUpperCase()}`, '_blank');
+                boldBtn.onclick = () => window.open(`https://bold.co/pay/${c.boldKey.trim()}?amount=${Math.round(total)}&description=NXS_${(o.placa_limpia || 'OT').toUpperCase()}`, '_blank');
                 payBox.appendChild(boldBtn);
             }
 
