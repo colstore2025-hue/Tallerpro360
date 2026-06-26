@@ -36,21 +36,19 @@
         </button>
     </div>
 
-    <!-- Contenedor del Loader -->
     <div id="loader" class="flex flex-col items-center justify-center min-h-screen orbitron text-cyan-400 p-6 text-center">
         <div id="loader-spinner" class="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
         <p id="loader-text" class="animate-pulse tracking-[0.4em] text-xs">NEXUS_CORE_BUILDING_UP_TELEMETRÍA</p>
         <p id="error-debug" class="text-red-500 font-mono text-[11px] mt-4 max-w-lg hidden uppercase bg-red-950/30 p-4 rounded-xl border border-red-500/20"></p>
     </div>
 
-    <!-- Estructura del Documento -->
     <div id="main-doc" class="paper hidden">
         <div class="watermark orbitron">NEXUS_X</div>
 
         <header class="flex justify-between items-start border-b-4 border-gray-900 pb-6 mb-6">
             <div class="flex items-center gap-5">
                 <div class="w-24 h-24 bg-white rounded-2xl flex items-center justify-center overflow-hidden border border-gray-200 p-2 shadow-sm">
-                    <img id="doc-logo" src="" alt="Logo" class="hidden object-contain max-h-full">
+                    <img id="doc-logo" src="" alt="Logo" class="hidden object-contain max-h-full max-w-full">
                     <span id="logo-placeholder" class="orbitron text-4xl text-gray-300 font-black italic">T_360</span>
                 </div>
                 <div>
@@ -169,7 +167,6 @@
 
         const GLOBAL_DRIVE_FALLBACK = "https://drive.google.com/drive/folders/1-51Jy7F0xN6ZLLB2dmI2U4XHrlR3AXGo";
 
-        // Fallback incrustado nativamente para blindaje total contra fallas de importación
         const LOCAL_FALLBACKS = {
             "taller_003": {
                 nombre: "CARROS COLOMBIA",
@@ -204,10 +201,8 @@
                     return;
                 }
                 const orden = snap.data();
-                
                 const empresaIdTarget = orden.empresaId || orden.id_empresa || "taller_003";
 
-                // Construcción de la identidad base
                 let identity = {
                     nombre: LOCAL_FALLBACKS[empresaIdTarget]?.nombre || "CARROS COLOMBIA",
                     nit: LOCAL_FALLBACKS[empresaIdTarget]?.nit || "901345988-1",
@@ -216,7 +211,6 @@
                     logo: ""
                 };
 
-                // Lectura viva del nodo remoto de empresas
                 try {
                     const snapEmpresa = await getDoc(doc(db, "empresas", empresaIdTarget));
                     if (snapEmpresa.exists()) {
@@ -225,7 +219,10 @@
                         identity.nit = empData.nit || empData.nit_taller || identity.nit;
                         identity.ws = empData.whatsapp || empData.telefono || identity.ws;
                         identity.direccion = empData.direccion || empData.ubicacion || identity.direccion;
-                        identity.logo = empData.logo || identity.logo;
+                        
+                        if (empData.logo && empData.logo.trim().length > 20) {
+                            identity.logo = empData.logo.trim();
+                        }
                     }
                 } catch (errRemote) {
                     console.warn("Utilizando redundancia de seguridad local.", errRemote);
@@ -248,17 +245,21 @@
             document.getElementById("taller-direccion").innerHTML = `<i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> DIRECCIÓN: ` + c.direccion.toUpperCase();
             document.getElementById("taller-ws").innerHTML = `<i class="fab fa-whatsapp mr-1"></i> ASISTENCIA: +57 ` + c.ws;
 
+            // Renderizado Seguro del Logo
             const logoImg = document.getElementById("doc-logo");
             const placeholder = document.getElementById("logo-placeholder");
-            if (c.logo && c.logo.length > 30) {
-                logoImg.src = c.logo.trim();
+            if (c.logo) {
+                logoImg.src = c.logo;
                 logoImg.classList.remove("hidden");
                 placeholder.classList.add("hidden");
+                logoImg.onerror = () => { 
+                    logoImg.classList.add("hidden"); 
+                    placeholder.classList.remove("hidden"); 
+                };
             }
 
             document.getElementById("doc-badge").innerText = tipoDoc.toUpperCase();
             
-            // Extracción limpia del ID del documento sin romper la cadena
             let idLimpio = id;
             if(id.includes("_")) {
                 const fragmentosId = id.split("_");
@@ -271,34 +272,50 @@
             document.getElementById("v-cc").innerHTML = `<i class="fas fa-id-card mr-1"></i> IDENTIFICACIÓN: ` + (o.cedula || o.nit_cliente || "N/A");
             document.getElementById("v-tel").innerHTML = `<i class="fas fa-phone mr-1"></i> CELULAR: +57 ` + (o.telefono || "N/A");
             
-            // Tratamiento elástico del campo placa
             let rawPlaca = o.placa || (id.includes("_") ? id.split("_")[1] : "S/N");
-            let placaLimpia = rawPlaca.split("-")[0].toUpperCase().trim();
+            let placaLimpia = o.placa_limpia || rawPlaca.split("-")[0].toUpperCase().trim();
             let modeloExtraido = rawPlaca.includes("-") ? rawPlaca.split("-")[1].toUpperCase().trim() : (o.modelo || o.vehiculo || "UNIDAD");
 
             document.getElementById("v-placa").innerText = placaLimpia;
             document.getElementById("v-marca").innerText = modeloExtraido;
             
-            const kilometrajeLogueado = o.kilometraje || o.km || 0;
-            document.getElementById("v-km").innerText = Number(kilometrajeLogueado).toLocaleString() + " KM";
+            // 🔍 Extractor Múltiple de Kilometraje Inteligente (Soporta observaciones e inventario)
+            let campoBitacora = o.bitacora_ia || o.bitacora || "";
+            let campoObservaciones = o.observaciones || (o.inventario_ingreso ? o.inventario_ingreso.observaciones : "") || "";
+            let textoCombinado = (campoBitacora + " " + campoObservaciones).trim();
 
-            document.getElementById("v-bitacora").innerHTML = (o.bitacora || "INGRESO REGISTRADO EN PLATAFORMA").replace(/\n/g, "<br>");
+            let kilometrajeLogueado = Number(o.kilometraje || o.km || 0);
 
+            if (kilometrajeLogueado === 0 && textoCombinado) {
+                let regexKM = /(?:KM|KMS|KILOMETRAJE|KILOMETROS)\s*([\d.]+)/i;
+                let matches = textoCombinado.match(regexKM);
+                if (matches) {
+                    kilometrajeLogueado = Number(matches[1].replace(/\./g, ""));
+                }
+            }
+            document.getElementById("v-km").innerText = kilometrajeLogueado > 0 ? kilometrajeLogueado.toLocaleString() + " KM" : "0 KM";
+            document.getElementById("v-bitacora").innerHTML = (o.bitacora_ia || o.bitacora || campoObservaciones || "INGRESO REGISTRADO EN PLATAFORMA").replace(/\n/g, "<br>");
+
+            // 🛠️ Mapeo Preciso de la Estructura Real de "items" con propiedades "desc" y "venta"
             const tbody = document.getElementById("tabla-items");
             tbody.innerHTML = "";
-            const totalItems = [...(o.servicios || []), ...(o.repuestos || []), ...(o.items || [])];
+            
+            const totalItems = o.items || [];
             let subtotalCalculado = 0;
 
             if (totalItems.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="3" class="text-center text-gray-400 py-6 italic font-sans">VALORACIÓN INICIAL TÉCNICA // UNIDAD EN PROCESO DE DIAGNÓSTICO</td></tr>`;
             } else {
                 totalItems.forEach(i => {
-                    const neto = Number(i.precio || i.valor || 0);
-                    const cantidad = Number(i.cantidad || 1);
+                    const neto = Number(i.venta || i.precio || i.valor || 0);
+                    const cantidad = Number(i.cantidad || i.cant || 1);
+                    const descripcion = (i.desc || i.descripcion || i.nombre || "Mantenimiento General").toUpperCase();
+                    
                     subtotalCalculado += (neto * cantidad);
+                    
                     const row = document.createElement("tr");
                     row.innerHTML = `
-                        <td>${(i.descripcion || i.nombre || "Mantenimiento General").toUpperCase()}</td>
+                        <td>${descripcion}</td>
                         <td class="text-center">${cantidad}</td>
                         <td class="text-right">$ ${(neto * cantidad).toLocaleString()}</td>
                     `;
@@ -306,17 +323,30 @@
                 });
             }
 
-            const total = o.total || subtotalCalculado;
-            const base = total / 1.19;
-            const iva = total - base;
+            // Mapeo Inteligente de Totales (Soporta el objeto mapa "costos_totales" y raíz "total")
+            let total = 0;
+            if (o.costos_totales && o.costos_totales.total !== undefined) {
+                total = Number(o.costos_totales.total);
+            } else {
+                total = Number(o.total || o.valor_total || subtotalCalculado || 0);
+            }
+
+            let base = total / 1.19;
+            let iva = total - base;
+
+            if (o.costos_totales) {
+                if (o.costos_totales.base) base = Number(o.costos_totales.base);
+                if (o.costos_totales.iva) iva = Number(o.costos_totales.iva);
+            }
 
             document.getElementById("f-subtotal").innerText = `$ ${Math.round(base).toLocaleString()}`;
             document.getElementById("f-iva").innerText = `$ ${Math.round(iva).toLocaleString()}`;
             document.getElementById("f-total").innerText = `$ ${Math.round(total).toLocaleString()}`;
 
+            // Redirección de Carpeta Drive
             const btnEvidence = document.getElementById("btn-evidence");
-            if (o.link_drive || o.link_evidencia) {
-                const urlDirecta = o.link_drive || o.link_evidencia;
+            if (o.link_evidencia || o.link_drive) {
+                const urlDirecta = o.link_evidencia || o.link_drive;
                 btnEvidence.onclick = () => window.open(urlDirecta.trim(), '_blank');
             } else if (placaLimpia.length >= 3) {
                 btnEvidence.onclick = () => window.open(`https://drive.google.com/drive/search?q=${placaLimpia}`, '_blank');
@@ -325,7 +355,6 @@
             }
         }
 
-        // Ejecutar el núcleo
         init();
     </script>
 </body>
