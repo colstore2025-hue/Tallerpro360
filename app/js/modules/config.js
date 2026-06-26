@@ -10,7 +10,7 @@ import { db } from "../core/firebase-config.js";
 import { hablar } from "../voice/voiceCore.js";
 
 export default async function configModule(container, state) {
-    const empresaId = localStorage.getItem("nexus_empresaId");
+    const empresaId = localStorage.getItem("nexus_empresaId") || "taller_003";
     let logoBase64 = null;
 
     const PLANES = {
@@ -63,6 +63,13 @@ export default async function configModule(container, state) {
                         <div class="space-y-4">
                             <label class="text-[9px] text-cyan-500 font-black uppercase tracking-widest ml-4 italic">Identificador Tributario (NIT/ID)</label>
                             <input id="inNit" class="w-full bg-black/40 p-8 rounded-[2.5rem] border border-white/5 outline-none text-white font-mono focus:border-cyan-500 transition-all shadow-inner uppercase" placeholder="900000000-1">
+                        </div>
+                    </div>
+                    <!-- 📍 NUEVA SECCIÓN ADAPTADA: UBICACIÓN GEOGRÁFICA DE LA FIRMA -->
+                    <div class="grid grid-cols-1 gap-10 mt-10">
+                        <div class="space-y-4">
+                            <label class="text-[9px] text-cyan-500 font-black uppercase tracking-widest ml-4 italic">Dirección / Centro Logístico de Operaciones</label>
+                            <input id="inDireccion" class="w-full bg-black/40 p-8 rounded-[2.5rem] border border-white/5 outline-none text-white font-bold uppercase focus:border-cyan-500 transition-all shadow-inner" placeholder="EJ: CALLE 24 # 4-53 - CENTRO">
                         </div>
                     </div>
                 </div>
@@ -172,6 +179,22 @@ export default async function configModule(container, state) {
             };
         });
 
+        // Visibilidad de Contraseña Bold_Link
+        const toggleBtn = document.getElementById("toggleBold");
+        if(toggleBtn) {
+            toggleBtn.onclick = () => {
+                const input = document.getElementById("inBoldKey");
+                const icon = toggleBtn.querySelector("i");
+                if(input.type === "password") {
+                    input.type = "text";
+                    icon.className = "fas fa-eye-slash";
+                } else {
+                    input.type = "password";
+                    icon.className = "fas fa-eye";
+                }
+            };
+        }
+
         // Precios
         const calcular = () => {
             const plan = PLANES[document.getElementById("selPlan").value] || PLANES.pro;
@@ -205,6 +228,7 @@ export default async function configModule(container, state) {
                 const d = snap.data();
                 document.getElementById("inNombre").value = d.nombre || "";
                 document.getElementById("inNit").value = d.nit || "";
+                document.getElementById("inDireccion").value = d.direccion || d.ubicacion || "";
                 document.getElementById("inWs").value = d.whatsapp || "";
                 document.getElementById("inBoldKey").value = d.bold_api_key || "";
                 if(d.planNexus) document.getElementById("selPlan").value = d.planNexus;
@@ -218,7 +242,7 @@ export default async function configModule(container, state) {
             calcular();
         };
 
-                // Guardado Maestro QUANTUM-SAP
+        // Guardado Maestro QUANTUM-SAP
         document.getElementById("btnSaveAll").onclick = async () => {
             const btn = document.getElementById("btnSaveAll");
             btn.innerHTML = `SINCRONIZANDO... <i class="fas fa-sync fa-spin"></i>`;
@@ -226,6 +250,7 @@ export default async function configModule(container, state) {
             const payload = {
                 nombre: document.getElementById("inNombre").value.toUpperCase(),
                 nit: document.getElementById("inNit").value,
+                direccion: document.getElementById("inDireccion").value.toUpperCase(),
                 whatsapp: document.getElementById("inWs").value,
                 bold_api_key: document.getElementById("inBoldKey").value,
                 planNexus: document.getElementById("selPlan").value,
@@ -240,10 +265,11 @@ export default async function configModule(container, state) {
             localStorage.setItem("nexus_empresaNombre", payload.nombre);
             localStorage.setItem("nexus_empresaLogo", payload.logo || "");
             localStorage.setItem("nexus_empresaNit", payload.nit || "");
+            localStorage.setItem("nexus_empresaDireccion", payload.direccion || "");
             localStorage.setItem("nexus_empresaWs", payload.whatsapp || "");
 
             btn.innerHTML = `SINCRO EXITOSA <i class="fas fa-check"></i>`;
-            hablar("Nivel de órbita y Bold Link actualizados.");
+            hablar("Nivel de órbita y parámetros de identidad actualizados de forma exitosa.");
             setTimeout(() => location.reload(), 1200);
         };
 
