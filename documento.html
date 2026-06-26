@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS_X | Aerospace Documentation System</title>
+    <title>TALLERPRO360 | Aerospace Documentation System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -18,10 +18,6 @@
         .theme-reparacion { border-top: 16px solid #a855f7; }
         .theme-factura { border-top: 16px solid #10b981; }
 
-        .timeline-step { position: relative; padding-left: 24px; border-left: 2px dashed #cbd5e1; }
-        .timeline-step::before { content: ''; position: absolute; left: -6px; top: 2px; width: 10px; height: 10px; border-radius: 50%; background: #06b2d4; border: 2px solid white; }
-        
-        .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 10rem; opacity: 0.01; font-family: 'Orbitron'; font-weight: 900; pointer-events: none; white-space: nowrap; }
         .sap-table th { background-color: #111827; color: #ffffff; font-family: 'Orbitron'; font-size: 9px; font-weight: 900; text-transform: uppercase; padding: 12px; }
         .sap-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 11px; font-weight: 700; color: #334155; }
         
@@ -29,7 +25,6 @@
             body { background: white; color: black; }
             .paper { margin: 0; box-shadow: none; width: 100%; border-radius: 0; padding: 0.8cm; border-top: none !important; }
             .no-print { display: none !important; }
-            .page-break { page-break-before: always; }
         }
     </style>
 </head>
@@ -53,7 +48,7 @@
             <div class="flex items-center gap-5">
                 <div class="w-24 h-24 bg-white rounded-2xl flex items-center justify-center overflow-hidden border border-gray-200 p-2 shadow-sm">
                     <img id="doc-logo" src="" alt="Logo" class="hidden object-contain max-h-full">
-                    <span id="logo-placeholder" class="orbitron text-4xl text-gray-300 font-black italic">N_X</span>
+                    <span id="logo-placeholder" class="orbitron text-4xl text-gray-300 font-black italic">T_360</span>
                 </div>
                 <div>
                     <h1 id="taller-nombre" class="orbitron text-2xl font-black uppercase text-gray-900 tracking-tighter">---</h1>
@@ -92,29 +87,10 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-4 gap-3 mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-[11px] font-bold text-slate-700">
-            <div class="bg-white p-2.5 rounded-xl border border-slate-200/60 shadow-sm">
-                <span class="text-[8px] text-slate-400 orbitron block uppercase font-black">Técnico Asignado</span>
-                <p id="v-tecnico" class="uppercase text-slate-900 truncate mt-0.5">N/A</p>
-            </div>
-            <div class="bg-white p-2.5 rounded-xl border border-slate-200/60 shadow-sm">
-                <span class="text-[8px] text-slate-400 orbitron block uppercase font-black">Nivel Combustible</span>
-                <p id="v-combustible" class="text-slate-900 mt-0.5"><i class="fas fa-gas-pump text-amber-500 mr-1"></i> 1/2 TANK</p>
-            </div>
-            <div class="bg-white p-2.5 rounded-xl border border-slate-200/60 shadow-sm">
-                <span class="text-[8px] text-slate-400 orbitron block uppercase font-black">Control de Fluidos</span>
-                <p id="v-fluidos" class="text-slate-900 text-[10px] mt-0.5 truncate">ACEITE ● FRENOS ● HIDR</p>
-            </div>
-            <div class="bg-white p-2.5 rounded-xl border border-slate-200/60 shadow-sm">
-                <span class="text-[8px] text-slate-400 orbitron block uppercase font-black">Garantía Aplicable</span>
-                <p class="text-emerald-600 mt-0.5 font-black"><i class="fas fa-shield-alt mr-1"></i> PROTECCIÓN 30D</p>
-            </div>
-        </div>
-
         <div class="mb-6">
             <div class="p-5 bg-slate-900 rounded-2xl border-l-4 border-cyan-500 font-mono text-[11px] text-cyan-100 italic leading-relaxed shadow-md">
-                <strong class="orbitron text-[8px] text-cyan-400 tracking-widest not-italic uppercase block mb-1">Motivo de Ingreso & Diagnóstico Inteligente (AI Log):</strong>
-                <p id="v-bitacora">Descargando telemetría de fallas...</p>
+                <strong class="orbitron text-[8px] text-cyan-400 tracking-widest not-italic uppercase block mb-1">Motivo de Ingreso / Historial de Telemetría:</strong>
+                <p id="v-bitacora">Descargando bitácora operativa de la misión...</p>
             </div>
         </div>
 
@@ -122,7 +98,7 @@
             <table class="w-full sap-table">
                 <thead>
                     <tr>
-                        <th class="p-4 text-left tracking-wider">Descripción de Operación Técnica / Suministro</th>
+                        <th class="p-4 text-left tracking-wider">Descripción del Servicio / Componente Técnico</th>
                         <th class="p-4 text-center w-20">Cant</th>
                         <th class="p-4 text-right w-36">Total Neto</th>
                     </tr>
@@ -135,13 +111,13 @@
             <div class="col-span-7">
                 <div id="nexus-payments" class="no-print flex flex-col gap-2 mb-4"></div>
                 <div class="text-[9px] text-gray-400 font-mono uppercase italic border-l-2 border-gray-200 pl-3">
-                    <p class="font-black text-gray-500 mb-0.5">NEXUS-X LOGISTICS & DIGITAL AUDIT COMMAND</p>
-                    <p>Soporte digital válido como cotización / cuenta de cobro integrada TallerPRO360.</p>
+                    <p class="font-black text-gray-500 mb-0.5">NEXUS-X STARLINK SAAS COLOMBIA // SYSTEM COMMAND</p>
+                    <p>Documento digital emitido de forma automatizada por TALLERPRO360.</p>
                 </div>
             </div>
             <div class="col-span-5 space-y-2 bg-gray-900 p-5 rounded-2xl border-t-4 border-cyan-500 text-white shadow-md">
                 <div class="flex justify-between text-[11px] font-bold text-cyan-400/60">
-                    <span class="orbitron tracking-widest">BASE IMPONIBLE:</span>
+                    <span class="orbitron tracking-widest">BASE NETO:</span>
                     <span id="f-subtotal" class="font-mono">$ 0</span>
                 </div>
                 <div class="flex justify-between text-[11px] font-bold text-cyan-400/60">
@@ -149,40 +125,29 @@
                     <span id="f-iva" class="font-mono">$ 0</span>
                 </div>
                 <div class="border-t border-white/10 my-2 pt-2 flex justify-between items-center">
-                    <span class="orbitron text-xs font-black italic tracking-wider">TOTAL IMPUESTO INC:</span>
+                    <span class="orbitron text-xs font-black italic tracking-wider">TOTAL LIQUIDADO:</span>
                     <span id="f-total" class="text-2xl orbitron font-black text-cyan-400 italic leading-none">$ 0</span>
                 </div>
             </div>
         </div>
 
         <div id="seccion-evidencias-directas" class="mb-6">
-            <h3 class="orbitron text-[10px] font-black mb-4 text-gray-400 tracking-widest uppercase border-b border-gray-200 pb-2"><i class="fas fa-camera mr-2 text-cyan-500"></i> Registro de Evidencias Fotográficas del Servicio</h3>
-            <div id="galeria-evidencias" class="grid grid-cols-3 gap-3"></div>
             <div class="mt-4 no-print">
                 <button id="btn-evidence" class="w-full bg-gray-100 border border-gray-300 text-gray-700 py-3 px-6 rounded-xl flex justify-between items-center hover:bg-gray-200 transition-all">
                     <div class="text-left font-sans">
-                        <span id="evidence-label" class="block orbitron text-[10px] font-black text-cyan-600 tracking-wider">REPOSITORIO EXTERNO CLOUD DRIVE</span>
-                        <span class="text-[9px] italic opacity-60 uppercase">Ver histórico extendido multimedia</span>
+                        <span class="block orbitron text-[10px] font-black text-cyan-600 tracking-wider">REPOSITORIO DIGITAL CLOUD DRIVE</span>
+                        <span class="text-[9px] italic opacity-60 uppercase">Acceder al histórico multimedia de la placa</span>
                     </div>
-                    <span id="evidence-icon" class="text-lg">📂</span>
+                    <span class="text-lg">📂 ➔</span>
                 </button>
             </div>
         </div>
-
-        <footer class="text-[9px] text-gray-400 font-sans leading-relaxed border-t border-gray-200 pt-4 mt-6">
-            <h4 class="orbitron text-[9px] font-black text-gray-700 uppercase mb-2 tracking-widest">POLÍTICAS DE GARANTÍA LEGAL Y CONTRACTUAL (TallerPRO360 Standard)</h4>
-            <ol class="list-decimal pl-4 space-y-1 text-justify">
-                <li>Las reparaciones técnicas ejecutadas cuentan con una cobertura de garantía de 30 días o 2,000 kilómetros recorridos (lo que ocurra primero), contados a partir de la firma de entrega.</li>
-                <li>La garantía sobre repuestos e insumos mecánicos o eléctricos estará sujeta exclusivamente a los términos y matrices de fallo determinados por el fabricante o proveedor directo.</li>
-                <li>Cualquier tipo de manipulación, desarme técnico externo o intervención ajena a la firma ejecutora sobre los sistemas intervenidos anulará de forma inmediata el derecho de reclamación.</li>
-                <li>No se asume responsabilidad ni cobertura sobre repuestos, piezas o lubricantes que hayan sido suministrados directamente por el cliente.</li>
-            </ol>
-        </footer>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { CONFIG_EMPRESA_FALLBACK } from "./config.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
@@ -198,57 +163,53 @@
         
         const params = new URLSearchParams(window.location.search);
         const id = params.get("id");
-        const tipoDoc = (params.get("tipo") || "factura").toLowerCase();
+        const tipoDoc = (params.get("tipo") || "orden").toLowerCase();
 
-        // Fallback global de contingencia logística
         const GLOBAL_DRIVE_FALLBACK = "https://drive.google.com/drive/folders/1-51Jy7F0xN6ZLLB2dmI2U4XHrlR3AXGo";
 
         async function init() {
             if (!id) {
-                document.getElementById("loader-text").innerText = "❌ ERROR_MISSION_ID_NOT_FOUND";
+                document.getElementById("loader-text").innerText = "❌ ERROR: ID DE LA MISIÓN INEXISTENTE";
                 return;
             }
             try {
                 const snap = await getDoc(doc(db, "ordenes", id));
                 if (!snap.exists()) {
-                    document.getElementById("loader-text").innerText = "❌ ERROR: ORDEN INEXISTENTE EN LA NUBE";
+                    document.getElementById("loader-text").innerText = "❌ ERROR: LA ORDEN NO EXISTE EN LA NUBE";
                     return;
                 }
                 const orden = snap.data();
                 
-                // 🔥 REINGENIERÍA: Forzado estricto al nodo del taller afiliado 'taller_003'
-                const empresaIdDinamico = orden.empresaId || orden.id_empresa || "taller_003";
+                // Forzado al nodo dinámico maestro de taller_003
+                const empresaIdTarget = orden.empresaId || orden.id_empresa || "taller_003";
 
+                // Valores iniciales basados en config.js local
                 let identity = {
-                    logo: "",
-                    nombre: "EASY VEHICLE USA / COLOMBIAN TRUCKS LOGISTICS",
-                    nit: "901.345.988-1",
-                    ws: "3115409540",
-                    direccion: "CHARLOTTE NC. UNITED STATES // OPERACIÓN COLOMBIA",
-                    boldKey: ""
+                    nombre: CONFIG_EMPRESA_FALLBACK[empresaIdTarget]?.nombre || "CARROS COLOMBIA",
+                    nit: CONFIG_EMPRESA_FALLBACK[empresaIdTarget]?.nit || "901345988-1",
+                    ws: CONFIG_EMPRESA_FALLBACK[empresaIdTarget]?.whatsapp || "3107645306",
+                    direccion: CONFIG_EMPRESA_FALLBACK[empresaIdTarget]?.direccion || "CALLE 24 # 4-53 IBAGUÉ, TOLIMA",
+                    logo: ""
                 };
 
-                // --- 🏛️ ABSORCIÓN ASÍNCROA DESDE EL NODO MAESTRO EN FIREBASE ---
-                if (empresaIdDinamico) {
-                    try {
-                        const snapEmpresa = await getDoc(doc(db, "empresas", empresaIdDinamico));
-                        if (snapEmpresa.exists()) {
-                            const empData = snapEmpresa.data();
-                            identity.logo = empData.logo || identity.logo;
-                            identity.nombre = empData.nombre || empData.razon_social || identity.nombre;
-                            identity.nit = empData.nit || empData.nit_taller || identity.nit;
-                            identity.ws = empData.whatsapp || empData.telefono || identity.ws;
-                            identity.direccion = empData.direccion || empData.ubicacion || identity.direccion;
-                            identity.boldKey = empData.bold_api_key || empData.boldKey || identity.boldKey;
-                        }
-                    } catch (errCruce) {
-                        console.warn("⚠️ Telemetría de empresa externa no localizada. Usando redundancia interna.", errCruce);
+                // ABSORCIÓN DIRECTA DEL NODO DE FIREBASE (Modificación para sincronización dinámica total)
+                try {
+                    const snapEmpresa = await getDoc(doc(db, "empresas", empresaIdTarget));
+                    if (snapEmpresa.exists()) {
+                        const empData = snapEmpresa.data();
+                        identity.nombre = empData.nombre || empData.razon_social || identity.nombre;
+                        identity.nit = empData.nit || empData.nit_taller || identity.nit;
+                        identity.ws = empData.whatsapp || empData.telefono || identity.ws;
+                        identity.direccion = empData.direccion || empData.ubicacion || identity.direccion;
+                        identity.logo = empData.logo || identity.logo;
                     }
+                } catch (errRemote) {
+                    console.warn("Conexión remota ocupada. Utilizando redundancia de config.js", errRemote);
                 }
 
                 render(orden, identity);
             } catch (e) {
-                console.error("Critical Failure:", e);
+                console.error(e);
                 document.getElementById("loader-text").innerText = "❌ CRITICAL_NEXUS_CORE_FAULT";
             }
         }
@@ -258,82 +219,66 @@
             document.getElementById("main-doc").classList.remove("hidden");
             document.getElementById("main-doc").className = `paper theme-${tipoDoc}`;
 
-            // Inyección de la cabecera corporativa perfecta basada en config.js (taller_003)
+            // Inyección limpia de datos dinámicos provenientes de config / firebase
             document.getElementById("taller-nombre").innerText = c.nombre.toUpperCase();
-            document.getElementById("taller-nit").innerText = "NIT: " + c.nit.toString().toUpperCase();
+            document.getElementById("taller-nit").innerText = "NIT: " + c.nit;
             document.getElementById("taller-direccion").innerHTML = `<i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> DIRECCIÓN: ` + c.direccion.toUpperCase();
-            document.getElementById("taller-ws").innerHTML = `<i class="fab fa-whatsapp mr-1"></i> COMMS: +57 ` + c.ws;
+            document.getElementById("taller-ws").innerHTML = `<i class="fab fa-whatsapp mr-1"></i> ASISTENCIA: +57 ` + c.ws;
 
             const logoImg = document.getElementById("doc-logo");
             const placeholder = document.getElementById("logo-placeholder");
-            if (c.logo && c.logo.trim().length > 40) {
+            if (c.logo && c.logo.length > 30) {
                 logoImg.src = c.logo.trim();
                 logoImg.classList.remove("hidden");
                 placeholder.classList.add("hidden");
-            } else {
-                logoImg.classList.add("hidden");
-                placeholder.classList.remove("hidden");
             }
 
-            // Configurar el Badge del Tipo de Documento
             document.getElementById("doc-badge").innerText = tipoDoc.toUpperCase();
-            document.getElementById("doc-id").innerText = `#${o.id ? o.id.slice(-6).toUpperCase() : '---'}`;
-            
-            if (o.fecha_creacion_manual) {
-                document.getElementById("doc-fecha").innerText = o.fecha_creacion_manual.split('T')[0];
-            }
+            document.getElementById("doc-id").innerText = `#${id.includes("OT_") ? id.split("_")[2] || id.slice(-6).toUpperCase() : id.slice(-6).toUpperCase()}`;
+            document.getElementById("doc-fecha").innerText = o.fecha_creacion_manual ? o.fecha_creacion_manual.split('T')[0] : "SINCRO_TIME";
 
-            // Mapeo Avanzado de Expediente del Cliente
-            document.getElementById("v-cliente").innerText = (o.cliente || "OPERACIÓN_ANÓNIMA").toUpperCase();
-            document.getElementById("v-cc").innerHTML = `<i class="fas fa-id-card mr-1"></i> IDENTIFICACIÓN: ` + (o.cedula || o.nit_cliente || "N/A").toUpperCase();
+            document.getElementById("v-cliente").innerText = (o.cliente || "OPERACIÓN GENERAL").toUpperCase();
+            document.getElementById("v-cc").innerHTML = `<i class="fas fa-id-card mr-1"></i> IDENTIFICACIÓN: ` + (o.cedula || o.nit_cliente || "N/A");
             document.getElementById("v-tel").innerHTML = `<i class="fas fa-phone mr-1"></i> CELULAR: +57 ` + (o.telefono || "N/A");
             
-            // 🔥 CONTROL DE IDENTIFICADORES VULNERABLES (Muestra placa completa + modelo arriba)
-            document.getElementById("v-placa").innerText = (o.placa || "S/N").toUpperCase();
-            document.getElementById("v-marca").innerText = (o.marca || o.vehiculo || "VEHÍCULO").toUpperCase() + ` ` + (o.modelo || "");
+            // Tratamiento elástico del campo placa
+            let rawPlaca = o.placa || (id.includes("_") ? id.split("_")[1] : "S/N");
+            let placaLimpia = rawPlaca.split("-")[0].toUpperCase().trim();
+            let modeloExtraido = rawPlaca.includes("-") ? rawPlaca.split("-")[1].toUpperCase().trim() : (o.modelo || o.vehiculo || "UNIDAD");
+
+            document.getElementById("v-placa").innerText = placaLimpia;
+            document.getElementById("v-marca").innerText = modeloExtraido;
             
-            // 🔥 REINGENIERÍA DE KILOMETRAJE: Absorbe de forma redundante el Kilometraje de Ingreso Real
-            const kilometrajeIngreso = o.kilometraje || o.km || 0;
-            document.getElementById("v-km").innerText = Number(kilometrajeIngreso).toLocaleString() + " KM_LOGGED";
+            // Extracción automatizada del kilometraje real
+            const kilometrajeLogueado = o.kilometraje || o.km || 0;
+            document.getElementById("v-km").innerText = Number(kilometrajeLogueado).toLocaleString() + " KM";
 
-            if (o.tecnico || o.tecnico_asignado) {
-                document.getElementById("v-tecnico").innerText = (o.tecnico || o.tecnico_asignado).toUpperCase();
-            }
+            document.getElementById("v-bitacora").innerHTML = (o.bitacora || "INGRESO REGISTRADO EN PLATAFORMA").replace(/\n/g, "<br>");
 
-            // Formateo Seguro de Bitácora
-            const bitacoraTexto = o.bitacora_ia || o.bitacora || "DIAGNOSTICO PENDIENTE";
-            document.getElementById("v-bitacora").innerHTML = bitacoraTexto.replace(/\n/g, "<br>");
-
-            // Sincronización de Items Mecánicos
+            // Procesamiento de Servicios e Items
             const tbody = document.getElementById("tabla-items");
             tbody.innerHTML = "";
-            const listaItems = [...(o.servicios || []), ...(o.repuestos || []), ...(o.items || [])];
+            const totalItems = [...(o.servicios || []), ...(o.repuestos || []), ...(o.items || [])];
             let subtotalCalculado = 0;
 
-            listaItems.forEach(i => {
-                const val = Number(i.precio || i.venta || i.valor || 0);
-                const cant = Number(i.cantidad || 1);
-                const itemTotal = val * cant;
-                subtotalCalculado += itemTotal;
+            if (totalItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center text-gray-400 py-6 italic font-sans">VALORACIÓN INICIAL TÉCNICA // UNIDAD EN PROCESO DE DIAGNÓSTICO</td></tr>`;
+            } else {
+                totalItems.forEach(i => {
+                    const neto = Number(i.precio || i.valor || 0);
+                    const cantidad = Number(i.cantidad || 1);
+                    subtotalCalculado += (neto * cantidad);
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${(i.descripcion || i.nombre || "Mantenimiento General").toUpperCase()}</td>
+                        <td class="text-center">${cantidad}</td>
+                        <td class="text-right">$ ${(neto * cantidad).toLocaleString()}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
 
-                const desc = (i.desc || i.descripcion || i.nombre || "SERVICIO TÉCNICO OPERATIVO").toUpperCase();
-                const tipoTag = i.tipo ? i.tipo : "LABOR";
-
-                const row = document.createElement("tr");
-                row.className = "hover:bg-slate-50 transition-colors";
-                row.innerHTML = `
-                    <td>
-                        <span class="block text-gray-900 font-bold">${desc}</span>
-                        <span class="text-[8px] text-gray-400 font-mono tracking-widest uppercase italic">${tipoTag} // VERIFIED_TASK</span>
-                    </td>
-                    <td class="text-center font-mono text-gray-600">${cant}</td>
-                    <td class="text-right font-mono text-gray-900">$ ${itemTotal.toLocaleString()}</td>
-                `;
-                tbody.appendChild(row);
-            });
-
-            // Re-cálculo de Totales Impuestos Inc.
-            const total = Number(o.total || subtotalCalculated);
+            const total = o.total || subtotalCalculado;
             const base = total / 1.19;
             const iva = total - base;
 
@@ -341,59 +286,18 @@
             document.getElementById("f-iva").innerText = `$ ${Math.round(iva).toLocaleString()}`;
             document.getElementById("f-total").innerText = `$ ${Math.round(total).toLocaleString()}`;
 
-            // --- 📸 ABSORCIÓN ESTRUCTURADA DE FOTOS DESDE INVENTARIO_INGRESO ---
-            const galeria = document.getElementById("galeria-evidencias");
-            galeria.innerHTML = "";
-            
-            const fotosUrl = o.evidencias || o.fotos || o.inventario_ingreso?.fotos || o.fotos_ingreso || [];
-            
-            if (Array.isArray(fotosUrl) && fotosUrl.length > 0) {
-                fotosUrl.forEach(url => {
-                    if (url && url.trim().length > 10) {
-                        const wrapper = document.createElement("div");
-                        wrapper.className = "bg-slate-100 rounded-xl overflow-hidden h-40 border border-slate-200 shadow-sm relative";
-                        wrapper.innerHTML = `<img src="${url.trim()}" class="object-cover w-full h-full hover:scale-105 transition-transform duration-500">`;
-                        galeria.appendChild(wrapper);
-                    }
-                });
-            } else {
-                galeria.className = "block text-center p-6 bg-slate-50 border border-dashed border-slate-300 rounded-2xl text-[11px] font-bold text-slate-400 uppercase italic w-full col-span-3";
-                galeria.innerText = "No se registraron capturas multimedia directas en el expediente de la misión.";
-            }
-
-            // --- 📂 CONTROL TOTAL DEL REPOSITORIO DE DRIVE VINCULADO (BLINDADO) ---
+            // 📂 RESOLUCIÓN DEL BOTÓN DE GOOGLE DRIVE (Blindaje ante Placas Compuestas)
             const btnEvidence = document.getElementById("btn-evidence");
-            const linkDrive = o.link_evidencia || o.documentos?.trazabilidad_url || o.google_drive_folder || o.link_drive;
-            
-            if (linkDrive && linkDrive.trim().length > 10) {
-                btnEvidence.onclick = () => window.open(linkDrive.trim(), '_blank');
+            if (o.link_drive || o.link_evidencia) {
+                const urlDirecta = o.link_drive || o.link_evidencia;
+                btnEvidence.onclick = () => window.open(urlDirecta.trim(), '_blank');
+            } else if (placaLimpia.length >= 3) {
+                // Si la orden no trae un enlace duro, ejecuta la consulta estructurada en la nube usando la placa limpia
+                btnEvidence.onclick = () => window.open(`https://drive.google.com/drive/search?q=${placaLimpia}`, '_blank');
             } else {
-                // Extracción segura del código puro de placa por si fue alterado con apellidos
-                const placaIdentificadorPuro = o.placa_limpia || (o.placa ? o.placa.split('-')[0].trim().toUpperCase() : "");
-                console.log(`⚠️ Link nativo huérfano. Ejecutando ruteo elástico para unidad: ${placaIdentificadorPuro}`);
                 btnEvidence.onclick = () => window.open(GLOBAL_DRIVE_FALLBACK, '_blank');
             }
-
-            // Pasarelas Colectoras de Fondos Bold & Cash Control
-            const payBox = document.getElementById("nexus-payments");
-            payBox.innerHTML = "";
-
-            if (c.boldKey && c.boldKey.trim().length > 5) {
-                const boldBtn = document.createElement("button");
-                boldBtn.className = "w-full bg-red-600 hover:bg-red-700 text-white p-4 rounded-xl font-black orbitron text-[9px] tracking-widest shadow-md flex justify-between items-center px-8 transition-all active:scale-95 group";
-                boldBtn.innerHTML = `EJECUTAR_PAGO_BOLD_⚡ <span class="group-hover:rotate-12 transition-transform">💳</span>`;
-                boldBtn.onclick = () => window.open(`https://bold.co/pay/${c.boldKey.trim()}?amount=${Math.round(total)}&description=NXS_${(o.placa_limpia || 'OT').toUpperCase()}`, '_blank');
-                payBox.appendChild(boldBtn);
-            }
-
-            const cashBtn = document.createElement("button");
-            cashBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-xl font-black orbitron text-[9px] tracking-widest shadow-md flex justify-between items-center px-8 transition-all active:scale-95 group mt-1.5";
-            cashBtn.innerHTML = `CONFIRMAR_EFECTIVO_💵 <span class="group-hover:scale-110 transition-transform">✅</span>`;
-            cashBtn.onclick = () => alert('CIERRE_NODO: REGISTRO DE RECAUDO EN EFECTIVO ALMACENADO CORRECTAMENTE.');
-            payBox.appendChild(cashBtn);
         }
-
-        init();
     </script>
 </body>
 </html>
