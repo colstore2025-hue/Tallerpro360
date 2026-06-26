@@ -438,7 +438,7 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
         }
     };
 
-        // =========================================================================
+            // =========================================================================
     // 📡 TRANSMISIÓN DE TELEMETRÍA Y AMARRE QUANTUM-SAP / SAP-HANA ENTERPRISE
     // =========================================================================
     const ejecutarSincronizacionTotal = async () => {
@@ -498,7 +498,8 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
                     coti_url: ordenActiva.documentos?.coti_url || null,
                     checklist_url: ordenActiva.documentos?.checklist_url || null,
                     factura_url: ordenActiva.documentos?.factura_url || null,
-                    trazabilidad_url: ordenActiva.documentos?.trazabilidad_url || null
+                    // 🔥 MOD REINFORCEMENT: Enlaza dinámicamente link_evidencia para compatibilidad con documento.html
+                    trazabilidad_url: ordenActiva.link_evidencia || ordenActiva.documentos?.trazabilidad_url || null
                 },
                 
                 kilometraje: "0", 
