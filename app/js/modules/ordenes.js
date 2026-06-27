@@ -438,7 +438,7 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
         }
     };
 
-                    // =========================================================================
+                        // =========================================================================
     // 📡 TRANSMISIÓN DE TELEMETRÍA Y AMARRE QUANTUM-SAP / SAP-HANA ENTERPRISE
     // =========================================================================
     const ejecutarSincronizacionTotal = async () => {
@@ -540,42 +540,6 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
             };
             
             batch.set(doc(db, "ordenes", id), dataMision);
-            await batch.commit();
-
-            // ⚡ ACTUALIZACIÓN VISUAL DE IMPACTO (Inyección dinámica de estilos QUANTUM en caliente)
-            // Esto escala el tamaño de la Marca/Modelo y del Kilometraje en la interfaz de usuario de forma inmediata
-            setTimeout(() => {
-                const elMarca = document.getElementById("v-marca") || document.getElementById("f-marca-display");
-                const elKm = document.getElementById("v-km") || document.getElementById("f-km-display");
-                
-                if (elMarca) {
-                    elMarca.style.fontSize = "2.25rem"; // Equivale a text-4xl (Mismo tamaño que la placa)
-                    elMarca.style.fontWeight = "900";
-                    elMarca.style.lineHeight = "1";
-                }
-                if (elKm) {
-                    elKm.style.fontSize = "1.875rem"; // Equivale a text-3xl (Maximizado para lectura espacial)
-                    elKm.style.fontWeight = "900";
-                }
-            }, 100);
-
-            btn.innerHTML = `<i class="fas fa-check-circle"></i> SINCRO_OK_🛰️`;
-            setTimeout(() => {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-satellite"></i> SINCRONIZAR`;
-            }, 2000);
-
-        } catch (error) {
-            console.error("CRITICAL_SYNC_ERROR: ", error);
-            btn.className = "bg-red-600 text-white font-bold p-3 rounded-xl w-full";
-            btn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ERROR_DE_SINCRO`;
-            setTimeout(() => {
-                btn.disabled = false;
-                btn.className = "bg-cyan-500 text-black font-bold p-3 rounded-xl w-full"; 
-                btn.innerHTML = `<i class="fas fa-satellite"></i> SINCRONIZAR`;
-            }, 3000);
-        }
-    };
 
             // =========================================================================
             // 🏛️ INYECCIÓN DE CRUCE EN EL LIBRO DIARIO DETALLADO (CONTABILIDAD)
@@ -596,7 +560,7 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
 
             if (montoContable > 0) {
                 batch.set(contabilidadRef, {
-                    empresaId,
+                    empresaId: empresaId || "taller_003",
                     id_referencia: id,
                     puc: estadoActual === 'ENTREGADO' ? "413505" : "110505",
                     cuenta: estadoActual === 'ENTREGADO' ? "413505" : "110505",
@@ -620,28 +584,25 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
             const itemsParaContabilidad = ordenActiva.items || [];
             
             itemsParaContabilidad.forEach((item, index) => {
-                // ID Determinista por Índice para anular duplicaciones en resincronizaciones
                 const costoItemRef = doc(db, "contabilidad", `CONT_COSTO_${id}_${index}`);
                 
-                let cuentaPUC = "613505"; // Por defecto: Costo de venta - Repuestos
+                let cuentaPUC = "613505"; 
                 let tipoRegistro = "costo_directo_ot";
                 let conceptoItem = "";
 
                 const costoTotalItem = Number(item.costo || 0) * (Number(item.cantidad) || 1);
 
-                // Clasificación matricial según el tipo de componente e insumo
                 if (item.tipo === 'REPUESTO') {
-                    cuentaPUC = "613505"; // Comercio al por mayor y menor: Repuestos y Accesorios
+                    cuentaPUC = "613505"; 
                     conceptoItem = `COSTO REPUESTO (${item.origen || 'TALLER'}): ${item.desc.toUpperCase()}`;
                 } else if (item.tipo === 'MANO_OBRA' || item.tipo === 'LABOR') {
-                    cuentaPUC = "613520"; // Costos de Servicios / Operarios Externos e Internos
+                    cuentaPUC = "613520"; 
                     conceptoItem = `COSTO MANO DE OBRA (${item.tecnico || 'TECNICO NEXUS'}): ${item.desc.toUpperCase()}`;
                 }
 
-                // Inyección atómica al batch si el ítem genera un costo real cargado en el libro diario
                 if (costoTotalItem > 0) {
                     batch.set(costoItemRef, {
-                        empresaId,
+                        empresaId: empresaId || "taller_003",
                         id_referencia: id,
                         item_index: index,
                         puc: cuentaPUC,
@@ -650,7 +611,7 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
                         concepto: `${conceptoItem} - PLACA: ${placaPuraSola}`,
                         tipo: tipoRegistro,
                         monto: costoTotalItem,
-                        debito: costoTotalItem, // Costos incrementan por el Débito
+                        debito: costoTotalItem, 
                         credito: 0,
                         placa: placaPuraSola,
                         vehiculo_detalle: placaRaw.toUpperCase(),
@@ -666,7 +627,7 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
             if (vInsumosIVA > 0) {
                 const insumoIvaRef = doc(db, "contabilidad", `CONT_GASTO_INS_IVA_${id}`);
                 batch.set(insumoIvaRef, {
-                    empresaId, id_referencia: id, puc: "519535", cuenta: "519535", cuentaContable: "519535",
+                    empresaId: empresaId || "taller_003", id_referencia: id, puc: "519535", cuenta: "519535", cuentaContable: "519535",
                     concepto: `GASTO INSUMOS CON IVA - OT: ${placaRaw.toUpperCase()}`,
                     tipo: "gasto_insumo_ot", monto: vInsumosIVA, debito: vInsumosIVA, credito: 0,
                     placa: placaPuraSola, vehiculo_detalle: placaRaw.toUpperCase(),
@@ -678,7 +639,7 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
             if (vInsumosNoIVA > 0) {
                 const insumoNoIvaRef = doc(db, "contabilidad", `CONT_GASTO_INS_NOIVA_${id}`);
                 batch.set(insumoNoIvaRef, {
-                    empresaId, id_referencia: id, puc: "519535", cuenta: "519535", cuentaContable: "519535",
+                    empresaId: empresaId || "taller_003", id_referencia: id, puc: "519535", cuenta: "519535", cuentaContable: "519535",
                     concepto: `GASTO INSUMOS SIN IVA - OT: ${placaRaw.toUpperCase()}`,
                     tipo: "gasto_insumo_ot", monto: vInsumosNoIVA, debito: vInsumosNoIVA, credito: 0,
                     placa: placaPuraSola, vehiculo_detalle: placaRaw.toUpperCase(),
@@ -712,6 +673,9 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
         }
     };
 
+    // =========================================================================
+    // 📊 ESCUCHADOR EN TIEMPO REAL Y RENDERIZADO DE INTERFAZ GRÁFICA MASTER
+    // =========================================================================
     const cargarEscuchaOrdenes = () => {
         const q = query(collection(db, "ordenes"), where("empresaId", "==", empresaId));
         
@@ -780,9 +744,29 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
                     </div>
                 </div>`;
             }).join('');
+
+            // ⚡ ACTUALIZACIÓN VISUAL DE IMPACTO EN CALIENTE
+            // Forza de forma determinista el escalado de fuentes QUANTUM-SAP para Marca y Kilometraje
+            setTimeout(() => {
+                const elMarca = document.getElementById("v-marca") || document.getElementById("f-marca-display");
+                const elKm = document.getElementById("v-km") || document.getElementById("f-km-display");
+                
+                if (elMarca) {
+                    elMarca.style.fontSize = "2.25rem"; 
+                    elMarca.style.fontWeight = "900";
+                    elMarca.style.lineHeight = "1";
+                }
+                if (elKm) {
+                    elKm.style.fontSize = "1.875rem"; 
+                    elKm.style.fontWeight = "900";
+                }
+            }, 100);
         });
     };
 
+    // =========================================================================
+    // ⚙️ HANDLERS AUXILIARES DE COMPONENTES E INTERACCIONES INTERNAS
+    // =========================================================================
     window.updateItem = (idx, campo, val) => { ordenActiva.items[idx][campo] = (campo==='costo'||campo==='venta'||campo==='cantidad')?Number(val):val; recalcularFinanzas(); };
     window.removeItemNexus = (idx) => { if(confirm("¿Desea remover este item del presupuesto?")) { ordenActiva.items.splice(idx, 1); recalcularFinanzas(); } };
     window.nexusEscuchaPlaca = () => { if(!recognition) return; recognition.start(); hablar("Placa"); recognition.onresult = (e) => { document.getElementById('f-placa').value = e.results[0][0].transcript.replace(/\s/g, '').toUpperCase(); }; };
