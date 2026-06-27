@@ -438,7 +438,7 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
         }
     };
 
-                // =========================================================================
+                    // =========================================================================
     // 📡 TRANSMISIÓN DE TELEMETRÍA Y AMARRE QUANTUM-SAP / SAP-HANA ENTERPRISE
     // =========================================================================
     const ejecutarSincronizacionTotal = async () => {
@@ -453,9 +453,24 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
             const placaRaw = document.getElementById("f-placa").value.trim();
             if (!placaRaw) throw new Error("IDENTIFICADOR_PLACA_REQUERIDO");
 
-            // 🔥 REINGENIERÍA COGNITIVA: Aislamiento estricto de Placa Pura para Drive y Base de Datos
+            // 🔥 REINGENIERÍA COGNITIVA: Aislamiento estricto de Placa Pura
             const placaPuraSola = placaRaw.split('-')[0].trim().toUpperCase();
-            const id = ordenActiva.id || `OT_${placaPuraSola}_${Date.now()}`;
+            
+            // 🔄 DETERMINACIÓN MULTI-ORDEN DINÁMICA:
+            // Si el cliente en pantalla es diferente al dueño original de la orden activa,
+            // se rompe el amarre del ID viejo y se fuerza un nuevo expediente temporal (Date.now())
+            // protegiendo el historial financiero del propietario o concesionario anterior.
+            const clienteEnPantalla = document.getElementById("f-cliente").value.trim().toUpperCase();
+            const clienteOriginal = (ordenActiva.cliente || "").trim().toUpperCase();
+            
+            let id = ordenActiva.id;
+            
+            if (!id || (clienteEnPantalla !== clienteOriginal && clienteOriginal !== "")) {
+                id = `OT_${placaPuraSola}_${Date.now()}`;
+                // Inicialización limpia de arrays y mapas financieros para la nueva orden
+                ordenActiva.items = [];
+                ordenActiva.costos_totales = { total: 0, ebitda: 0, base: 0, iva: 0 };
+            }
             
             const tOrd = document.getElementById("f-tipo-orden").value;
             const estadoActual = document.getElementById("f-estado").value;
@@ -470,6 +485,14 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
             // Captura quirúrgica del kilometraje de ingreso
             const vKilometraje = document.getElementById("f-kilometraje")?.value || document.getElementById("f-km")?.value || "0";
 
+            // 📝 VALIDACIÓN COGNITIVA DE BITÁCORA DE INGRESO
+            // Preserva tus palabras exactas por defecto y deja el campo abierto para que el extractor regex de documento.html
+            // lea el millaje ("KMS 235.000") sin pérdidas si el operario lo escribe directamente en la interfaz.
+            let inputBitacora = document.getElementById("ai-log-display")?.value || "";
+            if (!inputBitacora.trim()) {
+                inputBitacora = "DIAGNOSTICO PENDIENTE // SUBIR EVIDENCIAS ✅ Carpeta Drive Vinculada";
+            }
+
             const metaInventario = {
                 kit_herramientas: document.getElementById("inv-herramientas")?.checked || false,
                 documentos: document.getElementById("inv-documentos")?.checked || false,
@@ -481,25 +504,27 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
             const inputFechaManual = document.getElementById("f-fecha-manual").value;
             const timestampFinal = inputFechaManual ? new Date(inputFechaManual + "T12:00:00").toISOString() : new Date().toISOString();
 
-            // Construcción del documento unificado de la misión
+            // Construcción del documento unificado de la misión (Soporta multi-taller elástico sin amarres fijos)
             const dataMision = {
                 ...ordenActiva,
                 id,
-                placa: placaRaw.toUpperCase(), // Mantiene el formato híbrido completo (ej: IZW700-TRACKER) para visualización
-                placa_limpia: placaPuraSola,   // Llave de cruce limpia para carpetas indexadas de Drive
-                empresaId: empresaId || "taller_003",
+                placa: placaRaw.toUpperCase(), 
+                placa_limpia: placaPuraSola,   
+                empresaId: empresaId || ordenActiva.empresaId || "taller_003", 
+                id_empresa: empresaId || ordenActiva.empresaId || "taller_003",
                 tipo_orden: tOrd,
                 estado: estadoActual,
-                kilometraje: vKilometraje,     // Inyección del kilometraje de ingreso real
-                km: vKilometraje,              // Redundancia de mapeo
-                cliente: document.getElementById("f-cliente").value.toUpperCase(),
+                kilometraje: vKilometraje,     
+                km: vKilometraje,              
+                cliente: clienteEnPantalla,
                 telefono: document.getElementById("f-telefono").value,
                 anticipo: vAnticipo,
                 insumos: vInsumosIVA,
                 insumos_no_iva: vInsumosNoIVA,
-                bitacora_ia: document.getElementById("ai-log-display")?.value || "DIAGNOSTICO PENDIENTE - SUBIR EVIDENCIAS",
+                bitacora_ia: inputBitacora, 
                 inventario_ingreso: metaInventario,
                 fecha_creacion_manual: timestampFinal,
+                items: ordenActiva.items || [], 
                 
                 documentos: {
                     coti_url: ordenActiva.documentos?.coti_url || null,
@@ -515,6 +540,42 @@ window.enviarNotificacionNexus = (procesoEnviado) => {
             };
             
             batch.set(doc(db, "ordenes", id), dataMision);
+            await batch.commit();
+
+            // ⚡ ACTUALIZACIÓN VISUAL DE IMPACTO (Inyección dinámica de estilos QUANTUM en caliente)
+            // Esto escala el tamaño de la Marca/Modelo y del Kilometraje en la interfaz de usuario de forma inmediata
+            setTimeout(() => {
+                const elMarca = document.getElementById("v-marca") || document.getElementById("f-marca-display");
+                const elKm = document.getElementById("v-km") || document.getElementById("f-km-display");
+                
+                if (elMarca) {
+                    elMarca.style.fontSize = "2.25rem"; // Equivale a text-4xl (Mismo tamaño que la placa)
+                    elMarca.style.fontWeight = "900";
+                    elMarca.style.lineHeight = "1";
+                }
+                if (elKm) {
+                    elKm.style.fontSize = "1.875rem"; // Equivale a text-3xl (Maximizado para lectura espacial)
+                    elKm.style.fontWeight = "900";
+                }
+            }, 100);
+
+            btn.innerHTML = `<i class="fas fa-check-circle"></i> SINCRO_OK_🛰️`;
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-satellite"></i> SINCRONIZAR`;
+            }, 2000);
+
+        } catch (error) {
+            console.error("CRITICAL_SYNC_ERROR: ", error);
+            btn.className = "bg-red-600 text-white font-bold p-3 rounded-xl w-full";
+            btn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ERROR_DE_SINCRO`;
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.className = "bg-cyan-500 text-black font-bold p-3 rounded-xl w-full"; 
+                btn.innerHTML = `<i class="fas fa-satellite"></i> SINCRONIZAR`;
+            }, 3000);
+        }
+    };
 
             // =========================================================================
             // 🏛️ INYECCIÓN DE CRUCE EN EL LIBRO DIARIO DETALLADO (CONTABILIDAD)
