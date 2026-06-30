@@ -1,6 +1,6 @@
 /**
- * 🏛️ TALLERPRO360 - REPORTES, FINANZAS & AUDITORÍA FORENSE V18.0 🚀
- * PROTOCOLO: QUANTUM-SAP / MATRIZ DE DESGLOSE PUC EN COLUMNAS
+ * 🏛️ TALLERPRO360 - REPORTES, FINANZAS & AUDITORÍA FORENSE V19.0 🚀
+ * PROTOCOLO: QUANTUM-SAP / MATRIZ DE DESGLOSE PUC EN COLUMNAS & ENGINE PDF EXPEDICIONARIO
  * Desarrollado por: William Jeffry Urquijo Cubillos & Gemini AI (2026)
  */
 
@@ -85,22 +85,21 @@ export default async function reportesModule(container) {
 
     const establecerFechasPorDefecto = () => {
         const ahora = new Date();
-        // Por defecto, inicializa el rango cubriendo el mes fiscal actual
         state.fechaInicioFiltro = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
         state.fechaFinFiltro = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0, 23, 59, 59, 999);
     };
 
     const renderLayout = () => {
         container.innerHTML = `
-        <div class="bg-[#020617] min-h-screen text-slate-200 p-4 lg:p-8 orbitron antialiased">
+        <div class="max-w-[1600px] mx-auto bg-[#020617] min-h-screen text-slate-200 p-4 lg:p-8 orbitron antialiased">
             <header class="flex flex-col gap-6 mb-8 border-b border-white/5 pb-8">
                 <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
                     <div class="text-center lg:text-left">
-                        <h1 class="text-4xl font-black tracking-tight text-white uppercase">TallerPRO360<span class="text-cyan-400">_AuditoríaPUC</span></h1>
-                        <p class="text-[9px] text-slate-500 tracking-[0.4em] font-bold uppercase mt-2">SISTEMA INTEGRAL DE CONTROL FORENSE // RÉGIMEN: ${regimenTaller}</p>
+                        <h1 class="text-4xl font-black tracking-tight text-white uppercase">TallerPRO360<span class="text-cyan-400">_CapaHanaFinanzas</span></h1>
+                        <p class="text-[9px] text-slate-500 tracking-[0.4em] font-bold uppercase mt-2">MATRIZ DE CONSOLIDACIÓN TRIBUTARIA // AUDITORÍA FORENSE DE CUENTAS</p>
                     </div>
                     <button id="btnExportGlobal" class="bg-emerald-500 text-slate-950 px-6 py-3.5 rounded-xl text-[11px] font-black hover:bg-emerald-400 transition-all flex items-center gap-2.5 shadow-lg">
-                        <i class="fas fa-file-excel text-base"></i> EXPORTAR REPORTE SEGMENTADO (DESGLOSE PUC)
+                        <i class="fas fa-file-excel text-base"></i> EXPORTAR MATRIZ DE COMPAÑÍA (DESGLOSE PUC)
                     </button>
                 </div>
 
@@ -128,13 +127,17 @@ export default async function reportesModule(container) {
             <div id="kpi-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"></div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <div class="lg:col-span-2 chart-container flex flex-col justify-between">
-                    <h3 class="text-xs font-black text-cyan-400 uppercase tracking-widest mb-6">Rentabilidad por Vehículo Real</h3>
-                    <div class="h-72"><canvas id="mainChart"></canvas></div>
+                <div class="chart-container flex flex-col justify-between">
+                    <h3 class="text-xs font-black text-cyan-400 uppercase tracking-widest mb-6"><i class="fas fa-chart-bar mr-2"></i>EBITDA por Vehículo</h3>
+                    <div class="h-64"><canvas id="mainChart"></canvas></div>
                 </div>
                 <div class="chart-container flex flex-col justify-between">
-                    <h3 class="text-xs font-black text-amber-400 uppercase tracking-widest mb-6">Estructura de Egresos</h3>
+                    <h3 class="text-xs font-black text-amber-400 uppercase tracking-widest mb-6"><i class="fas fa-chart-pie mr-2"></i>Estructura de Egresos</h3>
                     <div class="h-64"><canvas id="pieChart"></canvas></div>
+                </div>
+                <div class="chart-container flex flex-col justify-between">
+                    <h3 class="text-xs font-black text-purple-400 uppercase tracking-widest mb-6"><i class="fas fa-wrench mr-2"></i>Participación por Línea</h3>
+                    <div class="h-64"><canvas id="lineaChart"></canvas></div>
                 </div>
             </div>
 
@@ -142,7 +145,7 @@ export default async function reportesModule(container) {
                 <div class="p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-900/20">
                     <div>
                         <h3 class="text-xs font-black text-white uppercase tracking-widest">Estructura Operativa Directa por Flota</h3>
-                        <p class="text-[9px] text-slate-500 mt-1">Haga clic en la placa para desplegar la bitácora técnica de costos y las cuentas auxiliares PUC afectadas</p>
+                        <p class="text-[9px] text-slate-500 mt-1">Haga clic en la placa para desplegar la bitácora técnica de costos, las cuentas auxiliares PUC afectadas y la emisión de PDFs</p>
                     </div>
                     <span id="counterTag" class="text-[9px] bg-cyan-500/10 text-cyan-400 px-4 py-1.5 rounded-md font-black border border-cyan-500/20 uppercase tracking-wider">Procesando...</span>
                 </div>
@@ -200,9 +203,10 @@ export default async function reportesModule(container) {
                     if (placaClaveGasto === 'ADMIN' || placaClaveGasto === '') {
                         const bloquesTexto = detalle.replace(/[()]/g, ' ').split(/[\s-]+/);
                         for (const bloque of bloquesTexto) {
-                            const limpio = bloque.replace(/[^A-Z0-9]/g, '').trim();
-                            if (limpio.length === 6 && /^[A-Z]{3}[0-9]{3}$/.test(limpio)) {
-                                placaClaveGasto = limpio;
+                            const limpio = block => bloque.replace(/[^A-Z0-9]/g, '').trim();
+                            const cleanBlock = limpio(bloque);
+                            if (cleanBlock.length === 6 && /^[A-Z]{3}[0-9]{3}$/.test(cleanBlock)) {
+                                placaClaveGasto = cleanBlock;
                                 break;
                             }
                         }
@@ -294,6 +298,10 @@ export default async function reportesModule(container) {
                 };
             });
 
+            // 📅 REFORMA OBLIGATORIA: Inyectar la línea de tiempo desde Abril de 2026 en adelante
+            const mesesPredeterminados = ["2026-04", "2026-05", "2026-06", "2026-07"];
+            mesesPredeterminados.forEach(m => periodosSet.add(m));
+
             state.periodosDisponibles = Array.from(periodosSet).sort().reverse();
             poblarSelectorPeriodos();
             filtrarYProcesarDatos();
@@ -312,7 +320,7 @@ export default async function reportesModule(container) {
         });
         select.innerHTML = html;
         if (state.periodosDisponibles.length > 0 && state.periodoSeleccionado === "TODOS" && state.filtroFrecuencia === "mes") {
-            state.periodoSeleccionado = state.periodosDisponibles[0];
+            state.periodoSeleccionado = "2026-06"; // Forzar la visualización inicial de Junio 2026
         }
         select.value = state.periodoSeleccionado;
         ajustarFechasPorPeriodoMes();
@@ -418,9 +426,12 @@ export default async function reportesModule(container) {
             <tr id="drilldown-${o.id}" class="hidden bg-[#040712] drilldown-container">
                 <td colspan="6" class="p-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
-                        <div class="bg-black/30 p-4 rounded-xl border border-white/5">
+                        <div class="bg-black/30 p-4 rounded-xl border border-white/5 relative">
                             <h4 class="orbitron font-black text-cyan-400 text-[10px] uppercase tracking-wider mb-2">Bitácora Resumen</h4>
                             <p class="text-slate-400 font-mono text-[11px] uppercase">${o.bitacora_ia}</p>
+                            <button onclick="window.exportarPdfPlaca('${o.id}', event)" class="absolute top-4 right-4 bg-red-600 text-white font-bold px-3 py-1.5 rounded-lg text-[9px] uppercase tracking-wider shadow-lg hover:bg-red-500 transition-all">
+                                <i class="fas fa-file-pdf mr-1"></i> Generar PDF
+                            </button>
                         </div>
                         <div class="bg-black/30 p-4 rounded-xl border border-white/5">
                             <h4 class="orbitron font-black text-amber-400 text-[10px] uppercase tracking-wider mb-2">Cuentas PUC Imputadas a la Placa</h4>
@@ -458,6 +469,47 @@ export default async function reportesModule(container) {
         contenedorPuc.innerHTML = htmlPuc || `<p class="text-slate-500 italic">Sin movimientos PUC adicionales</p>`;
     };
 
+    // 📥 EMISOR Y COMPILADOR EXCLUSIVO EN PDF PARA CASOS PUNTUALES
+    window.exportarPdfPlaca = (id, event) => {
+        event.stopPropagation();
+        const orden = state.ordenesMaster.find(o => o.id === id);
+        if (!orden) return;
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+
+        pdf.setFillColor(2, 6, 23);
+        pdf.rect(0, 0, 210, 297, 'F');
+
+        pdf.setFont("Helvetica", "bold");
+        pdf.setFontSize(22);
+        pdf.setTextColor(6, 182, 212);
+        pdf.text("TALLERPRO360", 15, 25);
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(148, 163, 184);
+        pdf.text("ESTADO ANALÍTICO Y CONTROL DE COSTOS DIRECTOS", 15, 32);
+
+        pdf.setDrawColor(255, 255, 255, 0.1);
+        pdf.line(15, 38, 195, 38);
+
+        pdf.setFontSize(12);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text(`VEHÍCULO PLACA: ${orden.placa}`, 15, 50);
+        pdf.text(`CLIENTE: ${orden.cliente}`, 15, 58);
+        pdf.text(`LÍNEA DE TRABAJO: ${orden.area}`, 15, 66);
+
+        pdf.setFontSize(11);
+        pdf.text("MÉTRICAS LIQUIDADAS:", 15, 82);
+        pdf.text(`INGRESO BRUTO: ${fmt(orden.total)}`, 20, 92);
+        pdf.text(`COSTO DIRECTO ASIGNADO: ${fmt(orden.gastosContabilidad)}`, 20, 100);
+        
+        pdf.setTextColor(52, 211, 153);
+        pdf.text(`EBITDA NETO REAL: ${fmt(orden.ebitda)}`, 20, 108);
+
+        pdf.save(`PRO360_Reporte_${orden.placa}.pdf`);
+    };
+
     const renderCharts = (data) => {
         const ultimas = data.slice(-8);
         const ctxMain = document.getElementById('mainChart');
@@ -482,7 +534,25 @@ export default async function reportesModule(container) {
                     labels: ['Fijos Administrativos', 'Nóminas', 'Costos de Flota'],
                     datasets: [{ data: [state.gastosFijosGlobales, state.nominasInformalesGlobales, data.reduce((a, b) => a + b.gastosContabilidad, 0)], backgroundColor: ['#f43f5e', '#f59e0b', '#06b6d4'], borderWidth: 0 }]
                 },
-                options: { cutout: '80%', plugins: { legend: { display: false } } }
+                options: { cutout: '75%', plugins: { legend: { display: false } } }
+            });
+        }
+
+        // 📊 GRÁFICO TERCERO ADICIONAL: DONA DE LÍNEAS OPERATIVAS
+        const ctxLinea = document.getElementById('lineaChart');
+        if (ctxLinea) {
+            if (state.charts.linea) state.charts.linea.destroy();
+            
+            const conteoAreas = {};
+            data.forEach(o => { conteoAreas[o.area] = (conteoAreas[o.area] || 0) + 1; });
+            
+            state.charts.linea = new Chart(ctxLinea, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(conteoAreas),
+                    datasets: [{ data: Object.values(conteoAreas), backgroundColor: ['#06b6d4', '#a855f7', '#fbbf24', '#f43f5e'], borderWidth: 0 }]
+                },
+                options: { cutout: '75%', plugins: { legend: { display: false } } }
             });
         }
     };
@@ -538,7 +608,6 @@ export default async function reportesModule(container) {
             dpFin.onchange = alCambiarFechasManual;
         }
 
-        // --- 📊 EXPORTACIÓN FORENSE: DESGLOSE PUC POR COLUMNAS CONFILTRADO REAL ---
         const btnExport = document.getElementById("btnExportGlobal");
         if (btnExport) {
             btnExport.onclick = () => {
@@ -552,7 +621,6 @@ export default async function reportesModule(container) {
                     return;
                 }
 
-                // 1. Escanear y recopilar todas las cuentas PUC de costos usadas por los vehículos del set de datos actual
                 const listaPucsDeCostos = new Set();
                 state.dataActual.forEach(o => {
                     const gastosDeEstaPlaca = state.gastosContablesBase.filter(g => g.placa === o.placa_pura);
@@ -561,12 +629,9 @@ export default async function reportesModule(container) {
                     });
                 });
 
-                // Ordenar las columnas de las cuentas PUC de menor a mayor código para estética de auditoría
                 const arrayPucsOrdenados = Array.from(listaPucsDeCostos).sort();
 
-                // 2. Mapear las filas inyectando el valor exacto en su respectiva columna PUC
                 const rowsExcel = state.dataActual.map(o => {
-                    // Columnas fijas obligatorias del reporte
                     const filaBase = {
                         "PERIODO_FISCAL": o.periodo,
                         "VEHICULO_PLACA": o.placa, 
@@ -580,12 +645,10 @@ export default async function reportesModule(container) {
                         "DIAS_PERMANENCIA": o.dias
                     };
 
-                    // Inicializar cada columna PUC detectada en cero para este vehículo
                     arrayPucsOrdenados.forEach(pucCodigo => {
                         filaBase[`PUC_${pucCodigo}`] = 0;
                     });
 
-                    // Depositar y consolidar el gasto real en la celda de la columna PUC que corresponda
                     const gastosDeEstaPlaca = state.gastosContablesBase.filter(g => g.placa === o.placa_pura);
                     gastosDeEstaPlaca.forEach(g => {
                         filaBase[`PUC_${g.puc}`] += safeNumber(g.monto);
@@ -598,36 +661,34 @@ export default async function reportesModule(container) {
                 const totalRows = rowsExcel.length;
                 const idxTotal = totalRows + 2; 
 
-                // Agregar fila de Totales Contables con fórmulas nativas de Excel
                 ws[`B${idxTotal}`] = { v: "TOTAL PERÍODO AUDITADO", t: 's' };
                 ws[`D${idxTotal}`] = { f: `SUM(D2:D${totalRows + 1})`, t: 'n' };
                 ws[`E${idxTotal}`] = { f: `SUM(E2:E${totalRows + 1})`, t: 'n' };
                 ws[`F${idxTotal}`] = { f: `SUM(F2:F${totalRows + 1})`, t: 'n' };
                 ws[`G${idxTotal}`] = { f: `SUM(G2:G${totalRows + 1})`, t: 'n' };
-                ws[`H${idxTotal}`] = { f: `SUM(H2:H${totalRows + 1})`, t: 'n' };
+                
+                // 📊 CONDICIÓN FORENSE: Restar los gastos fijos y nóminas directamente en la sumatoria del Excel
+                const formulaEbitdaForense = `SUM(H2:H${totalRows + 1}) - ${state.gastosFijosGlobales} - ${state.nominasInformalesGlobales}`;
+                ws[`H${idxTotal}`] = { f: formulaEbitdaForense, t: 'n' };
+                
                 ws[`I${idxTotal}`] = { f: `AVERAGE(I2:I${totalRows + 1})`, t: 'n' };
                 ws[`J${idxTotal}`] = { f: `AVERAGE(J2:J${totalRows + 1})`, t: 'n' };
 
-                // Inyectar sumatorias automáticas para cada una de las columnas PUC de forma dinámica
-                let letraColumnaAscii = 75; // Código ASCII de la letra 'K', que es donde inician las columnas dinámicas
+                let letraColumnaAscii = 75; 
                 arrayPucsOrdenados.forEach((puc, index) => {
                     const colLetter = getExcelColumnName(letraColumnaAscii + index);
                     ws[`${colLetter}${idxTotal}`] = { f: `SUM(${colLetter}2:${colLetter}${totalRows + 1})`, t: 'n' };
                 });
 
-                // Aplicar formatos numéricos de moneda y porcentaje a las celdas
                 const range = XLSX.utils.decode_range(ws['!ref']);
                 for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-                    // Formatear columnas de dinero
                     ['D', 'E', 'F', 'G', 'H'].forEach(col => {
                         const cell = ws[col + (R + 1)]; if (cell) cell.z = '$#,##0';
                     });
-                    // Formatear columnas PUC dinámicas como moneda
                     arrayPucsOrdenados.forEach((p, idx) => {
                         const colLetter = getExcelColumnName(letraColumnaAscii + idx);
                         const cellPuc = ws[colLetter + (R + 1)]; if (cellPuc) cellPuc.z = '$#,##0';
                     });
-                    // Formatear margen porcentual
                     const cellPct = ws['I' + (R + 1)]; if (cellPct) cellPct.z = '0.0%';
                 }
 
@@ -640,7 +701,6 @@ export default async function reportesModule(container) {
         }
     };
 
-    // Función auxiliar para calcular letras de columnas Excel más allá de la Z (AA, AB, etc.)
     const getExcelColumnName = (colNum) => {
         let columnName = "";
         while (colNum > 0) {
@@ -652,7 +712,11 @@ export default async function reportesModule(container) {
     };
 
     const loadDependencies = async () => {
-        const libs = ["https://cdn.jsdelivr.net/npm/chart.js", "https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"];
+        const libs = [
+            "https://cdn.jsdelivr.net/npm/chart.js", 
+            "https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js",
+            "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+        ];
         for (const lib of libs) {
             if (!document.querySelector(`script[src="${lib}"]`)) {
                 await new Promise(r => { const s = document.createElement("script"); s.src = lib; s.onload = r; document.head.appendChild(s); });
