@@ -207,41 +207,74 @@
                     return;
                 }
                 const orden = snap.data();
-                const empresaIdTarget = orden.empresaId || orden.id_empresa || "taller_003";
+                
+                // 🔒 CAPA DE SANITIZACIÓN QUANTUM-SAP CONTRA MISMATCHES DE LLAVE
+                let rawEmpresaTarget = orden.empresaId || orden.id_empresa || "taller_003";
+                const empresaIdTarget = rawEmpresaTarget.trim().toLowerCase().replace(/-/g, '_');
 
-                // 🛰️ ARQUITECTURA DE DATOS: HIDRATACIÓN EN TIEMPO REAL DESDE LOCALSTORAGE O FALLBACK REMOTO
                 let identity = {
-                    nombre: localStorage.getItem("nexus_empresaNombre") || "CARROS COLOMBIA",
-                    nit: localStorage.getItem("nexus_empresaNit") || "901345988-1",
-                    regimen: localStorage.getItem("nexus_empresaRegimen") ? localStorage.getItem("nexus_empresaRegimen").replace(/_/g, ' ') : "RESPONSABLE DE IVA",
-                    ws: localStorage.getItem("nexus_empresaWs") || "3107645306",
-                    direccion: localStorage.getItem("nexus_empresaDireccion") || "CALLE 24 # 4-53 - INDUSTRIAL PARK",
-                    ciudad: localStorage.getItem("nexus_empresaCiudad") || "IBAGUÉ, TOLIMA",
-                    legal: localStorage.getItem("nexus_empresaLegal") || "TODO DIAGNÓSTICO EJECUTADO POSEE VALIDEZ ESTÁNDAR OPERATIVA.",
-                    logo: localStorage.getItem("nexus_empresaLogo") || ""
+                    nombre: "COLOMBIAN TRUCKS LOGISTICS LLC",
+                    nit: "901345678-1",
+                    regimen: "RESPONSABLE DE IVA",
+                    ws: "3200000000",
+                    direccion: "CALLE 24 # 4-53 - INDUSTRIAL PARK",
+                    ciudad: "CHARLOTTE, NC",
+                    legal: "TODO DIAGNÓSTICO EJECUTADO POSEE VALIDEZ ESTÁNDAR OPERATIVA.",
+                    logo: ""
                 };
 
-                // Si por alguna razón el LocalStorage está vacío, extraemos directo de Firebase para evitar datos inventados
+                // 🚀 HIDRATACIÓN EN TIEMPO REAL DIRECTO DESDE FUENTE DE VERDAD (FIREBASE)
                 try {
                     const snapEmpresa = await getDoc(doc(db, "empresas", empresaIdTarget));
                     if (snapEmpresa.exists()) {
                         const empData = snapEmpresa.data();
                         
-                        if (!localStorage.getItem("nexus_empresaLogo")) {
-                            identity.nombre = empData.nombre || identity.nombre;
-                            identity.nit = empData.nit || identity.nit;
-                            identity.regimen = empData.regimen_fiscal ? empData.regimen_fiscal.replace(/_/g, ' ') : identity.regimen;
-                            identity.ws = empData.whatsapp || identity.ws;
-                            identity.direccion = empData.direccion || identity.direccion;
-                            identity.ciudad = empData.ciudad || identity.ciudad;
-                            identity.legal = empData.condiciones_legales || identity.legal;
-                            if (empData.logo && empData.logo.trim().length > 20) {
-                                identity.logo = empData.logo.trim();
-                            }
+                        identity.nombre = empData.nombre || identity.nombre;
+                        identity.nit = empData.nit || identity.nit;
+                        identity.regimen = empData.regimen_fiscal ? empData.regimen_fiscal.replace(/_/g, ' ') : identity.regimen;
+                        identity.ws = empData.whatsapp || identity.ws;
+                        identity.direccion = empData.direccion || identity.direccion;
+                        identity.ciudad = empData.ciudad || identity.ciudad;
+                        identity.legal = empData.condiciones_legales || identity.legal;
+                        if (empData.logo && empData.logo.trim().length > 20) {
+                            identity.logo = empData.logo.trim();
+                        }
+
+                        // Sincronizar LocalStorage en caliente para mitigar latencias en sub-vistas futuras
+                        localStorage.setItem("nexus_empresaId", empresaIdTarget);
+                        localStorage.setItem("nexus_empresaNombre", identity.nombre);
+                        localStorage.setItem("nexus_empresaLogo", identity.logo);
+                        localStorage.setItem("nexus_empresaNit", identity.nit);
+                        localStorage.setItem("nexus_empresaDireccion", identity.direccion);
+                        localStorage.setItem("nexus_empresaCiudad", identity.ciudad);
+                        localStorage.setItem("nexus_empresaRegimen", empData.regimen_fiscal || "RESPONSABLE_IVA");
+                        localStorage.setItem("nexus_empresaLegal", identity.legal);
+                        localStorage.setItem("nexus_empresaWs", identity.ws);
+                    } else {
+                        // Fallback Inteligente usando LocalStorage de contingencia si Firebase de empresas no responde
+                        if (localStorage.getItem("nexus_empresaNombre")) {
+                            identity.nombre = localStorage.getItem("nexus_empresaNombre");
+                            identity.nit = localStorage.getItem("nexus_empresaNit");
+                            identity.regimen = localStorage.getItem("nexus_empresaRegimen").replace(/_/g, ' ');
+                            identity.ws = localStorage.getItem("nexus_empresaWs");
+                            identity.direccion = localStorage.getItem("nexus_empresaDireccion");
+                            identity.ciudad = localStorage.getItem("nexus_empresaCiudad");
+                            identity.legal = localStorage.getItem("nexus_empresaLegal");
+                            identity.logo = localStorage.getItem("nexus_empresaLogo");
                         }
                     }
                 } catch (errRemote) {
-                    console.warn("Utilizando redundancia de seguridad local.", errRemote);
+                    console.warn("Utilizando redundancia crítica de seguridad local.", errRemote);
+                    if (localStorage.getItem("nexus_empresaNombre")) {
+                        identity.nombre = localStorage.getItem("nexus_empresaNombre");
+                        identity.nit = localStorage.getItem("nexus_empresaNit");
+                        identity.regimen = localStorage.getItem("nexus_empresaRegimen").replace(/_/g, ' ');
+                        identity.ws = localStorage.getItem("nexus_empresaWs");
+                        identity.direccion = localStorage.getItem("nexus_empresaDireccion");
+                        identity.ciudad = localStorage.getItem("nexus_empresaCiudad");
+                        identity.legal = localStorage.getItem("nexus_empresaLegal");
+                        identity.logo = localStorage.getItem("nexus_empresaLogo");
+                    }
                 }
 
                 render(orden, identity);
@@ -300,7 +333,7 @@
             let placaLimpia = o.placa_limpia || rawPlaca.split("-")[0].toUpperCase().trim();
             let modeloExtraido = rawPlaca.includes("-") ? rawPlaca.split("-")[1].toUpperCase().trim() : (o.modelo || o.vehiculo || "UNIDAD");
 
-            // 🎯 Cambios Estéticos Solicitados: Placa y Marca en balance de escala perfecto
+            // 🎯 Cambios Estéticos: Placa y Marca en balance de escala perfecto
             document.getElementById("v-placa").innerText = placaLimpia;
             document.getElementById("v-marca").innerText = modeloExtraido;
             
