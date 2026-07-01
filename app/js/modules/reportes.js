@@ -1,6 +1,6 @@
 /**
- * 🏛️ TALLERPRO360 - REPORTES, FINANZAS & AUDITORÍA FORENSE V21.0 🚀
- * PROTOCOLO: REINGENIERÍA PROFUNDA / QUANTUM-SAP CONTABLE
+ * 🏛️ TALLERPRO360 - REPORTES, FINANZAS & AUDITORÍA FORENSE V21.2 🚀
+ * PROTOCOLO: ESTABILIZACIÓN MATEMÁTICA Y CONFIABILIDAD DE DATOS (PUC - EBITDA)
  * Desarrollado por: William Jeffry Urquijo Cubillos & Gemini AI (2026)
  */
 
@@ -14,7 +14,7 @@ export default async function reportesModule(container) {
     if (!empresaId) {
         container.innerHTML = `<div class="p-20 text-center text-red-500 orbitron flex flex-col gap-4 justify-center items-center font-bold bg-[#020617] min-h-screen">
             <i class="fas fa-exclamation-triangle text-4xl animate-pulse"></i>
-            <span>ERROR CRÍTICO: AUTENTICACIÓN SAP REQUERIDA PARA MATRIZ DE REPORTES</span>
+            <span>ERROR CRÍTICO: AUTENTICACIÓN REQUERIDA</span>
         </div>`;
         return;
     }
@@ -47,13 +47,13 @@ export default async function reportesModule(container) {
         gastosFijosGlobales: 0, 
         nominasInformalesGlobales: 0,
         mapaGastosPorPlaca: {},
-        mapaDetalleGastosPUC: {}, // Almacena el desglose por subcuenta por cada placa
+        mapaDetalleGastosPUC: {}, 
         dataActual: [],
         charts: {},
         filtroFrecuencia: "mes", 
         fechaInicioFiltro: null,
         fechaFinFiltro: null,
-        periodoSeleccionado: "2026-05", // Inicialización inteligente basada en tus registros reales
+        periodoSeleccionado: "TODOS",
         periodosDisponibles: []
     };
 
@@ -77,7 +77,7 @@ export default async function reportesModule(container) {
             .sap-input { background: #090d16; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #06b6d4; padding: 10px 14px; font-size: 11px; outline: none; font-family: 'Orbitron'; }
             .sap-input:focus { border-color: #06b6d4; box-shadow: 0 0 12px rgba(6,182,212,0.25); }
             .kpi-card { position: relative; overflow: hidden; background: #0b0f17; padding: 1.8rem; border-radius: 2rem; border: 1px solid rgba(255,255,255,0.03); transition: all 0.4s ease; }
-            .chart-container { background: #0b0f17; padding: 1.5rem; border-radius: 2rem; border: 1px solid rgba(255,255,255,0.03); display: flex; flex-direction: column; justify-between; min-height: 320px; }
+            .chart-container { background: #0b0f17; padding: 1.5rem; border-radius: 2rem; border: 1px solid rgba(255,255,255,0.03); display: flex; flex-direction: column; justify-content: space-between; min-height: 320px; }
             .drilldown-container { background: #05080f; border-left: 4px solid #06b6d4; animation: fadeIn 0.3s ease-out; }
             @keyframes fadeIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
         `;
@@ -97,10 +97,10 @@ export default async function reportesModule(container) {
                 <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
                     <div class="text-center lg:text-left">
                         <h1 class="text-4xl font-black tracking-tight text-white uppercase">TallerPRO360<span class="text-cyan-400">_HanaForense</span></h1>
-                        <p class="text-[9px] text-slate-500 tracking-[0.4em] font-bold uppercase mt-2">NEXUS-X QUANTUM ENGINE // TOTALIZACIÓN Y CONTROL CONEXO DE SUB-CUENTAS</p>
+                        <p class="text-[9px] text-slate-500 tracking-[0.4em] font-bold uppercase mt-2">MATRIZ DE REPORTES // CONFIABILIDAD CONTABLE DE SUB-CUENTAS</p>
                     </div>
                     <button id="btnExportGlobal" class="bg-emerald-500 text-slate-950 px-6 py-3.5 rounded-xl text-[11px] font-black hover:bg-emerald-400 transition-all flex items-center gap-2.5 shadow-lg">
-                        <i class="fas fa-file-excel text-base"></i> EXPORTAR MATRIZ CONSOLIDADA DE COSTOS DIRECTOS Y PUC
+                        <i class="fas fa-file-excel text-base"></i> EXPORTAR MATRIZ CONSOLIDADA DE COSTOS Y PUC
                     </button>
                 </div>
 
@@ -146,7 +146,7 @@ export default async function reportesModule(container) {
                 <div class="p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-900/20">
                     <div>
                         <h3 class="text-xs font-black text-white uppercase tracking-widest">Estructura Operativa Directa por Flota</h3>
-                        <p class="text-[9px] text-slate-500 mt-1">Haga clic en la fila de la placa para ver las subcuentas asignadas, bitácora y exportar el PDF Corporativo</p>
+                        <p class="text-[9px] text-slate-500 mt-1">Haga clic en la fila de la placa para ver las subcuentas asignadas y exportar el PDF Corporativo</p>
                     </div>
                     <span id="counterTag" class="text-[9px] bg-cyan-500/10 text-cyan-400 px-4 py-1.5 rounded-md font-black border border-cyan-500/20 uppercase tracking-wider">Procesando...</span>
                 </div>
@@ -223,11 +223,9 @@ export default async function reportesModule(container) {
                     if (esNominaInformal) {
                         nominasInformalesGlobales += monto;
                     } else if (placaClaveGasto !== 'ADMIN' && placaClaveGasto.length >= 3) {
-                        // Consolidar montos totales por placa
                         if (!mapaGastosPorPlaca[placaClaveGasto]) mapaGastosPorPlaca[placaClaveGasto] = 0;
                         mapaGastosPorPlaca[placaClaveGasto] += monto;
 
-                        // Consolidar acumulado específico por cuenta PUC dentro de cada placa
                         if (!mapaDetalleGastosPUC[placaClaveGasto]) mapaDetalleGastosPUC[placaClaveGasto] = {};
                         if (!mapaDetalleGastosPUC[placaClaveGasto][cuentaPUC]) mapaDetalleGastosPUC[placaClaveGasto][cuentaPUC] = 0;
                         mapaDetalleGastosPUC[placaClaveGasto][cuentaPUC] += monto;
@@ -259,17 +257,13 @@ export default async function reportesModule(container) {
                     ivaRetenido = facturacionBruta - ingresosNetos;
                 }
                 
-                // REINGENIERÍA CONTABLE DE INTEGRACIÓN TOTAL:
-                // Se extrae el costo directo nativo registrado en la orden + todos los egresos conexos imputados en el módulo contabilidad
                 const costoDirectoOrden = safeNumber(o.costos_totales?.costo_directo || o.costo_directo || 0);
                 const gastosConexosPUC = mapaGastosPorPlaca[placaFinancieraClave] || 0;
                 const egresosTotalesConsolidados = costoDirectoOrden + gastosConexosPUC;
                 
-                // EBITDA REAL NETO: Ingreso Neto menos todos los egresos acumulados
                 const ebitdaRealPlaca = ingresosNetos - egresosTotalesConsolidados;
                 const margenEbitdaPrc = ingresosNetos > 0 ? (ebitdaRealPlaca / ingresosNetos) * 100 : 0;
                 
-                // 📅 REINGENIERÍA EN CASCADA DE TIEMPOS (EVITA EL COLAPSO EN JUNIO)
                 let fechaFinalObj = new Date();
                 let stringFechaBase = "";
 
@@ -284,7 +278,6 @@ export default async function reportesModule(container) {
                 if (stringFechaBase) {
                     fechaFinalObj = new Date(stringFechaBase);
                     if (isNaN(fechaFinalObj.getTime())) {
-                        // Extractor de emergencia manual para formatos alterados
                         const partes = stringFechaBase.substring(0, 10).split('-');
                         if (partes.length === 3) {
                             fechaFinalObj = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
@@ -298,7 +291,6 @@ export default async function reportesModule(container) {
                     fechaFinalObj = new Date(); 
                 }
 
-                // Extracción estricta del periodo contable AAAA-MM
                 const mesFormateado = String(fechaFinalObj.getMonth() + 1).padStart(2, '0');
                 const periodoClave = `${fechaFinalObj.getFullYear()}-${mesFormateado}`;
                 periodosSet.add(periodoClave);
@@ -341,9 +333,8 @@ export default async function reportesModule(container) {
         });
         select.innerHTML = html;
         
-        // Mantener el periodo seleccionado inicial de manera inteligente
-        if (!state.periodosDisponibles.includes(state.periodoSeleccionado) && state.periodosDisponibles.length > 0) {
-            state.periodoSeleccionado = state.periodosDisponibles[0];
+        if (state.periodoSeleccionado === "TODOS" && state.periodosDisponibles.length > 0) {
+            state.periodoSeleccionado = state.periodosDisponibles[0]; 
         }
         select.value = state.periodoSeleccionado;
         ajustarFechasPorPeriodoMes();
@@ -454,7 +445,7 @@ export default async function reportesModule(container) {
                                 <div class="flex justify-between items-center mb-4">
                                     <h4 class="orbitron font-black text-cyan-400 text-[10px] uppercase tracking-wider">Bitácora Técnica Operativa</h4>
                                     <button onclick="window.exportarPdfPlaca('${o.id}', event)" class="bg-red-600 text-white font-black px-4 py-2 rounded-lg text-[9px] uppercase tracking-wider shadow-lg hover:bg-red-500 transition-all flex items-center gap-2">
-                                        <i class="fas fa-file-pdf"></i> GENERAR INFORME DE SOCIOS PDF
+                                        <i class="fas fa-file-pdf"></i> INFORME DE SOCIOS PDF
                                     </button>
                                 </div>
                                 <p class="text-slate-300 font-mono text-[11px] uppercase bg-black/40 p-4 rounded-lg border border-white/5 leading-relaxed whitespace-pre-line">${o.bitacora_ia}</p>
@@ -490,10 +481,9 @@ export default async function reportesModule(container) {
             htmlPuc += `<div class="flex justify-between text-amber-400 border-b border-white/5 py-1"><span>COSTO_DIRECTO - REGISTRO INTERNO ORDEN</span><span>-${fmt(orden.costoDirectoOrden)}</span></div>`;
         }
 
-        // Obtener el desglose de subcuentas PUC agrupadas para esta placa específica
         const pucsDeEstaPlaca = state.mapaDetalleGastosPUC[placaPura] || {};
         Object.keys(pucsDeEstaPlaca).forEach(puc => {
-            htmlPuc += `<div class="flex justify-between text-red-400 border-b border-white/5 py-1 font-mono"><span>PUC ${puc} - ASIGNACIÓN EXTERNA</span><span>-${fmt(pucsDeEstaPlaca[puc])}</span></div>`;
+            htmlPuc += `<div class="flex justify-between text-red-400 border-b border-white/5 py-1 font-mono"><span>PUC ${puc} - ASIGNACIÓN CONTABLE</span><span>-${fmt(pucsDeEstaPlaca[puc])}</span></div>`;
         });
 
         if (Object.keys(pucsDeEstaPlaca).length === 0 && orden?.costoDirectoOrden === 0) {
@@ -503,7 +493,6 @@ export default async function reportesModule(container) {
         contenedorPuc.innerHTML = htmlPuc;
     };
 
-    // 📥 DOCUMENT ENGINE CORPORATIVO: RENDERIZADO SEGURO MEDIANTE BLOQUES SÓLIDOS (ABSORCIÓN)
     window.exportarPdfPlaca = (id, event) => {
         event.stopPropagation();
         const orden = state.ordenesMaster.find(o => o.id === id);
@@ -512,14 +501,12 @@ export default async function reportesModule(container) {
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
 
-        // Lienzo Corporativo Dark Premium
         pdf.setFillColor(11, 15, 23);
         pdf.rect(0, 0, 210, 297, 'F');
 
-        // Header
         pdf.setFont("Helvetica", "bold");
         pdf.setFontSize(20);
-        pdf.setTextColor(6, 182, 212); // Cyan
+        pdf.setTextColor(6, 182, 212); 
         pdf.text("TALLERPRO360 // AUDIT REPORT", 15, 25);
 
         pdf.setFontSize(8);
@@ -529,7 +516,6 @@ export default async function reportesModule(container) {
         pdf.setDrawColor(30, 41, 59);
         pdf.line(15, 35, 195, 35);
 
-        // Metadata de Operación
         pdf.setFontSize(10);
         pdf.setTextColor(255, 255, 255);
         pdf.text(`PLACA UNIDAD:`, 15, 45);
@@ -544,7 +530,6 @@ export default async function reportesModule(container) {
         pdf.setFont("Helvetica", "bold"); pdf.text(`PERIODO DE CIERRE:`, 15, 63);
         pdf.setFont("Helvetica", "normal"); pdf.text(`${orden.periodo}`, 60, 63);
 
-        // Tabla Financiera de Absorción de Utilidades
         pdf.setFillColor(15, 23, 42);
         pdf.rect(15, 72, 180, 46, 'F');
 
@@ -568,11 +553,10 @@ export default async function reportesModule(container) {
 
         pdf.line(15, 108, 195, 108);
         pdf.setFont("Helvetica", "bold");
-        pdf.setTextColor(52, 211, 153); // Verde esmeralda
+        pdf.setTextColor(52, 211, 153); 
         pdf.text("EBITDA COMPAÑÍA EXTRAÍDO:", 20, 114);
         pdf.text(`${fmt(orden.ebitda)}`, 145, 114);
 
-        // 📊 REINGENIERÍA DEL GRÁFICO: BARRAS SÓLIDAS DE CONTROL (CERO FALLOS DE VECTOR)
         pdf.setFontSize(10);
         pdf.setTextColor(6, 182, 212);
         pdf.text("MÉTRICA DE DISTRIBUCIÓN Y ABSORCIÓN DE COSTOS", 15, 130);
@@ -581,27 +565,22 @@ export default async function reportesModule(container) {
         const porcCostos = Math.min((orden.egresosConsolidados / totalFlujo), 1);
         const porcEbitda = Math.max(1 - porcCostos, 0);
 
-        // Contenedor barra de fondo
         pdf.setFillColor(30, 41, 59);
         pdf.rect(15, 136, 180, 10, 'F');
 
-        // Relleno Costos (Rojo)
         if (porcCostos > 0) {
             pdf.setFillColor(244, 63, 94);
             pdf.rect(15, 136, 180 * porcCostos, 10, 'F');
         }
-        // Relleno Utilidad sobrante (Verde)
         if (porcEbitda > 0) {
             pdf.setFillColor(52, 211, 153);
             pdf.rect(15 + (180 * porcCostos), 136, 180 * porcEbitda, 10, 'F');
         }
 
-        // Etiquetas del Gráfico Horizontal
         pdf.setFontSize(8);
         pdf.setTextColor(244, 63, 94); pdf.text(`Egresos: ${pct(porcCostos * 100)}`, 15, 150);
         pdf.setTextColor(52, 211, 153); pdf.text(`Margen EBITDA: ${pct(porcEbitda * 100)}`, 145, 150);
 
-        // Desglose Subcuentas PUC en PDF
         pdf.setFontSize(10);
         pdf.setTextColor(251, 191, 36);
         pdf.text("DESGLOSE DE EGRESOS DE CONTABILIDAD ASOCIADOS:", 15, 162);
@@ -616,14 +595,13 @@ export default async function reportesModule(container) {
             pdf.text("No se registran gastos externos en el libro diario para esta unidad.", 20, yPos);
             yPos += 8;
         } else {
-            pucsAsignados.slice(0, 5).forEach(g => { // Limitar a los primeros 5 para cuidar espacio
+            pucsAsignados.slice(0, 5).forEach(g => {
                 pdf.text(`• Subcuenta PUC ${g.puc} - ${g.concepto.substring(0, 40)}:`, 20, yPos);
                 pdf.text(`-${fmt(g.monto)}`, 145, yPos);
                 yPos += 6;
             });
         }
 
-        // Bloque de la Bitácora
         pdf.setFontSize(10);
         pdf.setTextColor(6, 182, 212);
         pdf.text("REGISTROS DE TRABAJO EN BITÁCORA OPERATIVA:", 15, 206);
@@ -636,7 +614,6 @@ export default async function reportesModule(container) {
         const lineasTexto = pdf.splitTextToSize(orden.bitacora_ia.toUpperCase(), 170);
         pdf.text(lineasTexto, 20, 220);
 
-        // Footer Legal Estricto
         pdf.setDrawColor(30, 41, 59);
         pdf.line(15, 268, 195, 268);
         pdf.setFontSize(7);
@@ -646,7 +623,6 @@ export default async function reportesModule(container) {
         pdf.save(`FINANZAS_JUNTA_${orden.placa}.pdf`);
     };
 
-    // 📊 REINGENIERÍA EXCEL EXPORT CON EXTRACCIÓN Y SUMATORIAS DINÁMICAS
     const exportarExcelGlobal = () => {
         if (typeof XLSX === 'undefined') {
             alert("Error: Librería Excel Engine no detectada.");
@@ -658,7 +634,6 @@ export default async function reportesModule(container) {
             return;
         }
 
-        // Mapear todas las subcuentas PUC únicas presentes en el universo filtrado
         const setPucsUnicos = new Set();
         state.dataActual.forEach(o => {
             const dePlaca = state.mapaDetalleGastosPUC[o.placa_pura] || {};
@@ -681,7 +656,6 @@ export default async function reportesModule(container) {
                 "MARGEN_OPERATIVO": o.margenPorcentaje / 100
             };
 
-            // Inyectar columnas para cada PUC individualizado
             arrPucsOrdenados.forEach(puc => {
                 const mapPlaca = state.mapaDetalleGastosPUC[o.placa_pura] || {};
                 fila[`PUC_${puc}`] = mapPlaca[puc] || 0;
@@ -694,7 +668,6 @@ export default async function reportesModule(container) {
         const rLen = rowsExcel.length;
         const totalIdx = rLen + 2; 
 
-        // Insertar Fórmulas de Sumatoria Totalizadora al final del libro
         ws[`C${totalIdx}`] = { v: "CONSOLIDADO OPERACIÓN:", t: 's' };
         ws[`D${totalIdx}`] = { f: `SUM(D2:D${rLen + 1})`, t: 'n' };
         ws[`E${totalIdx}`] = { f: `SUM(E2:E${rLen + 1})`, t: 'n' };
@@ -703,19 +676,16 @@ export default async function reportesModule(container) {
         ws[`H${totalIdx}`] = { f: `SUM(H2:H${rLen + 1})`, t: 'n' };
         ws[`I${totalIdx}`] = { f: `SUM(I2:I${rLen + 1})`, t: 'n' };
         
-        // El EBITDA descuenta además gastos corporativos globales no asignados a placas
         const formulaEbitdaFinal = `SUM(J2:J${rLen + 1}) - ${state.gastosFijosGlobales} - ${state.nominasInformalesGlobales}`;
         ws[`J${totalIdx}`] = { f: formulaEbitdaFinal, t: 'n' };
         ws[`K${totalIdx}`] = { f: `AVERAGE(K2:K${rLen + 1})`, t: 'n' };
 
-        // Añadir sumas por cada columna PUC variable
-        let startAsciiCode = 76; // Columna L en adelante
+        let startAsciiCode = 76; 
         arrPucsOrdenados.forEach((p, idx) => {
             const letter = getExcelColumnName(startAsciiCode + idx);
             ws[`${letter}${totalIdx}`] = { f: `SUM(${letter}2:${letter}${rLen + 1})`, t: 'n' };
         });
 
-        // Aplicar Máscaras de visualización monetaria en celdas
         const range = XLSX.utils.decode_range(ws['!ref']);
         for (let R = range.s.r + 1; R <= range.e.r; ++R) {
             ['D', 'E', 'F', 'G', 'H', 'I', 'J'].forEach(col => {
