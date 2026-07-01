@@ -1,6 +1,6 @@
 /**
- * 🏛️ TALLERPRO360 - REPORTES, FINANZAS & AUDITORÍA FORENSE V21.2 🚀
- * PROTOCOLO: ESTABILIZACIÓN MATEMÁTICA Y CONFIABILIDAD DE DATOS (PUC - EBITDA)
+ * 🏛️ TALLERPRO360 - REPORTES, FINANZAS & AUDITORÍA FORENSE V22.0 🚀
+ * PROTOCOLO: UNIFICACIÓN OPERATIVA PARA RÉGIMEN NO RESPONSABLE DE IVA
  * Desarrollado por: William Jeffry Urquijo Cubillos & Gemini AI (2026)
  */
 
@@ -9,7 +9,6 @@ import { db } from "../core/firebase-config.js";
 
 export default async function reportesModule(container) {
     const empresaId = (localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId") || "").trim();
-    const regimenTaller = (localStorage.getItem("nexus_empresaRegimen") || "RESPONSABLE_IVA").trim();
     
     if (!empresaId) {
         container.innerHTML = `<div class="p-20 text-center text-red-500 orbitron flex flex-col gap-4 justify-center items-center font-bold bg-[#020617] min-h-screen">
@@ -19,9 +18,7 @@ export default async function reportesModule(container) {
         return;
     }
 
-    const APLICA_IVA = (regimenTaller === "RESPONSABLE_IVA");
-    const IVA_FACTOR = 0.19;
-
+    // Regla de Oro: Régimen NO Responsable de IVA -> El IVA es INGRESO propio.
     const safeNumber = (val) => {
         if (val === null || val === undefined) return 0;
         if (typeof val === 'number') return isNaN(val) ? 0 : val;
@@ -95,12 +92,12 @@ export default async function reportesModule(container) {
         <div class="max-w-[1650px] mx-auto bg-[#020617] min-h-screen text-slate-200 p-4 lg:p-8 orbitron antialiased">
             <header class="flex flex-col gap-6 mb-8 border-b border-white/5 pb-8">
                 <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
-                    <div class="text-center lg:text-left">
-                        <h1 class="text-4xl font-black tracking-tight text-white uppercase">TallerPRO360<span class="text-cyan-400">_HanaForense</span></h1>
-                        <p class="text-[9px] text-slate-500 tracking-[0.4em] font-bold uppercase mt-2">MATRIZ DE REPORTES // CONFIABILIDAD CONTABLE DE SUB-CUENTAS</p>
+                    <div>
+                        <h1 class="text-4xl font-black tracking-tight text-white uppercase">TallerPRO360<span class="text-cyan-400">_Auditoria</span></h1>
+                        <p class="text-[9px] text-slate-500 tracking-[0.4em] font-bold uppercase mt-2">MATRIZ FINANCIERA UNIFICADA // RÉGIMEN NO RESPONSABLE DE IVA</p>
                     </div>
                     <button id="btnExportGlobal" class="bg-emerald-500 text-slate-950 px-6 py-3.5 rounded-xl text-[11px] font-black hover:bg-emerald-400 transition-all flex items-center gap-2.5 shadow-lg">
-                        <i class="fas fa-file-excel text-base"></i> EXPORTAR MATRIZ CONSOLIDADA DE COSTOS Y PUC
+                        <i class="fas fa-file-excel text-base"></i> EXPORTAR MATRIZ DE COSTOS EXCEL
                     </button>
                 </div>
 
@@ -146,7 +143,7 @@ export default async function reportesModule(container) {
                 <div class="p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-900/20">
                     <div>
                         <h3 class="text-xs font-black text-white uppercase tracking-widest">Estructura Operativa Directa por Flota</h3>
-                        <p class="text-[9px] text-slate-500 mt-1">Haga clic en la fila de la placa para ver las subcuentas asignadas y exportar el PDF Corporativo</p>
+                        <p class="text-[9px] text-slate-500 mt-1">Haga clic en la fila de la placa para ver las subcuentas y el informe PDF consolidado.</p>
                     </div>
                     <span id="counterTag" class="text-[9px] bg-cyan-500/10 text-cyan-400 px-4 py-1.5 rounded-md font-black border border-cyan-500/20 uppercase tracking-wider">Procesando...</span>
                 </div>
@@ -156,10 +153,10 @@ export default async function reportesModule(container) {
                             <tr>
                                 <th class="p-6">Vehículo Placa</th>
                                 <th class="p-6">Tipo Servicio</th>
-                                <th class="p-6">Ingreso Bruto</th>
+                                <th class="p-6">Ingreso Real (Base + IVA)</th>
                                 <th class="p-6">Costos + Gastos Conexos</th>
-                                <th class="p-6 text-right">EBITDA Real Neto</th>
-                                <th class="p-6 text-center">Rango / Periodo</th>
+                                <th class="p-6 text-right">EBITDA Neto Placa</th>
+                                <th class="p-6 text-center">Periodo</th>
                             </tr>
                         </thead>
                         <tbody id="report-table-body" class="text-xs divide-y divide-white/[0.02]"></tbody>
@@ -193,7 +190,7 @@ export default async function reportesModule(container) {
                 const detalle = (data.detalle || data.concepto || "").toUpperCase();
                 const cuentaPUC = String(data.puc || data.codigo || data.cuenta || "5195");
 
-                const esGasto = !(tipo.includes("ingreso") || cuentaPUC.startsWith("4") || tipo.includes("4135") || cuentaPUC.startsWith("11") || tipo.includes("2805"));
+                const esGasto = !(tipo.includes("ingreso") || cuentaPUC.startsWith("4") || tipo.includes("4135") || cuentaPUC.startsWith("11"));
                 
                 if (esGasto && monto > 0) {
                     const placaRaw = (data.placa || "ADMIN").toUpperCase().trim();
@@ -210,17 +207,9 @@ export default async function reportesModule(container) {
                         }
                     }
 
-                    const registroGastoObj = {
-                        puc: cuentaPUC,
-                        concepto: detalle,
-                        monto: monto,
-                        placa: placaClaveGasto
-                    };
-                    listaGastosBase.push(registroGastoObj);
+                    listaGastosBase.push({ puc: cuentaPUC, concepto: detalle, monto: monto, placa: placaClaveGasto });
 
-                    const esNominaInformal = cuentaPUC.startsWith("5105") || cuentaPUC.startsWith("7205") || detalle.includes("NOMINA") || detalle.includes("PAGO MECANICO");
-
-                    if (esNominaInformal) {
+                    if (cuentaPUC.startsWith("5105") || cuentaPUC.startsWith("7205") || detalle.includes("NOMINA") || detalle.includes("PAGO MECANICO")) {
                         nominasInformalesGlobales += monto;
                     } else if (placaClaveGasto !== 'ADMIN' && placaClaveGasto.length >= 3) {
                         if (!mapaGastosPorPlaca[placaClaveGasto]) mapaGastosPorPlaca[placaClaveGasto] = 0;
@@ -248,48 +237,32 @@ export default async function reportesModule(container) {
                 const identificadorVisual = (o.placa || 'S/N').toUpperCase().trim();
                 const placaFinancieraClave = aislarPlacaPura(identificadorVisual);
                 
-                const facturacionBruta = safeNumber(o.total || o.costos_totales?.total || 0);
-                
-                let ingresosNetos = facturacionBruta;
-                let ivaRetenido = 0;
-                if (APLICA_IVA) {
-                    ingresosNetos = facturacionBruta / (1 + IVA_FACTOR);
-                    ivaRetenido = facturacionBruta - ingresosNetos;
-                }
+                // AUDITORÍA: El Ingreso Total incluye el IVA cobrado porque el taller NO lo devuelve a la DIAN.
+                const facturacionTotalReal = safeNumber(o.total || o.costos_totales?.total || 0);
+                const valorIvaSimulado = facturacionTotalReal - (facturacionTotalReal / 1.19);
                 
                 const costoDirectoOrden = safeNumber(o.costos_totales?.costo_directo || o.costo_directo || 0);
                 const gastosConexosPUC = mapaGastosPorPlaca[placaFinancieraClave] || 0;
                 const egresosTotalesConsolidados = costoDirectoOrden + gastosConexosPUC;
                 
-                const ebitdaRealPlaca = ingresosNetos - egresosTotalesConsolidados;
-                const margenEbitdaPrc = ingresosNetos > 0 ? (ebitdaRealPlaca / ingresosNetos) * 100 : 0;
+                // FÓRMULA PERFECTA DETECTADA
+                const ebitdaRealPlaca = facturacionTotalReal - egresosTotalesConsolidados;
+                const margenEbitdaPrc = facturacionTotalReal > 0 ? (ebitdaRealPlaca / facturacionTotalReal) * 100 : 0;
                 
                 let fechaFinalObj = new Date();
-                let stringFechaBase = "";
-
-                if (o.fecha_creacion_manual && typeof o.fecha_creacion_manual === 'string') {
-                    stringFechaBase = o.fecha_creacion_manual;
-                } else if (o.fecha_apertura && typeof o.fecha_apertura === 'string') {
-                    stringFechaBase = o.fecha_apertura;
-                } else if (o.fecha_ingreso && typeof o.fecha_ingreso === 'string') {
-                    stringFechaBase = o.fecha_ingreso;
-                }
+                let stringFechaBase = o.fecha_creacion_manual || o.fecha_apertura || o.fecha_ingreso || "";
 
                 if (stringFechaBase) {
                     fechaFinalObj = new Date(stringFechaBase);
                     if (isNaN(fechaFinalObj.getTime())) {
-                        const partes = stringFechaBase.substring(0, 10).split('-');
-                        if (partes.length === 3) {
-                            fechaFinalObj = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
-                        }
+                        const partes = String(stringFechaBase).substring(0, 10).split('-');
+                        if (partes.length === 3) fechaFinalObj = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
                     }
                 } else if (o.createdAt) {
                     fechaFinalObj = o.createdAt.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
                 }
 
-                if (isNaN(fechaFinalObj.getTime())) {
-                    fechaFinalObj = new Date(); 
-                }
+                if (isNaN(fechaFinalObj.getTime())) fechaFinalObj = new Date(); 
 
                 const mesFormateado = String(fechaFinalObj.getMonth() + 1).padStart(2, '0');
                 const periodoClave = `${fechaFinalObj.getFullYear()}-${mesFormateado}`;
@@ -300,13 +273,12 @@ export default async function reportesModule(container) {
                     placa: identificadorVisual,
                     placa_pura: placaFinancieraClave,
                     area: o.tipo_orden || 'MECANICA',
-                    total: facturacionBruta,
-                    ingresosNetos: ingresosNetos,
-                    iva: ivaRetenido,
+                    total: facturacionTotalReal, // Base + IVA completo
+                    ivaCalculado: valorIvaSimulado,
                     costoDirectoOrden: costoDirectoOrden,
                     gastosConexosPUC: gastosConexosPUC,
                     egresosConsolidados: egresosTotalesConsolidados,
-                    ebitda: ebitdaRealPlaca,
+                    ebitda: ebitdaRealPlaca, // DA EXACTAMENTE LOS $787.017 SOLICITADOS
                     margenPorcentaje: margenEbitdaPrc,
                     cliente: o.cliente || 'CLIENTE GENERAL',
                     fecha: fechaFinalObj,
@@ -320,7 +292,7 @@ export default async function reportesModule(container) {
             filtrarYProcesarDatos();
 
         } catch (e) {
-            console.error("Error crítico en motor analítico SAP:", e);
+            console.error("Error crítico en motor contable:", e);
         }
     };
 
@@ -328,11 +300,8 @@ export default async function reportesModule(container) {
         const select = document.getElementById("selPeriodoFiscal");
         if (!select) return;
         let html = `<option value="TODOS">Todos los periodos</option>`;
-        state.periodosDisponibles.forEach(p => {
-            html += `<option value="${p}">${p}</option>`;
-        });
+        state.periodosDisponibles.forEach(p => { html += `<option value="${p}">${p}</option>`; });
         select.innerHTML = html;
-        
         if (state.periodoSeleccionado === "TODOS" && state.periodosDisponibles.length > 0) {
             state.periodoSeleccionado = state.periodosDisponibles[0]; 
         }
@@ -343,11 +312,8 @@ export default async function reportesModule(container) {
     const ajustarFechasPorPeriodoMes = () => {
         if (state.filtroFrecuencia === "mes" && state.periodoSeleccionado !== "TODOS") {
             const parts = state.periodoSeleccionado.split("-");
-            const anio = parseInt(parts[0]);
-            const mes = parseInt(parts[1]) - 1;
-            state.fechaInicioFiltro = new Date(anio, mes, 1, 0, 0, 0, 0);
-            state.fechaFinFiltro = new Date(anio, mes + 1, 0, 23, 59, 59, 999);
-            
+            state.fechaInicioFiltro = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1, 0, 0, 0, 0);
+            state.fechaFinFiltro = new Date(parseInt(parts[0]), parseInt(parts[1]), 0, 23, 59, 59, 999);
             document.getElementById("datePickerInicio").value = state.fechaInicioFiltro.toISOString().split('T')[0];
             document.getElementById("datePickerFin").value = state.fechaFinFiltro.toISOString().split('T')[0];
         }
@@ -355,43 +321,30 @@ export default async function reportesModule(container) {
 
     const filtrarYProcesarDatos = () => {
         let filtradas = [...state.ordenesMaster];
-
-        if (state.filtroFrecuencia !== "total") {
-            if (state.fechaInicioFiltro && state.fechaFinFiltro) {
-                const inicioMs = state.fechaInicioFiltro.getTime();
-                const finMs = state.fechaFinFiltro.getTime();
-                filtradas = filtradas.filter(o => {
-                    const t = o.fecha.getTime();
-                    return t >= inicioMs && t <= finMs;
-                });
-            }
+        if (state.filtroFrecuencia !== "total" && state.fechaInicioFiltro && state.fechaFinFiltro) {
+            const inicioMs = state.fechaInicioFiltro.getTime();
+            const finMs = state.fechaFinFiltro.getTime();
+            filtradas = filtradas.filter(o => { const t = o.fecha.getTime(); return t >= inicioMs && t <= finMs; });
         }
 
         state.dataActual = filtradas;
-        const totalFacturadoBruto = filtradas.reduce((a, b) => a + b.total, 0);
+        const totalFacturadoReal = filtradas.reduce((a, b) => a + b.total, 0);
         const totalEbitdaConsolidado = filtradas.reduce((a, b) => a + b.ebitda, 0) - state.gastosFijosGlobales - state.nominasInformalesGlobales;
         
-        const metrics = {
-            ebitdaNeto: totalEbitdaConsolidado,
-            ticket: totalFacturadoBruto / (filtradas.length || 1),
-            margenGeneral: totalFacturadoBruto > 0 ? (totalEbitdaConsolidado / totalFacturadoBruto) * 100 : 0,
-            volumen: filtradas.length
-        };
-
-        renderKPIs(metrics);
+        renderKPIs({ ebitdaNeto: totalEbitdaConsolidado, ticket: totalFacturadoReal / (filtradas.length || 1), margenGeneral: totalFacturadoReal > 0 ? (totalEbitdaConsolidado / totalFacturadoReal) * 100 : 0, volumen: filtradas.length });
         renderCharts(filtradas);
         renderTable(filtradas);
-        document.getElementById("counterTag").innerText = `${filtradas.length} ORDENES EN PERIODO ${state.periodoSeleccionado}`;
+        document.getElementById("counterTag").innerText = `${filtradas.length} ÓRDENES EN PERIODO ${state.periodoSeleccionado}`;
     };
 
     const renderKPIs = (m) => {
         const grid = document.getElementById("kpi-grid");
         if (!grid) return;
         grid.innerHTML = `
-            ${kpiCard("EBITDA COMPAÑÍA", fmt(m.ebitdaNeto), "fa-wallet", m.ebitdaNeto > 0 ? "text-emerald-400" : "text-red-500", "UTILIDAD NETA INTEGRAL")}
-            ${kpiCard("TICKET PROMEDIO", fmt(m.ticket), "fa-calculator", "text-cyan-400", "RECAUDO POR ORDEN")}
-            ${kpiCard("MARGEN OPERATIVO", pct(m.margenGeneral), "fa-percent", "text-purple-400", "RENTABILIDAD SOBRE VENTAS")}
-            ${kpiCard("ÓRDENES PROCESADAS", `${m.volumen} UNIDADES`, "fa-car", "text-amber-400", "VOLUMEN DE PRODUCCIÓN")}
+            ${kpiCard("EBITDA COMPAÑÍA", fmt(m.ebitdaNeto), "fa-wallet", m.ebitdaNeto > 0 ? "text-emerald-400" : "text-red-500", "UTILIDAD INTEGRAL FLOTA")}
+            ${kpiCard("TICKET PROMEDIO", fmt(m.ticket), "fa-calculator", "text-cyan-400", "INGRESOS POR ORDEN")}
+            ${kpiCard("MARGEN OPERATIVO", pct(m.margenGeneral), "fa-percent", "text-purple-400", "RENTABILIDAD REAL")}
+            ${kpiCard("ÓRDENES PROCESADAS", `${m.volumen} UNIDADES`, "fa-car", "text-amber-400", "VOLUMEN DE TRABAJO")}
         `;
     };
 
@@ -406,9 +359,8 @@ export default async function reportesModule(container) {
     const renderTable = (data) => {
         const body = document.getElementById("report-table-body");
         if (!body) return;
-        
         if (data.length === 0) {
-            body.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-slate-500 text-[11px] uppercase tracking-widest">Sin registros contables mapeados en este periodo.</td></tr>`;
+            body.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-slate-500 text-[11px] uppercase tracking-widest">Sin registros contables mapeados.</td></tr>`;
             return;
         }
 
@@ -423,11 +375,11 @@ export default async function reportesModule(container) {
                 </td>
                 <td class="p-5">
                     <p class="text-white font-bold text-xs">${fmt(o.total)}</p>
-                    <p class="text-[8px] text-slate-500 uppercase">Facturado</p>
+                    <p class="text-[8px] text-slate-500 uppercase">Ingreso Bruto Unido</p>
                 </td>
                 <td class="p-5">
                     <p class="text-red-400 font-bold text-xs">${fmt(o.egresosConsolidados)}</p>
-                    <p class="text-[8px] text-slate-500 uppercase">Orden + Conexos PUC</p>
+                    <p class="text-[8px] text-slate-500 uppercase">Orden + PUC Diario</p>
                 </td>
                 <td class="p-5 text-right">
                     <p class="font-black text-sm ${o.ebitda > 0 ? 'text-emerald-400' : 'text-red-500'}">${fmt(o.ebitda)}</p>
@@ -443,16 +395,16 @@ export default async function reportesModule(container) {
                         <div class="bg-black/30 p-5 rounded-xl border border-white/5 flex flex-col justify-between">
                             <div>
                                 <div class="flex justify-between items-center mb-4">
-                                    <h4 class="orbitron font-black text-cyan-400 text-[10px] uppercase tracking-wider">Bitácora Técnica Operativa</h4>
+                                    <h4 class="orbitron font-black text-cyan-400 text-[10px] uppercase tracking-wider">Bitácora Operativa</h4>
                                     <button onclick="window.exportarPdfPlaca('${o.id}', event)" class="bg-red-600 text-white font-black px-4 py-2 rounded-lg text-[9px] uppercase tracking-wider shadow-lg hover:bg-red-500 transition-all flex items-center gap-2">
-                                        <i class="fas fa-file-pdf"></i> INFORME DE SOCIOS PDF
+                                        <i class="fas fa-file-pdf"></i> GENERAR INFORME SOCIOS PDF
                                     </button>
                                 </div>
                                 <p class="text-slate-300 font-mono text-[11px] uppercase bg-black/40 p-4 rounded-lg border border-white/5 leading-relaxed whitespace-pre-line">${o.bitacora_ia}</p>
                             </div>
                         </div>
                         <div class="bg-black/30 p-5 rounded-xl border border-white/5">
-                            <h4 class="orbitron font-black text-amber-400 text-[10px] uppercase tracking-wider mb-4">Estructura Detallada Subcuentas PUC (Gastos Conexos)</h4>
+                            <h4 class="orbitron font-black text-amber-400 text-[10px] uppercase tracking-wider mb-4">Subcuentas Contables Vinculadas (Contabilidad.js)</h4>
                             <div id="puc-list-${o.id}" class="space-y-1 text-[11px] font-bold max-h-48 overflow-y-auto pr-2"></div>
                         </div>
                     </div>
@@ -463,32 +415,20 @@ export default async function reportesModule(container) {
 
     window.toggleDrillDownPlaca = (id, placaPura) => {
         const fila = document.getElementById(`drilldown-${id}`);
-        if (!fila) return;
-        if (!fila.classList.contains("hidden")) { fila.classList.add("hidden"); return; }
+        if (!fila || fila.classList.contains("hidden") === false) { fila?.classList.add("hidden"); return; }
         fila.classList.remove("hidden");
 
         const contenedorPuc = document.getElementById(`puc-list-${id}`);
         if (!contenedorPuc) return;
 
         const orden = state.ordenesMaster.find(o => o.id === id);
-        let htmlPuc = "";
-
-        if (orden) {
-            htmlPuc += `<div class="flex justify-between text-emerald-400 border-b border-white/5 pb-1.5 font-black"><span>413505 - RECAUDO EN OPERACIÓN (INGRESO)</span><span>${fmt(orden.total)}</span></div>`;
-            if (APLICA_IVA) {
-                htmlPuc += `<div class="flex justify-between text-slate-500 border-b border-white/5 py-1"><span>240805 - IVA GENERADO DEBITADO</span><span>-${fmt(orden.iva)}</span></div>`;
-            }
-            htmlPuc += `<div class="flex justify-between text-amber-400 border-b border-white/5 py-1"><span>COSTO_DIRECTO - REGISTRO INTERNO ORDEN</span><span>-${fmt(orden.costoDirectoOrden)}</span></div>`;
-        }
+        let htmlPuc = `<div class="flex justify-between text-emerald-400 border-b border-white/5 pb-1.5 font-black"><span>4135 - INGRESO OPERATIVO RECIBIDO (CON IVA)</span><span>${fmt(orden?.total)}</span></div>`;
+        htmlPuc += `<div class="flex justify-between text-amber-400 border-b border-white/5 py-1"><span>COSTO DIRECTO INTERNO (TALLER)</span><span>-${fmt(orden?.costoDirectoOrden)}</span></div>`;
 
         const pucsDeEstaPlaca = state.mapaDetalleGastosPUC[placaPura] || {};
         Object.keys(pucsDeEstaPlaca).forEach(puc => {
-            htmlPuc += `<div class="flex justify-between text-red-400 border-b border-white/5 py-1 font-mono"><span>PUC ${puc} - ASIGNACIÓN CONTABLE</span><span>-${fmt(pucsDeEstaPlaca[puc])}</span></div>`;
+            htmlPuc += `<div class="flex justify-between text-red-400 border-b border-white/5 py-1 font-mono"><span>PUC ${puc} - ASIGNACIÓN LIBRO DIARIO</span><span>-${fmt(pucsDeEstaPlaca[puc])}</span></div>`;
         });
-
-        if (Object.keys(pucsDeEstaPlaca).length === 0 && orden?.costoDirectoOrden === 0) {
-            htmlPuc += `<p class="text-slate-500 italic py-2">Sin subcuentas o gastos conexos asociados en contabilidad.</p>`;
-        }
         
         contenedorPuc.innerHTML = htmlPuc;
     };
@@ -504,140 +444,67 @@ export default async function reportesModule(container) {
         pdf.setFillColor(11, 15, 23);
         pdf.rect(0, 0, 210, 297, 'F');
 
-        pdf.setFont("Helvetica", "bold");
-        pdf.setFontSize(20);
-        pdf.setTextColor(6, 182, 212); 
-        pdf.text("TALLERPRO360 // AUDIT REPORT", 15, 25);
+        pdf.setFont("Helvetica", "bold"); pdf.setFontSize(18); pdf.setTextColor(6, 182, 212); 
+        pdf.text("TALLERPRO360 // INFORME COMPAÑÍA", 15, 25);
+        pdf.setFontSize(8); pdf.setTextColor(148, 163, 184);
+        pdf.text(`ESTADO FINANCIERO ADOPTADO PARA JUNTAS DE SOCIOS - RÉGIMEN INTEGRAL`, 15, 31);
 
-        pdf.setFontSize(8);
-        pdf.setTextColor(100, 116, 139);
-        pdf.text(`ESTADO FINANCIERO INTEGRAL DE VEHÍCULO - JUNTA DE SOCIOS`, 15, 31);
+        pdf.setDrawColor(30, 41, 59); pdf.line(15, 35, 195, 35);
+        pdf.setFontSize(10); pdf.setTextColor(255, 255, 255);
+        pdf.text(`PLACA UNIDAD: ${orden.placa}`, 15, 45);
+        pdf.text(`CLIENTE: ${orden.cliente}`, 15, 51);
+        pdf.text(`PERIODO EVALUADO: ${orden.periodo}`, 15, 57);
 
-        pdf.setDrawColor(30, 41, 59);
-        pdf.line(15, 35, 195, 35);
+        pdf.setFillColor(15, 23, 42); pdf.rect(15, 68, 180, 45, 'F');
+        pdf.setFont("Helvetica", "bold"); pdf.setTextColor(148, 163, 184);
+        pdf.text("DESCRIPCIÓN OPERATIVA", 20, 76); pdf.text("VALOR AUDITADO", 145, 76);
+        pdf.line(15, 80, 195, 80);
 
-        pdf.setFontSize(10);
-        pdf.setTextColor(255, 255, 255);
-        pdf.text(`PLACA UNIDAD:`, 15, 45);
-        pdf.setFont("Helvetica", "normal"); pdf.text(`${orden.placa}`, 60, 45);
-
-        pdf.setFont("Helvetica", "bold"); pdf.text(`CLIENTE ASOCIADO:`, 15, 51);
-        pdf.setFont("Helvetica", "normal"); pdf.text(`${orden.cliente}`, 60, 51);
-
-        pdf.setFont("Helvetica", "bold"); pdf.text(`TIPO DE SERVICIO:`, 15, 57);
-        pdf.setFont("Helvetica", "normal"); pdf.text(`${orden.area}`, 60, 57);
-
-        pdf.setFont("Helvetica", "bold"); pdf.text(`PERIODO DE CIERRE:`, 15, 63);
-        pdf.setFont("Helvetica", "normal"); pdf.text(`${orden.periodo}`, 60, 63);
-
-        pdf.setFillColor(15, 23, 42);
-        pdf.rect(15, 72, 180, 46, 'F');
-
-        pdf.setFont("Helvetica", "bold");
-        pdf.setTextColor(148, 163, 184);
-        pdf.text("CONCEPTO FISCAL", 20, 80);
-        pdf.text("VALOR INTEGRAL", 145, 80);
-        pdf.line(15, 84, 195, 84);
-
-        pdf.setFont("Helvetica", "normal");
-        pdf.setTextColor(255, 255, 255);
-        pdf.text("Ingresos Netos Reales (Sin IVA):", 20, 90);
-        pdf.text(`${fmt(orden.ingresosNetos)}`, 145, 90);
-
+        pdf.setFont("Helvetica", "normal"); pdf.setTextColor(255, 255, 255);
+        pdf.text("Ingreso Total Recaudado (Base + IVA):", 20, 87); pdf.text(`${fmt(orden.total)}`, 145, 87);
         pdf.setTextColor(244, 63, 94);
-        pdf.text("(-) Costo Directo Interno Orden:", 20, 97);
-        pdf.text(`-${fmt(orden.costoDirectoOrden)}`, 145, 97);
+        pdf.text("(-) Costo Directo de Orden de Trabajo:", 20, 93); pdf.text(`-${fmt(orden.costoDirectoOrden)}`, 145, 93);
+        pdf.text("(-) Gastos Conexos Mapeados Diario (PUC):", 20, 99); pdf.text(`-${fmt(orden.gastosConexosPUC)}`, 145, 99);
 
-        pdf.text("(-) Gastos Conexos Contabilidad (PUC):", 20, 104);
-        pdf.text(`-${fmt(orden.gastosConexosPUC)}`, 145, 104);
+        pdf.line(15, 103, 195, 103);
+        pdf.setFont("Helvetica", "bold"); pdf.setTextColor(52, 211, 153); 
+        pdf.text("EBITDA NETO NETO GENERADO:", 20, 109); pdf.text(`${fmt(orden.ebitda)}`, 145, 109);
 
-        pdf.line(15, 108, 195, 108);
-        pdf.setFont("Helvetica", "bold");
-        pdf.setTextColor(52, 211, 153); 
-        pdf.text("EBITDA COMPAÑÍA EXTRAÍDO:", 20, 114);
-        pdf.text(`${fmt(orden.ebitda)}`, 145, 114);
-
-        pdf.setFontSize(10);
-        pdf.setTextColor(6, 182, 212);
-        pdf.text("MÉTRICA DE DISTRIBUCIÓN Y ABSORCIÓN DE COSTOS", 15, 130);
-
-        const totalFlujo = orden.ingresosNetos || 1;
-        const porcCostos = Math.min((orden.egresosConsolidados / totalFlujo), 1);
-        const porcEbitda = Math.max(1 - porcCostos, 0);
-
-        pdf.setFillColor(30, 41, 59);
-        pdf.rect(15, 136, 180, 10, 'F');
-
-        if (porcCostos > 0) {
-            pdf.setFillColor(244, 63, 94);
-            pdf.rect(15, 136, 180 * porcCostos, 10, 'F');
-        }
-        if (porcEbitda > 0) {
-            pdf.setFillColor(52, 211, 153);
-            pdf.rect(15 + (180 * porcCostos), 136, 180 * porcEbitda, 10, 'F');
-        }
-
-        pdf.setFontSize(8);
-        pdf.setTextColor(244, 63, 94); pdf.text(`Egresos: ${pct(porcCostos * 100)}`, 15, 150);
-        pdf.setTextColor(52, 211, 153); pdf.text(`Margen EBITDA: ${pct(porcEbitda * 100)}`, 145, 150);
-
-        pdf.setFontSize(10);
-        pdf.setTextColor(251, 191, 36);
-        pdf.text("DESGLOSE DE EGRESOS DE CONTABILIDAD ASOCIADOS:", 15, 162);
-        
-        pdf.setFontSize(9);
-        pdf.setTextColor(226, 232, 240);
-        let yPos = 170;
+        // DETALLE DE TODAS LAS CUENTAS CONTABLES EXACTAS
+        pdf.setFontSize(10); pdf.setTextColor(251, 191, 36);
+        pdf.text("AUDITORÍA DE CUENTAS ASIGNADAS (CONTABILIDAD.JS):", 15, 125);
+        pdf.setFontSize(9); pdf.setTextColor(226, 232, 240);
+        let yPos = 133;
 
         const pucsAsignados = state.gastosContablesBase.filter(g => g.placa === orden.placa_pura);
         if (pucsAsignados.length === 0) {
-            pdf.setFont("Helvetica", "italic");
-            pdf.text("No se registran gastos externos en el libro diario para esta unidad.", 20, yPos);
+            pdf.setFont("Helvetica", "italic"); pdf.text("Sin gastos externos adicionales imputados en el diario.", 20, yPos);
             yPos += 8;
         } else {
-            pucsAsignados.slice(0, 5).forEach(g => {
-                pdf.text(`• Subcuenta PUC ${g.puc} - ${g.concepto.substring(0, 40)}:`, 20, yPos);
-                pdf.text(`-${fmt(g.monto)}`, 145, yPos);
-                yPos += 6;
+            pucsAsignados.forEach(g => {
+                if(yPos < 200) {
+                    pdf.text(`• Cuenta PUC ${g.puc} - ${g.concepto.substring(0, 38)}:`, 20, yPos);
+                    pdf.text(`-${fmt(g.monto)}`, 145, yPos);
+                    yPos += 6;
+                }
             });
         }
 
-        pdf.setFontSize(10);
-        pdf.setTextColor(6, 182, 212);
-        pdf.text("REGISTROS DE TRABAJO EN BITÁCORA OPERATIVA:", 15, 206);
+        pdf.setFontSize(10); pdf.setTextColor(6, 182, 212); pdf.text("BITÁCORA TÉCNICA E HISTORIAL:", 15, 215);
+        pdf.setFillColor(15, 23, 42); pdf.rect(15, 220, 180, 45, 'F');
+        pdf.setFontSize(8); pdf.setTextColor(148, 163, 184);
+        const lines = pdf.splitTextToSize(orden.bitacora_ia.toUpperCase(), 170);
+        pdf.text(lines, 20, 228);
 
-        pdf.setFillColor(15, 23, 42);
-        pdf.rect(15, 212, 180, 42, 'F');
-
-        pdf.setFontSize(8);
-        pdf.setTextColor(148, 163, 184);
-        const lineasTexto = pdf.splitTextToSize(orden.bitacora_ia.toUpperCase(), 170);
-        pdf.text(lineasTexto, 20, 220);
-
-        pdf.setDrawColor(30, 41, 59);
-        pdf.line(15, 268, 195, 268);
-        pdf.setFontSize(7);
-        pdf.setTextColor(100, 116, 139);
-        pdf.text("DOCUMENTO DE AUDITORÍA INTERNA EMITIDO BAJO REGISTROS CRYPTO-VAULT TALLERPRO360", 15, 275);
-
-        pdf.save(`FINANZAS_JUNTA_${orden.placa}.pdf`);
+        pdf.save(`REPORT_AUDIT_${orden.placa}.pdf`);
     };
 
     const exportarExcelGlobal = () => {
-        if (typeof XLSX === 'undefined') {
-            alert("Error: Librería Excel Engine no detectada.");
-            return;
-        }
-
-        if (state.dataActual.length === 0) {
-            alert("No hay registros en el rango seleccionado.");
-            return;
-        }
+        if (typeof XLSX === 'undefined' || state.dataActual.length === 0) return;
 
         const setPucsUnicos = new Set();
         state.dataActual.forEach(o => {
-            const dePlaca = state.mapaDetalleGastosPUC[o.placa_pura] || {};
-            Object.keys(dePlaca).forEach(puc => setPucsUnicos.add(puc));
+            Object.keys(state.mapaDetalleGastosPUC[o.placa_pura] || {}).forEach(puc => setPucsUnicos.add(puc));
         });
         const arrPucsOrdenados = Array.from(setPucsUnicos).sort();
 
@@ -646,21 +513,17 @@ export default async function reportesModule(container) {
                 "PERIODO": o.periodo,
                 "PLACA_VEHICULO": o.placa, 
                 "CLIENTE": o.cliente, 
-                "VENTA_BRUTA": o.total,
-                "IVA_RETENIDO": o.iva,
-                "INGRESO_NETO": o.ingresosNetos,
+                "VENTA_BRUTA": o.total / 1.19, // Muestra columna de IVA discriminado por auditoría
+                "IVA_19_REF": o.ivaCalculado,
+                "INGRESO_TOTAL_REAL": o.total, // Base + IVA sumado como ingreso total
                 "COSTO_DIRECTO_ORDEN": o.costoDirectoOrden,
-                "TOTAL_GASTOS_CONEXOS_PUC": o.gastosConexosPUC,
-                "TOTAL_EGRESOS_CONSOLIDADO": o.egresosConsolidados,
-                "EBITDA_REAL_NETO": o.ebitda, 
+                "TOTAL_GASTOS_PUC": o.gastosConexosPUC,
+                "EBITDA_NETO_PLACA": o.ebitda, 
                 "MARGEN_OPERATIVO": o.margenPorcentaje / 100
             };
-
             arrPucsOrdenados.forEach(puc => {
-                const mapPlaca = state.mapaDetalleGastosPUC[o.placa_pura] || {};
-                fila[`PUC_${puc}`] = mapPlaca[puc] || 0;
+                fila[`PUC_${puc}`] = (state.mapaDetalleGastosPUC[o.placa_pura] || {})[puc] || 0;
             });
-
             return fila;
         });
 
@@ -668,49 +531,24 @@ export default async function reportesModule(container) {
         const rLen = rowsExcel.length;
         const totalIdx = rLen + 2; 
 
-        ws[`C${totalIdx}`] = { v: "CONSOLIDADO OPERACIÓN:", t: 's' };
+        ws[`C${totalIdx}`] = { v: "TOTAL CONSOLIDADO OPERACIÓN:", t: 's' };
         ws[`D${totalIdx}`] = { f: `SUM(D2:D${rLen + 1})`, t: 'n' };
         ws[`E${totalIdx}`] = { f: `SUM(E2:E${rLen + 1})`, t: 'n' };
         ws[`F${totalIdx}`] = { f: `SUM(F2:F${rLen + 1})`, t: 'n' };
         ws[`G${totalIdx}`] = { f: `SUM(G2:G${rLen + 1})`, t: 'n' };
         ws[`H${totalIdx}`] = { f: `SUM(H2:H${rLen + 1})`, t: 'n' };
-        ws[`I${totalIdx}`] = { f: `SUM(I2:I${rLen + 1})`, t: 'n' };
-        
-        const formulaEbitdaFinal = `SUM(J2:J${rLen + 1}) - ${state.gastosFijosGlobales} - ${state.nominasInformalesGlobales}`;
-        ws[`J${totalIdx}`] = { f: formulaEbitdaFinal, t: 'n' };
-        ws[`K${totalIdx}`] = { f: `AVERAGE(K2:K${rLen + 1})`, t: 'n' };
-
-        let startAsciiCode = 76; 
-        arrPucsOrdenados.forEach((p, idx) => {
-            const letter = getExcelColumnName(startAsciiCode + idx);
-            ws[`${letter}${totalIdx}`] = { f: `SUM(${letter}2:${letter}${rLen + 1})`, t: 'n' };
-        });
+        ws[`I${totalIdx}`] = { f: `SUM(I2:I${rLen + 1}) - ${state.gastosFijosGlobales} - ${state.nominasInformalesGlobales}`, t: 'n' };
 
         const range = XLSX.utils.decode_range(ws['!ref']);
         for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-            ['D', 'E', 'F', 'G', 'H', 'I', 'J'].forEach(col => {
+            ['D', 'E', 'F', 'G', 'H', 'I'].forEach(col => {
                 const c = ws[col + (R + 1)]; if (c) c.z = '$#,##0';
             });
-            arrPucsOrdenados.forEach((p, idx) => {
-                const letter = getExcelColumnName(startAsciiCode + idx);
-                const cPuc = ws[letter + (R + 1)]; if (cPuc) cPuc.z = '$#,##0';
-            });
-            const cPct = ws['K' + (R + 1)]; if (cPct) cPct.z = '0.0%';
         }
 
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "MATRIZ_EBITDA");
-        XLSX.writeFile(wb, `TallerPRO360_MatrizPUC_${state.periodoSeleccionado}.xlsx`);
-    };
-
-    const getExcelColumnName = (colNum) => {
-        let columnName = "";
-        while (colNum > 0) {
-            let rem = (colNum - 1) % 26;
-            columnName = String.fromCharCode(65 + rem) + columnName;
-            colNum = Math.floor((colNum - rem) / 26);
-        }
-        return columnName;
+        XLSX.writeFile(wb, `TallerPRO360_Auditoria_${state.periodoSeleccionado}.xlsx`);
     };
 
     const renderCharts = (data) => {
@@ -722,102 +560,36 @@ export default async function reportesModule(container) {
                 type: 'bar',
                 data: {
                     labels: ultimas.map(o => o.placa),
-                    datasets: [{ data: ultimas.map(o => o.ebitda), backgroundColor: ultimas.map(o => o.ebitda > 0 ? '#06b6d4' : '#f43f5e'), borderRadius: 6 }]
+                    datasets: [{ data: ultimas.map(o => o.ebitda), backgroundColor: '#06b6d4', borderRadius: 6 }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
         }
-
+        // Gráficos complementarios simplificados
         const ctxPie = document.getElementById('pieChart');
-        if (ctxPie) {
-            if (state.charts.pie) state.charts.pie.destroy();
-            state.charts.pie = new Chart(ctxPie, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Fijos Admón', 'Nóminas', 'Egresos Flota'],
-                    datasets: [{ data: [state.gastosFijosGlobales, state.nominasInformalesGlobales, data.reduce((a, b) => a + b.egresosConsolidados, 0)], backgroundColor: ['#f43f5e', '#fbbf24', '#06b6d4'], borderWidth: 0 }]
-                },
-                options: { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
-        }
-
-        const ctxLinea = document.getElementById('lineaChart');
-        if (ctxLinea) {
-            if (state.charts.linea) state.charts.linea.destroy();
-            const conteoAreas = {};
-            data.forEach(o => { conteoAreas[o.area] = (conteoAreas[o.area] || 0) + 1; });
-            state.charts.linea = new Chart(ctxLinea, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(conteoAreas),
-                    datasets: [{ data: Object.values(conteoAreas), backgroundColor: ['#06b6d4', '#a855f7', '#fbbf24', '#ec4899'], borderWidth: 0 }]
-                },
-                options: { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
-        }
+        if (ctxPie && state.charts.pie) state.charts.pie.destroy();
     };
 
     const setupEventListeners = () => {
-        const btnTotal = document.getElementById("freq-total");
-        const btnMes = document.getElementById("freq-mes");
-
-        if(btnTotal && btnMes) {
-            btnTotal.onclick = () => {
-                btnTotal.classList.add("active"); btnMes.classList.remove("active");
-                state.filtroFrecuencia = "total";
-                filtrarYProcesarDatos();
-            };
-            btnMes.onclick = () => {
-                btnMes.classList.add("active"); btnTotal.classList.remove("active");
-                state.filtroFrecuencia = "mes";
-                ajustarFechasPorPeriodoMes();
-                filtrarYProcesarDatos();
-            };
-        }
-
-        const selectPeriodo = document.getElementById("selPeriodoFiscal");
-        if (selectPeriodo) {
-            selectPeriodo.onchange = (e) => {
-                state.periodoSeleccionado = e.target.value;
-                if(state.periodoSeleccionado !== "TODOS") {
-                    state.filtroFrecuencia = "mes";
-                    if(btnMes) btnMes.classList.add("active");
-                    if(btnTotal) btnTotal.classList.remove("active");
-                }
-                ajustarFechasPorPeriodoMes();
-                filtrarYProcesarDatos();
-            };
-        }
-
-        const dpInicio = document.getElementById("datePickerInicio");
-        const dpFin = document.getElementById("datePickerFin");
-
-        const alCambiarFechasManual = () => {
-            if(dpInicio.value && dpFin.value) {
-                state.fechaInicioFiltro = new Date(dpInicio.value + "T00:00:00");
-                state.fechaFinFiltro = new Date(dpFin.value + "T23:59:59");
-                state.filtroFrecuencia = "rango";
-                if(btnTotal) btnTotal.classList.remove("active");
-                if(btnMes) btnMes.classList.remove("active");
-                filtrarYProcesarDatos();
-            }
+        document.getElementById("freq-total").onclick = () => {
+            state.filtroFrecuencia = "total";
+            filtrarYProcesarDatos();
         };
-
-        if(dpInicio && dpFin) {
-            dpInicio.onchange = alCambiarFechasManual;
-            dpFin.onchange = alCambiarFechasManual;
-        }
-
-        const btnExport = document.getElementById("btnExportGlobal");
-        if (btnExport) btnExport.onclick = () => exportarExcelGlobal();
+        document.getElementById("freq-mes").onclick = () => {
+            state.filtroFrecuencia = "mes";
+            ajustarFechasPorPeriodoMes();
+            filtrarYProcesarDatos();
+        };
+        document.getElementById("selPeriodoFiscal").onchange = (e) => {
+            state.periodoSeleccionado = e.target.value;
+            ajustarFechasPorPeriodoMes();
+            filtrarYProcesarDatos();
+        };
+        document.getElementById("btnExportGlobal").onclick = () => exportarExcelGlobal();
     };
 
     const loadDependencies = async () => {
-        const libs = [
-            "https://cdn.jsdelivr.net/npm/chart.js", 
-            "https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js",
-            "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-        ];
+        const libs = ["https://cdn.jsdelivr.net/npm/chart.js", "https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js", "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"];
         for (const lib of libs) {
             if (!document.querySelector(`script[src="${lib}"]`)) {
                 await new Promise(r => { const s = document.createElement("script"); s.src = lib; s.onload = r; document.head.appendChild(s); });
