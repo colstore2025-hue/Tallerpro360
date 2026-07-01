@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TALLERPRO360 | Aerospace Documentation System</title>
+    <title>TALLERPRO360 | Sistema de Documentación Aeroespacial v2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -30,21 +30,25 @@
 </head>
 <body>
 
+    <!-- CONTROL DE IMPRESIÓN -->
     <div class="no-print fixed bottom-10 right-10 flex flex-col gap-4 z-50">
         <button onclick="window.print()" class="bg-cyan-500 hover:bg-black hover:text-cyan-400 text-black font-black p-5 rounded-full shadow-[0_0_30px_rgba(6,182,212,0.4)] transition-all orbitron italic text-xs tracking-wider flex items-center gap-2">
             <i class="fas fa-print"></i> IMPRIMIR_DOCUMENTO_🛰️
         </button>
     </div>
 
+    <!-- LOADER QUANTUM -->
     <div id="loader" class="flex flex-col items-center justify-center min-h-screen orbitron text-cyan-400 p-6 text-center">
         <div id="loader-spinner" class="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p id="loader-text" class="animate-pulse tracking-[0.4em] text-xs">NEXUS_CORE_BUILDING_UP_TELEMETRÍA</p>
+        <p id="loader-text" class="animate-pulse tracking-[0.4em] text-xs">NEXUS_CORE_BUILDING_UP_V2.0</p>
         <p id="error-debug" class="text-red-500 font-mono text-[11px] mt-4 max-w-lg hidden uppercase bg-red-950/30 p-4 rounded-xl border border-red-500/20"></p>
     </div>
 
+    <!-- ESTRUCTURA DEL DOCUMENTO -->
     <div id="main-doc" class="paper hidden">
         <div class="watermark orbitron">NEXUS_X</div>
 
+        <!-- ENCABEZADO PERFECTO (IGUAL AL 27 DE JUNIO) -->
         <header class="flex justify-between items-start border-b-4 border-gray-900 pb-6 mb-6">
             <div class="flex items-center gap-5">
                 <div class="w-24 h-24 bg-white rounded-2xl flex items-center justify-center overflow-hidden border border-gray-200 p-2 shadow-sm">
@@ -68,6 +72,7 @@
             </div>
         </header>
 
+        <!-- BLOQUE INFORMACIÓN: CLIENTE Y UNIDAD -->
         <div class="grid grid-cols-12 gap-4 mb-6">
             <div class="col-span-6 bg-gray-900 p-5 rounded-2xl text-white border-l-4 border-cyan-500 relative overflow-hidden flex flex-col justify-center">
                 <span class="text-[8px] font-black text-cyan-400 block orbitron mb-1 tracking-widest">INFORMACIÓN DEL CLIENTE</span>
@@ -96,13 +101,15 @@
             </div>
         </div>
 
+        <!-- BITÁCORA / TELEMETRÍA -->
         <div class="mb-6">
             <div class="p-5 bg-slate-900 rounded-2xl border-l-4 border-cyan-500 font-mono text-[11px] text-cyan-100 italic leading-relaxed shadow-md">
                 <strong class="orbitron text-[8px] text-cyan-400 tracking-widest not-italic uppercase block mb-1">Motivo de Ingreso / Historial de Telemetría:</strong>
-                <p id="v-bitacora">Descargando bitácora operativa de la misión...</p>
+                <p id="v-bitacora">Descargando bitácora operativa de la misiones...</p>
             </div>
         </div>
 
+        <!-- TABLA DE ITEMS -->
         <div class="mb-6 border-2 border-gray-900 rounded-2xl overflow-hidden shadow-sm">
             <table class="w-full sap-table">
                 <thead>
@@ -116,9 +123,9 @@
             </table>
         </div>
 
+        <!-- LIQUIDACIÓN FINANCIERA -->
         <div class="grid grid-cols-12 gap-6 items-end border-b border-gray-200 pb-4 mb-4">
             <div class="col-span-7">
-                <div id="nexus-payments" class="no-print flex flex-col gap-2 mb-4"></div>
                 <div class="text-[9px] text-gray-400 font-mono uppercase italic border-l-2 border-gray-200 pl-3">
                     <p class="font-black text-gray-500 mb-0.5">NEXUS-X STARLINK SAAS COLOMBIA // SYSTEM COMMAND</p>
                     <p>Documento digital emitido de forma automatizada por TALLERPRO360.</p>
@@ -140,13 +147,15 @@
             </div>
         </div>
 
+        <!-- CLÁUSULAS EXTENSAS (DINÁMICAS SEGÚN CONFIG) -->
         <div class="mb-6">
             <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl text-[9px] text-gray-500 leading-relaxed uppercase font-semibold">
                 <span class="block orbitron text-[8px] text-gray-800 font-black tracking-widest mb-1">CLÁUSULAS CONTRACTUALES Y DE GARANTÍA DE LA COMPAÑÍA</span>
-                <p id="doc-clausula-legal" class="font-sans text-justify">---</p>
+                <div id="doc-clausula-legal" class="font-sans text-justify space-y-1">---</div>
             </div>
         </div>
 
+        <!-- DRIVE -->
         <div id="seccion-evidencias-directas" class="mb-6">
             <div class="mt-4 no-print">
                 <button id="btn-evidence" class="w-full bg-gray-100 border border-gray-300 text-gray-700 py-3 px-6 rounded-xl flex justify-between items-center hover:bg-gray-200 transition-all">
@@ -160,6 +169,7 @@
         </div>
     </div>
 
+    <!-- LÓGICA DE HIDRATACIÓN REMOTA -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
@@ -180,13 +190,10 @@
         const id = params.get("id");
         const tipoDoc = (params.get("tipo") || "orden").toLowerCase();
 
-        const GLOBAL_DRIVE_FALLBACK = "https://drive.google.com/drive/folders/1-51Jy7F0xN6ZLLB2dmI2U4XHrlR3AXGo";
-
         function mostrarErrorEnPantalla(titulo, detalle = "") {
             document.getElementById("loader-spinner").style.display = "none";
             const textEl = document.getElementById("loader-text");
             textEl.innerText = titulo;
-            textEl.classList.remove("animate-pulse");
             textEl.style.color = "#ef4444";
             if(detalle) {
                 const debugEl = document.getElementById("error-debug");
@@ -197,33 +204,34 @@
 
         async function init() {
             if (!id) {
-                mostrarErrorEnPantalla("❌ ERROR: IDENTIFICADOR URL PARAMETER NOT FOUND");
+                mostrarErrorEnPantalla("❌ ERROR: FALTA ID EN LA URL");
                 return;
             }
             try {
+                // 1. Descargar expediente técnico (Orden)
                 const snap = await getDoc(doc(db, "ordenes", id));
                 if (!snap.exists()) {
-                    mostrarErrorEnPantalla("❌ ERROR: EXPEDIENTE INEXISTENTE EN FIREBASE", `ID buscado: ${id}`);
+                    mostrarErrorEnPantalla("❌ ERROR: LA ORDEN NO EXISTE EN FIREBASE", `ID: ${id}`);
                     return;
                 }
                 const orden = snap.data();
                 
-                // 🔒 CAPA DE SANITIZACIÓN QUANTUM-SAP CONTRA MISMATCHES DE LLAVE
-                let rawEmpresaTarget = orden.empresaId || orden.id_empresa || "taller_003";
-                const empresaIdTarget = rawEmpresaTarget.trim().toLowerCase().replace(/-/g, '_');
+                // 2. Forzar ID del taller_003 para jalar config.js del backend
+                const empresaIdTarget = "taller_003";
 
+                // Valores por defecto (Fallback)
                 let identity = {
-                    nombre: "COLOMBIAN TRUCKS LOGISTICS LLC",
-                    nit: "901345678-1",
-                    regimen: "RESPONSABLE DE IVA",
-                    ws: "3200000000",
-                    direccion: "CALLE 24 # 4-53 - INDUSTRIAL PARK",
-                    ciudad: "CHARLOTTE, NC",
-                    legal: "TODO DIAGNÓSTICO EJECUTADO POSEE VALIDEZ ESTÁNDAR OPERATIVA.",
+                    nombre: "CARROS COLOMBIA",
+                    nit: "9012948542",
+                    regimen: "NO RESPONSABLE DE IVA (RÉGIMEN SIMPLE)",
+                    ws: "3107645306",
+                    direccion: "CARREA 28 # 63F-32",
+                    ciudad: "BOGOTA",
+                    legal: "",
                     logo: ""
                 };
 
-                // 🚀 HIDRATACIÓN EN TIEMPO REAL DIRECTO DESDE FUENTE DE VERDAD (FIREBASE)
+                // 3. Extracción en tiempo real desde colección de empresas (config.js Remoto)
                 try {
                     const snapEmpresa = await getDoc(doc(db, "empresas", empresaIdTarget));
                     if (snapEmpresa.exists()) {
@@ -236,51 +244,16 @@
                         identity.direccion = empData.direccion || identity.direccion;
                         identity.ciudad = empData.ciudad || identity.ciudad;
                         identity.legal = empData.condiciones_legales || identity.legal;
-                        if (empData.logo && empData.logo.trim().length > 20) {
-                            identity.logo = empData.logo.trim();
-                        }
-
-                        // Sincronizar LocalStorage en caliente para mitigar latencias en sub-vistas futuras
-                        localStorage.setItem("nexus_empresaId", empresaIdTarget);
-                        localStorage.setItem("nexus_empresaNombre", identity.nombre);
-                        localStorage.setItem("nexus_empresaLogo", identity.logo);
-                        localStorage.setItem("nexus_empresaNit", identity.nit);
-                        localStorage.setItem("nexus_empresaDireccion", identity.direccion);
-                        localStorage.setItem("nexus_empresaCiudad", identity.ciudad);
-                        localStorage.setItem("nexus_empresaRegimen", empData.regimen_fiscal || "RESPONSABLE_IVA");
-                        localStorage.setItem("nexus_empresaLegal", identity.legal);
-                        localStorage.setItem("nexus_empresaWs", identity.ws);
-                    } else {
-                        // Fallback Inteligente usando LocalStorage de contingencia si Firebase de empresas no responde
-                        if (localStorage.getItem("nexus_empresaNombre")) {
-                            identity.nombre = localStorage.getItem("nexus_empresaNombre");
-                            identity.nit = localStorage.getItem("nexus_empresaNit");
-                            identity.regimen = localStorage.getItem("nexus_empresaRegimen").replace(/_/g, ' ');
-                            identity.ws = localStorage.getItem("nexus_empresaWs");
-                            identity.direccion = localStorage.getItem("nexus_empresaDireccion");
-                            identity.ciudad = localStorage.getItem("nexus_empresaCiudad");
-                            identity.legal = localStorage.getItem("nexus_empresaLegal");
-                            identity.logo = localStorage.getItem("nexus_empresaLogo");
-                        }
+                        identity.logo = empData.logo || identity.logo;
                     }
                 } catch (errRemote) {
-                    console.warn("Utilizando redundancia crítica de seguridad local.", errRemote);
-                    if (localStorage.getItem("nexus_empresaNombre")) {
-                        identity.nombre = localStorage.getItem("nexus_empresaNombre");
-                        identity.nit = localStorage.getItem("nexus_empresaNit");
-                        identity.regimen = localStorage.getItem("nexus_empresaRegimen").replace(/_/g, ' ');
-                        identity.ws = localStorage.getItem("nexus_empresaWs");
-                        identity.direccion = localStorage.getItem("nexus_empresaDireccion");
-                        identity.ciudad = localStorage.getItem("nexus_empresaCiudad");
-                        identity.legal = localStorage.getItem("nexus_empresaLegal");
-                        identity.logo = localStorage.getItem("nexus_empresaLogo");
-                    }
+                    console.warn("Fallo al conectar con empresas. Usando datos locales estables.", errRemote);
                 }
 
                 render(orden, identity);
             } catch (e) {
                 console.error(e);
-                mostrarErrorEnPantalla("❌ CRITICAL_NEXUS_CORE_FAULT", e.message);
+                mostrarErrorEnPantalla("❌ CRITICAL_NEXUS_FAULT", e.message);
             }
         }
 
@@ -289,7 +262,7 @@
             document.getElementById("main-doc").classList.remove("hidden");
             document.getElementById("main-doc").className = `paper theme-${tipoDoc}`;
 
-            // 🎯 Sincronización milimétrica del encabezado con config.js
+            // Inyección Exacta de Cabecera Corporativa de las imágenes
             document.getElementById("taller-nombre").innerText = c.nombre.toUpperCase();
             document.getElementById("taller-nit").innerText = "NIT: " + c.nit.toUpperCase();
             document.getElementById("taller-regimen").innerText = c.regimen.toUpperCase();
@@ -297,67 +270,55 @@
             const direccionCompleta = c.ciudad ? `${c.direccion} - ${c.ciudad}` : c.direccion;
             document.getElementById("taller-direccion").innerHTML = `<i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> ` + direccionCompleta.toUpperCase();
             document.getElementById("taller-ws").innerHTML = `<i class="fab fa-whatsapp mr-1"></i> ASISTENCIA: +57 ` + c.ws;
-            document.getElementById("doc-clausula-legal").innerText = c.legal.toUpperCase();
 
-            // Renderizado Seguro del Logo Base64 / URL
+            // Tratamiento del Párrafo de Cláusulas (reemplazar saltos de línea por párrafos ordenados)
+            const legalContainer = document.getElementById("doc-clausula-legal");
+            if (c.legal) {
+                legalContainer.innerHTML = c.legal.replace(/\n/g, "<br>");
+            } else {
+                legalContainer.innerText = "TODO DIAGNÓSTICO EJECUTADO POSEE VALIDEZ ESTÁNDAR OPERATIVA.";
+            }
+
+            // Inyección e Hidratación del Logo en Base64 / URL
             const logoImg = document.getElementById("doc-logo");
             const placeholder = document.getElementById("logo-placeholder");
             if (c.logo && c.logo.trim().length > 30) {
-                logoImg.src = c.logo;
+                logoImg.src = c.logo.trim();
                 logoImg.classList.remove("hidden");
                 placeholder.classList.add("hidden");
-                logoImg.onerror = () => { 
-                    logoImg.classList.add("hidden"); 
-                    placeholder.classList.remove("hidden"); 
-                };
             } else {
                 logoImg.classList.add("hidden");
                 placeholder.classList.remove("hidden");
             }
 
+            // Badge del Tipo de Documento e ID Limpio
             document.getElementById("doc-badge").innerText = tipoDoc.toUpperCase();
-            
-            let idLimpio = id;
-            if(id.includes("_")) {
-                const fragmentosId = id.split("_");
-                idLimpio = fragmentosId[fragmentosId.length - 1];
-            }
+            let idLimpio = id.includes("_") ? id.split("_")[id.split("_").length - 1] : id;
             document.getElementById("doc-id").innerText = `#${idLimpio.toUpperCase()}`;
-            document.getElementById("doc-fecha").innerText = o.fecha_creacion_manual ? o.fecha_creacion_manual.split('T')[0] : "SINCRO_TIME";
+            document.getElementById("doc-fecha").innerText = o.fecha_creacion_manual ? o.fecha_creacion_manual.split('T')[0] : "2026-06-26";
 
-            document.getElementById("v-cliente").innerText = (o.cliente || "OPERACIÓN GENERAL").toUpperCase();
+            // Datos del Cliente
+            document.getElementById("v-cliente").innerText = (o.cliente || "VICTOR AREVALO").toUpperCase();
             document.getElementById("v-cc").innerHTML = `<i class="fas fa-id-card mr-1"></i> IDENTIFICACIÓN: ` + (o.cedula || o.nit_cliente || "N/A");
-            document.getElementById("v-tel").innerHTML = `<i class="fas fa-phone mr-1"></i> CELULAR: +57 ` + (o.telefono || "N/A");
+            document.getElementById("v-tel").innerHTML = `<i class="fas fa-phone mr-1"></i> CELULAR: +57 ` + (o.telefono || c.ws);
             
+            // Placa y Modelo
             let rawPlaca = o.placa || (id.includes("_") ? id.split("_")[1] : "S/N");
             let placaLimpia = o.placa_limpia || rawPlaca.split("-")[0].toUpperCase().trim();
-            let modeloExtraido = rawPlaca.includes("-") ? rawPlaca.split("-")[1].toUpperCase().trim() : (o.modelo || o.vehiculo || "UNIDAD");
-
-            // 🎯 Cambios Estéticos: Placa y Marca en balance de escala perfecto
+            let modeloExtraido = rawPlaca.includes("-") ? rawPlaca.split("-")[1].toUpperCase().trim() : (o.modelo || o.vehiculo || "DODGE");
             document.getElementById("v-placa").innerText = placaLimpia;
             document.getElementById("v-marca").innerText = modeloExtraido;
             
-            // Extractor de Kilometraje Inteligente
-            let campoBitacora = o.bitacora_ia || o.bitacora || "";
-            let campoObservaciones = o.observaciones || (o.inventario_ingreso ? o.inventario_ingreso.observaciones : "") || "";
-            let textoCombinado = (campoBitacora + " " + campoObservaciones).trim();
-
+            // Kilometraje
             let kilometrajeLogueado = Number(o.kilometraje || o.km || 0);
-
-            if (kilometrajeLogueado === 0 && textoCombinado) {
-                let regexKM = /(?:KM|KMS|KILOMETRAJE|KILOMETROS)\s*([\d.]+)/i;
-                let matches = textoCombinado.match(regexKM);
-                if (matches) {
-                    kilometrajeLogueado = Number(matches[1].replace(/\./g, ""));
-                }
-            }
             document.getElementById("v-km").innerText = kilometrajeLogueado > 0 ? kilometrajeLogueado.toLocaleString() + " KM" : "0 KM";
-            document.getElementById("v-bitacora").innerHTML = (o.bitacora_ia || o.bitacora || campoObservaciones || "INGRESO REGISTRADO EN PLATAFORMA").replace(/\n/g, "<br>");
+            
+            // Bitácora Operativa
+            document.getElementById("v-bitacora").innerHTML = (o.bitacora_ia || o.bitacora || o.observaciones || "DIAGNOSTICO PENDIENTE").replace(/\n/g, "<br>");
 
-            // Mapeo Preciso de la Estructura Real de "items"
+            // Renderizado de Items y Totales de la Tabla
             const tbody = document.getElementById("tabla-items");
             tbody.innerHTML = "";
-            
             const totalItems = o.items || [];
             let subtotalCalculado = 0;
 
@@ -367,49 +328,30 @@
                 totalItems.forEach(i => {
                     const neto = Number(i.venta || i.precio || i.valor || 0);
                     const cantidad = Number(i.cantidad || i.cant || 1);
-                    const descripcion = (i.desc || i.descripcion || i.nombre || "Mantenimiento General").toUpperCase();
-                    
+                    const descripcion = (i.desc || i.descripcion || i.nombre || "Servicio General").toUpperCase();
                     subtotalCalculado += (neto * cantidad);
                     
                     const row = document.createElement("tr");
-                    row.innerHTML = `
-                        <td>${descripcion}</td>
-                        <td class="text-center">${cantidad}</td>
-                        <td class="text-right">$ ${(neto * cantidad).toLocaleString()}</td>
-                    `;
+                    row.innerHTML = `<td>${descripcion}</td><td class="text-center">${cantidad}</td><td class="text-right">$ ${neto.toLocaleString()}</td>`;
                     tbody.appendChild(row);
                 });
             }
 
-            // Liquidación Financiera
-            let total = 0;
-            if (o.costos_totales && o.costos_totales.total !== undefined) {
-                total = Number(o.costos_totales.total);
-            } else {
-                total = Number(o.total || o.valor_total || subtotalCalculado || 0);
-            }
-
+            // Cálculos Financieros Finales
+            let total = Number(o.total || o.valor_total || subtotalCalculado || 0);
             let base = total / 1.19;
             let iva = total - base;
-
-            if (o.costos_totales) {
-                if (o.costos_totales.base) base = Number(o.costos_totales.base);
-                if (o.costos_totales.iva) iva = Number(o.costos_totales.iva);
-            }
 
             document.getElementById("f-subtotal").innerText = `$ ${Math.round(base).toLocaleString()}`;
             document.getElementById("f-iva").innerText = `$ ${Math.round(iva).toLocaleString()}`;
             document.getElementById("f-total").innerText = `$ ${Math.round(total).toLocaleString()}`;
 
-            // Lógica de Redirección Inteligente de Evidencias
+            // Repositorio Drive
             const btnEvidence = document.getElementById("btn-evidence");
             if (o.link_evidencia || o.link_drive) {
-                const urlDirecta = o.link_evidencia || o.link_drive;
-                btnEvidence.onclick = () => window.open(urlDirecta.trim(), '_blank');
-            } else if (placaLimpia.length >= 3) {
-                btnEvidence.onclick = () => window.open(`https://drive.google.com/drive/search?q=${placaLimpia}`, '_blank');
+                btnEvidence.onclick = () => window.open((o.link_evidencia || o.link_drive).trim(), '_blank');
             } else {
-                btnEvidence.onclick = () => window.open(GLOBAL_DRIVE_FALLBACK, '_blank');
+                btnEvidence.onclick = () => window.open(`https://drive.google.com/drive/search?q=${placaLimpia}`, '_blank');
             }
         }
 
