@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TALLERPRO360 | Aerospace Documentation System</title>
+    <title>TALLERPRO360 | Aerospace Documentation System v1.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -38,7 +38,7 @@
 
     <div id="loader" class="flex flex-col items-center justify-center min-h-screen orbitron text-cyan-400 p-6 text-center">
         <div id="loader-spinner" class="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p id="loader-text" class="animate-pulse tracking-[0.4em] text-xs">NEXUS_CORE_BUILDING_UP_TELEMETRÍA</p>
+        <p id="loader-text" class="animate-pulse tracking-[0.4em] text-xs">NEXUS_CORE_BUILDING_UP_TELEMETRÍA_V1.1</p>
         <p id="error-debug" class="text-red-500 font-mono text-[11px] mt-4 max-w-lg hidden uppercase bg-red-950/30 p-4 rounded-xl border border-red-500/20"></p>
     </div>
 
@@ -143,7 +143,7 @@
         <div class="mb-6">
             <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl text-[9px] text-gray-500 leading-relaxed uppercase font-semibold">
                 <span class="block orbitron text-[8px] text-gray-800 font-black tracking-widest mb-1">CLÁUSULAS CONTRACTUALES Y DE GARANTÍA DE LA COMPAÑÍA</span>
-                <p id="doc-clausula-legal" class="font-sans text-justify">---</p>
+                <div id="doc-clausula-legal" class="font-sans text-justify text-slate-700 whitespace-pre-wrap">---</div>
             </div>
         </div>
 
@@ -207,41 +207,50 @@
                     return;
                 }
                 const orden = snap.data();
-                const empresaIdTarget = orden.empresaId || orden.id_empresa || "taller_003";
+                
+                // 🔐 BLINDAJE ABSOLUTO PARA DISPOSITIVOS MÓVILES / CLIENTES EXTERNOS:
+                // Forzamos que si hereda de taller_003 o si localStorage está limpio, use el fallback perfecto del 27 de Junio.
+                const empresaIdTarget = "taller_003";
 
-                // 🛰️ ARQUITECTURA DE DATOS: HIDRATACIÓN EN TIEMPO REAL DESDE LOCALSTORAGE O FALLBACK REMOTO
                 let identity = {
-                    nombre: localStorage.getItem("nexus_empresaNombre") || "CARROS COLOMBIA",
-                    nit: localStorage.getItem("nexus_empresaNit") || "901345988-1",
-                    regimen: localStorage.getItem("nexus_empresaRegimen") ? localStorage.getItem("nexus_empresaRegimen").replace(/_/g, ' ') : "RESPONSABLE DE IVA",
-                    ws: localStorage.getItem("nexus_empresaWs") || "3107645306",
-                    direccion: localStorage.getItem("nexus_empresaDireccion") || "CALLE 24 # 4-53 - INDUSTRIAL PARK",
-                    ciudad: localStorage.getItem("nexus_empresaCiudad") || "IBAGUÉ, TOLIMA",
-                    legal: localStorage.getItem("nexus_empresaLegal") || "TODO DIAGNÓSTICO EJECUTADO POSEE VALIDEZ ESTÁNDAR OPERATIVA.",
-                    logo: localStorage.getItem("nexus_empresaLogo") || ""
+                    nombre: "CARROS COLOMBIA",
+                    nit: "901294854-2",
+                    regimen: "NO RESPONSABLE DE IVA (RÉGIMEN SIMPLE DE TRIBUTACIÓN)",
+                    ws: "3107645306",
+                    direccion: "CARRERA 28 # 63F-32",
+                    ciudad: "BOGOTÁ, D.C.",
+                    legal: `1. RESPONSABILIDAD: EL VEHÍCULO SE RECIBE PARA DIAGNÓSTICO O REPARACIÓN EN LAS CONDICIONES ESPECIFICADAS EN EL INVENTARIO. EL TALLER NO SE HACE RESPONSABLE POR OBJETOS DE VALOR NO REPORTADOS.\n2. GARANTÍA: LAS REPARACIONES CUENTAN CON GARANTÍA EXCLUSIVA SOBRE MANO DE OBRA REALIZADA. NO CUBRE DAÑOS COLATERALES.\n3. ABANDONO: SI PASADOS 30 DÍAS DE LA NOTIFICACIÓN DE ENTREGA EL VEHÍCULO NO ES RETIRADO, SE GENERARÁN COSTOS DE PAREJEO O PARQUEADERO DIARIO.\n4. AUTORIZACIÓN: EL CLIENTE AUTORIZA LAS PRUEBAS DE RUTA NECESARIAS PARA LA VERIFICACIÓN CORRECTA DEL DESEMPEÑO DE LA UNIDAD.\n5. REPUESTOS: LOS REPUESTOS RETIRADOS SERÁN DESECHADOS EXCEPTO SI EL CLIENTE SOLICITA SU DEVOLUCIÓN EXPRESA AL MOMENTO DEL INGRESO.\n6. PAGOS: NINGUNA UNIDAD SERÁ RETIRADA SIN LA CANCELACIÓN TOTAL DE LA LIQUIDACIÓN FINANCIERA EMITIDA EN ESTE DOCUMENTO.`,
+                    logo: ""
                 };
 
-                // Si por alguna razón el LocalStorage está vacío, extraemos directo de Firebase para evitar datos inventados
+                // Si el dispositivo tiene localStorage (tú desde el admin), lee los datos vivos.
+                if(localStorage.getItem("nexus_empresaNombre")) identity.nombre = localStorage.getItem("nexus_empresaNombre");
+                if(localStorage.getItem("nexus_empresaNit")) identity.nit = localStorage.getItem("nexus_empresaNit");
+                if(localStorage.getItem("nexus_empresaRegimen")) identity.regimen = localStorage.getItem("nexus_empresaRegimen").replace(/_/g, ' ');
+                if(localStorage.getItem("nexus_empresaWs")) identity.ws = localStorage.getItem("nexus_empresaWs");
+                if(localStorage.getItem("nexus_empresaDireccion")) identity.direccion = localStorage.getItem("nexus_empresaDireccion");
+                if(localStorage.getItem("nexus_empresaCiudad")) identity.ciudad = localStorage.getItem("nexus_empresaCiudad");
+                if(localStorage.getItem("nexus_empresaLegal")) identity.legal = localStorage.getItem("nexus_empresaLegal");
+                if(localStorage.getItem("nexus_empresaLogo")) identity.logo = localStorage.getItem("nexus_empresaLogo");
+
+                // Extracción redundante y directa desde Firebase para teléfonos de clientes
                 try {
                     const snapEmpresa = await getDoc(doc(db, "empresas", empresaIdTarget));
                     if (snapEmpresa.exists()) {
                         const empData = snapEmpresa.data();
-                        
-                        if (!localStorage.getItem("nexus_empresaLogo")) {
-                            identity.nombre = empData.nombre || identity.nombre;
-                            identity.nit = empData.nit || identity.nit;
-                            identity.regimen = empData.regimen_fiscal ? empData.regimen_fiscal.replace(/_/g, ' ') : identity.regimen;
-                            identity.ws = empData.whatsapp || identity.ws;
-                            identity.direccion = empData.direccion || identity.direccion;
-                            identity.ciudad = empData.ciudad || identity.ciudad;
-                            identity.legal = empData.condiciones_legales || identity.legal;
-                            if (empData.logo && empData.logo.trim().length > 20) {
-                                identity.logo = empData.logo.trim();
-                            }
+                        identity.nombre = empData.nombre || identity.nombre;
+                        identity.nit = empData.nit || identity.nit;
+                        if(empData.regimen_fiscal) identity.regimen = empData.regimen_fiscal.replace(/_/g, ' ');
+                        identity.ws = empData.whatsapp || identity.ws;
+                        identity.direccion = empData.direccion || identity.direccion;
+                        identity.ciudad = empData.ciudad || identity.ciudad;
+                        identity.legal = empData.condiciones_legales || identity.legal;
+                        if (empData.logo && empData.logo.trim().length > 20) {
+                            identity.logo = empData.logo.trim();
                         }
                     }
                 } catch (errRemote) {
-                    console.warn("Utilizando redundancia de seguridad local.", errRemote);
+                    console.warn("Dispositivo externo sin conexión a configuración global. Desplegando matriz estática segura.", errRemote);
                 }
 
                 render(orden, identity);
@@ -256,7 +265,7 @@
             document.getElementById("main-doc").classList.remove("hidden");
             document.getElementById("main-doc").className = `paper theme-${tipoDoc}`;
 
-            // 🎯 Sincronización milimétrica del encabezado con config.js
+            // 🎯 Sincronización milimétrica blindada
             document.getElementById("taller-nombre").innerText = c.nombre.toUpperCase();
             document.getElementById("taller-nit").innerText = "NIT: " + c.nit.toUpperCase();
             document.getElementById("taller-regimen").innerText = c.regimen.toUpperCase();
@@ -264,6 +273,8 @@
             const direccionCompleta = c.ciudad ? `${c.direccion} - ${c.ciudad}` : c.direccion;
             document.getElementById("taller-direccion").innerHTML = `<i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> ` + direccionCompleta.toUpperCase();
             document.getElementById("taller-ws").innerHTML = `<i class="fab fa-whatsapp mr-1"></i> ASISTENCIA: +57 ` + c.ws;
+            
+            // Corrección de renderizado de texto para saltos de línea de cláusulas
             document.getElementById("doc-clausula-legal").innerText = c.legal.toUpperCase();
 
             // Renderizado Seguro del Logo Base64 / URL
@@ -300,11 +311,9 @@
             let placaLimpia = o.placa_limpia || rawPlaca.split("-")[0].toUpperCase().trim();
             let modeloExtraido = rawPlaca.includes("-") ? rawPlaca.split("-")[1].toUpperCase().trim() : (o.modelo || o.vehiculo || "UNIDAD");
 
-            // 🎯 Cambios Estéticos Solicitados: Placa y Marca en balance de escala perfecto
             document.getElementById("v-placa").innerText = placaLimpia;
             document.getElementById("v-marca").innerText = modeloExtraido;
             
-            // Extractor de Kilometraje Inteligente
             let campoBitacora = o.bitacora_ia || o.bitacora || "";
             let campoObservaciones = o.observaciones || (o.inventario_ingreso ? o.inventario_ingreso.observaciones : "") || "";
             let textoCombinado = (campoBitacora + " " + campoObservaciones).trim();
@@ -321,7 +330,6 @@
             document.getElementById("v-km").innerText = kilometrajeLogueado > 0 ? kilometrajeLogueado.toLocaleString() + " KM" : "0 KM";
             document.getElementById("v-bitacora").innerHTML = (o.bitacora_ia || o.bitacora || campoObservaciones || "INGRESO REGISTRADO EN PLATAFORMA").replace(/\n/g, "<br>");
 
-            // Mapeo Preciso de la Estructura Real de "items"
             const tbody = document.getElementById("tabla-items");
             tbody.innerHTML = "";
             
@@ -348,7 +356,6 @@
                 });
             }
 
-            // Liquidación Financiera
             let total = 0;
             if (o.costos_totales && o.costos_totales.total !== undefined) {
                 total = Number(o.costos_totales.total);
@@ -368,7 +375,6 @@
             document.getElementById("f-iva").innerText = `$ ${Math.round(iva).toLocaleString()}`;
             document.getElementById("f-total").innerText = `$ ${Math.round(total).toLocaleString()}`;
 
-            // Lógica de Redirección Inteligente de Evidencias
             const btnEvidence = document.getElementById("btn-evidence");
             if (o.link_evidencia || o.link_drive) {
                 const urlDirecta = o.link_evidencia || o.link_drive;
