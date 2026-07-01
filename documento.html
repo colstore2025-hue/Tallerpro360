@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TALLERPRO360 | Aerospace Documentation System v1.1</title>
+    <title>TALLERPRO360 | Aerospace Documentation System v1.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -38,7 +38,7 @@
 
     <div id="loader" class="flex flex-col items-center justify-center min-h-screen orbitron text-cyan-400 p-6 text-center">
         <div id="loader-spinner" class="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p id="loader-text" class="animate-pulse tracking-[0.4em] text-xs">NEXUS_CORE_BUILDING_UP_TELEMETRÍA_V1.1</p>
+        <p id="loader-text" class="animate-pulse tracking-[0.4em] text-xs">NEXUS_CORE_BUILDING_UP_TELEMETRÍA_V1.2</p>
         <p id="error-debug" class="text-red-500 font-mono text-[11px] mt-4 max-w-lg hidden uppercase bg-red-950/30 p-4 rounded-xl border border-red-500/20"></p>
     </div>
 
@@ -207,9 +207,6 @@
                     return;
                 }
                 const orden = snap.data();
-                
-                // 🔐 BLINDAJE ABSOLUTO PARA DISPOSITIVOS MÓVILES / CLIENTES EXTERNOS:
-                // Forzamos que si hereda de taller_003 o si localStorage está limpio, use el fallback perfecto del 27 de Junio.
                 const empresaIdTarget = "taller_003";
 
                 let identity = {
@@ -223,7 +220,7 @@
                     logo: ""
                 };
 
-                // Si el dispositivo tiene localStorage (tú desde el admin), lee los datos vivos.
+                // Carga dinámica local si existe caché de administrador
                 if(localStorage.getItem("nexus_empresaNombre")) identity.nombre = localStorage.getItem("nexus_empresaNombre");
                 if(localStorage.getItem("nexus_empresaNit")) identity.nit = localStorage.getItem("nexus_empresaNit");
                 if(localStorage.getItem("nexus_empresaRegimen")) identity.regimen = localStorage.getItem("nexus_empresaRegimen").replace(/_/g, ' ');
@@ -233,7 +230,7 @@
                 if(localStorage.getItem("nexus_empresaLegal")) identity.legal = localStorage.getItem("nexus_empresaLegal");
                 if(localStorage.getItem("nexus_empresaLogo")) identity.logo = localStorage.getItem("nexus_empresaLogo");
 
-                // Extracción redundante y directa desde Firebase para teléfonos de clientes
+                // Sincronización remota para WhatsApp externos
                 try {
                     const snapEmpresa = await getDoc(doc(db, "empresas", empresaIdTarget));
                     if (snapEmpresa.exists()) {
@@ -250,7 +247,7 @@
                         }
                     }
                 } catch (errRemote) {
-                    console.warn("Dispositivo externo sin conexión a configuración global. Desplegando matriz estática segura.", errRemote);
+                    console.warn("Uso de contingencia por red.", errRemote);
                 }
 
                 render(orden, identity);
@@ -265,7 +262,6 @@
             document.getElementById("main-doc").classList.remove("hidden");
             document.getElementById("main-doc").className = `paper theme-${tipoDoc}`;
 
-            // 🎯 Sincronización milimétrica blindada
             document.getElementById("taller-nombre").innerText = c.nombre.toUpperCase();
             document.getElementById("taller-nit").innerText = "NIT: " + c.nit.toUpperCase();
             document.getElementById("taller-regimen").innerText = c.regimen.toUpperCase();
@@ -273,25 +269,31 @@
             const direccionCompleta = c.ciudad ? `${c.direccion} - ${c.ciudad}` : c.direccion;
             document.getElementById("taller-direccion").innerHTML = `<i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> ` + direccionCompleta.toUpperCase();
             document.getElementById("taller-ws").innerHTML = `<i class="fab fa-whatsapp mr-1"></i> ASISTENCIA: +57 ` + c.ws;
-            
-            // Corrección de renderizado de texto para saltos de línea de cláusulas
             document.getElementById("doc-clausula-legal").innerText = c.legal.toUpperCase();
 
-            // Renderizado Seguro del Logo Base64 / URL
+            // 🛡️ MATRIZ DE REDUNDANCIA ANTIBALAS PARA EL LOGO
             const logoImg = document.getElementById("doc-logo");
             const placeholder = document.getElementById("logo-placeholder");
-            if (c.logo && c.logo.trim().length > 30) {
-                logoImg.src = c.logo;
-                logoImg.classList.remove("hidden");
-                placeholder.classList.add("hidden");
-                logoImg.onerror = () => { 
-                    logoImg.classList.add("hidden"); 
-                    placeholder.classList.remove("hidden"); 
-                };
-            } else {
-                logoImg.classList.add("hidden");
-                placeholder.classList.remove("hidden");
-            }
+            
+            // Reemplazo estático de seguridad extraído de la firma funcional (imagen 1000389296.jpg)
+            const LOGO_RESPALDO_ESTABLE = "https://tallerpro360.firebasestorage.app/v0/b/tallerpro360.appspot.com/o/logos%2Fcarros_colombia.jpg?alt=media";
+
+            // Validar si Firebase devolvió un string real y largo
+            let urlLogoFinal = (c.logo && c.logo.trim().length > 30) ? c.logo.trim() : LOGO_RESPALDO_ESTABLE;
+
+            logoImg.src = urlLogoFinal;
+            logoImg.classList.remove("hidden");
+            placeholder.classList.add("hidden");
+
+            // Si por alguna razón la URL falla en cargar en el navegador del cliente, forzar el fallback
+            logoImg.onerror = () => {
+                if (logoImg.src !== LOGO_RESPALDO_ESTABLE) {
+                    logoImg.src = LOGO_RESPALDO_ESTABLE;
+                } else {
+                    logoImg.classList.add("hidden");
+                    placeholder.classList.remove("hidden");
+                }
+            };
 
             document.getElementById("doc-badge").innerText = tipoDoc.toUpperCase();
             
