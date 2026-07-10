@@ -3,158 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TALLERPRO360 | Aerospace Documentation System v1.3</title>
+    <title>TALLERPRO360 | Quantum SAP Core Documentation System v1.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #05070a; color: #e2e8f0; font-family: 'Rajdhani', sans-serif; margin: 0; }
+        /* --- QUANTUM SAP CORE STYLING --- */
+        body { background-color: #05070a; color: #e2e8f0; font-family: 'Rajdhani', sans-serif; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        .paper { background: white; color: #1a1a1a; min-height: 29.7cm; width: 21cm; margin: 20px auto; padding: 1.2cm; position: relative; box-shadow: 0 0 80px rgba(6,182,212,0.15); border-radius: 1.5rem; }
+        .paper { background: #ffffff; color: #1e293b; min-height: 29.7cm; width: 21cm; margin: 30px auto; padding: 1.5cm; position: relative; box-shadow: 0 25px 70px -10px rgba(6,182,212,0.15); border-radius: 1.25rem; transition: all 0.3s ease; }
         
+        /* Moduladores de Línea de Negocio (TallerPRO360 Master Specs) */
         .theme-cotizacion { border-top: 16px solid #fbbf24; }
-        .theme-orden { border-top: 16px solid #22d3ee; }
-        .theme-diagnostico { border-top: 16px solid #06b6d4; }
-        .theme-reparacion { border-top: 16px solid #a855f7; }
+        .theme-orden { border-top: 16px solid #06b6d4; }
+        .theme-diagnostico { border-top: 16px solid #3b82f6; }
+        .theme-reparacion { border-top: 16px solid #8b5cf6; }
         .theme-factura { border-top: 16px solid #10b981; }
 
-        .sap-table th { background-color: #111827; color: #ffffff; font-family: 'Orbitron'; font-size: 9px; font-weight: 900; text-transform: uppercase; padding: 12px; }
-        .sap-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 11px; font-weight: 700; color: #334155; }
+        /* Estructura de Tablas SAP de Alta Densidad */
+        .sap-table th { background-color: #0f172a; color: #ffffff; font-family: 'Orbitron'; font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 14px; tracking-width: 0.1em; }
+        .sap-table td { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: 700; color: #334155; }
+        .sap-table tr:nth-child(even) { background-color: #f8fafc; }
         
+        .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 9rem; font-weight: 900; color: rgba(241, 245, 249, 0.5); z-index: 0; pointer-events: none; letter-spacing: 0.2em; text-transform: uppercase; }
+
+        /* --- OPTIMIZACIÓN CRÍTICA DE IMPRESIÓN (CONTRASTE ALTO SAP) --- */
         @media print {
-            body { background: white; color: black; }
-            .paper { margin: 0; box-shadow: none; width: 100%; border-radius: 0; padding: 0.8cm; border-top: none !important; }
+            body { background: #ffffff !important; color: #000000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .paper { margin: 0 !important; box-shadow: none !important; width: 100% !important; max-width: 100% !important; min-height: auto !important; padding: 0.5cm !important; border-top: none !important; border-radius: 0 !important; }
             .no-print { display: none !important; }
+            .sap-table th { background-color: #111827 !important; color: #ffffff !important; }
+            .sap-table td { border-bottom: 1px solid #94a3b8 !important; color: #000000 !important; }
+            .watermark { color: rgba(226, 232, 240, 0.3) !important; font-size: 7rem; }
+            tr { page-break-inside: avoid !important; }
+            footer, .page-break-avoid { page-break-inside: avoid !important; }
         }
     </style>
 </head>
 <body>
 
     <div class="no-print fixed bottom-10 right-10 flex flex-col gap-4 z-50">
-        <button onclick="window.print()" class="bg-cyan-500 hover:bg-black hover:text-cyan-400 text-black font-black p-5 rounded-full shadow-[0_0_30px_rgba(6,182,212,0.4)] transition-all orbitron italic text-xs tracking-wider flex items-center gap-2">
-            <i class="fas fa-print"></i> IMPRIMIR_DOCUMENTO_🛰️
+        <button onclick="window.print()" class="bg-cyan-500 hover:bg-cyan-400 text-black font-black p-5 rounded-full shadow-[0_0_30px_rgba(6,182,212,0.4)] transition-all orbitron italic text-xs tracking-wider flex items-center gap-2 group transform hover:scale-105">
+            <i class="fas fa-print group-hover:rotate-12 transition-transform"></i> IMPRIMIR_DOCUMENTO_🛰️
         </button>
     </div>
 
     <div id="loader" class="flex flex-col items-center justify-center min-h-screen orbitron text-cyan-400 p-6 text-center">
-        <div id="loader-spinner" class="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p id="loader-text" class="animate-pulse tracking-[0.4em] text-xs">NEXUS_CORE_BUILDING_UP_TELEMETRÍA_V1.3</p>
-        <p id="error-debug" class="text-red-500 font-mono text-[11px] mt-4 max-w-lg hidden uppercase bg-red-950/30 p-4 rounded-xl border border-red-500/20"></p>
+        <div id="loader-spinner" class="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+        <p id="loader-text" class="animate-pulse tracking-[0.4em] text-xs font-bold">NEXUS_CORE_BUILDING_UP_TELEMETRÍA_V1.3</p>
+        <p id="error-debug" class="text-red-400 font-mono text-[11px] mt-4 max-w-lg hidden uppercase bg-red-950/40 p-4 rounded-xl border border-red-500/30 tracking-wide"></p>
     </div>
 
-    <div id="main-doc" class="paper hidden">
+    <div id="main-doc" class="paper hidden z-10">
         <div class="watermark orbitron">NEXUS_X</div>
 
-        <header class="flex justify-between items-start border-b-4 border-gray-900 pb-6 mb-6">
+        <header class="flex justify-between items-start border-b-4 border-slate-900 pb-6 mb-6 relative z-10">
             <div class="flex items-center gap-5">
-                <div class="w-24 h-24 bg-white rounded-2xl flex items-center justify-center overflow-hidden border border-gray-200 p-2 shadow-sm">
-                    <img id="doc-logo" src="" alt="Logo" class="hidden object-contain max-h-full max-w-full">
-                    <span id="logo-placeholder" class="orbitron text-4xl text-gray-300 font-black italic">T_360</span>
+                <div class="w-24 h-24 bg-white rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 p-2 shadow-sm">
+                    <img id="doc-logo" src="" alt="Logo TallerPRO360" class="hidden object-contain max-h-full max-w-full">
+                    <span id="logo-placeholder" class="orbitron text-4xl text-slate-300 font-black italic">T_360</span>
                 </div>
                 <div>
-                    <h1 id="taller-nombre" class="orbitron text-2xl font-black uppercase text-gray-900 tracking-tighter">---</h1>
-                    <div class="flex flex-col mt-1 text-[11px] font-bold text-gray-500 space-y-0.5">
+                    <h1 id="taller-nombre" class="orbitron text-2xl font-black uppercase text-slate-900 tracking-tighter">---</h1>
+                    <div class="flex flex-col mt-1 text-[11px] font-bold text-slate-500 space-y-0.5">
                         <p id="taller-nit" class="orbitron">NIT: ---</p>
                         <p id="taller-regimen" class="text-[9px] text-slate-400 font-black tracking-wide">---</p>
-                        <p id="taller-direccion" class="uppercase"><i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> ---</p>
+                        <p id="taller-direccion" class="uppercase"><i class="fas fa-map-marker-alt text-slate-400 mr-1"></i> ---</p>
                         <p id="taller-ws" class="text-cyan-600 orbitron"><i class="fab fa-whatsapp mr-1"></i> ---</p>
                     </div>
                 </div>
             </div>
             <div class="text-right">
-                <div id="doc-badge" class="orbitron text-[8px] font-black px-4 py-1.5 bg-gray-900 text-white inline-block italic tracking-widest rounded-md">---</div>
-                <h2 id="doc-id" class="text-2xl font-black orbitron text-gray-900 block tracking-tight mt-1">#---</h2>
-                <p id="doc-fecha" class="text-[9px] font-mono text-gray-400 uppercase tracking-wider mt-0.5">SINCRO_TIME</p>
+                <div id="doc-badge" class="orbitron text-[9px] font-black px-4 py-1.5 bg-slate-900 text-white inline-block italic tracking-widest rounded-md shadow-sm">---</div>
+                <h2 id="doc-id" class="text-3xl font-black orbitron text-slate-900 block tracking-tight mt-1">#---</h2>
+                <p id="doc-fecha" class="text-[9px] font-mono text-slate-400 uppercase tracking-wider mt-0.5">SINCRO_TIME</p>
             </div>
         </header>
 
-        <div class="grid grid-cols-12 gap-4 mb-6">
-            <div class="col-span-6 bg-gray-900 p-5 rounded-2xl text-white border-l-4 border-cyan-500 relative overflow-hidden flex flex-col justify-center">
+        <div class="grid grid-cols-12 gap-4 mb-6 relative z-10">
+            <div class="col-span-6 bg-slate-900 p-5 rounded-2xl text-white border-l-4 border-cyan-500 relative overflow-hidden flex flex-col justify-center shadow-sm">
                 <span class="text-[8px] font-black text-cyan-400 block orbitron mb-1 tracking-widest">INFORMACIÓN DEL CLIENTE</span>
-                <p id="v-cliente" class="text-lg font-bold uppercase truncate">---</p>
-                <div class="grid grid-cols-1 gap-1 mt-2 text-[10px] text-gray-400 font-medium">
-                    <p id="v-cc"><i class="fas fa-id-card mr-1"></i> IDENTIFICACIÓN: ---</p>
-                    <p id="v-tel"><i class="fas fa-phone mr-1"></i> CELULAR: ---</p>
+                <p id="v-cliente" class="text-lg font-bold uppercase truncate tracking-tight">---</p>
+                <div class="grid grid-cols-1 gap-1 mt-2 text-[10px] text-slate-400 font-semibold tracking-wide">
+                    <p id="v-cc"><i class="fas fa-id-card w-4 text-cyan-500"></i> IDENTIFICACIÓN: ---</p>
+                    <p id="v-tel"><i class="fas fa-phone w-4 text-cyan-500"></i> CELULAR: ---</p>
                 </div>
             </div>
             
-            <div class="col-span-6 bg-gray-50 p-4 rounded-2xl border border-gray-200 flex flex-col justify-between">
-                <div class="grid grid-cols-2 gap-4 items-center h-full">
-                    <div class="border-r border-gray-200/80 pr-2">
-                        <span class="text-[8px] font-black text-gray-400 block orbitron tracking-widest text-left">PLACA UNIDAD</span>
-                        <p id="v-placa" class="text-3xl font-black orbitron text-gray-900 tracking-tighter uppercase leading-none mt-1 text-left">---</p>
+            <div class="col-span-6 bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col justify-between shadow-sm">
+                <div class="grid grid-cols-2 gap-2 items-center h-full">
+                    <div class="border-r border-slate-200 pr-2">
+                        <span class="text-[8px] font-black text-slate-400 block orbitron tracking-widest text-left">PLACA UNIDAD</span>
+                        <p id="v-placa" class="text-3xl font-black orbitron text-slate-900 tracking-tighter uppercase leading-none mt-1 text-left">---</p>
                     </div>
                     <div class="pl-2">
-                        <span class="text-[8px] font-black text-gray-400 block orbitron tracking-widest text-left">LÍNEA / MODELO</span>
+                        <span class="text-[8px] font-black text-slate-400 block orbitron tracking-widest text-left">LÍNEA / MODELO</span>
                         <p id="v-marca" class="text-2xl font-black orbitron text-cyan-600 tracking-tighter uppercase leading-none mt-1 text-left truncate">---</p>
                     </div>
                 </div>
-                <div class="flex justify-between items-center mt-3 border-t border-gray-200/60 pt-2 text-[10px] font-bold text-gray-500 uppercase">
+                <div class="flex justify-between items-center mt-3 border-t border-slate-200 pt-2 text-[10px] font-bold text-slate-500 uppercase tracking-wide">
                     <span>MÉTRICA DE RECORRIDO:</span>
-                    <span id="v-km" class="text-sm font-black orbitron text-gray-900">--- KM</span>
+                    <span id="v-km" class="text-sm font-black orbitron text-slate-900">--- KM</span>
                 </div>
             </div>
         </div>
 
-        <div class="mb-6">
-            <div class="p-5 bg-slate-900 rounded-2xl border-l-4 border-cyan-500 font-mono text-[11px] text-cyan-100 italic leading-relaxed shadow-md">
+        <div class="mb-6 relative z-10">
+            <div class="p-5 bg-slate-900 rounded-2xl border-l-4 border-cyan-500 font-mono text-[11px] text-cyan-100 italic leading-relaxed shadow-sm">
                 <strong class="orbitron text-[8px] text-cyan-400 tracking-widest not-italic uppercase block mb-1">Motivo de Ingreso / Historial de Telemetría:</strong>
-                <p id="v-bitacora">Descargando bitácora operativa de la misión...</p>
+                <p id="v-bitacora" class="font-sans not-italic text-slate-300 text-xs">Descargando bitácora operativa de la misión...</p>
             </div>
         </div>
 
-        <div class="mb-6 border-2 border-gray-900 rounded-2xl overflow-hidden shadow-sm">
+        <div class="mb-6 border-2 border-slate-900 rounded-2xl overflow-hidden shadow-sm relative z-10">
             <table class="w-full sap-table">
                 <thead>
                     <tr>
                         <th class="p-4 text-left tracking-wider">Descripción del Servicio / Componente Técnico</th>
-                        <th class="p-4 text-center w-20">Cant</th>
-                        <th class="p-4 text-right w-36">Total Neto</th>
+                        <th class="p-4 text-center w-24">Cant</th>
+                        <th class="p-4 text-right w-40">Total Neto</th>
                     </tr>
                 </thead>
-                <tbody id="tabla-items" class="font-bold uppercase italic text-gray-700"></tbody>
+                <tbody id="tabla-items" class="font-bold uppercase text-slate-700">
+                    </tbody>
             </table>
         </div>
 
-        <div class="grid grid-cols-12 gap-6 items-end border-b border-gray-200 pb-4 mb-4">
+        <div class="grid grid-cols-12 gap-6 items-end border-b border-slate-200 pb-4 mb-4 relative z-10 page-break-avoid">
             <div class="col-span-7">
                 <div id="nexus-payments" class="no-print flex flex-col gap-2 mb-4"></div>
-                <div class="text-[9px] text-gray-400 font-mono uppercase italic border-l-2 border-gray-200 pl-3">
-                    <p class="font-black text-gray-500 mb-0.5">NEXUS-X STARLINK SAAS COLOMBIA // SYSTEM COMMAND</p>
-                    <p>Documento digital emitido de forma automatizada por TALLERPRO360.</p>
+                <div class="text-[9px] text-slate-400 font-mono uppercase italic border-l-2 border-slate-300 pl-3">
+                    <p class="font-black text-slate-500 mb-0.5">NEXUS-X STARLINK SAAS COLOMBIA // SYSTEM COMMAND</p>
+                    <p>Documento digital emitido de forma automatizada por la suite corporativa TALLERPRO360.</p>
                 </div>
             </div>
-            <div class="col-span-5 space-y-2 bg-gray-900 p-5 rounded-2xl border-t-4 border-cyan-500 text-white shadow-md">
-                <div class="flex justify-between text-[11px] font-bold text-cyan-400/60">
+            <div class="col-span-5 space-y-2 bg-slate-900 p-5 rounded-2xl border-t-4 border-cyan-500 text-white shadow-md">
+                <div class="flex justify-between text-[11px] font-bold text-cyan-400/70">
                     <span class="orbitron tracking-widest">BASE NETO:</span>
                     <span id="f-subtotal" class="font-mono">$ 0</span>
                 </div>
-                <div class="flex justify-between text-[11px] font-bold text-cyan-400/60">
+                <div class="flex justify-between text-[11px] font-bold text-cyan-400/70">
                     <span class="orbitron tracking-widest">IVA RELACIONADO (19%):</span>
                     <span id="f-iva" class="font-mono">$ 0</span>
                 </div>
                 <div class="border-t border-white/10 my-2 pt-2 flex justify-between items-center">
-                    <span class="orbitron text-xs font-black italic tracking-wider">TOTAL LIQUIDADO:</span>
+                    <span class="orbitron text-xs font-black italic tracking-wider text-white">TOTAL LIQUIDADO:</span>
                     <span id="f-total" class="text-2xl orbitron font-black text-cyan-400 italic leading-none">$ 0</span>
                 </div>
             </div>
         </div>
 
-        <div class="mb-6">
-            <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl text-[9px] text-gray-500 leading-relaxed uppercase font-semibold">
-                <span class="block orbitron text-[8px] text-gray-800 font-black tracking-widest mb-1">CLÁUSULAS CONTRACTUALES Y DE GARANTÍA DE LA COMPAÑÍA</span>
-                <div id="doc-clausula-legal" class="font-sans text-justify text-slate-700 whitespace-pre-wrap">---</div>
+        <div class="mb-6 relative z-10 page-break-avoid">
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-[9px] text-slate-500 leading-relaxed uppercase font-semibold">
+                <span class="block orbitron text-[8px] text-slate-800 font-black tracking-widest mb-1">CLÁUSULAS CONTRACTUALES Y DE GARANTÍA DE LA COMPAÑÍA</span>
+                <div id="doc-clausula-legal" class="font-sans text-justify text-slate-700 whitespace-pre-wrap normal-case font-medium">---</div>
             </div>
         </div>
 
-        <div id="seccion-evidencias-directas" class="mb-6">
-            <div class="mt-4 no-print">
-                <button id="btn-evidence" class="w-full bg-gray-100 border border-gray-300 text-gray-700 py-3 px-6 rounded-xl flex justify-between items-center hover:bg-gray-200 transition-all">
+        <div id="seccion-evidencias-directas" class="mb-2 relative z-10 no-print page-break-avoid">
+            <div class="mt-4">
+                <button id="btn-evidence" class="w-full bg-slate-50 border border-slate-200 text-slate-700 py-3 px-6 rounded-xl flex justify-between items-center hover:bg-slate-100 transition-all shadow-sm group">
                     <div class="text-left font-sans">
-                        <span class="block orbitron text-[10px] font-black text-cyan-600 tracking-wider">REPOSITORIO DIGITAL CLOUD DRIVE</span>
-                        <span class="text-[9px] italic opacity-60 uppercase">Acceder al histórico multimedia de la placa</span>
+                        <span class="block orbitron text-[10px] font-black text-cyan-600 tracking-wider group-hover:text-cyan-500 transition-colors">REPOSITORIO DIGITAL CLOUD DRIVE</span>
+                        <span class="text-[9px] italic opacity-60 uppercase font-bold">Acceder al histórico multimedia de la placa</span>
                     </div>
-                    <span class="text-lg">📂 ➔</span>
+                    <span class="text-lg group-hover:translate-x-1 transition-transform">📂 ➔</span>
                 </button>
             </div>
         </div>
@@ -164,6 +177,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
+        // Inicialización de la Infraestructura Cloud Firebase Dedicada
         const firebaseConfig = {
             apiKey: "AIzaSyAdk-s-OXu57MiobzRGBRu-TlF2KYeicWQ",
             authDomain: "tallerpro360.firebaseapp.com",
@@ -176,6 +190,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
+        // Extracción de Parámetros URL (Control de Ruteo de Órdenes)
         const params = new URLSearchParams(window.location.search);
         const id = params.get("id");
         const tipoDoc = (params.get("tipo") || "orden").toLowerCase();
@@ -201,6 +216,7 @@
                 return;
             }
             try {
+                // Enlace Directo al modelo estructural del Módulo ordenes.js
                 const snap = await getDoc(doc(db, "ordenes", id));
                 if (!snap.exists()) {
                     mostrarErrorEnPantalla("❌ ERROR: EXPEDIENTE INEXISTENTE EN FIREBASE", `ID buscado: ${id}`);
@@ -208,6 +224,7 @@
                 }
                 const orden = snap.data();
                 
+                // Mapeo Estricto de Identidad de Empresa (Módulo config.js Matcher)
                 let empresaIdTarget = "taller_003";
                 if (id.includes("taller_")) {
                     const match = id.match(/taller_\d+/);
@@ -216,7 +233,7 @@
                     empresaIdTarget = orden.empresaId || orden.id_empresa;
                 }
 
-                // VALORES ESTÁNDAR COMPORTAMIENTO LOCAL
+                // Matriz Core de Redundancia de Identidad (TallerPRO360 Defaults)
                 let identity = {
                     nombre: "CARROS COLOMBIA",
                     nit: "901294854-2",
@@ -228,6 +245,7 @@
                     logo: ""
                 };
 
+                // Lectura e integración cruzada desde LocalStorage (Módulo config.js Caching)
                 if(localStorage.getItem("nexus_empresaNombre")) identity.nombre = localStorage.getItem("nexus_empresaNombre");
                 if(localStorage.getItem("nexus_empresaNit")) identity.nit = localStorage.getItem("nexus_empresaNit");
                 if(localStorage.getItem("nexus_empresaRegimen")) identity.regimen = localStorage.getItem("nexus_empresaRegimen").replace(/_/g, ' ');
@@ -236,6 +254,7 @@
                 if(localStorage.getItem("nexus_empresaCiudad")) identity.ciudad = localStorage.getItem("nexus_empresaCiudad");
                 if(localStorage.getItem("nexus_empresaLegal")) identity.legal = localStorage.getItem("nexus_empresaLegal");
 
+                // Consulta Remota de Estabilización de Datos Maestros de Empresa
                 try {
                     const snapEmpresa = await getDoc(doc(db, "empresas", empresaIdTarget));
                     if (snapEmpresa.exists()) {
@@ -252,7 +271,7 @@
                         }
                     }
                 } catch (errRemote) {
-                    console.warn("Uso de redundancia por fallo de red remota.", errRemote);
+                    console.warn("Respaldo activado por contingencia de red.", errRemote);
                 }
 
                 render(orden, identity, empresaIdTarget);
@@ -263,29 +282,28 @@
         }
 
         function render(o, c, empresaId) {
+            // Despliegue de Interfaz y Ocultamiento de Pantallas de Espera
             document.getElementById("loader").style.display = "none";
             document.getElementById("main-doc").classList.remove("hidden");
             document.getElementById("main-doc").className = `paper theme-${tipoDoc}`;
 
+            // Inyección de Datos Corporativos de Cabecera
             document.getElementById("taller-nombre").innerText = c.nombre.toUpperCase();
             document.getElementById("taller-nit").innerText = "NIT: " + c.nit.toUpperCase();
             document.getElementById("taller-regimen").innerText = c.regimen.toUpperCase();
             
             const direccionCompleta = c.ciudad ? `${c.direccion} - ${c.ciudad}` : c.direccion;
-            document.getElementById("taller-direccion").innerHTML = `<i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> ` + direccionCompleta.toUpperCase();
+            document.getElementById("taller-direccion").innerHTML = `<i class="fas fa-map-marker-alt text-slate-400 mr-1"></i> ` + direccionCompleta.toUpperCase();
             document.getElementById("taller-ws").innerHTML = `<i class="fab fa-whatsapp mr-1"></i> ASISTENCIA: +57 ` + c.ws;
-            document.getElementById("doc-clausula-legal").innerText = c.legal.toUpperCase();
+            document.getElementById("doc-clausula-legal").innerText = c.legal;
 
-            // 🛡️ CONTROL DE REDUNDANCIA INMUNE PARA EL LOGO (CÓDIGO BASE64 COMPLETO)
+            // CONTROL INMUNE PARA EL LOGO CORPORATIVO (Base64 Vectorial)
             const logoImg = document.getElementById("doc-logo");
             const placeholder = document.getElementById("logo-placeholder");
             
-            // Cadena de inyección directa basada en el archivo limpio provisto
-            const LOGO_BASE64_CARROS_COLOMBIA = "data:image/png;base64,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AsFvdJwDAd98HAGB3dwcAMFv3PwDAt98FAOB3XgMAtAsWwAA02gLAwNoEAKC6BwBAVwAA7MUAAD64CgBA1gYAAD4wA8vff78AAAAJZRefAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAEkhJREFUeNrsnXmsXFUZxe/N29uXvva90AKFCoWWDgWhLKWAsgWpICqiAgqK/6gIMbKoMREUFZWoURMFRYisYgQpIKgRREBAsEAsFChLKVA6be/7vXnTfL7fbebeee++e99byvTe8ksmbeZOMmffc8893/nOd66iqioAAADg8KIsDwEAAGABAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAAC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GABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAgZfX/CzAAU+R3fW82f3cAAAAASUVORK5CYII=";
+            const LOGO_BASE64_CARROS_COLOMBIA = "data:image/png;base64,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AAGABAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAAmwIWAACAAGABAAAgZfX/CzAAU+R3fW82f3cAAAAASUVORK5CYII=";
 
             let urlLogoFinal = LOGO_BASE64_CARROS_COLOMBIA;
-            
-            // Si el taller NO es taller_003 y tiene su propia ruta remota estructurada, se procesará dinámicamente
             if (empresaId !== "taller_003" && c.logo && c.logo.trim().length > 30) {
                 urlLogoFinal = c.logo.trim();
             }
@@ -294,7 +312,7 @@
             logoImg.classList.remove("hidden");
             placeholder.classList.add("hidden");
 
-            // Mitigación en caliente ante fallos de carga
+            // Tolerancia a fallos: fallback directo ante errores de red remota
             logoImg.onerror = () => {
                 if (logoImg.src !== LOGO_BASE64_CARROS_COLOMBIA) {
                     logoImg.src = LOGO_BASE64_CARROS_COLOMBIA;
@@ -304,6 +322,7 @@
                 }
             };
 
+            // Inyección de Meta-información del Documento (Modulo: ordenes.js)
             document.getElementById("doc-badge").innerText = tipoDoc.toUpperCase();
             
             let idLimpio = id;
@@ -314,9 +333,10 @@
             document.getElementById("doc-id").innerText = `#${idLimpio.toUpperCase()}`;
             document.getElementById("doc-fecha").innerText = o.fecha_creacion_manual ? o.fecha_creacion_manual.split('T')[0] : "SINCRO_TIME";
 
+            // Inyección y Normalización de Datos de la Unidad Vehicular
             document.getElementById("v-cliente").innerText = (o.cliente || "OPERACIÓN GENERAL").toUpperCase();
-            document.getElementById("v-cc").innerHTML = `<i class="fas fa-id-card mr-1"></i> IDENTIFICACIÓN: ` + (o.cedula || o.nit_cliente || "N/A");
-            document.getElementById("v-tel").innerHTML = `<i class="fas fa-phone mr-1"></i> CELULAR: +57 ` + (o.telefono || "N/A");
+            document.getElementById("v-cc").innerHTML = `<i class="fas fa-id-card w-4 text-cyan-600"></i> IDENTIFICACIÓN: ` + (o.cedula || o.nit_cliente || "N/A");
+            document.getElementById("v-tel").innerHTML = `<i class="fas fa-phone w-4 text-cyan-600"></i> CELULAR: +57 ` + (o.telefono || "N/A");
             
             let rawPlaca = o.placa || (id.includes("_") ? id.split("_")[1] : "S/N");
             let placaLimpia = o.placa_limpia || rawPlaca.split("-")[0].toUpperCase().trim();
@@ -329,8 +349,8 @@
             let campoObservaciones = o.observaciones || (o.inventario_ingreso ? o.inventario_ingreso.observaciones : "") || "";
             let textoCombinado = (campoBitacora + " " + campoObservaciones).trim();
 
+            // Extracción de Kilometraje Mediante Expresión Regular Inteligente
             let kilometrajeLogueado = Number(o.kilometraje || o.km || 0);
-
             if (kilometrajeLogueado === 0 && textoCombinado) {
                 let regexKM = /(?:KM|KMS|KILOMETRAJE|KILOMETROS)\s*([\d.]+)/i;
                 let matches = textoCombinado.match(regexKM);
@@ -341,6 +361,7 @@
             document.getElementById("v-km").innerText = kilometrajeLogueado > 0 ? kilometrajeLogueado.toLocaleString() + " KM" : "0 KM";
             document.getElementById("v-bitacora").innerHTML = (o.bitacora_ia || o.bitacora || campoObservaciones || "INGRESO REGISTRADO EN PLATAFORMA").replace(/\n/g, "<br>");
 
+            // --- PROCESAMIENTO MATEMÁTICO SAP (Modulo: contabilidad.js Spec) ---
             const tbody = document.getElementById("tabla-items");
             tbody.innerHTML = "";
             
@@ -348,7 +369,7 @@
             let subtotalCalculado = 0;
 
             if (totalItems.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="text-center text-gray-400 py-6 italic font-sans">VALORACIÓN INICIAL TÉCNICA // UNIDAD EN PROCESO DE DIAGNÓSTICO</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center text-slate-400 py-8 italic font-sans font-medium tracking-wide">VALORACIÓN INICIAL TÉCNICA // UNIDAD EN PROCESO DE DIAGNÓSTICO</td></tr>`;
             } else {
                 totalItems.forEach(i => {
                     const neto = Number(i.venta || i.precio || i.valor || 0);
@@ -359,14 +380,15 @@
                     
                     const row = document.createElement("tr");
                     row.innerHTML = `
-                        <td>${descripcion}</td>
-                        <td class="text-center">${cantidad}</td>
-                        <td class="text-right">$ ${(neto * cantidad).toLocaleString()}</td>
+                        <td class="font-sans font-semibold text-slate-800">${descripcion}</td>
+                        <td class="text-center font-mono text-slate-600">${cantidad}</td>
+                        <td class="text-right font-mono text-slate-900">$ ${(neto * cantidad).toLocaleString()}</td>
                     `;
                     tbody.appendChild(row);
                 });
             }
 
+            // Consolidación de Totales y Desglose de IVA Compuesto (19% Legal CO)
             let total = 0;
             if (o.costos_totales && o.costos_totales.total !== undefined) {
                 total = Number(o.costos_totales.total);
@@ -386,6 +408,7 @@
             document.getElementById("f-iva").innerText = `$ ${Math.round(iva).toLocaleString()}`;
             document.getElementById("f-total").innerText = `$ ${Math.round(total).toLocaleString()}`;
 
+            // Enrutamiento de Repositorios de Evidencia Multimedia Cloud Drive
             const btnEvidence = document.getElementById("btn-evidence");
             if (o.link_evidencia || o.link_drive) {
                 const urlDirecta = o.link_evidencia || o.link_drive;
@@ -397,6 +420,7 @@
             }
         }
 
+        // Ejecución Inmediata del Core Initialize
         init();
     </script>
 </body>
