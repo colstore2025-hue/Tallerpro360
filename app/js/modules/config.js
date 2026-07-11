@@ -1,6 +1,7 @@
 /**
- * config.js - TallerPRO360 NEXUS-X V17.5 🚀
+ * config.js - TallerPRO360 NEXUS-X V17.6 🚀
  * PROTOCOLO: QUANTUM-SAP / AUDITORÍA FORENSE Y CAPA CONTABLE SAP-FI
+ * CONFIGURACIÓN MÁSTER: MOTOR DE COMPRESIÓN BINARIA ASÍNCRONA ANTI-CAÍDAS MÓVILES
  * @author William Jeffry Urquijo Cubillos & Gemini AI
  */
 import { 
@@ -26,7 +27,7 @@ export default async function configModule(container, state) {
             <header class="flex flex-col xl:flex-row justify-between items-start gap-10 mb-16 border-l-4 border-cyan-500 pl-8">
                 <div>
                     <h1 class="orbitron text-5xl font-black italic tracking-tighter uppercase">
-                        NXS_<span class="text-cyan-400">CONFIG</span><span class="text-slate-800 text-xl">.V17.5</span>
+                        NXS_<span class="text-cyan-400">CONFIG</span><span class="text-slate-800 text-xl">.V17.6</span>
                     </h1>
                     <p class="text-[9px] text-slate-500 font-black uppercase tracking-[0.6em] mt-3 italic">Protocolo de Identidad Estructurada SAP-FI y Despliegue Financiero</p>
                 </div>
@@ -48,7 +49,7 @@ export default async function configModule(container, state) {
                 <div class="bg-[#0d1117] border border-white/5 p-12 rounded-[4rem] shadow-inner relative overflow-hidden group">
                     <div class="flex flex-col items-center mb-16">
                         <div id="logoDrop" class="w-56 h-56 bg-black rounded-[4rem] border-2 border-dashed border-white/10 flex items-center justify-center relative overflow-hidden group hover:border-cyan-500 transition-all cursor-pointer shadow-2xl">
-                            <img id="prevLogo" src="" class="hidden w-full h-full object-cover">
+                            <img id="prevLogo" src="" class="hidden w-full h-full object-contain p-4">
                             <div class="flex flex-col items-center gap-3 text-slate-700 group-hover:text-cyan-500" id="camOverlay">
                                 <i class="fas fa-camera-retro text-4xl"></i>
                                 <span class="text-[8px] font-black uppercase tracking-widest italic">Digital Brand Logo</span>
@@ -236,16 +237,48 @@ export default async function configModule(container, state) {
         document.getElementById("selPlan").onchange = calcular;
         document.getElementById("selMeses").onchange = calcular;
 
-        // Inyección de Logo en Formato Base64 Puro
+        // 🛰️ ENGINE PIPELINE: COMPRESIÓN ULTRA-LIGERA AUTOMÁTICA EN CANVAS
         document.getElementById("inputLogo").onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = (ev) => {
-                    logoBase64 = ev.target.result;
-                    document.getElementById("prevLogo").src = logoBase64;
-                    document.getElementById("prevLogo").classList.remove("hidden");
-                    document.getElementById("camOverlay").classList.add("opacity-0");
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement("canvas");
+                        const MAX_WIDTH = 300; // Estandarizado óptimo para renderizado en WebView móvil
+                        const MAX_HEIGHT = 300;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext("2d");
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Conversión directa a PNG optimizado
+                        logoBase64 = canvas.toDataURL("image/png");
+                        
+                        const prevLogo = document.getElementById("prevLogo");
+                        prevLogo.src = logoBase64;
+                        prevLogo.classList.remove("hidden");
+                        document.getElementById("camOverlay").classList.add("opacity-0");
+                        
+                        console.log("🛰️ QUANTUM-SAP ENGINE: Logo comprimido con éxito.");
+                    };
+                    img.src = event.target.result;
                 };
                 reader.readAsDataURL(file);
             }
@@ -291,14 +324,13 @@ export default async function configModule(container, state) {
                 whatsapp: document.getElementById("inWs").value,
                 bold_api_key: document.getElementById("inBoldKey").value,
                 planNexus: document.getElementById("selPlan").value,
-                logo: logoBase64,
+                logo: logoBase64, 
                 lastUpdate: serverTimestamp()
             };
 
-            // Escritura en Base de Datos de la Compañía
             await setDoc(docRef, payload, { merge: true });
             
-            // 🔒 Almacenamiento Local para Alimentación Inmediata de sub-vistas (ej: documento.html)
+            // 🔒 Sincronización de caché local (LocalStorage)
             localStorage.setItem("nexus_empresaId", empresaId);
             localStorage.setItem("nexus_empresaNombre", payload.nombre);
             localStorage.setItem("nexus_empresaLogo", payload.logo || "");
