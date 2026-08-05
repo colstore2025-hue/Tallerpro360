@@ -1,7 +1,6 @@
 /**
- * 🏛️ TALLERPRO360 - REPORTES & AUDITORÍA FORENSE v19.0.1
- * 📜 SCRIPT ID: #NEXUS-X-REPORTS-2026-V19-FIX
- * CORRECCIÓN: IMPORTACIÓN DE 'where' DE FIREBASE
+ * 🏛️ TALLERPRO360 - REPORTES & AUDITORÍA FORENSE v19.0.2
+ * 📜 SCRIPT ID: #NEXUS-X-REPORTS-2026-V19-FIX2 (COSTOS Y GASTOS CONEXOS COMPLETOS)
  * DESARROLLADOR: WILLIAM JEFFRY URQUIJO CUBILLOS & GEMINI AI PRO
  */
 
@@ -117,7 +116,7 @@ export default async function reportes(container) {
     };
 
     // ==========================================
-    // 🧠 MOTOR DE CÁLCULO Y FILTRADO POR RANGO
+    // 🧠 MOTOR DE CÁLCULO Y FILTRADO ROBUSTO
     // ==========================================
     const procesarAuditoria = async () => {
         const btn = document.getElementById("btnGenerarData");
@@ -154,7 +153,7 @@ export default async function reportes(container) {
                 
                 if (fechaStr < fInicio || fechaStr > fFin) return;
 
-                const placa = (data.placa_limpia || data.placa || "DESCONOCIDO").toUpperCase().split('-')[0];
+                const placa = (data.placa_limpia || data.placa || "DESCONOCIDO").toUpperCase().split('-')[0].trim();
                 
                 if (!flota[placa]) {
                     flota[placa] = {
@@ -183,42 +182,58 @@ export default async function reportes(container) {
                 });
             });
 
-            // --- FASE B: COSTOS Y CONTABILIDAD LIBRO DIARIO ---
+            // --- FASE B: COSTOS, GASTOS Y CONEXOS (MOTOR UNIVERSAL CONTABLE) ---
             snapConta.forEach(doc => {
                 const data = doc.data();
-                const fechaStr = (data.fecha_registro || data.fecha || "").split('T')[0];
+                
+                // Procesar fecha de forma ultra-robusta (soporta Timestamps de Firestore, strings, etc.)
+                let fechaStr = "";
+                const rawFecha = data.fecha_registro || data.fecha || data.createdAt;
+                if (rawFecha) {
+                    if (typeof rawFecha.toDate === 'function') {
+                        fechaStr = rawFecha.toDate().toISOString().split('T')[0];
+                    } else {
+                        fechaStr = String(rawFecha).split('T')[0];
+                    }
+                }
                 if (!fechaStr) return;
-
                 if (fechaStr < fInicio || fechaStr > fFin) return;
 
-                if (data.tipo === "costo_directo_ot" || data.tipo === "gasto_insumo_ot") {
-                    const placa = (data.placa || "DESCONOCIDO").toUpperCase();
-                    
-                    if (!flota[placa]) {
-                        flota[placa] = { 
-                            cliente: "AJUSTE CONTABLE", 
-                            placa: placa, 
-                            placaDetalle: placa, 
-                            ordenes: [], 
-                            ingresosTotales: 0, 
-                            costosContables: 0, 
-                            ebitda: 0, 
-                            margenPorcentaje: 0,
-                            registrosPUC: [] 
-                        };
-                    }
+                // Si por error hay un registro de ingreso puro en contabilidad, lo omitimos para evitar doble conteo
+                const tipoReg = (data.tipo || "").toLowerCase();
+                if (tipoReg === 'ingreso' || tipoReg === 'venta' || tipoReg === 'abono_cliente') return;
 
-                    const montoCosto = Number(data.monto || data.debito || 0);
-                    flota[placa].costosContables += montoCosto;
-                    totalCostosG += montoCosto;
+                // Capturar placa de cualquier campo posible o asignarlo a Gastos Generales de Flota
+                const placaRaw = data.placa || data.vehiculo || data.placa_vehiculo || data.unidad || "GENERAL / FLOTA";
+                const placa = placaRaw.toUpperCase().trim();
 
-                    flota[placa].registrosPUC.push({
-                        puc: data.puc || "N/A",
-                        concepto: data.concepto || "Sin concepto",
-                        monto: montoCosto,
-                        fecha: fechaStr
-                    });
+                if (!flota[placa]) {
+                    flota[placa] = { 
+                        cliente: placa.includes("GENERAL") ? "GASTOS OPERATIVOS GENERALES" : "GASTOS CONEXOS", 
+                        placa: placa, 
+                        placaDetalle: placa, 
+                        ordenes: [], 
+                        ingresosTotales: 0, 
+                        costosContables: 0, 
+                        ebitda: 0, 
+                        margenPorcentaje: 0,
+                        registrosPUC: [] 
+                    };
                 }
+
+                // Capturar el monto de cualquier variante de campo numérico
+                const montoCosto = Number(data.monto || data.debito || data.valor || data.total || data.costo || 0);
+                if (montoCosto <= 0) return; // Omitir ceros
+
+                flota[placa].costosContables += montoCosto;
+                totalCostosG += montoCosto;
+
+                flota[placa].registrosPUC.push({
+                    puc: data.puc || data.cuenta || "N/A",
+                    concepto: data.concepto || data.descripcion || data.detalle || data.tipo || "Gasto operativo / Costo directo",
+                    monto: montoCosto,
+                    fecha: fechaStr
+                });
             });
 
             // --- FASE C: CÁLCULOS FINALES Y RENDERIZADO ---
@@ -231,7 +246,7 @@ export default async function reportes(container) {
             Object.keys(flota).sort().forEach(placa => {
                 const v = flota[placa];
                 v.ebitda = v.ingresosTotales - v.costosContables;
-                v.margenPorcentaje = v.ingresosTotales > 0 ? (v.ebitda / v.ingresosTotales) * 100 : 0;
+                v.margenPorcentaje = v.ingresosTotales > 0 ? (v.ebitda / v.ingresosTotales) * 100 : (v.costosContables > 0 ? -100 : 0);
 
                 const colorEbitda = v.ebitda >= 0 ? 'text-cyan-400' : 'text-red-400';
                 const colorMargen = v.margenPorcentaje >= 0 ? 'text-emerald-400' : 'text-red-400';
@@ -269,7 +284,7 @@ export default async function reportes(container) {
                 tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-slate-500 orbitron">NO SE ENCONTRARON REGISTROS EN EL PERIODO INDICADO</td></tr>`;
             }
 
-            document.getElementById("contador-placas").innerText = `${cantidadPlacas} Unidades Analizadas`;
+            document.getElementById("contador-placas").innerText = `${cantidadPlacas} Unidades / Categorías Analizadas`;
 
             const ebitdaGlobal = totalIngresosG - totalCostosG;
             const margenGlobal = totalIngresosG > 0 ? (ebitdaGlobal / totalIngresosG) * 100 : 0;
@@ -307,18 +322,14 @@ export default async function reportes(container) {
         const wb = XLSX.utils.book_new();
 
         const dataResumenFlota = [];
-        let totalIng = 0, totalCos = 0;
-
         Object.keys(flota).forEach(placa => {
             const v = flota[placa];
-            totalIng += v.ingresosTotales;
-            totalCos += v.costosContables;
             dataResumenFlota.push({
                 "Placa / Unidad": v.placaDetalle,
-                "Cliente / Flota": v.cliente,
+                "Cliente / Categoría": v.cliente,
                 "Total Órdenes": v.ordenes.length,
                 "Ingresos Totales ($)": Math.round(v.ingresosTotales),
-                "Costos Directos ($)": Math.round(v.costosContables),
+                "Costos Directos / Gastos ($)": Math.round(v.costosContables),
                 "EBITDA Utilidad ($)": Math.round(v.ebitda),
                 "Margen Operativo (%)": Number(v.margenPorcentaje.toFixed(2))
             });
@@ -327,65 +338,30 @@ export default async function reportes(container) {
         const wsResumen = XLSX.utils.json_to_sheet(dataResumenFlota);
         XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen Flota");
 
-        const dataDetalleOrdenes = [];
-        Object.keys(flota).forEach(placa => {
-            const v = flota[placa];
-            v.ordenes.forEach(o => {
-                if (o.items && o.items.length > 0) {
-                    o.items.forEach(item => {
-                        dataDetalleOrdenes.push({
-                            "Placa": v.placaDetalle,
-                            "Fecha OT": o.fecha,
-                            "Misión ID": o.id,
-                            "Item / Repuesto": item.desc || "N/A",
-                            "Tipo": item.tipo || "General",
-                            "Cantidad": item.cantidad || 1,
-                            "Valor Venta Total ($)": Math.round((item.venta || 0) * (item.cantidad || 1))
-                        });
-                    });
-                } else {
-                    dataDetalleOrdenes.push({
-                        "Placa": v.placaDetalle,
-                        "Fecha OT": o.fecha,
-                        "Misión ID": o.id,
-                        "Item / Repuesto": "Facturación Global de Orden",
-                        "Tipo": "Orden Directa",
-                        "Cantidad": 1,
-                        "Valor Venta Total ($)": Math.round(o.ingreso)
-                    });
-                }
-            });
-        });
-
-        if (dataDetalleOrdenes.length > 0) {
-            const wsOrdenes = XLSX.utils.json_to_sheet(dataDetalleOrdenes);
-            XLSX.utils.book_append_sheet(wb, wsOrdenes, "Detalle Órdenes");
-        }
-
         const dataConta = [];
         Object.keys(flota).forEach(placa => {
             const v = flota[placa];
             v.registrosPUC.forEach(p => {
                 dataConta.push({
-                    "Placa": v.placaDetalle,
+                    "Placa / Unidad": v.placaDetalle,
                     "Fecha Gasto": p.fecha || "N/A",
                     "Cuenta PUC": p.puc,
-                    "Concepto de Gasto": p.concepto,
-                    "Monto Costo ($)": Math.round(p.monto)
+                    "Concepto de Gasto / Costo": p.concepto,
+                    "Monto ($)": Math.round(p.monto)
                 });
             });
         });
 
         if (dataConta.length > 0) {
             const wsConta = XLSX.utils.json_to_sheet(dataConta);
-            XLSX.utils.book_append_sheet(wb, wsConta, "Costos PUC");
+            XLSX.utils.book_append_sheet(wb, wsConta, "Costos y Gastos PUC");
         }
 
         XLSX.writeFile(wb, `Auditoria_Gerencial_Flota_${inicio}_al_${fin}.xlsx`);
         
         Swal.fire({
             title: 'Excel Exportado',
-            text: `El reporte gerencial multi-hoja ha sido generado con éxito.`,
+            text: `El reporte gerencial completo ha sido generado con éxito.`,
             icon: 'success',
             background: '#0d1117', color: '#06b6d4'
         });
@@ -423,8 +399,8 @@ export default async function reportes(container) {
 
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(12);
-        doc.text(`PLACA UNIDAD:    ${v.placaDetalle}`, mLeft, 95);
-        doc.text(`CLIENTE / FLOTA: ${v.cliente}`, mLeft, 110);
+        doc.text(`UNIDAD / PLACA:    ${v.placaDetalle}`, mLeft, 95);
+        doc.text(`CATEGORÍA:         ${v.cliente}`, mLeft, 110);
 
         yPos = 150;
 
@@ -450,7 +426,7 @@ export default async function reportes(container) {
 
         doc.setFont("helvetica", "normal");
         doc.setTextColor(0, 0, 0);
-        doc.text("(-) Costos Directos e Insumos (Libro Diario PUC):", mLeft + 10, yPos);
+        doc.text("(-) Costos Directos y Gastos Conexos (Libro Diario):", mLeft + 10, yPos);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(200, 0, 0);
         doc.text(`-$ ${Math.round(v.costosContables).toLocaleString('es-CO')}`, 480, yPos);
@@ -473,13 +449,13 @@ export default async function reportes(container) {
 
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(14);
-        doc.text("2. DESGLOSE DE EGRESOS (LIBRO DIARIO)", mLeft, yPos);
+        doc.text("2. DESGLOSE DE COSTOS Y GASTOS (LIBRO DIARIO PUC)", mLeft, yPos);
         yPos += 20;
 
         if (v.registrosPUC.length === 0) {
             doc.setFont("helvetica", "italic");
             doc.setFontSize(10);
-            doc.text("No se registraron egresos contables en este periodo.", mLeft + 10, yPos);
+            doc.text("No se registraron egresos en este periodo para esta unidad.", mLeft + 10, yPos);
             yPos += 20;
         } else {
             doc.setFontSize(9);
@@ -488,8 +464,8 @@ export default async function reportes(container) {
                 doc.setFont("helvetica", "bold");
                 doc.text(`• [PUC ${puc.puc}]`, mLeft + 5, yPos);
                 doc.setFont("helvetica", "normal");
-                let textoConcepto = puc.concepto.length > 70 ? puc.concepto.substring(0, 70) + "..." : puc.concepto;
-                doc.text(textoConcepto, mLeft + 75, yPos);
+                let textoConcepto = puc.concepto.length > 65 ? puc.concepto.substring(0, 65) + "..." : puc.concepto;
+                doc.text(textoConcepto, mLeft + 80, yPos);
                 
                 doc.setFont("helvetica", "bold");
                 doc.setTextColor(200, 0, 0);
@@ -499,46 +475,6 @@ export default async function reportes(container) {
             });
             yPos += 15;
         }
-
-        if (yPos > 600) { doc.addPage(); yPos = 50; }
-
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        doc.text("3. DETALLE TÉCNICO DE ÓRDENES (SERVICIOS PRESTADOS)", mLeft, yPos);
-        yPos += 25;
-
-        v.ordenes.forEach((orden, idx) => {
-            if (yPos > 700) { doc.addPage(); yPos = 50; }
-
-            doc.setFillColor(245, 248, 250);
-            doc.rect(mLeft, yPos - 12, 532, 20, 'F');
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(0, 100, 150);
-            doc.text(`Misión OT #${idx + 1} | Fecha: ${orden.fecha} | Ingreso: $${Math.round(orden.ingreso).toLocaleString('es-CO')}`, mLeft + 5, yPos);
-            yPos += 20;
-
-            doc.setTextColor(0, 0, 0);
-            doc.setFontSize(9);
-            doc.setFont("helvetica", "bold");
-            doc.text("Items y Labores Facturadas:", mLeft + 10, yPos);
-            yPos += 15;
-            
-            doc.setFont("helvetica", "normal");
-            if (orden.items && orden.items.length > 0) {
-                orden.items.forEach(item => {
-                    if (yPos > 730) { doc.addPage(); yPos = 50; }
-                    let itemDesc = `• ${item.cantidad}x ${item.desc} (${item.tipo})`;
-                    doc.text(itemDesc, mLeft + 15, yPos);
-                    doc.text(`$${Math.round((item.venta || 0) * (item.cantidad || 1)).toLocaleString('es-CO')}`, 490, yPos);
-                    yPos += 12;
-                });
-            } else {
-                doc.text("• No hay items desglosados en la factura de esta orden.", mLeft + 15, yPos);
-                yPos += 12;
-            }
-            yPos += 10;
-        });
 
         doc.save(`FORENSE_${v.placaDetalle}_${inicio}_${fin}.pdf`);
         Swal.fire({
