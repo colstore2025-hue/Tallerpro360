@@ -1,11 +1,11 @@
 /**
- * 🏛️ TALLERPRO360 - REPORTES & AUDITORÍA FORENSE v19.0.0
- * 📜 SCRIPT ID: #NEXUS-X-REPORTS-2026-V19
- * CONSOLIDACIÓN: RANGO DINÁMICO, EXPORTACIÓN MULTI-HOJA EXCEL & INTELIGENCIA GERENCIAL
+ * 🏛️ TALLERPRO360 - REPORTES & AUDITORÍA FORENSE v19.0.1
+ * 📜 SCRIPT ID: #NEXUS-X-REPORTS-2026-V19-FIX
+ * CORRECCIÓN: IMPORTACIÓN DE 'where' DE FIREBASE
  * DESARROLLADOR: WILLIAM JEFFRY URQUIJO CUBILLOS & GEMINI AI PRO
  */
 
-import { collection, query, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, query, getDocs, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
 // Variable global para almacenar la data procesada en memoria y usarla en PDF/Excel
@@ -152,7 +152,6 @@ export default async function reportes(container) {
                 const fechaStr = (data.fecha_creacion_manual || data.createdAt || "").split('T')[0];
                 if (!fechaStr) return;
                 
-                // Validación por rango estricto (YYYY-MM-DD)
                 if (fechaStr < fInicio || fechaStr > fFin) return;
 
                 const placa = (data.placa_limpia || data.placa || "DESCONOCIDO").toUpperCase().split('-')[0];
@@ -272,7 +271,6 @@ export default async function reportes(container) {
 
             document.getElementById("contador-placas").innerText = `${cantidadPlacas} Unidades Analizadas`;
 
-            // Actualizar KPIs Globales Gerenciales
             const ebitdaGlobal = totalIngresosG - totalCostosG;
             const margenGlobal = totalIngresosG > 0 ? (ebitdaGlobal / totalIngresosG) * 100 : 0;
 
@@ -308,7 +306,6 @@ export default async function reportes(container) {
         const { inicio, fin } = window.nexusRangoReporte;
         const wb = XLSX.utils.book_new();
 
-        // 1. HOJA RESUMEN FLOTA
         const dataResumenFlota = [];
         let totalIng = 0, totalCos = 0;
 
@@ -330,7 +327,6 @@ export default async function reportes(container) {
         const wsResumen = XLSX.utils.json_to_sheet(dataResumenFlota);
         XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen Flota");
 
-        // 2. HOJA DETALLE DE ÓRDENES Y SERVICIOS
         const dataDetalleOrdenes = [];
         Object.keys(flota).forEach(placa => {
             const v = flota[placa];
@@ -366,7 +362,6 @@ export default async function reportes(container) {
             XLSX.utils.book_append_sheet(wb, wsOrdenes, "Detalle Órdenes");
         }
 
-        // 3. HOJA LIBRO DIARIO / COSTOS PUC
         const dataConta = [];
         Object.keys(flota).forEach(placa => {
             const v = flota[placa];
@@ -386,7 +381,6 @@ export default async function reportes(container) {
             XLSX.utils.book_append_sheet(wb, wsConta, "Costos PUC");
         }
 
-        // Descargar archivo Excel consolidado
         XLSX.writeFile(wb, `Auditoria_Gerencial_Flota_${inicio}_al_${fin}.xlsx`);
         
         Swal.fire({
@@ -434,7 +428,6 @@ export default async function reportes(container) {
 
         yPos = 150;
 
-        // --- SECCIÓN 1: ESTRUCTURA FINANCIERA ---
         doc.setTextColor(0, 0, 0);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(14);
@@ -478,7 +471,6 @@ export default async function reportes(container) {
         doc.text(`Margen Operativo Calculado: ${v.margenPorcentaje.toFixed(1)}%`, mLeft + 10, yPos);
         yPos += 40;
 
-        // --- SECCIÓN 2: AUDITORÍA DE COSTOS PUC ---
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(14);
         doc.text("2. DESGLOSE DE EGRESOS (LIBRO DIARIO)", mLeft, yPos);
@@ -508,7 +500,6 @@ export default async function reportes(container) {
             yPos += 15;
         }
 
-        // --- SECCIÓN 3: HISTORIAL DE ÓRDENES ---
         if (yPos > 600) { doc.addPage(); yPos = 50; }
 
         doc.setFontSize(14);
