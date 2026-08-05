@@ -1,15 +1,16 @@
 /**
- * 🏛️ TALLERPRO360 - REPORTES & AUDITORÍA FORENSE v19.0.2
- * 📜 SCRIPT ID: #NEXUS-X-REPORTS-2026-V19-FIX2 (COSTOS Y GASTOS CONEXOS COMPLETOS)
+ * 🏛️ TALLERPRO360 - REPORTES & AUDITORÍA FORENSE v19.1.0 (HIGH-TECH EXCEL ENGINE)
+ * 📜 SCRIPT ID: #NEXUS-X-REPORTS-2026-V19-PRO-EXCEL
  * DESARROLLADOR: WILLIAM JEFFRY URQUIJO CUBILLOS & GEMINI AI PRO
  */
 
 import { collection, query, getDocs, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "../core/firebase-config.js";
 
-// Variable global para almacenar la data procesada en memoria y usarla en PDF/Excel
+// Variables globales para persistencia en memoria y generación cruzada (PDF / Excel)
 window.nexusMemoriaFlota = {};
 window.nexusRangoReporte = { inicio: "", fin: "" };
+window.nexusMetadatasGlobales = { ingresosTotales: 0, costosTotales: 0, ebitdaGlobal: 0 };
 
 export default async function reportes(container) {
     const empresaId = localStorage.getItem("nexus_empresaId");
@@ -19,7 +20,7 @@ export default async function reportes(container) {
         return;
     }
 
-    // Asegurar carga de SheetJS para exportación a Excel profesional
+    // Asegurar carga dinámica de SheetJS (xlsx.full.min.js) para manipulación avanzada de libros Excel
     if (!window.XLSX) {
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
@@ -53,8 +54,8 @@ export default async function reportes(container) {
                         <button id="btnGenerarData" class="px-6 py-3 bg-cyan-500 text-black rounded-xl orbitron text-[11px] font-black hover:bg-white transition-all shadow-[0_0_15px_rgba(0,242,255,0.3)] flex items-center">
                             <i class="fas fa-satellite-dish mr-2"></i> ESCANEAR
                         </button>
-                        <button id="btnExportarExcel" class="px-5 py-3 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-xl orbitron text-[11px] font-black hover:bg-emerald-500 hover:text-black transition-all flex items-center" title="Exportar Reporte Gerencial a Excel">
-                            <i class="fas fa-file-excel mr-2"></i> EXCEL
+                        <button id="btnExportarExcel" class="px-5 py-3 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-xl orbitron text-[11px] font-black hover:bg-emerald-500 hover:text-black transition-all flex items-center" title="Exportar Reporte Gerencial a Excel Pro">
+                            <i class="fas fa-file-excel mr-2"></i> EXCEL PRO
                         </button>
                     </div>
                 </div>
@@ -112,7 +113,7 @@ export default async function reportes(container) {
         </div>`;
 
         document.getElementById("btnGenerarData").addEventListener("click", procesarAuditoria);
-        document.getElementById("btnExportarExcel").addEventListener("click", exportarExcelGerencial);
+        document.getElementById("btnExportarExcel").addEventListener("click", exportarExcelGerencialPro);
     };
 
     // ==========================================
@@ -174,7 +175,7 @@ export default async function reportes(container) {
                 totalIngresosG += ingresoOrden;
                 
                 flota[placa].ordenes.push({
-                    id: data.id,
+                    id: data.id || doc.id,
                     fecha: fechaStr,
                     ingreso: ingresoOrden,
                     items: data.items || [],
@@ -182,11 +183,10 @@ export default async function reportes(container) {
                 });
             });
 
-            // --- FASE B: COSTOS, GASTOS Y CONEXOS (MOTOR UNIVERSAL CONTABLE) ---
+            // --- FASE B: COSTOS, GASTOS Y CONEXOS (MOTOR UNIVERSAL CONTABLE / contabilidad.js) ---
             snapConta.forEach(doc => {
                 const data = doc.data();
                 
-                // Procesar fecha de forma ultra-robusta (soporta Timestamps de Firestore, strings, etc.)
                 let fechaStr = "";
                 const rawFecha = data.fecha_registro || data.fecha || data.createdAt;
                 if (rawFecha) {
@@ -199,11 +199,9 @@ export default async function reportes(container) {
                 if (!fechaStr) return;
                 if (fechaStr < fInicio || fechaStr > fFin) return;
 
-                // Si por error hay un registro de ingreso puro en contabilidad, lo omitimos para evitar doble conteo
                 const tipoReg = (data.tipo || "").toLowerCase();
                 if (tipoReg === 'ingreso' || tipoReg === 'venta' || tipoReg === 'abono_cliente') return;
 
-                // Capturar placa de cualquier campo posible o asignarlo a Gastos Generales de Flota
                 const placaRaw = data.placa || data.vehiculo || data.placa_vehiculo || data.unidad || "GENERAL / FLOTA";
                 const placa = placaRaw.toUpperCase().trim();
 
@@ -221,9 +219,8 @@ export default async function reportes(container) {
                     };
                 }
 
-                // Capturar el monto de cualquier variante de campo numérico
                 const montoCosto = Number(data.monto || data.debito || data.valor || data.total || data.costo || 0);
-                if (montoCosto <= 0) return; // Omitir ceros
+                if (montoCosto <= 0) return;
 
                 flota[placa].costosContables += montoCosto;
                 totalCostosG += montoCosto;
@@ -238,6 +235,12 @@ export default async function reportes(container) {
 
             // --- FASE C: CÁLCULOS FINALES Y RENDERIZADO ---
             window.nexusMemoriaFlota = flota;
+            window.nexusMetadatasGlobales = {
+                ingresosTotales: totalIngresosG,
+                costosTotales: totalCostosG,
+                ebitdaGlobal: totalIngresosG - totalCostosG
+            };
+
             const tbody = document.getElementById("tabla-flota");
             tbody.innerHTML = "";
 
@@ -286,7 +289,7 @@ export default async function reportes(container) {
 
             document.getElementById("contador-placas").innerText = `${cantidadPlacas} Unidades / Categorías Analizadas`;
 
-            const ebitdaGlobal = totalIngresosG - totalCostosG;
+            const ebitdaGlobal = window.nexusMetadatasGlobales.ebitdaGlobal;
             const margenGlobal = totalIngresosG > 0 ? (ebitdaGlobal / totalIngresosG) * 100 : 0;
 
             document.getElementById("kpi-ingresos").innerText = `$${Math.round(totalIngresosG).toLocaleString('es-CO')}`;
@@ -306,23 +309,29 @@ export default async function reportes(container) {
     };
 
     // ==========================================
-    // 📊 EXPORTACIÓN PROFESIONAL A EXCEL (MULTI-HOJA)
+    // 📊 MOTOR DE EXPORTACIÓN EXCEL PRO (MULTI-HOJA CON ANCHOS AUTOMÁTICOS)
     // ==========================================
-    const exportarExcelGerencial = () => {
+    const exportarExcelGerencialPro = () => {
         if (!window.XLSX) {
             return Swal.fire("Aviso", "La librería de Excel se está cargando. Intente de nuevo en un segundo.", "warning");
         }
 
         const flota = window.nexusMemoriaFlota;
         if (!flota || Object.keys(flota).length === 0) {
-            return Swal.fire("Sin Datos", "Debe ejecutar el escaneo de flota antes de exportar el reporte a Excel.", "info");
+            return Swal.fire("Sin Datos", "Debe ejecutar el escaneo de flota antes de exportar el reporte a Excel Pro.", "info");
         }
 
         const { inicio, fin } = window.nexusRangoReporte;
         const wb = XLSX.utils.book_new();
 
+        // -------------------------------------------------------------
+        // HOJA 1: RESUMEN GERENCIAL Y RENTABILIDAD POR UNIDAD
+        // -------------------------------------------------------------
         const dataResumenFlota = [];
-        Object.keys(flota).forEach(placa => {
+        dataResumenFlota.push({ "REPORTE GERENCIAL NEXE-X": `PERIODO DE AUDITORÍA: ${inicio} AL ${fin}`, "": "", "": "", "": "", "": "" });
+        dataResumenFlota.push({}); // Fila en blanco
+
+        Object.keys(flota).sort().forEach(placa => {
             const v = flota[placa];
             dataResumenFlota.push({
                 "Placa / Unidad": v.placaDetalle,
@@ -335,33 +344,81 @@ export default async function reportes(container) {
             });
         });
 
-        const wsResumen = XLSX.utils.json_to_sheet(dataResumenFlota);
-        XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen Flota");
+        // Fila de Totales Globales
+        const meta = window.nexusMetadatasGlobales;
+        const margenGlobalTot = meta.ingresosTotales > 0 ? (meta.ebitdaGlobal / meta.ingresosTotales) * 100 : 0;
+        dataResumenFlota.push({});
+        dataResumenFlota.push({
+            "Placa / Unidad": "TOTALES CONSOLIDADOS",
+            "Cliente / Categoría": "FLOTA GENERAL",
+            "Total Órdenes": Object.values(flota).reduce((acc, v) => acc + v.ordenes.length, 0),
+            "Ingresos Totales ($)": Math.round(meta.ingresosTotales),
+            "Costos Directos / Gastos ($)": Math.round(meta.costosTotales),
+            "EBITDA Utilidad ($)": Math.round(meta.ebitdaGlobal),
+            "Margen Operativo (%)": Number(margenGlobalTot.toFixed(2))
+        });
 
+        const wsResumen = XLSX.utils.json_to_sheet(dataResumenFlota, { skipHeader: false });
+        
+        // Ajustar anchos automáticos de columnas para Hoja 1
+        wsResumen['!cols'] = [
+            { wch: 18 }, { wch: 32 }, { wch: 15 }, { wch: 22 }, { wch: 26 }, { wch: 20 }, { wch: 20 }
+        ];
+        XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen Gerencial");
+
+        // -------------------------------------------------------------
+        // HOJA 2: LIBRO DIARIO PUC (COSTOS Y GASTOS CONEXOS)
+        // -------------------------------------------------------------
         const dataConta = [];
-        Object.keys(flota).forEach(placa => {
+        Object.keys(flota).sort().forEach(placa => {
             const v = flota[placa];
             v.registrosPUC.forEach(p => {
                 dataConta.push({
                     "Placa / Unidad": v.placaDetalle,
                     "Fecha Gasto": p.fecha || "N/A",
-                    "Cuenta PUC": p.puc,
-                    "Concepto de Gasto / Costo": p.concepto,
-                    "Monto ($)": Math.round(p.monto)
+                    "Cuenta PUC": String(p.puc),
+                    "Concepto de Gasto / Costo Operativo": p.concepto,
+                    "Monto Registrado ($)": Math.round(p.monto)
                 });
             });
         });
 
         if (dataConta.length > 0) {
             const wsConta = XLSX.utils.json_to_sheet(dataConta);
+            wsConta['!cols'] = [{ wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 50 }, { wch: 22 }];
             XLSX.utils.book_append_sheet(wb, wsConta, "Costos y Gastos PUC");
         }
 
-        XLSX.writeFile(wb, `Auditoria_Gerencial_Flota_${inicio}_al_${fin}.xlsx`);
+        // -------------------------------------------------------------
+        // HOJA 3: DETALLE DE ÓRDENES Y MISIONES LOGÍSTICAS
+        // -------------------------------------------------------------
+        const dataOrdenes = [];
+        Object.keys(flota).sort().forEach(placa => {
+            const v = flota[placa];
+            v.ordenes.forEach(o => {
+                dataOrdenes.push({
+                    "Placa / Unidad": v.placaDetalle,
+                    "ID Misión / Orden": o.id,
+                    "Fecha": o.fecha,
+                    "Cliente": v.cliente,
+                    "Ingreso Facturado ($)": Math.round(o.ingreso),
+                    "Bitácora / IA Notes": o.bitacora
+                });
+            });
+        });
+
+        if (dataOrdenes.length > 0) {
+            const wsOrdenes = XLSX.utils.json_to_sheet(dataOrdenes);
+            wsOrdenes['!cols'] = [{ wch: 18 }, { wch: 22 }, { wch: 15 }, { wch: 28 }, { wch: 22 }, { wch: 40 }];
+            XLSX.utils.book_append_sheet(wb, wsOrdenes, "Detalle Órdenes");
+        }
+
+        // Escritura y descarga del archivo Excel definitivo
+        XLSX.writeFile(wb, `Auditoria_Gerencial_NexusX_${inicio}_al_${fin}.xlsx`);
         
         Swal.fire({
-            title: 'Excel Exportado',
-            text: `El reporte gerencial completo ha sido generado con éxito.`,
+            title: '¡Excel Pro Generado!',
+            text: `El reporte gerencial multi-hoja ha sido exportado con éxito.`,
             icon: 'success',
             background: '#0d1117', color: '#06b6d4'
         });
