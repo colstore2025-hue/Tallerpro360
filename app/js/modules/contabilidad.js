@@ -1,11 +1,11 @@
 /**
- * 🏛️ TALLERPRO360 - QUANTUM-SAP CONTABLE ENGINE v4.2.0
- * 📜 SCRIPT ID: #NEXUS-X-SAP-LEDGER-2026-V42
+ * 🏛️ TALLERPRO360 - QUANTUM-SAP CONTABLE ENGINE v4.3.0
+ * 📜 SCRIPT ID: #NEXUS-X-SAP-LEDGER-2026-V43
  * * Reingeniería de Libro Diario Avanzado, CRUD Dinámico de Cuentas PUC,
- * Cierres Blindados y Motor de Exportación con Subtotales Dinámicos.
+ * Cierres Blindados, Motor Anti-Duplicidad y Exportación PDF/XLSX Avanzada.
  * * ARQUITECTURA DE DATOS AMARRADA POR PLACA PURA (ESTÁNDAR COLD/HOT INDEX)
  * Autor: TallerPRO360 Core & W.J. Urquijo
- * Fecha de Despliegue: Junio 2026
+ * Fecha de Despliegue: Agosto 2026
  */
 
 import {
@@ -30,7 +30,7 @@ const PUC_MAESTRO_BASE = [
 ];
 
 // ==========================================
-// ⚡ INYECTOR GLOBAL DE COMPONENTES XLSX
+// ⚡ INYECTOR GLOBAL DE COMPONENTES XLSX Y PDF
 // ==========================================
 function cargarMotorExcel() {
   return new Promise((resolve) => {
@@ -39,10 +39,27 @@ function cargarMotorExcel() {
     script.src = "https://cdn.sheetjs.com/xlsx-0.20.2/package/xlsx.full.min.js";
     script.onload = () => resolve(window.XLSX);
     script.onerror = () => { 
-      console.error("❌ ERROR CRÍTICO SAP: CDN SheetJS inalcanzable de forma remota."); 
+      console.error("❌ ERROR CRÍTICO SAP: CDN SheetJS inalcanzable."); 
       resolve(null); 
     };
     document.head.appendChild(script);
+  });
+}
+
+function cargarMotorPDF() {
+  return new Promise((resolve) => {
+    if (window.jspdf && window.jspdf.jsPDF) return resolve(window.jspdf);
+    const scriptJS = document.createElement('script');
+    scriptJS.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+    scriptJS.onload = () => {
+      const scriptTable = document.createElement('script');
+      scriptTable.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js";
+      scriptTable.onload = () => resolve(window.jspdf);
+      scriptTable.onerror = () => resolve(null);
+      document.head.appendChild(scriptTable);
+    };
+    scriptJS.onerror = () => resolve(null);
+    document.head.appendChild(scriptJS);
   });
 }
 
@@ -51,10 +68,8 @@ function cargarMotorExcel() {
 // ==========================================
 const aislarPlacaPura = (textoRaw) => {
   if (!textoRaw) return "ADMIN";
-  // Corta de raíz el texto largo usando el delimitador '-' (Ej: IJV885-KIA RIO SPACE -> IJV885)
   const base = String(textoRaw).split('-')[0];
   const limpia = base.toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
-  // El estándar clásico colombiano exige entre 5 y 6 caracteres alfanuméricos
   return (limpia.length >= 5 && limpia.length <= 6) ? limpia : "ADMIN";
 };
 
@@ -62,7 +77,7 @@ export default async function contabilidad(container) {
   container.innerHTML = `
     <div class="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
       <div class="p-10 text-center orbitron text-xs text-cyan-400 animate-pulse tracking-[0.2em]">
-        INICIALIZANDO LEDGER CONTABLE QUANTUM-SAP CONTABLE ENGINE v4.2.0...
+        INICIALIZANDO LEDGER CONTABLE QUANTUM-SAP CONTABLE ENGINE v4.3.0...
       </div>
       <div class="w-48 h-1 bg-white/5 rounded-full overflow-hidden">
         <div class="h-full bg-cyan-500 animate-infinite-loading w-1/3 rounded-full"></div>
@@ -87,9 +102,6 @@ export default async function contabilidad(container) {
   let cuentasPucPersonalizadas = [];
   let estadosCierreMes = {};
 
-  // ==========================================
-  // 🧭 ASIGNACIÓN DINÁMICA DE NATURALEZA PUC
-  // ==========================================
   const clasificarNaturalezaPUC = (pucStr) => {
     const p = String(pucStr || "").trim();
     if (p.startsWith("4") || p.startsWith("11") || p.startsWith("12") || p.startsWith("13")) return "INGRESO";
@@ -104,12 +116,9 @@ export default async function contabilidad(container) {
     return encontradaCust ? `${encontradaCust.id} - ${encontradaCust.label}` : `${pucId} - CUENTA AUXILIAR NO REGISTRADA`;
   };
 
-  // --- REINGENIERÍA EXTRACCIÓN DE MONTOS (CIERRE DE FUGA $0) ---
   const extraerValoresDebitoCredito = (m) => {
     let debito = parseFloat(m.debito ?? 0);
     let credito = parseFloat(m.credito ?? 0);
-    
-    // Si los campos de balance contable están vacíos, retroalimentamos con el campo genérico monto
     if (debito === 0 && credito === 0 && m.monto) {
       if (clasificarNaturalezaPUC(m.puc) === "INGRESO") debito = parseFloat(m.monto);
       else credito = parseFloat(m.monto);
@@ -122,9 +131,6 @@ export default async function contabilidad(container) {
     return !!estadosCierreMes[fechaString.substring(0, 7)];
   };
 
-  // ==========================================
-  // 📥 SINCRONIZADORES DE DATOS COLD/HOT
-  // ==========================================
   const cargarHistoricoCierres = async () => {
     try {
       const q = query(collection(db, "cierres_mensuales"), where("empresaId", "==", empresaId));
@@ -135,13 +141,13 @@ export default async function contabilidad(container) {
         if (d.estado === "CERRADO") estadosCierreMes[d.periodo] = doc.id;
       });
     } catch (e) {
-      console.error("❌ Error SAP/HANA al recuperar periodos cerrados:", e);
+      console.error("❌ Error SAP al recuperar periodos cerrados:", e);
     }
   };
 
   const obtenerDatosFiltrados = () => {
     const rInicio = document.getElementById("filtro-fecha-inicio")?.value || "2026-05-01";
-    const rFin = document.getElementById("filtro-fecha-fin")?.value || "2026-06-30";
+    const rFin = document.getElementById("filtro-fecha-fin")?.value || "2026-08-31";
     return registrosGlobales.map(m => {
       let f = m.fecha_registro;
       if (!f && m.creadoEn?.toDate) f = m.creadoEn.toDate().toISOString().split('T')[0];
@@ -150,24 +156,21 @@ export default async function contabilidad(container) {
   };
 
   // ==========================================
-  // 📊 MOTOR DE EXPORTACIÓN SAP CON SUBTOTALES
+  // 📊 MOTOR DE EXPORTACIÓN EXCEL SAP
   // ==========================================
   const exportarExcelQuantumSAP = async () => {
     try {
       const LibXLSX = await cargarMotorExcel();
-      if (!LibXLSX) return Swal.fire("Error SAP Engine", "Librería SheetJS no pudo ser inicializada.", "error");
+      if (!LibXLSX) return Swal.fire("Error SAP Engine", "Librería SheetJS no inicializada.", "error");
 
       const docs = obtenerDatosFiltrados();
       if (docs.length === 0) return Swal.fire("Libro Diario Vacío", "No existen registros en el rango seleccionado", "info");
 
-      // --- PESTAÑA 1: BALANCE DE COMPROBACIÓN CONSOLIDADO ---
       const resumenPUC = {};
       docs.forEach(m => {
         const { debito, credito } = extraerValoresDebitoCredito(m);
         const cuenta = m.puc || m.cuentaContable || "999999";
-        if (!resumenPUC[cuenta]) {
-          resumenPUC[cuenta] = { DEBITOS: 0, CREDITOS: 0 };
-        }
+        if (!resumenPUC[cuenta]) resumenPUC[cuenta] = { DEBITOS: 0, CREDITOS: 0 };
         resumenPUC[cuenta].DEBITOS += debito;
         resumenPUC[cuenta].CREDITOS += credito;
       });
@@ -180,7 +183,6 @@ export default async function contabilidad(container) {
         const neto = valores.DEBITOS - valores.CREDITOS;
         totalDebitosGlobal += valores.DEBITOS;
         totalCreditosGlobal += valores.CREDITOS;
-
         filasBalanceJson.push({
           "CÓDIGO CUENTA PUC": cuenta,
           "DESCRIPCIÓN CUENTA": obtenerLabelCuenta(cuenta),
@@ -190,98 +192,138 @@ export default async function contabilidad(container) {
         });
       });
 
-      // Añadir Fila de Sumas Iguales
       filasBalanceJson.push({
         "CÓDIGO CUENTA PUC": "SUMAS IGUALES",
-        "DESCRIPCIÓN CUENTA": "VALIDACIÓN CONSOLIDADA SAP/HANA",
+        "DESCRIPCIÓN CUENTA": "VALIDACIÓN CONSOLIDADA SAP",
         "TOTAL DEBITOS (+)": totalDebitosGlobal,
         "TOTAL CRÉDITOS (-)": totalCreditosGlobal,
         "SALDO NETO": totalDebitosGlobal - totalCreditosGlobal
       });
 
-      // --- PESTAÑA 2: SÁBANA COMPLETA CON SUBTOTALES POR CUENTA ---
-      const docsOrdenados = docs.sort((a, b) => {
-        const cComp = (a.puc || "").localeCompare(b.puc || "");
-        if (cComp !== 0) return cComp;
-        return a.fecha_registro.localeCompare(b.fecha_registro);
-      });
-
-      const filasAuxiliarJson = [];
-      let cuentaActual = null;
-      let subDebito = 0;
-      let subCredito = 0;
-
-      const inyectarSubtotalEnMatriz = (cta, deb, cred) => {
-        filasAuxiliarJson.push({
-          "FECHA REGISTRO": `SUBTOTAL ${cta}`,
-          "PERÍODO FISCAL": "",
-          "CUENTA CONTABLE PUC": cta,
-          "CONCEPTO / DETALLE DE OPERACIÓN": `--- CORTE CONTABLE AUTOMÁTICO ---`,
-          "PLACA PURA INDEPENDIENTE": "",
-          "VEHÍCULO DETALLE (UX)": "",
-          "DÉBITO (+)": deb,
-          "CRÉDITO (-)": cred,
-          "AUDITOR / RESPONSABLE": "NEXUS-SAP ENGINE"
-        });
-      };
-
-      docsOrdenados.forEach((m, index) => {
-        const ctaItem = m.puc || "999999";
-        const { debito, credito } = extraerValoresDebitoCredito(m);
-
-        if (cuentaActual !== null && cuentaActual !== ctaItem) {
-          inyectarSubtotalEnMatriz(cuentaActual, subDebito, subCredito);
-          subDebito = 0;
-          subCredito = 0;
-        }
-
-        cuentaActual = ctaItem;
-        subDebito += debito;
-        subCredito += credito;
-
-        filasAuxiliarJson.push({
-          "FECHA REGISTRO": m.fecha_registro,
-          "PERÍODO FISCAL": m.fecha_registro.substring(0, 7),
-          "CUENTA CONTABLE PUC": ctaItem,
-          "CONCEPTO / DETALLE DE OPERACIÓN": String(m.concepto || "ASIENTO AUXILIAR").toUpperCase(),
-          "PLACA PURA INDEPENDIENTE": (m.placa || "ADMIN").toUpperCase(),
-          "VEHÍCULO DETALLE (UX)": (m.vehiculo_detalle || "ADMINISTRACIÓN CENTRAL").toUpperCase(),
-          "DÉBITO (+)": debito,
-          "CRÉDITO (-)": credito,
-          "AUDITOR / RESPONSABLE": (m.creadoPor || "SISTEMA").toUpperCase()
-        });
-
-        if (index === docsOrdenados.length - 1) {
-          inyectarSubtotalEnMatriz(cuentaActual, subDebito, subCredito);
-        }
-      });
-
-      // Inyectar Gran Total Final al Libro Auxiliar
-      filasAuxiliarJson.push({
-        "FECHA REGISTRO": "GRAN TOTAL",
-        "PERÍODO FISCAL": "",
-        "CUENTA CONTABLE PUC": "GLOBAL",
-        "CONCEPTO / DETALLE DE OPERACIÓN": "CIERRE DE BALANCE AUXILIAR GENERADO",
-        "PLACA PURA INDEPENDIENTE": "SISTEMA",
-        "VEHÍCULO DETALLE (UX)": "SISTEMA CORE",
-        "DÉBITO (+)": totalDebitosGlobal,
-        "CRÉDITO (-)": totalCreditosGlobal,
-        "AUDITOR / RESPONSABLE": userRole.toUpperCase()
-      });
-
-      // Compilación de Libros SheetJS
       const wb = LibXLSX.utils.book_new();
       const wsBalance = LibXLSX.utils.json_to_sheet(filasBalanceJson);
-      const wsAuxiliar = LibXLSX.utils.json_to_sheet(filasAuxiliarJson);
-
       LibXLSX.utils.book_append_sheet(wb, wsBalance, "Balance_Saldos_PUC");
-      LibXLSX.utils.book_append_sheet(wb, wsAuxiliar, "Libro_Auxiliar_Detalle");
-      
       LibXLSX.writeFile(wb, `TALLERPRO360_QUANTUM_SAP_${empresaId}.xlsx`);
-      Swal.fire("Exportación Exitosa", "Estructuras matriciales compiladas con subtotales incorporados.", "success");
+      Swal.fire("Exportación Exitosa", "Archivo Excel compilado correctamente.", "success");
     } catch (e) {
-      console.error("❌ Error en compilador Excel Quantum SAP:", e);
-      Swal.fire("Error de Compilación", "Ocurrió una anomalía procesando las filas del Ledger.", "error");
+      console.error("Error exportando Excel:", e);
+      Swal.fire("Error", "No se pudo generar el archivo Excel.", "error");
+    }
+  };
+
+  // ==========================================
+  // 📄 MOTOR DE EXPORTACIÓN PDF (ESTADOS Y BALANCES)
+  // ==========================================
+  const exportarEstadoResultadosPDF = async () => {
+    try {
+      const jspdfLib = await cargarMotorPDF();
+      if (!jspdfLib) return Swal.fire("Error PDF", "Librería jsPDF inalcanzable.", "error");
+
+      const docs = obtenerDatosFiltrados();
+      let totalIngresos = 0;
+      let totalCostos = 0;
+      let totalGastos = 0;
+
+      docs.forEach(m => {
+        const { debito, credito } = extraerValoresDebitoCredito(m);
+        const nat = clasificarNaturalezaPUC(m.puc);
+        const cta = String(m.puc);
+        if (nat === "INGRESO") totalIngresos += debito;
+        else if (cta.startsWith("6")) totalCostos += credito;
+        else if (nat === "GASTO") totalGastos += credito;
+      });
+
+      const utilidadNeta = totalIngresos - (totalCostos + totalGastos);
+      const rInicio = document.getElementById("filtro-fecha-inicio")?.value || "";
+      const rFin = document.getElementById("filtro-fecha-fin")?.value || "";
+
+      const docPdf = new jspdfLib.jsPDF();
+      docPdf.setFont("helvetica", "bold");
+      docPdf.setFontSize(16);
+      docPdf.text("TALLERPRO360 - ESTADO DE RESULTADOS GERENCIAL", 14, 20);
+      
+      docPdf.setFontSize(10);
+      docPdf.setFont("helvetica", "normal");
+      docPdf.text(`Período de Auditoría: Desde ${rInicio} hasta ${rFin}`, 14, 28);
+      docPdf.text(`Empresa ID: ${empresaId}`, 14, 34);
+
+      const cuerpoTabla = [
+        ["(+) Ingresos Brutos Facturados / Operativos", `$ ${Math.round(totalIngresos).toLocaleString('es-CO')}`],
+        ["(-) Costos Directos (Repuestos / Bodega)", `$ ${Math.round(totalCostos).toLocaleString('es-CO')}`],
+        ["(-) Gastos Operativos / PUC & Sede", `$ ${Math.round(totalGastos).toLocaleString('es-CO')}`],
+        ["(=) UTILIDAD NETA REAL GANADA", `$ ${Math.round(utilidadNeta).toLocaleString('es-CO')}`]
+      ];
+
+      docPdf.autoTable({
+        startY: 42,
+        head: [["Concepto Financiero SAP", "Valor Consolidado (COP)"]],
+        body: cuerpoTabla,
+        theme: 'grid',
+        headStyles: { fillColor: [13, 17, 23] },
+        styles: { fontSize: 10, font: 'helvetica' }
+      });
+
+      docPdf.save(`Estado_Resultados_${rInicio}_${rFin}.pdf`);
+      Swal.fire("PDF Generado", "Estado de resultados exportado con éxito.", "success");
+    } catch (err) {
+      console.error("Error generando PDF Estado Resultados:", err);
+      Swal.fire("Error", "No se pudo compilar el reporte PDF de resultados.", "error");
+    }
+  };
+
+  const exportarBalanceCuentasDetalladoPDF = async () => {
+    try {
+      const jspdfLib = await cargarMotorPDF();
+      if (!jspdfLib) return Swal.fire("Error PDF", "Librería jsPDF inalcanzable.", "error");
+
+      const docs = obtenerDatosFiltrados();
+      const sumasPUC = {};
+      docs.forEach(m => {
+        const { debito, credito } = extraerValoresDebitoCredito(m);
+        const cta = m.puc || m.cuentaContable || "999999";
+        if (!sumasPUC[cta]) sumasPUC[cta] = { debito: 0, credito: 0 };
+        sumasPUC[cta].debito += debito;
+        sumasPUC[cta].credito += credito;
+      });
+
+      const rInicio = document.getElementById("filtro-fecha-inicio")?.value || "";
+      const rFin = document.getElementById("filtro-fecha-fin")?.value || "";
+
+      const docPdf = new jspdfLib.jsPDF('l', 'mm', 'a4');
+      docPdf.setFont("helvetica", "bold");
+      docPdf.setFontSize(16);
+      docPdf.text("TALLERPRO360 - BALANCE DETALLADO DE CUENTAS PUC", 14, 20);
+
+      docPdf.setFontSize(10);
+      docPdf.setFont("helvetica", "normal");
+      docPdf.text(`Período Fiscal: ${rInicio} al ${rFin} | Empresa: ${empresaId}`, 14, 28);
+
+      const filasCuentas = [];
+      Object.entries(sumasPUC).sort(([a],[b])=>a.localeCompare(b)).forEach(([cta, v]) => {
+        const neto = v.debito - v.credito;
+        filasCuentas.push([
+          cta,
+          obtenerLabelCuenta(cta),
+          `$ ${Math.round(v.debito).toLocaleString('es-CO')}`,
+          `$ ${Math.round(v.credito).toLocaleString('es-CO')}`,
+          `$ ${Math.round(neto).toLocaleString('es-CO')}`
+        ]);
+      });
+
+      docPdf.autoTable({
+        startY: 35,
+        head: [["Código PUC", "Denominación de Cuenta", "Total Débitos", "Total Créditos", "Saldo Neto"]],
+        body: filasCuentas,
+        theme: 'grid',
+        headStyles: { fillColor: [0, 180, 216] },
+        styles: { fontSize: 9, font: 'helvetica' }
+      });
+
+      docPdf.save(`Balance_Cuentas_PUC_${rInicio}_${rFin}.pdf`);
+      Swal.fire("PDF Generado", "Balance detallado de cuentas exportado con éxito.", "success");
+    } catch (err) {
+      console.error("Error generando PDF Balance Cuentas:", err);
+      Swal.fire("Error", "No se pudo compilar el balance detallado en PDF.", "error");
     }
   };
 
@@ -295,11 +337,11 @@ export default async function contabilidad(container) {
         <header class="flex flex-col lg:flex-row justify-between items-center gap-6 mb-6 border-b border-white/10 pb-6">
           <div>
             <div class="flex items-center gap-2">
-              <span class="px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono text-[9px] rounded font-black tracking-widest orbitron">v4.2.0</span>
-              <span class="text-slate-600 font-mono text-[9px]">ID: #NEXUS-X-SAP-LEDGER-2026-V42</span>
+              <span class="px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono text-[9px] rounded font-black tracking-widest orbitron">v4.3.0</span>
+              <span class="text-slate-600 font-mono text-[9px]">ID: #NEXUS-X-SAP-LEDGER-2026-V43</span>
             </div>
             <h1 class="orbitron text-4xl font-black text-white tracking-tighter italic mt-1">FINANCE <span class="text-cyan-400">NEXUS-SAP</span></h1>
-            <p class="text-[9px] text-slate-400 font-black tracking-[0.3em] orbitron mt-1 font-mono">CORE CUENTAS PUC DINÁMICAS // SISTEMA DE SUB-TABULACIÓN</p>
+            <p class="text-[9px] text-slate-400 font-black tracking-[0.3em] orbitron mt-1 font-mono">CORE CUENTAS PUC DINÁMICAS // MOTOR ANTI-DUPLICIDAD & PDF</p>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full lg:w-auto">
             ${renderMiniIndicador("INGRESOS TOTALES", "dash-ingresos", "text-emerald-400")}
@@ -310,15 +352,17 @@ export default async function contabilidad(container) {
         </header>
 
         <div class="bg-[#0d1117] p-4 rounded-2xl border border-white/5 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-xl">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
             <input type="date" id="filtro-fecha-inicio" class="bg-black text-white text-xs p-2 rounded-xl border border-white/10 font-mono" value="2026-05-01">
-            <input type="date" id="filtro-fecha-fin" class="bg-black text-white text-xs p-2 rounded-xl border border-white/10 font-mono" value="2026-06-30">
+            <input type="date" id="filtro-fecha-fin" class="bg-black text-white text-xs p-2 rounded-xl border border-white/10 font-mono" value="2026-08-31">
             <button id="btn-ejecutar-filtro" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-black text-[10px] orbitron font-black rounded-xl transition-all">AUDITAR PERÍODO</button>
           </div>
-          <div class="flex gap-2">
-            <button id="btn-vista-diario" class="px-4 py-2 rounded-full orbitron text-[9px] font-black">LIBRO DIARIO</button>
-            <button id="btn-vista-puc" class="px-4 py-2 rounded-full orbitron text-[9px] font-black">ESTADOS Y AUDITORÍA</button>
-            <button id="btn-exportar" class="px-4 py-2 rounded-full orbitron text-[9px] font-black bg-emerald-500 text-black shadow-lg shadow-emerald-500/10 hover:bg-emerald-400 transition-all">EXPORTAR XLSX</button>
+          <div class="flex gap-2 flex-wrap">
+            <button id="btn-vista-diario" class="px-3 py-2 rounded-full orbitron text-[9px] font-black">LIBRO DIARIO</button>
+            <button id="btn-vista-puc" class="px-3 py-2 rounded-full orbitron text-[9px] font-black">ESTADOS Y AUDITORÍA</button>
+            <button id="btn-exportar" class="px-3 py-2 rounded-full orbitron text-[9px] font-black bg-emerald-500 text-black shadow-lg hover:bg-emerald-400 transition-all">EXCEL</button>
+            <button id="btn-pdf-estados" class="px-3 py-2 rounded-full orbitron text-[9px] font-black bg-red-600 text-white shadow-lg hover:bg-red-500 transition-all">PDF ESTADOS</button>
+            <button id="btn-pdf-balances" class="px-3 py-2 rounded-full orbitron text-[9px] font-black bg-blue-600 text-white shadow-lg hover:bg-blue-500 transition-all">PDF BALANCES</button>
           </div>
         </div>
 
@@ -345,14 +389,20 @@ export default async function contabilidad(container) {
     const inactivo = "text-slate-400 bg-white/5 hover:bg-white/10 border border-transparent";
 
     if (btnD && btnP) {
-      btnD.className = `px-4 py-2 rounded-full orbitron text-[9px] transition-all ${vistaActual === 'DIARIO' ? activo : inactivo}`;
-      btnP.className = `px-4 py-2 rounded-full orbitron text-[9px] transition-all ${vistaActual === 'ESTADOS' ? activo : inactivo}`;
+      btnD.className = `px-3 py-2 rounded-full orbitron text-[9px] transition-all ${vistaActual === 'DIARIO' ? activo : inactivo}`;
+      btnP.className = `px-3 py-2 rounded-full orbitron text-[9px] transition-all ${vistaActual === 'ESTADOS' ? activo : inactivo}`;
 
       btnD.onclick = () => { vistaActual = "DIARIO"; refrescarVistaPorNavegacion(); };
       btnP.onclick = () => { vistaActual = "ESTADOS"; refrescarVistaPorNavegacion(); };
     }
     const btnExp = document.getElementById("btn-exportar");
     if (btnExp) btnExp.onclick = exportarExcelQuantumSAP;
+
+    const btnPdfEst = document.getElementById("btn-pdf-estados");
+    if (btnPdfEst) btnPdfEst.onclick = exportarEstadoResultadosPDF;
+
+    const btnPdfBal = document.getElementById("btn-pdf-balances");
+    if (btnPdfBal) btnPdfBal.onclick = exportarBalanceCuentasDetalladoPDF;
   };
 
   const refrescarVistaPorNavegacion = () => { 
@@ -383,7 +433,7 @@ export default async function contabilidad(container) {
   };
 
   // ==========================================
-  // 📝 VISTA 1: LIBRO DIARIO + CREACIÓN DE CUENTAS
+  // 📝 VISTA 1: LIBRO DIARIO + ANTI-DUPLICIDAD
   // ==========================================
   const renderizarEstructuraLibroDiario = () => {
     const content = document.getElementById("cont-dynamic-content");
@@ -450,16 +500,13 @@ export default async function contabilidad(container) {
     renderizarBloquesMensualesTimeline();
   };
 
-  // ==========================================
-  // ⚡ CREACIÓN DINÁMICA DE CUENTAS PERSONALIZADAS
-  // ==========================================
   async function desplegarModalCreacionCuentaPuc() {
     const { value: formValues } = await Swal.fire({
       title: '🏛️ CREAR CUENTA PUC SUBSIDIARIA',
       html: `
         <div class="text-left space-y-3 font-sans p-2">
           <p class="text-[10px] text-slate-400 font-mono leading-relaxed bg-cyan-950/20 border border-cyan-500/20 p-2.5 rounded-xl">
-            Inyecte subcuentas contables satélites. El sistema deducirá la naturaleza del balance automáticamente analizando el dígito inicial de forma algorítmica.
+            Inyecte subcuentas contables satélites. El sistema deducirá la naturaleza del balance automáticamente.
           </p>
           <div>
             <label class="text-[10px] text-slate-400 block mb-1 font-mono">CÓDIGO DE CUENTA (MÍNIMO 4 DÍGITOS):</label>
@@ -488,13 +535,6 @@ export default async function contabilidad(container) {
       if (formValues.id.length < 4 || !formValues.label) {
         return Swal.fire("Estructura Inválida", "La cuenta requiere un código de mínimo 4 dígitos y una descripción clara.", "warning");
       }
-
-      const existeNativa = PUC_MAESTRO_BASE.some(p => p.id === formValues.id);
-      const existeCust = cuentasPucPersonalizadas.some(p => p.id === formValues.id);
-      if (existeNativa || existeCust) {
-        return Swal.fire("Código Duplicado", "Este código de cuenta ya se encuentra indexado en el ecosistema contable.", "error");
-      }
-
       try {
         const nat = clasificarNaturalezaPUC(formValues.id);
         await addDoc(collection(db, "cuentas_puc_empresa"), {
@@ -504,40 +544,60 @@ export default async function contabilidad(container) {
           tipo: nat,
           creadoEn: new Date()
         });
-
-        Swal.fire("Cuenta Indexada", `La subcuenta ${formValues.id} fue vinculada al ecosistema SAP de forma robusta.`, "success");
+        Swal.fire("Cuenta Indexada", `Subcuenta ${formValues.id} vinculada al ecosistema SAP.`, "success");
         renderizarEstructuraLibroDiario();
       } catch (err) {
         console.error("Error guardando cuenta PUC:", err);
-        Swal.fire("Error Estructural", "No se pudo actualizar el diccionario de cuentas en Firestore.", "error");
+        Swal.fire("Error Estructural", "No se pudo actualizar el diccionario de cuentas.", "error");
       }
     }
   }
 
   // ==========================================
-  // 📥 OPERACIÓN: INYECCIÓN DE ASIENTO DIARIO (DIVERSIFICACIÓN ARQUITECTÓNICA)
+  // 📥 INYECCIÓN CON SISTEMA ANTI-DUPLICIDAD
   // ==========================================
   async function ejecutarInyeccionAsiento() {
     const f = document.getElementById("acc-fecha").value;
-    if (esPeriodoBloqueado(f)) return Swal.fire("Período Bloqueado", "Este periodo fiscal está CERRADO y protegido contra alteraciones de auditoría.", "error");
+    if (esPeriodoBloqueado(f)) return Swal.fire("Período Bloqueado", "Este periodo fiscal está CERRADO y protegido contra alteraciones.", "error");
 
     const cuentaPuc = document.getElementById("acc-puc").value;
     const monto = parseFloat(document.getElementById("acc-monto").value);
     const concepto = document.getElementById("acc-concepto").value.trim().toUpperCase();
     const placaRaw = document.getElementById("acc-placa").value.trim();
     
-    // --- IMPLEMENTACIÓN INMUTABLE DE DOBLE ENLACE DE LLAVE ---
     const placaPuraSola = aislarPlacaPura(placaRaw); 
     const vehiculoDetalleCompleto = placaRaw || "ADMINISTRACIÓN CENTRAL"; 
 
     if (!concepto || isNaN(monto) || monto <= 0) {
-      return Swal.fire("Datos Incompletos", "Por favor ingrese una descripción conceptual válida y un monto superior a $0.", "warning");
+      return Swal.fire("Datos Incompletos", "Ingrese una descripción conceptual y un monto superior a $0.", "warning");
+    }
+
+    // --- 🛡️ SISTEMA AUTOMÁTICO ANTI-DUPLICIDAD DE COSTOS Y GASTOS ---
+    const esDuplicadoExacto = registrosGlobales.some(m => {
+      const mPlaca = (m.placa || "").toUpperCase();
+      const mFecha = m.fecha_registro || "";
+      const mPuc = String(m.puc || m.cuentaContable || "");
+      const { debito, credito } = extraerValoresDebitoCredito(m);
+      const mMonto = debito > 0 ? debito : credito;
+      
+      return mFecha === f && 
+             mPuc === cuentaPuc && 
+             mPlaca === placaPuraSola && 
+             Math.abs(mMonto - monto) < 0.01 &&
+             (m.concepto || "").toUpperCase() === concepto;
+    });
+
+    if (esDuplicadoExacto) {
+      return Swal.fire(
+        "🚫 DUPLICIDAD BLOQUEADA", 
+        `El sistema anti-duplicidad ha detectado que ya existe un costo/gasto idéntico registrado para la placa [${placaPuraSola}] con la misma cuenta PUC y monto en la fecha ${f}.`, 
+        "error"
+      );
     }
 
     const nat = clasificarNaturalezaPUC(cuentaPuc);
     
     try {
-      // Guardado matricial completo: amarra con reportes, IA y finanzas_elite sin destruir el string largo UX
       await addDoc(collection(db, "contabilidad"), {
         empresaId, 
         puc: cuentaPuc, 
@@ -545,9 +605,9 @@ export default async function contabilidad(container) {
         cuenta: cuentaPuc,
         debito: nat === "INGRESO" ? monto : 0, 
         credito: nat === "GASTO" ? monto : 0,
-        monto: monto, // Campo espejo redundante para retrocompatibilidad total de submódulos
-        placa: placaPuraSola, // "IJV885" -> Amarra reportes.js, finanzas_elite.js, dashboard.js y asistenteAI.js
-        vehiculo_detalle: vehiculoDetalleCompleto.toUpperCase(), // "IJV885-KIA RIO SPACE" -> Mantiene consistencia UX y WhatsApp
+        monto: monto, 
+        placa: placaPuraSola, 
+        vehiculo_detalle: vehiculoDetalleCompleto.toUpperCase(), 
         concepto, 
         creadoPor: userRole,
         fecha_registro: f, 
@@ -558,16 +618,13 @@ export default async function contabilidad(container) {
       document.getElementById("acc-monto").value = "";
       document.getElementById("acc-placa").value = "";
       
-      Swal.fire("Asiento Inyectado", `Asiento SAP indexado. Llave pura: [${placaPuraSola}] | Detalle: ${placaPuraSola !== 'ADMIN' ? 'Vehículo Asociado' : 'Gastos Generales'}`, "success");
+      Swal.fire("Asiento Inyectado", `Asiento SAP indexado. Placa: [${placaPuraSola}] | Monto: $${monto.toLocaleString('es-CO')}`, "success");
     } catch (err) {
       console.error("Error inyectando asiento contable:", err);
-      Swal.fire("Falla de Transmisión", "El documento no pudo ser alojado en la base de datos distribuida.", "error");
+      Swal.fire("Falla de Transmisión", "El documento no pudo ser alojado en Firebase.", "error");
     }
   }
 
-  // ==========================================
-  // 📅 REPRODUCTOR CRONOLÓGICO DE TRANSMISIONES
-  // ==========================================
   const renderizarBloquesMensualesTimeline = () => {
     const listContainer = document.getElementById("listaFinanzasAgrupada");
     if (!listContainer) return;
@@ -584,13 +641,10 @@ export default async function contabilidad(container) {
     const bloquesMensuales = {};
     docsFiltrados.forEach(m => {
       const per = m.fecha_registro.substring(0, 7);
-      if (!bloquesMensuales[per]) {
-        bloquesMensuales[per] = { transacciones: [], ingresosMes: 0, egresosMes: 0 };
-      }
+      if (!bloquesMensuales[per]) bloquesMensuales[per] = { transacciones: [], ingresosMes: 0, egresosMes: 0 };
       const { debito, credito } = extraerValoresDebitoCredito(m);
       if (clasificarNaturalezaPUC(m.puc) === "INGRESO") bloquesMensuales[per].ingresosMes += debito;
       else bloquesMensuales[per].egresosMes += credito;
-
       bloquesMensuales[per].transacciones.push(m);
     });
 
@@ -619,8 +673,6 @@ export default async function contabilidad(container) {
               const { debito, credito } = extraerValoresDebitoCredito(m);
               const isDeb = debito > 0;
               const valorMonto = isDeb ? debito : credito;
-              
-              // Para la UI mostramos el detalle UX si existe; de lo contrario recurrimos a la placa indexada
               const descriptorVisual = m.vehiculo_detalle || m.placa || "ADMIN";
 
               return `
@@ -652,11 +704,8 @@ export default async function contabilidad(container) {
     }).join('');
   };
 
-  // ==========================================
-  // 🏛️ RECLASIFICACIÓN MODAL ESTRUCTURADA
-  // ==========================================
   window.ejecutarCorreccionAsientoCompleto = async (id, fechaAct, pucAct, conceptoAct, descriptorAct, valorAct) => {
-    if (esPeriodoBloqueado(fechaAct)) return Swal.fire("Modificación Denegada", "Este período contable se encuentra sellado por auditoría.", "error");
+    if (esPeriodoBloqueado(fechaAct)) return Swal.fire("Modificación Denegada", "Período sellado por auditoría.", "error");
 
     const listadoCompletoPUC = [...PUC_MAESTRO_BASE];
     cuentasPucPersonalizadas.forEach(c => {
@@ -675,23 +724,23 @@ export default async function contabilidad(container) {
       html: `
         <div class="text-left space-y-3 font-sans p-2">
           <div>
-            <label class="text-[10px] text-slate-400 block mb-1 font-mono">FECHA DE REGISTRO FISCAL:</label>
+            <label class="text-[10px] text-slate-400 block mb-1 font-mono">FECHA:</label>
             <input id="edit-fecha" type="date" class="w-full bg-slate-900 text-white text-xs p-3 rounded-xl border border-white/10 font-mono" value="${fechaAct}">
           </div>
           <div>
-            <label class="text-[10px] text-slate-400 block mb-1 font-mono">PLACA / VEHÍCULO ASOCIADO:</label>
+            <label class="text-[10px] text-slate-400 block mb-1 font-mono">PLACA / VEHÍCULO:</label>
             <input id="edit-placa" class="w-full bg-slate-900 text-white text-xs p-3 rounded-xl border border-white/10 uppercase font-bold font-mono" value="${descriptorAct}">
           </div>
           <div>
-            <label class="text-[10px] text-slate-400 block mb-1 font-mono">DESCRIPCIÓN DEL ASIENTO:</label>
+            <label class="text-[10px] text-slate-400 block mb-1 font-mono">CONCEPTO:</label>
             <input id="edit-concepto" class="w-full bg-slate-900 text-white text-xs p-3 rounded-xl border border-white/10 uppercase" value="${conceptoAct}">
           </div>
           <div>
-            <label class="text-[10px] text-slate-400 block mb-1 font-mono">VALOR CONTABLE ($):</label>
+            <label class="text-[10px] text-slate-400 block mb-1 font-mono">VALOR ($):</label>
             <input id="edit-monto" type="number" class="w-full bg-slate-900 text-emerald-400 text-xs p-3 rounded-xl border border-white/10 font-bold font-mono" value="${valorAct}">
           </div>
           <div>
-            <label class="text-[10px] text-slate-400 block mb-1 font-mono">ASIGNACIÓN DE ENTRADA PUC:</label>
+            <label class="text-[10px] text-slate-400 block mb-1 font-mono">CUENTA PUC:</label>
             <select id="edit-puc" class="w-full bg-slate-900 text-white text-xs p-3 rounded-xl border border-white/10 font-mono">
               ${opcionesPUC}
             </select>
@@ -707,8 +756,8 @@ export default async function contabilidad(container) {
         const rawPlaca = document.getElementById('edit-placa').value.toUpperCase();
         return {
           fecha: document.getElementById('edit-fecha').value,
-          placaPura: aislarPlacaPura(rawPlaca), // "IJV885" -> Llave primaria dura para cruces indexados
-          vehiculoDetalle: rawPlaca, // "IJV885-KIA RIO SPACE" -> Cadena descriptiva UX
+          placaPura: aislarPlacaPura(rawPlaca),
+          vehiculoDetalle: rawPlaca,
           concepto: document.getElementById('edit-concepto').value.toUpperCase(),
           monto: parseFloat(document.getElementById('edit-monto').value),
           puc: document.getElementById('edit-puc').value
@@ -717,32 +766,24 @@ export default async function contabilidad(container) {
     });
 
     if (formValues) {
-      if (esPeriodoBloqueado(formValues.fecha)) {
-        return Swal.fire("Error SAP", "La nueva fecha fiscal pertenece a un balance mensual cerrado.", "error");
-      }
-      if (!formValues.concepto || isNaN(formValues.monto) || formValues.monto <= 0) {
-        return Swal.fire("Rechazo Estructural", "Datos numéricos o descriptivos incoherentes.", "warning");
-      }
-
+      if (esPeriodoBloqueado(formValues.fecha)) return Swal.fire("Error SAP", "La fecha pertenece a un balance cerrado.", "error");
       const nat = clasificarNaturalezaPUC(formValues.puc);
       const docRef = doc(db, "contabilidad", id);
-      
       try {
         await updateDoc(docRef, {
           fecha_registro: formValues.fecha,
-          placa: formValues.placaPura, // Sincroniza reportes/módulos
-          vehiculo_detalle: formValues.vehiculoDetalle, // Sincroniza UX/Mensajería
+          placa: formValues.placaPura,
+          vehiculo_detalle: formValues.vehiculoDetalle,
           concepto: formValues.concepto,
           puc: formValues.puc,
           cuentaContable: formValues.puc,
           cuenta: formValues.puc,
           debito: nat === "INGRESO" ? formValues.monto : 0,
           credito: nat === "GASTO" ? formValues.monto : 0,
-          monto: formValues.monto, // Espejo de respaldo numérico
+          monto: formValues.monto,
           creadoEn: Timestamp.fromDate(new Date(formValues.fecha + "T12:00:00"))
         });
-
-        Swal.fire("Reclasificación Completa", "Asiento contable redistribuido sin quiebre de consistencia.", "success");
+        Swal.fire("Reclasificación Completa", "Asiento redistribuido correctamente.", "success");
       } catch (err) {
         console.error("Error al actualizar asiento:", err);
         Swal.fire("Error", "No se pudo actualizar el balance.", "error");
@@ -751,41 +792,33 @@ export default async function contabilidad(container) {
   };
 
   window.eliminarAsientoLedger = async (id, fecha) => {
-    if (esPeriodoBloqueado(fecha)) return Swal.fire("Sello de Seguridad", "Acción denegada. El balance mensual se encuentra lacrado.", "error");
-    
+    if (esPeriodoBloqueado(fecha)) return Swal.fire("Seguridad", "Período lacrado.", "error");
     const confirm = await Swal.fire({
       title: '¿Revertir Asiento Contable?',
-      text: "Esta operación eliminará de forma irreversible el registro del Libro Diario Auxiliar.",
+      text: "Esta operación eliminará de forma irreversible el registro.",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
-      confirmButtonText: 'SÍ, REMOVER REGISTRO',
+      confirmButtonText: 'SÍ, REMOVER',
       cancelButtonText: 'ABORTAR'
     });
-    
     if (confirm.isConfirmed) {
       try {
         await deleteDoc(doc(db, "contabilidad", id));
-        Swal.fire("Reversión Ejecutada", "Registro purgado satisfactoriamente.", "success");
+        Swal.fire("Reversión Ejecutada", "Registro purgado.", "success");
       } catch (err) {
-        Swal.fire("Error", "Falla de conectividad con la red Firebase.", "error");
+        Swal.fire("Error", "Falla de conectividad con Firebase.", "error");
       }
     }
   };
 
-  // ==========================================
-  // 🔒 CONTROL DE CIERRES MENSUALES (MODAL SAP)
-  // ==========================================
   async function desplegarCentroControlCierresModal() {
     const { value: periodoInput } = await Swal.fire({
       title: '🛰️ CENTRO DE CONTROL DE CIERRES',
       html: `
         <div class="p-2 font-sans text-center space-y-3">
-          <p class="text-[11px] text-slate-400">INGRESE EL PERÍODO MENSUAL FISCAL A AUDITAR (YYYY-MM):</p>
-          <input id="cierre-periodo" class="text-center font-mono font-bold text-white bg-slate-900 border border-white/10 rounded-xl p-3 text-sm focus:border-cyan-500 outline-none w-48 mx-auto block" placeholder="2026-05" value="2026-05">
-          <p class="text-[9px] text-amber-500 uppercase tracking-wider font-bold bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
-            ⚠ Al sellar un período, se bloquean las inserciones, ediciones o eliminaciones extemporáneas.
-          </p>
+          <p class="text-[11px] text-slate-400">INGRESE EL PERÍODO FISCAL (YYYY-MM):</p>
+          <input id="cierre-periodo" class="text-center font-mono font-bold text-white bg-slate-900 border border-white/10 rounded-xl p-3 text-sm focus:border-cyan-500 outline-none w-48 mx-auto block" placeholder="2026-08" value="2026-08">
         </div>`,
       showCancelButton: true,
       showConfirmButton: true,
@@ -804,10 +837,10 @@ export default async function contabilidad(container) {
     if (!periodoFinal || !/^\d{4}-\d{2}$/.test(periodoFinal)) return;
 
     if (Swal.clickConfirm && document.activeElement?.classList.contains('swal2-confirm')) {
-      if (estadosCierreMes[periodoFinal]) return Swal.fire("Aviso", "Este período fiscal ya se encuentra sellado.", "info");
+      if (estadosCierreMes[periodoFinal]) return Swal.fire("Aviso", "Este período ya está sellado.", "info");
       try {
         await addDoc(collection(db, "cierres_mensuales"), { empresaId, periodo: periodoFinal, estado: "CERRADO" });
-        Swal.fire("Período Sellado", `Balance del mes de ${periodoFinal} blindado correctamente.`, "success");
+        Swal.fire("Período Sellado", `Balance del mes ${periodoFinal} blindado.`, "success");
         await renderLayoutBase();
       } catch (err) {
         Swal.fire("Error", "No se pudo registrar el cierre.", "error");
@@ -815,7 +848,6 @@ export default async function contabilidad(container) {
     }
   }
 
-  // Listener global para la reapertura (Botón Deny del modal de cierres)
   document.addEventListener('click', async (e) => {
     if (e.target && e.target.classList.contains('swal2-deny')) {
       const inputEl = document.getElementById('cierre-periodo');
@@ -824,28 +856,22 @@ export default async function contabilidad(container) {
         if (estadosCierreMes[per]) {
           try {
             await deleteDoc(doc(db, "cierres_mensuales", estadosCierreMes[per]));
-            Swal.fire("Estatus Reabierto", `El período ${per} ha sido restaurado a modo modificable.`, "success");
+            Swal.fire("Estatus Reabierto", `Período ${per} restaurado.`, "success");
             await renderLayoutBase();
           } catch (err) {
-            Swal.fire("Error", "Imposible remover el candado en este momento.", "error");
+            Swal.fire("Error", "Imposible remover candado.", "error");
           }
-        } else {
-          Swal.fire("Sin Cierre Activo", "Este mes no cuenta con un registro de bloqueo.", "info");
         }
       }
     }
   });
 
-  // ==========================================
-  // 📊 VISTA 2: BALANCES AGREGADOS POR CUENTA PUC
-  // ==========================================
   const renderizarVistaBalancesPUC = () => {
     const content = document.getElementById("cont-dynamic-content");
     if (!content) return;
 
     const docs = obtenerDatosFiltrados();
     const sumasPUC = {};
-    
     docs.forEach(m => {
       const { debito, credito } = extraerValoresDebitoCredito(m);
       const cta = m.puc || m.cuentaContable || "999999";
@@ -886,28 +912,22 @@ export default async function contabilidad(container) {
       </div>`;
   };
 
-  // ==========================================
-  // 📡 CONEXIÓN CANALIZADA FIRESTORE (REAL-TIME)
-  // ==========================================
   function conectarCanalesFirestore() {
     if (unsubscribeContabilidad) unsubscribeContabilidad();
     if (unsubscribeCuentas) unsubscribeCuentas();
 
-    // Canal 1: Libro Auxiliar Diario real-time
     const qContable = query(collection(db, "contabilidad"), where("empresaId", "==", empresaId));
     unsubscribeContabilidad = onSnapshot(qContable, (snap) => {
       registrosGlobales = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       procesarEstructurasContables();
-    }, (err) => console.error("Error en flujo de Ledger Contable:", err));
+    }, (err) => console.error("Error en Ledger Contable:", err));
 
-    // Canal 2: Diccionario de Cuentas Contables Creadas Dinámicamente
     const qCuentas = query(collection(db, "cuentas_puc_empresa"), where("empresaId", "==", empresaId));
     unsubscribeCuentas = onSnapshot(qCuentas, (snap) => {
       cuentasPucPersonalizadas = snap.docs.map(d => ({ id: d.data().id, ...d.data() }));
       if (vistaActual === "DIARIO") renderizarEstructuraLibroDiario();
-    }, (err) => console.error("Error en flujo de Plan de Cuentas Dinámico:", err));
+    }, (err) => console.error("Error en Plan de Cuentas:", err));
   }
 
-  // Lanzamiento de Rutinas Iniciales de Compilación
   await renderLayoutBase();
 }
