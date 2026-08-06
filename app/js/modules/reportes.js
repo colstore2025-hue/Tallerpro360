@@ -1,6 +1,6 @@
 /**
- * 🏛️ TALLERPRO360 - REPORTES, FINANZAS & AUDITORÍA FORENSE V23.0 QUANTUM-SAP 🚀
- * PROTOCOLO: ESTABILIZACIÓN OPERATIVA INTERNA / AGRUPACIÓN POR CENTRO DE COSTOS (ACTIVO)
+ * 🏛️ TALLERPRO360 - REPORTES, FINANZAS & AUDITORÍA FORENSE V24.0 QUANTUM-SAP 🚀
+ * PROTOCOLO: ESTABILIZACIÓN OPERATIVA INTERNA / VALIDACIÓN ESTRICTA DE PLACAS & INFORME GERENCIAL EJECUTIVO
  */
 
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -45,18 +45,33 @@ export default async function reportesModule(container) {
         return isNaN(d.getTime()) ? new Date() : d;
     };
 
+    // 🛡️ VALIDADOR ESTRICTO DE PLACAS (Evita que palabras como ADM, NOMINA, GASTO entren como vehículos)
+    const esPlacaValida = (texto) => {
+        if (!texto) return false;
+        const limpio = String(texto).toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
+        const invalidos = ['ADMIN', 'ADM', 'NOMINA', 'PAGO', 'GASTO', 'SEDE', 'ARRIENDO', 'LUGAR', 'TALLER', 'GENERAL', 'VARIOS', 'CONTADO', 'CREDITO', 'COMISION', 'REPUESTO'];
+        if (invalidos.includes(limpio) || limpio.length < 5 || limpio.length > 7) return false;
+        
+        // Patrón estándar de placas (Ej: ABC123 o ABC124 o similares latinoamericanas)
+        const patronPlaca = /^[A-Z]{3}[0-9]{2}[0-9A-Z]$|^[A-Z]{3}[0-9]{3}$/;
+        return patronPlaca.test(limpio);
+    };
+
     const aislarPlacaPura = (texto) => {
-        if (!texto) return 'ADMIN';
-        const base = texto.split('-')[0];
-        return base.toUpperCase().replace(/[^A-Z0-9]/g, '').trim().substring(0, 6);
+        if (!texto) return '';
+        const limpio = String(texto).toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
+        if (esPlacaValida(limpio)) return limpio.substring(0, 6);
+        return '';
     };
 
     let state = {
         rawOrdenes: [],
         rawContabilidad: [],
-        centrosBeneficioActivos: [], // Agrupación por PLACA (El verdadero core SAP)
+        centrosBeneficioActivos: [],
         gastosFijosGlobales: 0,
         nominasInformalesGlobales: 0,
+        costosRepuestosGlobales: 0,
+        comisionesGlobales: 0,
         pucsGlobalesDetectados: new Set(),
         charts: {},
         filtroFrecuencia: "mes", 
@@ -108,9 +123,14 @@ export default async function reportesModule(container) {
                         <h1 class="text-4xl font-black tracking-tight text-white uppercase">TallerPRO360<span class="text-cyan-400">_HanaForense</span></h1>
                         <p class="text-[9px] text-slate-500 tracking-[0.4em] font-bold uppercase mt-2">MATRIZ DE REPORTES // CONFIABILIDAD CONTABLE POR CENTRO DE COSTOS (ACTIVO)</p>
                     </div>
-                    <button id="btnExportGlobal" class="bg-emerald-500 text-slate-950 px-6 py-3.5 rounded-xl text-[11px] font-black hover:bg-emerald-400 transition-all flex items-center gap-2.5 shadow-lg">
-                        <i class="fas fa-file-excel text-base"></i> EXPORTAR MATRIZ QUANTUM-SAP
-                    </button>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button id="btnInformeGerencial" class="bg-purple-600 text-white px-5 py-3.5 rounded-xl text-[11px] font-black hover:bg-purple-500 transition-all flex items-center gap-2.5 shadow-lg">
+                            <i class="fas fa-print text-base"></i> IMPRIMIR INFORME GERENCIAL
+                        </button>
+                        <button id="btnExportGlobal" class="bg-emerald-500 text-slate-950 px-5 py-3.5 rounded-xl text-[11px] font-black hover:bg-emerald-400 transition-all flex items-center gap-2.5 shadow-lg">
+                            <i class="fas fa-file-excel text-base"></i> EXPORTAR MATRIZ SAP
+                        </button>
+                    </div>
                 </div>
 
                 <div class="w-full grid grid-cols-1 xl:grid-cols-3 gap-4 bg-slate-900/40 p-5 rounded-2xl border border-white/5 items-center justify-between mt-4">
@@ -155,7 +175,7 @@ export default async function reportesModule(container) {
                 <div class="p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-900/20">
                     <div>
                         <h3 class="text-xs font-black text-white uppercase tracking-widest">Estructura Operativa Directa Consolidada por Flota</h3>
-                        <p class="text-[9px] text-slate-500 mt-1">Clic en la placa para expandir matriz de múltiples órdenes y PUCs del periodo</p>
+                        <p class="text-[9px] text-slate-500 mt-1">Clic en la placa para expandir matriz de órdenes y PUCs validados</p>
                     </div>
                     <span id="counterTag" class="text-[9px] bg-cyan-500/10 text-cyan-400 px-4 py-1.5 rounded-md font-black border border-cyan-500/20 uppercase tracking-wider">Procesando...</span>
                 </div>
@@ -226,43 +246,47 @@ export default async function reportesModule(container) {
         }
     };
 
-    // 🧠 MOTOR CUÁNTICO: AGRUPACIÓN POR CENTRO DE BENEFICIO (PLACA) + FILTRO TEMPORAL
+    // 🧠 MOTOR CUÁNTICO REFORZADO: FILTRADO LIMPIO DE PLACAS Y CONTABILIDAD
     const procesarMotorAnalitico = () => {
         let tsInicio = state.filtroFrecuencia !== "total" && state.fechaInicioFiltro ? state.fechaInicioFiltro.getTime() : 0;
         let tsFin = state.filtroFrecuencia !== "total" && state.fechaFinFiltro ? state.fechaFinFiltro.getTime() : Infinity;
 
-        // 1. Filtrar datos por tiempo
         const ordsFiltradas = state.rawOrdenes.filter(o => o._fechaObj.getTime() >= tsInicio && o._fechaObj.getTime() <= tsFin);
         const contFiltrada = state.rawContabilidad.filter(c => c._fechaObj.getTime() >= tsInicio && c._fechaObj.getTime() <= tsFin);
 
         const mapaVehiculos = {};
         state.gastosFijosGlobales = 0;
         state.nominasInformalesGlobales = 0;
+        state.costosRepuestosGlobales = 0;
+        state.comisionesGlobales = 0;
         state.pucsGlobalesDetectados.clear();
 
-        // 2. Procesar Egresos Contables (Solo los del periodo)
+        // 1. Procesamiento Contable con Filtrado Estricto
         contFiltrada.forEach(data => {
             const monto = safeNumber(data.monto || data.total || data.valor || data.pago_mecanico || data.salario);
             const tipo = (data.tipo || "").toLowerCase();
             const detalle = (data.detalle || data.concepto || "").toUpperCase();
             const cuentaPUC = String(data.puc || data.codigo || data.cuenta || "5195");
-            const esGasto = !(tipo.includes("ingreso") || cuentaPUC.startsWith("4") || tipo.includes("4135") || cuentaPUC.startsWith("11") || tipo.includes("2805"));
+            const esGasto = !(tipo.includes("ingreso") || cuentaPUC.startsWith("4") || tipo.includes("4135") || cuentaPUC.startsWith("11"));
             
             if (esGasto && monto > 0) {
-                let placaRaw = (data.placa || "ADMIN").toUpperCase().trim();
+                let placaRaw = (data.placa || "").toUpperCase().trim();
                 let placaClave = aislarPlacaPura(placaRaw);
 
-                if (placaClave === 'ADMIN' || placaClave === '') {
-                    const bloquesTexto = detalle.replace(/[()]/g, ' ').split(/[\s-]+/);
-                    for (const bloque of bloquesTexto) {
-                        const limpio = bloque.replace(/[^A-Z0-9]/g, '').trim();
-                        if (limpio.length === 6 && /^[A-Z]{3}[0-9]{3}$/.test(limpio)) { placaClave = limpio; break; }
+                // Si no hay placa válida en el registro contable, buscamos dentro del texto del detalle de manera estricta
+                if (!placaClave) {
+                    const palabras = detalle.replace(/[()]/g, ' ').split(/[\s-]+/);
+                    for (const palabra of palabras) {
+                        if (esPlacaValida(palabra)) { placaClave = aislarPlacaPura(palabra); placaRaw = palabra; break; }
                     }
                 }
 
                 if (cuentaPUC.startsWith("5105") || cuentaPUC.startsWith("7205") || detalle.includes("NOMINA") || detalle.includes("PAGO MECANICO")) {
                     state.nominasInformalesGlobales += monto;
-                } else if (placaClave !== 'ADMIN' && placaClave.length >= 3) {
+                    state.comisionesGlobales += monto;
+                } else if (cuentaPUC.startsWith("5135") || cuentaPUC.startsWith("5140") || detalle.includes("REPUESTO") || detalle.includes("INSUMO")) {
+                    state.costosRepuestosGlobales += monto;
+                } else if (placaClave) {
                     if (!mapaVehiculos[placaClave]) mapaVehiculos[placaClave] = iniciarCentroCosto(placaClave, placaRaw);
                     
                     if (!mapaVehiculos[placaClave].pucsAgrupados[cuentaPUC]) mapaVehiculos[placaClave].pucsAgrupados[cuentaPUC] = 0;
@@ -272,41 +296,46 @@ export default async function reportesModule(container) {
                     mapaVehiculos[placaClave].detallesContables.push({ puc: cuentaPUC, detalle, monto });
                     state.pucsGlobalesDetectados.add(cuentaPUC);
                 } else {
+                    // Si no pertenece a ningún vehículo válido, va a gastos generales de sede
                     state.gastosFijosGlobales += monto;
                 }
             }
         });
 
-        // 3. Procesar Ingresos y Costos Directos (Órdenes del periodo)
+        // 2. Procesamiento de Órdenes de Trabajo y Costos Directos
         ordsFiltradas.forEach(o => {
-            const placaRaw = (o.placa || 'S/N').toUpperCase().trim();
-            const placaClave = aislarPlacaPura(placaRaw);
+            let placaRaw = (o.placa || 'S/N').toUpperCase().trim();
+            let placaClave = aislarPlacaPura(placaRaw);
+
+            if (!placaClave) return; // Omitir órdenes sin placa vehicular válida
             
             if (!mapaVehiculos[placaClave]) mapaVehiculos[placaClave] = iniciarCentroCosto(placaClave, placaRaw);
             
             const facturacionTotal = safeNumber(o.total || o.costos_totales?.total || 0);
             const costoDirecto = safeNumber(o.costos_totales?.costo_directo || o.costo_directo || 0);
 
-            mapaVehiculos[placaClave].cliente = o.cliente || mapaVehiculos[placaClave].cliente; // Toma el último
+            mapaVehiculos[placaClave].cliente = o.cliente || mapaVehiculos[placaClave].cliente;
+            mapaVehiculos[placaClave].vehiculoModelo = o.vehiculo || o.modelo || mapaVehiculos[placaClave].vehiculoModelo;
             mapaVehiculos[placaClave].totalIngresoBase += facturacionTotal;
             mapaVehiculos[placaClave].totalCostoDirecto += costoDirecto;
+            state.costosRepuestosGlobales += costoDirecto;
+
             mapaVehiculos[placaClave].ordenesAsociadas.push({
                 id: o.id, area: o.tipo_orden || 'MECÁNICA', total: facturacionTotal, costo: costoDirecto,
                 bitacora: o.bitacora_ia || o.diagnostico || o.observaciones || "SIN BITÁCORA"
             });
         });
 
-        // 4. Consolidar Matemáticas Finales por Vehículo
+        // 3. Consolidación Final
         const listaFinal = Object.values(mapaVehiculos).map(v => {
             v.egresosConsolidados = v.totalCostoDirecto + v.totalGastosPUC;
             v.ebitdaFinal = v.totalIngresoBase - v.egresosConsolidados;
             v.margen = v.totalIngresoBase > 0 ? (v.ebitdaFinal / v.totalIngresoBase) * 100 : 0;
             return v;
-        }).sort((a, b) => b.ebitdaFinal - a.ebitdaFinal); // Ordenar por más rentable
+        }).sort((a, b) => b.ebitdaFinal - a.ebitdaFinal);
 
         state.centrosBeneficioActivos = listaFinal;
 
-        // 5. Globales
         const totalIngresoCompania = listaFinal.reduce((a, b) => a + b.totalIngresoBase, 0);
         const ebitdaNetoCompania = listaFinal.reduce((a, b) => a + b.ebitdaFinal, 0) - state.gastosFijosGlobales - state.nominasInformalesGlobales;
 
@@ -324,7 +353,7 @@ export default async function reportesModule(container) {
     };
 
     const iniciarCentroCosto = (placaPura, placaVisual) => ({
-        placaPura, placaVisual, cliente: 'CLIENTE NO REGISTRADO',
+        placaPura, placaVisual, cliente: 'CLIENTE GENERAL', vehiculoModelo: 'VEHÍCULO TALLER',
         totalIngresoBase: 0, totalCostoDirecto: 0, totalGastosPUC: 0,
         pucsAgrupados: {}, detallesContables: [], ordenesAsociadas: [],
         egresosConsolidados: 0, ebitdaFinal: 0, margen: 0
@@ -353,7 +382,7 @@ export default async function reportesModule(container) {
         const body = document.getElementById("report-table-body");
         if (!body) return;
         if (data.length === 0) {
-            body.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-slate-500 text-[11px] uppercase tracking-widest">Sin movimientos contables u operativos detectados.</td></tr>`; return;
+            body.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-slate-500 text-[11px] uppercase tracking-widest">Sin movimientos contables u operativos detectados en este periodo.</td></tr>`; return;
         }
 
         body.innerHTML = data.map(v => `
@@ -384,7 +413,7 @@ export default async function reportesModule(container) {
                              <div class="flex justify-between items-center mb-4">
                                 <h4 class="orbitron font-black text-cyan-400 text-[10px] uppercase tracking-wider">Historial Operativo (Periodo)</h4>
                                 <button onclick="window.exportarPdfPlaca('${v.placaPura}', event)" class="bg-red-600 text-white font-black px-4 py-2 rounded-lg text-[9px] uppercase tracking-wider shadow-lg hover:bg-red-500 flex items-center gap-2">
-                                    <i class="fas fa-file-pdf"></i> GENERAR PDF JUNTA
+                                    <i class="fas fa-file-pdf"></i> GENERAR PDF ACTIVO
                                 </button>
                             </div>
                             ${v.ordenesAsociadas.map(o => `
@@ -398,10 +427,10 @@ export default async function reportesModule(container) {
                             `).join("")}
                         </div>
                         <div class="bg-black/30 p-5 rounded-xl border border-white/5">
-                            <h4 class="orbitron font-black text-amber-400 text-[10px] uppercase tracking-wider mb-4">Integración Contable PUC Global del Periodo</h4>
+                            <h4 class="orbitron font-black text-amber-400 text-[10px] uppercase tracking-wider mb-4">Integración Contable PUC del Periodo</h4>
                             <div class="space-y-1 text-[11px] font-bold">
                                 <div class="flex justify-between text-emerald-400 border-b border-white/5 pb-1.5 font-black"><span>4135 - TOTAL INGRESOS FACTURADOS</span><span>${fmt(v.totalIngresoBase)}</span></div>
-                                <div class="flex justify-between text-amber-400 border-b border-white/5 py-1"><span>COSTOS_DIRECTOS - REGISTROS INTERNOS (SUMA)</span><span>-${fmt(v.totalCostoDirecto)}</span></div>
+                                <div class="flex justify-between text-amber-400 border-b border-white/5 py-1"><span>COSTOS_DIRECTOS - TALLER (SUMA)</span><span>-${fmt(v.totalCostoDirecto)}</span></div>
                                 ${Object.entries(v.pucsAgrupados).map(([puc, val]) => `<div class="flex justify-between text-red-400 border-b border-white/5 py-1 font-mono"><span>PUC ${puc} - DIARIO CONSOLIDADO</span><span>-${fmt(val)}</span></div>`).join("")}
                             </div>
                         </div>
@@ -416,6 +445,126 @@ export default async function reportesModule(container) {
         if (fila) fila.classList.toggle("hidden");
     };
 
+    // 📄 GENERACIÓN DE INFORME GERENCIAL MENSUAL (PDF EJECUTIVO IDÉNTICO AL EJEMPLO)
+    const exportarInformeGerencialPDF = () => {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        
+        const totalIngresos = state.centrosBeneficioActivos.reduce((a,b) => a + b.totalIngresoBase, 0);
+        const totalCostosRep = state.costosRepuestosGlobales;
+        const totalComisiones = state.comisionesGlobales;
+        const totalGastosSede = state.gastosFijosGlobales;
+        const utilidadNeta = totalIngresos - totalCostosRep - totalComisiones - totalGastosSede;
+        const margenOperativo = totalIngresos > 0 ? (utilidadNeta / totalIngresos) * 100 : 0;
+
+        // Encabezado Corporativo
+        pdf.setFont("Helvetica", "bold"); pdf.setFontSize(14); pdf.setTextColor(15, 23, 42);
+        pdf.text("TALLERPRO360 // INFORME GERENCIAL MENSUAL", 15, 18);
+        
+        pdf.setFontSize(8); pdf.setTextColor(100, 116, 139);
+        pdf.text(`NIT: 901.882.391-4 | Tel: +57 310 764 5306 | Periodo Requerido: ${state.periodoSeleccionado}`, 15, 23);
+        pdf.text(`Fecha de Emisión: ${new Date().toLocaleDateString()}`, 15, 27);
+        
+        pdf.setDrawColor(203, 213, 225); pdf.line(15, 30, 195, 30);
+
+        let y = 36;
+
+        // 1. ESTADO DE RESULTADOS GERENCIAL
+        pdf.setFillColor(241, 245, 249); pdf.rect(15, y, 180, 7, 'F');
+        pdf.setFont("Helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(15, 23, 42);
+        pdf.text("1. ESTADO DE RESULTADOS GERENCIAL - CONSOLIDADO DEL PERIODO", 18, y + 4.5);
+        y += 11;
+
+        const filasER = [
+            ["(+) Ingresos Brutos Facturados a Clientes", fmt(totalIngresos)],
+            ["(+) Ingreso Neto Taller (Antes de Impuestos)", fmt(totalIngresos)],
+            ["(-) Costo Directo Repuestos e Insumos en Bodega", `-${fmt(totalCostosRep)}`],
+            ["(-) Comisiones y Mano de Obra para Mecánicos", `-${fmt(totalComisiones)}`],
+            ["(-) Gastos Operativos de la Sede (Arriendo, Servicios, Nómina Fija)", `-${fmt(totalGastosSede)}`],
+            ["(=) UTILIDAD NETA REAL GANADA POR EL TALLER EN EL PERIODO", fmt(utilidadNeta)]
+        ];
+
+        filasER.forEach((fila, idx) => {
+            if (idx === filasER.length - 1) {
+                pdf.setFillColor(236, 253, 245); pdf.rect(15, y - 1, 180, 6, 'F');
+                pdf.setFont("Helvetica", "bold"); pdf.setTextColor(16, 185, 129);
+            } else {
+                pdf.setFont("Helvetica", "normal"); pdf.setTextColor(51, 65, 85);
+            }
+            pdf.text(fila[0], 18, y + 3);
+            pdf.text(fila[1], 150, y + 3);
+            y += 6;
+        });
+
+        y += 4;
+        pdf.setFont("Helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(100, 116, 139);
+        pdf.text(`MARGEN OPERATIVO REAL DE RENTABILIDAD DEL PERIODO: ${margenOperativo.toFixed(1)}% Promedio Libre`, 18, y);
+        y += 8;
+
+        // 2. DETALLE DE RENTABILIDAD POR PLACA Y VEHÍCULO ATENDIDO
+        pdf.setFillColor(241, 245, 249); pdf.rect(15, y, 180, 7, 'F');
+        pdf.setFont("Helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(15, 23, 42);
+        pdf.text(`2. DETALLE DE RENTABILIDAD POR PLACA Y VEHÍCULO ATENDIDO (${state.centrosBeneficioActivos.length} ÓRDENES)`, 18, y + 4.5);
+        y += 11;
+
+        // Cabecera Tabla Placas
+        pdf.setFillColor(15, 23, 42); pdf.rect(15, y, 180, 6, 'F');
+        pdf.setFont("Helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(255, 255, 255);
+        pdf.text("PLACA", 18, y + 4);
+        pdf.text("VEHÍCULO / MODELO", 42, y + 4);
+        pdf.text("PROPIETARIO", 90, y + 4);
+        pdf.text("FACTURADO", 125, y + 4);
+        pdf.text("COSTO", 150, y + 4);
+        pdf.text("MARGEN", 175, y + 4);
+        y += 6;
+
+        pdf.setFont("Helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(51, 65, 85);
+        state.centrosBeneficioActivos.forEach((v) => {
+            if (y > 270) { pdf.addPage(); y = 20; }
+            pdf.text(v.placaVisual, 18, y + 4);
+            pdf.text(String(v.vehiculoModelo || 'GENERAL').substring(0, 22), 42, y + 4);
+            pdf.text(String(v.cliente || 'CLIENTE').substring(0, 18), 90, y + 4);
+            pdf.text(fmt(v.totalIngresoBase), 125, y + 4);
+            pdf.text(fmt(v.egresosConsolidados), 150, y + 4);
+            pdf.text(`${v.margen.toFixed(0)}%`, 175, y + 4);
+            pdf.setDrawColor(241, 245, 249); pdf.line(15, y + 6, 195, y + 6);
+            y += 7;
+        });
+
+        // 3. DESGLOSE DE GASTOS OPERATIVOS DE LA SEDE
+        y += 4;
+        if (y > 250) { pdf.addPage(); y = 20; }
+        pdf.setFillColor(241, 245, 249); pdf.rect(15, y, 180, 7, 'F');
+        pdf.setFont("Helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(15, 23, 42);
+        pdf.text("3. DESGLOSE DE GASTOS OPERATIVOS DE LA SEDE", 18, y + 4.5);
+        y += 11;
+
+        pdf.setFillColor(15, 23, 42); pdf.rect(15, y, 180, 6, 'F');
+        pdf.setFont("Helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(255, 255, 255);
+        pdf.text("FECHA", 18, y + 4);
+        pdf.text("CATEGORÍA", 45, y + 4);
+        pdf.text("CONCEPTO / DESCRIPCIÓN", 90, y + 4);
+        pdf.text("MONTO COP", 160, y + 4);
+        y += 6;
+
+        pdf.setFont("Helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(51, 65, 85);
+        pdf.text(new Date().toISOString().split('T')[0], 18, y + 4);
+        pdf.text("Gastos Generales / Sede", 45, y + 4);
+        pdf.text("Consolidado Arriendo, Servicios y Operación", 90, y + 4);
+        pdf.text(fmt(totalGastosSede), 160, y + 4);
+        y += 12;
+
+        // Firma Auditoría
+        if (y > 260) { pdf.addPage(); y = 20; }
+        pdf.setDrawColor(203, 213, 225); pdf.line(15, y, 75, y);
+        pdf.setFont("Helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(15, 23, 42);
+        pdf.text("FIRMA AUDITORÍA GERENCIAL", 15, y + 4);
+        pdf.setFont("Helvetica", "normal"); pdf.setTextColor(100, 116, 139);
+        pdf.text("Director Operativo - TallerPRO360 SAP Engine", 15, y + 8);
+
+        pdf.save(`Informe_Gerencial_${state.periodoSeleccionado}.pdf`);
+    };
+
     window.exportarPdfPlaca = (placaPura, event) => {
         event.stopPropagation();
         const v = state.centrosBeneficioActivos.find(c => c.placaPura === placaPura);
@@ -425,11 +574,11 @@ export default async function reportesModule(container) {
         const pdf = new jsPDF('p', 'mm', 'a4');
         pdf.setFillColor(11, 15, 23); pdf.rect(0, 0, 210, 297, 'F');
         
-        pdf.setFont("Helvetica", "bold"); pdf.setFontSize(18); pdf.setTextColor(6, 182, 212); 
+        pdf.setFont("Helvetica", "bold"); pdf.setFontSize(16); pdf.setTextColor(6, 182, 212); 
         pdf.text("TALLERPRO360 // REPORTE FORENSE DE ACTIVO", 15, 25);
         
         pdf.setFontSize(8); pdf.setTextColor(148, 163, 184);
-        pdf.text(`PERIODO EVALUADO: ${state.periodoSeleccionado} | RANGO: ${state.fechaInicioFiltro ? state.fechaInicioFiltro.toISOString().split('T')[0] : 'TODO'} a ${state.fechaFinFiltro ? state.fechaFinFiltro.toISOString().split('T')[0] : 'TODO'}`, 15, 31);
+        pdf.text(`PERIODO EVALUADO: ${state.periodoSeleccionado}`, 15, 31);
         
         pdf.setDrawColor(30, 41, 59); pdf.line(15, 35, 195, 35);
         
@@ -438,7 +587,6 @@ export default async function reportesModule(container) {
         pdf.setFont("Helvetica", "bold"); pdf.text(`CLIENTE ASOCIADO:`, 15, 51); pdf.setFont("Helvetica", "normal"); pdf.text(`${v.cliente}`, 55, 51);
         pdf.setFont("Helvetica", "bold"); pdf.text(`VOLUMEN ÓRDENES:`, 15, 57); pdf.setFont("Helvetica", "normal"); pdf.text(`${v.ordenesAsociadas.length}`, 55, 57);
 
-        // Bloque Financiero
         pdf.setFillColor(15, 23, 42); pdf.rect(15, 65, 180, 46, 'F');
         pdf.setFont("Helvetica", "bold"); pdf.setTextColor(148, 163, 184);
         pdf.text("ESTRUCTURA INTEGRAL CONSOLIDADA", 20, 73); pdf.text("VALOR TOTAL", 145, 73);
@@ -454,23 +602,22 @@ export default async function reportesModule(container) {
         pdf.setFont("Helvetica", "bold"); pdf.setTextColor(52, 211, 153); 
         pdf.text("EBITDA PERIODO DEL ACTIVO:", 20, 107); pdf.text(`${fmt(v.ebitdaFinal)}`, 145, 107);
 
-        // Desglose PUCs
         let yPos = 125;
         pdf.setFontSize(10); pdf.setTextColor(251, 191, 36);
-        pdf.text("DESGLOSE AUDITORÍA PUC (TODAS LAS CUENTAS CRUZADAS):", 15, yPos); yPos += 8;
+        pdf.text("DESGLOSE AUDITORÍA PUC:", 15, yPos); yPos += 8;
         
         pdf.setFontSize(9); pdf.setTextColor(226, 232, 240);
         if (v.detallesContables.length === 0) {
-            pdf.setFont("Helvetica", "italic"); pdf.text("Sin registros contables externos en este periodo.", 20, yPos); yPos += 8;
+            pdf.setFont("Helvetica", "italic"); pdf.text("Sin registros contables externos en este periodo.", 20, yPos);
         } else {
             v.detallesContables.forEach(g => {
                 if (yPos < 280) {
-                    pdf.text(`• PUC ${g.puc} - ${g.detalle.substring(0, 50)}:`, 20, yPos); pdf.text(`-${fmt(g.monto)}`, 145, yPos); yPos += 6;
+                    pdf.text(`• PUC ${g.puc} - ${g.detalle.substring(0, 45)}:`, 20, yPos); pdf.text(`-${fmt(g.monto)}`, 145, yPos); yPos += 6;
                 }
             });
         }
 
-        pdf.save(`FINANZAS_SOCIO_${v.placaPura}_${state.periodoSeleccionado}.pdf`);
+        pdf.save(`Finanzas_Activo_${v.placaPura}_${state.periodoSeleccionado}.pdf`);
     };
 
     const exportarExcelGlobal = () => {
@@ -505,26 +652,12 @@ export default async function reportesModule(container) {
         ws[`F${totalIdx}`] = { f: `SUM(F2:F${rLen + 1})`, t: 'n' };
         ws[`G${totalIdx}`] = { f: `SUM(G2:G${rLen + 1})`, t: 'n' };
         ws[`H${totalIdx}`] = { f: `SUM(H2:H${rLen + 1})`, t: 'n' };
-        
-        // El EBITDA total se calcula restando también los globales de la empresa que no aplican a un solo vehículo
         ws[`I${totalIdx}`] = { f: `SUM(I2:I${rLen + 1}) - ${state.gastosFijosGlobales} - ${state.nominasInformalesGlobales}`, t: 'n' };
         ws[`J${totalIdx}`] = { f: `AVERAGE(J2:J${rLen + 1})`, t: 'n' };
-
-        let startAsciiCode = 11; // Columna K en adelante
-        arrPucsOrdenados.forEach((p, idx) => {
-            const letter = getExcelColumnName(startAsciiCode + idx + 1);
-            ws[`${letter}${totalIdx}`] = { f: `SUM(${letter}2:${letter}${rLen + 1})`, t: 'n' };
-        });
 
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "MATRIZ_SAP");
         XLSX.writeFile(wb, `TallerPRO360_MatrizSAP_${state.periodoSeleccionado}.xlsx`);
-    };
-
-    const getExcelColumnName = (colNum) => {
-        let columnName = "";
-        while (colNum > 0) { let rem = (colNum - 1) % 26; columnName = String.fromCharCode(65 + rem) + columnName; colNum = Math.floor((colNum - rem) / 26); }
-        return columnName;
     };
 
     const renderCharts = (data) => {
@@ -593,6 +726,7 @@ export default async function reportesModule(container) {
         attach("datePickerInicio", "change", updateDates);
         attach("datePickerFin", "change", updateDates);
         attach("btnExportGlobal", "click", exportarExcelGlobal);
+        attach("btnInformeGerencial", "click", exportarInformeGerencialPDF);
     };
 
     const loadDependencies = async () => {
