@@ -1,8 +1,8 @@
 /**
- * 🏛️ TALLERPRO360 - HANAFORENSE QUANTUM-SAP REPORTING ENGINE v4.2.0
- * 📜 SCRIPT ID: #NEXUS-X-SAP-HANA-REPORTS-2026
+ * 🏛️ TALLERPRO360 - HANAFORENSE QUANTUM-SAP REPORTING ENGINE v4.3.0
+ * 📜 SCRIPT ID: #NEXUS-X-SAP-HANA-REPORTS-2026-V2
  * * Matriz de Reportes, Confiabilidad Contable por Centro de Costos Activo,
- * Consolidación Financiera y Motor de Impresión de Informes Gerenciales.
+ * Consolidación Financiera, Análisis por Placa y Orden por Fecha, y Motor Multihoja Excel.
  * Autor: TallerPRO360 Core & W.J. Urquijo
  * Fecha de Despliegue: Junio 2026
  */
@@ -44,7 +44,7 @@ export default async function reportes(container) {
   container.innerHTML = `
     <div class="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
       <div class="p-10 text-center orbitron text-xs text-cyan-400 animate-pulse tracking-[0.2em]">
-        INICIALIZANDO MATRIZ DE REPORTES HANAFORENSE v4.2.0...
+        INICIALIZANDO MATRIZ DE REPORTES HANAFORENSE v4.3.0...
       </div>
       <div class="w-48 h-1 bg-white/5 rounded-full overflow-hidden">
         <div class="h-full bg-cyan-500 animate-infinite-loading w-1/3 rounded-full"></div>
@@ -136,7 +136,6 @@ export default async function reportes(container) {
         flotaMap[placaPura] = {
           placa: placaPura,
           vehiculo: vehiculoDetalle,
-          propietario: "CLIENTE GENERAL",
           volumenOps: 0,
           ingresos: 0,
           egresos: 0
@@ -169,18 +168,21 @@ export default async function reportes(container) {
         <header class="flex flex-col lg:flex-row justify-between items-center gap-6 mb-6 border-b border-white/10 pb-6">
           <div>
             <div class="flex items-center gap-2">
-              <span class="px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono text-[9px] rounded font-black tracking-widest orbitron">HANAFORENSE v4.2.0</span>
+              <span class="px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono text-[9px] rounded font-black tracking-widest orbitron">HANAFORENSE v4.3.0</span>
               <span class="text-slate-600 font-mono text-[9px]">MATRIZ DE REPORTES & CENTRO DE COSTOS</span>
             </div>
             <h1 class="orbitron text-3xl lg:text-4xl font-black text-white tracking-tighter italic mt-1">TALLERPRO360 <span class="text-cyan-400">HANA FORENSE</span></h1>
             <p class="text-[9px] text-slate-400 font-black tracking-[0.3em] orbitron mt-1 font-mono">CONFIABILIDAD CONTABLE POR CENTRO DE COSTOS ACTIVO</p>
           </div>
           <div class="flex flex-wrap items-center gap-3">
-            <button id="btn-imprimir-informe" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-[10px] orbitron font-black rounded-xl transition-all shadow-lg shadow-purple-600/20 flex items-center gap-2">
-              🖨️ IMPRIMIR INFORME GERENCIAL
+            <button id="btn-informe-placa" class="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-black text-[10px] orbitron font-black rounded-xl transition-all shadow-lg shadow-cyan-600/20 flex items-center gap-2">
+              🔍 INFORME POR PLACA (ORDEN X ORDEN)
             </button>
-            <button id="btn-exportar-hana" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-black text-[10px] orbitron font-black rounded-xl transition-all shadow-lg shadow-emerald-600/20 flex items-center gap-2">
-              📊 EXPORTAR MATRIZ SAP
+            <button id="btn-imprimir-informe" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-[10px] orbitron font-black rounded-xl transition-all shadow-lg shadow-purple-600/20 flex items-center gap-2">
+              🖨️ INFORME PDF GASTOS & GERENCIAL
+            </button>
+            <button id="btn-exportar-hana" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-black text-[10px] orbitron font-black rounded-xl transition-all shadow-lg shadow-emerald-600/20 flex items-center gap-2">
+              📊 EXPORTAR SAP (POR TIPO DE CUENTA)
             </button>
           </div>
         </header>
@@ -232,7 +234,7 @@ export default async function reportes(container) {
           <div class="flex justify-between items-center border-b border-white/10 pb-4">
             <div>
               <h3 class="orbitron text-sm font-black text-cyan-400 uppercase tracking-widest">ESTRUCTURA OPERATIVA DIRECTA CONSOLIDADA POR FLOTA</h3>
-              <p class="text-[10px] text-slate-500 font-mono mt-0.5">Clic en las unidades para auditar matriz de órdenes y PUCs vinculados.</p>
+              <p class="text-[10px] text-slate-500 font-mono mt-0.5">Servicios analizados orden por orden (servicios en diferentes fechas se mantienen independientes).</p>
             </div>
             <span class="text-xs font-mono text-slate-400 bg-white/5 px-3 py-1 rounded-lg">${Object.keys(flotaMap).length} VEHÍCULOS PROCESADOS</span>
           </div>
@@ -273,15 +275,97 @@ export default async function reportes(container) {
             </table>
           </div>
         </div>
+
+        <!-- Contenedor Modal / Sección para Informe por Placa Orden por Orden -->
+        <div id="modal-informe-placa" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+          <div class="bg-[#0d1117] border border-cyan-500/30 rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl">
+            <div class="p-5 border-b border-white/10 flex justify-between items-center bg-cyan-950/20">
+              <div>
+                <h3 class="orbitron text-sm font-black text-cyan-400 uppercase">ANÁLISIS DETALLADO POR PLACA Y ORDEN (FECHAS INDEPENDIENTES)</h3>
+                <p class="text-[10px] text-slate-400 font-mono">Cada servicio u orden en diferente fecha se audita de forma individualizada.</p>
+              </div>
+              <button id="cerrar-modal-placa" class="px-3 py-1 bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white rounded-lg font-mono text-xs transition-all">✕ CERRAR</button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-4 flex-1">
+              <div class="flex items-center gap-3">
+                <input type="text" id="input-buscar-placa" placeholder="Filtrar por placa (Ej. CXI647)..." class="bg-black text-white text-xs p-2.5 rounded-xl border border-white/10 font-mono w-72">
+                <span class="text-[10px] text-slate-400 font-mono">Mostrando registros individuales por orden y fecha:</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs font-mono" id="tabla-reporte-placa">
+                  <thead>
+                    <tr class="border-b border-white/10 text-slate-400 uppercase text-[9px]">
+                      <th class="py-2 px-2">PLACA</th>
+                      <th class="py-2 px-2">FECHA DE ORDEN</th>
+                      <th class="py-2 px-2">CUENTA PUC</th>
+                      <th class="py-2 px-2">CONCEPTO / SERVICIO</th>
+                      <th class="py-2 px-2 text-right">DÉBITO (+)</th>
+                      <th class="py-2 px-2 text-right">CRÉDITO (-)</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-white/5" id="tbody-reporte-placa">
+                    <!-- Se inyecta dinámicamente -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>`;
 
     document.getElementById("btn-filtrar-hana").onclick = renderizarDashboardHanaforense;
-    document.getElementById("btn-exportar-hana").onclick = exportarMatrizHanaExcel;
+    document.getElementById("btn-exportar-hana").onclick = exportarMatrizHanaExcelPorTipoCuenta;
     document.getElementById("btn-imprimir-informe").onclick = imprimirInformeGerencialPDF;
+
+    // Control de Modal Informe por Placa
+    const modalPlaca = document.getElementById("modal-informe-placa");
+    document.getElementById("btn-informe-placa").onclick = () => {
+      modalPlaca.classList.remove("hidden");
+      poblarTablaReportePlaca("");
+    };
+    document.getElementById("cerrar-modal-placa").onclick = () => modalPlaca.classList.add("hidden");
+    document.getElementById("input-buscar-placa").oninput = (e) => {
+      poblarTablaReportePlaca(e.target.value);
+    };
   };
 
   // ==========================================
-  // 🖨️ MOTOR DE IMPRESIÓN DE INFORME GERENCIAL PDF
+  // 🔍 POBLAR TABLA REPORTE ORDEN POR ORDEN (POR PLACA)
+  // ==========================================
+  const poblarTablaReportePlaca = (filtroPlaca) => {
+    const docs = obtenerDatosFiltrados();
+    const tbody = document.getElementById("tbody-reporte-placa");
+    if (!tbody) return;
+
+    const filtrados = docs.filter(m => {
+      const p = aislarPlacaPura(m.placa || m.vehiculo_detalle);
+      if (filtroPlaca.trim() === "") return true;
+      return p.includes(filtroPlaca.toUpperCase().trim());
+    });
+
+    if (filtrados.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-500">No se encontraron registros de órdenes para esta placa.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtrados.map(m => {
+      const placaPura = aislarPlacaPura(m.placa || m.vehiculo_detalle);
+      const { debito, credito } = extraerValoresDebitoCredito(m);
+      return `
+        <tr class="hover:bg-white/5">
+          <td class="py-2.5 px-2 font-bold text-cyan-400">${placaPura}</td>
+          <td class="py-2.5 px-2 text-slate-300">${m.fecha_registro}</td>
+          <td class="py-2.5 px-2 text-slate-400 font-mono">${m.puc || 'N/A'}</td>
+          <td class="py-2.5 px-2 text-slate-200">${m.concepto || m.vehiculo_detalle || 'Servicio de Taller'}</td>
+          <td class="py-2.5 px-2 text-right text-emerald-400 font-bold">$ ${Math.round(debito).toLocaleString('es-CO')}</td>
+          <td class="py-2.5 px-2 text-right text-red-400 font-bold">$ ${Math.round(credito).toLocaleString('es-CO')}</td>
+        </tr>`;
+    }).join('');
+  };
+
+  // ==========================================
+  // 🖨️ MOTOR DE IMPRESIÓN DE INFORME PDF GASTOS & GERENCIAL
   // ==========================================
   const imprimirInformeGerencialPDF = () => {
     const docs = obtenerDatosFiltrados();
@@ -307,7 +391,7 @@ export default async function reportes(container) {
     ventanaPrint.document.write(`
       <html>
         <head>
-          <title>TALLERPRO360 - INFORME GERENCIAL MENSUAL</title>
+          <title>TALLERPRO360 - INFORME GERENCIAL Y DE GASTOS</title>
           <style>
             body { font-family: monospace; padding: 20px; color: #111; background: #fff; }
             h2 { border-bottom: 2px solid #111; padding-bottom: 5px; }
@@ -319,26 +403,28 @@ export default async function reportes(container) {
           </style>
         </head>
         <body>
-          <h2>TALLERPRO360 // INFORME GERENCIAL MENSUAL</h2>
+          <h2>TALLERPRO360 // INFORME GERENCIAL Y DE GASTOS</h2>
           <p><strong>NIT:</strong> 901.882.391-4 | <strong>Tel:</strong> +57 310 764 5306 | <strong>Período:</strong> 2026-07</p>
           
           <h3>1. ESTADO DE RESULTADOS GERENCIAL - CONSOLIDADO</h3>
           <table>
             <tr><td>(+) Ingresos Brutos Facturados a Clientes</td><td class="text-right">$ ${Math.round(ingresosTot).toLocaleString('es-CO')}</td></tr>
-            <tr><td>(-) Costo Directo Repuestos e Insumos</td><td class="text-right">-$ ${Math.round(costoRepuestos).toLocaleString('es-CO')}</td></tr>
-            <tr><td>(-) Comisiones y Mano de Obra Operarios</td><td class="text-right">-$ ${Math.round(comisionesNom).toLocaleString('es-CO')}</td></tr>
-            <tr><td>(-) Gastos Operativos de la Sede</td><td class="text-right">-$ ${Math.round(gastosSede).toLocaleString('es-CO')}</td></tr>
+            <tr><td>(-) Costo Directo Repuestos e Insumos (Cuenta 6)</td><td class="text-right">-$ ${Math.round(costoRepuestos).toLocaleString('es-CO')}</td></tr>
+            <tr><td>(-) Comisiones y Mano de Obra Operarios (Cuenta 5105)</td><td class="text-right">-$ ${Math.round(comisionesNom).toLocaleString('es-CO')}</td></tr>
+            <tr><td>(-) Gastos Operativos de la Sede y Otros (Cuenta 5)</td><td class="text-right">-$ ${Math.round(gastosSede).toLocaleString('es-CO')}</td></tr>
             <tr class="bold"><td>(=) UTILIDAD NETA REAL GANADA EN EL PERÍODO</td><td class="text-right">$ ${Math.round(utilidadReal).toLocaleString('es-CO')}</td></tr>
           </table>
 
-          <h3>2. DESGLOSE DE GASTOS OPERATIVOS Y SEDE</h3>
+          <h3>2. INFORME DETALLADO DE GASTOS Y COSTOS</h3>
           <table>
-            <tr><th>FECHA</th><th>CATEGORÍA</th><th>CONCEPTO / DESCRIPCIÓN</th><th class="text-right">MONTO COP</th></tr>
+            <tr><th>FECHA</th><th>CUENTA PUC</th><th>TIPO DE GASTO</th><th>CONCEPTO / DESCRIPCIÓN</th><th>PLACA</th><th class="text-right">MONTO COP</th></tr>
             ${docs.filter(m => clasificarNaturalezaPUC(m.puc) === "GASTO").map(m => `
               <tr>
                 <td>${m.fecha_registro}</td>
-                <td>CUENTA PUC ${m.puc}</td>
+                <td>${m.puc}</td>
+                <td>${String(m.puc || "").startsWith("6") ? "COSTO DIRECTO" : "GASTO OPERATIVO"}</td>
                 <td>${m.concepto}</td>
+                <td>${aislarPlacaPura(m.placa || m.vehiculo_detalle)}</td>
                 <td class="text-right">$ ${Math.round(m.monto || m.credito || 0).toLocaleString('es-CO')}</td>
               </tr>`).join('')}
           </table>
@@ -354,28 +440,65 @@ export default async function reportes(container) {
   };
 
   // ==========================================
-  // 📊 EXPORTADOR EXCEL MATRIZ HANA
+  // 📊 EXPORTADOR EXCEL MULTI-HOJA SEPARADO POR TIPO DE CUENTA
   // ==========================================
-  const exportarMatrizHanaExcel = async () => {
+  const exportarMatrizHanaExcelPorTipoCuenta = async () => {
     const LibXLSX = await cargarMotorExcel();
     if (!LibXLSX) return alert("Librería SheetJS no disponible.");
 
     const docs = obtenerDatosFiltrados();
-    const filasJson = docs.map(m => ({
+
+    // Filtrar por tipo de cuenta
+    const ingresosData = docs.filter(m => clasificarNaturalezaPUC(m.puc) === "INGRESO").map(m => ({
       "FECHA": m.fecha_registro,
       "CUENTA PUC": m.puc,
       "CONCEPTO": m.concepto,
-      "PLACA ACTIVO": m.placa,
-      "DETALLE VEHÍCULO": m.vehiculo_detalle,
-      "DÉBITO (+)": m.debito || 0,
-      "CRÉDITO (-)": m.credito || 0,
+      "PLACA ACTIVO": aislarPlacaPura(m.placa || m.vehiculo_detalle),
+      "VALOR DÉBITO (+)": m.debito || m.monto || 0,
       "AUDITOR": m.creadoPor || "SISTEMA"
     }));
 
+    const costosData = docs.filter(m => String(m.puc || "").startsWith("6")).map(m => ({
+      "FECHA": m.fecha_registro,
+      "CUENTA PUC": m.puc,
+      "CONCEPTO": m.concepto,
+      "PLACA ACTIVO": aislarPlacaPura(m.placa || m.vehiculo_detalle),
+      "VALOR CRÉDITO (-)": m.credito || m.monto || 0,
+      "AUDITOR": m.creadoPor || "SISTEMA"
+    }));
+
+    const gastosData = docs.filter(m => clasificarNaturalezaPUC(m.puc) === "GASTO" && !String(m.puc || "").startsWith("6")).map(m => ({
+      "FECHA": m.fecha_registro,
+      "CUENTA PUC": m.puc,
+      "CONCEPTO": m.concepto,
+      "PLACA ACTIVO": aislarPlacaPura(m.placa || m.vehiculo_detalle),
+      "VALOR CRÉDITO (-)": m.credito || m.monto || 0,
+      "AUDITOR": m.creadoPor || "SISTEMA"
+    }));
+
+    const consolidadoData = docs.map(m => ({
+      "FECHA": m.fecha_registro,
+      "TIPO CUENTA": clasificarNaturalezaPUC(m.puc),
+      "CUENTA PUC": m.puc,
+      "CONCEPTO": m.concepto,
+      "PLACA": aislarPlacaPura(m.placa || m.vehiculo_detalle),
+      "DÉBITO": m.debito || 0,
+      "CRÉDITO": m.credito || 0
+    }));
+
     const wb = LibXLSX.utils.book_new();
-    const ws = LibXLSX.utils.json_to_sheet(filasJson);
-    LibXLSX.utils.book_append_sheet(wb, ws, "Hanaforense_Consolidado");
-    LibXLSX.writeFile(wb, `TALLERPRO360_HANAFORENSE_${empresaId}.xlsx`);
+
+    const wsConsolidado = LibXLSX.utils.json_to_sheet(consolidadoData);
+    const wsIngresos = LibXLSX.utils.json_to_sheet(ingresosData);
+    const wsCostos = LibXLSX.utils.json_to_sheet(costosData);
+    const wsGastos = LibXLSX.utils.json_to_sheet(gastosData);
+
+    LibXLSX.utils.book_append_sheet(wb, wsConsolidado, "Consolidado General");
+    LibXLSX.utils.book_append_sheet(wb, wsIngresos, "Ingresos (Clases 4 y 1)");
+    LibXLSX.utils.book_append_sheet(wb, wsCostos, "Costos Directos (Clase 6)");
+    LibXLSX.utils.book_append_sheet(wb, wsGastos, "Gastos Operativos (Clase 5)");
+
+    LibXLSX.writeFile(wb, `TALLERPRO360_HANAFORENSE_CUENTAS_${empresaId}.xlsx`);
   };
 
   await cargarDatosContables();
