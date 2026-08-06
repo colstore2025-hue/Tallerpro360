@@ -558,7 +558,7 @@ export default async function contabilidad(container) {
   // ==========================================
   async function ejecutarInyeccionAsiento() {
     const f = document.getElementById("acc-fecha").value;
-    if (esPeriodoBloqueado(f)) return Swal.fire("Período Bloqueado", "Este periodo fiscal está CERRADO y protegido contra alteraciones.", "error");
+    if (esPeriodoBloqueado(f)) return Swal.fire("Período Bloqueado", "Este periodo fiscal está CERRADO y protegido contra alterations.", "error");
 
     const cuentaPuc = document.getElementById("acc-puc").value;
     const monto = parseFloat(document.getElementById("acc-monto").value);
@@ -813,12 +813,12 @@ export default async function contabilidad(container) {
   };
 
   async function desplegarCentroControlCierresModal() {
-    const { value: periodoInput } = await Swal.fire({
+    const result = await Swal.fire({
       title: '🛰️ CENTRO DE CONTROL DE CIERRES',
       html: `
         <div class="p-2 font-sans text-center space-y-3">
           <p class="text-[11px] text-slate-400">INGRESE EL PERÍODO FISCAL (YYYY-MM):</p>
-          <input id="cierre-periodo" class="text-center font-mono font-bold text-white bg-slate-900 border border-white/10 rounded-xl p-3 text-sm focus:border-cyan-500 outline-none w-48 mx-auto block" placeholder="2026-08" value="2026-08">
+          <input id="cierre-periodo" class="text-center font-mono font-bold text-white bg-slate-900 border border-white/10 rounded-xl p-3 text-sm focus:border-cyan-500 outline-none w-48 mx-auto block" placeholder="2026-08" value="${new Date().toISOString().substring(0,7)}">
         </div>`,
       showCancelButton: true,
       showConfirmButton: true,
@@ -829,42 +829,44 @@ export default async function contabilidad(container) {
       confirmButtonColor: '#ef4444',
       denyButtonColor: '#00b4d8',
       cancelButtonColor: '#1f2937',
-      preConfirm: () => document.getElementById('cierre-periodo').value.trim()
+      preConfirm: () => {
+        const val = document.getElementById('cierre-periodo')?.value.trim();
+        if (!val || !/^\d{4}-\d{2}$/.test(val)) {
+          Swal.showValidationMessage('Ingrese un formato de período válido (YYYY-MM)');
+          return false;
+        }
+        return val;
+      }
     });
 
-    const inputElement = document.getElementById('cierre-periodo');
-    const periodoFinal = inputElement ? inputElement.value.trim() : periodoInput;
-    if (!periodoFinal || !/^\d{4}-\d{2}$/.test(periodoFinal)) return;
+    if (!result.value) return;
+    const periodoFinal = result.value;
 
-    if (Swal.clickConfirm && document.activeElement?.classList.contains('swal2-confirm')) {
+    if (result.isConfirmed) {
       if (estadosCierreMes[periodoFinal]) return Swal.fire("Aviso", "Este período ya está sellado.", "info");
       try {
         await addDoc(collection(db, "cierres_mensuales"), { empresaId, periodo: periodoFinal, estado: "CERRADO" });
         Swal.fire("Período Sellado", `Balance del mes ${periodoFinal} blindado.`, "success");
         await renderLayoutBase();
       } catch (err) {
+        console.error("Error al sellar balance:", err);
         Swal.fire("Error", "No se pudo registrar el cierre.", "error");
+      }
+    } else if (result.isDenied) {
+      if (estadosCierreMes[periodoFinal]) {
+        try {
+          await deleteDoc(doc(db, "cierres_mensuales", estadosCierreMes[periodoFinal]));
+          Swal.fire("Estatus Reabierto", `Período ${periodoFinal} restaurado.`, "success");
+          await renderLayoutBase();
+        } catch (err) {
+          console.error("Error al reabrir período:", err);
+          Swal.fire("Error", "Imposible remover candado.", "error");
+        }
+      } else {
+        Swal.fire("Aviso", "El período ingresado no se encuentra sellado.", "info");
       }
     }
   }
-
-  document.addEventListener('click', async (e) => {
-    if (e.target && e.target.classList.contains('swal2-deny')) {
-      const inputEl = document.getElementById('cierre-periodo');
-      if (inputEl && /^\d{4}-\d{2}$/.test(inputEl.value)) {
-        const per = inputEl.value;
-        if (estadosCierreMes[per]) {
-          try {
-            await deleteDoc(doc(db, "cierres_mensuales", estadosCierreMes[per]));
-            Swal.fire("Estatus Reabierto", `Período ${per} restaurado.`, "success");
-            await renderLayoutBase();
-          } catch (err) {
-            Swal.fire("Error", "Imposible remover candado.", "error");
-          }
-        }
-      }
-    }
-  });
 
   const renderizarVistaBalancesPUC = () => {
     const content = document.getElementById("cont-dynamic-content");
@@ -931,4 +933,3 @@ export default async function contabilidad(container) {
 
   await renderLayoutBase();
 }
-
