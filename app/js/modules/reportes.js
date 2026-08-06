@@ -1,7 +1,7 @@
 /**
  * 🏛️ TALLERPRO360 - REPORTES, FINANZAS & AUDITORÍA FORENSE V23.2 QUANTUM-SAP 🚀
- * PROTOCOLO: ESTABILIZACIÓN OPERATIVA INTERNA / UNIFICACIÓN CRUZADA DE FLOTA & INFORME GERENCIAL PDF
- * ARQUITECTURA: SEPARACIÓN ESTRICTA (ÓRDENES = COSTOS DIRECTOS / CONTABILIDAD = GASTOS FIJOS, VARIABLES, GARANTÍAS E INSUMOS)
+ * FIRMA: COLOMBIAN TRUCKS LOGISTICS LLC / EASY VEHICLE USA / NEXUS-X STARLINK
+ * PROTOCOLO: REINGENIERÍA FINANCIERA, DEDUPLICACIÓN DE INGRESOS/EGRESOS & INFORME GERENCIAL MULTI-PÁGINA PDF
  */
 
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -11,13 +11,25 @@ export default async function reportesModule(container) {
     const empresaId = (localStorage.getItem("nexus_empresaId") || localStorage.getItem("empresaId") || "").trim();
     
     if (!empresaId) {
-        container.innerHTML = `<div class="p-20 text-center text-red-500 orbitron flex flex-col gap-4 justify-center items-center font-bold bg-[#020617] min-h-screen">
-            <i class="fas fa-exclamation-triangle text-4xl animate-pulse"></i>
-            <span>ERROR CRÍTICO: AUTENTICACIÓN SAP REQUERIDA PARA MATRIZ DE REPORTES</span>
+        container.innerHTML = `
+        <div class="p-20 text-center text-red-500 orbitron flex flex-col gap-4 justify-center items-center font-bold bg-[#020617] min-h-screen">
+            <i class="fas fa-exclamation-triangle text-5xl animate-pulse"></i>
+            <span class="text-xl">ERROR CRÍTICO DE AUTENTICACIÓN SAP</span>
+            <p class="text-xs text-slate-400 font-sans">Se requiere una sesión válida para acceder a la Matriz Financiera Forense.</p>
         </div>`;
         return;
     }
 
+    // ⛔ PALABRAS RESERVADAS / CONTABLES (JAMÁS SON PLACAS VEHICULARES)
+    const BLACKLIST_PLACAS = new Set([
+        "ADMIN", "ADM", "S/N", "SN", "GENERAL", "CODENSA", "DIAN", "BANCO", "BANCOS",
+        "OFICINA", "GASTO", "GASTOS", "TALLER", "MECANICO", "MECANICA", "VARIOS", "VARARIOS",
+        "REPUESTOS", "SERVICIOS", "NOMINA", "EPM", "ETB", "EMCALI", "BOGOTA", "CLARO", "MOVISTAR",
+        "SISTEMA", "AJUSTE", "PETRO", "NEXUS", "CHEVROLET", "KENWORTH", "INTERNATIONAL", "FREIGHTLINER",
+        "CONTABILIDAD", "PENDIENTE", "MOSTRADOR", "CLIENTE", "PROVEEDOR", "INVENTARIO", "CAJA", "EFECTIVO"
+    ]);
+
+    // 🧮 HELPERS DE FORMATEO Y PARSEO SEGURO
     const safeNumber = (val) => {
         if (val === null || val === undefined) return 0;
         if (typeof val === 'number') return isNaN(val) ? 0 : val;
@@ -46,17 +58,40 @@ export default async function reportesModule(container) {
         return isNaN(d.getTime()) ? new Date() : d;
     };
 
-    const aislarPlacaPura = (texto) => {
-        if (!texto) return '';
-        const base = String(texto).split('-')[0];
-        return base.toUpperCase().replace(/[^A-Z0-9]/g, '').trim().substring(0, 6);
-    };
-
+    // 🚗 MOTOR RIGUROSO DE VALIDACIÓN DE PLACAS
     const esPlacaVehiculoValida = (placa) => {
         if (!placa) return false;
-        const p = placa.toUpperCase().trim();
-        if (p === 'ADMIN' || p === 'S/N' || p === 'GENERAL' || p.length < 5) return false;
-        return /^[A-Z]{3}[0-9]{2,3}$/.test(p) || (p.length >= 5 && p.length <= 6 && /[A-Z]/.test(p) && /[0-9]/.test(p));
+        const p = String(placa).toUpperCase().trim().replace(/[^A-Z0-9]/g, '');
+        if (p.length < 5 || p.length > 7) return false;
+        if (BLACKLIST_PLACAS.has(p)) return false;
+
+        for (const bl of BLACKLIST_PLACAS) {
+            if (p === bl || (bl.length >= 4 && p.includes(bl))) return false;
+        }
+
+        const tieneLetras = /[A-Z]/.test(p);
+        const tieneNumeros = /[0-9]/.test(p);
+        if (!tieneLetras || !tieneNumeros) return false;
+
+        // Formatos de placas colombianas, americanas y tráileres (ej: AAA123, AAA12B, R12345, 123456)
+        return /^[A-Z]{3}[0-9]{2,3}[A-Z0-9]?$/.test(p) ||
+               /^[RSTVXZ][0-9]{4,5}$/.test(p) ||
+               /^[A-Z]{1,2}[0-9]{4,5}$/.test(p) ||
+               /^[A-Z0-9]{6,7}$/.test(p);
+    };
+
+    const aislarPlacaPura = (texto) => {
+        if (!texto) return '';
+        const raw = String(texto).toUpperCase().trim();
+        const bloques = raw.split(/[\s\-\/\_\(\)]+/);
+        
+        for (const b of bloques) {
+            const limpio = b.replace(/[^A-Z0-9]/g, '').trim();
+            if (esPlacaVehiculoValida(limpio)) return limpio;
+        }
+
+        const limpioDirecto = raw.replace(/[^A-Z0-9]/g, '').trim();
+        return esPlacaVehiculoValida(limpioDirecto) ? limpioDirecto : '';
     };
 
     let state = {
@@ -65,6 +100,7 @@ export default async function reportesModule(container) {
         centrosBeneficioActivos: [],
         gastosFijosGlobales: 0,
         nominasInformalesGlobales: 0,
+        ingresosOtrosGlobales: 0,
         pucsGlobalesDetectados: new Set(),
         charts: {},
         filtroFrecuencia: "mes", 
@@ -95,7 +131,7 @@ export default async function reportesModule(container) {
             .sap-input:focus { border-color: #06b6d4; box-shadow: 0 0 12px rgba(6,182,212,0.25); }
             .kpi-card { position: relative; overflow: hidden; background: #0b0f17; padding: 1.8rem; border-radius: 2rem; border: 1px solid rgba(255,255,255,0.03); transition: all 0.4s ease; }
             .chart-container { background: #0b0f17; padding: 1.5rem; border-radius: 2rem; border: 1px solid rgba(255,255,255,0.03); display: flex; flex-direction: column; justify-content: space-between; min-height: 320px; }
-            .drilldown-container { background: #05080f; border-left: 4px solid #06b6d4; animation: fadeIn 0.3s ease-out; }
+            .drilldown-container { background: #040712; border-left: 4px solid #06b6d4; animation: fadeIn 0.3s ease-out; }
             @keyframes fadeIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
         `;
         document.head.appendChild(style);
@@ -114,7 +150,7 @@ export default async function reportesModule(container) {
                 <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
                     <div class="text-center lg:text-left">
                         <h1 class="text-4xl font-black tracking-tight text-white uppercase">Nexus-X<span class="text-cyan-400">_HanaForense V23.2</span></h1>
-                        <p class="text-[9px] text-slate-500 tracking-[0.4em] font-bold uppercase mt-2">MATRIZ DE REPORTES // CONFIABILIDAD CONTABLE Y OPERATIVA POR CENTRO DE COSTOS (NEXUS-X)</p>
+                        <p class="text-[9px] text-slate-500 tracking-[0.4em] font-bold uppercase mt-2">MATRIZ FINANCIERA GERENCIAL // CONFIABILIDAD DE FLOTA & AUDITORÍA FORENSE (NEXUS-X)</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-3">
                         <button id="btnExportPdfGerencial" class="bg-amber-500 text-slate-950 px-5 py-3.5 rounded-xl text-[11px] font-black hover:bg-amber-400 transition-all flex items-center gap-2 shadow-lg cursor-pointer">
@@ -168,7 +204,7 @@ export default async function reportesModule(container) {
                 <div class="p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-900/20">
                     <div>
                         <h3 class="text-xs font-black text-white uppercase tracking-widest">Estructura Operativa Consolidada por Flota (Vehículos)</h3>
-                        <p class="text-[9px] text-slate-500 mt-1">Clic en la placa para expandir matriz de órdenes y gastos contables (Garantías/Insumos) del periodo</p>
+                        <p class="text-[9px] text-slate-500 mt-1">Haga clic en la placa para desplegar el desglose forense de órdenes y contabilidad</p>
                     </div>
                     <span id="counterTag" class="text-[9px] bg-cyan-500/10 text-cyan-400 px-4 py-1.5 rounded-md font-black border border-cyan-500/20 uppercase tracking-wider">Procesando...</span>
                 </div>
@@ -178,8 +214,8 @@ export default async function reportesModule(container) {
                             <tr>
                                 <th class="p-6">Centro de Costo (Vehículo)</th>
                                 <th class="p-6">Volumen Ops.</th>
-                                <th class="p-6">Ingreso Recaudado (Total Órdenes)</th>
-                                <th class="p-6">Egresos (Costos Taller + Gastos Contables)</th>
+                                <th class="p-6">Ingresos Consolidados</th>
+                                <th class="p-6">Egresos (Costos Dir. + Gastos PUC)</th>
                                 <th class="p-6 text-right">EBITDA Periodo</th>
                             </tr>
                         </thead>
@@ -205,7 +241,6 @@ export default async function reportesModule(container) {
                 return { id: doc.id, ...d, _fechaObj: fecha, _periodo: p };
             });
 
-            // Gracias al botón antiduplicidad en contabilidad.js, estos registros ya vienen limpios y únicos
             state.rawContabilidad = snapAcc.docs.map(doc => {
                 const d = doc.data();
                 const fecha = extractDate(d);
@@ -244,7 +279,7 @@ export default async function reportesModule(container) {
         }
     };
 
-    // 🧠 MOTOR CUÁNTICO: SEPARACIÓN ARQUITECTÓNICA PURA (ÓRDENES = COSTOS DIRECTOS / CONTABILIDAD = GASTOS FIJOS, VARIABLES, GARANTÍAS E INSUMOS)
+    // 🧠 MOTOR CUÁNTICO DE AUDITORÍA FORENSE & DEDUPLICACIÓN DE COSTOS/INGRESOS
     const procesarMotorAnalitico = () => {
         let tsInicio = state.filtroFrecuencia !== "total" && state.fechaInicioFiltro ? state.fechaInicioFiltro.getTime() : 0;
         let tsFin = state.filtroFrecuencia !== "total" && state.fechaFinFiltro ? state.fechaFinFiltro.getTime() : Infinity;
@@ -253,8 +288,10 @@ export default async function reportesModule(container) {
         const contFiltrada = state.rawContabilidad.filter(c => c._fechaObj.getTime() >= tsInicio && c._fechaObj.getTime() <= tsFin);
 
         const mapaVehiculos = {};
+        const ordenesIDsProcesadas = new Set();
         state.gastosFijosGlobales = 0;
         state.nominasInformalesGlobales = 0;
+        state.ingresosOtrosGlobales = 0;
         state.pucsGlobalesDetectados.clear();
 
         const registrarPlacaEnMapa = (placaRaw) => {
@@ -268,58 +305,56 @@ export default async function reportesModule(container) {
             return null;
         };
 
-        // PASO 1: Registrar todas las placas válidas desde Órdenes (módulo exclusivo de costos operativos y directos)
+        // PASO 1: Registrar Órdenes (Fuente primaria de ingresos por servicios y costos directos de taller)
         ordsFiltradas.forEach(o => {
             let placaClave = registrarPlacaEnMapa(o.placa);
-            if (!placaClave) {
-                const bloques = String(o.placa || "").replace(/[()]/g, ' ').split(/[\s-]+/);
-                for (const b of bloques) {
-                    const limpio = b.replace(/[^A-Z0-9]/g, '').trim();
-                    if (esPlacaVehiculoValida(limpio)) {
-                        placaClave = registrarPlacaEnMapa(limpio);
-                        break;
-                    }
-                }
+            if (placaClave) {
+                ordenesIDsProcesadas.add(String(o.id).toLowerCase());
+                const facturacionTotal = safeNumber(o.total || o.costos_totales?.total || 0);
+                const costoDirecto = safeNumber(o.costos_totales?.costo_directo || o.costo_directo || 0);
+
+                mapaVehiculos[placaClave].cliente = o.cliente || mapaVehiculos[placaClave].cliente;
+                mapaVehiculos[placaClave].totalIngresoOrdenes += facturacionTotal;
+                mapaVehiculos[placaClave].totalCostoDirecto += costoDirecto;
+                mapaVehiculos[placaClave].ordenesAsociadas.push({
+                    id: o.id, 
+                    area: o.tipo_orden || 'MECÁNICA', 
+                    total: facturacionTotal, 
+                    costo: costoDirecto,
+                    bitacora: o.bitacora_ia || o.diagnostico || o.observaciones || "SIN BITÁCORA"
+                });
             }
         });
 
-        // PASO 2: Registrar placas válidas desde Contabilidad (módulo exclusivo de gastos fijos, variables, garantías o insumos)
-        contFiltrada.forEach(data => {
-            let placaClave = registrarPlacaEnMapa(data.placa);
-            if (!placaClave) {
-                const detalle = (data.detalle || data.concepto || "").toUpperCase();
-                const bloques = detalle.replace(/[()]/g, ' ').split(/[\s-]+/);
-                for (const b of bloques) {
-                    const limpio = b.replace(/[^A-Z0-9]/g, '').trim();
-                    if (esPlacaVehiculoValida(limpio)) {
-                        placaClave = registrarPlacaEnMapa(limpio);
-                        break;
-                    }
-                }
-            }
-        });
-
-        // PASO 3: Procesar y acumular Egresos de Contabilidad (Garantías, Insumos, Gastos Fijos o Variables - Ya libres de duplicados por antiduplicidad)
+        // PASO 2: Procesar Contabilidad con Deduplicación Inteligente
         contFiltrada.forEach(data => {
             const monto = safeNumber(data.monto || data.total || data.valor || data.pago_mecanico || data.salario || data.credito || 0);
-            const tipo = (data.tipo || "").toLowerCase();
-            const detalle = (data.detalle || data.concepto || "").toUpperCase();
+            const tipo = String(data.tipo || "").toLowerCase();
+            const detalle = String(data.detalle || data.concepto || "").toUpperCase();
             const cuentaPUC = String(data.puc || data.codigo || data.cuenta || "5195");
-            const esGasto = !(tipo.includes("ingreso") || cuentaPUC.startsWith("4") || tipo.includes("4135") || cuentaPUC.startsWith("11"));
             
-            if (esGasto && monto > 0) {
-                let placaRaw = (data.placa || "").toUpperCase().trim();
-                let placaClave = aislarPlacaPura(placaRaw);
+            // Clasificación Ingreso vs Gasto
+            const esIngreso = tipo.includes("ingreso") || cuentaPUC.startsWith("4") || tipo.includes("4135");
+            const esGasto = !esIngreso && !cuentaPUC.startsWith("11"); // 11xx son traslados de activos/bancos
 
-                if (!esPlacaVehiculoValida(placaClave)) {
-                    const bloques = detalle.replace(/[()]/g, ' ').split(/[\s-]+/);
-                    for (const b of bloques) {
-                        const limpio = b.replace(/[^A-Z0-9]/g, '').trim();
-                        if (esPlacaVehiculoValida(limpio)) { placaClave = limpio; break; }
+            let placaClave = registrarPlacaEnMapa(data.placa || data.vehiculo);
+            if (!placaClave) placaClave = aislarPlacaPura(detalle);
+
+            if (esIngreso && monto > 0) {
+                // 🛑 DEDUPLICACIÓN DE INGRESOS: Ignorar ingresos que referencien órdenes ya contadas
+                const refOrden = (detalle.match(/(ORDEN|OT|ORD)[#\s\-]*([A-Z0-9]+)/i) || [])[2];
+                const esOrdenRepetida = refOrden && ordenesIDsProcesadas.has(refOrden.toLowerCase());
+
+                if (!esOrdenRepetida) {
+                    if (placaClave && mapaVehiculos[placaClave]) {
+                        mapaVehiculos[placaClave].totalIngresoOtros += monto;
+                        mapaVehiculos[placaClave].detallesIngresosOtros.push({ puc: cuentaPUC, detalle, monto });
+                    } else {
+                        state.ingresosOtrosGlobales += monto;
                     }
                 }
-
-                if (esPlacaVehiculoValida(placaClave) && mapaVehiculos[placaClave]) {
+            } else if (esGasto && monto > 0) {
+                if (placaClave && mapaVehiculos[placaClave]) {
                     if (!mapaVehiculos[placaClave].pucsAgrupados[cuentaPUC]) mapaVehiculos[placaClave].pucsAgrupados[cuentaPUC] = 0;
                     mapaVehiculos[placaClave].pucsAgrupados[cuentaPUC] += monto;
                     mapaVehiculos[placaClave].totalGastosPUC += monto;
@@ -335,52 +370,22 @@ export default async function reportesModule(container) {
             }
         });
 
-        // PASO 4: Procesar y acumular Ingresos y Costos Directos de Órdenes (Módulo exclusivo de costos operativos)
-        ordsFiltradas.forEach(o => {
-            let placaRaw = (o.placa || '').toUpperCase().trim();
-            let placaClave = aislarPlacaPura(placaRaw);
-
-            if (!esPlacaVehiculoValida(placaClave)) {
-                const bloques = placaRaw.replace(/[()]/g, ' ').split(/[\s-]+/);
-                for (const b of bloques) {
-                    const limpio = b.replace(/[^A-Z0-9]/g, '').trim();
-                    if (esPlacaVehiculoValida(limpio)) { placaClave = limpio; break; }
-                }
-            }
-
-            if (esPlacaVehiculoValida(placaClave)) {
-                if (!mapaVehiculos[placaClave]) {
-                    mapaVehiculos[placaClave] = iniciarCentroCosto(placaClave, placaRaw || placaClave);
-                }
-                
-                const facturacionTotal = safeNumber(o.total || o.costos_totales?.total || 0);
-                const costoDirecto = safeNumber(o.costos_totales?.costo_directo || o.costo_directo || 0);
-
-                mapaVehiculos[placaClave].cliente = o.cliente || mapaVehiculos[placaClave].cliente;
-                mapaVehiculos[placaClave].totalIngresoBase += facturacionTotal;
-                mapaVehiculos[placaClave].totalCostoDirecto += costoDirecto;
-                mapaVehiculos[placaClave].ordenesAsociadas.push({
-                    id: o.id, 
-                    area: o.tipo_orden || 'MECÁNICA', 
-                    total: facturacionTotal, 
-                    costo: costoDirecto,
-                    bitacora: o.bitacora_ia || o.diagnostico || o.observaciones || "SIN BITÁCORA"
-                });
-            }
-        });
-
-        // PASO 5: Consolidación final de la matriz por vehículo (Sin duplicación cruzada)
-        const listaFinal = Object.values(mapaVehiculos).filter(v => esPlacaVehiculoValida(v.placaPura)).map(v => {
-            v.egresosConsolidados = v.totalCostoDirecto + v.totalGastosPUC;
-            v.ebitdaFinal = v.totalIngresoBase - v.egresosConsolidados;
-            v.margen = v.totalIngresoBase > 0 ? (v.ebitdaFinal / v.totalIngresoBase) * 100 : 0;
-            return v;
-        }).sort((a, b) => b.ebitdaFinal - a.ebitdaFinal);
+        // PASO 3: Consolidación Final por Vehículo
+        const listaFinal = Object.values(mapaVehiculos)
+            .filter(v => esPlacaVehiculoValida(v.placaPura))
+            .map(v => {
+                v.totalIngresosConsolidados = v.totalIngresoOrdenes + v.totalIngresoOtros;
+                v.egresosConsolidados = v.totalCostoDirecto + v.totalGastosPUC;
+                v.ebitdaFinal = v.totalIngresosConsolidados - v.egresosConsolidados;
+                v.margen = v.totalIngresosConsolidados > 0 ? (v.ebitdaFinal / v.totalIngresosConsolidados) * 100 : 0;
+                return v;
+            })
+            .sort((a, b) => b.ebitdaFinal - a.ebitdaFinal);
 
         state.centrosBeneficioActivos = listaFinal;
 
-        const totalIngresoCompania = listaFinal.reduce((a, b) => a + b.totalIngresoBase, 0);
-        const ebitdaNetoCompania = listaFinal.reduce((a, b) => a + b.ebitdaFinal, 0) - state.gastosFijosGlobales - state.nominasInformalesGlobales;
+        const totalIngresoCompania = listaFinal.reduce((a, b) => a + b.totalIngresosConsolidados, 0) + state.ingresosOtrosGlobales;
+        const ebitdaNetoCompania = listaFinal.reduce((a, b) => a + b.ebitdaFinal, 0) + state.ingresosOtrosGlobales - state.gastosFijosGlobales - state.nominasInformalesGlobales;
 
         renderKPIs({
             ebitdaNeto: ebitdaNetoCompania,
@@ -392,14 +397,16 @@ export default async function reportesModule(container) {
 
         renderCharts(listaFinal);
         renderTable(listaFinal);
+        
         const counterTag = document.getElementById("counterTag");
-        if (counterTag) counterTag.innerText = `${listaFinal.length} VEHÍCULOS PROCESADOS EN ${state.periodoSeleccionado}`;
+        if (counterTag) counterTag.innerText = `${listaFinal.length} VEHÍCULOS PROCESADOS // PERIODO ${state.periodoSeleccionado}`;
     };
 
     const iniciarCentroCosto = (placaPura, placaVisual) => ({
         placaPura, placaVisual, cliente: 'CLIENTE NO REGISTRADO',
-        totalIngresoBase: 0, totalCostoDirecto: 0, totalGastosPUC: 0,
-        pucsAgrupados: {}, detallesContables: [], ordenesAsociadas: [],
+        totalIngresoOrdenes: 0, totalIngresoOtros: 0, totalIngresosConsolidados: 0,
+        totalCostoDirecto: 0, totalGastosPUC: 0,
+        pucsAgrupados: {}, detallesContables: [], detallesIngresosOtros: [], ordenesAsociadas: [],
         egresosConsolidados: 0, ebitdaFinal: 0, margen: 0
     });
 
@@ -410,7 +417,7 @@ export default async function reportesModule(container) {
             ${kpiCard("EBITDA COMPAÑÍA", fmt(m.ebitdaNeto), "fa-wallet", m.ebitdaNeto > 0 ? "text-emerald-400" : "text-red-500", "UTILIDAD NETA PERIODO")}
             ${kpiCard("TICKET PROMEDIO", fmt(m.ticket), "fa-calculator", "text-cyan-400", "RECAUDO POR ORDEN")}
             ${kpiCard("MARGEN OPERATIVO", pct(m.margenGeneral), "fa-percent", "text-purple-400", "RENTABILIDAD REAL")}
-            ${kpiCard("ACTIVOS ATENDIDOS", `${m.volumenVehiculos} UNIDADES`, "fa-car", "text-amber-400", `VÍA ${m.volumenOps} ÓRDENES`)}
+            ${kpiCard("ACTIVOS ATENDIDOS", `${m.volumenVehiculos} UNIDADES`, "fa-truck", "text-amber-400", `VÍA ${m.volumenOps} ÓRDENES`)}
         `;
     };
 
@@ -426,44 +433,47 @@ export default async function reportesModule(container) {
         const body = document.getElementById("report-table-body");
         if (!body) return;
         if (data.length === 0) {
-            body.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-slate-500 text-[11px] uppercase tracking-widest">Sin movimientos contables u operativos detectados para vehículos en este periodo.</td></tr>`; return;
+            body.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-slate-500 text-[11px] uppercase tracking-widest">Sin movimientos financieros u operativos registrados en este rango.</td></tr>`; 
+            return;
         }
 
         body.innerHTML = data.map(v => `
             <tr class="hover:bg-cyan-500/[0.02] transition-colors cursor-pointer" onclick="window.toggleDrillDownPlaca('${v.placaPura}')">
                 <td class="p-5">
                     <p class="font-black text-white text-sm tracking-tight"><i class="fas fa-chevron-right text-[10px] text-cyan-500 mr-2"></i>${v.placaVisual}</p>
-                    <p class="text-[8px] text-slate-500 uppercase">${v.cliente.substring(0, 30)}</p>
+                    <p class="text-[8px] text-slate-500 uppercase">${v.cliente.substring(0, 32)}</p>
                 </td>
                 <td class="p-5">
                     <span class="px-3 py-1 rounded-md text-[9px] font-black bg-slate-900 border border-white/5 text-amber-400">${v.ordenesAsociadas.length} ORD(S)</span>
                 </td>
                 <td class="p-5">
-                    <p class="text-emerald-400 font-bold text-xs">${fmt(v.totalIngresoBase)}</p>
+                    <p class="text-emerald-400 font-bold text-xs">${fmt(v.totalIngresosConsolidados)}</p>
+                    ${v.totalIngresoOtros > 0 ? `<p class="text-[8px] text-slate-500 uppercase">Órdenes: ${fmt(v.totalIngresoOrdenes)} | Otros: ${fmt(v.totalIngresoOtros)}</p>` : ''}
                 </td>
                 <td class="p-5">
                     <p class="text-red-400 font-bold text-xs">${fmt(v.egresosConsolidados)}</p>
-                    <p class="text-[8px] text-slate-500 uppercase">Taller Dir: ${fmt(v.totalCostoDirecto)} | Gastos/Insumos: ${fmt(v.totalGastosPUC)}</p>
+                    <p class="text-[8px] text-slate-500 uppercase">Costos Dir: ${fmt(v.totalCostoDirecto)} | Gastos PUC: ${fmt(v.totalGastosPUC)}</p>
                 </td>
                 <td class="p-5 text-right">
                     <p class="font-black text-sm ${v.ebitdaFinal > 0 ? 'text-emerald-400' : 'text-red-500'}">${fmt(v.ebitdaFinal)}</p>
                     <p class="text-[8px] font-bold text-slate-500">${pct(v.margen)} MG</p>
                 </td>
             </tr>
-            <tr id="drilldown-${v.placaPura}" class="hidden bg-[#040712] drilldown-container">
+            <tr id="drilldown-${v.placaPura}" class="hidden drilldown-container">
                 <td colspan="5" class="p-6">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 text-xs">
                         <div class="bg-black/30 p-5 rounded-xl border border-white/5">
                              <div class="flex justify-between items-center mb-4">
-                                <h4 class="orbitron font-black text-cyan-400 text-[10px] uppercase tracking-wider">Historial Operativo (Órdenes)</h4>
+                                <h4 class="orbitron font-black text-cyan-400 text-[10px] uppercase tracking-wider">Historial Operativo (Órdenes de Taller)</h4>
                                 <button onclick="window.exportarPdfPlaca('${v.placaPura}', event)" class="bg-red-600 text-white font-black px-4 py-2 rounded-lg text-[9px] uppercase tracking-wider shadow-lg hover:bg-red-500 flex items-center gap-2 cursor-pointer">
-                                    <i class="fas fa-file-pdf"></i> PDF ACTIVO
+                                    <i class="fas fa-file-pdf"></i> PDF UNIDAD
                                 </button>
                             </div>
-                            ${v.ordenesAsociadas.map(o => `
+                            ${v.ordenesAsociadas.length === 0 ? '<p class="text-slate-600 italic text-[10px]">Sin órdenes registradas en este rango.</p>' : 
+                                v.ordenesAsociadas.map(o => `
                                 <div class="mb-3 pb-3 border-b border-white/5 last:border-0 last:mb-0 last:pb-0">
                                     <div class="flex justify-between text-[10px] text-slate-400 mb-1">
-                                        <span class="font-bold text-amber-400">ORDEN: ${o.id.substring(0,6).toUpperCase()} (${o.area})</span>
+                                        <span class="font-bold text-amber-400">ORDEN: ${String(o.id).substring(0,8).toUpperCase()} (${o.area})</span>
                                         <span>Ing: <span class="text-emerald-400">${fmt(o.total)}</span> | Costo Dir: <span class="text-red-400">${fmt(o.costo)}</span></span>
                                     </div>
                                     <p class="text-[10px] font-mono text-slate-500 bg-black/40 p-2 rounded whitespace-pre-line">${o.bitacora}</p>
@@ -471,11 +481,16 @@ export default async function reportesModule(container) {
                             `).join("")}
                         </div>
                         <div class="bg-black/30 p-5 rounded-xl border border-white/5">
-                            <h4 class="orbitron font-black text-amber-400 text-[10px] uppercase tracking-wider mb-4">Gastos Conexos / Insumos / Garantías (Contabilidad)</h4>
-                            <div class="space-y-1 text-[11px] font-bold">
-                                <div class="flex justify-between text-emerald-400 border-b border-white/5 pb-1.5 font-black"><span>4135 - TOTAL INGRESOS FACTURADOS</span><span>${fmt(v.totalIngresoBase)}</span></div>
-                                <div class="flex justify-between text-amber-400 border-b border-white/5 py-1"><span>COSTOS_DIRECTOS - TALLER (ÓRDENES)</span><span>-${fmt(v.totalCostoDirecto)}</span></div>
-                                ${Object.entries(v.pucsAgrupados).map(([puc, val]) => `<div class="flex justify-between text-red-400 border-b border-white/5 py-1 font-mono"><span>PUC ${puc} - GASTO / INSUMO / GARANTÍA</span><span>-${fmt(val)}</span></div>`).join("")}
+                            <h4 class="orbitron font-black text-amber-400 text-[10px] uppercase tracking-wider mb-4">Desglose Contable (PUC / Gastos / Garantías)</h4>
+                            <div class="space-y-1.5 text-[11px] font-bold">
+                                <div class="flex justify-between text-emerald-400 border-b border-white/5 pb-1.5 font-black"><span>INGRESOS TOTALES</span><span>${fmt(v.totalIngresosConsolidados)}</span></div>
+                                <div class="flex justify-between text-amber-400 border-b border-white/5 py-1"><span>(-) COSTOS DIRECTOS TALLER</span><span>-${fmt(v.totalCostoDirecto)}</span></div>
+                                ${Object.entries(v.pucsAgrupados).map(([puc, val]) => `
+                                    <div class="flex justify-between text-red-400 border-b border-white/5 py-1 font-mono">
+                                        <span>(-) PUC ${puc} GASTO / INSUMO</span>
+                                        <span>-${fmt(val)}</span>
+                                    </div>
+                                `).join("")}
                             </div>
                         </div>
                     </div>
@@ -489,86 +504,106 @@ export default async function reportesModule(container) {
         if (fila) fila.classList.toggle("hidden");
     };
 
-    // 📄 INFORME GERENCIAL EJECUTIVO PDF
+    // 📄 INFORME GERENCIAL CON PAGINACIÓN DINÁMICA MULTI-PÁGINA PDF
     const exportarInformeGerencialPdf = () => {
+        if (typeof window.jspdf === 'undefined') { alert("Cargando librería PDF... Intente nuevamente."); return; }
+        
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
-        const totalIngresos = state.centrosBeneficioActivos.reduce((a, b) => a + b.totalIngresoBase, 0);
+        const totalIngresos = state.centrosBeneficioActivos.reduce((a, b) => a + b.totalIngresosConsolidados, 0) + state.ingresosOtrosGlobales;
         const totalCostosDir = state.centrosBeneficioActivos.reduce((a, b) => a + b.totalCostoDirecto, 0);
         const totalPucs = state.centrosBeneficioActivos.reduce((a, b) => a + b.totalGastosPUC, 0);
         const utilidadNeta = totalIngresos - totalCostosDir - totalPucs - state.gastosFijosGlobales - state.nominasInformalesGlobales;
         const margenPromedio = totalIngresos > 0 ? (utilidadNeta / totalIngresos) * 100 : 0;
 
-        pdf.setFont("Helvetica", "bold"); pdf.setFontSize(14); pdf.setTextColor(15, 23, 42);
-        pdf.text("COLOMBIAN TRUCKS LOGISTICS LLC", 15, 15);
-        
-        pdf.setFontSize(8); pdf.setTextColor(100, 116, 139);
-        pdf.text("Sistema Logístico Nexus-X / EASY VEHICLE USA", 15, 20);
-        pdf.text("Charlotte NC, United States", 15, 24);
+        const renderEncabezado = (paginaNum) => {
+            pdf.setFont("Helvetica", "bold"); pdf.setFontSize(13); pdf.setTextColor(15, 23, 42);
+            pdf.text("COLOMBIAN TRUCKS LOGISTICS LLC", 15, 12);
+            pdf.setFontSize(8); pdf.setTextColor(100, 116, 139);
+            pdf.text("Sistema Logístico Nexus-X / EASY VEHICLE USA - Charlotte NC", 15, 16);
 
-        pdf.setFont("Helvetica", "bold"); pdf.text("INFORME GERENCIAL MENSUAL", 145, 15, { align: 'right' });
-        pdf.setFont("Helvetica", "normal");
-        pdf.text(`PERIODO: ${state.periodoSeleccionado}`, 145, 20, { align: 'right' });
-        pdf.text(`FECHA EMISIÓN: ${new Date().toLocaleDateString()}`, 145, 24, { align: 'right' });
+            pdf.setFont("Helvetica", "bold"); pdf.setTextColor(15, 23, 42);
+            pdf.text("INFORME GERENCIAL FINANCIERO", 195, 12, { align: 'right' });
+            pdf.setFont("Helvetica", "normal");
+            pdf.text(`PERIODO: ${state.periodoSeleccionado} | PÁG. ${paginaNum}`, 195, 16, { align: 'right' });
+            pdf.setDrawColor(203, 213, 225); pdf.line(15, 19, 195, 19);
+        };
 
-        pdf.setDrawColor(203, 213, 225); pdf.line(15, 28, 195, 28);
+        let paginaActual = 1;
+        renderEncabezado(paginaActual);
 
+        // Resumen Financiero Gerencial
         pdf.setFont("Helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(15, 23, 42);
-        pdf.text("1. ESTADO DE RESULTADOS GERENCIAL - CONSOLIDADO DEL PERIODO", 15, 35);
+        pdf.text("1. ESTADO DE RESULTADOS CONSOLIDADO", 15, 25);
 
-        pdf.setFillColor(241, 245, 249); pdf.rect(15, 38, 180, 32, 'F');
-        pdf.setFont("Helvetica", "normal"); pdf.setFontSize(8);
-        pdf.text("(+) Ingresos Brutos Facturados a Clientes", 20, 44); pdf.text(fmt(totalIngresos), 185, 44, { align: 'right' });
-        pdf.text("(+) Ingreso Neto Operativo", 20, 50); pdf.text(fmt(totalIngresos), 185, 50, { align: 'right' });
+        pdf.setFillColor(248, 250, 252); pdf.rect(15, 28, 180, 36, 'F');
+        pdf.setFont("Helvetica", "normal"); pdf.setFontSize(8); pdf.setTextColor(51, 65, 85);
         
+        pdf.text("(+) Ingresos Consolidados por Flota & Servicios", 20, 34); pdf.text(fmt(totalIngresos), 185, 34, { align: 'right' });
         pdf.setTextColor(220, 38, 38);
-        pdf.text("(-) Costo Directo de Taller (Módulo Órdenes)", 20, 56); pdf.text(`-${fmt(totalCostosDir)}`, 185, 56, { align: 'right' });
-        pdf.text("(-) Gastos Fijos, Variables, Garantías & Insumos (Contabilidad)", 20, 62); pdf.text(`-${fmt(totalPucs + state.gastosFijosGlobales + state.nominasInformalesGlobales)}`, 185, 62, { align: 'right' });
+        pdf.text("(-) Costos Directos de Taller (Módulo Órdenes)", 20, 40); pdf.text(`-${fmt(totalCostosDir)}`, 185, 40, { align: 'right' });
+        pdf.text("(-) Gastos Conexos, Insumos & Garantías (Contabilidad)", 20, 46); pdf.text(`-${fmt(totalPucs)}`, 185, 46, { align: 'right' });
+        pdf.text("(-) Gastos Fijos, Nómina & Administrativos Globales", 20, 52); pdf.text(`-${fmt(state.gastosFijosGlobales + state.nominasInformalesGlobales)}`, 185, 52, { align: 'right' });
 
-        pdf.setDrawColor(203, 213, 225); pdf.line(15, 66, 195, 66);
+        pdf.setDrawColor(203, 213, 225); pdf.line(15, 55, 195, 55);
         pdf.setFont("Helvetica", "bold"); pdf.setTextColor(15, 23, 42);
-        pdf.text("(=) UTILIDAD NETA REAL GANADA EN EL PERIODO", 20, 72); 
-        pdf.setTextColor(16, 185, 129);
-        pdf.text(fmt(utilidadNeta), 185, 72, { align: 'right' });
+        pdf.text("(=) UTILIDAD NETA REAL (EBITDA CONSOLIDADO)", 20, 60); 
+        pdf.setTextColor(utilidadNeta >= 0 ? 16 : 220, utilidadNeta >= 0 ? 185 : 38, utilidadNeta >= 0 ? 129 : 38);
+        pdf.text(fmt(utilidadNeta), 185, 60, { align: 'right' });
 
         pdf.setFontSize(7); pdf.setTextColor(100, 116, 139);
-        pdf.text(`MARGEN OPERATIVO REAL DE RENTABILIDAD: ${margenPromedio.toFixed(1)}% Promedio Libre`, 15, 78);
+        pdf.text(`MARGEN OPERATIVO GERENCIAL: ${margenPromedio.toFixed(1)}% | EMISIÓN: ${new Date().toLocaleDateString()}`, 15, 68);
 
+        // Tabla de Rentabilidad por Placa
         pdf.setFont("Helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(15, 23, 42);
-        pdf.text(`2. DETALLE DE RENTABILIDAD POR PLACA Y VEHÍCULO ATENDIDO (${state.centrosBeneficioActivos.length} UNIDADES / FLOTA)`, 15, 87);
+        pdf.text(`2. DETALLE DE RENTABILIDAD POR VEHÍCULO (${state.centrosBeneficioActivos.length} UNIDADES)`, 15, 76);
 
-        pdf.setFillColor(15, 23, 42); pdf.rect(15, 91, 180, 6, 'F');
-        pdf.setFont("Helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(255, 255, 255);
-        pdf.text("PLACA", 18, 95);
-        pdf.text("CLIENTE / PROPIETARIO", 45, 95);
-        pdf.text("FACTURADO", 105, 95, { align: 'right' });
-        pdf.text("EGRESOS", 135, 95, { align: 'right' });
-        pdf.text("GANANCIA", 165, 95, { align: 'right' });
-        pdf.text("MG", 190, 95, { align: 'right' });
+        const renderEncabezadoTabla = (y) => {
+            pdf.setFillColor(15, 23, 42); pdf.rect(15, y, 180, 6, 'F');
+            pdf.setFont("Helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(255, 255, 255);
+            pdf.text("PLACA", 18, y + 4);
+            pdf.text("CLIENTE / PROPIETARIO", 45, y + 4);
+            pdf.text("INGRESOS", 110, y + 4, { align: 'right' });
+            pdf.text("EGRESOS", 140, y + 4, { align: 'right' });
+            pdf.text("EBITDA", 170, y + 4, { align: 'right' });
+            pdf.text("MG", 190, y + 4, { align: 'right' });
+        };
 
-        let yT = 101;
-        pdf.setFont("Helvetica", "normal"); pdf.setTextColor(51, 65, 85);
+        let yPos = 80;
+        renderEncabezadoTabla(yPos);
+        yPos += 6;
+
+        pdf.setFont("Helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(51, 65, 85);
+
         state.centrosBeneficioActivos.forEach((v, idx) => {
-            if (yT < 275) {
-                if (idx % 2 === 0) { pdf.setFillColor(248, 250, 252); pdf.rect(15, yT - 4, 180, 6, 'F'); }
-                pdf.text(v.placaVisual, 18, yT);
-                pdf.text((v.cliente || "CLIENTE GENERAL").substring(0, 28), 45, yT);
-                pdf.text(fmt(v.totalIngresoBase), 105, yT, { align: 'right' });
-                pdf.text(fmt(v.egresosConsolidados), 135, yT, { align: 'right' });
-                pdf.text(fmt(v.ebitdaFinal), 165, yT, { align: 'right' });
-                pdf.text(`${v.margen.toFixed(0)}%`, 190, yT, { align: 'right' });
-                yT += 6;
+            if (yPos > 270) {
+                pdf.addPage();
+                paginaActual++;
+                renderEncabezado(paginaActual);
+                yPos = 25;
+                renderEncabezadoTabla(yPos);
+                yPos += 6;
+                pdf.setFont("Helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(51, 65, 85);
             }
+
+            if (idx % 2 === 0) { pdf.setFillColor(248, 250, 252); pdf.rect(15, yPos - 3.5, 180, 5, 'F'); }
+            pdf.text(v.placaVisual, 18, yPos);
+            pdf.text((v.cliente || "CLIENTE GENERAL").substring(0, 30), 45, yPos);
+            pdf.text(fmt(v.totalIngresosConsolidados), 110, yPos, { align: 'right' });
+            pdf.text(fmt(v.egresosConsolidados), 140, yPos, { align: 'right' });
+            pdf.text(fmt(v.ebitdaFinal), 170, yPos, { align: 'right' });
+            pdf.text(`${v.margen.toFixed(0)}%`, 190, yPos, { align: 'right' });
+            yPos += 5;
         });
 
-        yT += 10;
-        if (yT > 265) { pdf.addPage(); yT = 25; }
-        pdf.setDrawColor(203, 213, 225); pdf.line(15, yT, 80, yT);
+        yPos += 12;
+        if (yPos > 260) { pdf.addPage(); paginaActual++; renderEncabezado(paginaActual); yPos = 30; }
+
+        pdf.setDrawColor(203, 213, 225); pdf.line(15, yPos, 85, yPos);
         pdf.setFont("Helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(15, 23, 42);
-        pdf.text("FIRMA AUDITORÍA GERENCIAL", 15, yT + 4);
+        pdf.text("FIRMA Y AUDITORÍA GERENCIAL", 15, yPos + 4);
         pdf.setFont("Helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(100, 116, 139);
-        pdf.text("Director Operativo COLOMBIAN TRUCKS LOGISTICS LLC", 15, t = yT + 8);
-        pdf.text("CERTIFICACIÓN DIGITAL NEXUS-X V23.2 // SINCRONIZACIÓN 100% VERIFICADA", 110, yT + 8);
+        pdf.text("Director Operativo CTL LLC / EASY VEHICLE USA", 15, yPos + 8);
 
         pdf.save(`Informe_Gerencial_${state.periodoSeleccionado}.pdf`);
     };
@@ -576,51 +611,51 @@ export default async function reportesModule(container) {
     window.exportarPdfPlaca = (placaPura, event) => {
         event.stopPropagation();
         const v = state.centrosBeneficioActivos.find(c => c.placaPura === placaPura);
-        if (!v) return;
+        if (!v || typeof window.jspdf === 'undefined') return;
 
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
         pdf.setFillColor(11, 15, 23); pdf.rect(0, 0, 210, 297, 'F');
         
-        pdf.setFont("Helvetica", "bold"); pdf.setFontSize(16); pdf.setTextColor(6, 182, 212); 
-        pdf.text("NEXUS-X // REPORTE GERENCIAL DE ACTIVO", 15, 20);
+        pdf.setFont("Helvetica", "bold"); pdf.setFontSize(15); pdf.setTextColor(6, 182, 212); 
+        pdf.text("NEXUS-X // AUDITORÍA GERENCIAL DE VEHÍCULO", 15, 20);
         
         pdf.setFontSize(8); pdf.setTextColor(148, 163, 184);
-        pdf.text(`PERIODO: ${state.periodoSeleccionado} | PLACA: ${v.placaVisual}`, 15, 26);
+        pdf.text(`PERIODO: ${state.periodoSeleccionado} | UNIDAD: ${v.placaVisual}`, 15, 26);
         
         pdf.setDrawColor(30, 41, 59); pdf.line(15, 30, 195, 30);
         
-        pdf.setFontSize(10); pdf.setTextColor(255, 255, 255);
-        pdf.text(`PLACA UNIDAD:`, 15, 40); pdf.setFont("Helvetica", "normal"); pdf.text(`${v.placaVisual}`, 55, 40);
-        pdf.setFont("Helvetica", "bold"); pdf.text(`CLIENTE ASOCIADO:`, 15, 46); pdf.setFont("Helvetica", "normal"); pdf.text(`${v.cliente}`, 55, 46);
-        pdf.setFont("Helvetica", "bold"); pdf.text(`VOLUMEN ÓRDENES:`, 15, 52); pdf.setFont("Helvetica", "normal"); pdf.text(`${v.ordenesAsociadas.length}`, 55, 52);
+        pdf.setFontSize(9); pdf.setTextColor(255, 255, 255);
+        pdf.text(`PLACA:`, 15, 38); pdf.setFont("Helvetica", "normal"); pdf.text(`${v.placaVisual}`, 50, 38);
+        pdf.setFont("Helvetica", "bold"); pdf.text(`CLIENTE:`, 15, 44); pdf.setFont("Helvetica", "normal"); pdf.text(`${v.cliente}`, 50, 44);
+        pdf.setFont("Helvetica", "bold"); pdf.text(`ÓRDENES:`, 15, 50); pdf.setFont("Helvetica", "normal"); pdf.text(`${v.ordenesAsociadas.length} Registros`, 50, 50);
 
-        pdf.setFillColor(15, 23, 42); pdf.rect(15, 60, 180, 44, 'F');
+        pdf.setFillColor(15, 23, 42); pdf.rect(15, 58, 180, 44, 'F');
         pdf.setFont("Helvetica", "bold"); pdf.setTextColor(148, 163, 184);
-        pdf.text("ESTRUCTURA FINANCIERA DEL ACTIVO", 20, 68); pdf.text("VALOR TOTAL", 145, 68);
-        pdf.line(15, 72, 195, 72);
+        pdf.text("ESTRUCTURA FINANCIERA DEL ACTIVO", 20, 66); pdf.text("VALOR TOTAL", 145, 66);
+        pdf.line(15, 70, 195, 70);
 
         pdf.setFont("Helvetica", "normal"); pdf.setTextColor(255, 255, 255);
-        pdf.text("Ingresos Totales Recaudados:", 20, 78); pdf.text(`${fmt(v.totalIngresoBase)}`, 145, 78);
+        pdf.text("Ingresos Totales (Órdenes + Otros):", 20, 76); pdf.text(`${fmt(v.totalIngresosConsolidados)}`, 145, 76);
         pdf.setTextColor(244, 63, 94);
-        pdf.text("(-) Costos Directos de Taller (Órdenes):", 20, 85); pdf.text(`-${fmt(v.totalCostoDirecto)}`, 145, 85);
-        pdf.text("(-) Gastos Conexos / Garantías / Insumos:", 20, 92); pdf.text(`-${fmt(v.totalGastosPUC)}`, 145, 92);
+        pdf.text("(-) Costos Directos de Taller (Órdenes):", 20, 83); pdf.text(`-${fmt(v.totalCostoDirecto)}`, 145, 83);
+        pdf.text("(-) Gastos Conexos, Insumos & Garantías (PUC):", 20, 90); pdf.text(`-${fmt(v.totalGastosPUC)}`, 145, 90);
 
-        pdf.line(15, 96, 195, 96);
+        pdf.line(15, 94, 195, 94);
         pdf.setFont("Helvetica", "bold"); pdf.setTextColor(52, 211, 153); 
-        pdf.text("EBITDA PERIODO DEL ACTIVO:", 20, 102); pdf.text(`${fmt(v.ebitdaFinal)}`, 145, 102);
+        pdf.text("EBITDA FINAL DEL VEHÍCULO:", 20, 99); pdf.text(`${fmt(v.ebitdaFinal)}`, 145, 99);
 
-        let yPos = 118;
-        pdf.setFontSize(10); pdf.setTextColor(251, 191, 36);
-        pdf.text("DETALLE DE GASTOS CONTABLES (GARANTÍAS / INSUMOS) ASOCIADOS:", 15, yPos); yPos += 8;
+        let yPos = 114;
+        pdf.setFontSize(9); pdf.setTextColor(251, 191, 36);
+        pdf.text("DESGLOSE DE GASTOS Y CONTABILIDAD ASOCIADA:", 15, yPos); yPos += 8;
         
-        pdf.setFontSize(9); pdf.setTextColor(226, 232, 240);
+        pdf.setFontSize(8); pdf.setTextColor(226, 232, 240);
         if (v.detallesContables.length === 0) {
-            pdf.setFont("Helvetica", "italic"); pdf.text("Sin registros contables externos (garantías/insumos) en este periodo.", 20, yPos);
+            pdf.setFont("Helvetica", "italic"); pdf.text("Sin registros adicionales de gastos en contabilidad para este periodo.", 20, yPos);
         } else {
             v.detallesContables.forEach(g => {
                 if (yPos < 275) {
-                    pdf.text(`• PUC ${g.puc} - ${g.detalle.substring(0, 45)}:`, 20, yPos); 
+                    pdf.text(`• PUC ${g.puc} - ${g.detalle.substring(0, 48)}:`, 20, yPos); 
                     pdf.text(`-${fmt(g.monto)}`, 145, yPos); 
                     yPos += 6;
                 }
@@ -630,24 +665,27 @@ export default async function reportesModule(container) {
         pdf.save(`Informe_Gerencial_${v.placaPura}_${state.periodoSeleccionado}.pdf`);
     };
 
+    // 📊 EXPORTACIÓN EXCEL CORPORATIVA
     const exportarExcelGlobal = () => {
         if (typeof XLSX === 'undefined') { alert("Error: Librería Excel Engine no detectada."); return; }
-        if (state.centrosBeneficioActivos.length === 0) { alert("No hay datos calculados en este rango."); return; }
+        if (state.centrosBeneficioActivos.length === 0) { alert("Sin datos calculados para exportar."); return; }
 
         const arrPucsOrdenados = Array.from(state.pucsGlobalesDetectados).sort();
 
         const rowsExcel = state.centrosBeneficioActivos.map(v => {
             const fila = {
-                "PERIODO_EVALUADO": state.periodoSeleccionado,
-                "CENTRO_COSTO_PLACA": v.placaVisual,
+                "PERIODO": state.periodoSeleccionado,
+                "PLACA_VEHICULO": v.placaVisual,
                 "CANT_ORDENES": v.ordenesAsociadas.length,
                 "CLIENTE": v.cliente, 
-                "INGRESO_TOTAL_RECAUDADO": v.totalIngresoBase,
-                "SUMA_COSTOS_DIRECTOS_TALLER": v.totalCostoDirecto,
-                "TOTAL_GASTOS_CONTABLES_PLACA": v.totalGastosPUC,
-                "EGRESOS_CONSOLIDADOS": v.egresosConsolidados,
-                "EBITDA_REAL_NETO": v.ebitdaFinal,
-                "MARGEN_OPERATIVO": v.margen / 100
+                "INGRESOS_ORDENES": v.totalIngresoOrdenes,
+                "INGRESOS_OTROS": v.totalIngresoOtros,
+                "INGRESOS_CONSOLIDADOS": v.totalIngresosConsolidados,
+                "COSTOS_DIRECTOS_TALLER": v.totalCostoDirecto,
+                "GASTOS_CONTABLES_PUC": v.totalGastosPUC,
+                "EGRESOS_TOTALES": v.egresosConsolidados,
+                "EBITDA_NETO": v.ebitdaFinal,
+                "MARGEN_PORCENTUAL": v.margen / 100
             };
             arrPucsOrdenados.forEach(puc => { fila[`PUC_${puc}`] = v.pucsAgrupados[puc] || 0; });
             return fila;
@@ -657,29 +695,19 @@ export default async function reportesModule(container) {
         const rLen = rowsExcel.length;
         const totalIdx = rLen + 2; 
 
-        ws[`D${totalIdx}`] = { v: "CONSOLIDADO GLOBAL:", t: 's' };
+        ws[`D${totalIdx}`] = { v: "TOTALES CONSOLIDADOS:", t: 's' };
         ws[`E${totalIdx}`] = { f: `SUM(E2:E${rLen + 1})`, t: 'n' };
         ws[`F${totalIdx}`] = { f: `SUM(F2:F${rLen + 1})`, t: 'n' };
         ws[`G${totalIdx}`] = { f: `SUM(G2:G${rLen + 1})`, t: 'n' };
         ws[`H${totalIdx}`] = { f: `SUM(H2:H${rLen + 1})`, t: 'n' };
-        ws[`I${totalIdx}`] = { f: `SUM(I2:I${rLen + 1}) - ${state.gastosFijosGlobales} - ${state.nominasInformalesGlobales}`, t: 'n' };
-        ws[`J${totalIdx}`] = { f: `AVERAGE(J2:J${rLen + 1})`, t: 'n' };
-
-        let startAsciiCode = 11;
-        arrPucsOrdenados.forEach((p, idx) => {
-            const letter = getExcelColumnName(startAsciiCode + idx + 1);
-            ws[`${letter}${totalIdx}`] = { f: `SUM(${letter}2:${letter}${rLen + 1})`, t: 'n' };
-        });
+        ws[`I${totalIdx}`] = { f: `SUM(I2:I${rLen + 1})`, t: 'n' };
+        ws[`J${totalIdx}`] = { f: `SUM(J2:J${rLen + 1})`, t: 'n' };
+        ws[`K${totalIdx}`] = { f: `SUM(K2:K${rLen + 1}) - ${state.gastosFijosGlobales} - ${state.nominasInformalesGlobales}`, t: 'n' };
+        ws[`L${totalIdx}`] = { f: `AVERAGE(L2:L${rLen + 1})`, t: 'n' };
 
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "MATRIZ_NEXUS");
-        XLSX.writeFile(wb, `ColombianTrucks_MatrizNexus_${state.periodoSeleccionado}.xlsx`);
-    };
-
-    const getExcelColumnName = (colNum) => {
-        let columnName = "";
-        while (colNum > 0) { let rem = (colNum - 1) % 26; columnName = String.fromCharCode(65 + rem) + columnName; colNum = Math.floor((colNum - rem) / 26); }
-        return columnName;
+        XLSX.utils.book_append_sheet(wb, ws, "MATRIZ_FINANCIERA");
+        XLSX.writeFile(wb, `ColombianTrucks_MatrizFinanciera_${state.periodoSeleccionado}.xlsx`);
     };
 
     const renderCharts = (data) => {
@@ -698,7 +726,7 @@ export default async function reportesModule(container) {
         state.charts.pie = new Chart(document.getElementById('pieChart'), {
             type: 'doughnut',
             data: {
-                labels: ['Fijos Admón', 'Nóminas', 'Costo Directo Taller', 'Gastos/Insumos Placa'],
+                labels: ['Fijos Admón', 'Nóminas', 'Costo Dir. Taller', 'Gastos/Insumos Flota'],
                 datasets: [{ 
                     data: [state.gastosFijosGlobales, state.nominasInformalesGlobales, data.reduce((a,b)=>a+b.totalCostoDirecto,0), data.reduce((a,b)=>a+b.totalGastosPUC,0)], 
                     backgroundColor: ['#f43f5e', '#fbbf24', '#06b6d4', '#a855f7'], borderWidth: 0 
@@ -714,8 +742,8 @@ export default async function reportesModule(container) {
         state.charts.linea = new Chart(document.getElementById('lineaChart'), {
             type: 'doughnut',
             data: {
-                labels: Object.keys(ingresosPorArea),
-                datasets: [{ data: Object.values(ingresosPorArea), backgroundColor: ['#06b6d4', '#a855f7', '#fbbf24', '#ec4899'], borderWidth: 0 }]
+                labels: Object.keys(ingresosPorArea).length > 0 ? Object.keys(ingresosPorArea) : ['GENERAL'],
+                datasets: [{ data: Object.keys(ingresosPorArea).length > 0 ? Object.values(ingresosPorArea) : [1], backgroundColor: ['#06b6d4', '#a855f7', '#fbbf24', '#ec4899'], borderWidth: 0 }]
             },
             options: { cutout: '70%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
@@ -725,16 +753,14 @@ export default async function reportesModule(container) {
         const attach = (id, event, handler) => { const el = document.getElementById(id); if (el) el.addEventListener(event, handler); };
         
         attach("freq-total", "click", (e) => {
-            const freqMes = document.getElementById("freq-mes");
-            if (freqMes) freqMes.classList.remove("active"); 
+            document.getElementById("freq-mes")?.classList.remove("active"); 
             e.target.classList.add("active");
             state.filtroFrecuencia = "total"; 
             procesarMotorAnalitico();
         });
         
         attach("freq-mes", "click", (e) => {
-            const freqTotal = document.getElementById("freq-total");
-            if (freqTotal) freqTotal.classList.remove("active"); 
+            document.getElementById("freq-total")?.classList.remove("active"); 
             e.target.classList.add("active");
             state.filtroFrecuencia = "mes"; 
             ajustarFechasPorPeriodoMes(); 
@@ -745,10 +771,8 @@ export default async function reportesModule(container) {
             state.periodoSeleccionado = e.target.value;
             if(state.periodoSeleccionado !== "TODOS") { 
                 state.filtroFrecuencia = "mes"; 
-                const freqMes = document.getElementById("freq-mes");
-                const freqTotal = document.getElementById("freq-total");
-                if (freqMes) freqMes.classList.add("active"); 
-                if (freqTotal) freqTotal.classList.remove("active"); 
+                document.getElementById("freq-mes")?.classList.add("active"); 
+                document.getElementById("freq-total")?.classList.remove("active"); 
             }
             ajustarFechasPorPeriodoMes(); 
             procesarMotorAnalitico();
@@ -761,10 +785,8 @@ export default async function reportesModule(container) {
                 state.fechaInicioFiltro = new Date(i + "T00:00:00"); 
                 state.fechaFinFiltro = new Date(f + "T23:59:59"); 
                 state.filtroFrecuencia = "rango"; 
-                const freqTotal = document.getElementById("freq-total");
-                const freqMes = document.getElementById("freq-mes");
-                if (freqTotal) freqTotal.classList.remove("active"); 
-                if (freqMes) freqMes.classList.remove("active"); 
+                document.getElementById("freq-total")?.classList.remove("active"); 
+                document.getElementById("freq-mes")?.classList.remove("active"); 
                 procesarMotorAnalitico(); 
             }
         };
