@@ -931,3 +931,4 @@ export default async function contabilidad(container) {
 
   await renderLayoutBase();
 }
+
