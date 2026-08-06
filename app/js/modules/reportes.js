@@ -1,6 +1,7 @@
 /**
  * 🏛️ TALLERPRO360 - REPORTES, FINANZAS & AUDITORÍA FORENSE V23.2 QUANTUM-SAP 🚀
  * PROTOCOLO: ESTABILIZACIÓN OPERATIVA INTERNA / UNIFICACIÓN CRUZADA DE FLOTA & INFORME GERENCIAL PDF
+ * ARQUITECTURA: SEPARACIÓN ESTRICTA (ÓRDENES = COSTOS DIRECTOS / CONTABILIDAD = GASTOS FIJOS, VARIABLES, GARANTÍAS E INSUMOS)
  */
 
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -112,8 +113,8 @@ export default async function reportesModule(container) {
             <header class="flex flex-col gap-6 mb-8 border-b border-white/5 pb-8">
                 <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
                     <div class="text-center lg:text-left">
-                        <h1 class="text-4xl font-black tracking-tight text-white uppercase">TallerPRO360<span class="text-cyan-400">_HanaForense V23.2</span></h1>
-                        <p class="text-[9px] text-slate-500 tracking-[0.4em] font-bold uppercase mt-2">MATRIZ DE REPORTES // CONFIABILIDAD CONTABLE POR CENTRO DE COSTOS (ACTIVO)</p>
+                        <h1 class="text-4xl font-black tracking-tight text-white uppercase">Nexus-X<span class="text-cyan-400">_HanaForense V23.2</span></h1>
+                        <p class="text-[9px] text-slate-500 tracking-[0.4em] font-bold uppercase mt-2">MATRIZ DE REPORTES // CONFIABILIDAD CONTABLE Y OPERATIVA POR CENTRO DE COSTOS (NEXUS-X)</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-3">
                         <button id="btnExportPdfGerencial" class="bg-amber-500 text-slate-950 px-5 py-3.5 rounded-xl text-[11px] font-black hover:bg-amber-400 transition-all flex items-center gap-2 shadow-lg cursor-pointer">
@@ -167,7 +168,7 @@ export default async function reportesModule(container) {
                 <div class="p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-900/20">
                     <div>
                         <h3 class="text-xs font-black text-white uppercase tracking-widest">Estructura Operativa Consolidada por Flota (Vehículos)</h3>
-                        <p class="text-[9px] text-slate-500 mt-1">Clic en la placa para expandir matriz de órdenes y PUCs del periodo</p>
+                        <p class="text-[9px] text-slate-500 mt-1">Clic en la placa para expandir matriz de órdenes y gastos contables (Garantías/Insumos) del periodo</p>
                     </div>
                     <span id="counterTag" class="text-[9px] bg-cyan-500/10 text-cyan-400 px-4 py-1.5 rounded-md font-black border border-cyan-500/20 uppercase tracking-wider">Procesando...</span>
                 </div>
@@ -177,8 +178,8 @@ export default async function reportesModule(container) {
                             <tr>
                                 <th class="p-6">Centro de Costo (Vehículo)</th>
                                 <th class="p-6">Volumen Ops.</th>
-                                <th class="p-6">Ingreso Recaudado (Total)</th>
-                                <th class="p-6">Egresos (Directo + PUCs)</th>
+                                <th class="p-6">Ingreso Recaudado (Total Órdenes)</th>
+                                <th class="p-6">Egresos (Costos Taller + Gastos Contables)</th>
                                 <th class="p-6 text-right">EBITDA Periodo</th>
                             </tr>
                         </thead>
@@ -204,6 +205,7 @@ export default async function reportesModule(container) {
                 return { id: doc.id, ...d, _fechaObj: fecha, _periodo: p };
             });
 
+            // Gracias al botón antiduplicidad en contabilidad.js, estos registros ya vienen limpios y únicos
             state.rawContabilidad = snapAcc.docs.map(doc => {
                 const d = doc.data();
                 const fecha = extractDate(d);
@@ -242,7 +244,7 @@ export default async function reportesModule(container) {
         }
     };
 
-    // 🧠 MOTOR CUÁNTICO: PRE-AGRUPACIÓN UNIFICADA DE PLACAS Y REVISIÓN DE CRUZADOS
+    // 🧠 MOTOR CUÁNTICO: SEPARACIÓN ARQUITECTÓNICA PURA (ÓRDENES = COSTOS DIRECTOS / CONTABILIDAD = GASTOS FIJOS, VARIABLES, GARANTÍAS E INSUMOS)
     const procesarMotorAnalitico = () => {
         let tsInicio = state.filtroFrecuencia !== "total" && state.fechaInicioFiltro ? state.fechaInicioFiltro.getTime() : 0;
         let tsFin = state.filtroFrecuencia !== "total" && state.fechaFinFiltro ? state.fechaFinFiltro.getTime() : Infinity;
@@ -266,11 +268,10 @@ export default async function reportesModule(container) {
             return null;
         };
 
-        // PASO 1: Registrar todas las placas válidas desde Órdenes para asegurar ingresos correctos
+        // PASO 1: Registrar todas las placas válidas desde Órdenes (módulo exclusivo de costos operativos y directos)
         ordsFiltradas.forEach(o => {
             let placaClave = registrarPlacaEnMapa(o.placa);
             if (!placaClave) {
-                // Buscar dentro del texto si viene embebida
                 const bloques = String(o.placa || "").replace(/[()]/g, ' ').split(/[\s-]+/);
                 for (const b of bloques) {
                     const limpio = b.replace(/[^A-Z0-9]/g, '').trim();
@@ -282,7 +283,7 @@ export default async function reportesModule(container) {
             }
         });
 
-        // PASO 2: Registrar placas válidas desde Contabilidad
+        // PASO 2: Registrar placas válidas desde Contabilidad (módulo exclusivo de gastos fijos, variables, garantías o insumos)
         contFiltrada.forEach(data => {
             let placaClave = registrarPlacaEnMapa(data.placa);
             if (!placaClave) {
@@ -298,7 +299,7 @@ export default async function reportesModule(container) {
             }
         });
 
-        // PASO 3: Procesar y acumular Egresos Contables (PUCs)
+        // PASO 3: Procesar y acumular Egresos de Contabilidad (Garantías, Insumos, Gastos Fijos o Variables - Ya libres de duplicados por antiduplicidad)
         contFiltrada.forEach(data => {
             const monto = safeNumber(data.monto || data.total || data.valor || data.pago_mecanico || data.salario || data.credito || 0);
             const tipo = (data.tipo || "").toLowerCase();
@@ -334,7 +335,7 @@ export default async function reportesModule(container) {
             }
         });
 
-        // PASO 4: Procesar y acumular Ingresos y Costos de Órdenes (separando cada orden con su respectivo ingreso y costo)
+        // PASO 4: Procesar y acumular Ingresos y Costos Directos de Órdenes (Módulo exclusivo de costos operativos)
         ordsFiltradas.forEach(o => {
             let placaRaw = (o.placa || '').toUpperCase().trim();
             let placaClave = aislarPlacaPura(placaRaw);
@@ -368,7 +369,7 @@ export default async function reportesModule(container) {
             }
         });
 
-        // PASO 5: Consolidación final de la matriz por vehículo
+        // PASO 5: Consolidación final de la matriz por vehículo (Sin duplicación cruzada)
         const listaFinal = Object.values(mapaVehiculos).filter(v => esPlacaVehiculoValida(v.placaPura)).map(v => {
             v.egresosConsolidados = v.totalCostoDirecto + v.totalGastosPUC;
             v.ebitdaFinal = v.totalIngresoBase - v.egresosConsolidados;
@@ -442,7 +443,7 @@ export default async function reportesModule(container) {
                 </td>
                 <td class="p-5">
                     <p class="text-red-400 font-bold text-xs">${fmt(v.egresosConsolidados)}</p>
-                    <p class="text-[8px] text-slate-500 uppercase">Dir: ${fmt(v.totalCostoDirecto)} | PUC: ${fmt(v.totalGastosPUC)}</p>
+                    <p class="text-[8px] text-slate-500 uppercase">Taller Dir: ${fmt(v.totalCostoDirecto)} | Gastos/Insumos: ${fmt(v.totalGastosPUC)}</p>
                 </td>
                 <td class="p-5 text-right">
                     <p class="font-black text-sm ${v.ebitdaFinal > 0 ? 'text-emerald-400' : 'text-red-500'}">${fmt(v.ebitdaFinal)}</p>
@@ -454,7 +455,7 @@ export default async function reportesModule(container) {
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 text-xs">
                         <div class="bg-black/30 p-5 rounded-xl border border-white/5">
                              <div class="flex justify-between items-center mb-4">
-                                <h4 class="orbitron font-black text-cyan-400 text-[10px] uppercase tracking-wider">Historial Operativo (Periodo)</h4>
+                                <h4 class="orbitron font-black text-cyan-400 text-[10px] uppercase tracking-wider">Historial Operativo (Órdenes)</h4>
                                 <button onclick="window.exportarPdfPlaca('${v.placaPura}', event)" class="bg-red-600 text-white font-black px-4 py-2 rounded-lg text-[9px] uppercase tracking-wider shadow-lg hover:bg-red-500 flex items-center gap-2 cursor-pointer">
                                     <i class="fas fa-file-pdf"></i> PDF ACTIVO
                                 </button>
@@ -463,18 +464,18 @@ export default async function reportesModule(container) {
                                 <div class="mb-3 pb-3 border-b border-white/5 last:border-0 last:mb-0 last:pb-0">
                                     <div class="flex justify-between text-[10px] text-slate-400 mb-1">
                                         <span class="font-bold text-amber-400">ORDEN: ${o.id.substring(0,6).toUpperCase()} (${o.area})</span>
-                                        <span>Ing: <span class="text-emerald-400">${fmt(o.total)}</span> | Costo: <span class="text-red-400">${fmt(o.costo)}</span></span>
+                                        <span>Ing: <span class="text-emerald-400">${fmt(o.total)}</span> | Costo Dir: <span class="text-red-400">${fmt(o.costo)}</span></span>
                                     </div>
                                     <p class="text-[10px] font-mono text-slate-500 bg-black/40 p-2 rounded whitespace-pre-line">${o.bitacora}</p>
                                 </div>
                             `).join("")}
                         </div>
                         <div class="bg-black/30 p-5 rounded-xl border border-white/5">
-                            <h4 class="orbitron font-black text-amber-400 text-[10px] uppercase tracking-wider mb-4">Integración Contable PUC del Vehículo</h4>
+                            <h4 class="orbitron font-black text-amber-400 text-[10px] uppercase tracking-wider mb-4">Gastos Conexos / Insumos / Garantías (Contabilidad)</h4>
                             <div class="space-y-1 text-[11px] font-bold">
                                 <div class="flex justify-between text-emerald-400 border-b border-white/5 pb-1.5 font-black"><span>4135 - TOTAL INGRESOS FACTURADOS</span><span>${fmt(v.totalIngresoBase)}</span></div>
-                                <div class="flex justify-between text-amber-400 border-b border-white/5 py-1"><span>COSTOS_DIRECTOS - TALLER (SUMA)</span><span>-${fmt(v.totalCostoDirecto)}</span></div>
-                                ${Object.entries(v.pucsAgrupados).map(([puc, val]) => `<div class="flex justify-between text-red-400 border-b border-white/5 py-1 font-mono"><span>PUC ${puc} - REGISTRO CONTABLE</span><span>-${fmt(val)}</span></div>`).join("")}
+                                <div class="flex justify-between text-amber-400 border-b border-white/5 py-1"><span>COSTOS_DIRECTOS - TALLER (ÓRDENES)</span><span>-${fmt(v.totalCostoDirecto)}</span></div>
+                                ${Object.entries(v.pucsAgrupados).map(([puc, val]) => `<div class="flex justify-between text-red-400 border-b border-white/5 py-1 font-mono"><span>PUC ${puc} - GASTO / INSUMO / GARANTÍA</span><span>-${fmt(val)}</span></div>`).join("")}
                             </div>
                         </div>
                     </div>
@@ -488,7 +489,7 @@ export default async function reportesModule(container) {
         if (fila) fila.classList.toggle("hidden");
     };
 
-    // 📄 INFORME GERENCIAL EJECUTIVO PDF (Formato Estilo Empresa Corporativa)
+    // 📄 INFORME GERENCIAL EJECUTIVO PDF
     const exportarInformeGerencialPdf = () => {
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
@@ -498,13 +499,12 @@ export default async function reportesModule(container) {
         const utilidadNeta = totalIngresos - totalCostosDir - totalPucs - state.gastosFijosGlobales - state.nominasInformalesGlobales;
         const margenPromedio = totalIngresos > 0 ? (utilidadNeta / totalIngresos) * 100 : 0;
 
-        // Cabecera Corporativa
         pdf.setFont("Helvetica", "bold"); pdf.setFontSize(14); pdf.setTextColor(15, 23, 42);
-        pdf.text("CARROS DE COLOMBIA", 15, 15);
+        pdf.text("COLOMBIAN TRUCKS LOGISTICS LLC", 15, 15);
         
         pdf.setFontSize(8); pdf.setTextColor(100, 116, 139);
-        pdf.text("NIT: 901.882.391-4 | Tel: +57 310 764 5306", 15, 20);
-        pdf.text("Cra. 23 #68-47, Barrios Unidos, Bogotá D.C. / Colombia | Email: mono.arevalo.co@gmail.com", 15, 24);
+        pdf.text("Sistema Logístico Nexus-X / EASY VEHICLE USA", 15, 20);
+        pdf.text("Charlotte NC, United States", 15, 24);
 
         pdf.setFont("Helvetica", "bold"); pdf.text("INFORME GERENCIAL MENSUAL", 145, 15, { align: 'right' });
         pdf.setFont("Helvetica", "normal");
@@ -513,39 +513,36 @@ export default async function reportesModule(container) {
 
         pdf.setDrawColor(203, 213, 225); pdf.line(15, 28, 195, 28);
 
-        // Sección 1: Estado de Resultados Gerencial
         pdf.setFont("Helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(15, 23, 42);
         pdf.text("1. ESTADO DE RESULTADOS GERENCIAL - CONSOLIDADO DEL PERIODO", 15, 35);
 
         pdf.setFillColor(241, 245, 249); pdf.rect(15, 38, 180, 32, 'F');
         pdf.setFont("Helvetica", "normal"); pdf.setFontSize(8);
         pdf.text("(+) Ingresos Brutos Facturados a Clientes", 20, 44); pdf.text(fmt(totalIngresos), 185, 44, { align: 'right' });
-        pdf.text("(+) Ingreso Neto Taller (Antes de Impuestos)", 20, 50); pdf.text(fmt(totalIngresos), 185, 50, { align: 'right' });
+        pdf.text("(+) Ingreso Neto Operativo", 20, 50); pdf.text(fmt(totalIngresos), 185, 50, { align: 'right' });
         
         pdf.setTextColor(220, 38, 38);
-        pdf.text("(-) Costo Directo Repuestos e Insumos en Bodega", 20, 56); pdf.text(`-${fmt(totalCostosDir)}`, 185, 56, { align: 'right' });
-        pdf.text("(-) Gastos Operativos / PUC & Sede", 20, 62); pdf.text(`-${fmt(totalPucs + state.gastosFijosGlobales + state.nominasInformalesGlobales)}`, 185, 62, { align: 'right' });
+        pdf.text("(-) Costo Directo de Taller (Módulo Órdenes)", 20, 56); pdf.text(`-${fmt(totalCostosDir)}`, 185, 56, { align: 'right' });
+        pdf.text("(-) Gastos Fijos, Variables, Garantías & Insumos (Contabilidad)", 20, 62); pdf.text(`-${fmt(totalPucs + state.gastosFijosGlobales + state.nominasInformalesGlobales)}`, 185, 62, { align: 'right' });
 
         pdf.setDrawColor(203, 213, 225); pdf.line(15, 66, 195, 66);
         pdf.setFont("Helvetica", "bold"); pdf.setTextColor(15, 23, 42);
-        pdf.text("(=) UTILIDAD NETA REAL GANADA POR EL TALLER EN EL PERIODO", 20, 72); 
+        pdf.text("(=) UTILIDAD NETA REAL GANADA EN EL PERIODO", 20, 72); 
         pdf.setTextColor(16, 185, 129);
         pdf.text(fmt(utilidadNeta), 185, 72, { align: 'right' });
 
         pdf.setFontSize(7); pdf.setTextColor(100, 116, 139);
         pdf.text(`MARGEN OPERATIVO REAL DE RENTABILIDAD: ${margenPromedio.toFixed(1)}% Promedio Libre`, 15, 78);
 
-        // Sección 2: Detalle de Rentabilidad por Placa
         pdf.setFont("Helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(15, 23, 42);
-        pdf.text(`2. DETALLE DE RENTABILIDAD POR PLACA Y VEHÍCULO ATENDIDO (${state.centrosBeneficioActivos.length} ÓRDENES / FLOTA)`, 15, 87);
+        pdf.text(`2. DETALLE DE RENTABILIDAD POR PLACA Y VEHÍCULO ATENDIDO (${state.centrosBeneficioActivos.length} UNIDADES / FLOTA)`, 15, 87);
 
-        // Tabla Header
         pdf.setFillColor(15, 23, 42); pdf.rect(15, 91, 180, 6, 'F');
         pdf.setFont("Helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(255, 255, 255);
         pdf.text("PLACA", 18, 95);
         pdf.text("CLIENTE / PROPIETARIO", 45, 95);
         pdf.text("FACTURADO", 105, 95, { align: 'right' });
-        pdf.text("COSTOS", 135, 95, { align: 'right' });
+        pdf.text("EGRESOS", 135, 95, { align: 'right' });
         pdf.text("GANANCIA", 165, 95, { align: 'right' });
         pdf.text("MG", 190, 95, { align: 'right' });
 
@@ -564,15 +561,14 @@ export default async function reportesModule(container) {
             }
         });
 
-        // Sección 3: Firma Auditoría
         yT += 10;
         if (yT > 265) { pdf.addPage(); yT = 25; }
         pdf.setDrawColor(203, 213, 225); pdf.line(15, yT, 80, yT);
         pdf.setFont("Helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(15, 23, 42);
         pdf.text("FIRMA AUDITORÍA GERENCIAL", 15, yT + 4);
         pdf.setFont("Helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(100, 116, 139);
-        pdf.text("Director Operativo CARROS DE COLOMBIA", 15, yT + 8);
-        pdf.text("CERTIFICACIÓN DIGITAL TALLERPRO360 V23.2 // SINCRONIZACIÓN 100% VERIFICADA", 110, yT + 8);
+        pdf.text("Director Operativo COLOMBIAN TRUCKS LOGISTICS LLC", 15, t = yT + 8);
+        pdf.text("CERTIFICACIÓN DIGITAL NEXUS-X V23.2 // SINCRONIZACIÓN 100% VERIFICADA", 110, yT + 8);
 
         pdf.save(`Informe_Gerencial_${state.periodoSeleccionado}.pdf`);
     };
@@ -587,7 +583,7 @@ export default async function reportesModule(container) {
         pdf.setFillColor(11, 15, 23); pdf.rect(0, 0, 210, 297, 'F');
         
         pdf.setFont("Helvetica", "bold"); pdf.setFontSize(16); pdf.setTextColor(6, 182, 212); 
-        pdf.text("CARROS DE COLOMBIA // REPORTE GERENCIAL DE ACTIVO", 15, 20);
+        pdf.text("NEXUS-X // REPORTE GERENCIAL DE ACTIVO", 15, 20);
         
         pdf.setFontSize(8); pdf.setTextColor(148, 163, 184);
         pdf.text(`PERIODO: ${state.periodoSeleccionado} | PLACA: ${v.placaVisual}`, 15, 26);
@@ -607,8 +603,8 @@ export default async function reportesModule(container) {
         pdf.setFont("Helvetica", "normal"); pdf.setTextColor(255, 255, 255);
         pdf.text("Ingresos Totales Recaudados:", 20, 78); pdf.text(`${fmt(v.totalIngresoBase)}`, 145, 78);
         pdf.setTextColor(244, 63, 94);
-        pdf.text("(-) Costos Directos de Taller:", 20, 85); pdf.text(`-${fmt(v.totalCostoDirecto)}`, 145, 85);
-        pdf.text("(-) Gastos Conexos PUC:", 20, 92); pdf.text(`-${fmt(v.totalGastosPUC)}`, 145, 92);
+        pdf.text("(-) Costos Directos de Taller (Órdenes):", 20, 85); pdf.text(`-${fmt(v.totalCostoDirecto)}`, 145, 85);
+        pdf.text("(-) Gastos Conexos / Garantías / Insumos:", 20, 92); pdf.text(`-${fmt(v.totalGastosPUC)}`, 145, 92);
 
         pdf.line(15, 96, 195, 96);
         pdf.setFont("Helvetica", "bold"); pdf.setTextColor(52, 211, 153); 
@@ -616,11 +612,11 @@ export default async function reportesModule(container) {
 
         let yPos = 118;
         pdf.setFontSize(10); pdf.setTextColor(251, 191, 36);
-        pdf.text("DETALLE DE TRANSACCIONES CONTABLES PUC ASOCIADAS:", 15, yPos); yPos += 8;
+        pdf.text("DETALLE DE GASTOS CONTABLES (GARANTÍAS / INSUMOS) ASOCIADOS:", 15, yPos); yPos += 8;
         
         pdf.setFontSize(9); pdf.setTextColor(226, 232, 240);
         if (v.detallesContables.length === 0) {
-            pdf.setFont("Helvetica", "italic"); pdf.text("Sin registros contables externos en este periodo.", 20, yPos);
+            pdf.setFont("Helvetica", "italic"); pdf.text("Sin registros contables externos (garantías/insumos) en este periodo.", 20, yPos);
         } else {
             v.detallesContables.forEach(g => {
                 if (yPos < 275) {
@@ -647,8 +643,8 @@ export default async function reportesModule(container) {
                 "CANT_ORDENES": v.ordenesAsociadas.length,
                 "CLIENTE": v.cliente, 
                 "INGRESO_TOTAL_RECAUDADO": v.totalIngresoBase,
-                "SUMA_COSTOS_DIRECTOS": v.totalCostoDirecto,
-                "TOTAL_GASTOS_PUC": v.totalGastosPUC,
+                "SUMA_COSTOS_DIRECTOS_TALLER": v.totalCostoDirecto,
+                "TOTAL_GASTOS_CONTABLES_PLACA": v.totalGastosPUC,
                 "EGRESOS_CONSOLIDADOS": v.egresosConsolidados,
                 "EBITDA_REAL_NETO": v.ebitdaFinal,
                 "MARGEN_OPERATIVO": v.margen / 100
@@ -676,8 +672,8 @@ export default async function reportesModule(container) {
         });
 
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "MATRIZ_SAP");
-        XLSX.writeFile(wb, `CarrosDeColombia_MatrizSAP_${state.periodoSeleccionado}.xlsx`);
+        XLSX.utils.book_append_sheet(wb, ws, "MATRIZ_NEXUS");
+        XLSX.writeFile(wb, `ColombianTrucks_MatrizNexus_${state.periodoSeleccionado}.xlsx`);
     };
 
     const getExcelColumnName = (colNum) => {
@@ -702,7 +698,7 @@ export default async function reportesModule(container) {
         state.charts.pie = new Chart(document.getElementById('pieChart'), {
             type: 'doughnut',
             data: {
-                labels: ['Fijos Admón', 'Nóminas', 'Costo Directo Taller', 'Gastos PUC Vehículos'],
+                labels: ['Fijos Admón', 'Nóminas', 'Costo Directo Taller', 'Gastos/Insumos Placa'],
                 datasets: [{ 
                     data: [state.gastosFijosGlobales, state.nominasInformalesGlobales, data.reduce((a,b)=>a+b.totalCostoDirecto,0), data.reduce((a,b)=>a+b.totalGastosPUC,0)], 
                     backgroundColor: ['#f43f5e', '#fbbf24', '#06b6d4', '#a855f7'], borderWidth: 0 
